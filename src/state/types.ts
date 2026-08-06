@@ -354,7 +354,7 @@ export interface Tally {
 // --- Run end ---
 
 export interface RunEnd {
-  cause: 'starved' | 'frozen' | 'slain' | 'despair' | 'survived';
+  cause: 'starved' | 'frozen' | 'slain' | 'despair' | 'survived' | 'jarl';
   title: string;
   lines: string[];
 }

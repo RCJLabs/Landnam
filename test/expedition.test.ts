@@ -278,7 +278,9 @@ describe('sending parties out beats never leaving', () => {
       passDay(state);
     }
     return {
-      survived: state.end?.cause === 'survived',
+      // Coming through the winter, which since 4.6 is being alive at the thaw
+      // rather than the run ending there.
+      survived: !state.end,
       day: state.day,
       food: state.party.food,
       firewood: state.party.firewood,

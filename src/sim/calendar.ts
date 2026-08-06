@@ -5,6 +5,9 @@ import type { Season } from '../state/types';
 
 export const SEASON_LENGTH = 24;
 
+/** Four seasons to the year. */
+export const YEAR_LENGTH = SEASON_LENGTH * 4;
+
 /** Order of play, starting at landfall. */
 export const SEASON_ORDER: readonly Season[] = ['summer', 'autumn', 'winter', 'spring'] as const;
 
@@ -30,6 +33,31 @@ export function nextSeason(day: number): Season {
 export function daysUntilWinter(day: number): number {
   const winterStart = SEASON_ORDER.indexOf('winter') * SEASON_LENGTH + 1;
   return day >= winterStart ? 0 : winterStart - day;
+}
+
+/** 1-based. Day 1 is the first summer of year one. */
+export function yearOf(day: number): number {
+  return Math.floor((Math.max(1, day) - 1) / YEAR_LENGTH) + 1;
+}
+
+/**
+ * The first day of the next spring — when the winter ahead lets go. Before
+ * 4.6 this was a single constant, because the run ended at the first thaw.
+ * Now the year comes round again, and everything that used to count toward
+ * day 73 counts toward whichever thaw is next.
+ */
+export function nextThaw(day: number): number {
+  const here = Math.max(1, day);
+  const springStart = SEASON_ORDER.indexOf('spring') * SEASON_LENGTH + 1;
+  const thaw = (yearOf(here) - 1) * YEAR_LENGTH + springStart;
+  return here < thaw ? thaw : thaw + YEAR_LENGTH;
+}
+
+/** How many winters the band has come out the other side of. */
+export function wintersStood(day: number): number {
+  const springStart = SEASON_ORDER.indexOf('spring') * SEASON_LENGTH + 1;
+  if (day < springStart) return 0;
+  return Math.floor((day - springStart) / YEAR_LENGTH) + 1;
 }
 
 export interface SeasonEffects {

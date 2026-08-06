@@ -16,7 +16,7 @@ import {
 import { canFound } from '../src/sim/site';
 import { living } from '../src/sim/people';
 import { foodPerDay, SURVIVAL_DAY } from '../src/sim/upkeep';
-import { daysUntilWinter, seasonOf } from '../src/sim/calendar';
+import { daysUntilWinter, seasonOf, wintersStood } from '../src/sim/calendar';
 import { visibilityAt } from '../src/sim/fog';
 import { encode } from '../src/state/save';
 import type { GameState } from '../src/state/types';
@@ -255,14 +255,18 @@ describe('the year', () => {
     expect(daysUntilWinter(49)).toBe(0);
   });
 
-  it('surviving to spring ends the run in victory', () => {
+  it('the first thaw is a milestone, not the end of the run', () => {
     let state = newGame('survive-seed');
     state = structuredClone(state);
     state.day = SURVIVAL_DAY - 1;
     state.party.food = 999;
     state.party.firewood = 999;
     state = apply(state, { type: 'CAMP' });
-    expect(state.end?.cause).toBe('survived');
+    // Until 4.6 this ended the run in victory. Now the year comes round.
+    expect(state.end).toBeUndefined();
+    expect(state.day).toBe(SURVIVAL_DAY);
+    expect(wintersStood(state.day)).toBe(1);
+    expect(state.saga.some((e) => e.text.includes('One winter behind us'))).toBe(true);
   });
 });
 

@@ -39,6 +39,7 @@ import {
   renderHint,
   renderSagaLog,
   renderSitePanel,
+  renderThingMark,
   renderTopBar,
   renderWinterMark,
 } from './render/ui';
@@ -270,7 +271,12 @@ function render(): void {
 
   topbarSlot.replaceChildren(renderTopBar(state));
   travelView.update(state);
-  hintSlot.replaceChildren(renderHint(state), renderWinterMark(state), renderSitePanel(state));
+  hintSlot.replaceChildren(
+    renderHint(state),
+    renderWinterMark(state),
+    renderThingMark(state),
+    renderSitePanel(state),
+  );
 
   const deeds = deedsFor(
     state,
@@ -400,6 +406,7 @@ declare global {
       raid(difficulty?: number): void;
       visit(id?: string): void;
       stock(food?: number, firewood?: number): void;
+      skip(days?: number): void;
     };
   }
 }
@@ -431,6 +438,17 @@ window.landnam = {
     next.party.food = food;
     next.party.firewood = firewood;
     next.party.morale = Math.max(next.party.morale, 70);
+    state = next;
+    save(state);
+    render();
+  },
+  // Winds the calendar on. Reaching the endgame honestly is two years of
+  // turns, which is a fine thing to ask of a player and a poor thing to ask
+  // of a playtest.
+  skip(days = 96) {
+    if (!state || currentMode(state) !== 'TRAVEL') return;
+    const next = structuredClone(state);
+    next.day += days;
     state = next;
     save(state);
     render();

@@ -15,6 +15,8 @@ import { bargain, bargainBlocker, canFallOn, fallOn, seeNeighbours } from './nei
 import { bonus } from './lore';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
+import { callThing } from './thing';
+import { THING_OPENING } from '../data/thing';
 import { passDay } from './upkeep';
 
 export type TravelAction =
@@ -25,7 +27,8 @@ export type TravelAction =
   | { type: 'FISH' }
   | { type: 'FOUND' }
   | { type: 'BARTER'; id: string }
-  | { type: 'FALL_ON'; id: string };
+  | { type: 'FALL_ON'; id: string }
+  | { type: 'CALL_THING' };
 
 /** Effort to row a hex of coastal water. The knarr is faster than legs. */
 export const SEA_EFFORT = 2;
@@ -353,6 +356,28 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       if (difficulty === null) return prev;
       const ground = state.world.tiles[key(party.at)]?.terrain ?? 'meadow';
       startBattle(state, ground, difficulty);
+      return state;
+    }
+
+    case 'CALL_THING': {
+      // Three days of people arriving, and the case put on the last of them.
+      const result = callThing(state);
+      if (!result) return prev;
+      advance(state, 3);
+      if (state.end) return state;
+      reveal(state);
+      // A claim carried ends the run, and the ending screen is the payoff. A
+      // claim refused has to be READ, or three days and a feast vanish into
+      // the log with nothing on screen to show for them.
+      if (!result.proclaimed && !state.event) {
+        state.event = {
+          id: 'thing',
+          title: 'The Thing',
+          body: THING_OPENING,
+          choices: [],
+          outcome: { text: result.text, good: false },
+        };
+      }
       return state;
     }
 

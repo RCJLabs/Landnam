@@ -18,6 +18,8 @@ export interface TitleForms {
   wandering: string[];
   /** Nobody came back. */
   lost: string[];
+  /** Proclaimed at the Thing. */
+  jarl: string[];
 }
 
 export const TITLES: TitleForms = {
@@ -35,6 +37,11 @@ export const TITLES: TitleForms = {
     'The Saga of the Landing at {landing}',
     'The Saga of the Band That Kept Walking',
     'What Happened After {landing}',
+  ],
+  jarl: [
+    'The Saga of the Jarl of {steading}',
+    'How {steading} Got Itself a Jarl',
+    'The Saga of {steading}, and the Thing That Carried It',
   ],
   lost: [
     'The Saga of Those Who Did Not Come Back',
@@ -156,6 +163,11 @@ export const CLOSINGS: Record<string, string[]> = {
     'The ice broke in the shallows and they were still there. The land had not taken them, not that year.',
     'They lived to see the ice go out. Whatever came after, it came after this.',
     'Spring found them alive and where they had put themselves, and that was the whole of the victory.',
+  ],
+  jarl: [
+    'They called the Thing and the Thing carried it, and after that there was somebody on that coast who could be appealed to. Which is all a jarl has ever been.',
+    'The weapons went up along the length of the hall, and the coast had a jarl. Nobody who had come off that knarr had expected to see it.',
+    'It was carried, and the carrying of it was the end of the story anybody tells. What came after was administration.',
   ],
   starved: [
     'The stores ran out before the season turned, and hunger finished what the crossing had started.',

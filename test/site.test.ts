@@ -12,6 +12,7 @@ import { apply } from '../src/sim/actions';
 import { applyTravel, canGather } from '../src/sim/travel';
 import { assign, makePlots } from '../src/sim/colony';
 import { stream } from '../src/rng';
+import { YEAR_LENGTH } from '../src/sim/calendar';
 import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
 import {
@@ -440,9 +441,12 @@ describe('home ground pays for itself', () => {
     expect(eventChance(open)).toBe(eventChance({ ...open, settlement: undefined }));
   });
 
-  it('the steading is named in the ending you earn by surviving', () => {
+  it('the steading is named in the ending you earn by enduring', () => {
     const state = homed('ending', {});
-    state.day = 80;
+    // Since 4.6 one winter is not an ending. A whole life on that coast is.
+    state.day = 4 * YEAR_LENGTH + 72;
+    state.party.food = 9999;
+    state.party.firewood = 9999;
     passDay(state);
     expect(state.end?.cause).toBe('survived');
     expect(state.end!.title).toContain('Testholt');

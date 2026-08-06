@@ -1039,6 +1039,47 @@ h2.grim {
   font-style: italic;
 }
 
+
+/* --- The Thing (4.6) --- */
+
+.thing-mark {
+  padding: 7px 10px;
+  background: var(--ink-soft);
+  border-top: 1px solid var(--edge);
+  font-size: 13px;
+}
+
+.thing-mark.ready {
+  border-top-color: var(--gold);
+}
+
+/* Red is the winter mark's colour because a short store is an emergency. A
+   goal you are working toward is not one, so it reads neutral until it is
+   actually reachable. */
+.thing-mark .mark-head {
+  color: var(--parchment);
+}
+
+.thing-mark.ready .mark-head {
+  color: var(--gold);
+}
+
+.need {
+  display: flex;
+  gap: 8px;
+  color: var(--parchment-dim);
+  line-height: 1.5;
+}
+
+.need.met {
+  color: var(--moss);
+}
+
+.need-mark {
+  width: 12px;
+  text-align: center;
+}
+
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {

@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 4.6**
+> **CURRENT MILESTONE: 5.1**
 
 ---
 
@@ -74,7 +74,7 @@ Order negotiable; each is a shippable minor version.
 - [x] **4.3 Neighbors** — Persistent rival clans and native settlements: reputation, trade, tribute, alliances, escalation.
 - [x] **4.4 Knowledge** — Discovery-driven progression (runes, shipwright, smithing) unlocked by exploration and events, not a tech-tree menu.
 - [x] **4.5 The Saga** — Run-end saga generator: your whole game retold as a short prose saga from the log. Shareable seed + saga.
-- [ ] **4.6 Endgame** — Victory: survive N winters and hold a Thing to be proclaimed jarl. Defeat: warband extinguished.
+- [x] **4.6 Endgame** — Victory: survive N winters and hold a Thing to be proclaimed jarl. Defeat: warband extinguished.
 
 ## Phase 5 — Ship it → v1.0
 
@@ -91,6 +91,23 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 4.6 Endgame** — Phase 4 closes. Surviving the first winter is
+  no longer winning: the thaw is a milestone, the year comes round again, and
+  the winter mark now points at whichever winter is actually next. Victory is a
+  Thing held and carried, and the road to it is a checklist on screen from the
+  first thaw onward — two winters stood, a mead hall to hold it in, no blood
+  unanswered at home, somebody on the coast who will speak for you, thirty of
+  food for the feast, and the whole band at the steading. Every item is a
+  system Phase 4 already built, and every item on its own blocks the claim.
+  Calling it costs three days and the feast whether it carries or not, and the
+  odds are shown before the case is put: a band that scraped in is around 58%,
+  one that did everything is 83% — capped below certainty on purpose, because a
+  climax that cannot be lost is a button that says "you win". A coast you
+  wronged drags a strong claim from 83% down to 58%. Carried, the run ends as a
+  jarldom and the saga is titled for it; refused, there is a card to read and
+  twelve days before it can be pressed again. Five winters without a title ends
+  the run anyway: a life, if not a jarldom. `SAVE_VERSION` 16 with a migration.
+  429 tests.
 - **2026-08-06 — 4.5 The Saga** — The ending screen is now the run, retold. Six
   chapters — the landing, the country, the land-taking, the neighbours, what
   they worked out, blood — and a closing, every one of them assembled from what

@@ -1,0 +1,163 @@
+// Calling the Thing, and what comes of it.
+//
+// The endgame. Everything the run has built points here: winters from the
+// calendar, a mead hall from the queue, quiet in the hall from 4.1, a coast
+// that will speak for you from 4.3, rune-craft from 4.4 — and a feast, which
+// is simply food.
+//
+// The claim is a roll, and the roll is shown before it is made. A player who
+// walks into a 41% Thing and loses it walked in knowing.
+
+import { wintersStood } from './calendar';
+import { checkOdds } from './events';
+import { FEUD_THRESHOLD } from '../data/feuds';
+import {
+  FEAST_FOOD,
+  NEEDS,
+  PROCLAIMED,
+  REFUSED,
+  THING_ANGER_MAX,
+  THING_BASE,
+  THING_COOLDOWN,
+  THING_DC,
+  THING_MERIT_CAP,
+  THING_OPENING,
+  WINTERS_TO_JARL,
+  type NeedId,
+} from '../data/thing';
+import { stream } from '../rng';
+import type { GameState } from '../state/types';
+import { angerLevel, friendliest, goodwillLevel } from './neighbours';
+import { bonus } from './lore';
+import { bestStat, fullName, living } from './people';
+import { chronicle } from './saga';
+import { atHome } from './site';
+
+export interface Need {
+  id: NeedId;
+  label: string;
+  why: string;
+  met: boolean;
+}
+
+/** True when nobody at home is still owed blood. */
+export function houseAtPeace(state: GameState): boolean {
+  return !state.grudges.some((g) => !g.settled && g.weight >= FEUD_THRESHOLD);
+}
+
+/** True when at least one place on the coast would send anyone at all. */
+export function hasSpeakers(state: GameState): boolean {
+  const best = friendliest(state);
+  return !!best && best.found === true && best.standing >= 25;
+}
+
+/**
+ * The checklist, always readable — met or not. It is shown from the first
+ * thaw onward, because a goal the player cannot see is a goal they cannot
+ * work toward, which is the whole difference between an endgame and a timer.
+ */
+export function thingNeeds(state: GameState): Need[] {
+  const home = state.settlement;
+  const met: Record<NeedId, boolean> = {
+    winters: wintersStood(state.day) >= WINTERS_TO_JARL,
+    hall: !!home?.built.includes('meadhall'),
+    peace: houseAtPeace(state),
+    friends: hasSpeakers(state),
+    feast: state.party.food >= FEAST_FOOD,
+    gathered: !!home && atHome(state) && !state.expedition,
+  };
+  return NEEDS.map((need) => ({ ...need, met: met[need.id] }));
+}
+
+export function thingReady(state: GameState): boolean {
+  return thingNeeds(state).every((n) => n.met);
+}
+
+/** Days before the claim can be pressed again, or 0. */
+export function thingCooldown(state: GameState): number {
+  const last = state.flags['thingCalledOn'];
+  if (last === undefined) return 0;
+  return Math.max(0, THING_COOLDOWN - (state.day - last));
+}
+
+export function canCallThing(state: GameState): boolean {
+  if (state.end || state.event || state.battle) return false;
+  return thingReady(state) && thingCooldown(state) === 0;
+}
+
+/**
+ * What the band brings to the case, as a single number added to 2d6.
+ *
+ * Every term is something the player did on purpose. Rune-craft is here
+ * because being able to point at what was actually agreed is exactly what
+ * wins an argument in front of a hall full of people.
+ */
+export function thingStanding(state: GameState): number {
+  const merits =
+    Math.floor(bestStat(state.party.people, 'spirit') / 2) +
+    Math.floor(goodwillLevel(state) / 40) +
+    Math.floor(state.party.morale / 40) +
+    Math.min(2, Math.max(0, wintersStood(state.day) - WINTERS_TO_JARL)) +
+    Math.min(2, state.settlement ? Math.floor(state.settlement.built.length / 3) : 0) +
+    bonus(state, 'check');
+  const anger = Math.min(THING_ANGER_MAX, Math.floor(angerLevel(state) / 40));
+  // Merits are capped together; ill-will is not, and is taken off afterwards.
+  // A coast you have wronged can pull down a claim nothing else could.
+  return THING_BASE + Math.min(THING_MERIT_CAP, merits) - anger;
+}
+
+/** The odds, to be shown before the claim is made and never after. */
+export function thingOdds(state: GameState): number {
+  return checkOdds(thingStanding(state), THING_DC);
+}
+
+export interface ThingResult {
+  proclaimed: boolean;
+  text: string;
+  /** The person the saga will name. */
+  jarl?: string;
+}
+
+/**
+ * Holds the Thing. Mutates; callers hold a clone. The feast is eaten either
+ * way — that is the cost of asking, and it is why asking at 30% is a real
+ * decision rather than a free reroll.
+ */
+export function callThing(state: GameState): ThingResult | null {
+  if (!canCallThing(state)) return null;
+
+  state.party.food = Math.max(0, state.party.food - FEAST_FOOD);
+  state.flags['thingCalledOn'] = state.day;
+  state.flags['thingsCalled'] = (state.flags['thingsCalled'] ?? 0) + 1;
+
+  const speaker =
+    living(state.party.people).reduce<(typeof state.party.people)[number] | undefined>(
+      (best, p) => (!best || p.stats.spirit > best.stats.spirit ? p : best),
+      undefined,
+    );
+  const name = speaker ? fullName(speaker) : 'whoever was left';
+
+  const rng = stream(state.seed, 'events').derive(`thing:${state.day}`);
+  const proclaimed = rng.roll(2, 6) + thingStanding(state) >= THING_DC;
+
+  chronicle(state, THING_OPENING, 'saga');
+
+  if (proclaimed) {
+    const text = rng.derive('carried').pick(PROCLAIMED).replace(/\{name\}/g, name);
+    chronicle(state, text, 'saga');
+    state.end = {
+      cause: 'jarl',
+      title: `${name}, Jarl of ${state.settlement!.name}`,
+      lines: [
+        `On day ${state.day} the Thing carried it, and there was a jarl on that coast where there had been nobody.`,
+        `${wintersStood(state.day)} winters, and a hall full of people who came when they were called.`,
+      ],
+    };
+    return { proclaimed: true, text, jarl: name };
+  }
+
+  const text = rng.derive('refused').pick(REFUSED);
+  chronicle(state, text, 'grim');
+  state.party.morale = Math.max(0, state.party.morale - 10);
+  return { proclaimed: false, text };
+}

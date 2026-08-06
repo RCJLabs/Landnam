@@ -13,9 +13,12 @@ import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, buildable, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
 import { passDay, SURVIVAL_DAY } from '../src/sim/upkeep';
+import { YEAR_LENGTH } from '../src/sim/calendar';
 import {
   coldNight,
   forecast,
+  markVisible,
+  MARK_WINDOW,
   PRUDENCE,
   readiness,
   sickCount,
@@ -105,12 +108,19 @@ describe('the winter mark', () => {
     expect(forecast(state).days).toBeLessThan(SURVIVAL_DAY - 25);
   });
 
-  it('is nothing once the ice has broken', () => {
+  it('is put away once the ice has broken, and comes back for the next winter', () => {
     const state = toAutumn('mark-done');
     state.day = SURVIVAL_DAY;
-    expect(forecast(state).days).toBe(0);
-    expect(forecast(state).food).toBe(0);
+    // The mark now points at the NEXT winter rather than at nothing, because
+    // there is a next winter — but it is not shown through spring and summer.
+    expect(markVisible(state)).toBe(false);
+    expect(forecast(state).days).toBe(YEAR_LENGTH);
     expect(readiness(state)).toContain('ice');
+
+    // Autumn of the second year, and it is back on screen counting down.
+    state.day = SURVIVAL_DAY + YEAR_LENGTH - MARK_WINDOW;
+    expect(markVisible(state)).toBe(true);
+    expect(forecast(state).days).toBe(MARK_WINDOW);
   });
 
   /**
@@ -189,7 +199,9 @@ describe('an unprepared colony dies and it is clearly your fault', () => {
     }
     return {
       toldReady,
-      survived: endCause(state) === 'survived',
+      // The thaw no longer ends the run, so coming through it means being
+      // alive and unended when the loop stops.
+      survived: !state.end,
       day: state.day,
       cause: endCause(state),
       verdict: winterVerdict(state),

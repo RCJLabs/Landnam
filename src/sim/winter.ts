@@ -9,12 +9,12 @@
 // thumb someone tuned by feel.
 
 import type { GameState, Injury, Person } from '../state/types';
-import { effectsOn, seasonOf } from './calendar';
+import { effectsOn, nextThaw, seasonOf } from './calendar';
 import { dayLabour, jobOf, output, seasonFactor, shelterSaving } from './colony';
 import { living } from './people';
 import { chronicle } from './saga';
 import { bonus } from './lore';
-import { firewoodPerNight, foodPerDay, SURVIVAL_DAY } from './upkeep';
+import { firewoodPerNight, foodPerDay } from './upkeep';
 import { stream } from '../rng';
 
 /** Winter opens on day 49. Spring — and survival — on day 73. */
@@ -22,6 +22,13 @@ export const WINTER_DAY = 49;
 
 /** How much more than the forecast to bank. The weather is not a mean. */
 export const PRUDENCE = 1.15;
+
+/**
+ * How far out the mark starts being shown: the turn of autumn. Before 4.6 the
+ * panel was gated on "day 25 or later", which meant the same thing exactly
+ * once. It has to be a window now, because the year comes round again.
+ */
+export const MARK_WINDOW = 48;
 
 export interface Forecast {
   /** Days between now and the ice breaking. */
@@ -45,7 +52,9 @@ export interface Forecast {
  * days and it will starve. Change the plan and the number changes with it.
  */
 export function forecast(state: GameState): Forecast {
-  const days = Math.max(0, SURVIVAL_DAY - state.day);
+  // Whichever thaw is next. Before 4.6 this was the single day the run ended
+  // on; the mark now points at the winter actually coming.
+  const days = Math.max(0, nextThaw(state.day) - state.day);
   const home = state.settlement;
   const crew = living(state.party.people);
 
@@ -99,7 +108,8 @@ function ratio(today: number, then: number, seasonal: number): number {
 /** One line naming where the band stands against the winter. */
 export function readiness(state: GameState): string {
   const f = forecast(state);
-  if (f.days <= 0) return 'The ice has broken. We lived.';
+  // Out of season the mark is not a live target, so it does not read like one.
+  if (!markVisible(state)) return 'The ice has broken. We lived.';
   if (f.ready) {
     return `Stores will reach spring: ${f.food} food and ${f.firewood} wood is the mark, and we are past both.`;
   }
@@ -119,6 +129,17 @@ const ILLNESSES: Omit<Injury, 'id'>[] = [
 ];
 
 export const SICKNESS_BASE_DC = 9;
+
+/**
+ * Whether the mark is worth putting on screen. A number the player cannot act
+ * on yet is noise, and a winter target shown through high summer is noise for
+ * two whole seasons.
+ */
+export function markVisible(state: GameState): boolean {
+  if (state.end || !state.settlement) return false;
+  const days = forecast(state).days;
+  return days > 0 && days <= MARK_WINDOW;
+}
 
 /** True while the ground is too hard for anything to mend properly. */
 export function frozen(day: number): boolean {

@@ -15,7 +15,10 @@ import {
   verdictFor,
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
-import { forecast } from '../sim/winter';
+import { forecast, markVisible } from '../sim/winter';
+import { wintersStood } from '../sim/calendar';
+import { thingNeeds, thingOdds } from '../sim/thing';
+import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
 import { angriest, neighbourHere, neighbourLine, standingOf } from '../sim/neighbours';
 import { button, el } from './svg';
@@ -62,9 +65,8 @@ export function renderTopBar(state: GameState): HTMLElement {
  * panel was on screen for two seasons telling it the number.
  */
 export function renderWinterMark(state: GameState): HTMLElement {
-  if (state.end || state.day < 25 || !state.settlement) return el('div');
+  if (!markVisible(state)) return el('div');
   const f = forecast(state);
-  if (f.days <= 0) return el('div');
 
   const row = (label: string, have: number, need: number, gap: number): HTMLElement =>
     el('div', { class: `mark-row${gap < 0 ? ' short' : ''}` }, [
@@ -84,6 +86,38 @@ export function renderWinterMark(state: GameState): HTMLElement {
     row('Food', state.party.food, f.food, f.foodGap),
     row('Wood', state.party.firewood, f.firewood, f.firewoodGap),
   ]);
+}
+
+/**
+ * The road to a jarldom, as a checklist. Shown from the first thaw onward at
+ * the steading and nowhere else.
+ *
+ * This is the endgame's whole apparatus, and it is the same trick as the
+ * winter mark: a goal the player can see is a goal they can work toward, and
+ * one they cannot is a timer with extra steps.
+ */
+export function renderThingMark(state: GameState): HTMLElement {
+  if (state.end || state.event || !state.settlement) return el('div');
+  if (wintersStood(state.day) < 1 || !atHome(state)) return el('div');
+
+  const needs = thingNeeds(state);
+  const ready = needs.every((n) => n.met);
+  const panel = el('div', { class: `thing-mark${ready ? ' ready' : ''}` }, [
+    el('div', { class: 'mark-head' }, [
+      ready
+        ? `The Thing can be called · ${Math.round(thingOdds(state) * 100)}%`
+        : `${wintersStood(state.day)} of ${WINTERS_TO_JARL} winters · what a jarl needs`,
+    ]),
+  ]);
+  for (const need of needs) {
+    panel.append(
+      el('div', { class: `need${need.met ? ' met' : ''}` }, [
+        el('span', { class: 'need-mark' }, [need.met ? '✓' : '·']),
+        el('span', { class: 'need-label' }, [need.label]),
+      ]),
+    );
+  }
+  return panel;
 }
 
 /**

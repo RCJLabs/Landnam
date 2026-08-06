@@ -13,6 +13,9 @@ import { atSea, canFish, canGather } from '../sim/travel';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
 import { BARTER_FOOD } from '../data/clans';
+import { FEAST_FOOD } from '../data/thing';
+import { wintersStood } from '../sim/calendar';
+import { thingCooldown, thingNeeds, thingOdds } from '../sim/thing';
 import { button, el } from './svg';
 
 export interface Deed {
@@ -136,6 +139,27 @@ export function deedsFor(
       blurb: 'Only a launched party walks the map. Everyone you send stops working.',
       tone: 'weighty',
       run: onLaunch,
+    });
+  }
+
+  // The endgame. Offered from the first thaw onward so the player knows the
+  // shape of what they are working toward, and blocked with the reason until
+  // the whole checklist is met.
+  if (state.settlement && wintersStood(state.day) >= 1) {
+    const cooling = thingCooldown(state);
+    const missing = thingNeeds(state).find((n) => !n.met);
+    const blocked = cooling > 0
+      ? `They will not be called back for another ${cooling} days.`
+      : missing
+        ? `${missing.label} — ${missing.why}`
+        : undefined;
+    deeds.push({
+      id: 'thing',
+      label: 'Call a Thing',
+      blurb: `Send word the length of the coast and put the case. ${Math.round(thingOdds(state) * 100)}% · costs 3 days and ${FEAST_FOOD} of food.`,
+      tone: 'weighty',
+      ...(blocked ? { blocked } : {}),
+      run: () => dispatch({ type: 'CALL_THING' }),
     });
   }
 

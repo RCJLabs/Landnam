@@ -118,9 +118,11 @@ export function composeSaga(state: GameState): Saga {
 
   // --- Title ---
   const bank = home
-    ? state.end?.cause === 'survived'
-      ? TITLES.stood
-      : TITLES.fell
+    ? state.end?.cause === 'jarl'
+      ? TITLES.jarl
+      : state.end?.cause === 'survived'
+        ? TITLES.stood
+        : TITLES.fell
     : alive.length === 0
       ? TITLES.lost
       : TITLES.wandering;

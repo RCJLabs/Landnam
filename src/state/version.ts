@@ -16,7 +16,8 @@
 // v13 (4.3): the root gained neighbours.
 // v14 (4.4): the root gained lore.
 // v15 (4.5): the root gained the tally.
-export const SAVE_VERSION = 15;
+// v16 (4.6): RunEnd gained the 'jarl' cause.
+export const SAVE_VERSION = 16;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

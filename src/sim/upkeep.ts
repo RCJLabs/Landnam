@@ -2,7 +2,8 @@
 // feed, a fire to keep, and a season that stops giving.
 
 import type { GameState, Person, RunEnd } from '../state/types';
-import { effectsOn, seasonOf } from './calendar';
+import { effectsOn, nextThaw, seasonOf, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from './calendar';
+import { LONG_LIFE_WINTERS } from '../data/thing';
 import { living } from './people';
 import { noteFirstWork, shelterSaving, workTheDay } from './colony';
 import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
@@ -12,7 +13,11 @@ import { driftStandings } from './neighbours';
 import { bonus } from './lore';
 import { chronicle } from './saga';
 
-/** Winter arrives on day 49; spring on day 73 is survival. */
+/**
+ * The first thaw. Until 4.6 this ended the run in victory; now it is the day
+ * the endgame OPENS — the checklist in sim/thing.ts starts being shown, and
+ * the year comes round again. See LONG_LIFE_WINTERS for the far end.
+ */
 export const SURVIVAL_DAY = 73;
 
 export function foodPerDay(state: GameState): number {
@@ -153,8 +158,22 @@ export function passDay(state: GameState): boolean {
   if ((state.day - 1) % 24 === 0) {
     chronicle(state, seasonOpening(season), 'saga');
   }
+  // Each thaw is now a milestone rather than the end of the run, so it is
+  // marked as one — and it is the moment the Thing becomes worth thinking
+  // about, so the band is told how many winters it has behind it.
+  if (state.day === nextThaw(state.day - 1)) {
+    const stood = wintersStood(state.day);
+    state.party.morale = Math.min(100, state.party.morale + 10);
+    chronicle(
+      state,
+      stood === 1
+        ? 'We had lived through it. One winter behind us, and the country still ours to argue about.'
+        : `${stood} winters stood. There were people on this coast now who had never known us not being here.`,
+      'saga',
+    );
+  }
   // Telegraph the coming winter while there is still time to act.
-  if (state.day === 41) {
+  if (daysUntilNextWinter(state.day) === 8) {
     chronicle(state, 'The light was going early. Winter was eight days out, and our stores were what they were.', 'saga');
   }
 
@@ -163,6 +182,14 @@ export function passDay(state: GameState): boolean {
   // fight — maybeFireFeud refuses while a battle or another card is up.
   if (!state.end) maybeFireFeud(state);
   return !state.end;
+}
+
+/** Days until the next winter closes in, whichever year it is. */
+function daysUntilNextWinter(day: number): number {
+  const winterStart = 2 * SEASON_LENGTH + 1;
+  const thisYear = Math.floor((day - 1) / YEAR_LENGTH) * YEAR_LENGTH + winterStart;
+  const start = day <= thisYear ? thisYear : thisYear + YEAR_LENGTH;
+  return start - day;
 }
 
 /** Hunger escalates rather than repeating itself day after day. */
@@ -191,14 +218,17 @@ function seasonOpening(season: string): string {
 export function checkRunEnd(state: GameState, _forage: number): void {
   const alive = living(state.party.people);
 
-  if (state.day >= SURVIVAL_DAY && alive.length > 0) {
+  // A whole life on that coast, without ever being proclaimed anything. Not a
+  // failure — but the run has to stop somewhere, and a band that has stood
+  // five winters has said everything it is going to say.
+  if (wintersStood(state.day) >= LONG_LIFE_WINTERS && alive.length > 0) {
     const home = state.settlement;
-    endRun(state, 'survived', home ? `${home.name} Stood` : 'We Held the Land', [
-      `${alive.length} of ${state.party.people.length} lived to see the ice break.`,
+    endRun(state, 'survived', home ? `${home.name} Endured` : 'We Held the Land', [
+      `${alive.length} of ${state.party.people.length} were still there after ${wintersStood(state.day)} winters.`,
       home
-        ? `${home.name} was founded on day ${home.foundedOn}, and it was still standing when the ice broke.`
-        : 'We never set a post in the ground. We wintered where we stood, and moved on.',
-      'The land had not taken us. Not this year.',
+        ? `${home.name} was founded on day ${home.foundedOn} and never fell.`
+        : 'We never set a post in the ground. We wintered where we stood, year on year.',
+      'No title, and no need of one.',
     ]);
     appendVerdict(state);
     return;

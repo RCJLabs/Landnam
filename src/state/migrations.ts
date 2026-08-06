@@ -152,6 +152,11 @@ export const MIGRATIONS: Record<number, Migration> = {
     ...save,
     version: 15,
   }),
+
+  // v15 -> v16: a run can now end in a jarldom. Nothing reshapes — an older
+  // save simply has no ending with that cause, which is exactly true of it —
+  // but the registry refuses silent gaps, so the bump ships this anyway.
+  15: (save) => ({ ...save, version: 16 }),
 };
 
 export interface MigrationResult {
