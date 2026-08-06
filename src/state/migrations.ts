@@ -127,6 +127,13 @@ export const MIGRATIONS: Record<number, Migration> = {
   // v11 -> v12: parties go out from the steading. An absent expedition means
   // everyone is home, which is exactly what an older save describes.
   11: (save) => ({ ...save, version: 12 }),
+
+  // v12 -> v13: the coast has other people on it. An older run comes forward
+  // with an empty one rather than having neighbours invented around it —
+  // placement needs the worldgen stream and a hex map, neither of which a
+  // migration is allowed to reach, and a steading that has never met anybody
+  // is a coherent thing for a save to describe.
+  12: (save) => ({ neighbours: [], ...save, version: 13 }),
 };
 
 export interface MigrationResult {

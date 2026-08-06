@@ -908,6 +908,33 @@ h2.grim {
   background: var(--ink);
 }
 
+
+/* --- Neighbours (4.3) --- */
+
+/* Standing has one palette, shared by the map glyphs and the panels, so that
+   "the red one" means the same thing everywhere the player looks. */
+.site-standing {
+  margin-top: 5px;
+  font-style: italic;
+  color: var(--parchment-dim);
+}
+
+.site-standing.hostile { color: #b23b2e; }
+.site-standing.cold { color: #c2703a; }
+.site-standing.wary { color: #b6a06a; }
+.site-standing.friendly { color: #7fa05a; }
+.site-standing.sworn { color: #5fa389; }
+
+.action.danger {
+  border-color: #7d3227;
+  color: #d98a80;
+}
+
+.action.disabled,
+.action:disabled {
+  opacity: 0.4;
+}
+
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {

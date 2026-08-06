@@ -8,6 +8,7 @@ import { noteFirstWork, shelterSaving, workTheDay } from './colony';
 import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
+import { driftStandings } from './neighbours';
 import { chronicle } from './saga';
 
 /** Winter arrives on day 49; spring on day 73 is survival. */
@@ -142,6 +143,8 @@ export function passDay(state: GameState): boolean {
   driftMoods(state, pressure);
   stirGrudges(state, pressure);
   feudsComeDue(state);
+  // The coast forgets slowly, and only a little each day.
+  driftStandings(state);
 
   // Season turned?
   if ((state.day - 1) % 24 === 0) {

@@ -11,6 +11,8 @@ import { bestAt, effectiveStat, living } from './people';
 import { chronicle } from './saga';
 import { atHome, foundSettlement } from './site';
 import { fieldCrew, permittedStep } from './expedition';
+import { bargain, bargainBlocker, canFallOn, fallOn, seeNeighbours } from './neighbours';
+import { startBattle } from './battleTurn';
 import { passDay } from './upkeep';
 
 export type TravelAction =
@@ -19,7 +21,9 @@ export type TravelAction =
   | { type: 'FORAGE' }
   | { type: 'HUNT' }
   | { type: 'FISH' }
-  | { type: 'FOUND' };
+  | { type: 'FOUND' }
+  | { type: 'BARTER'; id: string }
+  | { type: 'FALL_ON'; id: string };
 
 /** Effort to enter a hex, or null when it cannot be entered on foot. */
 export function moveEffort(state: GameState, to: Hex): number | null {
@@ -74,6 +78,8 @@ function reveal(state: GameState): void {
     state.party.at,
     sightRadius(state.world, state.party.at, effects.sight),
   );
+  // Somebody else's smoke shows up the moment the ground it stands on does.
+  seeNeighbours(state);
 }
 
 /**
@@ -262,6 +268,25 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       advance(state, 1);
       if (state.end) return state;
       reveal(state);
+      return state;
+    }
+
+    case 'BARTER': {
+      if (bargainBlocker(state, action.id) !== null) return prev;
+      if (!bargain(state, action.id)) return prev;
+      advance(state, 1);
+      if (state.end) return state;
+      reveal(state);
+      return state;
+    }
+
+    case 'FALL_ON': {
+      // The day is spent whether or not it goes well, and the fight begins
+      // before the day turns — you do not get to sleep on the decision.
+      const difficulty = canFallOn(state, action.id) ? fallOn(state, action.id) : null;
+      if (difficulty === null) return prev;
+      const ground = state.world.tiles[key(party.at)]?.terrain ?? 'meadow';
+      startBattle(state, ground, difficulty);
       return state;
     }
 

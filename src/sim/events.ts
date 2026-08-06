@@ -10,6 +10,7 @@ import { startBattle, startRaid } from './battleTurn';
 import { raidDifficulty } from './raid';
 import { settleFeud } from './minds';
 import { purposeDef } from './expedition';
+import { angerLevel, angriest, friendliest, goodwillLevel, shiftStanding, stirFactor } from './neighbours';
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
@@ -53,6 +54,10 @@ function conditionHolds(state: GameState, condition: Condition): boolean {
       return state.party.firewood <= condition.value;
     case 'sick':
       return sickCount(state) > 0;
+    case 'anger':
+      return angerLevel(state) >= condition.min;
+    case 'goodwill':
+      return goodwillLevel(state) >= condition.min;
   }
 }
 
@@ -109,7 +114,10 @@ export function eventChance(state: GameState): number {
   // report, which is the point of building one.
   const defence = effectiveReport(state)?.defence ?? home.report.defence;
   const quiet = defence * 0.09 + home.watch * WATCH_QUIET;
-  return BASE_EVENT_CHANCE * Math.max(0.15, 1 - quiet);
+  // A coast with a grievance against you is a busier coast. Quiet ground is
+  // still quieter than loud ground, but it does not buy you peace you have
+  // spent elsewhere.
+  return BASE_EVENT_CHANCE * Math.max(0.15, 1 - quiet) * stirFactor(state);
 }
 
 /** Rolls for an event after a travel action. Mutates the state clone. */
@@ -200,6 +208,11 @@ function applyEffect(state: GameState, effect: Effect): void {
       state.flags['pendingRaid'] = 1;
       state.flags['pendingBattleDifficulty'] = effect.difficulty ?? 0;
       break;
+    case 'standing': {
+      const who = effect.who === 'friendliest' ? friendliest(state) : angriest(state);
+      if (who) shiftStanding(state, who.id, effect.n);
+      break;
+    }
   }
 }
 

@@ -19,6 +19,7 @@ import type { Battle, Combatant, GameState, Person, Stats, Terrain } from '../st
 import { pushMode } from '../modes';
 import { effectiveStat } from './people';
 import { fieldCrew, homeCrew } from './expedition';
+import { raidSource } from './neighbours';
 import { chronicle } from './saga';
 import { startingNerve } from './morale';
 import {
@@ -271,11 +272,21 @@ export function beginBattle(
   for (const c of battle.combatants) c.nerve = startingNerve(state, c.personId);
   battle.order = rollInitiative(state, battle, rng.derive('initiative'));
   if (raid && home) {
+    // A raid with a name on it reads differently from weather. If nobody on
+    // the coast has a quarrel with us, it is strangers and stays strangers.
+    const from = raidSource(state);
     battle.log.push(
       `They came at ${home.name} out of the trees. ${foes.length} against ${standing(battle, 'warband').length}.` +
+        (from ? ` ${from.name} had not forgotten us.` : '') +
         (home.built.includes('palisade') ? ' The palisade was between us.' : ''),
     );
-    chronicle(state, `Raiders came on ${home.name} before we saw them.`, 'grim');
+    chronicle(
+      state,
+      from
+        ? `Men out of ${from.name} came on ${home.name} before we saw them.`
+        : `Raiders came on ${home.name} before we saw them.`,
+      'grim',
+    );
   } else {
     battle.log.push(
       `They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.`,

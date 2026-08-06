@@ -9,6 +9,7 @@ import { buildingById } from '../data/buildings';
 import type { GameState } from '../state/types';
 import { effectiveReport } from './colony';
 import { standing } from './battle';
+import { raidPressure } from './neighbours';
 import { chronicle } from './saga';
 
 /** What share of the store a successful sack carries off. */
@@ -34,7 +35,15 @@ export function raidDifficulty(state: GameState): number {
   if (!home) return 0;
   const worthTaking = home.built.length * 0.4 + Math.min(3, state.party.food / 40);
   const warned = effectiveReport(state)!.defence * 0.18 + home.watch * 0.12;
-  return Math.max(-1, Math.min(4, Math.round(worthTaking - warned)));
+  // Whoever you have wronged brings more of their own. This is the whole
+  // reason a neighbour is a persistent object and not a card.
+  //
+  // The ceiling is above what rollFoes can actually field (MAX_RAIDERS), so
+  // that a site worth watching still reads as safer than one that is not even
+  // when both are already bringing everything they have. Clamping at the foe
+  // cap would flatten the two into the same number and quietly delete the
+  // reason to build a palisade.
+  return Math.max(-1, Math.min(6, Math.round(worthTaking - warned + raidPressure(state))));
 }
 
 /**

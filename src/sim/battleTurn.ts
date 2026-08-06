@@ -15,6 +15,7 @@ import { takeFoeTurn } from './battleAi';
 import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
+import { noteRaidSent } from './neighbours';
 import { key } from '../hex';
 import { checkRunEnd } from './upkeep';
 
@@ -129,6 +130,8 @@ export function startBattle(state: GameState, terrain: Terrain, difficulty = 0):
 /** Opens a raid on the steading — same machinery, your own ground. */
 export function startRaid(state: GameState, difficulty = 0): void {
   const terrain = state.world.tiles[key(state.settlement!.at)]?.terrain ?? 'meadow';
+  // Somebody sent them, and it goes on their account.
+  noteRaidSent(state);
   beginBattle(state, terrain, difficulty, true);
   playUntilOurTurn(state);
 }

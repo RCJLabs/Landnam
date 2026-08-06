@@ -8,6 +8,7 @@ import { effectsOn } from '../sim/calendar';
 import { revealAround, sightRadius } from '../sim/fog';
 import { makeWarband } from '../sim/people';
 import { generateWorld } from '../sim/worldgen';
+import { placeNeighbours } from '../sim/neighbours';
 import type { GameState } from './types';
 import { SAVE_VERSION } from './version';
 
@@ -44,6 +45,7 @@ export function newGame(seed: string): GameState {
     ],
     flags: { landingNamed: 1 },
     grudges: [],
+    neighbours: placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours')),
     nextId: 1,
   };
 

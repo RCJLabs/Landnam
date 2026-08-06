@@ -3,7 +3,8 @@
 
 import { cornerPoints, fromKey, fromPixel, neighbors, toPixel, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
-import type { GameState, Tile } from '../state/types';
+import type { GameState, Neighbour, Tile } from '../state/types';
+import { clanKind, standingFor } from '../data/clans';
 import { moveEffort } from '../sim/travel';
 import { mapDefs, svgEl } from './svg';
 
@@ -122,6 +123,12 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
           opacity: 0.75,
         }),
       );
+    }
+
+    // Other people's places, once somebody has laid eyes on them.
+    for (const n of state.neighbours) {
+      if (!n.found) continue;
+      layerOverlay.append(neighbourMark(n));
     }
 
     if (state.settlement) {
@@ -272,6 +279,60 @@ function mounds(cx: number, cy: number, visible: boolean): SVGGElement {
       fill: '#8d8459',
     }),
   );
+  return g;
+}
+
+/**
+ * Somebody else's place. Colour carries the standing, because the one thing
+ * the player must be able to read off the map at a glance is who is angry.
+ */
+export const STANDING_INK: Record<string, string> = {
+  hostile: '#b23b2e',
+  cold: '#c2703a',
+  wary: '#b6a06a',
+  friendly: '#7fa05a',
+  sworn: '#5fa389',
+};
+
+function neighbourMark(n: Neighbour): SVGGElement {
+  const p = toPixel(n.at, HEX_SIZE);
+  const ink = STANDING_INK[standingFor(n.standing).id] ?? '#b6a06a';
+  const g = svgEl('g', { class: `neighbour standing-${standingFor(n.standing).id}` });
+  const r = HEX_SIZE * 0.3;
+  g.append(
+    svgEl('polygon', {
+      points: cornerPoints(p.x, p.y, HEX_SIZE - 4),
+      fill: 'none',
+      stroke: ink,
+      'stroke-width': 2,
+      'stroke-dasharray': '3 4',
+      opacity: 0.85,
+    }),
+  );
+  if (clanKind(n.kind).id === 'native') {
+    // A tent: two poles crossed over a hide.
+    g.append(
+      svgEl('path', {
+        d: `M ${p.x} ${p.y - r} L ${p.x - r} ${p.y + r} L ${p.x + r} ${p.y + r} Z`,
+        fill: '#3b3225',
+        stroke: ink,
+        'stroke-width': 1.6,
+      }),
+    );
+  } else {
+    // A rival hall: the same bowed roof as ours, in somebody else's colour.
+    g.append(
+      svgEl('path', {
+        d:
+          `M ${p.x - r} ${p.y + r * 0.6} L ${p.x - r} ${p.y} ` +
+          `Q ${p.x} ${p.y - r * 1.3} ${p.x + r} ${p.y} ` +
+          `L ${p.x + r} ${p.y + r * 0.6} Z`,
+        fill: '#3b3225',
+        stroke: ink,
+        'stroke-width': 1.6,
+      }),
+    );
+  }
   return g;
 }
 

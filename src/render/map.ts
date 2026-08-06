@@ -8,7 +8,9 @@
 import { cornerPoints, distance, fromKey, toPixel, key, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import { exploredFraction } from '../sim/fog';
-import type { GameState } from '../state/types';
+import type { GameState, Neighbour } from '../state/types';
+import { clanKind, standingFor } from '../data/clans';
+import { STANDING_INK } from './travel';
 import { button, el, svgEl } from './svg';
 
 const HEX = 10;
@@ -125,6 +127,9 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
   // The knarr, where it all started.
   layers.marks.append(knarr(world.landing));
 
+  const met = state.neighbours.filter((n) => n.found);
+  for (const n of met) layers.marks.append(otherPlace(n));
+
   if (state.settlement) {
     layers.marks.append(hall(state.settlement.at));
   }
@@ -140,6 +145,11 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
       : []),
     legendItem('here', 'Where we are standing'),
     legendItem('trail', 'Ground we have walked'),
+    // Named, with what they think of us — the chart is where the player
+    // reads the coast's temper without having to walk it again.
+    ...met.map((n) =>
+      neighbourKey(n, `${n.name} — a ${clanKind(n.kind).noun} · ${standingFor(n.standing).label}`),
+    ),
   ]);
 
   const card = el('div', { class: 'card chart-card' }, [
@@ -186,6 +196,44 @@ function legendItem(kind: 'knarr' | 'hall' | 'here' | 'trail', text: string): HT
       svgEl('circle', { cx: 0, cy: 0, r: HEX * 0.22, fill: '#e8dcc0', opacity: 0.55 }),
     );
   }
+  return el('div', { class: 'chart-key' }, [swatch, el('span', {}, [text])]);
+}
+
+/** Somebody else's place, inked by what they think of us. */
+function otherPlace(n: Neighbour, at: Hex = n.at): SVGGElement {
+  const p = toPixel(at, HEX);
+  const ink = STANDING_INK[standingFor(n.standing).id] ?? '#b6a06a';
+  const g = svgEl('g', { class: 'mark-other' });
+  const r = HEX * 0.55;
+  g.append(
+    clanKind(n.kind).id === 'native'
+      ? svgEl('path', {
+          d: `M ${p.x} ${p.y - r} L ${p.x - r} ${p.y + r * 0.8} L ${p.x + r} ${p.y + r * 0.8} Z`,
+          fill: '#2a2318',
+          stroke: ink,
+          'stroke-width': 1.4,
+        })
+      : svgEl('path', {
+          d:
+            `M ${p.x - r} ${p.y + r * 0.6} L ${p.x - r} ${p.y} ` +
+            `Q ${p.x} ${p.y - r * 1.2} ${p.x + r} ${p.y} ` +
+            `L ${p.x + r} ${p.y + r * 0.6} Z`,
+          fill: '#2a2318',
+          stroke: ink,
+          'stroke-width': 1.4,
+        }),
+  );
+  return g;
+}
+
+/** A legend row for one neighbour, drawn with the same glyph as the chart. */
+function neighbourKey(n: Neighbour, text: string): HTMLElement {
+  const swatch = svgEl('svg', {
+    class: 'chart-swatch other',
+    viewBox: '-11 -11 22 22',
+    xmlns: 'http://www.w3.org/2000/svg',
+  });
+  swatch.append(otherPlace(n, { q: 0, r: 0 }));
   return el('div', { class: 'chart-key' }, [swatch, el('span', {}, [text])]);
 }
 

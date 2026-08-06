@@ -382,6 +382,7 @@ declare global {
       state(): GameState | null;
       fight(difficulty?: number): void;
       raid(difficulty?: number): void;
+      visit(id?: string): void;
     };
   }
 }
@@ -401,6 +402,19 @@ window.landnam = {
     const next = structuredClone(state);
     next.party.at = { ...next.settlement!.at };
     startRaid(next, difficulty);
+    state = next;
+    save(state);
+    render();
+  },
+  // Stands the band in somebody else's yard, which otherwise takes a walk of
+  // several days and the luck to have looked in the right direction.
+  visit(id?: string) {
+    if (!state || currentMode(state) !== 'TRAVEL') return;
+    const next = structuredClone(state);
+    const target = id ? next.neighbours.find((n) => n.id === id) : next.neighbours[0];
+    if (!target) return;
+    next.party.at = { ...target.at };
+    target.found = true;
     state = next;
     save(state);
     render();

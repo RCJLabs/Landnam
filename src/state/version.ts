@@ -13,7 +13,8 @@
 // v10 (3.5): Ground gained 'wall'; Battle gained the optional raid flag.
 // v11 (4.1): the root gained grudges.
 // v12 (4.2): the root gained the optional expedition.
-export const SAVE_VERSION = 12;
+// v13 (4.3): the root gained neighbours.
+export const SAVE_VERSION = 13;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

@@ -303,6 +303,31 @@ export interface Expedition {
   returning?: boolean;
 }
 
+// --- Neighbours ---
+
+/**
+ * Somebody else's place on the same coast. Standing is stored rather than
+ * derived because it is a memory: it is exactly the thing that must not reset
+ * when you stop raiding them.
+ */
+export interface Neighbour {
+  id: string;
+  /** Clan kind id from data/clans. */
+  kind: string;
+  name: string;
+  at: Hex;
+  /** What they think of you, -100..100. */
+  standing: number;
+  /** How much they can field, roughly 0..3. Feeds a fight's difficulty. */
+  might: number;
+  /** True once somebody has laid eyes on the place. */
+  found?: boolean;
+  /** The day of the last dealing, so the saga can say "again". */
+  lastDealt?: number;
+  /** Raids traced back to them. */
+  raidsSent: number;
+}
+
 // --- Run end ---
 
 export interface RunEnd {
@@ -336,6 +361,8 @@ export interface GameState {
   grudges: Grudge[];
   /** A party out from the steading. Absent means everyone is home. */
   expedition?: Expedition;
+  /** Everybody else on this coast, and what they think of you. */
+  neighbours: Neighbour[];
   end?: RunEnd;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;

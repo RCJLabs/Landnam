@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 4.3**
+> **CURRENT MILESTONE: 4.4**
 
 ---
 
@@ -71,7 +71,7 @@ Order negotiable; each is a shippable minor version.
 
 - [x] **4.1 Minds & feuds** — Moods from needs/events; trait interactions; grudges between settlers; feud events with blood-price resolutions.
 - [x] **4.2 Expeditions** — Launch parties FROM the colony back onto the world map (raid, trade, explore) while the colony sims on. The loop becomes a wheel.
-- [ ] **4.3 Neighbors** — Persistent rival clans and native settlements: reputation, trade, tribute, alliances, escalation.
+- [x] **4.3 Neighbors** — Persistent rival clans and native settlements: reputation, trade, tribute, alliances, escalation.
 - [ ] **4.4 Knowledge** — Discovery-driven progression (runes, shipwright, smithing) unlocked by exploration and events, not a tech-tree menu.
 - [ ] **4.5 The Saga** — Run-end saga generator: your whole game retold as a short prose saga from the log. Shareable seed + saga.
 - [ ] **4.6 Endgame** — Victory: survive N winters and hold a Thing to be proclaimed jarl. Defeat: warband extinguished.
@@ -91,6 +91,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 4.3 Neighbors** — The coast has other people on it, and they
+  remember. Four places are seeded at worldgen — natives who were here first
+  and open warm, rival Norse who came last year and open cold — each carrying
+  a standing from hostile to sworn that is stored, not derived, and drifts
+  back toward nothing at 0.12 a day. Stand in somebody's yard and you get two
+  buttons: barter, which trades food for timber at a rate that rises across
+  the whole standing range, or fall on them, which docks 45 on the spot. What
+  that buys you is the milestone: the angriest neighbour on the coast adds
+  directly to how many raiders come over the wall, raises how often the
+  country stirs around your hall, and unlocks a raid card a peaceful band
+  cannot draw at all — while a coast you have dealt with sends a basket to
+  your door and word of where the ice goes out first. Tribute is a real
+  lever in both directions. Measured across eight coasts: fall on your
+  neighbours and they field 72 raiders against you where dealing with them
+  fields 56, and the same 8 of food buys 39 of timber where an honest
+  neighbour gives 130 — and four of the eight will not deal with you at all.
+  Two whole seasons of drift later, the difference is still there. Raids now
+  arrive with a name on them in the saga. `SAVE_VERSION` 13 with a migration.
+  372 tests.
 - **2026-08-06 — 4.2 Expeditions** — Once the posts are in, the steading is
   where the band lives: to go anywhere at all you send a party, and the map
   only opens up while one is out. Three purposes — look at the country, go out

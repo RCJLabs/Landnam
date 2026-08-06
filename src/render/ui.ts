@@ -19,6 +19,15 @@ import {
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast } from '../sim/winter';
 import { everyoneHome, expeditionLine } from '../sim/expedition';
+import {
+  BARGAIN_REASON,
+  angriest,
+  bargainBlocker,
+  neighbourHere,
+  neighbourLine,
+  standingOf,
+} from '../sim/neighbours';
+import { BARTER_FOOD } from '../data/clans';
 import { button, el } from './svg';
 
 export type Dispatch = (action: Action) => void;
@@ -98,6 +107,10 @@ export function renderActionBar(
   if (state.end || state.event) return bar;
 
   const home = atHome(state);
+  // Standing inside somebody else's camp, the only two things worth offering
+  // are the two ways of dealing with them. Nobody picks berries in the middle
+  // of a stranger's yard, and a nine-button bar fits nothing on a phone.
+  const host = neighbourHere(state);
   bar.append(
     button(home ? 'Rest' : 'Camp', () => dispatch({ type: 'CAMP' }), {
       class: 'action',
@@ -108,7 +121,7 @@ export function renderActionBar(
   );
   // On your own ground the steading's jobs are the day's work; offering
   // foraging as well would pay the same people twice.
-  if (!home) {
+  if (!home && !host) {
     bar.append(
       button('Forage', () => dispatch({ type: 'FORAGE' }), { class: 'action' }),
       button('Hunt', () => dispatch({ type: 'HUNT' }), { class: 'action' }),
@@ -139,6 +152,22 @@ export function renderActionBar(
       button('Send out', onLaunch, {
         class: 'action settle',
         title: 'Send a party out from the steading.',
+      }),
+    );
+  }
+  if (host) {
+    const blocked = bargainBlocker(state, host.id);
+    bar.append(
+      button('Barter', () => dispatch({ type: 'BARTER', id: host.id }), {
+        class: `action${blocked ? ' disabled' : ''}`,
+        ...(blocked ? { disabled: 'true' } : {}),
+        title: blocked
+          ? BARGAIN_REASON[blocked]
+          : `Carry ${BARTER_FOOD} of food into ${host.name} and come out with goods. Costs a day.`,
+      }),
+      button('Fall on', () => dispatch({ type: 'FALL_ON', id: host.id }), {
+        class: 'action danger',
+        title: `Draw steel on ${host.name}. They will remember it for a long time.`,
       }),
     );
   }
@@ -191,7 +220,10 @@ export function renderSitePanel(state: GameState): HTMLElement {
   // then refuses is a lie the player will catch within a day. When there is a
   // blocker, the blocker IS the headline.
   const refused = !!blocker && blocker !== 'settled' && blocker !== 'ended';
-  const head = home
+  const host = neighbourHere(state);
+  const head = host
+    ? neighbourLine(host)
+    : home
     ? `${state.settlement!.name} — our own ground · tap Steading to set the work`
     : state.settlement
       ? `This ground: ${verdict.label}`
@@ -203,6 +235,20 @@ export function renderSitePanel(state: GameState): HTMLElement {
     el('div', { class: 'site-head' }, [head]),
     bars,
   ]);
+  if (host) {
+    panel.append(el('div', { class: `site-standing ${standingOf(host).id}` }, [standingOf(host).line]));
+  } else if (home) {
+    // At the hearth, what the player needs off this panel is the coast's
+    // temper — the thing that decides how much comes over the ridge.
+    const worst = angriest(state);
+    if (worst?.found && worst.standing < 0) {
+      panel.append(
+        el('div', { class: `site-standing ${standingOf(worst).id}` }, [
+          `${worst.name}: ${standingOf(worst).label.toLowerCase()}. ${standingOf(worst).line}`,
+        ]),
+      );
+    }
+  }
   // Say plainly why the button is missing, rather than leaving a blank space
   // where a choice should be.
   if (!home && refused) {

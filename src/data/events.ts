@@ -21,7 +21,11 @@ export type Condition =
   | { c: 'foodMax'; value: number }
   | { c: 'firewoodMax'; value: number }
   /** Someone in the band is carrying an illness. */
-  | { c: 'sick' };
+  | { c: 'sick' }
+  /** The angriest neighbour is at least this far below nothing. */
+  | { c: 'anger'; min: number }
+  /** The friendliest neighbour thinks at least this well of us. */
+  | { c: 'goodwill'; min: number };
 
 export type Effect =
   | { t: 'food'; n: number }
@@ -36,7 +40,9 @@ export type Effect =
   /** Draws steel: the fight begins once the card is dismissed. */
   | { t: 'battle'; difficulty?: number }
   /** They came for the steading. Fought on your own ground, with it at stake. */
-  | { t: 'raid'; difficulty?: number };
+  | { t: 'raid'; difficulty?: number }
+  /** Moves what one neighbour thinks of you. Cards say which one they mean. */
+  | { t: 'standing'; n: number; who: 'angriest' | 'friendliest' };
 
 export interface Outcome {
   text: string;
@@ -538,6 +544,111 @@ export const EVENTS: EventDef[] = [
       {
         label: 'Tell them what they can have',
         success: { text: 'The answer was short. They were back inside the hour.', effects: [{ t: 'raid', difficulty: -1 }, { t: 'morale', n: 4 }] },
+      },
+    ],
+  },
+
+  // --- The neighbours ---
+
+  {
+    id: 'tribute-asked',
+    title: 'A Man Comes to the Gate',
+    body: 'One man, no weapon showing, and a message he has clearly said before. His people are owed something for the ground we are standing on, and he would like it in food.',
+    weight: 14,
+    when: [{ c: 'settled' }, { c: 'anger', min: 15 }, { c: 'dayMin', day: 14 }],
+    choices: [
+      {
+        label: 'Count it out and let him carry it back',
+        success: {
+          text: 'We counted it into his sack ourselves so there could be no argument later. He went back the way he came, and said we would not be troubled.',
+          effects: [{ t: 'food', n: -14 }, { t: 'standing', n: 22, who: 'angriest' }, { t: 'morale', n: -4 }],
+        },
+      },
+      {
+        label: 'Send him back with nothing',
+        success: {
+          text: 'He listened to the whole of it without changing his face, which was worse than shouting would have been.',
+          effects: [{ t: 'standing', n: -18, who: 'angriest' }, { t: 'morale', n: 3 }],
+        },
+      },
+      {
+        label: 'Ask what it would take to end it properly',
+        check: { stat: 'wits', dc: 12 },
+        success: {
+          text: 'We talked until dark and found a price that was not only food. Whatever had been building went out of it.',
+          effects: [{ t: 'food', n: -8 }, { t: 'standing', n: 30, who: 'angriest' }],
+        },
+        failure: {
+          text: 'We talked past each other for an afternoon. He left thinking he had been laughed at.',
+          effects: [{ t: 'standing', n: -10, who: 'angriest' }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'they-remember',
+    title: 'They Remember',
+    body: 'Tracks in the frost on the ridge, a dozen sets, walking a slow line across everything we can see from the door. Nobody is hiding this. It is being shown to us.',
+    weight: 22,
+    // Only a band that has made enemies can draw this. A coast you have not
+    // wronged does not send people to walk your skyline.
+    when: [{ c: 'settled' }, { c: 'anger', min: 35 }, { c: 'dayMin', day: 14 }],
+    choices: [
+      {
+        label: 'Bring everyone inside and wait',
+        success: { text: 'We brought the beasts in and barred what could be barred. They came the next night.', effects: [{ t: 'raid' }] },
+      },
+      {
+        label: 'Go up the ridge and be seen doing it',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'We stood on the ridge until they had had a long look at us. They came anyway, but they came carefully.', effects: [{ t: 'raid', difficulty: -1 }, { t: 'morale', n: 3 }] },
+        failure: { text: 'We were still climbing when the smoke went up behind us.', effects: [{ t: 'raid', difficulty: 1 }] },
+      },
+    ],
+  },
+  {
+    id: 'a-basket-at-the-door',
+    title: 'A Basket at the Door',
+    body: 'Nobody saw it left. Dried fish, a coil of good rope, and a stone with a mark cut into it that none of us can read but all of us understand.',
+    weight: 12,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 25 }],
+    choices: [
+      {
+        label: 'Take it in and be grateful',
+        success: {
+          text: 'We ate the fish and kept the stone on the sill. It was not much and it was not nothing.',
+          effects: [{ t: 'food', n: 8 }, { t: 'morale', n: 4 }],
+        },
+      },
+      {
+        label: 'Send something better back',
+        success: {
+          text: 'We walked out a wool cloak and left it where the basket had been. Twice more that season, things arrived.',
+          effects: [{ t: 'food', n: 8 }, { t: 'firewood', n: -6 }, { t: 'standing', n: 16, who: 'friendliest' }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'word-from-the-camp',
+    title: 'Word from the Camp',
+    body: 'Two of them at the field edge, waiting to be noticed rather than walking in. They have come a long way to tell us something, and they are not in a hurry to say it.',
+    weight: 10,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 40 }, { c: 'dayMin', day: 20 }],
+    choices: [
+      {
+        label: 'Sit them down and hear it out',
+        success: {
+          text: 'They told us where the ice would go out first and which of the bays was worth walking to. We wrote none of it down and forgot none of it.',
+          effects: [{ t: 'reveal', radius: 4 }, { t: 'standing', n: 10, who: 'friendliest' }, { t: 'morale', n: 5 }],
+        },
+      },
+      {
+        label: 'Hear it standing, and get back to the work',
+        success: {
+          text: 'We took the news at the field edge and went back to the barley. They noticed that we had.',
+          effects: [{ t: 'reveal', radius: 2 }, { t: 'standing', n: -6, who: 'friendliest' }],
+        },
       },
     ],
   },
