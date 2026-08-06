@@ -1117,6 +1117,177 @@ export const EVENTS: EventDef[] = [
     ],
   },
 
+  // --- Deck expansion, batch two ---
+  //
+  // Deliberately NOT food-positive. Batch one was written for flavour and
+  // moved the first winter from 77% to 90% on its own, because most of it
+  // ended in finding something. These cost, or trade, or ask a question — the
+  // deck needs texture that is not a larder.
+  {
+    id: 'the-lame-ox',
+    title: 'Something Wrong With Its Foot',
+    body: 'It has been favouring the near hind since yesterday and this morning it will not put weight on it at all. It is worth more alive and working than it will ever be as meat.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'built', building: 'farmplots' }],
+    choices: [
+      {
+        label: 'Rest it and try to bring it round',
+        check: { stat: 'craft', dc: 12 },
+        success: { text: 'A fortnight of poultices and doing its work ourselves, and it walked out sound.', effects: [{ t: 'food', n: -5 }, { t: 'morale', n: 4 }] },
+        failure: { text: 'It never came right. We had it in the end anyway, and by then it was thin.', effects: [{ t: 'food', n: 5 }, { t: 'morale', n: -6 }] },
+      },
+      { label: 'Take it now while there is still meat on it', success: { text: 'It was done quickly and nobody watched who did not have to.', effects: [{ t: 'food', n: 11 }, { t: 'morale', n: -5 }] } },
+    ],
+  },
+  {
+    id: 'the-argument',
+    title: 'Two of Them, Over Nothing',
+    body: 'It started over a place at the fire and it has not stopped. Everyone has taken a side by now, including the ones saying they have not.',
+    weight: 8,
+    when: [{ c: 'settled' }, { c: 'moraleMax', value: 55 }],
+    choices: [
+      {
+        label: 'Hear it out in front of everyone',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'It was said aloud, which took the poison out of it. They are not friends. They are working.', effects: [{ t: 'morale', n: 7 }] },
+        failure: { text: 'Saying it aloud made it a thing with witnesses. It will be back.', effects: [{ t: 'morale', n: -6 }] },
+      },
+      { label: 'Put them on the same job until it stops', success: { text: 'Three days of hauling together and they were too tired to keep it up.', effects: [{ t: 'morale', n: 2 }] } },
+    ],
+  },
+  {
+    id: 'seed-corn',
+    title: 'The Last of the Seed',
+    body: 'What is in the bottom of the sack is either next year\'s crop or this month\'s bread. It cannot be both, and it will not keep for ever.',
+    weight: 8,
+    when: [{ c: 'settled' }, { c: 'season', any: ['winter', 'spring'] }, { c: 'foodMax', value: 30 }],
+    choices: [
+      {
+        label: 'Keep it back for the ground',
+        success: { text: 'We went hungry looking at it. In the spring it went in and came up.', effects: [{ t: 'food', n: -6 }, { t: 'morale', n: -4 }, { t: 'flag', flag: 'sowed', n: 1 }] },
+      },
+      {
+        label: 'Eat it',
+        success: { text: 'It was a good week and a bad year. Everyone knew which they were choosing.', effects: [{ t: 'food', n: 9 }, { t: 'morale', n: 5 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-debt',
+    title: 'They Remember What We Owe',
+    body: 'Two of them walked up and did not sit down. There was a matter of what was carried away last season, and they have come to say that it is still a matter.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'anger', min: 15 }],
+    choices: [
+      {
+        label: 'Pay it and be done',
+        success: { text: 'It cost more than it should have and it ended there, which is what we were paying for.', effects: [{ t: 'food', n: -12 }, { t: 'standing', n: 22, who: 'angriest' }] },
+      },
+      {
+        label: 'Tell them what we think the debt is worth',
+        check: { stat: 'spirit', dc: 13 },
+        success: { text: 'They went away having got less than they came for and no more than they could argue with.', effects: [{ t: 'food', n: -4 }, { t: 'morale', n: 4 }] },
+        failure: { text: 'They went away with nothing and a great deal to say about us.', effects: [{ t: 'standing', n: -16, who: 'angriest' }] },
+      },
+    ],
+  },
+  {
+    id: 'ice-in-the-bay',
+    title: 'The Water Has Skinned Over',
+    body: 'It is not thick enough to walk on and it is too thick to put a boat through. Whatever we were going to do with the water, we are not doing it for a while.',
+    weight: 8,
+    when: [{ c: 'season', any: ['winter'] }, { c: 'nearWater' }],
+    choices: [
+      {
+        label: 'Break a channel out to open water',
+        check: { stat: 'might', dc: 13 },
+        success: { text: 'A day of it with poles and axes and the boat could get out. It refroze behind us by evening.', effects: [{ t: 'wound', n: 2, count: 2 }, { t: 'morale', n: 3 }] },
+        failure: { text: 'We got half way and somebody went through to the waist. That ended it.', effects: [{ t: 'wound', n: 4 }, { t: 'morale', n: -5 }] },
+      },
+      { label: 'Wait for it to go', success: { text: 'It went eventually. Nothing came out of the water in the meantime.', effects: [{ t: 'morale', n: -3 }] } },
+    ],
+  },
+  {
+    id: 'the-runaway',
+    title: 'One of Them Is Not Here',
+    body: 'A bed not slept in and a bag gone from the peg. Nobody saw them go and nobody is saying much about why they might have.',
+    weight: 6,
+    when: [{ c: 'settled' }, { c: 'moraleMax', value: 40 }],
+    choices: [
+      {
+        label: 'Go after them',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'We caught them at the ford by the middle of the day. Nothing was said on the walk back.', effects: [{ t: 'morale', n: 3 }] },
+        failure: { text: 'We lost the trail in the wet ground and came back at dark with nothing.', effects: [{ t: 'morale', n: -7 }] },
+      },
+      { label: 'Let them go', success: { text: 'Nobody went after them. It was talked about for a day and then it was not.', effects: [{ t: 'morale', n: -4 }] } },
+    ],
+  },
+  {
+    id: 'the-tooth',
+    title: 'It Has To Come Out',
+    body: 'They have not eaten properly in three days and the side of the face has gone up like a fist. There is one thing to be done about it and nobody wants to be the one doing it.',
+    weight: 7,
+    when: [{ c: 'dayMin', day: 20 }],
+    choices: [
+      {
+        label: 'Take it out',
+        check: { stat: 'craft', dc: 11 },
+        success: { text: 'It came out whole and the swelling was down by the next evening. They ate like a man who had not.', effects: [{ t: 'heal', n: 4 }, { t: 'morale', n: 3 }] },
+        failure: { text: 'It broke. What was left had to be dug for, and the digging was worse than the tooth.', effects: [{ t: 'wound', n: 5 }, { t: 'morale', n: -5 }] },
+      },
+      { label: 'Let it run its course', success: { text: 'It burst on its own in the end, which is a mercy of a kind and not a pleasant one.', effects: [{ t: 'wound', n: 3 }] } },
+    ],
+  },
+  {
+    id: 'the-wrong-word',
+    title: 'Something Said At the Wrong Time',
+    body: 'It was meant as a joke and it landed on the one thing that is not a joke to the person it landed on. The hall has gone quiet in the particular way it does.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'dayMin', day: 30 }],
+    choices: [
+      {
+        label: 'Make them take it back in front of everyone',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'It was taken back badly and accepted anyway, which was enough.', effects: [{ t: 'morale', n: 5 }] },
+        failure: { text: 'Making a man apologise in front of people teaches him who made him do it.', effects: [{ t: 'morale', n: -8 }] },
+      },
+      { label: 'Pretend nobody heard it', success: { text: 'Everyone went back to what they were doing. Both of them remembered it.', effects: [{ t: 'morale', n: -2 }] } },
+    ],
+  },
+  {
+    id: 'the-good-offer',
+    title: 'They Want the Harbour',
+    body: 'A proposition, put politely and at length: their people would take the water side and work it, and we would have the whole of the upland to ourselves. It is not an unreasonable offer.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 20 }, { c: 'built', building: 'dock' }],
+    choices: [
+      {
+        label: 'Give them the water side',
+        success: { text: 'They had the beach by the summer and we have not wanted for timber since. It still rankles with some.', effects: [{ t: 'firewood', n: 30 }, { t: 'standing', n: 25, who: 'friendliest' }, { t: 'morale', n: -6 }] },
+      },
+      {
+        label: 'Refuse, politely',
+        success: { text: 'It was refused the way it was offered, and both sides went on as before. Mostly.', effects: [{ t: 'standing', n: -10, who: 'friendliest' }, { t: 'morale', n: 3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-hard-frost',
+    title: 'Iron Ground',
+    body: 'The spade rings off it. Nothing can be dug, nothing can be sunk, and anything that was going into the ground this week is not.',
+    weight: 8,
+    when: [{ c: 'season', any: ['winter'] }],
+    choices: [
+      {
+        label: 'Burn fires over the ground to soften it',
+        success: { text: 'A night of fire over the spot and a morning of fast digging before it closed again.', effects: [{ t: 'firewood', n: -7 }, { t: 'morale', n: 3 }] },
+      },
+      { label: 'Stop work until it lifts', success: { text: 'Everything stopped. People sat and looked at the door and got on each other\'s nerves.', effects: [{ t: 'morale', n: -5 }] } },
+    ],
+  },
+
 ];
 
 export function eventById(id: string): EventDef | undefined {
