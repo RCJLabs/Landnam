@@ -1040,6 +1040,16 @@ h2.grim {
 }
 
 
+/* --- Build stamp --- */
+
+.build-stamp {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--edge);
+}
+
 /* --- The Thing (4.6) --- */
 
 .thing-mark {

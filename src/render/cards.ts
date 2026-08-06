@@ -53,6 +53,9 @@ export function renderTitle(
       ]),
       buttons,
       seedInput,
+      // Which build this is. The only way, from a phone, to tell a fresh
+      // deploy from a cached one.
+      el('p', { class: 'build-stamp' }, [`build ${__BUILD__}`]),
     ]),
   ]);
 }

@@ -5,6 +5,13 @@ on:
     branches: ['**']
   pull_request:
 
+# A push supersedes the one before it. Without this every push leaves its CI
+# run queued forever, and on a busy runner pool those stale runs sit ahead of
+# the deploy that actually matters.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
