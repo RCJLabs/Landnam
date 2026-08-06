@@ -4,7 +4,7 @@
 // warrior's skill — and it is exactly as fragile as the weakest link in it.
 // Drop one man and the wall around him opens.
 
-import { distance } from '../hex';
+import { distance, key } from '../hex';
 import type { Battle, Combatant } from '../state/types';
 
 /** A wall of one neighbour is worth this; two or more, the full amount. */
@@ -14,6 +14,11 @@ export const WALL_BONUS_FULL = 3;
 /** A shield adds only this much when you are already locked in a line. */
 export const SHIELD_IN_WALL = 1;
 
+/** A fighter astride the palisade is holding stakes, not a line. */
+function onWall(battle: Battle, c: Combatant): boolean {
+  return battle.grid[key(c.at)]?.ground === 'wall';
+}
+
 /** Can this fighter hold a place in a wall at all? */
 export function canAnchor(c: Combatant): boolean {
   return !c.down && !c.fled && !c.broken;
@@ -21,9 +26,14 @@ export function canAnchor(c: Combatant): boolean {
 
 /** The allies standing shoulder to shoulder with this fighter. */
 export function wallLinks(battle: Battle, of: Combatant): Combatant[] {
-  if (!canAnchor(of)) return [];
+  if (!canAnchor(of) || onWall(battle, of)) return [];
   return battle.combatants.filter(
-    (c) => c.personId !== of.personId && c.side === of.side && canAnchor(c) && distance(c.at, of.at) === 1,
+    (c) =>
+      c.personId !== of.personId &&
+      c.side === of.side &&
+      canAnchor(c) &&
+      !onWall(battle, c) &&
+      distance(c.at, of.at) === 1,
   );
 }
 

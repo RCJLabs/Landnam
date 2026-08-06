@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 3.5**
+> **CURRENT MILESTONE: 4.1**
 
 ---
 
@@ -63,7 +63,7 @@ Goal: the full loop closes — travel, fight, settle, survive winter.
 - [x] **3.2 Colony view & jobs** — COLONY mode: zoomed local map of the settled hex. Assign warband to jobs: farmer, hunter, fisher, woodcutter, builder, warrior. Day-tick resolves labor into stockpiles. *Done when: job assignment visibly moves the numbers.*
 - [x] **3.3 Needs & buildings** — Needs: food, warmth, rest, morale. Build queue: longhouse, smokehouse, farm plots, palisade, dock, mead hall. Buildings unlock capacity and jobs. *Done when: a build order emerges naturally from scarcity.*
 - [x] **3.4 The First Winter** — Winter as boss fight: no forage, firewood burn, sickness events, morale spiral. Stockpile targets telegraphed in autumn. *Done when: an unprepared colony dies and it's clearly your fault — ship v0.3 (full loop).*
-- [ ] **3.5 Raid defense** — Rival clans attack the colony; battle layer reuses the colony map with palisade/buildings as terrain. Losses damage structures and people. *Done when: the palisade earns its lumber.*
+- [x] **3.5 Raid defense** — Rival clans attack the colony; battle layer reuses the colony map with palisade/buildings as terrain. Losses damage structures and people. *Done when: the palisade earns its lumber.*
 
 ## Phase 4 — Depth passes → v0.4–v0.9
 
@@ -91,6 +91,21 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 3.5 Raid defense — Phase 3 complete** — Rival clans come for
+  the store and the roof, and the fight happens on the ground you built: the
+  hall at your back, your fields and woods in the middle, raiders coming in
+  from the open edge. The palisade runs across the approach with one gate in
+  it — and it is *passable at high cost* rather than solid, which is both what
+  its own blurb promised and what stops a sealed field stranding an enemy AI
+  that paths by hex distance. A raider astride the stakes has one hand on them
+  and no footing: 3 easier to hit, and no place in a shield wall. Raids bring
+  a bigger band than a chance meeting does. Losing one means the steading is
+  sacked — two fifths of the store carried off, the watch broken, and a
+  building fired (the longhouse last, because it is full of people). Measured
+  over ten raids at the game's own scaling: walled holds 4 and loses 5 people,
+  1 building and 346 supplies; open holds 1 and loses 22 people, 9 buildings
+  and 632 supplies. The wall earns its eight timber many times over and is
+  still not an off-switch. `SAVE_VERSION` 10 with a migration. 314 tests.
 - **2026-08-06 — The chart, and two battle-layout bugs** — A **Chart** overlay
   on the travel screen: everything the band has seen, fitted to one screen,
   with the knarr where it came ashore, the steading, where the party is

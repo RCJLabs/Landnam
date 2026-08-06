@@ -114,6 +114,11 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 9 };
   },
+
+  // v9 -> v10: raids are fought on the steading, so a battle knows whether it
+  // is one. A fight saved mid-swing before this was on open ground by
+  // definition — an absent flag already means exactly that.
+  9: (save) => ({ ...save, version: 10 }),
 };
 
 export interface MigrationResult {

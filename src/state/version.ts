@@ -10,7 +10,8 @@
 // v7 (3.2): Settlement gained plots/shelter/watch; Person gained job.
 // v8 (3.3): Settlement gained built/queue/works.
 // v9 (map): World gained trod and landingName.
-export const SAVE_VERSION = 9;
+// v10 (3.5): Ground gained 'wall'; Battle gained the optional raid flag.
+export const SAVE_VERSION = 10;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

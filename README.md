@@ -88,6 +88,12 @@ no audio files, no network.
   built in the autumn or not at all. Cold nights bring sickness that docks
   stats and will not mend until the thaw. If the colony dies in the dark, the
   number was on screen for two seasons — and the ending will say so.
+- **They will come for it.** Once you have something worth taking, rival
+  clans come to take it — and that fight happens on your own ground, with the
+  hall at your back. A palisade does not stop them; it makes them climb where
+  you are waiting, one at a time, with no footing and no shield wall. Lose the
+  yard and they carry off two fifths of the store and put a torch to
+  something. The longhouse burns last, because it is full of people.
 - **The chart** shows everything you have seen on one screen: where the knarr
   came ashore, where the steading stands, where you are now, and the ground
   you actually walked to get there.

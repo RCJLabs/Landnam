@@ -50,7 +50,7 @@ import {
 } from './render/battleUi';
 import { combatantAt, isWarbandTurn } from './sim/battle';
 import { canFound } from './sim/site';
-import { startBattle } from './sim/battleTurn';
+import { startBattle, startRaid } from './sim/battleTurn';
 import { button, el } from './render/svg';
 
 const app = document.getElementById('app');
@@ -343,6 +343,7 @@ declare global {
     landnam?: {
       state(): GameState | null;
       fight(difficulty?: number): void;
+      raid(difficulty?: number): void;
     };
   }
 }
@@ -353,6 +354,15 @@ window.landnam = {
     const next = structuredClone(state);
     const here = next.world.tiles[key(next.party.at)]?.terrain ?? 'meadow';
     startBattle(next, here, difficulty);
+    state = next;
+    save(state);
+    render();
+  },
+  raid(difficulty = 0) {
+    if (!state || currentMode(state) !== 'TRAVEL' || !state.settlement) return;
+    const next = structuredClone(state);
+    next.party.at = { ...next.settlement!.at };
+    startRaid(next, difficulty);
     state = next;
     save(state);
     render();

@@ -6,7 +6,8 @@ import { stream } from '../rng';
 import { EVENTS, eventById, type Condition, type Effect, type EventDef } from '../data/events';
 import type { ActiveEvent, GameState, Stats } from '../state/types';
 import { seasonOf } from './calendar';
-import { startBattle } from './battleTurn';
+import { startBattle, startRaid } from './battleTurn';
+import { raidDifficulty } from './raid';
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
@@ -190,6 +191,10 @@ function applyEffect(state: GameState, effect: Effect): void {
       state.flags['pendingBattle'] = 1;
       state.flags['pendingBattleDifficulty'] = effect.difficulty ?? 0;
       break;
+    case 'raid':
+      state.flags['pendingRaid'] = 1;
+      state.flags['pendingBattleDifficulty'] = effect.difficulty ?? 0;
+      break;
   }
 }
 
@@ -223,15 +228,23 @@ export function dismissEvent(state: GameState): void {
   if (!state.event?.outcome) return;
   delete state.event;
 
-  if ((state.flags['pendingBattle'] ?? 0) > 0 && !state.end) {
+  const raiding = (state.flags['pendingRaid'] ?? 0) > 0;
+  if (((state.flags['pendingBattle'] ?? 0) > 0 || raiding) && !state.end) {
     let difficulty = state.flags['pendingBattleDifficulty'] ?? 0;
     // Fighting at your own gate is easier: you know the ground, and there are
     // only so many ways in. A strong site is worth a whole enemy.
     const defence = effectiveReport(state)?.defence ?? 0;
     if (atHome(state) && defence >= 3) difficulty -= 1;
     delete state.flags['pendingBattle'];
+    delete state.flags['pendingRaid'];
     delete state.flags['pendingBattleDifficulty'];
-    const terrain = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
-    startBattle(state, terrain, difficulty);
+
+    if (raiding && state.settlement && atHome(state)) {
+      // Raiders bring what the place is worth taking.
+      startRaid(state, difficulty + raidDifficulty(state));
+    } else {
+      const terrain = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
+      startBattle(state, terrain, difficulty);
+    }
   }
 }

@@ -15,6 +15,13 @@ export const THROW_RANGE = 3;
 /** Raising a shield is worth this much to the roll needed to hit you. */
 export const DEFEND_BONUS = 3;
 
+/**
+ * Being on top of a palisade. You have one hand on the stakes and no footing
+ * worth the name, and this is the entire reason the thing is worth building:
+ * it does not stop them, it makes them climb where you are waiting.
+ */
+export const WALL_EXPOSED = 3;
+
 function actionRng(state: GameState, label: string): Rng {
   const battle = state.battle!;
   return stream(state.seed, 'combat').derive(
@@ -49,7 +56,8 @@ export function evasion(state: GameState, target: Combatant): number {
     MAX_OUTNUMBERED,
     Math.max(0, threatCount(battle, target.at, target.side) - 1),
   );
-  return 7 + wits + shelter - surrounded * OUTNUMBERED_PENALTY;
+  const onTheStakes = battle.grid[key(target.at)]?.ground === 'wall' ? WALL_EXPOSED : 0;
+  return 7 + wits + shelter - surrounded * OUTNUMBERED_PENALTY - onTheStakes;
 }
 
 function drop(

@@ -24,6 +24,7 @@ import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
   generateBattlefield,
+  generateSteadingField,
   groundName,
   isPassable,
 } from './battlefield';
@@ -106,9 +107,21 @@ function makeFoe(rng: Rng, archetypeId: string, index: number): Person {
   };
 }
 
-/** What the warband is up against, scaled loosely to its own strength. */
-function rollFoes(rng: Rng, warbandSize: number, difficulty: number): Person[] {
-  const count = Math.max(1, Math.min(6, Math.round(warbandSize * 0.6) + difficulty));
+/** The most a wandering encounter brings, and the most a raid brings. */
+export const MAX_FOES = 6;
+export const MAX_RAIDERS = 9;
+
+/**
+ * What the warband is up against, scaled loosely to its own strength.
+ *
+ * A raid brings more than a chance meeting does: nobody crosses the country
+ * for somebody else's store with four scouts. Without the larger cap a full
+ * band behind a palisade simply cannot be threatened, and the wall stops
+ * being a mitigation and becomes an off-switch.
+ */
+function rollFoes(rng: Rng, warbandSize: number, difficulty: number, raid = false): Person[] {
+  const cap = raid ? MAX_RAIDERS : MAX_FOES;
+  const count = Math.max(1, Math.min(cap, Math.round(warbandSize * (raid ? 0.9 : 0.6)) + difficulty));
   const foes: Person[] = [];
   for (let i = 0; i < count; i++) {
     const archetype = rng.weighted(FOE_ARCHETYPES, (a) => a.weight);
@@ -136,15 +149,37 @@ function rollInitiative(state: GameState, battle: Battle, rng: Rng): string[] {
  * Creates the battle and pushes BATTLE onto the mode stack.
  * Mutates — callers are already working on a state clone.
  */
-export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0): void {
+export function beginBattle(
+  state: GameState,
+  terrain: Terrain,
+  difficulty = 0,
+  raid = false,
+): void {
   state.modes = pushMode(state, 'BATTLE').modes;
-  const rng = stream(state.seed, 'combat').derive(`battle:${state.day}:${key(state.party.at)}`);
+  const rng = stream(state.seed, 'combat').derive(
+    `${raid ? 'raid' : 'battle'}:${state.day}:${key(state.party.at)}`,
+  );
 
-  const { grid, warbandSpots, foeSpots } = generateBattlefield(terrain, rng.derive('ground'));
-  const foes = rollFoes(rng.derive('foes'), state.party.people.filter((p) => p.alive).length, difficulty);
+  // A raid is fought on the ground you built, not on ground you wandered onto.
+  const home = state.settlement;
+  const { grid, warbandSpots, foeSpots } =
+    raid && home
+      ? generateSteadingField(
+          home.plots.map((p) => p.kind),
+          home.built.includes('palisade'),
+          rng.derive('ground'),
+        )
+      : generateBattlefield(terrain, rng.derive('ground'));
+  const foes = rollFoes(
+    rng.derive('foes'),
+    state.party.people.filter((p) => p.alive).length,
+    difficulty,
+    raid,
+  );
 
   const battle: Battle = {
     terrain,
+    ...(raid ? { raid: true } : {}),
     width: FIELD_WIDTH,
     height: FIELD_HEIGHT,
     grid,
@@ -235,10 +270,18 @@ export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0):
   // Nerve needs the battle in place, because it reads each fighter's Person.
   for (const c of battle.combatants) c.nerve = startingNerve(state, c.personId);
   battle.order = rollInitiative(state, battle, rng.derive('initiative'));
-  battle.log.push(
-    `They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.`,
-  );
-  chronicle(state, `We were brought to a fight on ${groundName(terrain)}.`, 'grim');
+  if (raid && home) {
+    battle.log.push(
+      `They came at ${home.name} out of the trees. ${foes.length} against ${standing(battle, 'warband').length}.` +
+        (home.built.includes('palisade') ? ' The palisade was between us.' : ''),
+    );
+    chronicle(state, `Raiders came on ${home.name} before we saw them.`, 'grim');
+  } else {
+    battle.log.push(
+      `They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.`,
+    );
+    chronicle(state, `We were brought to a fight on ${groundName(terrain)}.`, 'grim');
+  }
   refreshTurn(battle);
 }
 

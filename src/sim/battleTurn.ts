@@ -14,6 +14,8 @@ import {
 import { takeFoeTurn } from './battleAi';
 import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
+import { holdSteading, sackSteading } from './raid';
+import { key } from '../hex';
 import { checkRunEnd } from './upkeep';
 
 /**
@@ -124,6 +126,13 @@ export function startBattle(state: GameState, terrain: Terrain, difficulty = 0):
   playUntilOurTurn(state);
 }
 
+/** Opens a raid on the steading — same machinery, your own ground. */
+export function startRaid(state: GameState, difficulty = 0): void {
+  const terrain = state.world.tiles[key(state.settlement!.at)]?.terrain ?? 'meadow';
+  beginBattle(state, terrain, difficulty, true);
+  playUntilOurTurn(state);
+}
+
 /** Ends the current fighter's turn and plays every foe turn that follows. */
 export function endTurn(state: GameState): boolean {
   const battle = state.battle;
@@ -148,10 +157,17 @@ export function leaveBattle(state: GameState): Aftermath | undefined {
   if (!battle || !battle.outcome) return undefined;
 
   const won = battle.outcome === 'won';
+  const wasRaid = battle.raid === true;
 
   // The field first — deaths, wounds, loot and what the living learned — so
   // the closing lines can speak to what it actually cost.
   const aftermath = settleAftermath(state, battle);
+
+  // A raid is the only fight where the ground itself is the stake.
+  if (wasRaid && state.settlement) {
+    if (won) holdSteading(state, aftermath.foesDown);
+    else sackSteading(state);
+  }
 
   // Running is remembered. It costs the band's heart even in victory.
   if (aftermath.ran.length > 0) {

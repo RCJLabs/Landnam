@@ -66,6 +66,7 @@ describe('content lint: events', () => {
   it('every effect is a known shape with sane numbers', () => {
     const known = [
       'food', 'firewood', 'morale', 'wound', 'heal', 'injure', 'kill', 'flag', 'reveal', 'battle',
+      'raid',
     ];
     for (const event of EVENTS) {
       for (const choice of event.choices) {
@@ -78,7 +79,7 @@ describe('content lint: events', () => {
               if (effect.count !== undefined) expect(effect.count).toBeGreaterThan(0);
             }
             if (effect.t === 'reveal') expect(effect.radius).toBeGreaterThan(0);
-            if (effect.t === 'battle' && effect.difficulty !== undefined) {
+            if ((effect.t === 'battle' || effect.t === 'raid') && effect.difficulty !== undefined) {
               // Difficulty shifts the foe count; anything wilder is a typo.
               expect(effect.difficulty, event.id).toBeGreaterThanOrEqual(-2);
               expect(effect.difficulty, event.id).toBeLessThanOrEqual(2);

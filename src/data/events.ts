@@ -34,7 +34,9 @@ export type Effect =
   | { t: 'flag'; flag: string; n: number }
   | { t: 'reveal'; radius: number }
   /** Draws steel: the fight begins once the card is dismissed. */
-  | { t: 'battle'; difficulty?: number };
+  | { t: 'battle'; difficulty?: number }
+  /** They came for the steading. Fought on your own ground, with it at stake. */
+  | { t: 'raid'; difficulty?: number };
 
 export interface Outcome {
   text: string;
@@ -487,6 +489,55 @@ export const EVENTS: EventDef[] = [
       {
         label: 'Mark it and eat as usual',
         success: { text: 'A word said over the fire and nothing more. It was still something.', effects: [{ t: 'morale', n: 4 }] },
+      },
+    ],
+  },
+  {
+    id: 'smoke-on-the-ridge',
+    title: 'Smoke on the Ridge',
+    body: 'A thread of smoke where no smoke should be, and it has moved since morning. Somebody is camped within a day of us and taking no trouble to hide it.',
+    weight: 13,
+    when: [{ c: 'settled' }, { c: 'atHome' }, { c: 'dayMin', day: 12 }],
+    choices: [
+      {
+        label: 'Go out and meet them before they come to us',
+        check: { stat: 'wits', dc: 13 },
+        success: { text: 'We found them at their fire and settled it away from the hall.', effects: [{ t: 'battle', difficulty: 0 }] },
+        failure: { text: 'We walked half a day and found a cold fire. They had already gone past us.', effects: [{ t: 'raid', difficulty: 1 }] },
+      },
+      {
+        label: 'Stand the watch and let them come',
+        success: { text: 'We doubled the watch and waited. They came on the third night.', effects: [{ t: 'raid' }] },
+      },
+    ],
+  },
+  {
+    id: 'they-came-at-dawn',
+    title: 'They Came at Dawn',
+    body: 'No warning worth the name. The dogs went off and then there were men in the yard, and after that there was no time to decide anything.',
+    weight: 12,
+    when: [{ c: 'settled' }, { c: 'atHome' }, { c: 'dayMin', day: 20 }],
+    choices: [
+      {
+        label: 'Form up in front of the hall',
+        success: { text: 'Whatever we had, we put between them and the door.', effects: [{ t: 'raid' }] },
+      },
+    ],
+  },
+  {
+    id: 'a-price-asked',
+    title: 'A Price Is Asked',
+    body: 'Six of them at the edge of the field, weapons grounded, and one walks forward to say what it would cost to make them go away.',
+    weight: 11,
+    when: [{ c: 'settled' }, { c: 'atHome' }, { c: 'dayMin', day: 16 }],
+    choices: [
+      {
+        label: 'Pay them and be rid of it',
+        success: { text: 'We counted it out in front of everyone. They took it and went, and nobody looked at anybody.', effects: [{ t: 'food', n: -12 }, { t: 'morale', n: -8 }] },
+      },
+      {
+        label: 'Tell them what they can have',
+        success: { text: 'The answer was short. They were back inside the hour.', effects: [{ t: 'raid', difficulty: -1 }, { t: 'morale', n: 4 }] },
       },
     ],
   },

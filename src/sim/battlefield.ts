@@ -40,6 +40,11 @@ export function groundCost(ground: Ground): number {
       return 1;
     case 'rough':
       return 2;
+    // A palisade does not stop them, it slows them where you want them
+    // slowed. Sealing the field outright would also strand the enemy AI,
+    // which paths by hex distance and cannot see round a wall.
+    case 'wall':
+      return 3;
     default:
       return Infinity;
   }
@@ -106,6 +111,82 @@ function ensureCrossable(grid: Record<HexKey, BattleTile>, rng: Rng): void {
     const tile = grid[key(offsetToAxial(lane, row))];
     if (tile && !isPassable(tile.ground)) tile.ground = 'rough';
   }
+}
+
+// --- The steading under attack ---
+
+/** Where the palisade runs, and where its gate is. */
+export const WALL_ROW = 5;
+
+/**
+ * The field for a raid: your own ground, with the hall at your back.
+ *
+ * Laid out from the steading rather than rolled from terrain, because the
+ * whole point of defending a place you built is that what you built is on the
+ * map. Fields and woods come from the plots; the palisade, if it stands, runs
+ * across the approach with one gate in it.
+ */
+export function generateSteadingField(
+  plotKinds: string[],
+  hasPalisade: boolean,
+  rng: Rng,
+): { grid: Record<HexKey, BattleTile>; warbandSpots: Hex[]; foeSpots: Hex[] } {
+  const grid: Record<HexKey, BattleTile> = {};
+  const warbandSpots: Hex[] = [];
+  const foeSpots: Hex[] = [];
+
+  // What the steading is mostly made of decides what the middle ground is.
+  const woods = plotKinds.filter((k) => k === 'wood').length;
+  const waters = plotKinds.filter((k) => k === 'water').length;
+  const total = Math.max(1, plotKinds.length);
+  const woodShare = woods / total;
+  const waterShare = waters / total;
+
+  const gate = rng.int(1, FIELD_WIDTH - 2);
+
+  for (let row = 0; row < FIELD_HEIGHT; row++) {
+    for (let col = 0; col < FIELD_WIDTH; col++) {
+      const h = offsetToAxial(col, row);
+      let ground: Ground = 'open';
+
+      if (row === WALL_ROW && hasPalisade && col !== gate) {
+        ground = 'wall';
+      } else if (row > WALL_ROW) {
+        // The yard: kept clear, so the defenders have room to form up.
+        ground = 'open';
+      } else if (row >= 2 && row <= WALL_ROW - 1) {
+        const roll = rng.next();
+        if (roll < waterShare * 0.5) ground = 'water';
+        else if (roll < waterShare * 0.5 + woodShare * 0.5) ground = 'rough';
+      }
+
+      grid[key(h)] = { ground };
+      // Defenders form up in the two rows immediately behind the palisade, so
+      // a raider who climbs it lands within reach of somebody. Deploying them
+      // back by the hall would hand the wall away for nothing.
+      if (row >= WALL_ROW + 1 && row <= WALL_ROW + 2) warbandSpots.push(h);
+      if (row <= 1) foeSpots.push(h);
+    }
+  }
+
+  // The hall stands in the yard: something to fight around, and the thing
+  // they came for.
+  const hall = offsetToAxial(Math.floor(FIELD_WIDTH / 2), FIELD_HEIGHT - 1);
+  grid[key(hall)] = { ground: 'block' };
+
+  // The gate column must run clear from the raiders' edge to the yard, or
+  // the fast way in is not actually faster than climbing.
+  for (let row = 2; row <= WALL_ROW; row++) {
+    const tile = grid[key(offsetToAxial(gate, row))];
+    if (tile && tile.ground !== 'wall' && !isPassable(tile.ground)) tile.ground = 'open';
+    if (row === WALL_ROW && tile) tile.ground = 'open';
+  }
+
+  return {
+    grid,
+    warbandSpots: warbandSpots.filter((h) => key(h) !== key(hall)),
+    foeSpots,
+  };
 }
 
 /** Human-readable name for the ground, used in the battle log. */

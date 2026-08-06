@@ -135,7 +135,7 @@ export interface ActiveEvent {
  * Battlefield ground. Deliberately coarse for 2.1: cover and elevation
  * arrive with the shield wall in 2.3.
  */
-export type Ground = 'open' | 'rough' | 'block' | 'water';
+export type Ground = 'open' | 'rough' | 'block' | 'water' | 'wall';
 
 export interface BattleTile {
   ground: Ground;
@@ -193,6 +193,8 @@ export interface Aftermath {
 export interface Battle {
   /** The overworld terrain this ground was generated from. */
   terrain: Terrain;
+  /** True when this is a raid on the steading: your ground, your buildings. */
+  raid?: boolean;
   width: number;
   height: number;
   grid: Record<HexKey, BattleTile>;

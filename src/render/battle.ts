@@ -17,6 +17,7 @@ const GROUND_FILL: Record<Ground, string> = {
   rough: '#6d6446',
   block: '#4a453c',
   water: '#2e5468',
+  wall: '#4a3b28',
 };
 
 export interface BattleView {
@@ -72,6 +73,9 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     for (const [k, tile] of Object.entries(battle.grid)) {
       const h = fromKey(k);
       const p = toPixel(h, HEX);
+      // A palisade has to read as stakes, not as one more brown hex — it is
+      // the thing the player spent eight timber on.
+      if (tile.ground === 'wall') layers.overlay.append(stakes(p.x, p.y));
       layers.ground.append(
         svgEl('polygon', {
           points: cornerPoints(p.x, p.y, HEX - 0.5),
@@ -317,6 +321,34 @@ function fighter(
       width: Math.max(0, width * healthFraction),
       height: 4,
       fill: healthFraction > 0.5 ? '#7d9150' : healthFraction > 0.25 ? '#d3a441' : '#b23b2e',
+    }),
+  );
+  return g;
+}
+
+/** Split trunks, sharpened, sunk deep. */
+function stakes(cx: number, cy: number): SVGGElement {
+  const g = svgEl('g', { class: 'stakes' });
+  for (const dx of [-0.42, -0.14, 0.14, 0.42]) {
+    const x = cx + dx * HEX;
+    g.append(
+      svgEl('path', {
+        d: `M ${x} ${cy + HEX * 0.42} L ${x} ${cy - HEX * 0.3} L ${x + HEX * 0.06} ${cy - HEX * 0.44}`,
+        stroke: '#c9a468',
+        'stroke-width': 2.4,
+        fill: 'none',
+        'stroke-linecap': 'round',
+      }),
+    );
+  }
+  g.append(
+    svgEl('line', {
+      x1: cx - HEX * 0.5,
+      y1: cy + HEX * 0.05,
+      x2: cx + HEX * 0.5,
+      y2: cy + HEX * 0.05,
+      stroke: '#8a6f43',
+      'stroke-width': 1.6,
     }),
   );
   return g;
