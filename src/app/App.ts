@@ -5,6 +5,7 @@ import { distance, eq } from '../core/hex';
 import { generateSeed, makeRng } from '../core/rng';
 import { makeBattle } from '../sim/tactical/battle';
 import { raidById } from '../content/raids';
+import { UNLOCKS } from '../content/unlocks';
 import { GameRun, StrategicIntent, TacticalIntent } from '../sim/types';
 import { newRun } from '../sim/strategic/state';
 import { stepStrategic } from '../sim/strategic/sail';
@@ -56,13 +57,23 @@ export class App {
           else this.startNewRun();
         },
         (seed) => this.startNewRun(seed),
+        (id) => this.buyUnlock(id, hasSave),
       ),
     );
   }
 
+  private buyUnlock(id: string, hasSave: boolean): void {
+    const def = UNLOCKS.find((u) => u.id === id);
+    if (!def || this.meta.unlocks.includes(id) || this.meta.fame < def.cost) return;
+    this.meta.fame -= def.cost;
+    this.meta.unlocks.push(id);
+    saveMeta(this.meta);
+    this.showTitle(hasSave);
+  }
+
   private startNewRun(seed?: string): void {
     const finalSeed = seed || generateSeed(this.entropy());
-    const run = newRun(finalSeed);
+    const run = newRun(finalSeed, this.meta.unlocks);
     saveRun(run);
     this.beginRun(run);
   }
@@ -151,6 +162,9 @@ export class App {
       this.meta.fame += next.end.fame;
       this.meta.runsPlayed += 1;
       if (next.end.outcome === 'victory') this.meta.victories += 1;
+      const col = (h: { q: number; r: number }) => h.q + ((h.r - (h.r & 1)) >> 1);
+      const west = col(next.chart.startAt) - col(next.chart.shipAt);
+      this.meta.bestDistanceWest = Math.max(this.meta.bestDistanceWest, west);
       saveMeta(this.meta);
       clearRun();
     }
@@ -222,7 +236,7 @@ export class App {
 
     // Overlay per phase.
     if (run.phase === 'ended' && run.end) {
-      replaceChildren(this.overlayRoot, renderRunEnd(run, () => this.startNewRun()));
+      replaceChildren(this.overlayRoot, renderRunEnd(run, () => this.showTitle(false)));
     } else if (this.crewPanelOpen) {
       replaceChildren(this.overlayRoot, renderCrewPanel(run, this.toggleCrewPanel));
     } else if (run.phase === 'event' && run.activeEvent) {

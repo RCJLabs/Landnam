@@ -29,13 +29,30 @@ function initialWeather(rng: Rng, chart: GameRun['chart']): Weather {
   return { windFrom, windStrength: rng.int(1, 2) as 1 | 2, storms };
 }
 
-export function newRun(seed: string): GameRun {
+export function newRun(seed: string, unlocks: string[] = []): GameRun {
   const rng = makeRng(seed);
   const chart = generateChart(rng.fork('chart'));
   const crewRng = rng.fork('crew');
   const crew: CrewMember[] = [];
   for (let i = 0; i < BALANCE.crew.startCount; i++) {
     crew.push(makeCrewMember(crewRng, `crew_${i + 1}`, i === 0));
+  }
+  const has = (id: string) => unlocks.includes(id);
+  if (has('hardy-crew')) {
+    for (const c of crew) {
+      c.hpMax += 2;
+      c.hp += 2;
+    }
+  }
+  if (has('veteran-captain')) {
+    const cap = crew[0]!;
+    const capRng = rng.fork('veteran');
+    for (let i = 0; i < 2; i++) {
+      const stat = capRng.pick(['might', 'skill', 'guts', 'sea'] as const);
+      if (cap[stat] < 6) cap[stat] += 1;
+    }
+    cap.armor = 'mail';
+    cap.weapon = 'sword';
   }
   const shipName = crewRng.pick(SHIP_NAMES);
   const run: GameRun = {
@@ -49,12 +66,12 @@ export function newRun(seed: string): GameRun {
       hull: BALANCE.ship.hullMax,
       hullMax: BALANCE.ship.hullMax,
       cargoMax: BALANCE.ship.cargoMax,
-      upgrades: [],
+      upgrades: unlocks.filter((u) => u === 'crows-nest' || u === 'sealskin-sails'),
     },
     crew,
-    food: BALANCE.resources.startFood,
-    water: BALANCE.resources.startWater,
-    silver: BALANCE.resources.startSilver,
+    food: BALANCE.resources.startFood + (has('full-hold') ? 10 : 0),
+    water: BALANCE.resources.startWater + (has('full-hold') ? 10 : 0),
+    silver: BALANCE.resources.startSilver + (has('war-chest') ? 15 : 0),
     timber: BALANCE.resources.startTimber,
     moraleShip: BALANCE.morale.start,
     weather: initialWeather(rng.fork('weather'), chart),

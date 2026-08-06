@@ -41,13 +41,15 @@ export function sailCost(run: GameRun, to: Axial): number | null {
   if (!t || t.terrain === 'land' || t.terrain === 'ice') return null;
   let cost = BALANCE.sailing.baseMoveCost;
   // Adverse wind: moving toward where the wind is blowing FROM.
+  // Sealskin sails shrug off all but a dead-on headwind.
   const dir = dirTo(run.chart.shipAt, to);
   if (dir >= 0 && run.weather.windStrength > 0) {
     const diff = Math.min(
       (dir - run.weather.windFrom + 6) % 6,
       (run.weather.windFrom - dir + 6) % 6,
     );
-    if (diff <= 1) cost += BALANCE.sailing.adverseWindExtra;
+    const threshold = run.ship.upgrades.includes('sealskin-sails') ? 0 : 1;
+    if (diff <= threshold) cost += BALANCE.sailing.adverseWindExtra;
   }
   if (run.weather.storms.some((s) => distance(s, to) <= 1)) {
     cost += BALANCE.sailing.stormEntryExtra;
@@ -62,9 +64,22 @@ function log(run: GameRun, events: SimEvent[], text: string, tone: 'info' | 'goo
 }
 
 function endRun(run: GameRun, events: SimEvent[], end: RunEnd) {
+  const alive = livingCrew(run);
+  const raids = run.flags['raidsWon'] ?? 0;
+  const deeds: string[] = [];
+  if (end.outcome !== 'victory') {
+    deeds.push(`${run.turn} turns on the whale-road.`);
+  }
+  deeds.push(
+    alive > 0
+      ? `${alive} of ${run.crew.length} crew ${end.outcome === 'victory' ? 'set foot on the new shore' : 'lived to tell it'}.`
+      : 'None of the crew survived.',
+  );
+  if (raids > 0) deeds.push(`${raids} raid${raids > 1 ? 's' : ''} carried.`);
+  if (run.silver > 0) deeds.push(`${run.silver} silver in the hold.`);
   run.phase = 'ended';
-  run.end = end;
-  events.push({ type: 'RUN_ENDED', end });
+  run.end = { ...end, summary: [...end.summary, ...deeds] };
+  events.push({ type: 'RUN_ENDED', end: run.end });
 }
 
 function computeFame(run: GameRun, victory: boolean): number {

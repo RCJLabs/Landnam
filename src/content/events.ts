@@ -303,6 +303,45 @@ export const EVENTS: EventDef[] = [
     ],
   },
   {
+    id: 'draugr-ship',
+    title: 'The Dead Ship',
+    text: 'A longship rides at anchor where no anchor could hold. Frost sheathes her rigging in high summer, and her crew stands unmoving at the rail, watching you with black eyes.',
+    weight: 60,
+    conditions: [{ c: 'onFeature', kind: 'mythic' }, { c: 'dangerMin', tier: 2 }],
+    options: [
+      {
+        label: 'Board her — grave-gold is still gold',
+        success: { text: 'The dead do not draw steel until your first boot lands on their deck. Then they all move at once.', effects: [{ t: 'startBattle', raidId: 'draugr-ship' }, { t: 'markUsed' }] },
+      },
+      {
+        label: 'Row wide, and quietly',
+        check: { stat: 'sea', who: 'crewAvg', dc: 8 },
+        success: { text: 'You slip past. None aboard looks back, by unspoken agreement.', effects: [{ t: 'morale', amount: -2 }] },
+        failure: { text: 'The dead ship follows you until dusk, never gaining, never falling behind. The crew does not sleep that night.', effects: [{ t: 'morale', amount: -6 }] },
+      },
+    ],
+  },
+  {
+    id: 'sea-altar',
+    title: 'The Skerry Altar',
+    text: 'On a bare rock stands a weathered altar-stone, older than any kingdom, ringed with the offerings of sailors long drowned: arm-rings, teeth, a rusted sword.',
+    weight: 40,
+    conditions: [{ c: 'onFeature', kind: 'mythic' }],
+    options: [
+      {
+        label: 'Leave silver and ask for fair winds',
+        success: { text: 'The silver sinks into the offering-hollow like water into sand. That night, every wound aboard aches a little less.', effects: [{ t: 'res', silver: -8 }, { t: 'healAll', amount: 4 }, { t: 'morale', amount: 6 }, { t: 'markUsed' }] },
+      },
+      {
+        label: 'Take the offerings',
+        check: { stat: 'guts', who: 'crewAvg', dc: 10 },
+        success: { text: 'You take it all, and nothing comes for you. Some nights, that feels worse.', effects: [{ t: 'res', silver: 20 }, { t: 'morale', amount: -6 }, { t: 'fame', amount: 5 }, { t: 'markUsed' }] },
+        failure: { text: 'The first man to touch the arm-rings goes rigid and falls. He wakes at dawn, grey-haired and whispering.', effects: [{ t: 'hurtRandom', amount: 5 }, { t: 'morale', amount: -8 }, { t: 'markUsed' }] },
+      },
+      { label: 'Touch nothing', success: { text: 'Some doors are better left unknocked.', effects: [] } },
+    ],
+  },
+  {
     id: 'strange-waters',
     title: 'Strange Waters',
     text: 'The sea here turns without wind. Gulls will not cross it. The compass-stone spins slow circles in its bowl.',

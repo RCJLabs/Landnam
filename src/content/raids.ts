@@ -105,6 +105,35 @@ const BOARDING: RaidDef = {
 };
 RAIDS.push(BOARDING);
 
+// The dead crew their own ship. They do not rout, and they do not stop.
+const DRAUGR_SHIP: RaidDef = {
+  id: 'draugr-ship',
+  title: 'The Dead Ship',
+  template: [
+    '~~~~~~~~~~~~',
+    '~Pddd~~~~~~~',
+    '~PddddddE~~~',
+    '~PdddddddE~~',
+    '~PddddddddE~',
+    '~PdddddddE~~',
+    '~PddddddE~~~',
+    '~~~~~~~~~~~~',
+  ],
+  roster: [
+    ['draugr', 'draugr', 'draugr'],
+    ['draugr', 'draugr', 'draugr', 'draugr'],
+    ['draugr', 'draugr', 'draugr', 'draugr', 'draugr'],
+    ['draugr', 'draugr', 'draugr', 'draugr', 'draugr', 'draugr'],
+  ],
+  lootText: 'Grave-gold, cold to the touch, and the dead ship’s silence.',
+  loot: [
+    { t: 'res', silver: 25 },
+    { t: 'fame', amount: 15 },
+  ],
+  fame: 15,
+};
+RAIDS.push(DRAUGR_SHIP);
+
 export function raidById(id: string): RaidDef {
   const def = RAIDS.find((r) => r.id === id);
   if (!def) throw new Error(`unknown raid ${id}`);

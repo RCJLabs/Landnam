@@ -1,6 +1,7 @@
-// Title screen: continue or start a new voyage (optionally with a chosen seed).
+// Title screen: continue or start a new voyage, and the fame legacy shop.
 
 import { MetaProfile } from '../sim/types';
+import { UNLOCKS } from '../content/unlocks';
 import { el, button } from './dom';
 
 export function renderTitle(
@@ -8,6 +9,7 @@ export function renderTitle(
   hasSave: boolean,
   onContinue: () => void,
   onNewRun: (seed?: string) => void,
+  onBuyUnlock: (id: string) => void,
 ): HTMLElement {
   const overlay = el('div', { class: 'overlay title-screen' });
   const seedInput = el('input', {
@@ -37,6 +39,32 @@ export function renderTitle(
     }),
   );
   children.push(buttons, seedInput);
+
+  // Legacy shop appears once there is fame to brag about.
+  if (meta.runsPlayed > 0) {
+    const owned = new Set(meta.unlocks);
+    const shop = el('div', { class: 'legacy-shop' }, [
+      el('h3', { class: 'port-heading' }, ['Legacy of the Line']),
+    ]);
+    for (const u of UNLOCKS) {
+      const row = el('div', { class: 'trade-row' }, [
+        el('span', { class: 'trade-label' }, [
+          el('strong', {}, [u.name]),
+          el('span', { class: 'legacy-blurb' }, [` — ${u.blurb}`]),
+        ]),
+      ]);
+      if (owned.has(u.id)) {
+        row.append(el('span', { class: 'legacy-owned' }, ['Yours']));
+      } else if (meta.fame >= u.cost) {
+        row.append(button(`${u.cost} fame`, () => onBuyUnlock(u.id)));
+      } else {
+        row.append(el('span', { class: 'legacy-locked' }, [`${u.cost} fame`]));
+      }
+      shop.append(row);
+    }
+    children.push(shop);
+  }
+
   const panel = el('div', { class: 'panel title-panel' }, children);
   overlay.append(panel);
   return overlay;

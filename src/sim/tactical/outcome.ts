@@ -63,6 +63,7 @@ export function applyBattleOutcome(
   const tile = run.chart.tiles[key(run.chart.shipAt)];
   if (battle.result === 'won') {
     applyEffects(run, events, battle.loot, rng);
+    run.flags['raidsWon'] = (run.flags['raidsWon'] ?? 0) + 1;
     run.moraleShip = Math.min(100, run.moraleShip + 8);
     if (tile?.feature) tile.feature.used = true;
     const entry = {

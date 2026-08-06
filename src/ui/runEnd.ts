@@ -21,7 +21,7 @@ export function renderRunEnd(run: GameRun, onNewRun: () => void): HTMLElement {
     ]),
     el('div', { class: 'saga-summary' }, end.summary.map((s) => el('p', {}, [s]))),
     el('p', { class: 'fame-line' }, [`Fame earned: ${end.fame}`]),
-    button('Begin a new voyage', onNewRun, { class: 'btn-primary' }),
+    button('Return to the hall', onNewRun, { class: 'btn-primary' }),
   ]);
   overlay.append(panel);
   return overlay;
