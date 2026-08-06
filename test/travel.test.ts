@@ -1,14 +1,32 @@
 import { describe, it, expect } from 'vitest';
-import { key, distance } from '../src/hex';
+import { key, distance, neighbors } from '../src/hex';
 import { newGame, START_FIREWOOD, START_FOOD } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { canMove, daysForMove, moveEffort, moveOptions } from '../src/sim/travel';
+import {
+  atSea,
+  canFish,
+  canGather,
+  canMove,
+  daysForMove,
+  isCoastalWater,
+  moveEffort,
+  moveOptions,
+  SEA_EFFORT,
+} from '../src/sim/travel';
+import { canFound } from '../src/sim/site';
 import { living } from '../src/sim/people';
 import { foodPerDay, SURVIVAL_DAY } from '../src/sim/upkeep';
 import { daysUntilWinter, seasonOf } from '../src/sim/calendar';
 import { visibilityAt } from '../src/sim/fog';
 import { encode } from '../src/state/save';
 import type { GameState } from '../src/state/types';
+
+/** Answers whatever card is on the table, so a move can be tested. */
+function card(state: GameState): GameState {
+  if (!state.event) return state;
+  const chosen = apply(state, { type: 'CHOOSE', index: 0 });
+  return apply(chosen, { type: 'DISMISS_EVENT' });
+}
 
 function step(state: GameState): GameState {
   if (state.event) {
@@ -70,13 +88,69 @@ describe('movement', () => {
     expect(apply(state, { type: 'MOVE', to: far })).toBe(state);
   });
 
-  it('never permits walking onto open sea', () => {
+  it('the knarr hugs the coast: water in sight of land only', () => {
     const state = newGame('sea-seed');
+    let coastal = 0;
+    let open = 0;
     for (const [k, tile] of Object.entries(state.world.tiles)) {
       if (tile.terrain !== 'ocean') continue;
       const h = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
-      expect(moveEffort(state, h)).toBeNull();
+      const effort = moveEffort(state, h);
+      if (isCoastalWater(state, h)) {
+        // Rowable, and never cheaper than the easiest ground on foot.
+        expect(effort, k).toBe(SEA_EFFORT);
+        coastal += 1;
+      } else {
+        expect(effort, `${k}: open water is not a road`).toBeNull();
+        open += 1;
+      }
     }
+    expect(coastal, 'no water was reachable at all').toBeGreaterThan(0);
+    expect(open, 'the whole sea was coastal').toBeGreaterThan(0);
+  });
+
+  it('a band can put out from the beach, sail, and come ashore again', () => {
+    const state = newGame('sea-voyage');
+    // The landing is a shore hex, so at least one neighbour is coastal water.
+    const water = neighbors(state.party.at).find((h) => isCoastalWater(state, h));
+    expect(water, 'nothing to launch into from the landing').toBeTruthy();
+    expect(canMove(state, water!)).toBe(true);
+
+    const afloat = card(apply(state, { type: 'MOVE', to: water! }));
+    expect(afloat).not.toBe(state);
+    expect(atSea(afloat)).toBe(true);
+    expect(afloat.day).toBeGreaterThan(state.day);
+
+    // At sea the land's larder is shut, but the nets are the best they get.
+    expect(canGather(afloat)).toBe(false);
+    expect(canFish(afloat)).toBe(true);
+    expect(apply(afloat, { type: 'FORAGE' })).toBe(afloat);
+    expect(apply(afloat, { type: 'HUNT' })).toBe(afloat);
+    expect(apply(afloat, { type: 'FISH' }).party.food).toBeGreaterThanOrEqual(afloat.party.food);
+
+    // A night aboard gathers no firewood — the pile only ever goes down,
+    // because the night's fire still has to come from somewhere.
+    const camped = apply(afloat, { type: 'CAMP' });
+    expect(camped.party.firewood).toBeLessThanOrEqual(afloat.party.firewood);
+
+    // A card drawn on the water blocks the road like any other, so answer it
+    // before asking whether the band can get home.
+    const anchored = card(camped);
+
+    // There is always a way back to dry land from coastal water.
+    const shore = moveOptions(anchored).find(
+      (h) => anchored.world.tiles[`${h.q},${h.r}`]?.terrain !== 'ocean',
+    );
+    expect(shore, 'stranded at sea').toBeTruthy();
+    expect(atSea(apply(anchored, { type: 'MOVE', to: shore! }))).toBe(false);
+  });
+
+  it('you cannot raise a hall on water', () => {
+    const state = newGame('sea-found');
+    const water = neighbors(state.party.at).find((h) => isCoastalWater(state, h))!;
+    const afloat = card(apply(state, { type: 'MOVE', to: water }));
+    expect(canFound(afloat, afloat.party.at)).toBe(false);
+    expect(apply(afloat, { type: 'FOUND' })).toBe(afloat);
   });
 
   it('advances the day and moves the party', () => {

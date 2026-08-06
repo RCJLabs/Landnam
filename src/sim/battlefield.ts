@@ -24,7 +24,9 @@ interface GroundMix {
 }
 
 const MIXES: Record<Terrain, GroundMix> = {
-  ocean: { rough: 0, block: 0, water: 0 }, // never fought on
+  // A fight on the water is two hulls lashed together: cargo and mast to
+  // climb over, and open sea in the gaps where the boats do not meet.
+  ocean: { rough: 0.06, block: 0.14, water: 0.24 },
   shore: { rough: 0.12, block: 0.03, water: 0.1 },
   meadow: { rough: 0.08, block: 0.02, water: 0 },
   forest: { rough: 0.2, block: 0.16, water: 0 },
@@ -202,6 +204,8 @@ export function groundName(terrain: Terrain): string {
       return 'bare rock';
     case 'shore':
       return 'wet sand';
+    case 'ocean':
+      return 'lashed hulls';
     case 'valley':
       return 'good grass';
     default:

@@ -925,14 +925,60 @@ h2.grim {
 .site-standing.friendly { color: #7fa05a; }
 .site-standing.sworn { color: #5fa389; }
 
-.action.danger {
-  border-color: #7d3227;
+/* --- The day's work, behind one button (4.3) --- */
+
+.action.act {
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.deeds {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0;
+}
+
+/* Each deed is a full-width target with its own reason for existing written
+   underneath it, which is the whole point of moving them off the bar. */
+.deed {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 9px 12px;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.deed-label {
+  display: block;
+  font-size: 16px;
+  color: var(--parchment);
+}
+
+.deed-blurb {
+  display: block;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--parchment-dim);
+}
+
+.deed.weighty .deed-label {
+  color: var(--gold);
+}
+
+.deed.grim .deed-label {
   color: #d98a80;
 }
 
-.action.disabled,
-.action:disabled {
-  opacity: 0.4;
+.deed.blocked {
+  opacity: 0.45;
+}
+
+.deed.blocked .deed-blurb {
+  color: var(--blood);
+  font-style: italic;
 }
 
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */

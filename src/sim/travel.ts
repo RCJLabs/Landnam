@@ -25,13 +25,41 @@ export type TravelAction =
   | { type: 'BARTER'; id: string }
   | { type: 'FALL_ON'; id: string };
 
-/** Effort to enter a hex, or null when it cannot be entered on foot. */
+/** Effort to row a hex of coastal water. The knarr is faster than legs. */
+export const SEA_EFFORT = 2;
+
+/** True where the knarr can go: water with a shore in sight. */
+export function isCoastalWater(state: GameState, at: Hex): boolean {
+  if (state.world.tiles[key(at)]?.terrain !== 'ocean') return false;
+  return neighbors(at).some((n) => {
+    const tile = state.world.tiles[key(n)];
+    return tile !== undefined && tile.terrain !== 'ocean';
+  });
+}
+
+/** The band is afloat. */
+export function atSea(state: GameState): boolean {
+  return state.world.tiles[key(state.party.at)]?.terrain === 'ocean';
+}
+
+/**
+ * Effort to enter a hex, or null when it cannot be entered at all.
+ *
+ * The knarr came with the band and it did not rot on the beach: water is
+ * crossable, but only water with land in sight. Coast-hugging is what a
+ * knarr actually did, and it keeps the map a country to be walked rather
+ * than a lake to be cut straight across.
+ */
 export function moveEffort(state: GameState, to: Hex): number | null {
   const tile = state.world.tiles[key(to)];
   if (!tile) return null;
+  const penalty = effectsOn(state.day).travelPenalty;
+  if (tile.terrain === 'ocean') {
+    return isCoastalWater(state, to) ? SEA_EFFORT + penalty : null;
+  }
   const def = terrainDef(tile.terrain);
   if (!Number.isFinite(def.cost)) return null;
-  let effort = def.cost + effectsOn(state.day).travelPenalty;
+  let effort = def.cost + penalty;
   if (tile.river) effort += 1; // fording costs time and dry clothes
   return effort;
 }
@@ -60,10 +88,11 @@ export function moveOptions(state: GameState): Hex[] {
   );
 }
 
-export function canFish(state: GameState): boolean {
+/** Water worth putting a net in, from where we are standing (or floating). */
+function fishableWater(state: GameState): boolean {
   const here = state.world.tiles[key(state.party.at)];
   if (!here) return false;
-  if (here.river || here.terrain === 'shore') return true;
+  if (here.river || here.terrain === 'shore' || here.terrain === 'ocean') return true;
   return neighbors(state.party.at).some((n) => state.world.tiles[key(n)]?.terrain === 'ocean');
 }
 
@@ -92,9 +121,28 @@ function marchLine(
   terrain: Terrain,
   days: number,
   changedGround: boolean,
+  fromSea: boolean,
 ): string {
   const ground = terrainDef(terrain).name.toLowerCase();
   const rng = actionRng(state, `march:${terrain}`);
+
+  // A day under oars is not a day's walking, and saying so is most of what
+  // makes the coast feel like a coast.
+  if (terrain === 'ocean') {
+    return rng.pick([
+      'We put the knarr in the water and rowed the coast until the light went.',
+      'A day on the water, with the land always on one hand.',
+      'We worked along the shore under oars. It was faster than walking and colder.',
+      'The sail took what wind there was and we made good water.',
+    ]);
+  }
+  if (fromSea) {
+    return rng.pick([
+      `We ran the keel up and stepped out into ${ground}.`,
+      `We came ashore on ${ground} and dragged the boat up past the tide.`,
+      `The water shallowed and we walked her in. ${ground.charAt(0).toUpperCase()}${ground.slice(1)}, and dry feet.`,
+    ]);
+  }
 
   if (days > 1) {
     return rng.pick([
@@ -125,7 +173,13 @@ function marchLine(
  * six people twice — enough firewood to make winter a formality.
  */
 export function canGather(state: GameState): boolean {
-  return !atHome(state);
+  // Nothing grows on water either. At sea the nets are the only larder.
+  return !atHome(state) && !atSea(state);
+}
+
+/** Fishing is the one thing a boat is better at than a beach. */
+export function canFish(state: GameState): boolean {
+  return !atHome(state) && fishableWater(state);
 }
 
 /** Whoever is on the map right now: the expedition, or the whole band. */
@@ -170,7 +224,9 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       if (!canMove(state, action.to)) return prev;
       const days = daysForMove(state, action.to)!;
       const tile = state.world.tiles[key(action.to)]!;
-      const changedGround = state.world.tiles[key(party.at)]?.terrain !== tile.terrain;
+      const wasOn = state.world.tiles[key(party.at)]?.terrain;
+      const changedGround = wasOn !== tile.terrain;
+      const fromSea = wasOn === 'ocean' && tile.terrain !== 'ocean';
       party.at = action.to;
       party.hasCamped = false;
       // Remember the route, not just the view: the map draws where we walked.
@@ -179,7 +235,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       advance(state, days);
       if (state.end) return state;
       reveal(state);
-      chronicle(state, marchLine(state, tile.terrain, days, changedGround));
+      chronicle(state, marchLine(state, tile.terrain, days, changedGround, fromSea));
       return state;
     }
 
@@ -189,11 +245,13 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const rng = actionRng(state, 'camp');
       const hands = fieldCrew(state).length;
       const home = atHome(state);
+      const afloat = atSea(state);
       // At home the woodcutters have already been counted; camping there is
-      // rest, not a second day's felling.
-      const wood = home
-        ? 0
-        : Math.max(0, Math.round(def.wood * (0.5 + hands * 0.18) * rng.float(0.8, 1.2)));
+      // rest, not a second day's felling. At sea there is nothing to cut.
+      const wood =
+        home || afloat
+          ? 0
+          : Math.max(0, Math.round(def.wood * (0.5 + hands * 0.18) * rng.float(0.8, 1.2)));
       party.firewood += wood;
       party.hasCamped = true;
 
@@ -215,9 +273,11 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
         state,
         home
           ? `We rested at ${state.settlement!.name}, and the work went on around us.`
-          : wood > 0
-            ? `We made camp and cut ${wood} of firewood.`
-            : 'We made camp. There was nothing here worth burning.',
+          : afloat
+            ? 'We lay at anchor in the lee of the land and slept in the boat.'
+            : wood > 0
+              ? `We made camp and cut ${wood} of firewood.`
+              : 'We made camp. There was nothing here worth burning.',
         'plain',
       );
       return state;
@@ -291,7 +351,8 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
     }
 
     case 'FISH': {
-      if (!canFish(state) || !canGather(state)) return prev;
+      // Deliberately not gated on canGather: the sea is where the fish are.
+      if (!canFish(state)) return prev;
       const here = state.world.tiles[key(party.at)]!;
       const def = terrainDef(here.terrain);
       const base = Math.max(def.fish, here.river ? 3 : 0, 2);

@@ -33,6 +33,7 @@ import {
   renderTitle,
   renderWarband,
 } from './render/cards';
+import { deedsFor, renderDeeds } from './render/deeds';
 import {
   renderActionBar,
   renderHint,
@@ -71,6 +72,8 @@ let picked: string | null = null;
 let colonyTab: ColonyTab = 'work';
 /** The chart overlay. A view of the save, not part of it. */
 let mapOpen = false;
+/** The day's-work sheet behind the Act button. */
+let actOpen = false;
 /** The send-out card: who is ticked, and what for. Both are view state. */
 let launchOpen = false;
 let launchPicked = new Set<string>();
@@ -108,7 +111,8 @@ function dispatch(action: Action): void {
 }
 
 function onHexTap(target: Hex): void {
-  if (!state || state.event || state.aftermath || state.end || foundingOpen || mapOpen || launchOpen) return;
+  if (!state || state.event || state.aftermath || state.end) return;
+  if (foundingOpen || mapOpen || launchOpen || actOpen) return;
   if (equals(target, state.party.at)) return;
   dispatch({ type: 'MOVE', to: target });
 }
@@ -138,6 +142,7 @@ function startRun(seed: string): void {
   picked = null;
   colonyTab = 'work';
   mapOpen = false;
+  actOpen = false;
   launchOpen = false;
   launchPicked = new Set();
   launchPurpose = 'explore';
@@ -267,15 +272,11 @@ function render(): void {
   travelView.update(state);
   hintSlot.replaceChildren(renderHint(state), renderWinterMark(state), renderSitePanel(state));
 
-  const actions = renderActionBar(
+  const deeds = deedsFor(
     state,
     dispatch,
     () => {
       foundingOpen = true;
-      render();
-    },
-    () => {
-      mapOpen = true;
       render();
     },
     () => {
@@ -284,6 +285,14 @@ function render(): void {
       render();
     },
   );
+
+  const actions = renderActionBar(state, deeds.length, () => {
+    actOpen = true;
+    render();
+  }, () => {
+    mapOpen = true;
+    render();
+  });
   if (!state.end && !state.event) {
     actions.append(
       button('Band', () => {
@@ -332,6 +341,13 @@ function render(): void {
           render();
         },
       ),
+    );
+  } else if (actOpen) {
+    overlaySlot.replaceChildren(
+      renderDeeds(deeds, () => {
+        actOpen = false;
+        render();
+      }),
     );
   } else if (mapOpen) {
     overlaySlot.replaceChildren(

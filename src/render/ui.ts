@@ -6,11 +6,9 @@ import type { GameState } from '../state/types';
 import { daysUntilWinter, effectsOn, seasonOf } from '../sim/calendar';
 import { foodPerDay, firewoodPerNight } from '../sim/upkeep';
 import { living } from '../sim/people';
-import { canFish } from '../sim/travel';
 import {
   atHome,
   BLOCK_REASON,
-  canFound,
   foundBlocker,
   scoreWord,
   siteReport,
@@ -18,16 +16,8 @@ import {
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast } from '../sim/winter';
-import { everyoneHome, expeditionLine } from '../sim/expedition';
-import {
-  BARGAIN_REASON,
-  angriest,
-  bargainBlocker,
-  neighbourHere,
-  neighbourLine,
-  standingOf,
-} from '../sim/neighbours';
-import { BARTER_FOOD } from '../data/clans';
+import { expeditionLine } from '../sim/expedition';
+import { angriest, neighbourHere, neighbourLine, standingOf } from '../sim/neighbours';
 import { button, el } from './svg';
 
 export type Dispatch = (action: Action) => void;
@@ -96,86 +86,25 @@ export function renderWinterMark(state: GameState): HTMLElement {
   ]);
 }
 
+/**
+ * Three buttons and no more. Everything that spends a day lives behind Act
+ * (see render/deeds.ts); Chart and Band are views, cost nothing, and stay out
+ * here where they can be reached in one tap.
+ */
 export function renderActionBar(
   state: GameState,
-  dispatch: Dispatch,
-  onSettle?: () => void,
+  deedCount: number,
+  onAct: () => void,
   onMap?: () => void,
-  onLaunch?: () => void,
 ): HTMLElement {
   const bar = el('div', { class: 'actionbar' });
   if (state.end || state.event) return bar;
 
-  const home = atHome(state);
-  // Standing inside somebody else's camp, the only two things worth offering
-  // are the two ways of dealing with them. Nobody picks berries in the middle
-  // of a stranger's yard, and a nine-button bar fits nothing on a phone.
-  const host = neighbourHere(state);
-  bar.append(
-    button(home ? 'Rest' : 'Camp', () => dispatch({ type: 'CAMP' }), {
-      class: 'action',
-      title: home
-        ? 'Pass the day at the steading. The work goes on around you.'
-        : 'Rest, mend, and cut firewood. Costs a day.',
-    }),
-  );
-  // On your own ground the steading's jobs are the day's work; offering
-  // foraging as well would pay the same people twice.
-  if (!home && !host) {
+  if (deedCount > 0) {
     bar.append(
-      button('Forage', () => dispatch({ type: 'FORAGE' }), { class: 'action' }),
-      button('Hunt', () => dispatch({ type: 'HUNT' }), { class: 'action' }),
-    );
-    if (canFish(state)) {
-      bar.append(button('Fish', () => dispatch({ type: 'FISH' }), { class: 'action' }));
-    }
-  }
-  if (onSettle && canFound(state, state.party.at)) {
-    bar.append(
-      button('Settle', onSettle, {
-        class: 'action settle',
-        title: 'Take this land. There is no undoing it.',
-      }),
-    );
-  }
-  if (atHome(state)) {
-    bar.append(
-      button('Steading', () => dispatch({ type: 'ENTER_COLONY' }), {
-        class: 'action settle',
-        title: 'Set your people to work.',
-      }),
-    );
-  }
-  // Once the posts are in, only a launched party walks the map.
-  if (onLaunch && everyoneHome(state) && atHome(state)) {
-    bar.append(
-      button('Send out', onLaunch, {
-        class: 'action settle',
-        title: 'Send a party out from the steading.',
-      }),
-    );
-  }
-  if (host) {
-    const blocked = bargainBlocker(state, host.id);
-    bar.append(
-      button('Barter', () => dispatch({ type: 'BARTER', id: host.id }), {
-        class: `action${blocked ? ' disabled' : ''}`,
-        ...(blocked ? { disabled: 'true' } : {}),
-        title: blocked
-          ? BARGAIN_REASON[blocked]
-          : `Carry ${BARTER_FOOD} of food into ${host.name} and come out with goods. Costs a day.`,
-      }),
-      button('Fall on', () => dispatch({ type: 'FALL_ON', id: host.id }), {
-        class: 'action danger',
-        title: `Draw steel on ${host.name}. They will remember it for a long time.`,
-      }),
-    );
-  }
-  if (state.expedition && !state.expedition.returning) {
-    bar.append(
-      button('Turn back', () => dispatch({ type: 'TURN_HOME' }), {
-        class: 'action secondary',
-        title: 'Head for the steading.',
+      button('Act', onAct, {
+        class: 'action act',
+        title: 'What to do with the day.',
       }),
     );
   }
@@ -224,7 +153,7 @@ export function renderSitePanel(state: GameState): HTMLElement {
   const head = host
     ? neighbourLine(host)
     : home
-    ? `${state.settlement!.name} — our own ground · tap Steading to set the work`
+    ? `${state.settlement!.name} — our own ground · Act to set the work`
     : state.settlement
       ? `This ground: ${verdict.label}`
       : refused

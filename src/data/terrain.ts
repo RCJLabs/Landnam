@@ -25,10 +25,12 @@ const DEFS: Record<Terrain, TerrainDef> = {
   ocean: {
     id: 'ocean',
     name: 'Open Sea',
+    // Impassable on foot. The knarr crosses coastal water — see SEA_EFFORT in
+    // sim/travel.ts, which is where the sea's own rules live.
     cost: Infinity,
     forage: 0,
     hunt: 0,
-    fish: 0,
+    fish: 5,
     wood: 0,
     blocksSight: false,
     fill: '#1d3b52',

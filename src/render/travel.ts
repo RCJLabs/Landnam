@@ -1,11 +1,11 @@
 // TRAVEL renderer: the world map as layered SVG. Pure view — it reads state
 // and emits a hex click; it never mutates anything.
 
-import { cornerPoints, fromKey, fromPixel, neighbors, toPixel, type Hex } from '../hex';
+import { cornerPoints, fromKey, fromPixel, key, neighbors, toPixel, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import type { GameState, Neighbour, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
-import { moveEffort } from '../sim/travel';
+import { atSea, moveEffort } from '../sim/travel';
 import { mapDefs, svgEl } from './svg';
 
 export const HEX_SIZE = 26;
@@ -131,11 +131,19 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       layerOverlay.append(neighbourMark(n));
     }
 
+    // Where the keel first touched sand. Kept on the map because it is the
+    // one fixed point on a coast you are otherwise reading for the first time.
+    if (state.world.seen[key(state.world.landing)]) {
+      layerOverlay.append(landfallMark(state.world.landing));
+    }
+
     if (state.settlement) {
       layerOverlay.append(steading(state.settlement.at));
     }
 
-    layerParty.append(partyToken(state.party.at));
+    layerParty.append(
+      atSea(state) ? shipToken(state.party.at) : partyToken(state.party.at),
+    );
   }
 
   function neighbourOptions(state: GameState): Hex[] {
@@ -365,27 +373,124 @@ function steading(at: Hex): SVGGElement {
   return g;
 }
 
+/**
+ * The band, as a face under a helmet.
+ *
+ * A coloured dot said "you are here" and nothing else. What the map wants to
+ * say is "these are your people", so this is a helm — dome, nasal bar, and a
+ * beard under it — over a red shield. Everything is silhouette: at a hex
+ * width of about 50px on a phone, detail smaller than the nasal bar turns to
+ * mush, so there is none.
+ */
 function partyToken(at: Hex): SVGGElement {
   const p = toPixel(at, HEX_SIZE);
+  const s = HEX_SIZE;
   const g = svgEl('g', { class: 'party-token' });
-  // A shield on a spear: readable at thumb size.
+
   g.append(
+    // The shield he is standing behind, and the dark disc that keeps the
+    // whole thing legible over meadow, sand or snow alike.
+    svgEl('circle', { cx: p.x, cy: p.y, r: s * 0.48, fill: '#1d1a14', opacity: 0.6 }),
     svgEl('circle', {
       cx: p.x,
       cy: p.y,
-      r: HEX_SIZE * 0.46,
-      fill: '#1d1a14',
-      opacity: 0.55,
-    }),
-    svgEl('circle', {
-      cx: p.x,
-      cy: p.y,
-      r: HEX_SIZE * 0.36,
+      r: s * 0.4,
       fill: '#b23b2e',
       stroke: '#e8dcc0',
-      'stroke-width': 2.5,
+      'stroke-width': 2,
     }),
-    svgEl('circle', { cx: p.x, cy: p.y, r: HEX_SIZE * 0.1, fill: '#e8dcc0' }),
+    // Beard: a broad wedge below the brow, outlined so it separates from the
+    // red behind it. It is what makes the shape read as a face rather than a
+    // bucket.
+    svgEl('path', {
+      d:
+        `M ${p.x - s * 0.27} ${p.y - s * 0.04} ` +
+        `Q ${p.x} ${p.y + s * 0.52} ${p.x + s * 0.27} ${p.y - s * 0.04} Z`,
+      fill: '#c9a15c',
+      stroke: '#2a2318',
+      'stroke-width': 1.1,
+    }),
+    // Helm: a dome sitting on the brow line, filling most of the disc.
+    svgEl('path', {
+      d:
+        `M ${p.x - s * 0.3} ${p.y - s * 0.04} ` +
+        `Q ${p.x - s * 0.3} ${p.y - s * 0.4} ${p.x} ${p.y - s * 0.4} ` +
+        `Q ${p.x + s * 0.3} ${p.y - s * 0.4} ${p.x + s * 0.3} ${p.y - s * 0.04} Z`,
+      fill: '#98a1ad',
+      stroke: '#2a2318',
+      'stroke-width': 1.3,
+    }),
+    // Nasal bar down past the brow, and a dark eye either side of it.
+    svgEl('rect', {
+      x: p.x - s * 0.055,
+      y: p.y - s * 0.14,
+      width: s * 0.11,
+      height: s * 0.26,
+      fill: '#98a1ad',
+      stroke: '#2a2318',
+      'stroke-width': 1,
+    }),
+    svgEl('rect', { x: p.x - s * 0.22, y: p.y - s * 0.13, width: s * 0.13, height: s * 0.09, fill: '#2a2318' }),
+    svgEl('rect', { x: p.x + s * 0.09, y: p.y - s * 0.13, width: s * 0.13, height: s * 0.09, fill: '#2a2318' }),
+  );
+  return g;
+}
+
+/** The same band, afloat: the knarr under them, shields on the rail. */
+function shipToken(at: Hex): SVGGElement {
+  const p = toPixel(at, HEX_SIZE);
+  const s = HEX_SIZE;
+  const g = svgEl('g', { class: 'party-token afloat' });
+  const half = s * 0.5;
+
+  g.append(
+    svgEl('ellipse', { cx: p.x, cy: p.y + s * 0.18, rx: s * 0.62, ry: s * 0.26, fill: '#1d1a14', opacity: 0.45 }),
+    // Mast, then the square sail on it: one red stripe on undyed wool, which
+    // is the whole of what a longship reads as at this size.
+    svgEl('line', {
+      x1: p.x, y1: p.y - s * 0.56, x2: p.x, y2: p.y + s * 0.16,
+      stroke: '#2a2318', 'stroke-width': 2.2,
+    }),
+    svgEl('rect', {
+      x: p.x - s * 0.3, y: p.y - s * 0.52, width: s * 0.6, height: s * 0.4,
+      fill: '#e8dcc0', stroke: '#2a2318', 'stroke-width': 1.2,
+    }),
+    svgEl('rect', { x: p.x - s * 0.3, y: p.y - s * 0.38, width: s * 0.6, height: s * 0.13, fill: '#b23b2e' }),
+    // Hull: a shallow curve rising to a stem at each end.
+    svgEl('path', {
+      d:
+        `M ${p.x - half} ${p.y + s * 0.02} ` +
+        `Q ${p.x} ${p.y + s * 0.5} ${p.x + half} ${p.y + s * 0.02} ` +
+        `L ${p.x + half * 0.8} ${p.y - s * 0.14} ` +
+        `Q ${p.x} ${p.y + s * 0.26} ${p.x - half * 0.8} ${p.y - s * 0.14} Z`,
+      fill: '#4a3b28',
+      stroke: '#e8dcc0',
+      'stroke-width': 1.6,
+    }),
+  );
+  return g;
+}
+
+/** Where the keel first touched sand — a beached hull, prow up. */
+function landfallMark(at: Hex): SVGGElement {
+  const p = toPixel(at, HEX_SIZE);
+  const s = HEX_SIZE;
+  const g = svgEl('g', { class: 'landfall' });
+  g.append(
+    svgEl('path', {
+      d: `M ${p.x - s * 0.42} ${p.y + s * 0.06} q ${s * 0.42} ${s * 0.34} ${s * 0.84} 0 Z`,
+      fill: '#3a2c1d',
+      stroke: '#d3a441',
+      'stroke-width': 1.6,
+    }),
+    svgEl('line', {
+      x1: p.x - s * 0.46, y1: p.y + s * 0.06, x2: p.x + s * 0.46, y2: p.y + s * 0.06,
+      stroke: '#d3a441', 'stroke-width': 1.6,
+    }),
+    svgEl('line', {
+      x1: p.x, y1: p.y - s * 0.34, x2: p.x, y2: p.y + s * 0.06,
+      stroke: '#d3a441', 'stroke-width': 1.6,
+    }),
   );
   return g;
 }

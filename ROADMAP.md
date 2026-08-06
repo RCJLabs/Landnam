@@ -91,6 +91,19 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — The sea, one button, and a face** — Three fixes off a phone
+  playtest. The knarr is on the map now: a beached hull marks where you came
+  ashore, and coastal water — any sea hex with land in sight — can be rowed at
+  2 effort, so a coast is a road rather than a wall. Open water with no land
+  beside it is still refused, which keeps the map a country to be walked
+  instead of a lake to be cut across. At sea there is no forage and no
+  firewood, the nets are the best they get anywhere, and a fight on the water
+  is fought across lashed hulls. Second: the row of nine wrapping buttons is
+  gone. One **Act** button opens the day's work as a list, each choice with a
+  line saying what it does and what it costs — and the ones you cannot take
+  still listed, greyed, with the ground's own reason. Third: the red dot is a
+  Viking — helm, nasal bar and beard over a red shield, and a longship under
+  a striped sail when the band is afloat. 374 tests.
 - **2026-08-06 — 4.3 Neighbors** — The coast has other people on it, and they
   remember. Four places are seeded at worldgen — natives who were here first
   and open warm, rival Norse who came last year and open cold — each carrying
