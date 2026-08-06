@@ -30,7 +30,13 @@ export default defineConfig({
     __BUILD__: JSON.stringify(buildStamp()),
   },
   plugins: [viteSingleFile()],
+  // The source entry is app.html, not index.html. index.html at the repo root
+  // is the BUILT page — GitHub Pages serves whatever sits at the root of the
+  // published branch, and a Vite entry there (four lines that load
+  // /src/main.ts) publishes as a blank screen with a dead script tag.
+  server: { open: '/app.html' },
   build: {
+    rollupOptions: { input: 'app.html' },
     target: 'es2022',
     assetsInlineLimit: 100_000_000,
     cssCodeSplit: false,

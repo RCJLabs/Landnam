@@ -17,9 +17,12 @@
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
-const BUILT = 'dist/index.html';
-const OUT = 'docs';
-const ENTRY = 'index.html';
+const BUILT = 'dist/app.html';
+const ENTRY = 'app.html';
+// Published to BOTH, because GitHub Pages can be pointed at the branch root or
+// at /docs and we do not get to see which one is set. Two copies of a 181 kB
+// file is a cheap price for not being able to check a dropdown.
+const TARGETS = ['.', 'docs'];
 
 // Guard the mistake above: if the source entry ever stops looking like a
 // source entry, something has overwritten it and the build is not to be
@@ -46,16 +49,20 @@ if (!html.includes('__BUILD_MARKER_ABSENT__') && !/build [0-9a-f]{7} · /.test(h
   process.exit(1);
 }
 
-mkdirSync(OUT, { recursive: true });
-copyFileSync(BUILT, `${OUT}/${ENTRY}`);
-
-// The stamp the page fetches to notice it is out of date. Written here so it
-// always matches the index.html sitting next to it.
 const sha = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
-writeFileSync(`${OUT}/build.txt`, `${sha} ${new Date().toISOString()}\n`);
+const stamp = `${sha} ${new Date().toISOString()}\n`;
 
-// Pages runs Jekyll over the folder unless told not to.
-writeFileSync(`${OUT}/.nojekyll`, '');
+for (const dir of TARGETS) {
+  mkdirSync(dir, { recursive: true });
+  copyFileSync(BUILT, `${dir}/index.html`);
+  // The stamp the page fetches to notice it is out of date. Written beside
+  // each copy so it always matches the index.html next to it.
+  writeFileSync(`${dir}/build.txt`, stamp);
+  // Pages runs Jekyll over the folder unless told not to.
+  writeFileSync(`${dir}/.nojekyll`, '');
+}
 
 const stamped = html.match(/build [0-9a-f]{7} · [0-9-]+ [0-9:]+/)?.[0] ?? '(none)';
-console.log(`publish: ${OUT}/${ENTRY} — ${Math.round(html.length / 1024)} kB, ${stamped}`);
+console.log(
+  `publish: index.html in ${TARGETS.join(' and ')} — ${Math.round(html.length / 1024)} kB, ${stamped}`,
+);

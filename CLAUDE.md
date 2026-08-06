@@ -67,19 +67,21 @@ src/
 update ROADMAP.md statuses + changelog, tag `v0.X`, push. Deliverables are
 always: `index.html` + source zip + updated `ROADMAP.md`.
 
-**Deploying is a committed file, not a workflow.** GitHub Pages serves
-`main` / `/docs`. `npm run publish` builds and writes `docs/index.html`,
+**Deploying is a committed file, not a workflow.** GitHub Pages serves `main`. `npm run publish` builds and writes `docs/index.html`,
 `docs/build.txt` and `docs/.nojekyll`. There is no Deploy action: the old one
 pushed to `gh-pages` and left GitHub's own `pages build and deployment` to
 publish it, which failed repeatedly inside `actions/deploy-pages` with
 "Invalid actions OIDC token" and left the live site hours behind the branch.
 A committed artifact has no moving parts.
 
-The build output goes in `docs/`, never the repo root — the root `index.html`
-is Vite's source entry. Publishing over it makes Vite build the built page as
-its own input: four modules instead of sixty-five, a frozen build stamp, and a
-file that grows every run. `scripts/publish.mjs` refuses to run if the entry
-stops looking like an entry, but do not put it back.
+**The Vite source entry is `app.html`, not `index.html`.** `index.html` at the
+repo root is the BUILT page, because Pages serves whatever sits at the root of
+the published branch and a source entry there publishes as a blank screen with
+a dead `/src/main.ts` tag. `npm run publish` writes the build to BOTH the root
+and `docs/`, so the site works whether Pages points at the branch root or at
+`/docs` — we cannot see which is configured. `scripts/publish.mjs` refuses to
+run if `app.html` stops looking like an entry, or if the built page carries no
+build stamp.
 
 Run `npm run publish` in any commit that should change what is live — a
 source-only commit will otherwise leave the site on the old build.
