@@ -11,6 +11,7 @@ import { stream } from '../rng';
 import type { GameState, Person, Purpose } from '../state/types';
 import { effectiveStat, living } from './people';
 import { chronicle } from './saga';
+import { note } from './tally';
 import { atHome } from './site';
 
 /** Provisions a party takes per member per day it expects to be out. */
@@ -125,6 +126,7 @@ export function launch(state: GameState, members: string[], purpose: Purpose): b
   const carried = provisionsFor(going.length);
   state.party.food -= carried;
 
+  note(state, 'expeditions');
   state.expedition = {
     members: going.map((p) => p.id),
     purpose,

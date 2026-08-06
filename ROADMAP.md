@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 4.5**
+> **CURRENT MILESTONE: 4.6**
 
 ---
 
@@ -73,7 +73,7 @@ Order negotiable; each is a shippable minor version.
 - [x] **4.2 Expeditions** — Launch parties FROM the colony back onto the world map (raid, trade, explore) while the colony sims on. The loop becomes a wheel.
 - [x] **4.3 Neighbors** — Persistent rival clans and native settlements: reputation, trade, tribute, alliances, escalation.
 - [x] **4.4 Knowledge** — Discovery-driven progression (runes, shipwright, smithing) unlocked by exploration and events, not a tech-tree menu.
-- [ ] **4.5 The Saga** — Run-end saga generator: your whole game retold as a short prose saga from the log. Shareable seed + saga.
+- [x] **4.5 The Saga** — Run-end saga generator: your whole game retold as a short prose saga from the log. Shareable seed + saga.
 - [ ] **4.6 Endgame** — Victory: survive N winters and hold a Thing to be proclaimed jarl. Defeat: warband extinguished.
 
 ## Phase 5 — Ship it → v1.0
@@ -91,6 +91,21 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 4.5 The Saga** — The ending screen is now the run, retold. Six
+  chapters — the landing, the country, the land-taking, the neighbours, what
+  they worked out, blood — and a closing, every one of them assembled from what
+  actually happened and every one of them left out entirely when there is
+  nothing behind it. A band that never settled is never given a steading; a
+  band that lost nobody is told so; everyone who died is named with what did
+  it. The wording is picked with the run's own seed and its ending, so the same
+  finished run always tells the same saga — which is what makes shipping the
+  seed with it worth anything. One button copies the whole thing as plain text
+  with `seed "..."` at the foot. To make it possible, the state gained a tally
+  of the things a finished run cannot reconstruct about itself — fights, raids
+  held, foes felled, bargains struck, parties sent, days on the water — because
+  a settled battle leaves no trace and a bargain leaves only firewood.
+  `SAVE_VERSION` 15 with a migration; an older run comes forward at zero and
+  its saga simply omits what it cannot honestly claim. 411 tests.
 - **2026-08-06 — 4.4 Knowledge** — Six things a band can work out, and not one
   of them bought. There is no research screen and nothing to spend: rune-craft
   comes off a carved boulder in the hills, iron-craft off a seam of bog ore and

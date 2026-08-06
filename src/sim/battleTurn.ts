@@ -17,6 +17,7 @@ import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
 import { noteRaidSent } from './neighbours';
 import { bonus } from './lore';
+import { note } from './tally';
 import { key } from '../hex';
 import { checkRunEnd } from './upkeep';
 
@@ -166,6 +167,8 @@ export function leaveBattle(state: GameState): Aftermath | undefined {
   // The field first — deaths, wounds, loot and what the living learned — so
   // the closing lines can speak to what it actually cost.
   const aftermath = settleAftermath(state, battle);
+  if (won) note(state, 'battlesWon');
+  note(state, 'foesFelled', aftermath.foesDown);
 
   // A raid is the only fight where the ground itself is the stake.
   if (wasRaid && state.settlement) {

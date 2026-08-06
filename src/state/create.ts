@@ -9,6 +9,7 @@ import { revealAround, sightRadius } from '../sim/fog';
 import { makeWarband } from '../sim/people';
 import { generateWorld } from '../sim/worldgen';
 import { placeNeighbours } from '../sim/neighbours';
+import { emptyTally } from '../sim/tally';
 import type { GameState } from './types';
 import { SAVE_VERSION } from './version';
 
@@ -46,6 +47,7 @@ export function newGame(seed: string): GameState {
     flags: { landingNamed: 1 },
     grudges: [],
     lore: [],
+    tally: emptyTally(),
     neighbours: placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours')),
     nextId: 1,
   };

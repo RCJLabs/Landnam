@@ -13,6 +13,7 @@ import { atHome, foundSettlement } from './site';
 import { fieldCrew, permittedStep } from './expedition';
 import { bargain, bargainBlocker, canFallOn, fallOn, seeNeighbours } from './neighbours';
 import { bonus } from './lore';
+import { note } from './tally';
 import { startBattle } from './battleTurn';
 import { passDay } from './upkeep';
 
@@ -236,6 +237,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // Remember the route, not just the view: the map draws where we walked.
       const there = key(action.to);
       if (state.world.trod[there] === undefined) state.world.trod[there] = state.day;
+      if (tile.terrain === 'ocean') note(state, 'seaDays', days);
       advance(state, days);
       if (state.end) return state;
       reveal(state);

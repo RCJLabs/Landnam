@@ -12,6 +12,7 @@ import { standing } from './battle';
 import { raidPressure } from './neighbours';
 import { chronicle } from './saga';
 import { learn } from './lore';
+import { note } from './tally';
 
 /** What share of the store a successful sack carries off. */
 export const SACK_SHARE = 0.4;
@@ -106,6 +107,7 @@ export function holdSteading(state: GameState, foesDown: number): void {
   // A line that held is a line you can now explain to somebody. Nothing else
   // in the game teaches this, because nothing else is a line that held.
   if (foesDown > 0) learn(state, 'shieldcraft');
+  note(state, 'raidsHeld');
   chronicle(
     state,
     foesDown > 0

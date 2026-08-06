@@ -20,6 +20,7 @@ import { pushMode } from '../modes';
 import { effectiveStat } from './people';
 import { fieldCrew, homeCrew } from './expedition';
 import { raidSource } from './neighbours';
+import { note } from './tally';
 import { chronicle } from './saga';
 import { startingNerve } from './morale';
 import {
@@ -267,6 +268,8 @@ export function beginBattle(
     });
   }
 
+  note(state, 'battles');
+  if (raid) note(state, 'raids');
   state.battle = battle;
   // Nerve needs the battle in place, because it reads each fighter's Person.
   for (const c of battle.combatants) c.nerve = startingNerve(state, c.personId);

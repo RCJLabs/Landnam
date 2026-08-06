@@ -4,7 +4,9 @@
 // Streams are named and independent — drawing from `combat` never shifts
 // what `worldgen` produces, so replays and saves stay stable.
 
-export type StreamName = 'worldgen' | 'party' | 'events' | 'combat' | 'colony';
+// Named streams keep one system's rolls from shifting another's. Adding a
+// stream is always safe; renaming one silently changes every existing seed.
+export type StreamName = 'worldgen' | 'party' | 'events' | 'combat' | 'colony' | 'saga';
 
 export interface Rng {
   /** Float in [0, 1). */

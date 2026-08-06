@@ -328,6 +328,29 @@ export interface Neighbour {
   raidsSent: number;
 }
 
+// --- The tally ---
+
+/**
+ * What the band did, counted as it happened. Everything here is something a
+ * finished run cannot reconstruct from its own state — a settled battle
+ * leaves no trace of itself, and a bargain leaves only firewood.
+ */
+export interface Tally {
+  battles: number;
+  battlesWon: number;
+  /** Raids that came at the steading. */
+  raids: number;
+  /** Raids the line held. */
+  raidsHeld: number;
+  foesFelled: number;
+  expeditions: number;
+  bargains: number;
+  /** Neighbours we fell on. */
+  sackings: number;
+  /** Days spent on the water. */
+  seaDays: number;
+}
+
 // --- Run end ---
 
 export interface RunEnd {
@@ -365,6 +388,8 @@ export interface GameState {
   neighbours: Neighbour[];
   /** Lore ids the band has worked out, in the order it worked them out. */
   lore: string[];
+  /** What the band did, for the saga to read back. */
+  tally: Tally;
   end?: RunEnd;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;

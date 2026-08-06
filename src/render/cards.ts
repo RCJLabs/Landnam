@@ -8,6 +8,7 @@ import { XP_PER_ADVANCE } from '../sim/consequences';
 import { scoreWord, siteReport, strongestOf, verdictFor } from '../sim/site';
 import { moodOf, MOOD_WORD } from '../sim/minds';
 import { known } from '../sim/lore';
+import { composeSaga, sagaText } from '../sim/sagagen';
 import { jobOf } from '../sim/colony';
 import {
   LAUNCH_REASON,
@@ -337,39 +338,66 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
   const end = state.end!;
   const survived = end.cause === 'survived';
   const explored = Math.round(exploredFraction(state.world) * 100);
+  const saga = composeSaga(state);
 
-  const summary = el('div', { class: 'end-summary' });
-  for (const line of end.lines) summary.append(el('p', {}, [line]));
-  summary.append(
+  // The saga IS the ending screen now. What used to be here — the closing
+  // lines, the roll of the dead — is inside it, said in prose, so the last
+  // thing the player reads is a story about their run rather than a receipt.
+  const body = el('div', { class: 'end-summary' });
+  for (const chapter of saga.chapters) {
+    body.append(
+      el('h3', { class: 'saga-head' }, [chapter.heading]),
+      el('p', { class: 'saga-prose' }, [chapter.text]),
+    );
+  }
+  body.append(
     el('p', { class: 'end-stat' }, [`${state.day} days ashore · ${explored}% of the land seen`]),
   );
 
-  const learned = known(state);
-  if (learned.length > 0) {
-    summary.append(el('h3', {}, ['What We Worked Out']));
-    summary.append(
-      el('p', { class: 'end-lore' }, [learned.map((l) => l.name).join(' · ')]),
-    );
-  }
-
-  const fallen = state.party.people.filter((p) => !p.alive);
-  if (fallen.length > 0) {
-    summary.append(el('h3', {}, ['The Fallen']));
-    for (const person of fallen) {
-      summary.append(
-        el('p', { class: 'fallen' }, [
-          `${fullName(person)} — ${person.fate ?? 'lost'}${person.diedOn ? `, day ${person.diedOn}` : ''}`,
-        ]),
-      );
-    }
-  }
+  // Shareable: the seed goes with the text, because a saga without the seed
+  // that made it is an anecdote and a saga with it is a challenge.
+  const note = el('p', { class: 'seed-note' }, [`seed "${state.seed}"`]);
+  const copy = button('Copy the saga', () => {
+    const ok = copyText(sagaText(saga));
+    note.replaceChildren(ok ? `Copied — seed "${state.seed}"` : `seed "${state.seed}"`);
+  }, { class: 'action secondary wide' });
 
   return el('div', { class: 'overlay' }, [
     el('div', { class: 'card end-card' }, [
-      el('h2', { class: survived ? 'good' : 'grim' }, [end.title]),
-      summary,
-      el('p', { class: 'seed-note' }, [`seed ${state.seed}`]),
+      el('h2', { class: survived ? 'good' : 'grim' }, [saga.title]),
+      body,
+      note,
+      copy,
       button('Land again', onRestart, { class: 'primary wide' }),
     ]),
   ]);
+}
+
+/**
+ * Puts text on the clipboard. The async Clipboard API needs a secure context
+ * and the built page is opened from file://, where it is not available — so
+ * the old selection trick is the path that actually runs, and the modern one
+ * is the fallback rather than the other way round.
+ */
+function copyText(text: string): boolean {
+  try {
+    const holder = document.createElement('textarea');
+    holder.value = text;
+    holder.setAttribute('readonly', 'true');
+    holder.style.position = 'fixed';
+    holder.style.opacity = '0';
+    document.body.append(holder);
+    holder.select();
+    const ok = document.execCommand('copy');
+    holder.remove();
+    if (ok) return true;
+  } catch {
+    // Fall through to the async API.
+  }
+  try {
+    void navigator.clipboard?.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
 }

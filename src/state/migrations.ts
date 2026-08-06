@@ -139,6 +139,19 @@ export const MIGRATIONS: Record<number, Migration> = {
   // forward knowing nothing, which is honest — nobody was keeping track of
   // what it had figured out, so there is nothing to credit it with.
   13: (save) => ({ lore: [], ...save, version: 14 }),
+
+  // v14 -> v15: the band's deeds are counted for the saga. An older run's
+  // fights are genuinely unrecoverable — nothing on the state remembers them —
+  // so it comes forward at zero and counts from here. The saga leaves out what
+  // it cannot honestly claim rather than inventing a number.
+  14: (save) => ({
+    tally: {
+      battles: 0, battlesWon: 0, raids: 0, raidsHeld: 0, foesFelled: 0,
+      expeditions: 0, bargains: 0, sackings: 0, seaDays: 0,
+    },
+    ...save,
+    version: 15,
+  }),
 };
 
 export interface MigrationResult {

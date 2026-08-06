@@ -27,6 +27,7 @@ import type { GameState, Neighbour, World } from '../state/types';
 import { fieldCrew, purposeDef } from './expedition';
 import { effectiveStat } from './people';
 import { chronicle } from './saga';
+import { note } from './tally';
 
 /** Anger past this stops adding to the pressure — a coast has limits. */
 export const PRESSURE_MAX = 3;
@@ -215,6 +216,7 @@ export function bargain(state: GameState, id: string): Bargain | null {
   state.party.firewood += firewood;
   state.party.morale = Math.min(100, state.party.morale + 3);
   shiftStanding(state, n.id, REP_TRADED);
+  note(state, 'bargains');
   n.lastDealt = state.day;
 
   chronicle(
@@ -246,6 +248,7 @@ export function fallOn(state: GameState, id: string): number | null {
   if (!canFallOn(state, id)) return null;
   const n = neighbourById(state, id)!;
   shiftStanding(state, n.id, REP_RAIDED);
+  note(state, 'sackings');
   n.lastDealt = state.day;
   chronicle(state, `We went into ${n.name} under arms, and they knew our faces.`, 'grim');
   return n.might;

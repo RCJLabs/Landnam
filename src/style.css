@@ -473,6 +473,39 @@ button.wide {
   color: #d98a80;
 }
 
+/* --- The saga (4.5) --- */
+
+/* The ending screen is the saga, so it reads like a page rather than a
+   panel: chapter headings in small caps, prose in the body face. */
+.saga-head {
+  margin: 14px 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.saga-head:first-child {
+  margin-top: 0;
+}
+
+.end-summary .saga-prose {
+  font-size: 15.5px;
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+
+.end-card .end-stat {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.action.secondary.wide {
+  width: 100%;
+  margin-top: 12px;
+  flex: 0 0 auto;
+}
+
 h2.good {
   color: var(--moss);
 }
