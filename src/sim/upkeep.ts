@@ -25,11 +25,40 @@ export function foodPerDay(state: GameState): number {
 }
 
 /**
+ * The band the firewood figures were tuned against. Six off the knarr.
+ */
+export const BAND_BASE = 6;
+
+/**
+ * How much of a night's fire is the hearth itself rather than the people
+ * round it.
+ *
+ * A fire warms a room, not a headcount, so cost cannot scale straight off the
+ * roster — but a hall of twelve does not keep warm on what six burned either.
+ * This splits the difference: a little over half the burn is the hearth and
+ * is paid whoever is home, and the rest follows the band.
+ *
+ * The reason this exists at all: food already scaled with mouths and firewood
+ * did not, so every extra person was pure labour at no cost in wood. That is
+ * precisely what made a settled band untouchable — three separate attempts to
+ * threaten the late game bounced off six people out-producing any burn that
+ * could be set. Phase 6.2 lets the band GROW, and growth had to cost
+ * something before it could be offered.
+ */
+export const HEARTH_SHARE = 0.55;
+
+/**
  * What tonight actually costs. Seeded, because how hard THIS winter is was
- * decided when the run was — see winterDepth in calendar.ts.
+ * decided when the run was — see winterDepth in calendar.ts — and scaled by
+ * how many are round the fire.
  */
 export function firewoodPerNight(state: GameState): number {
-  return effectsOn(state.day, state.seed).firewood;
+  const heads = living(state.party.people).length;
+  const base = effectsOn(state.day, state.seed).firewood;
+  const share = HEARTH_SHARE + (1 - HEARTH_SHARE) * (heads / BAND_BASE);
+  // Never below one: a fire is a fire. Rounded up, because you cannot burn
+  // half a log and the alternative is a band that quietly gets free nights.
+  return Math.max(1, Math.ceil(base * share));
 }
 
 function weakest(people: Person[]): Person | undefined {

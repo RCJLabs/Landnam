@@ -45,7 +45,7 @@ import { apply, type Action } from '../src/sim/actions';
 import { moveOptions, canGather, canFish } from '../src/sim/travel';
 import { canFound, siteReport } from '../src/sim/site';
 import { assign, queueBuild } from '../src/sim/colony';
-import { foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
+import { BAND_BASE, foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
 import { distance, key, fromKey, neighbors } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
 import { terrainDef } from '../src/data/terrain';
@@ -377,5 +377,71 @@ describe('no two winters are the same, and the mark says so', () => {
     expect(markHaze(150)).toBe(0);
     expect(markHaze(100)).toBeGreaterThan(0);
     expect(markHaze(90)).toBeGreaterThan(markHaze(110));
+  });
+});
+
+// --- 6.2 groundwork: growth has to cost something ---
+
+describe('the fire scales with the band round it', () => {
+  /** A band of exactly this many living people, on this day. */
+  function bandOf(heads: number, day: number): GameState {
+    const state = structuredClone(newGame('hearth'));
+    state.day = day;
+    while (state.party.people.length < heads) {
+      state.party.people.push({ ...state.party.people[0]!, id: `extra-${state.party.people.length}` });
+    }
+    state.party.people.forEach((person, i) => {
+      person.alive = i < heads;
+    });
+    return state;
+  }
+
+  const MIDWINTER = 60;
+
+  it('leaves the band the game was tuned for exactly where it was', () => {
+    // Six off the knarr is the figure every winter number was balanced
+    // against, and 80% of bands reaching the first winter is a number worth
+    // not disturbing. Scaling must pivot on it, not shift it.
+    for (const day of [10, 30, MIDWINTER, 80]) {
+      const six = bandOf(BAND_BASE, day);
+      expect(firewoodPerNight(six)).toBe(effectsOn(day, six.seed).firewood);
+    }
+  });
+
+  it('makes a bigger hall cost more to keep', () => {
+    const six = firewoodPerNight(bandOf(6, MIDWINTER));
+    const nine = firewoodPerNight(bandOf(9, MIDWINTER));
+    const twelve = firewoodPerNight(bandOf(12, MIDWINTER));
+    expect(nine).toBeGreaterThan(six);
+    expect(twelve).toBeGreaterThan(nine);
+  });
+
+  it('does not turn losing people into a windfall', () => {
+    // A fire warms a room, not a headcount. If half the band dying halved the
+    // burn, a death would be a saving — which is the opposite of what
+    // permadeath and the memorial wall are for.
+    const six = firewoodPerNight(bandOf(6, MIDWINTER));
+    const three = firewoodPerNight(bandOf(3, MIDWINTER));
+    expect(three).toBeLessThan(six);
+    expect(three * 2).toBeGreaterThan(six);
+  });
+
+  it('never lets a night be free', () => {
+    for (const heads of [1, 2, 3]) {
+      for (const day of [10, MIDWINTER]) {
+        expect(firewoodPerNight(bandOf(heads, day))).toBeGreaterThanOrEqual(1);
+      }
+    }
+  });
+
+  it('closes the asymmetry that made extra hands free', () => {
+    // The whole reason this exists: food scaled with mouths and firewood did
+    // not, so every additional person was labour at no cost in wood. Three
+    // separate attempts to threaten the late game bounced off exactly that.
+    // Both must now move together before 6.2 offers anybody a way to grow.
+    const small = bandOf(4, MIDWINTER);
+    const large = bandOf(12, MIDWINTER);
+    expect(foodPerDay(large)).toBeGreaterThan(foodPerDay(small));
+    expect(firewoodPerNight(large)).toBeGreaterThan(firewoodPerNight(small));
   });
 });

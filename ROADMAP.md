@@ -95,10 +95,13 @@ because by year two it has more labour than uses for it.
   so long-range stockpiling is a gamble rather than arithmetic. *Shipped, and
   measured at no change to the curve — see the changelog. It is a prerequisite
   for 6.2, not a fix on its own.*
-- [ ] **6.2 Hands** — The band can grow: thralls taken, survivors taken in, a
+- [~] **6.2 Hands** — The band can grow: thralls taken, survivors taken in, a
   neighbour's sons. Losing people becomes recoverable, which is what makes
   losing them affordable to inflict — and the labour surplus becomes a choice
   instead of a given. THE unlock for everything below.
+  *Groundwork done: the fire now scales with the band round it, so growth has
+  a price before growth is offered. Still to come: capacity from buildings,
+  the four ways in, and whether a thrall is a full person (SAVE_VERSION 17).*
 - [ ] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
   answer is walls, allies and standing rather than a bigger woodpile. Makes
   4.3's neighbours load-bearing.
@@ -113,6 +116,24 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 6.2 groundwork: the fire scales with the band** — Before the
+  band can grow, growing has to cost something. Food already scaled with
+  mouths and firewood did not — it was a flat seasonal figure — so every extra
+  person was pure labour at no charge in wood. That asymmetry is the whole
+  reason a settled band was untouchable, and why three separate attempts to
+  threaten the late game bounced off it: six people out-produce any burn that
+  can be set, and a seventh would have made it worse.
+  A night's fire is now part hearth and part headcount — a little over half is
+  paid whoever is home, because a fire warms a room rather than a roster, and
+  the rest follows the band. It pivots exactly on the six who came off the
+  knarr, so the tuned early game does not move by a single log: measured at
+  80% reaching the first winter, 50% seeing spring, 50% reaching the second,
+  unchanged. A hall of twelve burns 9 a night in midwinter where six burn 6,
+  and a band cut to three still burns 5 — losing people must never be a
+  saving, or permadeath and the memorial wall are arguing with the upkeep.
+  This ships as groundwork and claims nothing about the curve on its own.
+  Nobody can grow yet. 498 tests.
 
 - **2026-08-06 — 6.1 Winters that vary, and a mark that admits it** — Each
   winter now has a severity fixed by the run's own seed: a floor that grows
