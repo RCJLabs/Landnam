@@ -30,7 +30,13 @@ function nearWater(state: GameState): boolean {
   return neighbors(state.party.at).some((n) => state.world.tiles[key(n)]?.terrain === 'ocean');
 }
 
-function conditionHolds(state: GameState, condition: Condition): boolean {
+/**
+ * Exported so the first-run lessons can be triggered by the SAME vocabulary
+ * real events use. "Woven into events, not tutorial screens" is a content
+ * decision, and it only holds if the two share an interpreter — otherwise the
+ * lessons drift into a second, parallel engine nobody maintains.
+ */
+export function conditionHolds(state: GameState, condition: Condition): boolean {
   const tile = state.world.tiles[key(state.party.at)];
   switch (condition.c) {
     case 'terrain':

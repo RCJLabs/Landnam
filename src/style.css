@@ -1186,3 +1186,29 @@ button.mute.off .mute-horn {
   stroke: var(--blood);
   stroke-width: 2;
 }
+
+/* --- First-run lessons ---
+   The same card as an event on purpose: guidance arrives in the game's voice,
+   not in a tutorial chrome. The one thing set apart is the rule under the
+   body, which is the only line in the game allowed to name a button. */
+
+.lesson-point {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--gold);
+  background: rgba(211, 164, 65, 0.08);
+  color: var(--parchment);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+button.relearn {
+  width: 100%;
+  margin-top: 10px;
+  min-height: var(--tap);
+  background: none;
+  border: none;
+  color: var(--parchment-dim);
+  font-size: 13px;
+  text-decoration: underline;
+}

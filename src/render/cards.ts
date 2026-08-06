@@ -17,6 +17,7 @@ import {
   PURPOSES,
 } from '../sim/expedition';
 import { FEUD_THRESHOLD } from '../data/feuds';
+import type { LessonDef } from '../data/lessons';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import type { GameState, Person, Purpose } from '../state/types';
 import { button, el } from './svg';
@@ -26,6 +27,8 @@ export function renderTitle(
   hasExistingSave: boolean,
   onContinue: () => void,
   onNew: (seed: string) => void,
+  /** Present only for a player who has already been taught something. */
+  onRelearn?: () => void,
 ): HTMLElement {
   const seedInput = el('input', {
     class: 'seed-input',
@@ -53,6 +56,9 @@ export function renderTitle(
       ]),
       buttons,
       seedInput,
+      // Offered only to someone who has been taught, because to anyone else
+      // it is a control for turning on a thing that is already on.
+      ...(onRelearn ? [button('Show the guidance again', onRelearn, { class: 'relearn' })] : []),
       // Which build this is. The only way, from a phone, to tell a fresh
       // deploy from a cached one.
       el('p', { class: 'build-stamp' }, [`build ${__BUILD__}`]),
@@ -84,6 +90,23 @@ export function renderEventCard(state: GameState, dispatch: Dispatch): HTMLEleme
     card.append(choices);
   }
 
+  return el('div', { class: 'overlay' }, [card]);
+}
+
+/**
+ * A first-run lesson. Deliberately the SAME card as an event, down to the
+ * class name — the point of 5.2 is that guidance arrives in the game's voice
+ * at the moment it matters, not as a tutorial screen bolted on the side. The
+ * only thing marking it out is the rule under the body, which is the one line
+ * that is allowed to speak plainly about buttons.
+ */
+export function renderLesson(lesson: LessonDef, onDismiss: () => void): HTMLElement {
+  const card = el('div', { class: 'card event-card lesson-card' }, [
+    el('h2', {}, [lesson.title]),
+    el('p', { class: 'event-body' }, [lesson.body]),
+    el('p', { class: 'lesson-point' }, [lesson.point]),
+    button('Onward', onDismiss, { class: 'primary wide' }),
+  ]);
   return el('div', { class: 'overlay' }, [card]);
 }
 

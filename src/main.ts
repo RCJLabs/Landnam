@@ -29,6 +29,7 @@ import {
   renderEventCard,
   renderFounding,
   renderLaunch,
+  renderLesson,
   renderRunEnd,
   renderTitle,
   renderWarband,
@@ -70,6 +71,8 @@ import {
   wake,
 } from './audio';
 import type { AmbienceProfile } from './data/sounds';
+import { lessonDue } from './sim/lessons';
+import { forgetTeaching, markTaught, taught } from './taught';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('missing #app');
@@ -139,6 +142,22 @@ function armAudio(): void {
   window.addEventListener('keydown', start);
 }
 
+/**
+ * The lesson, if one is due, as a ready-to-mount overlay. Every mode asks,
+ * because the things worth explaining happen in all three — the shield wall
+ * is a battle lesson and jobs are a colony one — and because a lesson that
+ * only ever appeared on the map would be a tutorial screen wearing a hat.
+ */
+function lessonOverlay(): HTMLElement | null {
+  if (!state) return null;
+  const due = lessonDue(state, taught());
+  if (!due) return null;
+  return renderLesson(due, () => {
+    markTaught(due.id);
+    render();
+  });
+}
+
 // Chrome that persists across renders, so the map keeps its camera.
 const topbarSlot = el('div', { class: 'slot topbar-slot' });
 const mapSlot = el('div', { class: 'slot map-slot' });
@@ -146,6 +165,11 @@ const hintSlot = el('div', { class: 'slot hint-slot' });
 const actionSlot = el('div', { class: 'slot action-slot' });
 const sagaSlot = el('div', { class: 'slot saga-slot' });
 const overlaySlot = el('div', { class: 'slot overlay-slot' });
+
+/** replaceChildren wants a list; a missing overlay is an empty one. */
+function asNodes(node: HTMLElement | null): HTMLElement[] {
+  return node ? [node] : [];
+}
 
 function shell(): HTMLElement {
   return el('div', { class: 'shell' }, [
@@ -233,8 +257,19 @@ function showTitle(): void {
   travelView = null;
   air = null;
   hushAmbience();
+  const beenTaught = taught().length > 0;
   app!.replaceChildren(
-    renderTitle(hasSave(), continueRun, (seed) => startRun(seed)),
+    renderTitle(
+      hasSave(),
+      continueRun,
+      (seed) => startRun(seed),
+      beenTaught
+        ? () => {
+            forgetTeaching();
+            showTitle();
+          }
+        : undefined,
+    ),
   );
 }
 
@@ -264,7 +299,7 @@ function renderBattle(): void {
   );
   sagaSlot.replaceChildren(renderBattleLog(state));
   overlaySlot.replaceChildren(
-    state.battle.outcome ? renderBattleResult(state, dispatch) : document.createTextNode(''),
+    ...(state.battle.outcome ? [renderBattleResult(state, dispatch)] : asNodes(lessonOverlay())),
   );
 }
 
@@ -309,7 +344,7 @@ function renderColony(): void {
     }, colonyDispatch),
   );
   sagaSlot.replaceChildren(renderColonyFooter(state));
-  overlaySlot.replaceChildren();
+  overlaySlot.replaceChildren(...asNodes(lessonOverlay()));
 }
 
 function render(): void {
@@ -450,7 +485,9 @@ function render(): void {
   } else if (state.event) {
     overlaySlot.replaceChildren(renderEventCard(state, dispatch));
   } else {
-    overlaySlot.replaceChildren();
+    // Last, so nothing the game itself is saying is ever pushed aside by the
+    // teaching. lessonDue() enforces the same rule from the other side.
+    overlaySlot.replaceChildren(...asNodes(lessonOverlay()));
   }
 
   // Keep the party in view after it moves.

@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 5.2**
+> **CURRENT MILESTONE: 5.3**
 
 ---
 
@@ -79,7 +79,7 @@ Order negotiable; each is a shippable minor version.
 ## Phase 5 — Ship it → v1.0
 
 - [x] **5.1 Sound** — WebAudio synth: wind, drums, horn, UI ticks. Mute toggle. *Done when: the game has a voice, makes no request to get it, and is silent until touched.*
-- [ ] **5.2 Onboarding** — First-run guided prompts woven into events (no tutorial screens).
+- [x] **5.2 Onboarding** — First-run guided prompts woven into events (no tutorial screens). *Done when: a new player is taught by the game reaching a state, a veteran sees nothing, and the teaching changes the run not at all.*
 - [ ] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall.
 - [ ] **5.4 Release** — v1.0 tag, `landnam.rcjlabs.com` CNAME. THEN decide TWA/Capacitor wrap (stay web during development).
 
@@ -90,6 +90,30 @@ Order negotiable; each is a shippable minor version.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 5.2 Onboarding** — Nine lessons, and not one of them a
+  tutorial screen. Each is triggered by the game reaching a state where the
+  thing actually matters — the store card comes up the evening the food is
+  down to four days, the land-taking card the first time you stand on ground
+  that would take the posts, the shield wall the first time steel is out —
+  and they are evaluated by the SAME condition interpreter real events use,
+  so the two can never drift into parallel engines. They wear the event card,
+  down to the class name; the only thing setting them apart is one line under
+  the body, which is the only place in the game allowed to name a button. The
+  body stays in chronicle voice and a test enforces it.
+  The teaching is free, and that is the load-bearing claim: a lesson has no
+  effects, cannot be failed, never displaces a real event, an aftermath or an
+  ending, and is not in the save. Asking for a lesson on every single turn of
+  a sixty-turn run produces a byte-identical encoded state to never asking at
+  all, which is what stops a "harmless" hint from ever quietly consuming an
+  RNG roll or a card slot. What a PLAYER has read lives beside the mute in its
+  own localStorage key, not in the save — otherwise every new landing would
+  re-teach the game, and the same seed would play differently depending on who
+  loaded it. A player who has been taught gets a line on the title screen to
+  put it all back. Nothing fires on the title screen or on day one; the
+  measurement caught the first draft firing "The Store" at a full store,
+  because the threshold had been set to the number the band lands with.
+  No `SAVE_VERSION` bump — there is nothing new in the save. 471 tests.
 
 - **2026-08-06 — 5.1 Sound** — The game has a voice, and it is synthesised on
   the spot: twenty-three sounds written down as recipes — oscillators,
