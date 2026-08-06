@@ -80,7 +80,7 @@ Order negotiable; each is a shippable minor version.
 
 - [x] **5.1 Sound** — WebAudio synth: wind, drums, horn, UI ticks. Mute toggle. *Done when: the game has a voice, makes no request to get it, and is silent until touched.*
 - [x] **5.2 Onboarding** — First-run guided prompts woven into events (no tutorial screens). *Done when: a new player is taught by the game reaching a state, a veteran sees nothing, and the teaching changes the run not at all.*
-- [~] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall. *Curve harness and memorial shipped; the landing fix and animation polish are still open — see the changelog.*
+- [~] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall. *Curve harness, memorial and animation shipped; the landing fix and the flat late game are still open — see the changelog.*
 - [ ] **5.4 Release** — v1.0 tag, `landnam.rcjlabs.com` CNAME. THEN decide TWA/Capacitor wrap (stay web during development).
 
 ---
@@ -90,6 +90,26 @@ Order negotiable; each is a shippable minor version.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 5.3 (part): motion** — The screen stops cutting. The band's
+  token is now drawn at the origin and positioned by a transform on its group,
+  and the element is kept between repaints rather than destroyed and rebuilt
+  somewhere else — so a CSS transition turns a move into a glide, with no
+  timer and no animation frame anywhere in the game. Everything stays
+  turn-based: the state moved the instant the tap landed and only the picture
+  takes 260ms to catch up. A token that has just been built is positioned
+  BEFORE it enters the document, because a transition needs two values to move
+  between and a new token should appear where it belongs rather than fly in
+  from the corner of the map; swapping between helmet and longship rebuilds
+  it, because a helmet cannot tween into a ship and pretending otherwise looks
+  worse than the cut it actually is.
+  Cards rise as they arrive. Numbers in the top bar flash when they move, and
+  only when they move: the bar keeps its own memory of the last reading, the
+  FIRST reading never flashes — opening the game is not a moment where six
+  numbers changed — and a stat it has never seen before is not a change
+  either. Day is deliberately left out, because it changes every single turn
+  and flashing it would train the eye to ignore the whole bar.
+  All of it is off for anyone who has asked for reduced motion. 481 tests.
 
 - **2026-08-06 — 5.3 (part): the curve, measured — and a wall** — The
   difficulty of this game had never been measured, only felt. It is now: a

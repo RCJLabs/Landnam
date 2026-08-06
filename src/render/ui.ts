@@ -22,15 +22,19 @@ import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
 import { angriest, neighbourHere, neighbourLine, standingOf } from '../sim/neighbours';
 import { button, el } from './svg';
+import { makeWatch } from './motion';
 
 export type Dispatch = (action: Action) => void;
 
-function stat(label: string, value: string, warn = false): HTMLElement {
-  return el('div', { class: `stat${warn ? ' warn' : ''}` }, [
+function stat(label: string, value: string, warn = false, bump = false): HTMLElement {
+  return el('div', { class: `stat${warn ? ' warn' : ''}${bump ? ' bumped' : ''}` }, [
     el('span', { class: 'stat-label' }, [label]),
     el('span', { class: 'stat-value' }, [value]),
   ]);
 }
+
+/** The top bar's own memory of the numbers, so a change can be pointed at. */
+const watchTopBar = makeWatch();
 
 export function renderTopBar(state: GameState): HTMLElement {
   const season = seasonOf(state.day);
@@ -41,13 +45,19 @@ export function renderTopBar(state: GameState): HTMLElement {
   const daysOfFood = Math.floor(food / foodPerDay(state));
   const nightsOfWood = Math.floor(wood / firewoodPerNight(state));
 
+  const band = living(state.party.people).length;
+  const heart = Math.round(state.party.morale);
+  // Day is deliberately left out: it changes every single turn, so flashing
+  // it would train the eye to ignore the whole bar.
+  const moved = watchTopBar({ band, food, wood, heart });
+
   const bar = el('div', { class: 'topbar' }, [
     stat('Day', `${state.day}`),
     stat('Season', effects.label, season === 'winter'),
-    stat('Band', `${living(state.party.people).length}`, living(state.party.people).length <= 2),
-    stat('Food', `${food}`, daysOfFood <= 2),
-    stat('Wood', `${wood}`, nightsOfWood <= 2),
-    stat('Heart', `${Math.round(state.party.morale)}`, state.party.morale < 30),
+    stat('Band', `${band}`, band <= 2, moved.band),
+    stat('Food', `${food}`, daysOfFood <= 2, moved.food),
+    stat('Wood', `${wood}`, nightsOfWood <= 2, moved.wood),
+    stat('Heart', `${heart}`, state.party.morale < 30, moved.heart),
   ]);
 
   if (untilWinter > 0 && untilWinter <= 16) {

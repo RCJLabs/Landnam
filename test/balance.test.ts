@@ -34,6 +34,7 @@
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { fallenOf } from '../src/sim/fallen';
+import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
 import { moveOptions, canGather, canFish } from '../src/sim/travel';
 import { canFound, siteReport } from '../src/sim/site';
@@ -277,5 +278,39 @@ describe('the memorial outlives the run', () => {
   it('leaves the living off it', () => {
     const state = structuredClone(newGame('living'));
     expect(fallenOf(state)).toHaveLength(0);
+  });
+});
+
+// --- Motion ---
+
+describe('the chrome points at what changed', () => {
+  it('says nothing on the first reading', () => {
+    // Opening the game is not a moment where six numbers changed. Flashing
+    // the whole bar on load is noise with no information in it.
+    expect(bumped(null, { food: 24, wood: 8 })).toEqual({});
+  });
+
+  it('marks only the numbers that actually moved', () => {
+    const moved = bumped({ food: 24, wood: 8, heart: 70 }, { food: 21, wood: 8, heart: 70 });
+    expect(moved.food).toBe(true);
+    expect(moved.wood).toBe(false);
+    expect(moved.heart).toBe(false);
+  });
+
+  it('does not bump a number it has never seen before', () => {
+    // A stat that appears mid-run (a bar gaining a column) has not changed.
+    expect(bumped({ food: 24 }, { food: 24, wood: 8 }).wood).toBe(false);
+  });
+
+  it('remembers between readings, and each watch keeps its own memory', () => {
+    const bar = makeWatch();
+    const other = makeWatch();
+    expect(bar({ food: 24 })).toEqual({});
+    expect(bar({ food: 24 }).food).toBe(false);
+    expect(bar({ food: 20 }).food).toBe(true);
+    // Reading the same value twice in a row is not a change either.
+    expect(bar({ food: 20 }).food).toBe(false);
+    // The other bar has seen nothing, so it is still on its first reading.
+    expect(other({ food: 20 })).toEqual({});
   });
 });

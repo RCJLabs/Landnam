@@ -57,6 +57,10 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     );
   }
 
+  /** The band's token, kept between repaints so it can be moved rather than remade. */
+  let token: SVGGElement | null = null;
+  let tokenAfloat = false;
+
   function centreOn(h: Hex): void {
     const p = toPixel(h, HEX_SIZE);
     camera.x = p.x;
@@ -69,7 +73,9 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     layerTerrain.replaceChildren();
     layerRivers.replaceChildren();
     layerOverlay.replaceChildren();
-    layerParty.replaceChildren();
+    // NOT cleared: the token is kept across repaints so it can glide from one
+    // hex to the next rather than being destroyed and rebuilt somewhere else.
+    // Everything else on this layer is redrawn as usual.
 
     // Only draw what has been seen — the unknown is simply absent.
     for (const [k, visibility] of Object.entries(state.world.seen)) {
@@ -141,9 +147,34 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       layerOverlay.append(steading(state.settlement.at));
     }
 
-    layerParty.append(
-      atSea(state) ? shipToken(state.party.at) : partyToken(state.party.at),
-    );
+    placeToken(state);
+  }
+
+  /**
+   * Puts the band where it is now. The element is made once and then only
+   * moved, which is the whole trick: a CSS transition on the group's
+   * transform turns a state change into a glide, with no timer and no
+   * animation frame anywhere in the game.
+   *
+   * Swapping between walking and afloat rebuilds it, because a helmet cannot
+   * tween into a longship and pretending otherwise would look worse than the
+   * cut it actually is.
+   */
+  function placeToken(state: GameState): void {
+    const afloat = atSea(state);
+    const p = toPixel(state.party.at, HEX_SIZE);
+    if (!token || tokenAfloat !== afloat) {
+      token = afloat ? shipToken() : partyToken();
+      tokenAfloat = afloat;
+      // Positioned BEFORE it goes into the document. A transition needs two
+      // computed values to move between, and an element that arrives already
+      // in the right place never has a first one — so a new token appears
+      // where it belongs instead of flying in from the corner of the map.
+      token.setAttribute('transform', `translate(${p.x} ${p.y})`);
+      layerParty.replaceChildren(token);
+      return;
+    }
+    token.setAttribute('transform', `translate(${p.x} ${p.y})`);
   }
 
   function neighbourOptions(state: GameState): Hex[] {
@@ -382,18 +413,27 @@ function steading(at: Hex): SVGGElement {
  * width of about 50px on a phone, detail smaller than the nasal bar turns to
  * mush, so there is none.
  */
-function partyToken(at: Hex): SVGGElement {
-  const p = toPixel(at, HEX_SIZE);
+/**
+ * The band, drawn at the ORIGIN rather than at its hex.
+ *
+ * Position is a transform on the group, which is what lets the token glide
+ * from one hex to the next instead of teleporting: the element persists
+ * across repaints and a CSS transition on `transform` does the rest, with no
+ * animation frame and no timer on the game side. Everything here stays
+ * turn-based — the state moved the instant the tap landed; only the picture
+ * takes a moment to catch up.
+ */
+function partyToken(): SVGGElement {
   const s = HEX_SIZE;
   const g = svgEl('g', { class: 'party-token' });
 
   g.append(
     // The shield he is standing behind, and the dark disc that keeps the
     // whole thing legible over meadow, sand or snow alike.
-    svgEl('circle', { cx: p.x, cy: p.y, r: s * 0.48, fill: '#1d1a14', opacity: 0.6 }),
+    svgEl('circle', { cx: 0, cy: 0, r: s * 0.48, fill: '#1d1a14', opacity: 0.6 }),
     svgEl('circle', {
-      cx: p.x,
-      cy: p.y,
+      cx: 0,
+      cy: 0,
       r: s * 0.4,
       fill: '#b23b2e',
       stroke: '#e8dcc0',
@@ -404,8 +444,8 @@ function partyToken(at: Hex): SVGGElement {
     // bucket.
     svgEl('path', {
       d:
-        `M ${p.x - s * 0.27} ${p.y - s * 0.04} ` +
-        `Q ${p.x} ${p.y + s * 0.52} ${p.x + s * 0.27} ${p.y - s * 0.04} Z`,
+        `M ${-s * 0.27} ${-s * 0.04} ` +
+        `Q 0 ${s * 0.52} ${s * 0.27} ${-s * 0.04} Z`,
       fill: '#c9a15c',
       stroke: '#2a2318',
       'stroke-width': 1.1,
@@ -413,56 +453,55 @@ function partyToken(at: Hex): SVGGElement {
     // Helm: a dome sitting on the brow line, filling most of the disc.
     svgEl('path', {
       d:
-        `M ${p.x - s * 0.3} ${p.y - s * 0.04} ` +
-        `Q ${p.x - s * 0.3} ${p.y - s * 0.4} ${p.x} ${p.y - s * 0.4} ` +
-        `Q ${p.x + s * 0.3} ${p.y - s * 0.4} ${p.x + s * 0.3} ${p.y - s * 0.04} Z`,
+        `M ${-s * 0.3} ${-s * 0.04} ` +
+        `Q ${-s * 0.3} ${-s * 0.4} 0 ${-s * 0.4} ` +
+        `Q ${s * 0.3} ${-s * 0.4} ${s * 0.3} ${-s * 0.04} Z`,
       fill: '#98a1ad',
       stroke: '#2a2318',
       'stroke-width': 1.3,
     }),
     // Nasal bar down past the brow, and a dark eye either side of it.
     svgEl('rect', {
-      x: p.x - s * 0.055,
-      y: p.y - s * 0.14,
+      x: -s * 0.055,
+      y: -s * 0.14,
       width: s * 0.11,
       height: s * 0.26,
       fill: '#98a1ad',
       stroke: '#2a2318',
       'stroke-width': 1,
     }),
-    svgEl('rect', { x: p.x - s * 0.22, y: p.y - s * 0.13, width: s * 0.13, height: s * 0.09, fill: '#2a2318' }),
-    svgEl('rect', { x: p.x + s * 0.09, y: p.y - s * 0.13, width: s * 0.13, height: s * 0.09, fill: '#2a2318' }),
+    svgEl('rect', { x: -s * 0.22, y: -s * 0.13, width: s * 0.13, height: s * 0.09, fill: '#2a2318' }),
+    svgEl('rect', { x: s * 0.09, y: -s * 0.13, width: s * 0.13, height: s * 0.09, fill: '#2a2318' }),
   );
   return g;
 }
 
-/** The same band, afloat: the knarr under them, shields on the rail. */
-function shipToken(at: Hex): SVGGElement {
-  const p = toPixel(at, HEX_SIZE);
+/** The same band, afloat: the knarr under them, shields on the rail. Also at the origin. */
+function shipToken(): SVGGElement {
   const s = HEX_SIZE;
   const g = svgEl('g', { class: 'party-token afloat' });
   const half = s * 0.5;
 
   g.append(
-    svgEl('ellipse', { cx: p.x, cy: p.y + s * 0.18, rx: s * 0.62, ry: s * 0.26, fill: '#1d1a14', opacity: 0.45 }),
+    svgEl('ellipse', { cx: 0, cy: s * 0.18, rx: s * 0.62, ry: s * 0.26, fill: '#1d1a14', opacity: 0.45 }),
     // Mast, then the square sail on it: one red stripe on undyed wool, which
     // is the whole of what a longship reads as at this size.
     svgEl('line', {
-      x1: p.x, y1: p.y - s * 0.56, x2: p.x, y2: p.y + s * 0.16,
+      x1: 0, y1: -s * 0.56, x2: 0, y2: s * 0.16,
       stroke: '#2a2318', 'stroke-width': 2.2,
     }),
     svgEl('rect', {
-      x: p.x - s * 0.3, y: p.y - s * 0.52, width: s * 0.6, height: s * 0.4,
+      x: -s * 0.3, y: -s * 0.52, width: s * 0.6, height: s * 0.4,
       fill: '#e8dcc0', stroke: '#2a2318', 'stroke-width': 1.2,
     }),
-    svgEl('rect', { x: p.x - s * 0.3, y: p.y - s * 0.38, width: s * 0.6, height: s * 0.13, fill: '#b23b2e' }),
+    svgEl('rect', { x: -s * 0.3, y: -s * 0.38, width: s * 0.6, height: s * 0.13, fill: '#b23b2e' }),
     // Hull: a shallow curve rising to a stem at each end.
     svgEl('path', {
       d:
-        `M ${p.x - half} ${p.y + s * 0.02} ` +
-        `Q ${p.x} ${p.y + s * 0.5} ${p.x + half} ${p.y + s * 0.02} ` +
-        `L ${p.x + half * 0.8} ${p.y - s * 0.14} ` +
-        `Q ${p.x} ${p.y + s * 0.26} ${p.x - half * 0.8} ${p.y - s * 0.14} Z`,
+        `M ${-half} ${s * 0.02} ` +
+        `Q 0 ${s * 0.5} ${half} ${s * 0.02} ` +
+        `L ${half * 0.8} ${-s * 0.14} ` +
+        `Q 0 ${s * 0.26} ${-half * 0.8} ${-s * 0.14} Z`,
       fill: '#4a3b28',
       stroke: '#e8dcc0',
       'stroke-width': 1.6,
