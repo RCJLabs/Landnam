@@ -122,7 +122,25 @@ export const MIGRATIONS: Record<number, Migration> = {
 
   // v10 -> v11: people keep a tally of each other. A band from before this
   // existed was getting along by definition, so it comes forward with none.
-  10: (save) => ({ grudges: [], ...save, version: 11 }),
+  // Personal morale arrived with the feuds, and it lives on the PERSON — so
+  // the root-level `grudges: []` is only half the job. A save from before
+  // this carried people with no morale at all, and every mood, drift and
+  // grudge calculation downstream of it quietly became NaN. Caught by a
+  // fixture test years of saves later than it should have been.
+  //
+  // They come forward at the band's own morale rather than at some neutral
+  // number: before this version the warband's figure WAS everyone's figure,
+  // so that is the honest reading of what the old save meant.
+  10: (save) => {
+    const party = save['party'] as
+      | { morale?: number; people?: Record<string, unknown>[] }
+      | undefined;
+    const shared = typeof party?.morale === 'number' ? party.morale : 50;
+    if (party?.people) {
+      party.people = party.people.map((person) => ({ morale: shared, ...person }));
+    }
+    return { grudges: [], ...save, version: 11 };
+  },
 
   // v11 -> v12: parties go out from the steading. An absent expedition means
   // everyone is home, which is exactly what an older save describes.

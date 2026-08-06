@@ -91,6 +91,29 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — A save-migration bug, and the ground a wall needs** — Two
+  audit items. The first found a real bug within a minute of existing: a
+  fixture test that carries a v1 save forward and then asks whether it is
+  PLAYABLE — every field a new game has, every field a person has, decoded,
+  played on for twelve turns, and re-saved to a fixed point. Personal morale
+  arrived at version 11 and lives on the person, but the migration only added
+  the root-level `grudges: []` — so every save older than 4.1 came forward
+  with people whose morale was `undefined`, and every mood, drift and grudge
+  calculation downstream of it quietly became NaN. They now come forward at
+  the band's own morale, which before that version WAS everyone's figure.
+  The second is a floor under the shield wall. Battlefields already guarantee
+  a walkable LANE, which is the opposite of what a line needs — a corridor
+  admits single file, and single file is how you lose the fight the wall was
+  meant to win. Fields now also guarantee somewhere four can stand abreast.
+  Honest accounting: the guarantee is currently inert. No terrain the game
+  ships ever produces a field without a four-wide stand, so it fires never and
+  the shield-wall figures are unchanged at 33 wins to 30. It is a regression
+  guard on data — obstacle density is a table anyone can tune — and it does
+  NOT on its own make the rejected landing change safe, because the mechanism
+  there is row DENSITY, not existence: four can stand abreast in 98% of meadow
+  rows and 40% of ocean ones, and that spread is what decides whether a line
+  is worth forming. 488 tests.
+
 - **2026-08-06 — Two levers for the flat late game, both thrown away** — The
   game's difficulty lives entirely in one season: 41 of 43 bands that get
   through the first winter reach the second. Two fixes were built and

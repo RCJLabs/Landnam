@@ -1,8 +1,16 @@
 // 2.3: the shield wall, and nerve — breaking, fleeing, rallying.
 
 import { describe, it, expect } from 'vitest';
-import { distance, offsetToAxial } from '../src/hex';
+import {
+  FRONT_WIDTH,
+  MIDDLE_ROWS,
+  generateBattlefield,
+  widestStand,
+} from '../src/sim/battlefield';
+import { makeRng } from '../src/rng';
+import { distance, key, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
+import type { Terrain } from '../src/state/types';
 import { encode } from '../src/state/save';
 import { apply } from '../src/sim/actions';
 import { activeCombatant, effective, fighterPerson, standing } from '../src/sim/battle';
@@ -443,5 +451,51 @@ describe('formation play beats brawling', () => {
       expect(formation(seed).battle?.outcome, seed).toBeDefined();
     }
     expect(encode(formation('formation-0'))).toBe(encode(formation('formation-0')));
+  });
+});
+
+/**
+ * The ground a wall needs.
+ *
+ * This exists because a proposed worldgen change moved where bands land, and
+ * on the worlds it produced the shield wall went dead level with charging in.
+ * Where you land decides where you fight, so terrain that fragments the middle
+ * of the field can silently erase a milestone the game is built on. Obstacle
+ * density is plain data in MIXES — one edit away from doing it again.
+ */
+describe('every field has ground a line can form on', () => {
+  const ALL: Terrain[] = [
+    'ocean', 'shore', 'meadow', 'forest', 'hills', 'mountains', 'bog', 'valley',
+  ];
+
+  it('gives every terrain somewhere four can stand abreast', () => {
+    for (const terrain of ALL) {
+      for (let i = 0; i < 60; i += 1) {
+        const { grid } = generateBattlefield(terrain, makeRng(`front-${terrain}-${i}`));
+        const widest = Math.max(...MIDDLE_ROWS.map((row) => widestStand(grid, row)));
+        expect(widest, `${terrain} field ${i} had nowhere to form up`).toBeGreaterThanOrEqual(
+          FRONT_WIDTH,
+        );
+      }
+    }
+  });
+
+  it('holds even on ground far heavier than anything shipped', () => {
+    // The guarantee is currently never exercised — today's heaviest terrain,
+    // mountains, still leaves a four-wide stand somewhere on every field. That
+    // is exactly why it is worth asserting: it is a floor nobody is standing
+    // on yet, and the next tuning pass on MIXES is what it is there to catch.
+    // A field of near-solid rock must still be a battle rather than a corridor.
+    const solid = generateBattlefield('mountains', makeRng('hostile'));
+    for (const row of MIDDLE_ROWS) {
+      for (let col = 0; col < 7; col += 1) {
+        const tile = solid.grid[key(offsetToAxial(col, row))];
+        if (tile) tile.ground = 'block';
+      }
+    }
+    // Re-running the guarantee on a field we have just sealed proves it is the
+    // guarantee doing the work and not the dice.
+    const sealed = Math.max(...MIDDLE_ROWS.map((row) => widestStand(solid.grid, row)));
+    expect(sealed).toBe(0);
   });
 });

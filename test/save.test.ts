@@ -132,3 +132,110 @@ describe('migration registry', () => {
     }
   });
 });
+
+/**
+ * The failure mode these guard is the one that actually destroys a player's
+ * run: a migration that advances the version but forgets a field, leaving an
+ * `undefined` for a renderer or a reducer to trip over three turns later. The
+ * existing v1 fixture proves a save ARRIVES; these prove it is playable when
+ * it gets here.
+ */
+describe('a migrated save is a playable save', () => {
+  /** A v1 save with real people and real ground in it, not an empty shell. */
+  function frozenV1(): Record<string, unknown> {
+    const seedGame = newGame('frozen-fixture');
+    return {
+      version: 1,
+      seed: 'frozen-fixture',
+      day: 20,
+      modes: ['TRAVEL'],
+      world: structuredClone(seedGame.world),
+      party: {
+        at: { ...seedGame.party.at },
+        // Two people carrying only the fields v1 knew about. Everything a
+        // later version added must be filled in by a migration, not by luck.
+        people: seedGame.party.people.slice(0, 2).map((p) => ({
+          id: p.id,
+          name: p.name,
+          byname: p.byname,
+          age: p.age,
+          stats: { ...p.stats },
+          trait: p.trait,
+          health: p.health,
+          maxHealth: p.maxHealth,
+          injuries: [],
+          alive: true,
+        })),
+        food: 18,
+        firewood: 6,
+        morale: 55,
+        hasCamped: false,
+      },
+      saga: [{ day: 1, text: 'We came ashore.', tone: 'plain' }],
+      flags: {},
+      nextId: 9,
+    };
+  }
+
+  it('comes forward with every field a new game has', () => {
+    const migrated = migrate(frozenV1()).save;
+    const today = newGame('shape-reference') as unknown as Record<string, unknown>;
+    const missing = Object.keys(today).filter((field) => !(field in migrated));
+    // Optional fields are absent on a fresh game too, so anything `newGame`
+    // sets is something every save must have — that is the whole contract.
+    expect(missing, `migrated save is missing: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('gives every carried-forward person the fields the code reads today', () => {
+    const migrated = migrate(frozenV1()).save;
+    const party = migrated['party'] as { people: Record<string, unknown>[] };
+    const reference = newGame('person-reference').party.people[0] as unknown as Record<
+      string,
+      unknown
+    >;
+    // `job`, `fate` and `diedOn` are genuinely optional — nobody has a job
+    // before there is a steading, and the living have no fate.
+    const optional = new Set(['job', 'fate', 'diedOn']);
+    for (const person of party.people) {
+      const missing = Object.keys(reference).filter(
+        (field) => !optional.has(field) && !(field in person),
+      );
+      expect(missing, `person missing: ${missing.join(', ')}`).toEqual([]);
+    }
+  });
+
+  it('decodes into a state the game will actually accept', () => {
+    const loaded = decode(JSON.stringify(frozenV1()));
+    expect(loaded).not.toBeNull();
+    expect(loaded!.version).toBe(SAVE_VERSION);
+    expect(loaded!.party.people).toHaveLength(2);
+    expect(loaded!.saga[0]?.text).toBe('We came ashore.');
+  });
+
+  it('can be played on without throwing', () => {
+    // The real test of a migration: take a turn on what came back.
+    let state = decode(JSON.stringify(frozenV1()))!;
+    expect(() => {
+      for (let i = 0; i < 12 && !state.end; i += 1) {
+        const options = moveOptions(state);
+        state = apply(
+          state,
+          state.event
+            ? { type: 'DISMISS_EVENT' }
+            : options.length > 0
+              ? { type: 'MOVE', to: options[i % options.length]! }
+              : { type: 'CAMP' },
+        );
+      }
+    }).not.toThrow();
+    expect(state.day).toBeGreaterThan(20);
+  });
+
+  it('survives a second trip through save and load unchanged', () => {
+    // A migrated save is re-encoded the moment the player takes a turn, so
+    // migrate(load(save(migrate(old)))) has to be a fixed point.
+    const once = decode(JSON.stringify(frozenV1()))!;
+    const twice = decode(encode(once))!;
+    expect(encode(twice)).toBe(encode(once));
+  });
+});

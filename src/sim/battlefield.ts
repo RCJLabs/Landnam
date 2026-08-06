@@ -89,6 +89,7 @@ export function generateBattlefield(
   }
 
   ensureCrossable(grid, rng);
+  ensureFront(grid, rng);
   return { grid, warbandSpots, foeSpots };
 }
 
@@ -113,6 +114,58 @@ function ensureCrossable(grid: Record<HexKey, BattleTile>, rng: Rng): void {
     const tile = grid[key(offsetToAxial(lane, row))];
     if (tile && !isPassable(tile.ground)) tile.ground = 'rough';
   }
+}
+
+/**
+ * How many shoulders the ground must be able to hold in a row.
+ *
+ * Four, because the shield wall's bonus comes from standing next to people
+ * and caps at two neighbours: four abreast is a line with a proper middle.
+ */
+export const FRONT_WIDTH = 4;
+
+/**
+ * A field with no room to form a line is a field where the shield wall does
+ * not exist — and the wall is a whole milestone of this game.
+ *
+ * `ensureCrossable` above guarantees a walkable LANE, which is the opposite
+ * thing: a corridor admits single file, and single file is exactly how you
+ * lose a fight the wall was supposed to win. On heavy ground — forest blocks
+ * one hex in six, mountains nearly one in four — the middle of the field
+ * fragments into pockets, adjacency breaks, and holding the line stops paying
+ * for itself. This guarantees somewhere on the field where four can stand
+ * abreast, whatever country the fight was rolled from.
+ */
+function ensureFront(grid: Record<HexKey, BattleTile>, rng: Rng): void {
+  for (const row of MIDDLE_ROWS) {
+    if (widestStand(grid, row) >= FRONT_WIDTH) return;
+  }
+
+  // Nowhere to form up: clear a stretch. Rough rather than open, because the
+  // ground is still what it is — bog is bog, you just can stand in a line in
+  // it. Only the impassable is moved.
+  const row = rng.pick(MIDDLE_ROWS);
+  const start = rng.int(0, Math.max(0, FIELD_WIDTH - FRONT_WIDTH));
+  for (let col = start; col < start + FRONT_WIDTH; col += 1) {
+    const tile = grid[key(offsetToAxial(col, row))];
+    if (tile && !isPassable(tile.ground)) tile.ground = 'rough';
+  }
+}
+
+/** The longest run of hexes in one row that people can actually stand in. */
+export function widestStand(grid: Record<HexKey, BattleTile>, row: number): number {
+  let best = 0;
+  let run = 0;
+  for (let col = 0; col < FIELD_WIDTH; col += 1) {
+    const tile = grid[key(offsetToAxial(col, row))];
+    if (tile && isPassable(tile.ground)) {
+      run += 1;
+      best = Math.max(best, run);
+    } else {
+      run = 0;
+    }
+  }
+  return best;
 }
 
 // --- The steading under attack ---
