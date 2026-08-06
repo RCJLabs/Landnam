@@ -21,6 +21,10 @@ no audio files, no network.
   best suited to the work.
 - **Events** put choices in front of you with the odds shown. Checks roll
   2d6 plus your best hand for the job; they are meant to be lost sometimes.
+- **Fights** zoom into a hex battlefield made from the ground you were
+  standing on. Turn order comes from wits; each fighter gets a move and one
+  action. Tap a dashed hex to step, a ringed foe to strike. Win or lose, you
+  come back to the road.
 - **The saga log** writes down what happened, in chronicle voice. It is the
   record of the run.
 - **Winter** starts on day 49 and stops the land from giving. Reaching spring

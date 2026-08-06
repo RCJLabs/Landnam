@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 2.1**
+> **CURRENT MILESTONE: 2.2**
 
 ---
 
@@ -50,7 +50,7 @@ Goal: land on a hostile coast, explore, and survive to winter.
 
 Goal: encounters zoom into battles worth winning.
 
-- [ ] **2.1 Battle scene** — Combat events push BATTLE mode: small hex battlefield (~9×7) generated from the overworld hex's terrain. Initiative order from stats. Move + one action per turn. *Done when: a full battle round-trips back to travel.*
+- [x] **2.1 Battle scene** — Combat events push BATTLE mode: small hex battlefield (7×9, portrait) generated from the overworld hex's terrain. Initiative order from stats. Move + one action per turn. *Done when: a full battle round-trips back to travel.*
 - [ ] **2.2 Actions & AI** — Strike, throw (axe/spear), shove, defend, dash. Facing-free, zone-of-control melee. Simple enemy AI (aggressive / cautious / flanker archetypes). *Done when: fights are winnable and losable on purpose.*
 - [ ] **2.3 Shield wall & morale** — Adjacent allied warriors form a shield wall: shared defense bonus that shatters when a link falls. Unit morale: breaking, fleeing, rallying. *Done when: formation play beats brawling.*
 - [ ] **2.4 Consequences** — Persistent injuries, permadeath, loot, XP → stat growth. Deaths written into the saga. *Done when: losing a veteran hurts — ship v0.2.*
@@ -90,6 +90,15 @@ Order negotiable; each is a shippable minor version.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 2.1 Battle scene** — BATTLE mode pushes over travel and pops
+  back. Foes are `Person` objects like anyone else, so a `Combatant` carries
+  only position and turn state. Battlefield generated from the overworld hex's
+  terrain (7×9 portrait, so a hex clears the 44px touch target on a phone),
+  with a guaranteed crossable lane and deployment that leaves elbow room.
+  Initiative from wits; move plus one strike per turn; foes close and swing on
+  their own. Three combat events now draw steel. `SAVE_VERSION` 2 with a
+  migration. 135 tests.
 
 - **2026-08-06 — v0.1 "The Whale Road"** — Phases 0 and 1 complete. Single-file
   build (49 kB, runs offline from `file://`). Shared axial hex library with A*

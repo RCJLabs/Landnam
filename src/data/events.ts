@@ -23,7 +23,9 @@ export type Effect =
   | { t: 'injure' }
   | { t: 'kill' }
   | { t: 'flag'; flag: string; n: number }
-  | { t: 'reveal'; radius: number };
+  | { t: 'reveal'; radius: number }
+  /** Draws steel: the fight begins once the card is dismissed. */
+  | { t: 'battle'; difficulty?: number };
 
 export interface Outcome {
   text: string;
@@ -226,7 +228,55 @@ export const EVENTS: EventDef[] = [
         success: { text: 'They came out and spoke. We learned the shape of the land, and whose it was.', effects: [{ t: 'reveal', radius: 4 }, { t: 'morale', n: 3 }] },
         failure: { text: 'They melted into the trees without a word. We slept badly.', effects: [{ t: 'morale', n: -5 }, { t: 'flag', flag: 'wary', n: 1 }] },
       },
+      {
+        label: 'Take them before they carry word',
+        success: { text: 'We went into the trees after them, and they did not run far.', effects: [{ t: 'battle', difficulty: -1 }] },
+      },
       { label: 'Keep walking, weapons loose', success: { text: 'We walked on with our hands near our axes and nothing came of it.', effects: [{ t: 'flag', flag: 'wary', n: 1 }] } },
+    ],
+  },
+  {
+    id: 'landing-party',
+    title: 'Another Keel on the Sand',
+    body: 'A ship drawn up where ours should be, and men around a fire who stand when they see us. They have the same look we do: too far from home, and not going back empty.',
+    weight: 9,
+    when: [{ c: 'dayMin', day: 7 }, { c: 'terrain', any: ['shore', 'meadow', 'valley'] }],
+    choices: [
+      {
+        label: 'Go at them',
+        success: { text: 'No words were wasted. We went down the sand at them.', effects: [{ t: 'battle', difficulty: 1 }] },
+      },
+      {
+        label: 'Try to treat with them',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'Their leader heard us out. We parted with the coast divided between us, after a fashion.', effects: [{ t: 'morale', n: 5 }, { t: 'flag', flag: 'wary', n: 1 }] },
+        failure: { text: 'Someone reached for an axe, and after that there was nothing to say.', effects: [{ t: 'battle', difficulty: 1 }] },
+      },
+      {
+        label: 'Withdraw before they count us',
+        check: { stat: 'wits', dc: 11 },
+        success: { text: 'We went back the way we came, quietly, and they never followed.', effects: [{ t: 'morale', n: -3 }] },
+        failure: { text: 'They saw us go, and they were faster than we were.', effects: [{ t: 'battle', difficulty: 0 }] },
+      },
+    ],
+  },
+  {
+    id: 'wolves-press',
+    title: 'The Pack Comes In',
+    body: 'The wolves that shadowed us have stopped shadowing. They are between us and the open ground, and they are not pacing any more.',
+    weight: 7,
+    when: [{ c: 'dayMin', day: 14 }, { c: 'terrain', any: ['forest', 'hills', 'bog'] }],
+    choices: [
+      {
+        label: 'Set our backs together and meet them',
+        success: { text: 'We put our backs together and let them come.', effects: [{ t: 'battle', difficulty: -1 }] },
+      },
+      {
+        label: 'Fire and noise',
+        check: { stat: 'craft', dc: 12 },
+        success: { text: 'Burning brands and shouting. They went, grudging every step.', effects: [{ t: 'firewood', n: -2 }, { t: 'morale', n: 2 }] },
+        failure: { text: 'The brands guttered in the wet and the pack came on anyway.', effects: [{ t: 'firewood', n: -2 }, { t: 'battle', difficulty: 0 }] },
+      },
     ],
   },
   {

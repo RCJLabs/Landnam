@@ -119,6 +119,58 @@ export interface ActiveEvent {
   outcome?: { text: string; good: boolean };
 }
 
+// --- Battle ---
+
+/**
+ * Battlefield ground. Deliberately coarse for 2.1: cover and elevation
+ * arrive with the shield wall in 2.3.
+ */
+export type Ground = 'open' | 'rough' | 'block' | 'water';
+
+export interface BattleTile {
+  ground: Ground;
+}
+
+export type Side = 'warband' | 'foe';
+
+/**
+ * Per-battle state for one fighter. Deliberately holds NO stats, name, or
+ * health — those live on the Person this points at, because a person is one
+ * object in every mode. Look them up with `fighterPerson`.
+ */
+export interface Combatant {
+  personId: string;
+  side: Side;
+  at: Hex;
+  initiative: number;
+  /** Movement left this turn. */
+  movesLeft: number;
+  /** The one action per turn has been spent. */
+  hasActed: boolean;
+  /** Dropped: out of this fight, but not necessarily dead (see 2.4). */
+  down: boolean;
+}
+
+export type BattleOutcome = 'won' | 'lost';
+
+export interface Battle {
+  /** The overworld terrain this ground was generated from. */
+  terrain: Terrain;
+  width: number;
+  height: number;
+  grid: Record<HexKey, BattleTile>;
+  /** Enemies are People too — same model, same renderer treatment. */
+  foes: Person[];
+  combatants: Combatant[];
+  /** personIds, highest initiative first. */
+  order: string[];
+  /** Index into `order` of whoever is acting. */
+  turnIndex: number;
+  round: number;
+  log: string[];
+  outcome?: BattleOutcome;
+}
+
 // --- Run end ---
 
 export interface RunEnd {
@@ -142,6 +194,8 @@ export interface GameState {
   /** Arbitrary counters events can read and write. */
   flags: Record<string, number>;
   event?: ActiveEvent;
+  /** Present only while the BATTLE mode is on the stack. */
+  battle?: Battle;
   end?: RunEnd;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;

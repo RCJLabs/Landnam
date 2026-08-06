@@ -6,6 +6,7 @@ import { stream } from '../rng';
 import { EVENTS, eventById, type Condition, type Effect, type EventDef } from '../data/events';
 import type { ActiveEvent, GameState, Stats } from '../state/types';
 import { seasonOf } from './calendar';
+import { startBattle } from './battleTurn';
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
@@ -153,6 +154,12 @@ function applyEffect(state: GameState, effect: Effect): void {
         }
       }
       break;
+    case 'battle':
+      // Queued, not started: the player reads the outcome first, and the
+      // field only appears once they dismiss the card.
+      state.flags['pendingBattle'] = 1;
+      state.flags['pendingBattleDifficulty'] = effect.difficulty ?? 0;
+      break;
   }
 }
 
@@ -181,7 +188,16 @@ export function chooseOption(state: GameState, index: number): void {
   checkRunEnd(state, 1);
 }
 
-/** Dismisses a resolved card and hands control back to travel. */
+/** Dismisses a resolved card, drawing steel first if the choice called for it. */
 export function dismissEvent(state: GameState): void {
-  if (state.event?.outcome) delete state.event;
+  if (!state.event?.outcome) return;
+  delete state.event;
+
+  if ((state.flags['pendingBattle'] ?? 0) > 0 && !state.end) {
+    const difficulty = state.flags['pendingBattleDifficulty'] ?? 0;
+    delete state.flags['pendingBattle'];
+    delete state.flags['pendingBattleDifficulty'];
+    const terrain = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
+    startBattle(state, terrain, difficulty);
+  }
 }

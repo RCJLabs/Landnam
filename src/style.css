@@ -61,6 +61,19 @@ body,
   cursor: grab;
 }
 
+/* The battlefield frames itself, so no panning — just tap. */
+.field {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: manipulation;
+  background: #2b2a22;
+}
+
+button[disabled='true'] {
+  opacity: 0.45;
+}
+
 .sea {
   fill: var(--sea);
   filter: url(#water);

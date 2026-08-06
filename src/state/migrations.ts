@@ -15,8 +15,10 @@ export type Migration = (save: Record<string, unknown>) => Record<string, unknow
 
 /** Keyed by the version being migrated FROM. */
 export const MIGRATIONS: Record<number, Migration> = {
-  // Example for the next bump:
-  // 1: (save) => ({ ...save, newField: 0, version: 2 }),
+  // v1 -> v2: the BATTLE layer arrived. `battle` is optional and absent
+  // means "no fight in progress", so a v1 save needs no reshaping — but the
+  // bump still ships a migration, because the registry refuses silent gaps.
+  1: (save) => ({ ...save, version: 2 }),
 };
 
 export interface MigrationResult {

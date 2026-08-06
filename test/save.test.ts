@@ -75,28 +75,49 @@ describe('migration registry', () => {
     expect(() => migrate({ version: 0 })).toThrow(/no migration registered/);
   });
 
-  it('walks a save up through a chain of migrations', () => {
-    // Simulates a future bump: register temporary steps and prove the walk.
+  it('walks a save up through every registered migration in turn', () => {
+    // Register a step below the real ones so the walk has to chain: the fake
+    // 0->1 runs, then every real migration up to SAVE_VERSION follows.
     const added: number[] = [];
-    const fake: Record<number, Migration> = {
-      0: (save) => {
-        added.push(0);
-        return { ...save, addedInV1: true, version: 1 };
-      },
+    const fake: Migration = (save) => {
+      added.push(0);
+      return { ...save, addedInV1: true, version: 1 };
     };
     const original = { ...MIGRATIONS };
     try {
-      Object.assign(MIGRATIONS, fake);
+      MIGRATIONS[0] = fake;
       const result = migrate({ version: 0, keep: 'me' });
-      expect(result.applied).toBe(1);
+      // One fake step plus one per real migration from v1 upward.
+      expect(result.applied).toBe(SAVE_VERSION);
       expect(result.save['version']).toBe(SAVE_VERSION);
+      // Fields introduced early must survive every later migration.
       expect(result.save['addedInV1']).toBe(true);
       expect(result.save['keep']).toBe('me');
       expect(added).toEqual([0]);
     } finally {
-      for (const k of Object.keys(fake)) delete MIGRATIONS[Number(k)];
+      delete MIGRATIONS[0];
       Object.assign(MIGRATIONS, original);
     }
+  });
+
+  it('carries a real v1 save forward to the current version', () => {
+    // A frozen fixture from before the BATTLE layer existed.
+    const v1: Record<string, unknown> = {
+      version: 1,
+      seed: 'frozen-v1',
+      day: 12,
+      modes: ['TRAVEL'],
+      party: { at: { q: 0, r: 0 }, people: [], food: 5, firewood: 2, morale: 50, hasCamped: false },
+      saga: [],
+      flags: {},
+      nextId: 1,
+    };
+    const result = migrate(v1);
+    expect(result.save['version']).toBe(SAVE_VERSION);
+    expect(result.save['seed']).toBe('frozen-v1');
+    expect(result.save['day']).toBe(12);
+    // No fight was in progress, and none should be invented.
+    expect(result.save['battle']).toBeUndefined();
   });
 
   it('catches a migration that fails to advance the version', () => {
