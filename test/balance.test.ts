@@ -39,7 +39,6 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { effectsOn, winterDepth } from '../src/sim/calendar';
 import { markHaze } from '../src/sim/winter';
-import { fallenOf } from '../src/sim/fallen';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
 import { moveOptions, canGather, canFish } from '../src/sim/travel';
@@ -51,7 +50,8 @@ import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle } from '../src/sim/battleTurn';
 import { MAX_RAIDERS, MAX_RAIDERS_FAMED, raiderCap } from '../src/sim/battle';
-import { RAID_CHANCE_MAX, raidDifficulty, raidOdds } from '../src/sim/raid';
+import { RAID_CHANCE_MAX, SACK_TAKES, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
+import { fallenOf } from '../src/sim/fallen';
 import { capacity, crowding } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
@@ -805,5 +805,76 @@ describe('somebody who walked out is not somebody who died', () => {
     state.party.people[1]!.alive = false;
     state.party.people[1]!.left = true;
     expect(foodPerDay(state)).toBeLessThan(before);
+  });
+});
+
+// --- 3, 4 and 5 of the audit, deliberately in one place ---
+
+describe('losing a raid costs the one thing that is scarce', () => {
+  function sacked(seed: string, extraHands: number): GameState {
+    for (let i = 0; i < 150; i += 1) {
+      const state = structuredClone(newGame(`${seed}-${i}`));
+      if (!foundSettlement(state)) continue;
+      state.settlement!.built.push('longhouse', 'bud', 'meadhall');
+      state.party.food = 120;
+      state.party.firewood = 90;
+      for (let h = 0; h < extraHands; h += 1) {
+        state.party.people.push({
+          ...state.party.people[0]!, id: `hand-${h}`, bond: 'hand', alive: true, joinedOn: 1,
+        });
+      }
+      return state;
+    }
+    throw new Error('nothing foundable');
+  }
+
+  it('carries hands off, and never the sworn', () => {
+    const state = sacked('taken', 4);
+    const out = sackSteading(state);
+    expect(out.taken.length).toBeGreaterThan(0);
+    expect(out.taken.length).toBeLessThanOrEqual(SACK_TAKES);
+    // The warband is fixed at six and a raid must not end a run by dice.
+    expect(sworn(state.party.people)).toHaveLength(SWORN_MAX);
+  });
+
+  it('takes nobody when there is nobody but the sworn to take', () => {
+    const state = sacked('bare', 0);
+    expect(sackSteading(state).taken).toHaveLength(0);
+    expect(living(state.party.people)).toHaveLength(SWORN_MAX);
+  });
+
+  it('puts the carried-off on the memorial, unlike somebody who walked out', () => {
+    // Taken is not the same as left. A man carried off by raiders genuinely
+    // did not come back, and the wall is exactly the place to say so.
+    const state = sacked('wall', 3);
+    sackSteading(state);
+    expect(fallenOf(state).some((f) => f.fate.includes('carried off'))).toBe(true);
+  });
+
+  it('costs labour the band has to win back rather than simply out-work', () => {
+    const state = sacked('labour', 4);
+    const before = living(state.party.people).length;
+    sackSteading(state);
+    expect(living(state.party.people).length).toBeLessThan(before);
+  });
+});
+
+describe('raids are measured, not assumed', () => {
+  it('records how often a raid comes and how often it is held', { timeout: CURVE_TIMEOUT }, () => {
+    // Item 5 of the audit: nothing counted how often a raid was LOST, only
+    // how often one fired — so the change above had no baseline to move.
+    let fired = 0;
+    let held = 0;
+    let sagas = 0;
+    for (let s = 0; s < 20; s += 1) {
+      const state = run(`curve-${s}`, 169);
+      fired += state.tally.raids;
+      held += state.tally.raidsHeld;
+      if (state.tally.raids > 0) sagas += 1;
+    }
+    // eslint-disable-next-line no-console
+    console.log(`raids over 20 sagas: ${fired} came, ${held} held, ${fired - held} lost; ${sagas} sagas saw one`);
+    expect(fired).toBeGreaterThan(0);
+    expect(held).toBeLessThanOrEqual(fired);
   });
 });

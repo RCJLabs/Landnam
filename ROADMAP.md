@@ -69,15 +69,22 @@ the Thing is a lap of honour rather than a climax.
    `alive: false` so the upkeep accounting stays right, which counts them
    among the dead and puts them on the memorial. The fate text distinguishes
    them; the tally and the saga do not.
-3. **[~] NEXT — Make a lost raid cost hands.** The conclusion of five measured
+3. **[x] Make a lost raid cost hands.** The conclusion of five measured
    levers. A sacking takes stores and fires a building, both replaceable.
    Taking people is the only untried lever not priced in material.
-4. **[ ] Teach the balance bot 6.2.** It never accepts joiners, never manages
+4. **[x] Teach the balance bot 6.2.** It never accepts joiners, never manages
    capacity, never sees the sworn/hand split — so every measurement about
    GROWTH is unreliable. Must land in the same commit as item 3.
-5. **[ ] Measure raid outcomes.** Nothing counts how often a raid is LOST,
+5. **[x] Measure raid outcomes.** Baseline: **15 raids came, 0 held**. Nothing counts how often a raid is LOST,
    only how often one fires. That is the number item 3 moves, and there is no
    baseline for it.
+5b. **[~] NEXT — 6.3 overshot: nothing holds a raid.** The new baseline says
+   15 raids came across twenty sagas and the band held **none of them**. A
+   palisade and six sworn should hold some — that is what 3.5 measured and
+   what the wall's eight timber is for. Raising the raider cap to fourteen
+   and the difficulty clamp to ten went too far together. Tune against BOTH
+   `test/wall.test.ts` and this baseline, and expect the survival curve to
+   move for the first time when it lands.
 6. **[ ] Triple the event deck** (39 → ~100). Cheapest quality per hour in the
    project: pure data, guarded by the content lint, no engine risk.
 7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
@@ -224,6 +231,27 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — A sacking takes people, and the raids turn out to be
+  unholdable** — Five levers had failed on one number and every one of them
+  was priced in food, firewood or timber, which a settled band replaces
+  faster than anything can take it. So a sacking now carries hands off: two
+  at most, never the sworn, because the warband is fixed at six and a raid
+  that could take it would end runs by dice rather than by decision. That
+  costs the one thing 6.2 made scarce — labour that has to be recruited back
+  and given room — and it cannot be answered by fielding more of your own.
+  The carried-off go on the memorial, unlike somebody who walked out: a man
+  taken by raiders genuinely did not come back.
+  Shipped in the same commit as the measurement, on purpose, because
+  separating the two is exactly how three misleading readings were produced
+  earlier today. And the measurement immediately earned it: across twenty
+  sagas, **fifteen raids came and the band held none of them**. Not one. A
+  palisade and six sworn are supposed to hold some — that is what 3.5
+  measured, and it is what the wall's eight timber is for. Raising the raider
+  cap to fourteen and the difficulty clamp to ten in 6.3 went too far
+  together, and nothing was watching that number until now.
+  The fix is the next thing in the queue rather than a rushed edit at the end
+  of a long session. 532 tests.
 
 - **2026-08-06 — Two audit fixes: the invisible system, and the lie about the
   dead** — An audit found that `bond`, `capacity`, `crowding` and `roomLeft`

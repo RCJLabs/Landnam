@@ -10,6 +10,7 @@ import type { GameState } from '../state/types';
 import { effectiveReport } from './colony';
 import { standing } from './battle';
 import { angerLevel, raidPressure } from './neighbours';
+import { hands } from './people';
 import { wintersStood } from './calendar';
 import { chronicle } from './saga';
 import { learn } from './lore';
@@ -26,7 +27,29 @@ export interface Sack {
   firewood: number;
   /** Building id burned, if any. */
   burned?: string;
+  /** Names of the hands carried off. */
+  taken: string[];
 }
+
+/**
+ * The most hands a single sacking carries off.
+ *
+ * This is the conclusion of five measured levers, every one of which failed
+ * for the same reason. Raid pressure, deeper winters, a vaguer mark, bigger
+ * raids, more frequent raids: all of them priced the threat in food,
+ * firewood or timber, and a settled band replaces material faster than
+ * anything in the game can take it. The survival curve did not move once.
+ *
+ * Losing has to cost the thing 6.2 deliberately made scarce. A sacking that
+ * carries people off takes labour that has to be recruited back, room that
+ * has to be kept, and — because the warband is fixed at six — it cannot be
+ * answered by fielding more of your own.
+ *
+ * Hands only. The sworn who were going to die did so on the field; a raid
+ * that also carried off the warband would end runs by dice rather than by
+ * decision.
+ */
+export const SACK_TAKES = 2;
 
 /**
  * How hard the raid is. Bigger settlements are worth robbing, so the longer
@@ -131,7 +154,23 @@ export function sackSteading(state: GameState): Sack {
   state.party.food = Math.max(0, state.party.food - food);
   state.party.firewood = Math.max(0, state.party.firewood - firewood);
 
-  const out: Sack = { food, firewood };
+  const out: Sack = { food, firewood, taken: [] };
+
+  // And they take people. Hands, not sworn — see SACK_TAKES.
+  const takeable = hands(state.party.people);
+  for (const person of rng.shuffle(takeable).slice(0, SACK_TAKES)) {
+    person.alive = false;
+    person.fate = `was carried off when ${home.name} was sacked`;
+    person.diedOn = state.day;
+    out.taken.push(person.name);
+  }
+  if (out.taken.length > 0) {
+    chronicle(
+      state,
+      `${out.taken.join(' and ')} went with them, and we could not stop it.`,
+      'grim',
+    );
+  }
 
   // Something burns. The longhouse is the last thing they fire, because it is
   // full of people — everything else goes first.
