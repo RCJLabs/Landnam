@@ -78,13 +78,18 @@ the Thing is a lap of honour rather than a climax.
 5. **[x] Measure raid outcomes.** Baseline: **15 raids came, 0 held**. Nothing counts how often a raid is LOST,
    only how often one fires. That is the number item 3 moves, and there is no
    baseline for it.
-5b. **[~] NEXT — 6.3 overshot: nothing holds a raid.** The new baseline says
-   15 raids came across twenty sagas and the band held **none of them**. A
-   palisade and six sworn should hold some — that is what 3.5 measured and
-   what the wall's eight timber is for. Raising the raider cap to fourteen
-   and the difficulty clamp to ten went too far together. Tune against BOTH
-   `test/wall.test.ts` and this baseline, and expect the survival curve to
-   move for the first time when it lands.
+5b. **[~] NEXT — teach the bot to form a line, THEN judge the raids.** The
+   baseline says 15 raids came and none were held, and the first instinct —
+   that 6.3's cap raise overshot — is wrong. Sweeping the raider cap
+   (14 → 11 → 10) and the difficulty clamp (10 → 8 → 7) gave **identical**
+   results at every setting, because neither binds: the foe count is
+   `round(6 × 0.9) + difficulty`, so a typical raid fields about nine
+   whatever the ceiling says.
+   What actually loses them is that the harness charges the nearest foe and
+   never forms a shield wall — and `test/wall.test.ts` already measures that
+   charging loses. So "0 held" is very likely the SIXTH harness artifact of
+   the day rather than a game defect, and it cannot be told apart from one
+   until the bot can stand in a line. Do that first; re-measure after.
 6. **[ ] Triple the event deck** (39 → ~100). Cheapest quality per hour in the
    project: pure data, guarded by the content lint, no engine risk.
 7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
@@ -231,6 +236,24 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — The raids may not be broken; the bot cannot form a line** —
+  Fifteen raids came across twenty sagas and none were held, which looked like
+  6.3 having overshot. It is not that. Sweeping the raider cap through 14, 11
+  and 10 and the difficulty clamp through 10, 8 and 7 produced **identical**
+  numbers at every setting — because neither binds. The foe count is
+  `round(warband × 0.9) + difficulty`, so six defenders draw about nine
+  raiders whatever the ceiling is set to, and both knobs were sitting above
+  the value that actually decides the fight.
+  What loses those fights is almost certainly the measuring instrument. The
+  balance harness charges the nearest foe and never stands shoulder to
+  shoulder — and `test/wall.test.ts` exists precisely because charging loses
+  to holding the line. That makes "0 held" the sixth harness artifact of the
+  day rather than a finding about the game, and the two cannot be told apart
+  until the bot can form a wall.
+  Nothing was tuned on the strength of it. The cap and clamp are back exactly
+  where they shipped, and the queue now says to fix the bot first and judge
+  the raids afterwards. 532 tests.
 
 - **2026-08-06 — A sacking takes people, and the raids turn out to be
   unholdable** — Five levers had failed on one number and every one of them
