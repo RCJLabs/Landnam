@@ -59,6 +59,19 @@ export const RAID_RESPITE = 14;
 export const RAID_CHANCE_MAX = 0.055;
 
 /**
+ * What a point of being-worth-taking is worth as a daily chance.
+ *
+ * Tuned against test/thing.test.ts rather than against the survival curve,
+ * because that test carries a promise the survival curve cannot see: a band
+ * that builds the hall, keeps the peace and makes a friend must be able to
+ * reach the endgame. Measured across the four bands in that test — at 0.006
+ * one of the four got there, at 0.003 three did, and at 0.0015 all four do.
+ * A raid every other year for a rich hall is a hazard; one every season is a
+ * siege that eats the mead hall before the Thing can be called in it.
+ */
+const CHANCE_PER_WORTH = 0.0015;
+
+/**
  * The chance, on a given day, that somebody comes for the steading.
  *
  * Raids used to arrive ONLY as event cards, which made their frequency a
@@ -90,7 +103,7 @@ export function raidOdds(state: GameState): number {
   const warned = effectiveReport(state)!.defence * 0.22 + home.watch * 0.16;
 
   const drawn = Math.max(0, worth + grievance - warned);
-  return Math.min(RAID_CHANCE_MAX, drawn * 0.006);
+  return Math.min(RAID_CHANCE_MAX, drawn * CHANCE_PER_WORTH);
 }
 
 /**

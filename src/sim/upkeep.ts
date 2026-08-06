@@ -27,17 +27,17 @@ export const SURVIVAL_DAY = 73;
 /**
  * Somebody comes for the steading, or does not.
  *
- * NOT WIRED IN, deliberately, and the reason is worth keeping: rolling this
- * each day does exactly what 6.3 wanted — raids stop being a matter of which
- * card came up — and it breaks a Phase 4 guarantee doing it. With it live,
- * the bar in test/thing.test.ts ("a band that builds the hall, keeps the
- * peace and makes a friend gets there") fell from 4 of 4 to 1 of 4. Harder is
- * the goal; unreachable is not, and a band that did everything asked of it
- * must still be able to call a Thing.
+ * Rolled on its own rather than drawn from the event deck, because the deck
+ * made raids a matter of which card came up: a quarter of whole sagas never
+ * saw one at all, so their size could not decide a run however large 6.3 made
+ * them.
  *
- * What it needs is a tuning pass against that test rather than against the
- * survival curve alone — the odds, the respite, and what a lost raid actually
- * costs all move it. Left here, tested, and switched off until then.
+ * The rate is tuned against test/thing.test.ts, not against the survival
+ * curve, because that test carries a promise the curve cannot see — a band
+ * that builds the hall, keeps the peace and makes a friend must still be able
+ * to reach the endgame. The first cut took that from 4 of 4 to 1 of 4, which
+ * is harder in the wrong way: a siege that eats the mead hall before the
+ * Thing can be called in it is not difficulty, it is a dead end.
  */
 export function maybeRaid(state: GameState): void {
   if (state.end || state.battle || state.event) return;
@@ -213,6 +213,7 @@ export function passDay(state: GameState): boolean {
   // Moods have just moved, so this is the moment somebody decides they have
   // had enough. Only hands ever do — the sworn are sworn.
   handsLeave(state);
+  maybeRaid(state);
   stirGrudges(state, pressure);
   feudsComeDue(state);
   // The coast forgets slowly, and only a little each day.

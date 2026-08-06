@@ -47,6 +47,12 @@ in this document):
 | spring (day 73) | 47% |
 | the second winter — the Thing's window (day 169) | 47% |
 
+Five levers have now been aimed at that 47% and none has shifted it. Four of
+them were priced in food, firewood or timber; the fifth was a clamp. The
+conclusion the evidence supports is that **a settled band replaces material
+faster than anything can take it**, so the late game cannot be threatened
+through the survival loop at all — only through people.
+
 **The open problem, and Phase 6's whole reason for existing:** the late game
 is flat. A band that gets through the first winter reaches the second in
 almost every case, so one season holds the entire difficulty of the game and
@@ -54,13 +60,15 @@ the Thing is a lap of honour rather than a climax.
 
 **What is next, in order:**
 
-1. **Tune raid frequency until it does not break the Thing.** `raidOdds` and
-   `maybeRaid` are written, tested and deliberately NOT wired in
-   (`sim/raid.ts`, `sim/upkeep.ts`). Rolling raids daily does exactly what
-   6.3 wanted — and drops the Phase 4 bar in `test/thing.test.ts` from 4 of 4
-   bands reaching the endgame to 1 of 4. Harder is the goal; unreachable is
-   not. The odds, the respite, and what a lost raid COSTS all move it, and it
-   has to be tuned against that test rather than the survival curve alone.
+1. **Make a lost raid cost PEOPLE, not stores.** This is the conclusion of
+   five measured levers. Everything tried so far has been priced in food,
+   firewood or timber, and a settled band replaces those faster than any
+   threat can take them — which is why the curve has not moved once all day.
+   A sacking currently carries off two fifths of the store and fires a
+   building. If it also took hands — killed, or carried off — then losing
+   would cost the thing 6.2 made scarce, attrition would finally have a
+   source, and the answer would be the wall and the coast rather than a
+   bigger woodpile. Tune against `test/thing.test.ts` as well as the curve.
 2. **Re-measure.** If frequency moves the two-winter figure off 47%, Phase 6's
    thesis is proved. If it does not, that is four levers on one mechanism and
    the honest conclusion is that the late game needs a different KIND of
@@ -84,7 +92,7 @@ here so the next attempt does not begin by repeating them.
 | Raid pressure rising with the steading's fame | No curve change at three magnitudes. **The reason was a clamp, not the design** — see below. |
 | Winters deepening with the years, alone | Zero change for a careful player AND a careless one (18/40 either way): the winter mark was a perfect forecast, so the band simply stocked to the bigger number. Shipped later as 6.1, once the mark was made vague. |
 | A landing chosen near settleable ground | Fixed a real problem (settleable ground a median 5 and up to 11 hexes from the sand) and broke a bigger one: where you land decides where you fight, and on the worlds it produced the shield wall went dead level with charging in — 33 wins/157 standing became 32/158 over sixty seeds. Rejected. |
-| Rolling a raid every day instead of drawing one from the deck | Does what it says — but took `test/thing.test.ts` from 4 of 4 bands reaching the endgame to 1 of 4. Written, tested, and switched off pending a tuning pass. |
+| Rolling a raid every day instead of drawing one from the deck | Shipped after tuning. The first rate took `test/thing.test.ts` from 4 of 4 bands reaching the endgame to 1 of 4; measured at 0.006 → 1/4, 0.003 → 3/4, 0.0015 → 4/4. Raids now fire regularly and the curve STILL does not move, because bands hold them and losing one costs only stores. |
 | Guaranteeing a four-wide front on every battlefield | Shipped, but currently inert: no terrain the game ships ever fails it. A regression guard on tunable data, not a fix. The real mechanism is row DENSITY — 98% of meadow rows can hold a line against 40% of ocean ones. |
 
 **The lesson under most of these:** four null results in one day, and the
@@ -182,13 +190,14 @@ because by year two it has more labour than uses for it.
   steading holds who it has room for, three cards bring people in, and hands
   who have had enough walk out. The curve did not move — growth is possible
   but rare, and it takes 6.3's pressure to make a bigger band necessary.*
-- [~] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
+- [x] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
   answer is walls, allies and standing rather than a bigger woodpile. Makes
   4.3's neighbours load-bearing.
-  *The disconnected lever is fixed: raids can now field up to fourteen and
-  provocation reaches the field. The curve still has not moved, because raids
-  are rare — roughly three runs in four see one at all. Frequency is the next
-  thing to look at, not size.*
+  *Done: raids field up to fourteen, provocation reaches the field, and a
+  steading worth taking is now visited on its own schedule rather than when
+  the deck happens to offer it. The curve still has not moved — bands hold
+  the raids. What a LOST raid costs is the remaining lever: it takes stores,
+  and stores are the one thing a settled band always replaces.*
 - [ ] **6.4 No last winter** — Remove the five-winter forced ending; a run
   goes as long as it is held. The Thing becomes a milestone in a saga rather
   than its final page.
@@ -200,6 +209,29 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — Raids come on their own schedule now** — A steading worth
+  taking is visited because it is worth taking, not because the event deck
+  happened to offer the card: years stood, building raised and food in the
+  store all draw them, a coast with a grievance needs less excuse, and the
+  watch and the wall buy it back down — the first thing in this game that has
+  ever made standing the watch worth it on a quiet day.
+  The rate was tuned against `test/thing.test.ts` rather than the survival
+  curve, because that test carries a promise the curve cannot see: a band
+  that builds the hall, keeps the peace and makes a friend must still be able
+  to reach the endgame. Measured across its four bands — 0.006 got one of
+  them there, 0.003 got three, 0.0015 gets all four. A raid every other year
+  for a rich hall is a hazard; one every season is a siege that eats the mead
+  hall before the Thing can be called in it, which is harder in the wrong
+  direction.
+  And the curve still does not move: 77% reach the first winter, 47% see
+  spring, 47% reach the second. That is now five levers aimed at one number
+  without shifting it, and the evidence has stopped being ambiguous. Four of
+  the five were priced in food, firewood or timber, and a settled band
+  replaces those faster than anything can take them. A lost raid carries off
+  two fifths of the store and fires a building — both of which come back. The
+  next lever, and the roadmap says so plainly, is that losing must cost
+  HANDS. 525 tests.
 
 - **2026-08-06 — Raid frequency, written and switched off** — 6.3 made raids
   bigger and the curve did not move, because raids were rare: they arrived
