@@ -251,7 +251,8 @@ describe('standing is a memory', () => {
     old['version'] = 12;
 
     const { save, applied } = migrate(old);
-    expect(applied).toBe(1);
+    // v12 -> v13 -> v14: the coast, then what the band knows.
+    expect(applied).toBe(SAVE_VERSION - 12);
     const back = save as unknown as GameState;
     expect(back.neighbours).toEqual([]);
     // And an empty coast is a coherent thing to be: nothing reads off it.

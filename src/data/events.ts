@@ -5,6 +5,8 @@
 // outcomes are what gets copied into the saga log.
 
 import type { Season, Stats, Terrain } from '../state/types';
+import type { LoreId } from './lore';
+import type { BuildingId } from './buildings';
 
 export type Condition =
   | { c: 'terrain'; any: Terrain[] }
@@ -25,7 +27,13 @@ export type Condition =
   /** The angriest neighbour is at least this far below nothing. */
   | { c: 'anger'; min: number }
   /** The friendliest neighbour thinks at least this well of us. */
-  | { c: 'goodwill'; min: number };
+  | { c: 'goodwill'; min: number }
+  /** The band has NOT worked this out yet. How a discovery stops repeating. */
+  | { c: 'unknown'; lore: LoreId }
+  /** The band already knows this. Lets one discovery lead to another. */
+  | { c: 'known'; lore: LoreId }
+  /** This building is standing at the steading. */
+  | { c: 'built'; building: BuildingId };
 
 export type Effect =
   | { t: 'food'; n: number }
@@ -42,7 +50,9 @@ export type Effect =
   /** They came for the steading. Fought on your own ground, with it at stake. */
   | { t: 'raid'; difficulty?: number }
   /** Moves what one neighbour thinks of you. Cards say which one they mean. */
-  | { t: 'standing'; n: number; who: 'angriest' | 'friendliest' };
+  | { t: 'standing'; n: number; who: 'angriest' | 'friendliest' }
+  /** The band works something out. See data/lore.ts. */
+  | { t: 'learn'; lore: LoreId };
 
 export interface Outcome {
   text: string;
@@ -648,6 +658,197 @@ export const EVENTS: EventDef[] = [
         success: {
           text: 'We took the news at the field edge and went back to the barley. They noticed that we had.',
           effects: [{ t: 'reveal', radius: 2 }, { t: 'standing', n: -6, who: 'friendliest' }],
+        },
+      },
+    ],
+  },
+
+  // --- Discoveries (4.4) ---
+  //
+  // Every one of these is gated on `unknown`, so it stops appearing the moment
+  // the band has the thing. That is the whole of the "not a tech tree" rule:
+  // knowledge arrives because you were somewhere, not because you chose it off
+  // a list. A failed check is not a dead end — the card can come round again.
+
+  {
+    id: 'carved-boulder',
+    title: 'Marks on the Boulder',
+    body: 'A boulder the size of a byre, and one flat face of it covered in cut lines — angular, deliberate, weathered but not worn away. Somebody wanted this remembered.',
+    weight: 16,
+    when: [
+      { c: 'unknown', lore: 'runes' },
+      { c: 'terrain', any: ['hills', 'mountains', 'meadow', 'valley'] },
+      { c: 'dayMin', day: 5 },
+    ],
+    choices: [
+      {
+        label: 'Sit with it until the marks make sense',
+        check: { stat: 'wits', dc: 12 },
+        success: {
+          text: 'By the second day we had it: not a picture but a voice, the same few marks over and over for the same few sounds. We cut our own names into the back of it before we left.',
+          effects: [{ t: 'learn', lore: 'runes' }, { t: 'morale', n: 5 }],
+        },
+        failure: {
+          text: 'We stared at it until the light went and came away with nothing but a copy of it scratched on bark.',
+          effects: [{ t: 'morale', n: -2 }],
+        },
+      },
+      {
+        label: 'Copy what we can and walk on',
+        success: {
+          text: 'We took a rubbing in charcoal and left the stone to whoever it belonged to.',
+          effects: [],
+        },
+      },
+    ],
+  },
+  {
+    id: 'red-stone',
+    title: 'Red Stone in the Bank',
+    body: 'Where the stream has cut the bank there is a seam of it — heavy, rust-coloured, and nothing like the rock around it. One of the older hands turns a lump of it over and does not put it down.',
+    weight: 16,
+    when: [
+      { c: 'unknown', lore: 'smithing' },
+      { c: 'terrain', any: ['bog', 'hills', 'mountains'] },
+      { c: 'dayMin', day: 8 },
+    ],
+    choices: [
+      {
+        label: 'Build a bank of charcoal and try it',
+        check: { stat: 'craft', dc: 13 },
+        success: {
+          text: 'Three days of it, and most of that spent failing. What came out of the fourth burn was a bloom the size of a fist, and what came off the anvil after that held an edge.',
+          effects: [{ t: 'learn', lore: 'smithing' }, { t: 'firewood', n: -6 }],
+        },
+        failure: {
+          text: 'We burned a week of firewood and got slag and blisters. Somebody said we had not got the colour right, which nobody could argue with.',
+          effects: [{ t: 'firewood', n: -5 }, { t: 'morale', n: -3 }],
+        },
+      },
+      {
+        label: 'Note where it is and get on',
+        success: {
+          text: 'We marked the bend in the stream and left it in the ground. It was not going anywhere.',
+          effects: [],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-old-sky',
+    title: 'The Sky Before a Hard Night',
+    body: 'Clear as glass at dusk, and cold in a way that has intent behind it. The oldest of us looks up for a long while and says we should bank the fire differently tonight.',
+    weight: 15,
+    when: [
+      { c: 'unknown', lore: 'skywatch' },
+      { c: 'season', any: ['autumn', 'winter'] },
+      { c: 'dayMin', day: 24 },
+    ],
+    choices: [
+      {
+        label: 'Do it their way and watch how',
+        check: { stat: 'spirit', dc: 11 },
+        success: {
+          text: 'Turf over the embers, a stone at the windward side, and a hollow left for the air. There were coals in the morning. There had not been, any morning before.',
+          effects: [{ t: 'learn', lore: 'skywatch' }],
+        },
+        failure: {
+          text: 'We smothered it entirely and woke to cold ash and a lecture.',
+          effects: [{ t: 'firewood', n: -2 }, { t: 'morale', n: -2 }],
+        },
+      },
+      {
+        label: 'Build it high and sit up with it',
+        success: {
+          text: 'We burned through the night and were warm the whole of it, which was one way of solving the problem.',
+          effects: [{ t: 'firewood', n: -4 }, { t: 'morale', n: 3 }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-yarrow',
+    title: 'Yarrow and Birch Bark',
+    body: 'The sick one is no better and the arguments about what to do have started. Somebody remembers what their mother used, and somebody else remembers it differently.',
+    weight: 18,
+    when: [{ c: 'unknown', lore: 'leechcraft' }, { c: 'sick' }],
+    choices: [
+      {
+        label: 'Try it, and keep account of what works',
+        check: { stat: 'craft', dc: 12 },
+        success: {
+          text: 'Yarrow on the wound, birch bark boiled down for the fever, and the sick one kept warm and left alone. By the third day there was no arguing with the result.',
+          effects: [{ t: 'learn', lore: 'leechcraft' }, { t: 'heal', n: 3 }],
+        },
+        failure: {
+          text: 'We tried everything anybody could remember, all at once, and learned nothing from any of it.',
+          effects: [{ t: 'morale', n: -3 }],
+        },
+      },
+      {
+        label: 'Keep them warm and let it run its course',
+        success: {
+          text: 'We wrapped them up, kept the fire in, and waited. It was not nothing.',
+          effects: [{ t: 'heal', n: 2 }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-herb-woman',
+    title: 'She Brings Her Own Bag',
+    body: 'One of them walks up from the camp with a satchel and no escort, points at the worst of our sick, and starts unpacking on the floor of the hall without asking anybody.',
+    weight: 14,
+    when: [
+      { c: 'unknown', lore: 'leechcraft' },
+      { c: 'goodwill', min: 30 },
+      { c: 'settled' },
+    ],
+    choices: [
+      {
+        label: 'Stand out of her way and watch her hands',
+        success: {
+          text: 'She worked for two days and explained nothing, and we learned the whole of it anyway by watching. Whatever we owe them, it went up.',
+          effects: [{ t: 'learn', lore: 'leechcraft' }, { t: 'heal', n: 4 }, { t: 'standing', n: 8, who: 'friendliest' }],
+        },
+      },
+      {
+        label: 'Thank her and see her out',
+        success: {
+          text: 'We took the herbs and sent her home with bread, which was polite and cost us the rest of it.',
+          effects: [{ t: 'heal', n: 2 }, { t: 'standing', n: -4, who: 'friendliest' }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'where-she-takes-water',
+    title: 'Where She Takes Water',
+    body: 'The knarr is making more water than she should and nobody can agree where from. Somebody proposes hauling her out and going over the whole hull plank by plank.',
+    weight: 15,
+    when: [
+      { c: 'unknown', lore: 'shipwright' },
+      { c: 'nearWater' },
+      { c: 'dayMin', day: 10 },
+    ],
+    choices: [
+      {
+        label: 'Haul her out and go over every plank',
+        check: { stat: 'craft', dc: 12 },
+        success: {
+          text: 'A day lost and a strake sprung near the stem, which nobody would have found from inside her. We learned more about how a hull is meant to sit than we had in a season of sailing one.',
+          effects: [{ t: 'learn', lore: 'shipwright' }, { t: 'morale', n: 3 }],
+        },
+        failure: {
+          text: 'We had her up on rollers all day, found nothing, and put her back in wetter than she came out.',
+          effects: [{ t: 'morale', n: -3 }],
+        },
+      },
+      {
+        label: 'Bail her and get on with it',
+        success: {
+          text: 'We set somebody to bailing and said no more about it.',
+          effects: [],
         },
       },
     ],

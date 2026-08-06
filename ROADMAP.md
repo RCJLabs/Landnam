@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 4.4**
+> **CURRENT MILESTONE: 4.5**
 
 ---
 
@@ -72,7 +72,7 @@ Order negotiable; each is a shippable minor version.
 - [x] **4.1 Minds & feuds** — Moods from needs/events; trait interactions; grudges between settlers; feud events with blood-price resolutions.
 - [x] **4.2 Expeditions** — Launch parties FROM the colony back onto the world map (raid, trade, explore) while the colony sims on. The loop becomes a wheel.
 - [x] **4.3 Neighbors** — Persistent rival clans and native settlements: reputation, trade, tribute, alliances, escalation.
-- [ ] **4.4 Knowledge** — Discovery-driven progression (runes, shipwright, smithing) unlocked by exploration and events, not a tech-tree menu.
+- [x] **4.4 Knowledge** — Discovery-driven progression (runes, shipwright, smithing) unlocked by exploration and events, not a tech-tree menu.
 - [ ] **4.5 The Saga** — Run-end saga generator: your whole game retold as a short prose saga from the log. Shareable seed + saga.
 - [ ] **4.6 Endgame** — Victory: survive N winters and hold a Thing to be proclaimed jarl. Defeat: warband extinguished.
 
@@ -91,6 +91,23 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 4.4 Knowledge** — Six things a band can work out, and not one
+  of them bought. There is no research screen and nothing to spend: rune-craft
+  comes off a carved boulder in the hills, iron-craft off a seam of bog ore and
+  four days of failing at it, sky-reading off an old hand banking a fire in a
+  particular way, leechcraft off somebody being ill — or off a woman walking up
+  from a friendly camp with her own bag and explaining nothing. The other two
+  are taught by things you did rather than cards you drew: finishing the dock
+  teaches you how a hull is put together, and holding a raid teaches you what a
+  shield wall actually is. Every entry moves exactly one existing formula and
+  says so in one line on the roster: reckonings go better and the dead weigh
+  less, a day on the water costs less, blows bite deeper, a night needs less
+  wood, hurts mend faster and the cold bites less, a line is worth more.
+  Measured: sixty identical swings deal 134 without iron-craft and 160 with;
+  twenty cold nights put 101 people down untaught and 72 with leechcraft. Every
+  discovery card is gated on not already knowing the thing, so it stops
+  appearing the moment you have it and a failed attempt leaves the stone there
+  to come back to. `SAVE_VERSION` 14 with a migration. 393 tests.
 - **2026-08-06 — The sea, one button, and a face** — Three fixes off a phone
   playtest. The knarr is on the map now: a beached hull marks where you came
   ashore, and coastal water — any sea hex with land in sight — can be rowed at

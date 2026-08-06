@@ -12,6 +12,7 @@ import { chronicle } from './saga';
 import { atHome, foundSettlement } from './site';
 import { fieldCrew, permittedStep } from './expedition';
 import { bargain, bargainBlocker, canFallOn, fallOn, seeNeighbours } from './neighbours';
+import { bonus } from './lore';
 import { startBattle } from './battleTurn';
 import { passDay } from './upkeep';
 
@@ -55,7 +56,10 @@ export function moveEffort(state: GameState, to: Hex): number | null {
   if (!tile) return null;
   const penalty = effectsOn(state.day).travelPenalty;
   if (tile.terrain === 'ocean') {
-    return isCoastalWater(state, to) ? SEA_EFFORT + penalty : null;
+    if (!isCoastalWater(state, to)) return null;
+    // A band that knows how a hull is meant to sit gets more out of a day on
+    // the water. Never below one: a hex of sea is still a hex of sea.
+    return Math.max(1, SEA_EFFORT + penalty - bonus(state, 'sea'));
   }
   const def = terrainDef(tile.terrain);
   if (!Number.isFinite(def.cost)) return null;

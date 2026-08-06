@@ -10,6 +10,7 @@ import { startBattle, startRaid } from './battleTurn';
 import { raidDifficulty } from './raid';
 import { settleFeud } from './minds';
 import { purposeDef } from './expedition';
+import { bonus, knows, learn } from './lore';
 import { angerLevel, angriest, friendliest, goodwillLevel, shiftStanding, stirFactor } from './neighbours';
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
@@ -58,6 +59,12 @@ function conditionHolds(state: GameState, condition: Condition): boolean {
       return angerLevel(state) >= condition.min;
     case 'goodwill':
       return goodwillLevel(state) >= condition.min;
+    case 'unknown':
+      return !knows(state, condition.lore);
+    case 'known':
+      return knows(state, condition.lore);
+    case 'built':
+      return state.settlement?.built.includes(condition.building) ?? false;
   }
 }
 
@@ -91,7 +98,7 @@ export function presentEvent(state: GameState, def: EventDef): ActiveEvent {
     body: def.body,
     choices: def.choices.map((choice) => {
       if (!choice.check) return { label: choice.label };
-      const stat = bestStat(state.party.people, choice.check.stat);
+      const stat = bestStat(state.party.people, choice.check.stat) + bonus(state, 'check');
       const percent = Math.round(checkOdds(stat, choice.check.dc) * 100);
       return { label: choice.label, hint: `${STAT_LABEL[choice.check.stat]} · ${percent}%` };
     }),
@@ -213,6 +220,9 @@ function applyEffect(state: GameState, effect: Effect): void {
       if (who) shiftStanding(state, who.id, effect.n);
       break;
     }
+    case 'learn':
+      learn(state, effect.lore);
+      break;
   }
 }
 
@@ -237,7 +247,9 @@ export function chooseOption(state: GameState, index: number): void {
 
   let good = true;
   if (choice.check) {
-    const stat = bestStat(state.party.people, choice.check.stat);
+    // What the band knows counts on every card: a reckoning goes better when
+    // somebody can point at what was actually agreed.
+    const stat = bestStat(state.party.people, choice.check.stat) + bonus(state, 'check');
     const rng = stream(state.seed, 'events').derive(`check:${def.id}:${state.day}:${index}`);
     good = rng.roll(2, 6) + stat >= choice.check.dc;
   }

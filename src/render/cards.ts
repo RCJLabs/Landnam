@@ -7,6 +7,7 @@ import { exploredFraction } from '../sim/fog';
 import { XP_PER_ADVANCE } from '../sim/consequences';
 import { scoreWord, siteReport, strongestOf, verdictFor } from '../sim/site';
 import { moodOf, MOOD_WORD } from '../sim/minds';
+import { known } from '../sim/lore';
 import { jobOf } from '../sim/colony';
 import {
   LAUNCH_REASON,
@@ -312,6 +313,22 @@ export function renderWarband(state: GameState, close: () => void): HTMLElement 
     }
   }
 
+  // What the band has worked out lives with the band. Deliberately NOT a
+  // menu: there is nothing to click here and nothing to spend, only a record
+  // of things that happened and what each one turned out to be worth.
+  const learned = known(state);
+  if (learned.length > 0) {
+    card.append(el('h3', {}, ['What We Know']));
+    for (const lore of learned) {
+      card.append(
+        el('div', { class: 'lore' }, [
+          el('span', { class: 'lore-name' }, [lore.name]),
+          el('span', { class: 'lore-gain' }, [lore.gain]),
+        ]),
+      );
+    }
+  }
+
   card.append(button('Close', close, { class: 'primary wide' }));
   return el('div', { class: 'overlay' }, [card]);
 }
@@ -326,6 +343,14 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
   summary.append(
     el('p', { class: 'end-stat' }, [`${state.day} days ashore · ${explored}% of the land seen`]),
   );
+
+  const learned = known(state);
+  if (learned.length > 0) {
+    summary.append(el('h3', {}, ['What We Worked Out']));
+    summary.append(
+      el('p', { class: 'end-lore' }, [learned.map((l) => l.name).join(' · ')]),
+    );
+  }
 
   const fallen = state.party.people.filter((p) => !p.alive);
   if (fallen.length > 0) {

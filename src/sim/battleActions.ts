@@ -8,6 +8,7 @@ import { activeCombatant, fighterPerson, BASE_MOVES } from './battle';
 import { groundCost } from './battlefield';
 import { hasShot, reachWithZoc, threatCount } from './zoc';
 import { defenceBonus } from './wall';
+import { bonus } from './lore';
 import { NERVE_HIT, shakeNerve, witnessFall } from './morale';
 import { effectiveStat } from './people';
 
@@ -45,13 +46,25 @@ export const MAX_OUTNUMBERED = 2;
  * would otherwise be open, and the man who runs in alone ends up with three
  * of them on him and nothing at his back.
  */
+/**
+ * What the band's iron-craft adds to a blow. Deliberately one-sided: the lore
+ * is something THIS band worked out, and the raiders coming over the ridge
+ * did not sit in on it.
+ */
+function ourBite(state: GameState, attacker: Combatant): number {
+  return attacker.side === 'warband' ? bonus(state, 'bite') : 0;
+}
+
 export function evasion(state: GameState, target: Combatant): number {
   const person = fighterPerson(state, target.personId);
   const wits = person ? effectiveStat(person, 'wits') : 1;
   const battle = state.battle;
   if (!battle) return 7 + wits;
 
-  const shelter = target.broken ? 0 : defenceBonus(battle, target, DEFEND_BONUS);
+  // Wall-drill is likewise ours alone, and only counts to a fighter who is
+  // actually standing in a line.
+  const drill = target.side === 'warband' ? bonus(state, 'wall') : 0;
+  const shelter = target.broken ? 0 : defenceBonus(battle, target, DEFEND_BONUS, drill);
   const surrounded = Math.min(
     MAX_OUTNUMBERED,
     Math.max(0, threatCount(battle, target.at, target.side) - 1),
@@ -123,7 +136,8 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
     return true;
   }
 
-  const damage = rng.roll(1, 6) + Math.floor(effectiveStat(attacker, 'might') / 2);
+  const damage =
+    rng.roll(1, 6) + Math.floor(effectiveStat(attacker, 'might') / 2) + ourBite(state, active);
   defender.health = Math.max(0, defender.health - damage);
   if (defender.health > 0) {
     battle.log.push(`${attacker.name} struck ${defender.name} (${damage}).`);
@@ -184,7 +198,7 @@ export function doThrow(state: GameState, targetPersonId: string): boolean {
     return true;
   }
 
-  const damage = rng.roll(1, 6);
+  const damage = rng.roll(1, 6) + ourBite(state, active);
   defender.health = Math.max(0, defender.health - damage);
   if (defender.health > 0) {
     battle.log.push(`${thrower.name} put a spear into ${defender.name} (${damage}).`);

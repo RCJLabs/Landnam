@@ -11,6 +11,7 @@ import { effectiveReport } from './colony';
 import { standing } from './battle';
 import { raidPressure } from './neighbours';
 import { chronicle } from './saga';
+import { learn } from './lore';
 
 /** What share of the store a successful sack carries off. */
 export const SACK_SHARE = 0.4;
@@ -102,6 +103,9 @@ export function sackSteading(state: GameState): Sack {
 export function holdSteading(state: GameState, foesDown: number): void {
   const home = state.settlement!;
   state.party.morale = Math.min(100, state.party.morale + 12);
+  // A line that held is a line you can now explain to somebody. Nothing else
+  // in the game teaches this, because nothing else is a line that held.
+  if (foesDown > 0) learn(state, 'shieldcraft');
   chronicle(
     state,
     foesDown > 0

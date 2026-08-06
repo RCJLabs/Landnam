@@ -31,6 +31,8 @@ import { effectsOn } from './calendar';
 import { effectiveStat } from './people';
 import { homeCrew } from './expedition';
 import { chronicle } from './saga';
+import { bonus, learn } from './lore';
+import type { LoreId } from '../data/lore';
 
 /** Rings of local ground around the hall. Nineteen hexes at radius two. */
 export const PLOT_RADIUS = 2;
@@ -324,11 +326,18 @@ export function dayLabour(state: GameState): DayLabour {
 }
 
 /** Firewood a night costs after what the builders have put up. */
+/**
+ * Firewood a night no longer needs: what the roof keeps in, plus what the band
+ * has learned about banking a fire. Both live here rather than at the two call
+ * sites, because the day tick and the winter forecast MUST agree — a mark that
+ * is computed differently from the burn it predicts is worse than no mark.
+ */
 export function shelterSaving(state: GameState): number {
   const home = state.settlement;
-  // The roof keeps the hall warm whether or not a party is out under it.
-  if (!home) return 0;
-  return home.shelter * SHELTER_SAVES;
+  // A banked fire is banked wherever you are; a roof needs a roof.
+  const learned = bonus(state, 'warmth');
+  if (!home) return learned;
+  return home.shelter * SHELTER_SAVES + learned;
 }
 
 /**
@@ -375,6 +384,15 @@ export function workTheDay(state: GameState): DayLabour {
 }
 
 /**
+ * What raising a building teaches, if anything. A dock is a season of looking
+ * at hulls out of the water — you do not come away from that not knowing how
+ * one is put together.
+ */
+const TAUGHT_BY_BUILDING: Partial<Record<string, LoreId>> = {
+  dock: 'shipwright',
+};
+
+/**
  * Completes anything the banked work has paid for. A single day of many
  * builders can finish more than one thing, so this loops.
  */
@@ -396,6 +414,10 @@ export function finishBuilds(state: GameState): BuildingDef[] {
     home.shelter = Math.min(SHELTER_MAX, home.shelter + (building.shelter ?? 0));
     done.push(building);
     chronicle(state, `${building.name} stood finished at ${home.name}.`, 'good');
+    // Raising a thing teaches you the thing. Not every building has something
+    // to teach, which is why this is a lookup rather than a rule.
+    const taught = TAUGHT_BY_BUILDING[building.id];
+    if (taught) learn(state, taught);
   }
   // Work does not bank past the thing it was for.
   if (home.queue.length === 0) home.works = 0;

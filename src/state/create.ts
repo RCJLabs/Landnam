@@ -45,6 +45,7 @@ export function newGame(seed: string): GameState {
     ],
     flags: { landingNamed: 1 },
     grudges: [],
+    lore: [],
     neighbours: placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours')),
     nextId: 1,
   };

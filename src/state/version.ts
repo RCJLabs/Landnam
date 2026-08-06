@@ -14,7 +14,8 @@
 // v11 (4.1): the root gained grudges.
 // v12 (4.2): the root gained the optional expedition.
 // v13 (4.3): the root gained neighbours.
-export const SAVE_VERSION = 13;
+// v14 (4.4): the root gained lore.
+export const SAVE_VERSION = 14;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

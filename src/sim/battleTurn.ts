@@ -16,6 +16,7 @@ import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
 import { noteRaidSent } from './neighbours';
+import { bonus } from './lore';
 import { key } from '../hex';
 import { checkRunEnd } from './upkeep';
 
@@ -185,7 +186,10 @@ export function leaveBattle(state: GameState): Aftermath | undefined {
   // Every death drags on the band harder than the win lifts it. That asymmetry
   // is the whole point of the milestone: a victory you paid a veteran for is
   // not a victory you want twice.
-  const bereaved = aftermath.killed.length * 12;
+  // A band that can cut a name in stone carries its dead differently. It does
+  // not make the death cheaper — it makes it bearable, which is not the same.
+  const solace = Math.max(0, Math.min(0.8, bonus(state, 'solace')));
+  const bereaved = aftermath.killed.length * 12 * (1 - solace);
 
   if (won) {
     state.party.morale = Math.min(100, Math.max(0, state.party.morale + 10 - bereaved));

@@ -21,6 +21,21 @@ import { visibilityAt } from '../src/sim/fog';
 import { encode } from '../src/state/save';
 import type { GameState } from '../src/state/types';
 
+/**
+ * Plays a fight out by simply ending turns, and leaves the field. A card can
+ * draw steel, and a loop that only knows how to camp would sit in BATTLE mode
+ * forever having every action refused — which looks exactly like a hung run.
+ */
+function fight(state: GameState): GameState {
+  let s = state;
+  for (let i = 0; i < 400 && s.battle && !s.battle.outcome; i++) {
+    s = apply(s, { type: 'B_END_TURN' });
+  }
+  if (s.battle?.outcome) s = apply(s, { type: 'B_LEAVE' });
+  if (s.aftermath) s = apply(s, { type: 'DISMISS_AFTERMATH' });
+  return s;
+}
+
 /** Answers whatever card is on the table, so a move can be tested. */
 function card(state: GameState): GameState {
   if (!state.event) return state;
@@ -29,12 +44,16 @@ function card(state: GameState): GameState {
 }
 
 function step(state: GameState): GameState {
+  if (state.battle || state.aftermath) return fight(state);
   if (state.event) {
     const chosen = apply(state, { type: 'CHOOSE', index: 0 });
-    return apply(chosen, { type: 'DISMISS_EVENT' });
+    return fight(apply(chosen, { type: 'DISMISS_EVENT' }));
   }
   const options = moveOptions(state);
-  return options[0] ? apply(state, { type: 'MOVE', to: options[0] }) : apply(state, { type: 'CAMP' });
+  const next = options[0]
+    ? apply(state, { type: 'MOVE', to: options[0] })
+    : apply(state, { type: 'CAMP' });
+  return fight(next);
 }
 
 describe('new game', () => {
@@ -199,9 +218,11 @@ describe('supplies and camp', () => {
     state.party.food = 0;
     state.party.firewood = 0;
     for (let i = 0; i < 200 && !state.end; i++) {
-      state = state.event
-        ? apply(apply(state, { type: 'CHOOSE', index: 0 }), { type: 'DISMISS_EVENT' })
-        : apply(state, { type: 'CAMP' });
+      state = state.battle || state.aftermath
+        ? fight(state)
+        : state.event
+          ? fight(apply(apply(state, { type: 'CHOOSE', index: 0 }), { type: 'DISMISS_EVENT' }))
+          : fight(apply(state, { type: 'CAMP' }));
     }
     expect(state.end).toBeDefined();
     expect(['starved', 'frozen', 'despair', 'slain']).toContain(state.end!.cause);

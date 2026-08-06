@@ -363,6 +363,8 @@ export interface GameState {
   expedition?: Expedition;
   /** Everybody else on this coast, and what they think of you. */
   neighbours: Neighbour[];
+  /** Lore ids the band has worked out, in the order it worked them out. */
+  lore: string[];
   end?: RunEnd;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;

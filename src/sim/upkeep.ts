@@ -9,6 +9,7 @@ import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
 import { driftStandings } from './neighbours';
+import { bonus } from './lore';
 import { chronicle } from './saga';
 
 /** Winter arrives on day 49; spring on day 73 is survival. */
@@ -48,11 +49,13 @@ function mendInjuries(state: GameState): void {
   // Nothing mends in a cold hall on short rations. Winter illness that ticked
   // down like a summer scratch would take the teeth out of the whole season.
   const frozen = seasonOf(state.day) === 'winter';
+  // Somebody who knows what they are doing gets more out of a day's rest.
+  const care = 1 + bonus(state, 'mend');
   for (const person of state.party.people) {
     if (!person.alive) continue;
     person.injuries = person.injuries.filter((injury) => {
       if (frozen && injury.id.startsWith('ill_')) return true;
-      injury.heals -= 1;
+      injury.heals -= care;
       if (injury.heals <= 0) {
         chronicle(state, `${person.name}'s ${injury.label.toLowerCase()} had mended.`, 'good');
         return false;

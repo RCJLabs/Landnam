@@ -134,6 +134,11 @@ export const MIGRATIONS: Record<number, Migration> = {
   // migration is allowed to reach, and a steading that has never met anybody
   // is a coherent thing for a save to describe.
   12: (save) => ({ neighbours: [], ...save, version: 13 }),
+
+  // v13 -> v14: the band works things out. A run from before this comes
+  // forward knowing nothing, which is honest — nobody was keeping track of
+  // what it had figured out, so there is nothing to credit it with.
+  13: (save) => ({ lore: [], ...save, version: 14 }),
 };
 
 export interface MigrationResult {

@@ -8,12 +8,12 @@
 // so the target it prints is a simulation of your plan rather than a rule of
 // thumb someone tuned by feel.
 
-import { SHELTER_SAVES } from '../data/jobs';
 import type { GameState, Injury, Person } from '../state/types';
 import { effectsOn, seasonOf } from './calendar';
 import { dayLabour, jobOf, output, seasonFactor, shelterSaving } from './colony';
 import { living } from './people';
 import { chronicle } from './saga';
+import { bonus } from './lore';
 import { firewoodPerNight, foodPerDay, SURVIVAL_DAY } from './upkeep';
 import { stream } from '../rng';
 
@@ -51,11 +51,13 @@ export function forecast(state: GameState): Forecast {
 
   let food = 0;
   let firewood = 0;
+  const saved = shelterSaving(state);
 
   for (let i = 1; i <= days; i++) {
     const day = state.day + i;
     const mouths = Math.max(1, Math.ceil(crew.length / 2));
-    const fire = Math.max(0, effectsOn(day).firewood - (home ? home.shelter * SHELTER_SAVES : 0));
+    // Same helper the day tick burns from, so the mark cannot lie.
+    const fire = Math.max(0, effectsOn(day).firewood - saved);
 
     let grown = 0;
     let cut = 0;
@@ -136,7 +138,12 @@ export function coldNight(state: GameState, severity: number): Person[] {
   for (const person of living(state.party.people)) {
     // Already ill and still cold: it gets worse rather than doubling up.
     const alreadyIll = person.injuries.some((i) => i.id.startsWith('ill_'));
-    const roll = rng.derive(person.id).roll(2, 6) + Math.floor(person.stats.spirit / 2) + shelter;
+    const roll =
+      rng.derive(person.id).roll(2, 6) +
+      Math.floor(person.stats.spirit / 2) +
+      shelter +
+      // Knowing what to do for a cold body is worth as much as the roof over it.
+      bonus(state, 'physic');
     if (roll >= SICKNESS_BASE_DC + severity) continue;
 
     if (alreadyIll) {

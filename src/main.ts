@@ -399,6 +399,7 @@ declare global {
       fight(difficulty?: number): void;
       raid(difficulty?: number): void;
       visit(id?: string): void;
+      stock(food?: number, firewood?: number): void;
     };
   }
 }
@@ -418,6 +419,18 @@ window.landnam = {
     const next = structuredClone(state);
     next.party.at = { ...next.settlement!.at };
     startRaid(next, difficulty);
+    state = next;
+    save(state);
+    render();
+  },
+  // Fills the store, so a playtest can spend its days on the thing being
+  // tested rather than on not starving.
+  stock(food = 200, firewood = 200) {
+    if (!state) return;
+    const next = structuredClone(state);
+    next.party.food = food;
+    next.party.firewood = firewood;
+    next.party.morale = Math.max(next.party.morale, 70);
     state = next;
     save(state);
     render();

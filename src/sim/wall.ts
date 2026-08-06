@@ -49,11 +49,21 @@ export function wallBonus(battle: Battle, of: Combatant): number {
  * protection, but in a wall the shield IS the wall — it adds only a little
  * more. Without that, wall plus shield plus good wits stacks past anything
  * an attack roll can reach, and the fight stalls on untouchable men.
+ *
+ * `drill` is what the band has learned about holding a line (see data/lore).
+ * It is added to the WALL rather than to the fighter, so it is worth nothing
+ * to somebody standing on their own — which is the whole idea of drill.
  */
-export function defenceBonus(battle: Battle, of: Combatant, defendBonus: number): number {
+export function defenceBonus(
+  battle: Battle,
+  of: Combatant,
+  defendBonus: number,
+  drill = 0,
+): number {
   const wall = wallBonus(battle, of);
-  if (!of.defending) return wall;
-  return wall > 0 ? wall + SHIELD_IN_WALL : defendBonus;
+  const held = wall > 0 ? wall + drill : 0;
+  if (!of.defending) return held;
+  return held > 0 ? held + SHIELD_IN_WALL : defendBonus;
 }
 
 /** Everyone on a side who is currently part of a wall of at least one link. */

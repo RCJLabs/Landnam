@@ -981,6 +981,31 @@ h2.grim {
   font-style: italic;
 }
 
+
+/* --- What the band knows (4.4) --- */
+
+.lore {
+  display: grid;
+  gap: 1px;
+  margin-bottom: 8px;
+}
+
+.lore-name {
+  color: var(--gold);
+  font-size: 15px;
+}
+
+.lore-gain {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--parchment-dim);
+}
+
+.end-lore {
+  color: var(--gold);
+  font-style: italic;
+}
+
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { EVENTS, eventById } from '../src/data/events';
 import { TRAITS, traitById } from '../src/data/traits';
+import { LORE } from '../src/data/lore';
 import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
 import { checkOdds, isEligible, presentEvent } from '../src/sim/events';
 import { newGame } from '../src/state/create';
@@ -66,7 +67,7 @@ describe('content lint: events', () => {
   it('every effect is a known shape with sane numbers', () => {
     const known = [
       'food', 'firewood', 'morale', 'wound', 'heal', 'injure', 'kill', 'flag', 'reveal', 'battle',
-      'raid', 'standing',
+      'raid', 'standing', 'learn',
     ];
     for (const event of EVENTS) {
       for (const choice of event.choices) {
@@ -79,6 +80,11 @@ describe('content lint: events', () => {
               if (effect.count !== undefined) expect(effect.count).toBeGreaterThan(0);
             }
             if (effect.t === 'reveal') expect(effect.radius).toBeGreaterThan(0);
+            if (effect.t === 'learn') {
+              // A card that teaches something nobody has heard of is a typo
+              // that would silently do nothing at all.
+              expect(LORE.map((l) => l.id), event.id).toContain(effect.lore);
+            }
             if (effect.t === 'standing') {
               // A single card must not be able to swing a whole standing band
               // from hostile to sworn.
