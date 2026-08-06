@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 5.1**
+> **CURRENT MILESTONE: 5.2**
 
 ---
 
@@ -78,7 +78,7 @@ Order negotiable; each is a shippable minor version.
 
 ## Phase 5 — Ship it → v1.0
 
-- [ ] **5.1 Sound** — WebAudio synth: wind, drums, horn, UI ticks. Mute toggle.
+- [x] **5.1 Sound** — WebAudio synth: wind, drums, horn, UI ticks. Mute toggle. *Done when: the game has a voice, makes no request to get it, and is silent until touched.*
 - [ ] **5.2 Onboarding** — First-run guided prompts woven into events (no tutorial screens).
 - [ ] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall.
 - [ ] **5.4 Release** — v1.0 tag, `landnam.rcjlabs.com` CNAME. THEN decide TWA/Capacitor wrap (stay web during development).
@@ -90,6 +90,40 @@ Order negotiable; each is a shippable minor version.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 5.1 Sound** — The game has a voice, and it is synthesised on
+  the spot: twenty-three sounds written down as recipes — oscillators,
+  filtered noise, envelopes — with not one audio file anywhere, because the
+  built page still has to run offline from a `file://` open. Under all of it
+  is the wind, one continuous voice read off the world rather than triggered
+  by it: exposed ground opens the filter and a forest closes it, winter is
+  louder and more restless than summer on the same shore, a fight ducks the
+  bed so the horn has room, and inside the steading you can hear the roof.
+  What the game sounds like is a pure function of what changed — `cuesFor
+  (before, after, action)` — so a blow that lands and a blow that misses
+  differ because the STATE differs, not because the button did. That is what
+  makes it testable, and the test caught the first attempt scraping the fight
+  log for the word "shield" and calling "beat on his shield to no effect" a
+  shield-wall when it is a miss. It also means the foes' turns speak: you hear
+  what hit you on a turn you did not take. Silence is the default and it is
+  real — zero AudioContexts exist until the player touches the screen, muted
+  builds zero nodes rather than zero volume, and a browser with no WebAudio at
+  all gets a no-op instead of a thrown error. The mute is a horn glyph pinned
+  outside the mode chrome so it is there in all three modes and on the title
+  screen, 44px, crossed out rather than merely dimmed; it remembers itself in
+  its own localStorage key, deliberately NOT in the save, because a preference
+  is not part of a run — so no `SAVE_VERSION` bump. There is still no game
+  loop: cues go on the audio clock and the gusts are an LFO in the audio
+  thread. 456 tests.
+- **2026-08-06 — The chronicle stops stuttering** — Off a phone screenshot:
+  three consecutive days of quiet travel wrote three entries that read as one
+  line said three ways. Two things were wrong. The pool was picked blind, so
+  it could repeat outright — now every march line is chosen against the last
+  four entries and a literal repeat inside three days went from 4.9% of
+  windows to 0. And the quiet pool held four sentences that all said "nothing
+  happened", which no amount of de-duplication fixes; it now holds eight that
+  are about different things — the light, the feet, the weather, what nobody
+  said — so a fortnight of dull country reads as a fortnight.
 
 - **2026-08-06 — 4.6 Endgame** — Phase 4 closes. Surviving the first winter is
   no longer winning: the thaw is a milestone, the year comes round again, and

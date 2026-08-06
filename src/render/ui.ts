@@ -149,6 +149,53 @@ export function renderActionBar(
 }
 
 /**
+ * The mute, drawn as a horn rather than a speaker.
+ *
+ * Mounted once by main.ts outside the mode chrome, because it has to be
+ * reachable in all three modes and on the title screen — and because the top
+ * bar is already a scrolling row of numbers in every one of them, with no
+ * width to spare on a phone. The crossed-out state is drawn, not coloured:
+ * on a small screen at arm's length, colour alone is not an answer.
+ */
+export function renderMuteToggle(muted: boolean, onToggle: () => void): HTMLElement {
+  const control = button('', onToggle, {
+    class: `mute${muted ? ' off' : ''}`,
+    title: muted ? 'Sound off. Tap for sound.' : 'Sound on. Tap to silence.',
+    'aria-label': muted ? 'Turn sound on' : 'Turn sound off',
+  });
+  control.append(hornGlyph(muted));
+  return control;
+}
+
+function hornGlyph(muted: boolean): SVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', 'mute-glyph');
+  svg.setAttribute('aria-hidden', 'true');
+
+  const horn = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  // A drinking/blowing horn: narrow at the mouth, flaring and curling up.
+  horn.setAttribute('d', 'M4 15c4 1.5 8 1 11-2.5S18.5 5 17 3.5c-.8 2.5-2 5-4.5 7.5S7 14 4 15z');
+  horn.setAttribute('class', 'mute-horn');
+  svg.append(horn);
+
+  if (!muted) {
+    for (const [index, radius] of [7, 10].entries()) {
+      const wave = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      wave.setAttribute('d', `M6 ${18 - index} a${radius} ${radius} 0 0 0 ${radius} ${radius}`);
+      wave.setAttribute('class', 'mute-wave');
+      svg.append(wave);
+    }
+  } else {
+    const slash = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    slash.setAttribute('d', 'M3 21 21 3');
+    slash.setAttribute('class', 'mute-slash');
+    svg.append(slash);
+  }
+  return svg;
+}
+
+/**
  * The reading of the ground underfoot. Always on screen while you are still
  * looking for somewhere, because the whole decision is a comparison and the
  * player cannot compare what they cannot see.

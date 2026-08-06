@@ -2,7 +2,7 @@
 // least a day, and the day is what kills you.
 
 import { distance, key, neighbors, type Hex } from '../hex';
-import { stream } from '../rng';
+import { stream, type Rng } from '../rng';
 import { terrainDef } from '../data/terrain';
 import type { GameState, Person, Terrain } from '../state/types';
 import { effectsOn } from './calendar';
@@ -119,6 +119,24 @@ function reveal(state: GameState): void {
   seeNeighbours(state);
 }
 
+/** How many entries back the chronicle remembers saying a thing. */
+const ECHO = 4;
+
+/**
+ * Picks a line the chronicle has not used lately.
+ *
+ * Picking blind from a pool of four repeats inside three days about half the
+ * time, and a quiet stretch of travel is exactly when the log is the only
+ * thing moving on screen — so the repeat reads as a stutter in the writing
+ * rather than as a quiet week. Falls back to the whole pool once everything
+ * in it is recent, because a repeat beats saying nothing.
+ */
+function fresh(state: GameState, rng: Rng, pool: string[]): string {
+  const recent = new Set(state.saga.slice(-ECHO).map((entry) => entry.text));
+  const unused = pool.filter((line) => !recent.has(line));
+  return rng.pick(unused.length > 0 ? unused : pool);
+}
+
 /**
  * Marching lines. A chronicle that says "we moved on into forest" six days
  * running is worse than saying nothing, so the phrasing varies and leans on
@@ -137,7 +155,7 @@ function marchLine(
   // A day under oars is not a day's walking, and saying so is most of what
   // makes the coast feel like a coast.
   if (terrain === 'ocean') {
-    return rng.pick([
+    return fresh(state, rng, [
       'We put the knarr in the water and rowed the coast until the light went.',
       'A day on the water, with the land always on one hand.',
       'We worked along the shore under oars. It was faster than walking and colder.',
@@ -145,7 +163,7 @@ function marchLine(
     ]);
   }
   if (fromSea) {
-    return rng.pick([
+    return fresh(state, rng, [
       `We ran the keel up and stepped out into ${ground}.`,
       `We came ashore on ${ground} and dragged the boat up past the tide.`,
       `The water shallowed and we walked her in. ${ground.charAt(0).toUpperCase()}${ground.slice(1)}, and dry feet.`,
@@ -153,25 +171,38 @@ function marchLine(
   }
 
   if (days > 1) {
-    return rng.pick([
+    return fresh(state, rng, [
       `It took us ${days} days to cross into ${ground}.`,
       `${days} days of hard going, and ${ground} at the end of it.`,
       `We were ${days} days on that stretch. The ${ground} did not hurry for us.`,
     ]);
   }
   if (changedGround) {
-    return rng.pick([
+    return fresh(state, rng, [
       `We came down into ${ground} before dark.`,
       `The ground turned to ${ground} by afternoon.`,
       `We walked out of one country and into ${ground}.`,
       `By evening we were in ${ground}.`,
     ]);
   }
-  return rng.pick([
+  // The pool a quiet stretch draws from, and the longest one here on purpose.
+  // Four lines was enough to avoid a literal repeat and not enough to avoid
+  // sounding like one: three consecutive days of "we kept walking / another
+  // day of the same / we made what distance we could" are three different
+  // sentences saying one thing. These are deliberately about different things
+  // — the light, the feet, the weather, what nobody said — so a quiet week
+  // reads as a week rather than as one line stuttering. Eight of them against
+  // an ECHO of 4 means a fortnight of dull country never says the same thing
+  // twice running.
+  return fresh(state, rng, [
     'We kept walking. The country did not change.',
     'Another day of the same ground.',
     'We made what distance we could.',
     'We walked from first light and camped where the light left us.',
+    'Nothing came at us and nothing was said worth writing.',
+    'The weather held, which was the best that could be said for it.',
+    'Our feet were the only thing that changed, and not for the better.',
+    'We went on. There is no other word for a day like that one.',
   ]);
 }
 

@@ -280,3 +280,48 @@ describe('determinism of play', () => {
     expect(encode(playOut('replay-seed'))).toBe(encode(playOut('replay-seed')));
   });
 });
+
+describe('the chronicle does not stutter on a quiet stretch', () => {
+  /** Walks a band across dull country and returns the lines it wrote. */
+  function quietDays(seed: string, days: number): string[] {
+    let state = structuredClone(newGame(seed));
+    for (let i = 0; i < days && !state.end; i += 1) {
+      if (state.event) {
+        state = apply(state, { type: 'DISMISS_EVENT' });
+        continue;
+      }
+      const options = moveOptions(state);
+      if (options.length === 0) break;
+      state = apply(state, { type: 'MOVE', to: options[i % options.length]! });
+    }
+    return state.saga.map((entry) => entry.text);
+  }
+
+  it('never says the same thing twice inside three days', () => {
+    // The bug this locks down came off a phone screenshot: three consecutive
+    // entries that all read the same, on the screen where the log is the only
+    // thing moving.
+    let windows = 0;
+    let stutters = 0;
+    for (let s = 0; s < 40; s += 1) {
+      const lines = quietDays(`stutter-${s}`, 40);
+      for (let i = 2; i < lines.length; i += 1) {
+        windows += 1;
+        if (new Set(lines.slice(i - 2, i + 1)).size < 3) stutters += 1;
+      }
+    }
+    expect(windows).toBeGreaterThan(50);
+    expect(stutters).toBe(0);
+  });
+
+  it('keeps enough phrasings that a fortnight of dull country stays readable', () => {
+    // Suppressing repeats is not enough on its own — a pool of four distinct
+    // sentences all saying "nothing happened" still reads as one line said
+    // four ways. The pool has to be wider than the window that guards it.
+    const seen = new Set<string>();
+    for (let s = 0; s < 25; s += 1) {
+      for (const line of quietDays(`variety-${s}`, 30)) seen.add(line);
+    }
+    expect(seen.size).toBeGreaterThanOrEqual(12);
+  });
+});

@@ -1,6 +1,8 @@
 // Minimal SVG/DOM construction helpers. Renderers are pure views: they read
 // state and produce elements. No game logic lives here.
 
+import { play } from '../audio/engine';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export function svgEl<K extends keyof SVGElementTagNameMap>(
@@ -40,6 +42,12 @@ export function button(
   const node = el('button', { type: 'button', ...attrs }, [label]);
   node.addEventListener('click', (e) => {
     e.preventDefault();
+    // Every button in the game comes through here, so this is the one place a
+    // tap needs a sound. It fires BEFORE the handler, so a button that also
+    // swings an axe reads as a click and then a blow — which is the order the
+    // player's finger and the game actually go in. Kept very quiet on purpose:
+    // it is heard hundreds of times a run.
+    play('tap');
     onClick();
   });
   return node;

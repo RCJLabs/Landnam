@@ -37,6 +37,7 @@ import { deedsFor, renderDeeds } from './render/deeds';
 import {
   renderActionBar,
   renderHint,
+  renderMuteToggle,
   renderSagaLog,
   renderSitePanel,
   renderThingMark,
@@ -56,6 +57,19 @@ import { canFound } from './sim/site';
 import { startBattle, startRaid } from './sim/battleTurn';
 import { button, el } from './render/svg';
 import { watchForNewBuild } from './freshness';
+import {
+  ambienceFor,
+  cuesFor,
+  hushAmbience,
+  isMuted,
+  play,
+  playAll,
+  sameAir,
+  setAmbience,
+  toggleMute,
+  wake,
+} from './audio';
+import type { AmbienceProfile } from './data/sounds';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('missing #app');
@@ -84,6 +98,47 @@ let launchPurpose: Purpose = 'explore';
 let aim: Aim = 'strike';
 let aimTurnKey = '';
 
+/** The last air we asked for, so an unchanged profile is not re-eased every render. */
+let air: AmbienceProfile | null = null;
+
+/**
+ * The mute lives outside the shell: it has to be there in all three modes and
+ * on the title screen, and it must survive replaceChildren on #app.
+ */
+const muteSlot = el('div', { class: 'mute-slot' });
+
+function paintMute(): void {
+  muteSlot.replaceChildren(
+    renderMuteToggle(isMuted(), () => {
+      // Toggling is itself a gesture, so it is also a valid moment to start
+      // the audio — tapping "sound on" must actually produce sound.
+      wake();
+      const nowMuted = toggleMute();
+      paintMute();
+      if (!nowMuted) {
+        play('tap');
+        if (state) setAmbience(ambienceFor(state));
+      }
+    }),
+  );
+}
+
+/**
+ * Every mobile browser refuses to start an AudioContext outside a real user
+ * gesture, so the game stays silent until the player touches it — which is
+ * also the polite default. One listener, removed once it has done its job.
+ */
+function armAudio(): void {
+  const start = (): void => {
+    wake();
+    if (state) setAmbience(ambienceFor(state));
+    window.removeEventListener('pointerdown', start);
+    window.removeEventListener('keydown', start);
+  };
+  window.addEventListener('pointerdown', start);
+  window.addEventListener('keydown', start);
+}
+
 // Chrome that persists across renders, so the map keeps its camera.
 const topbarSlot = el('div', { class: 'slot topbar-slot' });
 const mapSlot = el('div', { class: 'slot map-slot' });
@@ -105,10 +160,14 @@ function shell(): HTMLElement {
 
 function dispatch(action: Action): void {
   if (!state) return;
-  const next = apply(state, action);
-  if (next === state) return;
+  const before = state;
+  const next = apply(before, action);
+  if (next === before) return;
   state = next;
   save(state);
+  // What changed IS what the game sounds like — see src/audio/cues.ts. Doing
+  // it here rather than inside the sim keeps every reducer pure.
+  playAll(cuesFor(before, next, action));
   render();
 }
 
@@ -172,6 +231,8 @@ function mountGame(): void {
 function showTitle(): void {
   state = null;
   travelView = null;
+  air = null;
+  hushAmbience();
   app!.replaceChildren(
     renderTitle(hasSave(), continueRun, (seed) => startRun(seed)),
   );
@@ -322,8 +383,6 @@ function render(): void {
       renderRunEnd(state, () => {
         clearSave();
         showTitle();
-// If the server has moved on since this page was cached, say so.
-watchForNewBuild();
       }),
     );
   } else if (launchOpen && state.settlement && !state.expedition) {
@@ -396,6 +455,14 @@ watchForNewBuild();
 
   // Keep the party in view after it moves.
   if (currentMode(state) === 'TRAVEL') travelView.centreOn(state.party.at);
+
+  // And keep the weather honest. Easing means calling this every render costs
+  // nothing when nothing has changed.
+  const wanted = ambienceFor(state);
+  if (!air || !sameAir(air, wanted)) {
+    air = wanted;
+    setAmbience(wanted);
+  }
 }
 
 // A small hand-hold for testing and for poking at a run from the console:
@@ -471,6 +538,9 @@ window.landnam = {
   },
 };
 
+paintMute();
+document.body.append(muteSlot);
+armAudio();
 showTitle();
 // If the server has moved on since this page was cached, say so.
 watchForNewBuild();

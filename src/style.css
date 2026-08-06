@@ -1130,3 +1130,59 @@ h2.grim {
     border-right: 1px solid var(--edge);
   }
 }
+
+/* --- The mute ---
+   Lives outside .shell so it survives every replaceChildren on #app and is
+   present in all three modes and on the title screen. Pinned to the top-right
+   of the map area rather than the very top of the screen, which on a phone is
+   where the browser's own chrome and the notch already are. */
+
+.mute-slot {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 62px);
+  right: 8px;
+  z-index: 40;
+}
+
+button.mute {
+  width: var(--tap);
+  height: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(34, 29, 22, 0.82);
+  border-color: rgba(70, 60, 44, 0.9);
+  /* The map scrolls under it, so it needs to read against anything. */
+  backdrop-filter: blur(2px);
+}
+
+.mute-glyph {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mute-horn {
+  fill: var(--gold);
+  stroke: none;
+}
+
+.mute-wave {
+  stroke: var(--gold);
+  stroke-width: 1.4;
+  opacity: 0.75;
+}
+
+button.mute.off .mute-horn {
+  fill: var(--parchment-dim);
+  opacity: 0.5;
+}
+
+.mute-slash {
+  stroke: var(--blood);
+  stroke-width: 2;
+}
