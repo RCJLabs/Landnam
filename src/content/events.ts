@@ -275,6 +275,10 @@ export const EVENTS: EventDef[] = [
         success: { text: 'Silver for smoked fish and clean water. They are glad to see your stern.', effects: [{ t: 'res', silver: -6, food: 8, water: 8 }, { t: 'markUsed' }] },
       },
       {
+        label: 'Raid it',
+        success: { text: 'The war-horn sounds. The village men snatch up spears and boar-hunting bows.', effects: [{ t: 'startBattle', raidId: 'village' }] },
+      },
+      {
         label: 'Demand tribute',
         check: { stat: 'might', who: 'crewAvg', dc: 8 },
         success: { text: 'They pay to see your sail leave. No blood, this time.', effects: [{ t: 'res', food: 6, silver: 6 }, { t: 'morale', amount: -2 }, { t: 'markUsed' }, { t: 'fame', amount: 2 }] },
@@ -292,9 +296,7 @@ export const EVENTS: EventDef[] = [
     options: [
       {
         label: 'Raid it',
-        check: { stat: 'might', who: 'crewAvg', dc: 7 },
-        success: { text: 'The brothers flee to their tower. Chalices, coin, and altar-cloth fill two chests. The bells toll behind you like a curse.', effects: [{ t: 'res', silver: 15 }, { t: 'fame', amount: 8 }, { t: 'morale', amount: 5 }, { t: 'markUsed' }] },
-        failure: { text: 'The brothers were warned — an armed levy waits behind the chapel wall. You pull back bloodied.', effects: [{ t: 'hurtRandom', amount: 3, count: 2 }, { t: 'morale', amount: -5 }, { t: 'markUsed' }] },
+        success: { text: 'Oars muffled, shields up. The keel bites the shingle below the chapel.', effects: [{ t: 'startBattle', raidId: 'monastery' }] },
       },
       { label: 'Trade for provisions', success: { text: 'The monks trade gladly, eyes on your axes the whole while.', effects: [{ t: 'res', silver: -4, food: 6 }, { t: 'markUsed' }] } },
       { label: 'Leave the god-men be', success: { text: 'Their singing follows you out to sea.', effects: [] } },

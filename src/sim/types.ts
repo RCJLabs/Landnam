@@ -125,7 +125,8 @@ export type Effect =
   | { t: 'recruitCastaway' }
   | { t: 'setFlag'; flag: string; value: number }
   | { t: 'fame'; amount: number }
-  | { t: 'markUsed' };
+  | { t: 'markUsed' }
+  | { t: 'startBattle'; raidId: string };
 
 export interface StatCheck {
   stat: 'might' | 'skill' | 'guts' | 'sea';
@@ -176,6 +177,65 @@ export interface ActivePort {
   stock: PortStock;
 }
 
+// --- Tactical battles ---
+
+export type BattleTerrain = 'grass' | 'sand' | 'floor' | 'deck' | 'water' | 'wall' | 'rock';
+
+export interface BattleTile {
+  terrain: BattleTerrain;
+  /** Cover bonus to def for the occupant. */
+  cover: 0 | 1;
+}
+
+export type UnitStatus = 'routing' | 'braced';
+
+export interface Unit {
+  id: string;
+  /** Link back to the CrewMember for player units. */
+  crewId?: string;
+  side: 'player' | 'enemy';
+  kind: string; // 'crew' or an enemy archetype id
+  name: string;
+  at: Axial;
+  hp: number;
+  hpMax: number;
+  atk: number;
+  def: number;
+  guts: number;
+  move: number;
+  damage: number;
+  statuses: UnitStatus[];
+  /** Hexes of movement left this round. */
+  movesLeft: number;
+  hasActed: boolean;
+  alive: boolean;
+  /** Fled off the battlefield edge. */
+  escaped: boolean;
+}
+
+export interface Battle {
+  raidId: string;
+  title: string;
+  width: number;
+  height: number;
+  grid: Record<HexKey, BattleTile>;
+  units: Unit[];
+  round: number;
+  /** Monotonic action counter — keys the per-action RNG stream. */
+  actionN: number;
+  sideMorale: { player: number; enemy: number };
+  lootText: string;
+  loot: Effect[];
+  result?: 'won' | 'lost';
+}
+
+export type TacticalIntent =
+  | { type: 'T_MOVE'; unitId: string; to: Axial }
+  | { type: 'T_STRIKE'; unitId: string; targetId: string }
+  | { type: 'T_BRACE'; unitId: string }
+  | { type: 'T_END_TURN' }
+  | { type: 'BATTLE_CONTINUE' };
+
 // --- Run ---
 
 export type Phase = 'voyage' | 'event' | 'port' | 'battle' | 'ended';
@@ -209,6 +269,7 @@ export interface GameRun {
   flags: Record<string, number>;
   activeEvent?: ActiveEvent;
   activePort?: ActivePort;
+  activeBattle?: Battle;
   log: LogEntry[];
   idCounter: number;
   end?: RunEnd;

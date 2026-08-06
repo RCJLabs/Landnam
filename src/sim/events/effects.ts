@@ -3,8 +3,10 @@
 import { key } from '../../core/hex';
 import { Rng } from '../../core/rng';
 import { BALANCE } from '../../content/balance';
+import { raidById } from '../../content/raids';
 import { Effect, GameRun, SimEvent } from '../types';
 import { makeRecruit } from '../strategic/crewGen';
+import { makeBattle } from '../tactical/battle';
 
 export function applyEffects(run: GameRun, events: SimEvent[], effects: Effect[], rng: Rng): void {
   for (const eff of effects) applyEffect(run, events, eff, rng);
@@ -79,6 +81,16 @@ function applyEffect(run: GameRun, events: SimEvent[], eff: Effect, rng: Rng): v
     case 'markUsed': {
       const tile = run.chart.tiles[key(run.chart.shipAt)];
       if (tile?.feature) tile.feature.used = true;
+      break;
+    }
+    case 'startBattle': {
+      const tile = run.chart.tiles[key(run.chart.shipAt)];
+      run.activeBattle = makeBattle(
+        raidById(eff.raidId),
+        run.crew,
+        tile?.dangerTier ?? 0,
+        rng.fork('battle-setup'),
+      );
       break;
     }
   }

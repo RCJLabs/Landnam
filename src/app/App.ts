@@ -1,14 +1,19 @@
 // App shell: owns the current run, the board, and screen transitions.
 // Flow: UI/board input -> StrategicIntent -> stepStrategic -> apply -> persist -> re-render.
 
-import { distance } from '../core/hex';
-import { generateSeed } from '../core/rng';
-import { GameRun, StrategicIntent } from '../sim/types';
+import { distance, eq } from '../core/hex';
+import { generateSeed, makeRng } from '../core/rng';
+import { makeBattle } from '../sim/tactical/battle';
+import { raidById } from '../content/raids';
+import { GameRun, StrategicIntent, TacticalIntent } from '../sim/types';
 import { newRun } from '../sim/strategic/state';
 import { stepStrategic } from '../sim/strategic/sail';
+import { canAct } from '../sim/tactical/actions';
 import { loadMeta, saveMeta, loadRun, saveRun, clearRun } from '../save/persist';
 import { HexBoard } from '../render/canvasHex';
 import { drawChart } from '../render/chartRender';
+import { battleCenter, drawBattle } from '../render/battleRender';
+import { renderBattleHud, renderBattleResult } from '../ui/battleHud';
 import { renderHud } from '../ui/hud';
 import { renderRunEnd } from '../ui/runEnd';
 import { renderTitle } from '../ui/title';
@@ -22,6 +27,9 @@ export class App {
   private board: HexBoard | null = null;
   private meta = loadMeta();
   private crewPanelOpen = false;
+  private selectedUnitId: string | null = null;
+  /** Which layer the camera is set up for. */
+  private boardMode: 'chart' | 'battle' = 'chart';
   private overlayRoot = must<HTMLDivElement>('overlay-root');
   private hudRoot = must<HTMLDivElement>('hud-root');
   private canvas = must<HTMLCanvasElement>('board');
@@ -69,7 +77,13 @@ export class App {
     if (!this.board) {
       this.board = new HexBoard(this.canvas, 26, {
         draw: (ctx, board) => {
-          if (this.run) drawChart(ctx, board, this.run);
+          const r = this.run;
+          if (!r) return;
+          if (r.phase === 'battle' && r.activeBattle) {
+            drawBattle(ctx, board, r.activeBattle, { unitId: this.selectedUnitId });
+          } else {
+            drawChart(ctx, board, r);
+          }
         },
         onClick: (hex) => this.onHexClick(hex),
         onHover: () => {},
@@ -81,13 +95,43 @@ export class App {
 
   private onHexClick(hex: { q: number; r: number }): void {
     const run = this.run;
-    if (!run || run.phase !== 'voyage') return;
+    if (!run) return;
+    if (run.phase === 'battle' && run.activeBattle) {
+      this.onBattleClick(hex);
+      return;
+    }
+    if (run.phase !== 'voyage') return;
     if (distance(hex, run.chart.shipAt) === 1) {
       this.dispatch({ type: 'SAIL', to: hex });
     }
   }
 
-  private dispatch(intent: StrategicIntent): void {
+  private onBattleClick(hex: { q: number; r: number }): void {
+    const run = this.run!;
+    const battle = run.activeBattle!;
+    if (battle.result) return;
+    const clicked = battle.units.find((u) => u.alive && !u.escaped && eq(u.at, hex));
+
+    if (clicked && clicked.side === 'player') {
+      this.selectedUnitId = clicked.id === this.selectedUnitId ? null : clicked.id;
+      this.renderAll();
+      return;
+    }
+    const sel = this.selectedUnitId
+      ? battle.units.find((u) => u.id === this.selectedUnitId)
+      : undefined;
+    if (!sel) return;
+    if (clicked && clicked.side === 'enemy') {
+      this.dispatch({ type: 'T_STRIKE', unitId: sel.id, targetId: clicked.id });
+      return;
+    }
+    if (!clicked && canAct(sel) === false && sel.movesLeft <= 0) return;
+    if (!clicked) {
+      this.dispatch({ type: 'T_MOVE', unitId: sel.id, to: hex });
+    }
+  }
+
+  private dispatch(intent: StrategicIntent | TacticalIntent): void {
     const run = this.run;
     if (!run) return;
     const { run: next, events } = stepStrategic(run, intent);
@@ -110,6 +154,23 @@ export class App {
     this.renderAll();
   }
 
+  /** Debug/test hook: jump straight into a raid battle on the current run. */
+  debugStartBattle(raidId = 'monastery'): void {
+    const run = this.run;
+    if (!run || run.phase !== 'voyage') return;
+    const next = structuredClone(run);
+    next.activeBattle = makeBattle(
+      raidById(raidId),
+      next.crew,
+      0,
+      makeRng(next.seed).fork(`debug-battle:${next.turn}`),
+    );
+    next.phase = 'battle';
+    this.run = next;
+    saveRun(next);
+    this.renderAll();
+  }
+
   private toggleCrewPanel = (): void => {
     this.crewPanelOpen = !this.crewPanelOpen;
     this.renderAll();
@@ -118,7 +179,29 @@ export class App {
   private renderAll(): void {
     const run = this.run;
     if (!run) return;
-    renderHud(this.hudRoot, run, (intent) => this.dispatch(intent), this.toggleCrewPanel);
+
+    // Camera/board mode transitions between layers.
+    if (run.phase === 'battle' && run.activeBattle) {
+      if (this.boardMode !== 'battle' && this.board) {
+        this.boardMode = 'battle';
+        this.board.hexSize = 42;
+        this.board.zoom = 1;
+        this.board.centerOn(battleCenter(run.activeBattle));
+      }
+    } else if (this.boardMode !== 'chart' && this.board) {
+      this.boardMode = 'chart';
+      this.board.hexSize = 26;
+      this.selectedUnitId = null;
+      this.board.centerOn(run.chart.shipAt);
+    }
+
+    if (run.phase === 'battle' && run.activeBattle) {
+      renderBattleHud(this.hudRoot, run, run.activeBattle, this.selectedUnitId, (i) =>
+        this.dispatch(i),
+      );
+    } else {
+      renderHud(this.hudRoot, run, (intent) => this.dispatch(intent), this.toggleCrewPanel);
+    }
 
     // Overlay per phase.
     if (run.phase === 'ended' && run.end) {
@@ -129,6 +212,8 @@ export class App {
       replaceChildren(this.overlayRoot, renderEventPanel(run, (i) => this.dispatch(i)));
     } else if (run.phase === 'port' && run.activePort) {
       replaceChildren(this.overlayRoot, renderPortPanel(run, (i) => this.dispatch(i)));
+    } else if (run.phase === 'battle' && run.activeBattle?.result) {
+      replaceChildren(this.overlayRoot, renderBattleResult(run.activeBattle, (i) => this.dispatch(i)));
     } else {
       replaceChildren(this.overlayRoot);
     }

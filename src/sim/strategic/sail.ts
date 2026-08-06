@@ -5,11 +5,24 @@
 import { Axial, key, distance, dirTo, neighbors } from '../../core/hex';
 import { revealRadius } from '../../core/fov';
 import { BALANCE } from '../../content/balance';
-import { GameRun, SimEvent, StrategicIntent, RunEnd } from '../types';
+import { GameRun, SimEvent, StrategicIntent, TacticalIntent, RunEnd } from '../types';
 import { turnRng } from './state';
-import { Rng } from '../../core/rng';
+import { makeRng, Rng } from '../../core/rng';
 import { activate, pickEvent, resolveOption } from '../events/engine';
 import { buy, dock, portHere, recruit, repairAtPort } from './ports';
+import {
+  BattleLogLine,
+  battleOutcome,
+  fleeMoves,
+  refreshSide,
+  routChecks,
+  tryBrace,
+  tryMove,
+  tryStrike,
+  unitById,
+} from '../tactical/actions';
+import { runEnemyTurn } from '../tactical/ai';
+import { applyBattleOutcome } from '../tactical/outcome';
 
 export interface StepResult {
   run: GameRun;
@@ -171,6 +184,85 @@ function discoverAround(run: GameRun, events: SimEvent[]) {
   }
 }
 
+/** Battle-phase sub-reducer. `run` is already a clone of `prev`. */
+function stepBattle(
+  prev: GameRun,
+  run: GameRun,
+  events: SimEvent[],
+  intent: StrategicIntent | TacticalIntent,
+): StepResult {
+  const battle = run.activeBattle!;
+
+  // Result screen showing: only Continue applies the outcome.
+  if (battle.result) {
+    if (intent.type === 'BATTLE_CONTINUE') {
+      const rng = makeRng(run.seed).fork(`battle-outcome:${run.turn}`);
+      applyBattleOutcome(run, battle, events, rng);
+      delete run.activeBattle;
+      run.phase = 'voyage';
+      checkRunEnd(run, events);
+      return { run, events };
+    }
+    return { run: prev, events: [] };
+  }
+
+  battle.actionN += 1;
+  const brng = makeRng(run.seed).fork(`battle:${run.turn}:${battle.actionN}`);
+  const blog: BattleLogLine[] = [];
+  let acted = false;
+
+  switch (intent.type) {
+    case 'T_MOVE': {
+      const unit = unitById(battle, intent.unitId);
+      if (unit && unit.side === 'player' && unit.alive && !unit.escaped) {
+        acted = tryMove(battle, unit, intent.to);
+      }
+      break;
+    }
+    case 'T_STRIKE': {
+      const unit = unitById(battle, intent.unitId);
+      const target = unitById(battle, intent.targetId);
+      if (unit && target && unit.side === 'player') {
+        acted = tryStrike(battle, unit, target, brng.fork('strike'), blog);
+      }
+      break;
+    }
+    case 'T_BRACE': {
+      const unit = unitById(battle, intent.unitId);
+      if (unit && unit.side === 'player' && unit.alive && !unit.escaped) {
+        acted = tryBrace(unit);
+      }
+      break;
+    }
+    case 'T_END_TURN': {
+      acted = true;
+      refreshSide(battle, 'enemy');
+      routChecks(battle, 'enemy', brng.fork('rout-e'), blog);
+      fleeMoves(battle, 'enemy', blog);
+      if (!battleOutcome(battle)) runEnemyTurn(battle, brng.fork('ai'), blog);
+      if (!battleOutcome(battle)) {
+        battle.round += 1;
+        refreshSide(battle, 'player');
+        routChecks(battle, 'player', brng.fork('rout-p'), blog);
+        fleeMoves(battle, 'player', blog);
+      }
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (!acted) return { run: prev, events: [] };
+  for (const line of blog) {
+    const entry = { turn: run.turn, text: line.text, tone: line.tone };
+    run.log.push(entry);
+    events.push({ type: 'LOG', entry });
+  }
+  const oc = battleOutcome(battle);
+  if (oc) battle.result = oc;
+  return { run, events };
+}
+
 /** Roll for (and fire) a voyage event on the current tile. */
 function maybeFireEvent(run: GameRun, rng: Rng): void {
   const tile = run.chart.tiles[key(run.chart.shipAt)];
@@ -188,7 +280,10 @@ function maybeFireEvent(run: GameRun, rng: Rng): void {
   run.phase = 'event';
 }
 
-export function stepStrategic(prev: GameRun, intent: StrategicIntent): StepResult {
+export function stepStrategic(
+  prev: GameRun,
+  intent: StrategicIntent | TacticalIntent,
+): StepResult {
   const run = structuredClone(prev);
   const events: SimEvent[] = [];
   const rng = turnRng(run);
@@ -205,12 +300,22 @@ export function stepStrategic(prev: GameRun, intent: StrategicIntent): StepResul
     }
     if (intent.type === 'EVENT_CONTINUE' && run.activeEvent?.outcome) {
       delete run.activeEvent;
+      if (run.activeBattle) {
+        // The event's outcome raised shields — go to the beach.
+        run.phase = 'battle';
+        log(run, events, 'Shields down from the rack. The crew wades ashore.', 'saga');
+        return { run, events };
+      }
       run.phase = 'voyage';
       // Landing on a port right after an event (e.g. arrival event) still docks.
       if (portHere(run)) dock(run, events);
       return { run, events };
     }
     return { run: prev, events: [] };
+  }
+
+  if (run.phase === 'battle' && run.activeBattle) {
+    return stepBattle(prev, run, events, intent);
   }
 
   if (run.phase === 'port') {
