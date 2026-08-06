@@ -24,7 +24,8 @@ body,
 #app {
   height: 100%;
   overflow: hidden;
-  background: var(--deep-sea);
+  /* Matches the undiscovered-fog paint so the chart has no visible edge. */
+  background: #0c1826;
   font-family: Georgia, 'Times New Roman', serif;
   color: var(--parchment);
 }

@@ -20,12 +20,12 @@ export const BALANCE = {
   crew: {
     startCount: 8,
     hpBase: 10,
-    foodPerCrewPerMove: 0.25, // one food unit feeds 4 crew for one move
-    waterPerCrewPerMove: 0.25,
+    foodPerCrewPerMove: 0.125, // one food per move for a full crew of 8
+    waterPerCrewPerMove: 0.125,
   },
   resources: {
-    startFood: 30,
-    startWater: 30,
+    startFood: 40,
+    startWater: 40,
     startSilver: 20,
     startTimber: 4,
   },
@@ -43,5 +43,8 @@ export const BALANCE = {
     max: 100,
     mutinyThreshold: 20,
     victoryFameBase: 100,
+    /** After this many turns, winter bears down: morale bleeds each turn,
+     * harder every 25 turns. The voyage has a clock. */
+    winterOnset: 60,
   },
 } as const;

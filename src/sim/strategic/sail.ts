@@ -40,10 +40,10 @@ export function sailCost(run: GameRun, to: Axial): number | null {
   const t = run.chart.tiles[key(to)];
   if (!t || t.terrain === 'land' || t.terrain === 'ice') return null;
   let cost = BALANCE.sailing.baseMoveCost;
-  // Adverse wind: moving toward where the wind is blowing FROM.
-  // Sealskin sails shrug off all but a dead-on headwind.
+  // Adverse wind: moving toward where the wind is blowing FROM, when it
+  // blows hard. Sealskin sails shrug off all but a dead-on headwind.
   const dir = dirTo(run.chart.shipAt, to);
-  if (dir >= 0 && run.weather.windStrength > 0) {
+  if (dir >= 0 && run.weather.windStrength >= 2) {
     const diff = Math.min(
       (dir - run.weather.windFrom + 6) % 6,
       (run.weather.windFrom - dir + 6) % 6,
@@ -140,6 +140,16 @@ function endOfTurn(run: GameRun, events: SimEvent[], rng: Rng) {
       }
       return true;
     });
+  }
+
+  // Winter is the voyage's clock: linger too long and the crew's spirit
+  // bleeds out no matter how full the hold is.
+  if (run.turn === BALANCE.morale.winterOnset) {
+    log(run, events, 'The nights grow long and the water darker. Winter is coming for this crossing.', 'saga');
+  }
+  if (run.turn >= BALANCE.morale.winterOnset) {
+    const bite = 1 + Math.floor((run.turn - BALANCE.morale.winterOnset) / 25);
+    run.moraleShip = Math.max(0, run.moraleShip - bite);
   }
 
   const w = run.weather;
@@ -434,7 +444,24 @@ export function stepStrategic(
       run.turn += 1;
       const hadFood = run.food > 0 && run.water > 0;
       consumeSupplies(run, events, rng);
-      log(run, events, 'The crew rests at anchor, watching the sky.');
+      // A held day is a working day: lines over the side, and canvas
+      // spread for rain if a storm is near.
+      const tile = run.chart.tiles[key(run.chart.shipAt)];
+      const canFish = tile?.terrain === 'sea' || tile?.terrain === 'coast';
+      const rainNear = run.weather.storms.some((s) => distance(s, run.chart.shipAt) <= 2);
+      let gains = '';
+      if (canFish) {
+        run.food += 3;
+        gains = ' Lines out — the catch is fair (+3 food).';
+      }
+      if (rainNear) {
+        run.water += 4;
+        gains += ' Storm-rain drums on the spread sail (+4 water).';
+      } else {
+        run.water += 2;
+        gains += ' A passing squall wets the canvas (+2 water).';
+      }
+      log(run, events, `The crew holds position, watching the sky.${gains}`);
       // Resting recovers a little fatigue — and hp, but only on full bellies.
       for (const c of run.crew) {
         if (!c.alive) continue;

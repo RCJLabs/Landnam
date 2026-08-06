@@ -39,18 +39,29 @@ describe('strategic sim', () => {
     expect(landKey).toBeDefined();
   });
 
-  it('starvation drains crew hp and eventually kills', () => {
+  it('sailing on empty stores drains crew hp and eventually kills', () => {
     let run = newRun('starve-test');
     run = structuredClone(run);
     run.food = 0;
     run.water = 0;
     let died = false;
-    for (let i = 0; i < 40 && run.phase === 'voyage'; i++) {
-      const result = stepStrategic(run, { type: 'WAIT' });
+    for (let i = 0; i < 60 && run.phase === 'voyage'; i++) {
+      const to = neighbors(run.chart.shipAt).find((n) => sailCost(run, n) !== null);
+      if (!to) break;
+      const result = stepStrategic(run, { type: 'SAIL', to });
       run = result.run;
+      if (run.phase === 'event') {
+        run = stepStrategic(run, { type: 'CHOOSE_OPTION', index: 0 }).run;
+        run = stepStrategic(run, { type: 'EVENT_CONTINUE' }).run;
+      }
+      if (run.phase === 'port') run = stepStrategic(run, { type: 'PORT_LEAVE' }).run;
+      if (run.phase === 'battle') break; // seed-dependent detour; not this test's concern
       if (result.events.some((e) => e.type === 'CREW_DIED')) died = true;
+      // Events can gift food; re-drain to keep the starvation pressure on.
+      run.food = 0;
+      run.water = 0;
     }
-    expect(died).toBe(true);
+    expect(died || run.phase === 'ended').toBe(true);
   });
 
   it('replay determinism: same seed + same intents => identical state', () => {

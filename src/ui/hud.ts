@@ -1,6 +1,7 @@
 // Voyage HUD: resource strip, action buttons, log.
 
 import { GameRun, StrategicIntent } from '../sim/types';
+import { BALANCE } from '../content/balance';
 import { livingCrew } from '../sim/strategic/sail';
 import { portHere } from '../sim/strategic/ports';
 import { el, button, replaceChildren } from './dom';
@@ -17,8 +18,10 @@ export function renderHud(
       el('span', { class: 'stat-value' }, [value]),
     ]);
 
+  const winterIn = BALANCE.morale.winterOnset - run.turn;
   const strip = el('div', { class: 'hud-strip' }, [
     stat('Turn', String(run.turn)),
+    winterIn > 0 ? stat('Winter in', String(winterIn), winterIn <= 15) : stat('Winter', 'HERE', true),
     stat('Crew', String(livingCrew(run)), livingCrew(run) <= 3),
     stat('Food', String(Math.floor(run.food)), run.food < 8),
     stat('Water', String(Math.floor(run.water)), run.water < 8),
@@ -38,7 +41,9 @@ export function renderHud(
       );
     }
     actions.append(
-      button('Hold position', () => dispatch({ type: 'WAIT' }), { title: 'Rest a turn: recover a little, spend supplies' }),
+      button('Hold position', () => dispatch({ type: 'WAIT' }), {
+        title: 'Hold a turn: fish (+food), catch rain (+water), rest wounds and fatigue',
+      }),
     );
     if (run.timber > 0 && run.ship.hull < run.ship.hullMax) {
       actions.append(

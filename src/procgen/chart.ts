@@ -34,7 +34,7 @@ const ANCHORS: Anchor[] = [
 const FEATURE_TABLES: Record<Region, [FeatureKind, number, number][]> = {
   norway: [['village', 1, 1]],
   shetland: [['port', 1, 1], ['monastery', 1, 2]],
-  faroes: [['monastery', 1, 2], ['village', 0, 1]],
+  faroes: [['port', 0, 1], ['monastery', 1, 2], ['village', 0, 1]],
   iceland: [['port', 1, 2], ['village', 1, 2]],
   greenland: [['port', 1, 1], ['mythic', 1, 1]],
   vinland: [['village', 1, 1]],
