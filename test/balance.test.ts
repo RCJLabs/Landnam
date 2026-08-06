@@ -250,6 +250,30 @@ describe('the difficulty curve', () => {
 
 // --- The wall ---
 
+// --- What the late game is NOT short of ---
+//
+// Two levers were built, measured and thrown away trying to fix the flat late
+// game (41 of 43 bands through the first winter reach the second). Both are
+// recorded here so the third attempt does not start by repeating them.
+//
+//   1. Raid pressure rising with the steading's fame. Built, then tried at
+//      three magnitudes up to three times the original. The curve moved by
+//      nothing at any of them: raids do fire — 61 across 80 runs, 38 runs saw
+//      one — and settled bands simply hold them.
+//   2. Winters that deepen with the years: +2 firewood a night per winter
+//      already stood, so winter two burns 8 and winter three 10, plus a
+//      colder night for the sickness roll. Implemented correctly and verified
+//      at the boundaries. It changed survival to the second winter by zero
+//      for a careful player AND by zero for a careless one (18/40 either
+//      way), because the winter mark is a perfect forecast and surplus labour
+//      can always be moved onto whatever it says is short.
+//
+// The diagnosis both point at: by the second year a settled band has more
+// labour than it has uses for, so NOTHING routed through the material
+// survival loop — food, firewood, cold — can threaten it. A lever that works
+// has to take away people or bring something a small band cannot beat, not
+// raise a number the band can simply out-work.
+
 describe('the memorial outlives the run', () => {
   it('names everyone the run buried, oldest death first', () => {
     const state = structuredClone(newGame('wall'));

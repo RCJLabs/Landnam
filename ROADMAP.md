@@ -91,6 +91,26 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — Two levers for the flat late game, both thrown away** — The
+  game's difficulty lives entirely in one season: 41 of 43 bands that get
+  through the first winter reach the second. Two fixes were built and
+  measured, and neither survived contact with the harness. Raid pressure
+  rising with the steading's fame moved the curve by nothing at three
+  magnitudes — raids do fire, 61 across 80 runs, and settled bands simply hold
+  them. Winters that deepen with the years (+2 firewood a night per winter
+  already stood, so the second burns 8 and the third 10, and the cold bites
+  harder for the sickness roll) was implemented correctly, verified at the
+  season boundaries, and changed survival to the second winter by exactly zero
+  — for a careful player and, checked separately, for a careless one too, 18
+  of 40 either way.
+  The negative result is the finding. By its second year a settled band has
+  more labour than it has uses for, and the winter mark is a perfect forecast,
+  so anything routed through the material survival loop is a number the band
+  simply out-works. A lever that bites has to take people away or bring
+  something a small band cannot beat. Both dead ends are written into
+  test/balance.test.ts so the third attempt does not begin by repeating them.
+  481 tests.
+
 - **2026-08-06 — 5.3 closes: one fix measured and thrown away** — The landing
   is chosen for loneliness alone, which puts ground you could settle a median
   5 and as much as 11 hexes from where the keel touches sand; a band that
