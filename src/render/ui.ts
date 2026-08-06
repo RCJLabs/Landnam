@@ -7,6 +7,16 @@ import { daysUntilWinter, effectsOn, seasonOf } from '../sim/calendar';
 import { foodPerDay, firewoodPerNight } from '../sim/upkeep';
 import { living } from '../sim/people';
 import { canFish } from '../sim/travel';
+import {
+  atHome,
+  BLOCK_REASON,
+  canFound,
+  foundBlocker,
+  scoreWord,
+  siteReport,
+  verdictFor,
+} from '../sim/site';
+import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { button, el } from './svg';
 
 export type Dispatch = (action: Action) => void;
@@ -42,7 +52,11 @@ export function renderTopBar(state: GameState): HTMLElement {
   return bar;
 }
 
-export function renderActionBar(state: GameState, dispatch: Dispatch): HTMLElement {
+export function renderActionBar(
+  state: GameState,
+  dispatch: Dispatch,
+  onSettle?: () => void,
+): HTMLElement {
   const bar = el('div', { class: 'actionbar' });
   if (state.end || state.event) return bar;
 
@@ -57,7 +71,70 @@ export function renderActionBar(state: GameState, dispatch: Dispatch): HTMLEleme
   if (canFish(state)) {
     bar.append(button('Fish', () => dispatch({ type: 'FISH' }), { class: 'action' }));
   }
+  if (onSettle && canFound(state, state.party.at)) {
+    bar.append(
+      button('Settle', onSettle, {
+        class: 'action settle',
+        title: 'Take this land. There is no undoing it.',
+      }),
+    );
+  }
   return bar;
+}
+
+/**
+ * The reading of the ground underfoot. Always on screen while you are still
+ * looking for somewhere, because the whole decision is a comparison and the
+ * player cannot compare what they cannot see.
+ */
+export function renderSitePanel(state: GameState): HTMLElement {
+  if (state.end || state.event) return el('div');
+  const at = state.party.at;
+  const report = siteReport(state.world, at);
+  if (!report) return el('div');
+
+  const home = atHome(state);
+  const blocker = foundBlocker(state, at);
+  const verdict = verdictFor(report.total);
+
+  const bars = el('div', { class: 'site-measures' });
+  for (const measure of MEASURES) {
+    const score = report[measure.id];
+    bars.append(
+      el('div', { class: 'site-measure' }, [
+        // The row itself is `display: contents`, so the tooltip has to hang
+        // on a span — a box-less element cannot be hovered.
+        el('span', { class: 'site-name', title: measure.meaning }, [measure.name]),
+        el('span', { class: 'site-pips', 'aria-label': `${score} of ${MEASURE_MAX}` }, [
+          '●'.repeat(score) + '○'.repeat(MEASURE_MAX - score),
+        ]),
+        el('span', { class: 'site-word' }, [scoreWord(score)]),
+      ]),
+    );
+  }
+
+  // A verdict that says "a steading could stand here" over ground the game
+  // then refuses is a lie the player will catch within a day. When there is a
+  // blocker, the blocker IS the headline.
+  const refused = !!blocker && blocker !== 'settled' && blocker !== 'ended';
+  const head = home
+    ? `${state.settlement!.name} — our own ground`
+    : state.settlement
+      ? `This ground: ${verdict.label}`
+      : refused
+        ? `${verdict.label}, but we cannot hold it`
+        : `${verdict.label} — ${verdict.line}`;
+
+  const panel = el('div', { class: `site${home ? ' home' : ''}${refused ? ' refused' : ''}` }, [
+    el('div', { class: 'site-head' }, [head]),
+    bars,
+  ]);
+  // Say plainly why the button is missing, rather than leaving a blank space
+  // where a choice should be.
+  if (!home && refused) {
+    panel.append(el('div', { class: 'site-block' }, [BLOCK_REASON[blocker!]]));
+  }
+  return panel;
 }
 
 export function renderSagaLog(state: GameState, expanded: boolean, toggle: () => void): HTMLElement {
@@ -87,5 +164,8 @@ export function renderSagaLog(state: GameState, expanded: boolean, toggle: () =>
 export function renderHint(state: GameState): HTMLElement {
   if (state.end) return el('div', { class: 'hint' }, ['The saga is finished.']);
   if (state.event) return el('div', { class: 'hint' }, ['Something needs answering.']);
+  if (!state.settlement) {
+    return el('div', { class: 'hint' }, ['Find ground worth holding · tap a marked hex to travel']);
+  }
   return el('div', { class: 'hint' }, ['Tap a marked hex to travel · drag to look about']);
 }

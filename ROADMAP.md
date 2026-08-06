@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 3.1**
+> **CURRENT MILESTONE: 3.2**
 
 ---
 
@@ -59,7 +59,7 @@ Goal: encounters zoom into battles worth winning.
 
 Goal: the full loop closes — travel, fight, settle, survive winter.
 
-- [ ] **3.1 Land-taking** — Any claimable hex shows site quality derived from surroundings (fresh water, soil, timber, harbor, defensibility). Founding is a one-way ritual moment. *Done when: choosing where to settle is a real decision.*
+- [x] **3.1 Land-taking** — Any claimable hex shows site quality derived from surroundings (fresh water, soil, timber, harbor, defensibility). Founding is a one-way ritual moment. *Done when: choosing where to settle is a real decision.*
 - [ ] **3.2 Colony view & jobs** — COLONY mode: zoomed local map of the settled hex. Assign warband to jobs: farmer, hunter, fisher, woodcutter, builder, warrior. Day-tick resolves labor into stockpiles. *Done when: job assignment visibly moves the numbers.*
 - [ ] **3.3 Needs & buildings** — Needs: food, warmth, rest, morale. Build queue: longhouse, smokehouse, farm plots, palisade, dock, mead hall. Buildings unlock capacity and jobs. *Done when: a build order emerges naturally from scarcity.*
 - [ ] **3.4 The First Winter** — Winter as boss fight: no forage, firewood burn, sickness events, morale spiral. Stockpile targets telegraphed in autumn. *Done when: an unprepared colony dies and it's clearly your fault — ship v0.3 (full loop).*
@@ -91,6 +91,24 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 3.1 Land-taking** — Every hex you stand on is read on five
+  measures: fresh water, soil, timber, harbour and defensibility, each 0–5,
+  each derived from the hex AND its ring, because a steading is not one hex —
+  it is the walk to the river, the walk to the woodpile, and the ways in you
+  cannot watch at once. The five are in structural tension: good farmland is
+  open ground and open ground cannot be held (soil/defence correlate at
+  −0.55, timber/defence at −0.75), and across 7,769 hexes there is not one
+  that scores 4+ on all five. No fresh water is a hard refusal — half the
+  land is unsettleable — and the readout leads with the refusal rather than
+  a verdict that promises what the gate denies. Founding is one way: the card
+  names the site's strength and its weakness, says out loud that there is no
+  second steading, and can be walked away from. The place names itself from
+  what it is best at, so a Ravavík is a harbour and a Steinborg is a crag.
+  Home ground then pays the promise back: soil doubles what you forage there
+  (186 against 93 over twenty days), timber pays out in firewood, a night
+  under your own roof mends more, and a defensible site is a quieter one —
+  fewer things walk up on you, and what does is a whole enemy easier.
+  `SAVE_VERSION` 6 with a migration. 220 tests.
 - **2026-08-06 — v0.2 "Shield Wall"** — Phase 2 complete. Battles are now
   something you can lose people in permanently.
 - **2026-08-06 — 2.4 Consequences** — A warrior dragged off the field rolls

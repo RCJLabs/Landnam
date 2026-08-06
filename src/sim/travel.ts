@@ -9,6 +9,7 @@ import { effectsOn } from './calendar';
 import { revealAround, sightRadius } from './fog';
 import { bestAt, effectiveStat, living } from './people';
 import { chronicle } from './saga';
+import { atHome, foundSettlement } from './site';
 import { passDay } from './upkeep';
 
 export type TravelAction =
@@ -16,7 +17,8 @@ export type TravelAction =
   | { type: 'CAMP' }
   | { type: 'FORAGE' }
   | { type: 'HUNT' }
-  | { type: 'FISH' };
+  | { type: 'FISH' }
+  | { type: 'FOUND' };
 
 /** Effort to enter a hex, or null when it cannot be entered on foot. */
 export function moveEffort(state: GameState, to: Hex): number | null {
@@ -101,6 +103,21 @@ function marchLine(
   ]);
 }
 
+/**
+ * What your own hearth is worth, per point of the measure that feeds it.
+ *
+ * This is the teeth in 3.1: a site's scores are a promise, and these are how
+ * the promise gets paid. Without them the readout would be a number the player
+ * has no reason to weigh.
+ */
+export const HOME_BONUS_PER_POINT = 0.12;
+
+/** Multiplier on a home-ground action, from the measure that governs it. */
+export function homeYield(state: GameState, measure: 'soil' | 'timber' | 'harbour'): number {
+  if (!atHome(state)) return 1;
+  return 1 + state.settlement!.report[measure] * HOME_BONUS_PER_POINT;
+}
+
 interface Gather {
   amount: number;
   scout?: Person;
@@ -153,25 +170,35 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const def = terrainDef(here.terrain);
       const rng = actionRng(state, 'camp');
       const hands = living(party.people).length;
-      const wood = Math.max(0, Math.round(def.wood * (0.5 + hands * 0.18) * rng.float(0.8, 1.2)));
+      const home = atHome(state);
+      const wood = Math.max(
+        0,
+        Math.round(
+          def.wood * (0.5 + hands * 0.18) * rng.float(0.8, 1.2) * homeYield(state, 'timber'),
+        ),
+      );
       party.firewood += wood;
       party.hasCamped = true;
 
-      // Rest mends bodies, but only on a full stomach.
+      // Rest mends bodies, but only on a full stomach — and a roof of your own
+      // mends them faster than a night under a cloak.
       const fed = party.food > 0;
+      const mend = fed ? (home ? 4 : 2) : 0;
       for (const person of living(party.people)) {
-        if (fed) person.health = Math.min(person.maxHealth, person.health + 2);
+        person.health = Math.min(person.maxHealth, person.health + mend);
       }
-      party.morale = Math.min(100, party.morale + (fed ? 5 : 1));
+      party.morale = Math.min(100, party.morale + (fed ? (home ? 7 : 5) : 1));
 
       advance(state, 1);
       if (state.end) return state;
       reveal(state);
       chronicle(
         state,
-        wood > 0
-          ? `We made camp and cut ${wood} of firewood.`
-          : 'We made camp. There was nothing here worth burning.',
+        home
+          ? `We slept at ${state.settlement!.name}${wood > 0 ? `, and put ${wood} of firewood by` : ', and it was ours'}.`
+          : wood > 0
+            ? `We made camp and cut ${wood} of firewood.`
+            : 'We made camp. There was nothing here worth burning.',
         'plain',
       );
       return state;
@@ -180,7 +207,14 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
     case 'FORAGE': {
       const here = state.world.tiles[key(party.at)]!;
       const def = terrainDef(here.terrain);
-      const { amount, scout } = gather(state, def.forage, 'wits', 'forage');
+      // Worked ground gives back more than wild ground: this is what the
+      // soil score was a promise of.
+      const { amount, scout } = gather(
+        state,
+        def.forage * homeYield(state, 'soil'),
+        'wits',
+        'forage',
+      );
       party.food += amount;
       advance(state, 1);
       if (state.end) return state;
@@ -213,12 +247,22 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       return state;
     }
 
+    case 'FOUND': {
+      // Setting the posts is a day's work like any other, and the last time
+      // this choice will be offered.
+      if (!foundSettlement(state)) return prev;
+      advance(state, 1);
+      if (state.end) return state;
+      reveal(state);
+      return state;
+    }
+
     case 'FISH': {
       if (!canFish(state)) return prev;
       const here = state.world.tiles[key(party.at)]!;
       const def = terrainDef(here.terrain);
       const base = Math.max(def.fish, here.river ? 3 : 0, 2);
-      const { amount } = gather(state, base, 'wits', 'fish');
+      const { amount } = gather(state, base * homeYield(state, 'harbour'), 'wits', 'fish');
       party.food += amount;
       advance(state, 1);
       if (state.end) return state;

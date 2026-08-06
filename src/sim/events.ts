@@ -10,6 +10,7 @@ import { startBattle } from './battleTurn';
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
+import { atHome } from './site';
 import { checkRunEnd } from './upkeep';
 
 /** Chance an event fires after a travel action. */
@@ -76,11 +77,21 @@ export function presentEvent(state: GameState, def: EventDef): ActiveEvent {
   };
 }
 
+/**
+ * Ground you can watch is ground where fewer things walk up on you. This is
+ * what the defensibility score buys — quiet, which in a survival game is the
+ * most valuable thing there is.
+ */
+export function eventChance(state: GameState): number {
+  if (!atHome(state)) return BASE_EVENT_CHANCE;
+  return BASE_EVENT_CHANCE * (1 - state.settlement!.report.defence * 0.09);
+}
+
 /** Rolls for an event after a travel action. Mutates the state clone. */
 export function maybeFireEvent(state: GameState): void {
   if (state.end || state.event) return;
   const rng = stream(state.seed, 'events').derive(`fire:${state.day}:${key(state.party.at)}`);
-  if (!rng.chance(BASE_EVENT_CHANCE)) return;
+  if (!rng.chance(eventChance(state))) return;
 
   const pool = EVENTS.filter((def) => isEligible(state, def));
   if (pool.length === 0) return;
@@ -194,7 +205,10 @@ export function dismissEvent(state: GameState): void {
   delete state.event;
 
   if ((state.flags['pendingBattle'] ?? 0) > 0 && !state.end) {
-    const difficulty = state.flags['pendingBattleDifficulty'] ?? 0;
+    let difficulty = state.flags['pendingBattleDifficulty'] ?? 0;
+    // Fighting at your own gate is easier: you know the ground, and there are
+    // only so many ways in. A strong site is worth a whole enemy.
+    if (atHome(state) && state.settlement!.report.defence >= 3) difficulty -= 1;
     delete state.flags['pendingBattle'];
     delete state.flags['pendingBattleDifficulty'];
     const terrain = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';

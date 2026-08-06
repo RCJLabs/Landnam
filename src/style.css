@@ -448,6 +448,79 @@ h2.grim {
   color: var(--blood);
 }
 
+
+/* --- The site reading (3.1) --- */
+
+.site {
+  padding: 6px 10px 8px;
+  background: var(--ink-soft);
+  border-top: 1px solid var(--edge);
+  font-size: 12px;
+}
+
+.site.home {
+  border-top-color: var(--gold);
+}
+
+.site.refused .site-head {
+  color: var(--parchment-dim);
+}
+
+.site-head {
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.site-measures {
+  display: grid;
+  /* Three columns so the pips line up in a readable stack on a phone. */
+  grid-template-columns: auto auto 1fr;
+  gap: 1px 8px;
+  align-items: baseline;
+}
+
+/* The row wrapper must not become a grid cell itself, or the five measures
+   tile across the columns instead of stacking as a table. */
+.site-measure {
+  display: contents;
+}
+
+.site-name {
+  color: var(--parchment-dim);
+  white-space: nowrap;
+}
+
+.site-pips {
+  color: var(--gold);
+  letter-spacing: 2px;
+  font-size: 11px;
+}
+
+.site-word {
+  color: var(--parchment-dim);
+  text-align: right;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.site-block {
+  margin-top: 5px;
+  color: var(--blood);
+  font-style: italic;
+}
+
+.action.settle {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.card.founding .site-measures {
+  margin: 12px 0;
+  font-size: 14px;
+}
+
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {

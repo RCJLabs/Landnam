@@ -15,11 +15,18 @@ import { createBattleView } from './render/battle';
 import {
   renderAftermath,
   renderEventCard,
+  renderFounding,
   renderRunEnd,
   renderTitle,
   renderWarband,
 } from './render/cards';
-import { renderActionBar, renderHint, renderSagaLog, renderTopBar } from './render/ui';
+import {
+  renderActionBar,
+  renderHint,
+  renderSagaLog,
+  renderSitePanel,
+  renderTopBar,
+} from './render/ui';
 import {
   renderBattleActions,
   renderBattleBar,
@@ -29,6 +36,7 @@ import {
   type Aim,
 } from './render/battleUi';
 import { combatantAt, isWarbandTurn } from './sim/battle';
+import { canFound } from './sim/site';
 import { startBattle } from './sim/battleTurn';
 import { button, el } from './render/svg';
 
@@ -40,6 +48,8 @@ let travelView: ReturnType<typeof createTravelView> | null = null;
 let battleView: ReturnType<typeof createBattleView> | null = null;
 let sagaExpanded = false;
 let rosterOpen = false;
+/** The land-taking card is UI state — the decision itself is the only thing saved. */
+let foundingOpen = false;
 /** Which action a tap on a foe performs. Resets to Strike each turn. */
 let aim: Aim = 'strike';
 let aimTurnKey = '';
@@ -73,7 +83,7 @@ function dispatch(action: Action): void {
 }
 
 function onHexTap(target: Hex): void {
-  if (!state || state.event || state.aftermath || state.end) return;
+  if (!state || state.event || state.aftermath || state.end || foundingOpen) return;
   if (equals(target, state.party.at)) return;
   dispatch({ type: 'MOVE', to: target });
 }
@@ -99,6 +109,7 @@ function startRun(seed: string): void {
   save(state);
   sagaExpanded = false;
   rosterOpen = false;
+  foundingOpen = false;
   mountGame();
 }
 
@@ -174,9 +185,12 @@ function render(): void {
 
   topbarSlot.replaceChildren(renderTopBar(state));
   travelView.update(state);
-  hintSlot.replaceChildren(renderHint(state));
+  hintSlot.replaceChildren(renderHint(state), renderSitePanel(state));
 
-  const actions = renderActionBar(state, dispatch);
+  const actions = renderActionBar(state, dispatch, () => {
+    foundingOpen = true;
+    render();
+  });
   if (!state.end && !state.event) {
     actions.append(
       button('Band', () => {
@@ -200,6 +214,20 @@ function render(): void {
         clearSave();
         showTitle();
       }),
+    );
+  } else if (foundingOpen && canFound(state, state.party.at)) {
+    overlaySlot.replaceChildren(
+      renderFounding(
+        state,
+        () => {
+          foundingOpen = false;
+          dispatch({ type: 'FOUND' });
+        },
+        () => {
+          foundingOpen = false;
+          render();
+        },
+      ),
     );
   } else if (rosterOpen) {
     overlaySlot.replaceChildren(

@@ -124,6 +124,10 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       );
     }
 
+    if (state.settlement) {
+      layerOverlay.append(steading(state.settlement.at));
+    }
+
     layerParty.append(partyToken(state.party.at));
   }
 
@@ -267,6 +271,35 @@ function mounds(cx: number, cy: number, visible: boolean): SVGGElement {
       d: `M ${cx - HEX_SIZE * 0.4} ${cy + HEX_SIZE * 0.16} q ${HEX_SIZE * 0.4} ${-HEX_SIZE * 0.42} ${HEX_SIZE * 0.8} 0 Z`,
       fill: '#8d8459',
     }),
+  );
+  return g;
+}
+
+/** A longhouse: a turf roof with a smoke-hole, readable at thumb size. */
+function steading(at: Hex): SVGGElement {
+  const p = toPixel(at, HEX_SIZE);
+  const w = HEX_SIZE * 0.62;
+  const h = HEX_SIZE * 0.44;
+  const g = svgEl('g', { class: 'steading' });
+  g.append(
+    svgEl('polygon', {
+      points: cornerPoints(p.x, p.y, HEX_SIZE - 2),
+      fill: 'none',
+      stroke: '#d3a441',
+      'stroke-width': 2.5,
+    }),
+    // The hall itself: a low bowed roof, gable end toward the viewer.
+    svgEl('path', {
+      d:
+        `M ${p.x - w / 2} ${p.y + h / 2} ` +
+        `L ${p.x - w / 2} ${p.y} ` +
+        `Q ${p.x} ${p.y - h} ${p.x + w / 2} ${p.y} ` +
+        `L ${p.x + w / 2} ${p.y + h / 2} Z`,
+      fill: '#4a3b28',
+      stroke: '#d3a441',
+      'stroke-width': 1.5,
+    }),
+    svgEl('circle', { cx: p.x, cy: p.y + h * 0.1, r: HEX_SIZE * 0.07, fill: '#d3a441' }),
   );
   return g;
 }

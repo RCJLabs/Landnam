@@ -6,7 +6,8 @@
 // v4 (2.3): Combatant gained nerve, broken and fled.
 // v5 (2.4): Person gained xp (and diedOn), Combatant gained kills, and the
 //           root gained the optional post-battle `aftermath`.
-export const SAVE_VERSION = 5;
+// v6 (3.1): the root gained the optional `settlement`.
+export const SAVE_VERSION = 6;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

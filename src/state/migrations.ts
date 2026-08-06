@@ -69,6 +69,11 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 5 };
   },
+
+  // v5 -> v6: the land can be taken. An absent `settlement` already means
+  // "still walking", so a v5 save needs no reshaping — but the registry
+  // refuses silent gaps, so the bump ships this anyway.
+  5: (save) => ({ ...save, version: 6 }),
 };
 
 export interface MigrationResult {

@@ -5,6 +5,8 @@ import { traitById } from '../data/traits';
 import { fullName, effectiveStat } from '../sim/people';
 import { exploredFraction } from '../sim/fog';
 import { XP_PER_ADVANCE } from '../sim/consequences';
+import { scoreWord, siteReport, strongestOf, verdictFor } from '../sim/site';
+import { MEASURES, MEASURE_MAX } from '../data/sites';
 import type { GameState, Person } from '../state/types';
 import { button, el } from './svg';
 import type { Dispatch } from './ui';
@@ -118,6 +120,60 @@ export function renderAftermath(state: GameState, dispatch: Dispatch): HTMLEleme
 
   card.append(button('Onward', () => dispatch({ type: 'DISMISS_AFTERMATH' }), { class: 'primary wide' }));
   return el('div', { class: 'overlay' }, [card]);
+}
+
+/**
+ * The land-taking. Deliberately heavier than any other card in the game: it
+ * names what you are giving up as well as what you are getting, and it says
+ * out loud that there is no second one.
+ */
+export function renderFounding(
+  state: GameState,
+  confirm: () => void,
+  cancel: () => void,
+): HTMLElement {
+  const report = siteReport(state.world, state.party.at)!;
+  const verdict = verdictFor(report.total);
+  const strongest = strongestOf(report);
+  const weakest = MEASURES.reduce((worst, m) =>
+    report[m.id] < report[worst.id] ? m : worst,
+  );
+
+  const table = el('div', { class: 'site-measures' });
+  for (const measure of MEASURES) {
+    const score = report[measure.id];
+    table.append(
+      el('div', { class: 'site-measure' }, [
+        el('span', { class: 'site-name' }, [measure.name]),
+        el('span', { class: 'site-pips' }, ['●'.repeat(score) + '○'.repeat(MEASURE_MAX - score)]),
+        el('span', { class: 'site-word' }, [scoreWord(score)]),
+      ]),
+    );
+  }
+
+  const strong = MEASURES.find((m) => m.id === strongest)!;
+
+  return el('div', { class: 'overlay' }, [
+    el('div', { class: 'card founding' }, [
+      el('h2', { class: 'good' }, ['Take This Land?']),
+      el('p', { class: 'event-body' }, [
+        `${verdict.label}. ${verdict.line}`,
+      ]),
+      table,
+      el('p', { class: 'event-body' }, [
+        `Its strength is ${strong.name.toLowerCase()}. ${strong.meaning} ` +
+          `Its weakness is ${weakest.name.toLowerCase()} — ${scoreWord(report[weakest.id])}, ` +
+          'and it will not improve because you wish it.',
+      ]),
+      el('p', { class: 'outcome grim' }, [
+        'The posts go in once. There is no second steading and no moving this one.',
+      ]),
+      el('div', { class: 'choices' }, [
+        button('Set the posts', confirm, { class: 'choice primary' }),
+        button('Walk on', cancel, { class: 'choice' }),
+      ]),
+    ]),
+  ]);
 }
 
 function personRow(person: Person): HTMLElement {

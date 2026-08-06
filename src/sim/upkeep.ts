@@ -146,8 +146,12 @@ export function checkRunEnd(state: GameState, _forage: number): void {
   const alive = living(state.party.people);
 
   if (state.day >= SURVIVAL_DAY && alive.length > 0) {
-    endRun(state, 'survived', 'We Held the Land', [
+    const home = state.settlement;
+    endRun(state, 'survived', home ? `${home.name} Stood` : 'We Held the Land', [
       `${alive.length} of ${state.party.people.length} lived to see the ice break.`,
+      home
+        ? `${home.name} was founded on day ${home.foundedOn}, and it was still standing when the ice broke.`
+        : 'We never set a post in the ground. We wintered where we stood, and moved on.',
       'The land had not taken us. Not this year.',
     ]);
     return;

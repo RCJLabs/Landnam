@@ -202,6 +202,31 @@ export interface Battle {
   outcome?: BattleOutcome;
 }
 
+// --- The land-taking ---
+
+/**
+ * How good a hex is to settle, each measure 0..5. Derived from the ground and
+ * its neighbours, so it is recomputable — but it is stored on the settlement
+ * anyway, because the reading you settled on is part of the record.
+ */
+export interface SiteReport {
+  water: number;
+  soil: number;
+  timber: number;
+  harbour: number;
+  defence: number;
+  /** Sum of the five, 0..25. */
+  total: number;
+}
+
+export interface Settlement {
+  at: Hex;
+  name: string;
+  /** The day the posts went in. There is only ever one. */
+  foundedOn: number;
+  report: SiteReport;
+}
+
 // --- Run end ---
 
 export interface RunEnd {
@@ -229,6 +254,8 @@ export interface GameState {
   battle?: Battle;
   /** The reckoning from the last fight, until the player has read it. */
   aftermath?: Aftermath;
+  /** Where the land was taken. Set once, never moved, never unset. */
+  settlement?: Settlement;
   end?: RunEnd;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;

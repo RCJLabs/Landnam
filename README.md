@@ -12,7 +12,7 @@ including a phone browser, and ships as a **single self-contained
 `index.html`** that works offline from a `file://` open — no images, no fonts,
 no audio files, no network.
 
-## Playing (v0.2 — the overworld and the shield wall)
+## Playing (v0.2 + the land-taking)
 
 - **Travel** by tapping a marked hex. Rough country costs more days than open
   ground, and each day eats food and burns firewood.
@@ -54,6 +54,15 @@ no audio files, no network.
   the veteran you lose is worth more than the one you started with. Win a
   field with bodies on it and you strip it for food and firewood. The
   reckoning waits until you are back on the road.
+- **Take the land.** Every hex you stand on is read on five measures — fresh
+  water, soil, timber, harbour, defensibility — from the ground and what
+  surrounds it. They pull against each other: the best farmland is open
+  country you cannot defend, a crag you can hold grows nothing, a harbour
+  wants sand. No fresh water and you cannot settle at all. When you set the
+  posts it is permanent: one steading, no moving it, and the place takes its
+  name from whatever it is best at. After that, your own ground gives back —
+  more from the fields, more firewood, deeper sleep, and fewer things walking
+  up on you in the night.
 - **The saga log** writes down what happened, in chronicle voice. It is the
   record of the run.
 - **Winter** starts on day 49 and stops the land from giving. Reaching spring
