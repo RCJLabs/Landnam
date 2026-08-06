@@ -52,8 +52,15 @@ export function evasion(state: GameState, target: Combatant): number {
   return 7 + wits + shelter - surrounded * OUTNUMBERED_PENALTY;
 }
 
-function drop(state: GameState, target: Combatant, person: Person, cause: string): void {
+function drop(
+  state: GameState,
+  target: Combatant,
+  person: Person,
+  cause: string,
+  killer?: Combatant,
+): void {
   const battle = state.battle!;
+  if (killer && killer.side !== target.side) killer.kills += 1;
   // Nerve has to be shaken while the fallen fighter is still counted as a
   // link, or nobody registers that the wall just opened.
   witnessFall(state, target);
@@ -121,6 +128,7 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
       target.side === 'foe'
         ? `${attacker.name} put ${defender.name} down.`
         : `${defender.name} went down under ${attacker.name}.`,
+      active,
     );
   }
   return true;
@@ -174,7 +182,7 @@ export function doThrow(state: GameState, targetPersonId: string): boolean {
     battle.log.push(`${thrower.name} put a spear into ${defender.name} (${damage}).`);
     shakeNerve(state, target, NERVE_HIT);
   } else {
-    drop(state, target, defender, `${thrower.name}'s throw dropped ${defender.name}.`);
+    drop(state, target, defender, `${thrower.name}'s throw dropped ${defender.name}.`, active);
   }
   return true;
 }
@@ -224,14 +232,14 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
     if (shoved.health > 0) {
       battle.log.push(`${shover.name} slammed ${shoved.name} into what was behind them (2).`);
     } else {
-      drop(state, target, shoved, `${shoved.name} was crushed against the rocks.`);
+      drop(state, target, shoved, `${shoved.name} was crushed against the rocks.`, active);
     }
     return true;
   }
 
   if (tile.ground === 'water') {
     // The old trick: put them in the water and let it do the work.
-    drop(state, target, shoved, `${shover.name} put ${shoved.name} into the water.`);
+    drop(state, target, shoved, `${shover.name} put ${shoved.name} into the water.`, active);
     return true;
   }
 

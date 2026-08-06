@@ -101,6 +101,7 @@ function makeFoe(rng: Rng, archetypeId: string, index: number): Person {
     maxHealth,
     morale: 60,
     injuries: [],
+    xp: 0,
     alive: true,
   };
 }
@@ -201,6 +202,7 @@ export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0):
       // Everyone carries something worth throwing once.
       throwsLeft: 1,
       defending: false,
+      kills: 0,
       nerve: 0,
       broken: false,
       fled: false,
@@ -221,6 +223,7 @@ export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0):
       hasActed: false,
       throwsLeft: archetypeOf(foe)?.throws ?? 1,
       defending: false,
+      kills: 0,
       nerve: 0,
       broken: false,
       fled: false,

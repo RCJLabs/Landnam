@@ -4,6 +4,7 @@
 import { traitById } from '../data/traits';
 import { fullName, effectiveStat } from '../sim/people';
 import { exploredFraction } from '../sim/fog';
+import { XP_PER_ADVANCE } from '../sim/consequences';
 import type { GameState, Person } from '../state/types';
 import { button, el } from './svg';
 import type { Dispatch } from './ui';
@@ -70,6 +71,55 @@ export function renderEventCard(state: GameState, dispatch: Dispatch): HTMLEleme
   return el('div', { class: 'overlay' }, [card]);
 }
 
+/**
+ * The reckoning after a fight. Deliberately shown on the road rather than on
+ * the field: the player leaves the battle thinking they won, and then learns
+ * what it cost.
+ */
+export function renderAftermath(state: GameState, dispatch: Dispatch): HTMLElement {
+  const after = state.aftermath!;
+  const card = el('div', { class: 'card' }, [
+    el('h2', { class: after.killed.length > 0 ? 'grim' : after.won ? 'good' : 'grim' }, [
+      after.killed.length > 0 ? 'What It Cost' : after.won ? 'The Reckoning' : 'What Was Left',
+    ]),
+  ]);
+
+  if (after.killed.length > 0) {
+    card.append(
+      el('h3', {}, ['The dead']),
+      ...after.killed.map((name) => el('p', { class: 'fallen' }, [`${name} did not get up.`])),
+    );
+  }
+  if (after.maimed.length > 0) {
+    card.append(
+      el('h3', {}, ['Carried off']),
+      ...after.maimed.map((name) => el('p', { class: 'event-body' }, [`${name} will feel it.`])),
+    );
+  }
+  if (after.ran.length > 0) {
+    card.append(
+      el('p', { class: 'event-body' }, [`${after.ran.join(' and ')} ran and came back after.`]),
+    );
+  }
+  if (after.food > 0 || after.firewood > 0) {
+    card.append(
+      el('p', { class: 'outcome good' }, [
+        `Taken off the field: ${after.food} food, ${after.firewood} firewood.`,
+      ]),
+    );
+  }
+  if (after.killed.length === 0 && after.maimed.length === 0 && after.ran.length === 0) {
+    card.append(
+      el('p', { class: 'event-body' }, [
+        after.won ? 'Every one of us walked away from it.' : 'We got away with our lives, and little else.',
+      ]),
+    );
+  }
+
+  card.append(button('Onward', () => dispatch({ type: 'DISMISS_AFTERMATH' }), { class: 'primary wide' }));
+  return el('div', { class: 'overlay' }, [card]);
+}
+
 function personRow(person: Person): HTMLElement {
   const trait = traitById(person.trait);
   const condition = !person.alive
@@ -95,6 +145,7 @@ function personRow(person: Person): HTMLElement {
     el('div', { class: 'person-meta' }, [
       person.alive ? `${person.health}/${person.maxHealth} · ${condition}` : condition,
       trait ? ` · ${trait.name}` : '',
+      person.alive && person.xp > 0 ? ` · ${person.xp}/${XP_PER_ADVANCE} xp` : '',
     ]),
   ]);
 }
@@ -125,7 +176,9 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
     summary.append(el('h3', {}, ['The Fallen']));
     for (const person of fallen) {
       summary.append(
-        el('p', { class: 'fallen' }, [`${fullName(person)} — ${person.fate ?? 'lost'}`]),
+        el('p', { class: 'fallen' }, [
+          `${fullName(person)} — ${person.fate ?? 'lost'}${person.diedOn ? `, day ${person.diedOn}` : ''}`,
+        ]),
       );
     }
   }

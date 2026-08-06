@@ -8,12 +8,13 @@ import {
   activeCombatant,
   beginBattle,
   effective,
-  fighterPerson,
   refreshTurn,
   standing,
 } from './battle';
 import { takeFoeTurn } from './battleAi';
 import { pressureAtTurnStart, takeBrokenTurn } from './morale';
+import { settleAftermath, type Aftermath } from './consequences';
+import { checkRunEnd } from './upkeep';
 
 /**
  * Pure safety net on the auto-played foe turns. Generous enough never to fire
@@ -138,54 +139,57 @@ export function endTurn(state: GameState): boolean {
 }
 
 /**
- * Leaves the field: pops BATTLE, writes the result into the saga, and picks
- * the warband back up. Losing costs health and heart, not lives — the full
- * weight of a defeat lands in 2.4.
+ * Leaves the field: pops BATTLE, settles everything the fight leaves behind,
+ * and picks the warband back up. This is where a battle stops being reversible
+ * — the dead stay dead and the maimed carry it.
  */
-export function leaveBattle(state: GameState): void {
+export function leaveBattle(state: GameState): Aftermath | undefined {
   const battle = state.battle;
-  if (!battle || !battle.outcome) return;
+  if (!battle || !battle.outcome) return undefined;
 
   const won = battle.outcome === 'won';
-  const fallen: string[] = [];
-  const ran: string[] = [];
-  for (const combatant of battle.combatants) {
-    if (combatant.side !== 'warband') continue;
-    const person = fighterPerson(state, combatant.personId);
-    if (!person) continue;
-    if (combatant.down) {
-      person.health = 1;
-      fallen.push(person.name);
-    } else if (combatant.fled) {
-      ran.push(person.name);
-    }
-  }
+
+  // The field first — deaths, wounds, loot and what the living learned — so
+  // the closing lines can speak to what it actually cost.
+  const aftermath = settleAftermath(state, battle);
 
   // Running is remembered. It costs the band's heart even in victory.
-  if (ran.length > 0) {
-    state.party.morale = Math.max(0, state.party.morale - ran.length * 4);
+  if (aftermath.ran.length > 0) {
+    state.party.morale = Math.max(0, state.party.morale - aftermath.ran.length * 4);
     chronicle(
       state,
-      `${ran.join(' and ')} ran, and came back to us later saying nothing.`,
+      `${aftermath.ran.join(' and ')} ran, and came back to us later saying nothing.`,
       'grim',
     );
   }
 
+  // Every death drags on the band harder than the win lifts it. That asymmetry
+  // is the whole point of the milestone: a victory you paid a veteran for is
+  // not a victory you want twice.
+  const bereaved = aftermath.killed.length * 12;
+
   if (won) {
-    state.party.morale = Math.min(100, state.party.morale + 10);
+    state.party.morale = Math.min(100, Math.max(0, state.party.morale + 10 - bereaved));
     chronicle(
       state,
-      fallen.length > 0
-        ? `We held the ground, and carried ${fallen.join(' and ')} off it.`
-        : 'We held the ground, and none of us stayed on it.',
-      'good',
+      aftermath.killed.length > 0
+        ? 'We held the ground, and it was not worth what we left on it.'
+        : aftermath.maimed.length > 0
+          ? 'We held the ground, and carried our hurt off it.'
+          : 'We held the ground, and none of us stayed on it.',
+      aftermath.killed.length > 0 ? 'grim' : 'good',
     );
   } else {
-    state.party.morale = Math.max(0, state.party.morale - 15);
+    state.party.morale = Math.max(0, state.party.morale - 15 - bereaved);
     chronicle(state, 'They broke us, and we ran. What we left behind we left behind.', 'grim');
   }
 
   const next = popMode(state);
   state.modes = next.modes;
   delete state.battle;
+  state.aftermath = aftermath;
+
+  // A fight can finish the run outright — there may be nobody left to walk on.
+  checkRunEnd(state, 0);
+  return aftermath;
 }

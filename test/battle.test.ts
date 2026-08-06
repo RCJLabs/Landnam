@@ -307,25 +307,38 @@ describe('the round trip', () => {
       expect(currentMode(returned)).toBe('TRAVEL');
       expect(returned.modes).toEqual(['TRAVEL']);
       expect(returned.battle).toBeUndefined();
-      // Whoever went down is back on their feet, if barely (2.4 makes it lethal).
+      // Everyone is settled one way or the other: on their feet, or dead with
+      // a cause and a date on it. Nobody is left at zero health and alive.
       for (const person of returned.party.people) {
-        expect(person.health).toBeGreaterThan(0);
+        if (person.alive) {
+          expect(person.health, `${person.name} alive at zero`).toBeGreaterThan(0);
+        } else {
+          expect(person.health).toBe(0);
+          expect(person.fate).toBeTruthy();
+          expect(person.diedOn).toBe(returned.day);
+        }
       }
       // The fight is written into the saga either way.
       expect(returned.saga.length).toBeGreaterThan(start.saga.length);
     },
   );
 
-  it('a won field lifts heart, a lost one costs it', () => {
+  it('a clean win lifts heart, a loss always costs it', () => {
     for (const seed of ['mood-a', 'mood-b', 'mood-c', 'mood-d']) {
       const start = battleState(seed);
       const before = start.party.morale;
       const fought = fightItOut(start);
       if (!fought.battle?.outcome) continue;
       const won = fought.battle.outcome === 'won';
-      const after = apply(fought, { type: 'B_LEAVE' }).party.morale;
-      if (won) expect(after).toBeGreaterThanOrEqual(before);
-      else expect(after).toBeLessThanOrEqual(before);
+      const left = apply(fought, { type: 'B_LEAVE' });
+      const after = left.party.morale;
+      // A win only lifts the band if it did not cost anyone. Since 2.4 a
+      // victory paid for with a death is allowed to leave them worse off.
+      if (won && left.aftermath!.killed.length === 0) {
+        expect(after, `${seed} clean win`).toBeGreaterThanOrEqual(before);
+      } else if (!won) {
+        expect(after, `${seed} loss`).toBeLessThanOrEqual(before);
+      }
     }
   });
 

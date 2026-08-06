@@ -49,6 +49,26 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 4 };
   },
+
+  // v4 -> v5: people earn xp. Everyone alive before this existed starts at
+  // nothing earned, which is honest: their fights were never counted.
+  4: (save) => {
+    const party = save['party'] as { people?: Record<string, unknown>[] } | undefined;
+    if (party?.people) {
+      party.people = party.people.map((p) => ({ xp: 0, ...p }));
+    }
+    const battle = save['battle'] as {
+      foes?: Record<string, unknown>[];
+      combatants?: Record<string, unknown>[];
+    } | undefined;
+    if (battle?.foes) {
+      battle.foes = battle.foes.map((p) => ({ xp: 0, ...p }));
+    }
+    if (battle?.combatants) {
+      battle.combatants = battle.combatants.map((c) => ({ kills: 0, ...c }));
+    }
+    return { ...save, version: 5 };
+  },
 };
 
 export interface MigrationResult {

@@ -79,9 +79,13 @@ export interface Person {
   /** Personal morale 0..100, distinct from the warband's. */
   morale: number;
   injuries: Injury[];
+  /** Earned by fighting. Enough of it and a stat goes up for good. */
+  xp: number;
   alive: boolean;
   /** Cause of death, for the saga. */
   fate?: string;
+  /** The day they died, so the saga can say when. */
+  diedOn?: number;
 }
 
 // --- The warband ---
@@ -151,6 +155,8 @@ export interface Combatant {
   throwsLeft: number;
   /** Shield up — harder to hit until this fighter's next turn. */
   defending: boolean;
+  /** Foes this fighter put down this battle. Feeds the xp they earn. */
+  kills: number;
   /** Nerve, 0..100. At zero it breaks. Battle-local; see morale.ts. */
   nerve: number;
   /** Nerve gone: will not fight, runs for its own edge, may rally. */
@@ -162,6 +168,21 @@ export interface Combatant {
 }
 
 export type BattleOutcome = 'won' | 'lost';
+
+/**
+ * What a settled fight left behind. Lives on the root state rather than on the
+ * battle, because the battle is gone by the time the player reads it — and it
+ * must survive a save, or reloading would skip the reckoning.
+ */
+export interface Aftermath {
+  killed: string[];
+  maimed: string[];
+  ran: string[];
+  foesDown: number;
+  food: number;
+  firewood: number;
+  won: boolean;
+}
 
 export interface Battle {
   /** The overworld terrain this ground was generated from. */
@@ -206,6 +227,8 @@ export interface GameState {
   event?: ActiveEvent;
   /** Present only while the BATTLE mode is on the stack. */
   battle?: Battle;
+  /** The reckoning from the last fight, until the player has read it. */
+  aftermath?: Aftermath;
   end?: RunEnd;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;

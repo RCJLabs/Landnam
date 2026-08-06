@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 2.4**
+> **CURRENT MILESTONE: 3.1**
 
 ---
 
@@ -53,7 +53,7 @@ Goal: encounters zoom into battles worth winning.
 - [x] **2.1 Battle scene** — Combat events push BATTLE mode: small hex battlefield (7×9, portrait) generated from the overworld hex's terrain. Initiative order from stats. Move + one action per turn. *Done when: a full battle round-trips back to travel.*
 - [x] **2.2 Actions & AI** — Strike, throw (axe/spear), shove, defend, dash. Facing-free, zone-of-control melee. Simple enemy AI (aggressive / cautious / flanker archetypes). *Done when: fights are winnable and losable on purpose.*
 - [x] **2.3 Shield wall & morale** — Adjacent allied warriors form a shield wall: shared defense bonus that shatters when a link falls. Unit morale: breaking, fleeing, rallying. *Done when: formation play beats brawling.*
-- [ ] **2.4 Consequences** — Persistent injuries, permadeath, loot, XP → stat growth. Deaths written into the saga. *Done when: losing a veteran hurts — ship v0.2.*
+- [x] **2.4 Consequences** — Persistent injuries, permadeath, loot, XP → stat growth. Deaths written into the saga. *Done when: losing a veteran hurts — ship v0.2.*
 
 ## Phase 3 — Landnám (settlement) → v0.3
 
@@ -91,6 +91,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — v0.2 "Shield Wall"** — Phase 2 complete. Battles are now
+  something you can lose people in permanently.
+- **2026-08-06 — 2.4 Consequences** — A warrior dragged off the field rolls
+  against death: spirit helps, and holding the ground helps most, because
+  losing means leaving them where they fell. The killed are gone for good,
+  with a cause and a date, and are named in the saga and on the run-end wall.
+  The rest are carried off carrying something — nine wounds that dock stats
+  while they mend, two of which never do. A won field with bodies on it
+  yields food and firewood rather than silver, because supplies feed the
+  survival loop that already exists and coin would have nothing to buy.
+  Kills earn xp; twelve of it raises a stat for good, capped at 6, and might
+  brings health with it. A death drags the band's heart down harder than any
+  victory lifts it, so a win paid for with a veteran leaves you worse off
+  than before the fight. The reckoning is shown on the road, not on the
+  field: you walk off thinking you won, and then find out what it cost.
+  Measured: a maimed band wins 4 of 14 where a whole one wins 7, killing a
+  band's best hand costs it reach in 16 of 20 bands, and per 24 fights the
+  dead run 2 at favourable odds against 10 at unfavourable.
+  `SAVE_VERSION` 5 with a migration. 195 tests.
 - **2026-08-06 — 2.3 Shield wall & morale** — Standing shoulder to shoulder
   is worth +2 defence, +3 with two mates, and it shatters the moment a link
   falls. Being surrounded is the other half: every enemy past the first on you

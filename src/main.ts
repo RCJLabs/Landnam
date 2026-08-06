@@ -12,7 +12,13 @@ import type { GameState } from './state/types';
 import { apply, type Action } from './sim/actions';
 import { createTravelView } from './render/travel';
 import { createBattleView } from './render/battle';
-import { renderEventCard, renderRunEnd, renderTitle, renderWarband } from './render/cards';
+import {
+  renderAftermath,
+  renderEventCard,
+  renderRunEnd,
+  renderTitle,
+  renderWarband,
+} from './render/cards';
 import { renderActionBar, renderHint, renderSagaLog, renderTopBar } from './render/ui';
 import {
   renderBattleActions,
@@ -67,7 +73,7 @@ function dispatch(action: Action): void {
 }
 
 function onHexTap(target: Hex): void {
-  if (!state || state.event || state.end) return;
+  if (!state || state.event || state.aftermath || state.end) return;
   if (equals(target, state.party.at)) return;
   dispatch({ type: 'MOVE', to: target });
 }
@@ -202,6 +208,8 @@ function render(): void {
         render();
       }),
     );
+  } else if (state.aftermath) {
+    overlaySlot.replaceChildren(renderAftermath(state, dispatch));
   } else if (state.event) {
     overlaySlot.replaceChildren(renderEventCard(state, dispatch));
   } else {

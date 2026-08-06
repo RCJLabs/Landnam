@@ -12,7 +12,7 @@ including a phone browser, and ships as a **single self-contained
 `index.html`** that works offline from a `file://` open — no images, no fonts,
 no audio files, no network.
 
-## Playing (v0.1 — the overworld)
+## Playing (v0.2 — the overworld and the shield wall)
 
 - **Travel** by tapping a marked hex. Rough country costs more days than open
   ground, and each day eats food and burns firewood.
@@ -45,6 +45,15 @@ no audio files, no network.
   Enemies fight to type — raiders close and swing, scouts throw and keep
   their distance, skirmishers hunt whoever is already busy. Win or lose, you
   come back to the road.
+- **The dead do not come back.** A warrior dragged off the field rolls
+  against death. Holding the ground means your people get carried off it;
+  losing means they are left where they fell, which is most of why a defeat
+  costs so much more than a victory. The ones who live carry a wound that
+  docks their stats until it mends, and some of them never mend. Kills earn
+  experience, and enough of it raises a stat for good — which is exactly why
+  the veteran you lose is worth more than the one you started with. Win a
+  field with bodies on it and you strip it for food and firewood. The
+  reckoning waits until you are back on the road.
 - **The saga log** writes down what happened, in chronicle voice. It is the
   record of the run.
 - **Winter** starts on day 49 and stops the land from giving. Reaching spring

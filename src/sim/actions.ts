@@ -24,7 +24,8 @@ export type Action =
   | TravelAction
   | BattleAction
   | { type: 'CHOOSE'; index: number }
-  | { type: 'DISMISS_EVENT' };
+  | { type: 'DISMISS_EVENT' }
+  | { type: 'DISMISS_AFTERMATH' };
 
 const BATTLE_TYPES = new Set([
   'B_MOVE',
@@ -80,6 +81,16 @@ export function apply(state: GameState, action: Action): GameState {
   }
 
   if (BATTLE_TYPES.has(action.type)) return state;
+
+  // The reckoning from a fight blocks the road until it has been read. It is
+  // the only place the player is told who did not get up.
+  if (state.aftermath) {
+    if (action.type !== 'DISMISS_AFTERMATH') return state;
+    const next = structuredClone(state);
+    delete next.aftermath;
+    return next;
+  }
+  if (action.type === 'DISMISS_AFTERMATH') return state;
 
   // A card on the table blocks everything else until it is answered.
   if (state.event) {

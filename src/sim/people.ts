@@ -53,6 +53,7 @@ export function makePerson(rng: Rng, id: string): Person {
     maxHealth,
     morale: 70,
     injuries: [],
+    xp: 0,
     alive: true,
   };
 }
