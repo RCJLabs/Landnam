@@ -235,10 +235,19 @@ export interface Settlement {
   report: SiteReport;
   /** The local map, generated once from the report. */
   plots: Plot[];
-  /** Walls and roofs raised so far, 0..SHELTER_MAX. Cuts the firewood burn. */
+  /**
+   * Walls and roofs raised so far. Since 3.3 this is granted by buildings
+   * rather than accrued directly, so it only moves when something is finished.
+   */
   shelter: number;
   /** How well the watch is kept, 0..WATCH_MAX. Decays if nobody stands it. */
   watch: number;
+  /** Building ids standing, in the order they were finished. */
+  built: string[];
+  /** Building ids waiting, head first. Builders work the head. */
+  queue: string[];
+  /** Builder-days banked against the head of the queue. */
+  works: number;
 }
 
 // --- Run end ---

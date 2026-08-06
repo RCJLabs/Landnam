@@ -12,6 +12,7 @@ import { bestStat, living } from './people';
 import { chronicle } from './saga';
 import { atHome } from './site';
 import { WATCH_QUIET } from '../data/jobs';
+import { effectiveReport } from './colony';
 import { checkRunEnd } from './upkeep';
 
 /** Chance an event fires after a travel action. */
@@ -86,8 +87,11 @@ export function presentEvent(state: GameState, def: EventDef): ActiveEvent {
 export function eventChance(state: GameState): number {
   if (!atHome(state)) return BASE_EVENT_CHANCE;
   const home = state.settlement!;
-  // Ground you can watch, plus people actually watching it.
-  const quiet = home.report.defence * 0.09 + home.watch * WATCH_QUIET;
+  // Ground you can watch, what you have raised on it, and people actually
+  // watching. A palisade counts here because it reads through the effective
+  // report, which is the point of building one.
+  const defence = effectiveReport(state)?.defence ?? home.report.defence;
+  const quiet = defence * 0.09 + home.watch * WATCH_QUIET;
   return BASE_EVENT_CHANCE * Math.max(0.15, 1 - quiet);
 }
 
@@ -212,7 +216,8 @@ export function dismissEvent(state: GameState): void {
     let difficulty = state.flags['pendingBattleDifficulty'] ?? 0;
     // Fighting at your own gate is easier: you know the ground, and there are
     // only so many ways in. A strong site is worth a whole enemy.
-    if (atHome(state) && state.settlement!.report.defence >= 3) difficulty -= 1;
+    const defence = effectiveReport(state)?.defence ?? 0;
+    if (atHome(state) && defence >= 3) difficulty -= 1;
     delete state.flags['pendingBattle'];
     delete state.flags['pendingBattleDifficulty'];
     const terrain = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';

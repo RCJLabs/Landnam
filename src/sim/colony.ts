@@ -19,6 +19,13 @@ import {
   type JobId,
   type PlotKind,
 } from '../data/jobs';
+import {
+  BUILDINGS,
+  buildingById,
+  type BuildingDef,
+  type BuildingId,
+} from '../data/buildings';
+import { MEASURE_MAX } from '../data/sites';
 import type { GameState, Person, Plot, SiteReport, Settlement } from '../state/types';
 import { effectsOn } from './calendar';
 import { effectiveStat, living } from './people';
@@ -27,6 +34,12 @@ import { chronicle } from './saga';
 
 /** Rings of local ground around the hall. Nineteen hexes at radius two. */
 export const PLOT_RADIUS = 2;
+
+/**
+ * The most shelter mending alone can ever reach. Everything above this has to
+ * be built and paid for.
+ */
+export const PATCH_SHELTER_CAP = 1;
 
 // --- The local map ---
 
@@ -83,6 +96,129 @@ export function plotsFor(settlement: Settlement, job: JobId): Plot[] {
   return settlement.plots.filter((p) => PLOTS[p.kind].worked.includes(job));
 }
 
+// --- What is standing ---
+
+export function standing(settlement: Settlement): BuildingDef[] {
+  return settlement.built
+    .map((id) => buildingById(id))
+    .filter((b): b is BuildingDef => !!b);
+}
+
+export function hasBuilt(state: GameState, id: BuildingId): boolean {
+  return state.settlement?.built.includes(id) ?? false;
+}
+
+/**
+ * The site's measures AFTER what has been raised on it. Everything that reads
+ * the ground reads it through here — farm plots really do make the soil
+ * better, which is the whole reason to break them.
+ */
+export function effectiveReport(state: GameState): SiteReport | undefined {
+  const home = state.settlement;
+  if (!home) return undefined;
+  const out = { ...home.report };
+  for (const building of standing(home)) {
+    for (const [measure, bump] of Object.entries(building.raises ?? {})) {
+      const k = measure as keyof SiteReport;
+      out[k] = Math.min(MEASURE_MAX, out[k] + (bump ?? 0));
+    }
+  }
+  out.total = out.water + out.soil + out.timber + out.harbour + out.defence;
+  return out;
+}
+
+/** Multiplier on food work from anything that keeps what you catch. */
+export function foodKeeping(state: GameState): number {
+  const home = state.settlement;
+  if (!home) return 1;
+  return standing(home).reduce((n, b) => n * (b.foodKeep ?? 1), 1);
+}
+
+/** Standing daily heart from the buildings that give it. */
+export function heartFromBuildings(state: GameState): number {
+  const home = state.settlement;
+  if (!home) return 0;
+  return standing(home).reduce((n, b) => n + (b.heart ?? 0), 0);
+}
+
+// --- The build queue ---
+
+export type BlockReason = 'built' | 'queued' | 'ground' | 'after' | 'timber';
+
+/** Why this cannot be raised, or null if it can. */
+export function buildBlocker(state: GameState, building: BuildingDef): BlockReason | null {
+  const home = state.settlement;
+  if (!home) return 'ground';
+  if (home.built.includes(building.id)) return 'built';
+  if (home.queue.includes(building.id)) return 'queued';
+  for (const id of building.after ?? []) {
+    if (!home.built.includes(id)) return 'after';
+  }
+  // Requirements read the RAW ground: a dock cannot conjure a harbour, and
+  // reading the effective report here would let a building qualify itself.
+  for (const [measure, need] of Object.entries(building.needs ?? {})) {
+    if (home.report[measure as keyof SiteReport] < (need ?? 0)) return 'ground';
+  }
+  if (state.party.firewood < building.timber) return 'timber';
+  return null;
+}
+
+export function canBuild(state: GameState, building: BuildingDef): boolean {
+  return buildBlocker(state, building) === null;
+}
+
+/** Everything not yet standing or queued, for the panel. */
+export function offerable(state: GameState): BuildingDef[] {
+  const home = state.settlement;
+  if (!home) return [];
+  return BUILDINGS.filter((b) => !home.built.includes(b.id) && !home.queue.includes(b.id));
+}
+
+/** What can be raised right now, timber in hand and all. */
+export function buildable(state: GameState): BuildingDef[] {
+  return offerable(state).filter((b) => canBuild(state, b));
+}
+
+/**
+ * Queues a building and pays its timber up front. Paying on queue rather than
+ * on completion is what makes the choice bite: the wood is gone, and it is
+ * gone into THIS rather than into the fire.
+ */
+export function queueBuild(state: GameState, id: BuildingId): boolean {
+  const home = state.settlement;
+  const building = buildingById(id);
+  if (!home || !building || !canBuild(state, building)) return false;
+  state.party.firewood -= building.timber;
+  home.queue.push(id);
+  return true;
+}
+
+/** Cancels a queued building, returning half its timber. Half is the lesson. */
+export function unqueueBuild(state: GameState, id: BuildingId): boolean {
+  const home = state.settlement;
+  const building = buildingById(id);
+  if (!home || !building) return false;
+  const index = home.queue.indexOf(id);
+  if (index < 0) return false;
+  home.queue.splice(index, 1);
+  state.party.firewood += Math.floor(building.timber / 2);
+  // Work banked against the head of the queue is lost with it.
+  if (index === 0) home.works = 0;
+  return true;
+}
+
+export function underway(state: GameState): BuildingDef | undefined {
+  const head = state.settlement?.queue[0];
+  return head ? buildingById(head) : undefined;
+}
+
+/** How far along the thing being built is, 0..1. */
+export function buildProgress(state: GameState): number {
+  const building = underway(state);
+  if (!building || !state.settlement) return 0;
+  return Math.max(0, Math.min(1, state.settlement.works / building.works));
+}
+
 // --- Assignment ---
 
 export function jobOf(person: Person): JobDef | undefined {
@@ -96,7 +232,9 @@ export function jobOf(person: Person): JobDef | undefined {
 export function availableJobs(state: GameState): JobDef[] {
   const home = state.settlement;
   if (!home) return [];
+  const unlocked = new Set(standing(home).map((b) => b.unlocks).filter(Boolean));
   return JOBS.filter((job) => {
+    if (unlocked.has(job.id)) return true;
     if (job.id === 'fisher') return plotsFor(home, 'fisher').length > 0;
     if (job.id === 'farmer') return plotsFor(home, 'farmer').length > 0;
     return true;
@@ -131,9 +269,11 @@ export function idlers(state: GameState): Person[] {
 export function output(state: GameState, person: Person, job: JobDef): number {
   const home = state.settlement;
   if (!home) return 0;
-  const ground = job.floor + home.report[job.measure] * job.perPoint;
+  const report = effectiveReport(state)!;
+  const ground = job.floor + report[job.measure] * job.perPoint;
   const skill = 0.55 + effectiveStat(person, job.stat) * 0.15;
-  return ground * skill * seasonFactor(state.day, job);
+  const kept = job.produces === 'food' ? foodKeeping(state) : 1;
+  return ground * skill * seasonFactor(state.day, job) * kept;
 }
 
 /**
@@ -197,7 +337,22 @@ export function workTheDay(state: GameState): DayLabour {
 
   state.party.food += labour.food;
   state.party.firewood += labour.firewood;
-  home.shelter = Math.min(SHELTER_MAX, home.shelter + labour.shelter);
+
+  // Builders' days go into whatever is on the stocks. With nothing queued they
+  // patch and mend — which must stay near worthless, because a builder who can
+  // reach a full roof by doing nothing in particular makes the longhouse, and
+  // the whole queue behind it, pointless.
+  if (labour.shelter > 0) {
+    if (home.queue.length > 0) {
+      home.works += labour.shelter;
+      finishBuilds(state);
+    } else if (home.shelter < PATCH_SHELTER_CAP) {
+      // Guarded: a bare min() here would CLAMP a steading that has already
+      // built its way past the cap back down to it, quietly demolishing the
+      // longhouse every day a builder had nothing else to do.
+      home.shelter = Math.min(PATCH_SHELTER_CAP, home.shelter + labour.shelter * 0.1);
+    }
+  }
 
   // A watch not stood falls off; a watch stood builds up.
   home.watch = Math.max(0, Math.min(WATCH_MAX, home.watch + labour.watch - WATCH_DECAY));
@@ -209,7 +364,37 @@ export function workTheDay(state: GameState): DayLabour {
   } else if (labour.byPerson.length > 0) {
     state.party.morale = Math.min(100, state.party.morale + 1);
   }
+  // A hall and a mead bench are worth something every single day.
+  state.party.morale = Math.min(100, state.party.morale + heartFromBuildings(state));
   return labour;
+}
+
+/**
+ * Completes anything the banked work has paid for. A single day of many
+ * builders can finish more than one thing, so this loops.
+ */
+export function finishBuilds(state: GameState): BuildingDef[] {
+  const home = state.settlement;
+  if (!home) return [];
+  const done: BuildingDef[] = [];
+  let guard = 8;
+  while (home.queue.length > 0 && guard-- > 0) {
+    const building = buildingById(home.queue[0]!);
+    if (!building) {
+      home.queue.shift();
+      continue;
+    }
+    if (home.works < building.works) break;
+    home.works -= building.works;
+    home.queue.shift();
+    home.built.push(building.id);
+    home.shelter = Math.min(SHELTER_MAX, home.shelter + (building.shelter ?? 0));
+    done.push(building);
+    chronicle(state, `${building.name} stood finished at ${home.name}.`, 'good');
+  }
+  // Work does not bank past the thing it was for.
+  if (home.queue.length === 0) home.works = 0;
+  return done;
 }
 
 /** A line for the saga on the day the steading first gets properly to work. */

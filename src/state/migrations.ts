@@ -86,6 +86,18 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 7 };
   },
+
+  // v7 -> v8: builders raise buildings instead of abstract shelter. A save
+  // that accrued shelter the old way keeps it — taking a roof away from a
+  // band mid-winter because the model changed would be indefensible — but
+  // from here on shelter only moves when something is finished.
+  7: (save) => {
+    const settlement = save['settlement'] as Record<string, unknown> | undefined;
+    if (settlement) {
+      save['settlement'] = { built: [], queue: [], works: 0, ...settlement };
+    }
+    return { ...save, version: 8 };
+  },
 };
 
 export interface MigrationResult {

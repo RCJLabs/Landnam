@@ -93,8 +93,11 @@ export const JOBS: JobDef[] = [
     stat: 'craft',
     measure: 'timber',
     produces: 'shelter',
-    floor: 0.1,
-    perPoint: 0.1,
+    // A builder has to finish something inside a season or the queue is
+    // decoration: this puts the cheapest building at about a week of one
+    // pair of hands.
+    floor: 0.35,
+    perPoint: 0.18,
     seasonal: 0.3,
   },
   {

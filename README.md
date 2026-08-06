@@ -72,6 +72,14 @@ no audio files, no network.
   firewood; warriors keep a watch that goes quiet the moment nobody stands
   it. Nothing grows in a frozen field, so what you bank in summer is what you
   eat in winter — and nobody works on the days you are away walking.
+- **Build what you lack.** The steading tracks four needs — food, warmth,
+  rest, heart — and says what each one actually is, worst first. Six
+  buildings each answer one of them: a longhouse for the cold, farm plots for
+  the fields, a smokehouse to keep what you catch, a dock for the water, a
+  palisade for the ways in, a mead hall for everything a ledger does not
+  measure. Builders work a queue, timber is paid when you commit, and what
+  gets finished changes the ground itself. The panel names the scarcity and
+  marks the answer, so the order comes out of your winter rather than a wiki.
 - **The saga log** writes down what happened, in chronicle voice. It is the
   record of the run.
 - **Winter** starts on day 49 and stops the land from giving. Reaching spring

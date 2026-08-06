@@ -14,11 +14,14 @@ import { createTravelView } from './render/travel';
 import { createBattleView } from './render/battle';
 import { createColonyView } from './render/colony';
 import {
+  renderBuilds,
   renderColonyActions,
   renderColonyBar,
   renderColonyFooter,
   renderColonyHint,
   renderCrew,
+  renderNeeds,
+  type ColonyTab,
 } from './render/colonyUi';
 import {
   renderAftermath,
@@ -61,6 +64,8 @@ let rosterOpen = false;
 let foundingOpen = false;
 /** Who is selected in the steading. Selection is a view concern, not a save. */
 let picked: string | null = null;
+/** Which half of the steading you are looking at: the work, or the building. */
+let colonyTab: ColonyTab = 'work';
 /** Which action a tap on a foe performs. Resets to Strike each turn. */
 let aim: Aim = 'strike';
 let aimTurnKey = '';
@@ -122,6 +127,7 @@ function startRun(seed: string): void {
   rosterOpen = false;
   foundingOpen = false;
   picked = null;
+  colonyTab = 'work';
   mountGame();
 }
 
@@ -199,11 +205,28 @@ function renderColony(): void {
 
   colonyView.update(state);
   topbarSlot.replaceChildren(renderColonyBar(state));
-  hintSlot.replaceChildren(renderColonyHint(state), renderCrew(state, picked, (id) => {
-    picked = id;
-    render();
-  }));
-  actionSlot.replaceChildren(renderColonyActions(state, picked, colonyDispatch));
+
+  // Work and Build are two views of the same steading. Selecting a person
+  // always wins, because the picker replaces the action bar.
+  if (colonyTab === 'build' && !picked) {
+    hintSlot.replaceChildren(renderNeeds(state), renderBuilds(state, colonyDispatch));
+  } else {
+    hintSlot.replaceChildren(
+      renderColonyHint(state),
+      renderCrew(state, picked, (id) => {
+        picked = id;
+        render();
+      }),
+    );
+  }
+
+  actionSlot.replaceChildren(
+    renderColonyActions(state, picked, colonyTab, (tab) => {
+      colonyTab = tab;
+      picked = null;
+      render();
+    }, colonyDispatch),
+  );
   sagaSlot.replaceChildren(renderColonyFooter(state));
   overlaySlot.replaceChildren();
 }

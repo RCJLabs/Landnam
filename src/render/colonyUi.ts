@@ -6,8 +6,21 @@
 // numbers are on a different screen.
 
 import { JOBS, jobById, SHELTER_MAX, WATCH_MAX, type JobId } from '../data/jobs';
+import { buildingById, type BuildingId } from '../data/buildings';
 import type { GameState, Person } from '../state/types';
-import { availableJobs, dayLabour, idlers, jobOf, output } from '../sim/colony';
+import {
+  availableJobs,
+  buildBlocker,
+  buildProgress,
+  dayLabour,
+  idlers,
+  jobOf,
+  offerable,
+  output,
+  underway,
+  type BlockReason,
+} from '../sim/colony';
+import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
 import { effectiveStat, living } from '../sim/people';
 import { plotTally } from './colony';
 import type { Dispatch } from './ui';
@@ -23,7 +36,8 @@ function stat(label: string, value: string, warn = false): HTMLElement {
 export function renderColonyBar(state: GameState): HTMLElement {
   const home = state.settlement!;
   const take = dayLabour(state);
-  return el('div', { class: 'topbar' }, [
+  const building = underway(state);
+  const bar = el('div', { class: 'topbar' }, [
     stat('Day', `${state.day}`),
     stat('Food/day', `+${take.food.toFixed(1)}`, take.food <= 0),
     stat('Wood/day', `+${take.firewood.toFixed(1)}`, take.firewood <= 0),
@@ -31,6 +45,119 @@ export function renderColonyBar(state: GameState): HTMLElement {
     stat('Watch', `${home.watch.toFixed(1)}/${WATCH_MAX}`),
     stat('Idle', `${take.idle}`, take.idle > 0),
   ]);
+  if (building) {
+    bar.append(
+      stat(
+        'Building',
+        `${building.name} ${Math.round(buildProgress(state) * 100)}%`,
+        take.shelter <= 0,
+      ),
+    );
+  }
+  return bar;
+}
+
+const BLOCK_WORD: Record<BlockReason, string> = {
+  built: 'standing',
+  queued: 'on the stocks',
+  ground: 'the ground will not take it',
+  after: 'needs a longhouse first',
+  timber: 'not enough timber',
+};
+
+/**
+ * The four needs, worst first, each saying what it actually is. This is where
+ * a build order comes from: the panel names the scarcity, and the suggestion
+ * names the answer.
+ */
+export function renderNeeds(state: GameState): HTMLElement {
+  const needs = [...readNeeds(state)].sort((a, b) => a.level - b.level);
+  const panel = el('div', { class: 'needs' });
+  panel.append(el('div', { class: 'needs-head' }, [pressureLine(state)]));
+  for (const need of needs) {
+    const pips = Math.round(need.level * 5);
+    panel.append(
+      el('div', { class: `need${need.level < 0.34 ? ' dire' : ''}` }, [
+        el('span', { class: 'need-name' }, [need.name]),
+        el('span', { class: 'need-pips' }, ['\u25cf'.repeat(pips) + '\u25cb'.repeat(5 - pips)]),
+        el('span', { class: 'need-line' }, [need.line]),
+      ]),
+    );
+  }
+  return panel;
+}
+
+/**
+ * The build queue and everything that could join it. Each entry carries what
+ * it answers and what it costs, so choosing is a comparison rather than a
+ * memory test.
+ */
+export function renderBuilds(state: GameState, dispatch: Dispatch): HTMLElement {
+  const home = state.settlement!;
+  const wrap = el('div', { class: 'builds' });
+
+  const worst = worstNeed(state);
+  const offers = offerable(state);
+  const suggested = suggestedBuild(
+    state,
+    offers.filter((b) => buildBlocker(state, b) === null),
+  );
+
+  wrap.append(
+    el('div', { class: 'builds-head' }, [
+      home.queue.length > 0
+        ? `On the stocks: ${underway(state)?.name ?? ''} ${Math.round(buildProgress(state) * 100)}%`
+        : `Nothing on the stocks. What hurts most is ${worst.name.toLowerCase()}.`,
+    ]),
+  );
+
+  for (const id of home.queue) {
+    const building = buildingById(id);
+    if (!building) continue;
+    const row = button(
+      '',
+      () => dispatch({ type: 'UNQUEUE_BUILD', building: building.id }),
+      { class: 'build queued', title: 'Cancel — half the timber comes back.' },
+    );
+    row.replaceChildren(
+      el('span', { class: 'build-name' }, [building.name]),
+      el('span', { class: 'build-note' }, [
+        id === home.queue[0] ? `${Math.round(buildProgress(state) * 100)}% — tap to cancel` : 'waiting',
+      ]),
+    );
+    wrap.append(row);
+  }
+
+  for (const building of offers) {
+    const blocker = buildBlocker(state, building);
+    const node = button(
+      '',
+      () => dispatch({ type: 'QUEUE_BUILD', building: building.id as BuildingId }),
+      {
+        class: `build${suggested?.id === building.id ? ' primary' : ''}`,
+        title: building.blurb,
+      },
+    );
+    node.replaceChildren(
+      el('span', { class: 'build-name' }, [building.name]),
+      el('span', { class: 'build-note' }, [
+        blocker
+          ? BLOCK_WORD[blocker]
+          : `${building.timber} timber · ${building.works} days · for ${building.answers}`,
+      ]),
+    );
+    if (blocker) node.setAttribute('disabled', 'true');
+    wrap.append(node);
+  }
+
+  if (home.built.length > 0) {
+    wrap.append(
+      el('div', { class: 'builds-head' }, [
+        `Standing: ${home.built.map((id) => buildingById(id)?.name ?? id).join(', ')}.`,
+      ]),
+    );
+  }
+  return wrap;
 }
 
 export function renderColonyHint(state: GameState): HTMLElement {
@@ -132,9 +259,13 @@ export function renderJobPicker(
   return wrap;
 }
 
+export type ColonyTab = 'work' | 'build';
+
 export function renderColonyActions(
   state: GameState,
   selected: string | null,
+  tab: ColonyTab,
+  setTab: (tab: ColonyTab) => void,
   dispatch: Dispatch,
 ): HTMLElement {
   const person = selected ? state.party.people.find((p) => p.id === selected) : undefined;
@@ -142,9 +273,13 @@ export function renderColonyActions(
 
   const bar = el('div', { class: 'actionbar' });
   bar.append(
-    button('Back to the land', () => dispatch({ type: 'LEAVE_COLONY' }), {
-      class: 'action primary',
+    button('Work', () => setTab('work'), {
+      class: `action${tab === 'work' ? ' primary' : ''}`,
     }),
+    button('Build', () => setTab('build'), {
+      class: `action${tab === 'build' ? ' primary' : ''}`,
+    }),
+    button('Back to the land', () => dispatch({ type: 'LEAVE_COLONY' }), { class: 'action' }),
   );
   return bar;
 }

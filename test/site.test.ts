@@ -361,6 +361,9 @@ describe('home ground pays for itself', () => {
       plots: [],
       shelter: 0,
       watch: 0,
+      built: [],
+      queue: [],
+      works: 0,
     };
     return state;
   }

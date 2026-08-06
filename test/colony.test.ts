@@ -14,6 +14,7 @@ import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
 import { seasonOf } from '../src/sim/calendar';
+import { suggestedBuild } from '../src/sim/needs';
 import {
   assign,
   availableJobs,
@@ -23,7 +24,9 @@ import {
   makePlots,
   output,
   PLOT_RADIUS,
+  buildable,
   plotsFor,
+  queueBuild,
   seasonFactor,
   shelterSaving,
   workTheDay,
@@ -251,7 +254,16 @@ describe('job assignment visibly moves the numbers', () => {
         const state = settledWell(seed);
         const crew = state.party.people.filter((p) => p.alive);
         crew.forEach((p, i) => assign(state, p.id, plan[i % plan.length]!));
-        while (state.day < 73 && !state.end) passDay(state);
+        while (state.day < 73 && !state.end) {
+          // Since 3.3 a sensible plan includes getting a roof up, and all
+          // three arms build identically — so what is being measured here is
+          // still the assignment and nothing else.
+          if (state.settlement!.queue.length === 0) {
+            const pick = suggestedBuild(state, buildable(state));
+            if (pick) queueBuild(state, pick.id);
+          }
+          passDay(state);
+        }
         lasted[name] = (lasted[name] ?? 0) + state.day;
         if (state.end?.cause === 'survived') survived[name] = (survived[name] ?? 0) + 1;
       }

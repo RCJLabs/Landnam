@@ -6,6 +6,7 @@
 
 import { cornerPoints, key, toPixel, type Hex } from '../hex';
 import { PLOTS, type JobId } from '../data/jobs';
+import { buildingById } from '../data/buildings';
 import type { GameState, Plot } from '../state/types';
 import { jobOf, plotsFor } from '../sim/colony';
 import { living } from '../sim/people';
@@ -68,6 +69,18 @@ export function createColonyView(): ColonyView {
       const mark = plotMark(plot, p.x, p.y);
       if (mark) layers.marks.append(mark);
     }
+
+    // What has been raised, standing on the plots it belongs on. Drawn over
+    // the ground so a finished building visibly changes the steading.
+    const spots = home.plots.filter((p) => p.kind !== 'hall');
+    home.built.forEach((id, i) => {
+      const building = buildingById(id);
+      if (!building) return;
+      const spot = spots[i % Math.max(1, spots.length)];
+      if (!spot) return;
+      const p = toPixel(spot.at, HEX);
+      layers.marks.append(raised(building.id, p.x, p.y));
+    });
 
     // Workers stand on the ground they work. Where several share a plot kind,
     // they are spread across the available plots so nobody is hidden.
@@ -162,6 +175,54 @@ function plotMark(plot: Plot, cx: number, cy: number): SVGElement | null {
     default:
       return null;
   }
+}
+
+/** A gold mark on the ground for each thing that has been raised. */
+function raised(id: string, cx: number, cy: number): SVGGElement {
+  const g = svgEl('g', { class: 'raised', opacity: 0.95 });
+  g.append(
+    svgEl('polygon', {
+      points: cornerPoints(cx, cy, HEX - 3),
+      fill: 'none',
+      stroke: '#d3a441',
+      'stroke-width': 2,
+    }),
+  );
+  if (id === 'palisade') {
+    // A line of stakes across the plot.
+    for (const dx of [-0.3, -0.1, 0.1, 0.3]) {
+      g.append(
+        svgEl('line', {
+          x1: cx + dx * HEX,
+          y1: cy - HEX * 0.3,
+          x2: cx + dx * HEX,
+          y2: cy + HEX * 0.3,
+          stroke: '#d3a441',
+          'stroke-width': 2.5,
+        }),
+      );
+    }
+  } else if (id === 'dock') {
+    g.append(
+      svgEl('path', {
+        d: `M ${cx - HEX * 0.4} ${cy} L ${cx + HEX * 0.4} ${cy} M ${cx - HEX * 0.2} ${cy} L ${cx - HEX * 0.2} ${cy + HEX * 0.3} M ${cx + HEX * 0.2} ${cy} L ${cx + HEX * 0.2} ${cy + HEX * 0.3}`,
+        stroke: '#d3a441',
+        'stroke-width': 2.5,
+        fill: 'none',
+      }),
+    );
+  } else {
+    // A roof: longhouse, smokehouse, mead hall and farm walls all read as one.
+    g.append(
+      svgEl('path', {
+        d: `M ${cx - HEX * 0.36} ${cy + HEX * 0.22} L ${cx} ${cy - HEX * 0.3} L ${cx + HEX * 0.36} ${cy + HEX * 0.22} Z`,
+        fill: '#4a3b28',
+        stroke: '#d3a441',
+        'stroke-width': 2,
+      }),
+    );
+  }
+  return g;
 }
 
 function worker(cx: number, cy: number, name: string): SVGGElement {

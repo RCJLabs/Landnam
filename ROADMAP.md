@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 3.3**
+> **CURRENT MILESTONE: 3.4**
 
 ---
 
@@ -61,7 +61,7 @@ Goal: the full loop closes — travel, fight, settle, survive winter.
 
 - [x] **3.1 Land-taking** — Any claimable hex shows site quality derived from surroundings (fresh water, soil, timber, harbor, defensibility). Founding is a one-way ritual moment. *Done when: choosing where to settle is a real decision.*
 - [x] **3.2 Colony view & jobs** — COLONY mode: zoomed local map of the settled hex. Assign warband to jobs: farmer, hunter, fisher, woodcutter, builder, warrior. Day-tick resolves labor into stockpiles. *Done when: job assignment visibly moves the numbers.*
-- [ ] **3.3 Needs & buildings** — Needs: food, warmth, rest, morale. Build queue: longhouse, smokehouse, farm plots, palisade, dock, mead hall. Buildings unlock capacity and jobs. *Done when: a build order emerges naturally from scarcity.*
+- [x] **3.3 Needs & buildings** — Needs: food, warmth, rest, morale. Build queue: longhouse, smokehouse, farm plots, palisade, dock, mead hall. Buildings unlock capacity and jobs. *Done when: a build order emerges naturally from scarcity.*
 - [ ] **3.4 The First Winter** — Winter as boss fight: no forage, firewood burn, sickness events, morale spiral. Stockpile targets telegraphed in autumn. *Done when: an unprepared colony dies and it's clearly your fault — ship v0.3 (full loop).*
 - [ ] **3.5 Raid defense** — Rival clans attack the colony; battle layer reuses the colony map with palisade/buildings as terrain. Losses damage structures and people. *Done when: the palisade earns its lumber.*
 
@@ -91,6 +91,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 3.3 Needs & buildings** — Four needs read off the state and
+  named plainly — food, warmth, rest, heart — each saying what it actually is
+  ("seven nights of fire, and no more") rather than showing a bar. Six
+  buildings, each answering exactly one of them: longhouse, farm plots,
+  smokehouse, dock, palisade, mead hall. Builders' days now go into a queue
+  instead of accruing abstract shelter, and what they finish changes the
+  ground itself — farm plots really do raise the soil, a dock raises the
+  harbour and unlocks fishing inland of the water, a palisade raises defence
+  and quiets the steading, a smokehouse keeps a quarter more of everything
+  caught, a mead hall lifts the heart every day. Timber is paid on queue and
+  half returns on cancel, so the queue is a decision and not a scratchpad.
+  Measured over six years: building what you lack survives 3 of 6 and averages
+  67 days, against 1 and 49 for a fixed showy order and 1 and 60 for never
+  building at all — and under three manufactured scarcities the same steading
+  wants three different things first. Two design bugs the measurement caught:
+  an idle builder could trickle to a FULL roof for free, which made the
+  longhouse pointless; and the guard that fixed it clamped shelter downward,
+  quietly demolishing finished buildings every day nothing was queued.
+  `SAVE_VERSION` 8 with a migration. 271 tests.
 - **2026-08-06 — 3.2 Colony view & jobs** — COLONY mode pushes over travel:
   nineteen hexes of your own ground, laid out from the site reading, so the
   local map is a picture of the choice you already made. Six jobs — farmer,

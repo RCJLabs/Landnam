@@ -9,11 +9,12 @@ import { applyTravel, type TravelAction } from './travel';
 import { isWarbandTurn } from './battle';
 import { doDash, doDefend, doMove, doShove, doStrike, doThrow } from './battleActions';
 import { endTurn, leaveBattle } from './battleTurn';
-import { assign, makePlots } from './colony';
+import { assign, makePlots, queueBuild, unqueueBuild } from './colony';
 import { atHome } from './site';
 import { stream } from '../rng';
 import { key } from '../hex';
 import type { JobId } from '../data/jobs';
+import type { BuildingId } from '../data/buildings';
 
 export type BattleAction =
   | { type: 'B_MOVE'; to: Hex }
@@ -28,7 +29,9 @@ export type BattleAction =
 export type ColonyAction =
   | { type: 'ENTER_COLONY' }
   | { type: 'LEAVE_COLONY' }
-  | { type: 'ASSIGN'; personId: string; job: JobId | null };
+  | { type: 'ASSIGN'; personId: string; job: JobId | null }
+  | { type: 'QUEUE_BUILD'; building: BuildingId }
+  | { type: 'UNQUEUE_BUILD'; building: BuildingId };
 
 export type Action =
   | TravelAction
@@ -38,7 +41,13 @@ export type Action =
   | { type: 'DISMISS_EVENT' }
   | { type: 'DISMISS_AFTERMATH' };
 
-const COLONY_TYPES = new Set(['ENTER_COLONY', 'LEAVE_COLONY', 'ASSIGN']);
+const COLONY_TYPES = new Set([
+  'ENTER_COLONY',
+  'LEAVE_COLONY',
+  'ASSIGN',
+  'QUEUE_BUILD',
+  'UNQUEUE_BUILD',
+]);
 
 const BATTLE_TYPES = new Set([
   'B_MOVE',
@@ -124,6 +133,16 @@ export function apply(state: GameState, action: Action): GameState {
     if (action.type === 'ASSIGN') {
       const next = structuredClone(state);
       if (!assign(next, action.personId, action.job)) return state;
+      return next;
+    }
+    if (action.type === 'QUEUE_BUILD') {
+      const next = structuredClone(state);
+      if (!queueBuild(next, action.building)) return state;
+      return next;
+    }
+    if (action.type === 'UNQUEUE_BUILD') {
+      const next = structuredClone(state);
+      if (!unqueueBuild(next, action.building)) return state;
       return next;
     }
     return state;

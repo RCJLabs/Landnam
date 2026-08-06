@@ -221,6 +221,9 @@ export function foundSettlement(state: GameState): boolean {
     plots: makePlots(report, { q: at.q, r: at.r }, rng.derive('plots')),
     shelter: 0,
     watch: 0,
+    built: [],
+    queue: [],
+    works: 0,
   };
   // The land-taking is the moment the run stops being a walk, so it is
   // written in saga voice rather than as another day's line.
