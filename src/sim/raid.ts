@@ -9,7 +9,8 @@ import { buildingById } from '../data/buildings';
 import type { GameState } from '../state/types';
 import { effectiveReport } from './colony';
 import { standing } from './battle';
-import { raidPressure } from './neighbours';
+import { angerLevel, raidPressure } from './neighbours';
+import { wintersStood } from './calendar';
 import { chronicle } from './saga';
 import { learn } from './lore';
 import { note } from './tally';
@@ -49,6 +50,47 @@ export function raidDifficulty(state: GameState): number {
   // against a band of six, so anything the coast felt about you past that was
   // silently discarded — which is why raid pressure measured as worthless.
   return Math.max(-1, Math.min(10, Math.round(worthTaking - warned + raidPressure(state))));
+}
+
+/** Days between raids at the very worst. Nobody is besieged every week. */
+export const RAID_RESPITE = 14;
+
+/** The most likely a single day can be, however rich and however hated. */
+export const RAID_CHANCE_MAX = 0.055;
+
+/**
+ * The chance, on a given day, that somebody comes for the steading.
+ *
+ * Raids used to arrive ONLY as event cards, which made their frequency a
+ * function of the deck rather than of the steading: measured across whole
+ * sagas, roughly one run in four never saw a single raid, and about three
+ * quarters of runs saw at most one. A threat that mostly does not happen
+ * cannot decide a run however large it is when it does — which is why making
+ * raids bigger in 6.3 moved the curve by nothing.
+ *
+ * This is the other half. A hall that has stood years, is full of building,
+ * and has a winter's food in it is worth crossing the country for, and a
+ * coast with a grievance needs less excuse. The watch and the wall buy it
+ * back down, which is the first thing in the game that has ever made the
+ * watch worth standing on a quiet day.
+ *
+ * Deliberately capped low. This is a background hazard, not a siege: at the
+ * ceiling it is about one raid a month, and a well-watched steading nobody
+ * has a quarrel with sits far below that.
+ */
+export function raidOdds(state: GameState): number {
+  const home = state.settlement;
+  if (!home || state.end) return 0;
+  // Nothing comes for a place that has only just been marked out.
+  if (state.day - home.foundedOn < RAID_RESPITE) return 0;
+
+  const worth =
+    wintersStood(state.day) * 0.6 + home.built.length * 0.35 + Math.min(3, state.party.food / 50);
+  const grievance = angerLevel(state) / 45;
+  const warned = effectiveReport(state)!.defence * 0.22 + home.watch * 0.16;
+
+  const drawn = Math.max(0, worth + grievance - warned);
+  return Math.min(RAID_CHANCE_MAX, drawn * 0.006);
 }
 
 /**

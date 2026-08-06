@@ -23,7 +23,86 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 5.4**
+> **CURRENT MILESTONE: 6.3**
+
+---
+
+## Where we are now
+
+*This section is the living head of the document: it is rewritten whenever it
+stops being true, unlike the changelog below, which is append-only history.
+Anyone — or any future session — should be able to read this and the "dead
+ends" table and pick the work up without re-deriving a day of measurement.*
+
+**Shipped:** Phases 0–4 complete. 5.1 Sound, 5.2 Onboarding and 5.3 Balance &
+juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
+
+**The measured curve** (30 seeds, a scripted player of roughly average
+competence — see `test/balance.test.ts`, which is the source of every number
+in this document):
+
+| milestone | reached |
+| --- | --- |
+| the first winter (day 49) | 73% |
+| spring (day 73) | 47% |
+| the second winter — the Thing's window (day 169) | 47% |
+
+**The open problem, and Phase 6's whole reason for existing:** the late game
+is flat. A band that gets through the first winter reaches the second in
+almost every case, so one season holds the entire difficulty of the game and
+the Thing is a lap of honour rather than a climax.
+
+**What is next, in order:**
+
+1. **Tune raid frequency until it does not break the Thing.** `raidOdds` and
+   `maybeRaid` are written, tested and deliberately NOT wired in
+   (`sim/raid.ts`, `sim/upkeep.ts`). Rolling raids daily does exactly what
+   6.3 wanted — and drops the Phase 4 bar in `test/thing.test.ts` from 4 of 4
+   bands reaching the endgame to 1 of 4. Harder is the goal; unreachable is
+   not. The odds, the respite, and what a lost raid COSTS all move it, and it
+   has to be tuned against that test rather than the survival curve alone.
+2. **Re-measure.** If frequency moves the two-winter figure off 47%, Phase 6's
+   thesis is proved. If it does not, that is four levers on one mechanism and
+   the honest conclusion is that the late game needs a different KIND of
+   threat, not a louder version of this one.
+3. **6.4 No last winter** — remove the five-winter forced ending.
+4. **5.4 Release** — v1.0 and the CNAME. Deliberately last: tagging freezes
+   the game's identity, so the balance settles first.
+
+**Known and not urgent:** the event deck is thin (~39 cards); there is no
+meta-progression and no daily seed; accessibility is minimal (keyboard play
+is not possible); and `data/events.ts`, `main.ts` and `render/travel.ts` all
+breach the ~300-line guidance, `main.ts` most of all.
+
+## Dead ends — measured, and not to be repeated
+
+Every one of these was built, measured, and reverted or corrected. They are
+here so the next attempt does not begin by repeating them.
+
+| Attempt | What happened |
+| --- | --- |
+| Raid pressure rising with the steading's fame | No curve change at three magnitudes. **The reason was a clamp, not the design** — see below. |
+| Winters deepening with the years, alone | Zero change for a careful player AND a careless one (18/40 either way): the winter mark was a perfect forecast, so the band simply stocked to the bigger number. Shipped later as 6.1, once the mark was made vague. |
+| A landing chosen near settleable ground | Fixed a real problem (settleable ground a median 5 and up to 11 hexes from the sand) and broke a bigger one: where you land decides where you fight, and on the worlds it produced the shield wall went dead level with charging in — 33 wins/157 standing became 32/158 over sixty seeds. Rejected. |
+| Rolling a raid every day instead of drawing one from the deck | Does what it says — but took `test/thing.test.ts` from 4 of 4 bands reaching the endgame to 1 of 4. Written, tested, and switched off pending a tuning pass. |
+| Guaranteeing a four-wide front on every battlefield | Shipped, but currently inert: no terrain the game ships ever fails it. A regression guard on tunable data, not a fix. The real mechanism is row DENSITY — 98% of meadow rows can hold a line against 40% of ocean ones. |
+
+**The lesson under most of these:** four null results in one day, and the
+worst of them was measuring plumbing rather than design. Raids were capped at
+nine; against six sworn the foe roll saturates that cap at difficulty four;
+and difficulty itself was clamped at six. Everything the coast felt about you
+past that was discarded by a `Math.min` before it reached a battlefield.
+**Before trusting any null result, check that the mechanism can physically
+produce a non-null one.**
+
+**The harness is code, and it has been wrong three times:** it did not fight
+back on the battlefield (which put "slain" at the top of the death table and
+made the game look far crueller than it is — teaching it to swing took the
+two-winter figure from 0% to 51%); a cheaper single-pass rewrite disagreed
+with itself by forty points; and its build list said `farm-plots` where the
+building is `farmplots`, so that entry silently never queued. **Every time the
+game gains a capability, the bot must gain it in the same commit**, or the
+measurement reports the new thing as worthless.
 
 ---
 
@@ -121,6 +200,25 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — Raid frequency, written and switched off** — 6.3 made raids
+  bigger and the curve did not move, because raids were rare: they arrived
+  only as event cards, so how often a steading was visited was a fact about
+  the deck rather than about the steading, and about a quarter of whole sagas
+  never saw one. `raidOdds` fixes that at the root — a hall that has stood
+  years, is full of building and has a winter's food in it is worth crossing
+  the country for, a coast with a grievance needs less excuse, and the watch
+  and the wall buy it back down. That last part is the first thing in this
+  game that has ever made standing the watch worth it on a quiet day.
+  It is not wired in. Rolling it each day does exactly what was wanted and
+  takes the Phase 4 bar — a band that builds the hall, keeps the peace and
+  makes a friend can reach the endgame — from 4 of 4 down to 1 of 4. Harder
+  is the goal; unreachable is not, and a band that did everything asked of it
+  must still be able to call a Thing. The function ships tested and switched
+  off, with the reason written where the next person will find it.
+  The roadmap gains a living head: where the project stands, what is next,
+  and a table of every measured dead end, so none of today's four null
+  results has to be rediscovered. 525 tests.
 
 - **2026-08-06 — 6.3 part: the lever was disconnected** — Raid pressure had
   been measured as worthless at three separate magnitudes, and the reason

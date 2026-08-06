@@ -51,7 +51,7 @@ import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle } from '../src/sim/battleTurn';
 import { MAX_RAIDERS, MAX_RAIDERS_FAMED, raiderCap } from '../src/sim/battle';
-import { raidDifficulty } from '../src/sim/raid';
+import { RAID_CHANCE_MAX, raidDifficulty, raidOdds } from '../src/sim/raid';
 import { capacity, crowding } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
@@ -733,5 +733,45 @@ describe('a steading worth taking draws more than six can hold', () => {
     }
     expect(sworn(state.party.people)).toHaveLength(SWORN_MAX);
     expect(raiderCap(state)).toBeGreaterThan(SWORN_MAX);
+  });
+});
+
+describe('a steading worth taking is visited', () => {
+  function steading(seed: string, built: string[], winters: number, food = 60): GameState {
+    for (let i = 0; i < 150; i += 1) {
+      const state = structuredClone(newGame(`${seed}-${i}`));
+      if (!foundSettlement(state)) continue;
+      state.settlement!.built.push(...built);
+      state.day = 73 + Math.max(0, winters - 1) * 96;
+      state.party.food = food;
+      return state;
+    }
+    throw new Error('nothing foundable');
+  }
+
+  it('leaves a steading alone while the posts are still fresh', () => {
+    const fresh = steading('fresh', ['longhouse'], 1);
+    fresh.settlement!.foundedOn = fresh.day - 2;
+    expect(raidOdds(fresh)).toBe(0);
+  });
+
+  it('comes more for a hall that has stood years and been built up', () => {
+    const young = raidOdds(steading('young', ['longhouse'], 1));
+    const old = raidOdds(steading('old', ['longhouse', 'bud', 'meadhall', 'smokehouse'], 4));
+    expect(old).toBeGreaterThan(young);
+  });
+
+  it('makes the watch and the wall worth keeping on a quiet day', () => {
+    const open = steading('open', ['longhouse', 'bud', 'meadhall'], 3);
+    const walled = structuredClone(open);
+    walled.settlement!.built.push('palisade');
+    walled.settlement!.watch = 6;
+    expect(raidOdds(walled)).toBeLessThan(raidOdds(open));
+  });
+
+  it('stays a background hazard rather than a siege', () => {
+    const richest = steading('rich', ['longhouse', 'bud', 'meadhall', 'smokehouse', 'dock'], 9, 900);
+    for (const n of richest.neighbours) n.standing = -100;
+    expect(raidOdds(richest)).toBeLessThanOrEqual(RAID_CHANCE_MAX);
   });
 });

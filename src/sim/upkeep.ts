@@ -5,12 +5,15 @@ import type { GameState, Person, RunEnd } from '../state/types';
 import { effectsOn, nextThaw, seasonOf, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from './calendar';
 import { LONG_LIFE_WINTERS } from '../data/thing';
 import { living } from './people';
+import { stream } from '../rng';
 import { noteFirstWork, shelterSaving, workTheDay } from './colony';
 import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
 import { driftStandings } from './neighbours';
 import { handsLeave } from './joining';
+import { raidable, raidDifficulty, raidOdds } from './raid';
+import { startRaid } from './battleTurn';
 import { bonus } from './lore';
 import { chronicle } from './saga';
 
@@ -20,6 +23,30 @@ import { chronicle } from './saga';
  * the year comes round again. See LONG_LIFE_WINTERS for the far end.
  */
 export const SURVIVAL_DAY = 73;
+
+/**
+ * Somebody comes for the steading, or does not.
+ *
+ * NOT WIRED IN, deliberately, and the reason is worth keeping: rolling this
+ * each day does exactly what 6.3 wanted — raids stop being a matter of which
+ * card came up — and it breaks a Phase 4 guarantee doing it. With it live,
+ * the bar in test/thing.test.ts ("a band that builds the hall, keeps the
+ * peace and makes a friend gets there") fell from 4 of 4 to 1 of 4. Harder is
+ * the goal; unreachable is not, and a band that did everything asked of it
+ * must still be able to call a Thing.
+ *
+ * What it needs is a tuning pass against that test rather than against the
+ * survival curve alone — the odds, the respite, and what a lost raid actually
+ * costs all move it. Left here, tested, and switched off until then.
+ */
+export function maybeRaid(state: GameState): void {
+  if (state.end || state.battle || state.event) return;
+  if (!raidable(state)) return;
+  const odds = raidOdds(state);
+  if (odds <= 0) return;
+  if (!stream(state.seed, 'events').derive(`raid:${state.day}`).chance(odds)) return;
+  startRaid(state, raidDifficulty(state));
+}
 
 export function foodPerDay(state: GameState): number {
   return Math.max(1, Math.ceil(living(state.party.people).length / 2));
