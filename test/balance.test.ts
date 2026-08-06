@@ -23,13 +23,17 @@
 // direction that flatters or damns whatever it is measuring. A later rewrite
 // of this file disagreed with itself by forty points for the same reason.
 //
-// The second is recorded but NOT yet fixed here: the landing is chosen for
+// The second was tried, measured, and REJECTED. The landing is chosen for
 // loneliness alone — the westernmost quiet beach — with no regard for whether
 // anywhere behind it can be lived in, which puts settleable ground a median 5
-// and as much as 11 hexes away. A band that draws a far beach spends its
-// first season walking. The fix is small and measured (it takes the worst
-// case from 11 hexes to 4) but it moves every seed's world, which destabilises
-// four seeded fixtures elsewhere in the suite, so it wants its own pass.
+// and as much as 11 hexes from the sand. Choosing a beach with somewhere to
+// live behind it takes the worst case from 11 hexes to 4 and looked like a
+// clear win. It is not: where you land decides where you fight, and on the
+// worlds it produces the shield wall stops paying for itself. Over sixty
+// seeds the line went from 33 wins and 157 people standing to 32 and 158 —
+// dead level with charging in, which is a Phase 2 milestone bar erased.
+// Battlefield generation has to stop being that sensitive to the terrain it
+// is handed before the landing can be touched. See test/wall.test.ts.
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';

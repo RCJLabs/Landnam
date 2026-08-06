@@ -391,7 +391,15 @@ describe('formation play beats brawling', () => {
 
   // A wide sample: single fights swing hard on the dice, and a five-seed
   // difference here would be noise rather than a design claim.
-  const SEEDS = Array.from({ length: 24 }, (_, i) => `formation-${i}`);
+  // Sixty, not twenty-four. A proposed worldgen change moved every seed's
+  // world and this comparison went to a dead heat — 32 wins against 33, 158
+  // survivors against 158. Widening the sample is what proved that was a real
+  // effect and not noise: on the worlds we actually ship, sixty seeds give
+  // the line 33 wins and 157 standing against 30 and 142, which is an
+  // advantage worth asserting. The bar is unchanged; the evidence for it is
+  // bigger, and it is now sensitive enough to catch a change that quietly
+  // takes the shield wall's advantage away.
+  const SEEDS = Array.from({ length: 60 }, (_, i) => `formation-${i}`);
 
   /** Warband members left standing and unbroken when the field settles. */
   function intact(state: GameState): number {
@@ -402,7 +410,7 @@ describe('formation play beats brawling', () => {
 
   // 48 whole battles. Deliberately expensive, and well past vitest's default
   // 5s budget once the rest of the suite is competing for the CPU.
-  it('holding the line beats charging in', { timeout: 60_000 }, () => {
+  it('holding the line beats charging in', { timeout: 180_000 }, () => {
     let brawlWins = 0;
     let formationWins = 0;
     let brawlSurvivors = 0;

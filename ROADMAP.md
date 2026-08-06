@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 5.3**
+> **CURRENT MILESTONE: 5.4**
 
 ---
 
@@ -80,7 +80,7 @@ Order negotiable; each is a shippable minor version.
 
 - [x] **5.1 Sound** — WebAudio synth: wind, drums, horn, UI ticks. Mute toggle. *Done when: the game has a voice, makes no request to get it, and is silent until touched.*
 - [x] **5.2 Onboarding** — First-run guided prompts woven into events (no tutorial screens). *Done when: a new player is taught by the game reaching a state, a veteran sees nothing, and the teaching changes the run not at all.*
-- [~] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall. *Curve harness, memorial and animation shipped; the landing fix and the flat late game are still open — see the changelog.*
+- [x] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall. *Done when: the curve is measured and asserted in CI, the dead outlive the run, and the screen stops cutting. Two findings left open and written down rather than rushed — see the changelog.*
 - [ ] **5.4 Release** — v1.0 tag, `landnam.rcjlabs.com` CNAME. THEN decide TWA/Capacitor wrap (stay web during development).
 
 ---
@@ -90,6 +90,28 @@ Order negotiable; each is a shippable minor version.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 5.3 closes: one fix measured and thrown away** — The landing
+  is chosen for loneliness alone, which puts ground you could settle a median
+  5 and as much as 11 hexes from where the keel touches sand; a band that
+  draws a far beach spends its first season walking. Choosing a beach with
+  somewhere to live behind it takes that worst case to 4 while leaving GOOD
+  ground a median 12 away, so the gamble survives. It looked like a clear win
+  and it is not one. Where you land decides where you fight, and on the worlds
+  it produces the shield wall stops paying: over sixty seeds the line went
+  from 33 wins and 157 people left standing to 32 and 158 — dead level with
+  charging in, which is a Phase 2 milestone bar erased. The change is
+  rejected, and the reason is written into the two tests that caught it.
+  Getting there was itself a correction. The first read of the wall figures
+  called it a sample too small to measure what it asserted; widening from
+  twenty-four seeds to sixty is what proved the opposite — the effect was
+  real. The wider sample is kept, because it is strictly more evidence for a
+  bar the game already claimed, and because it is now sensitive enough to
+  catch a change that quietly takes the shield wall's advantage away.
+  Left open on purpose: the late game is flat — 41 of 43 bands through the
+  first winter reach the second — and raid pressure, tried at three
+  magnitudes, moves it by nothing. Both want their own milestone rather than
+  a number nudged at the end of a long session. 481 tests.
 
 - **2026-08-06 — 5.3 (part): motion** — The screen stops cutting. The band's
   token is now drawn at the origin and positioned by a transform on its group,
