@@ -113,7 +113,10 @@ export function composeSaga(state: GameState): Saga {
   const tally = tallyOf(state);
   const crew = state.party.people;
   const alive = living(crew);
-  const dead = crew.filter((p) => !p.alive);
+  // The saga mourns the killed. Somebody who walked out is not among them —
+  // the chronicle already recorded them leaving, and a closing verse that
+  // grieves a man who is alive and elsewhere reads as a mistake.
+  const dead = crew.filter((p) => !p.alive && !p.left);
   const landing = world.landingName || 'the landing';
 
   // --- Title ---

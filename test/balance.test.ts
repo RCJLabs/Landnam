@@ -775,3 +775,35 @@ describe('a steading worth taking is visited', () => {
     expect(raidOdds(richest)).toBeLessThanOrEqual(RAID_CHANCE_MAX);
   });
 });
+
+describe('somebody who walked out is not somebody who died', () => {
+  it('keeps a leaver off the memorial and out of the saga', () => {
+    const state = structuredClone(newGame('walked'));
+    const killed = state.party.people[0]!;
+    killed.alive = false;
+    killed.fate = 'took a spear at the ford';
+    killed.diedOn = 20;
+
+    const gone = state.party.people[1]!;
+    gone.alive = false;
+    gone.left = true;
+    gone.fate = 'walked out one morning and did not come back';
+    gone.diedOn = 22;
+
+    const wall = fallenOf(state);
+    expect(wall).toHaveLength(1);
+    expect(wall[0]!.name).toBe(killed.name);
+  });
+
+  it('still stops counting them as a mouth to feed', () => {
+    // `alive: false` has to stand, whatever the fiction: somebody who has
+    // gone is not eating here any more, and the upkeep must agree.
+    const state = structuredClone(newGame('mouths'));
+    const before = foodPerDay(state);
+    state.party.people[0]!.alive = false;
+    state.party.people[0]!.left = true;
+    state.party.people[1]!.alive = false;
+    state.party.people[1]!.left = true;
+    expect(foodPerDay(state)).toBeLessThan(before);
+  });
+});

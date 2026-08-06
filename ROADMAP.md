@@ -58,24 +58,39 @@ is flat. A band that gets through the first winter reaches the second in
 almost every case, so one season holds the entire difficulty of the game and
 the Thing is a lap of honour rather than a climax.
 
-**What is next, in order:**
+**The queue** (from the audit of 2026-08-06, in order):
 
-1. **Make a lost raid cost PEOPLE, not stores.** This is the conclusion of
-   five measured levers. Everything tried so far has been priced in food,
-   firewood or timber, and a settled band replaces those faster than any
-   threat can take them — which is why the curve has not moved once all day.
-   A sacking currently carries off two fifths of the store and fires a
-   building. If it also took hands — killed, or carried off — then losing
-   would cost the thing 6.2 made scarce, attrition would finally have a
-   source, and the answer would be the wall and the coast rather than a
-   bigger woodpile. Tune against `test/thing.test.ts` as well as the curve.
-2. **Re-measure.** If frequency moves the two-winter figure off 47%, Phase 6's
-   thesis is proved. If it does not, that is four levers on one mechanism and
-   the honest conclusion is that the late game needs a different KIND of
-   threat, not a louder version of this one.
-3. **6.4 No last winter** — remove the five-winter forced ending.
-4. **5.4 Release** — v1.0 and the CNAME. Deliberately last: tagging freezes
-   the game's identity, so the balance settles first.
+1. **[x] Surface 6.2 in the UI.** `bond`, `capacity`, `crowding` and
+   `roomLeft` appear in ZERO renderer files. Who fights, who works and how
+   much room the hall has are all invisible, and crowding drains morale with
+   nothing on screen to say so — a hidden punishment, which is the one thing
+   this project's rules exist to prevent.
+2. **[x] Tell a leaver from a corpse.** Hands who walk out are marked
+   `alive: false` so the upkeep accounting stays right, which counts them
+   among the dead and puts them on the memorial. The fate text distinguishes
+   them; the tally and the saga do not.
+3. **[~] NEXT — Make a lost raid cost hands.** The conclusion of five measured
+   levers. A sacking takes stores and fires a building, both replaceable.
+   Taking people is the only untried lever not priced in material.
+4. **[ ] Teach the balance bot 6.2.** It never accepts joiners, never manages
+   capacity, never sees the sworn/hand split — so every measurement about
+   GROWTH is unreliable. Must land in the same commit as item 3.
+5. **[ ] Measure raid outcomes.** Nothing counts how often a raid is LOST,
+   only how often one fires. That is the number item 3 moves, and there is no
+   baseline for it.
+6. **[ ] Triple the event deck** (39 → ~100). Cheapest quality per hour in the
+   project: pure data, guarded by the content lint, no engine risk.
+7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
+   and they blur. Also the cleanest way to make the palisade read as ground
+   rather than as a number.
+8. **[ ] Split `data/events.ts` (946 lines) and `main.ts` (609).** `main.ts`
+   is the risk: a boot router carrying UI state for eight overlays, and every
+   milestone adds another.
+9. **[ ] Version the localStorage preferences.** Four keys and only `save` has
+   a version and a migration. `fallen` grows unboundedly toward a quota.
+10. **[ ] 5.4 Release** — v1.0 and the CNAME. Last, and now for a sharper
+    reason: tagging with 6.2 invisible would ship a version whose central new
+    system the player cannot see.
 
 **Known and not urgent:** the event deck is thin (~39 cards); there is no
 meta-progression and no daily seed; accessibility is minimal (keyboard play
@@ -209,6 +224,25 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — Two audit fixes: the invisible system, and the lie about the
+  dead** — An audit found that `bond`, `capacity`, `crowding` and `roomLeft`
+  appeared in exactly zero renderer files. The whole of 6.2 had shipped
+  invisible: a player could not see which of their people would be standing in
+  the line when a raid came, how much room the hall had, or why everyone's
+  heart was dropping in a crowded steading. That last one is the worst of it —
+  a penalty with nothing on screen to explain it is not difficulty, it is a
+  bug that looks like bad luck.
+  The roster now marks a hand as a hand, and the steading has a room panel
+  that reads like the winter mark does: how many are under the roof, how many
+  more will fit, and — when it is over — how many are sleeping on the floor
+  and exactly what it is taking off every heart.
+  Second: hands who walk out were marked dead. They are still `alive: false`,
+  because somebody who has gone is not eating here any more and the upkeep has
+  to agree, but they now carry `left` — and the memorial and the saga skip
+  them. A wall titled "those who did not come back" listing a man who is fine
+  and elsewhere is a lie about what happened to him.
+  527 tests.
 
 - **2026-08-06 — Raids come on their own schedule now** — A steading worth
   taking is visited because it is worth taking, not because the event deck

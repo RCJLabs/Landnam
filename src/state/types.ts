@@ -105,6 +105,15 @@ export interface Person {
   fate?: string;
   /** The day they died, so the saga can say when. */
   diedOn?: number;
+  /**
+   * They walked out rather than died.
+   *
+   * Still `alive: false`, because every mouth-and-fire calculation in the
+   * game counts the living and somebody who has gone is not eating here any
+   * more. But a memorial that lists them among the killed is telling a lie
+   * about what happened, and the saga should not mourn a man who is fine.
+   */
+  left?: boolean;
 }
 
 // --- The warband ---

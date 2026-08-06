@@ -80,7 +80,10 @@ export function handsLeave(state: GameState): Person[] {
     if (state.day - (person.joinedOn ?? 0) >= SETTLED_IN) continue;
     if (!rng.derive(person.id).chance(LEAVING_CHANCE)) continue;
 
+    // Not dead — gone. `alive: false` keeps the upkeep honest (they are not
+    // eating here any more); `left` keeps the saga honest.
     person.alive = false;
+    person.left = true;
     person.fate = 'walked out one morning and did not come back';
     person.diedOn = state.day;
     gone.push(person);

@@ -11,6 +11,8 @@ import type { GameState, Person } from '../state/types';
 import {
   availableJobs,
   buildBlocker,
+  capacity,
+  crowding,
   buildProgress,
   dayLabour,
   idlers,
@@ -21,6 +23,7 @@ import {
   type BlockReason,
 } from '../sim/colony';
 import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
+import { CROWDING_BITE } from '../sim/minds';
 import { forecast, readiness, sickCount } from '../sim/winter';
 import { effectiveStat, living } from '../sim/people';
 import { plotTally } from './colony';
@@ -73,6 +76,35 @@ const BLOCK_WORD: Record<BlockReason, string> = {
  * a build order comes from: the panel names the scarcity, and the suggestion
  * names the answer.
  */
+/**
+ * How full the hall is, and what it costs to be fuller than it holds.
+ *
+ * Crowding takes five off everyone's mood a head per night, and until this
+ * existed it did so with nothing on screen to explain it. A penalty the
+ * player cannot see is not difficulty, it is a bug that looks like bad luck.
+ */
+export function renderRoom(state: GameState): HTMLElement {
+  if (!state.settlement) return el('div');
+  const room = capacity(state);
+  const here = living(state.party.people).length;
+  const over = crowding(state);
+
+  return el('div', { class: `room-mark${over > 0 ? ' short' : ''}` }, [
+    el('div', { class: 'mark-head' }, [
+      over > 0
+        ? `${over} sleeping on the floor`
+        : `Room for ${room - here} more`,
+    ]),
+    el('div', { class: 'mark-row' }, [
+      el('span', { class: 'mark-name' }, ['Under the roof']),
+      el('span', { class: 'mark-value' }, [`${here} / ${room}`]),
+      el('span', { class: 'mark-gap' }, [
+        over > 0 ? `${over * CROWDING_BITE} off every heart` : 'enough',
+      ]),
+    ]),
+  ]);
+}
+
 export function renderNeeds(state: GameState): HTMLElement {
   const needs = [...readNeeds(state)].sort((a, b) => a.level - b.level);
   const panel = el('div', { class: 'needs' });
@@ -205,7 +237,13 @@ export function renderCrew(
     });
     row.addEventListener('click', () => select(selected === person.id ? null : person.id));
     row.append(
-      el('span', { class: 'crew-name' }, [person.name]),
+      el('span', { class: `crew-name${person.bond === 'hand' ? ' hand' : ''}` }, [
+        person.name,
+        // Who bears arms and who does not is the whole of 6.2, and it was
+        // shipped invisible: a player could not tell which of their people
+        // would be standing in the line when a raid came.
+        ...(person.bond === 'hand' ? [el('span', { class: 'crew-bond' }, ['hand'])] : []),
+      ]),
       el('span', { class: `crew-job${job ? '' : ' idle'}` }, [job ? job.name : 'idle']),
       el('span', { class: 'crew-take' }, [
         job ? `${amount.toFixed(1)} ${produceWord(job.produces)}` : '—',

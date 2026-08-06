@@ -14,7 +14,9 @@ import type { GameState } from '../state/types';
  */
 export function fallenOf(state: GameState): Fallen[] {
   return state.party.people
-    .filter((person) => !person.alive)
+    // The wall is for the dead. Somebody who walked out is not dead, and
+    // carving them would be a lie about what happened to them.
+    .filter((person) => !person.alive && !person.left)
     .map((person) => ({
       name: person.name,
       byname: person.byname,

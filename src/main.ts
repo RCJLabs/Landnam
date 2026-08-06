@@ -22,6 +22,7 @@ import {
   renderColonyHint,
   renderCrew,
   renderNeeds,
+  renderRoom,
   type ColonyTab,
 } from './render/colonyUi';
 import {
@@ -351,7 +352,11 @@ function renderColony(): void {
   // Work and Build are two views of the same steading. Selecting a person
   // always wins, because the picker replaces the action bar.
   if (colonyTab === 'build' && !picked) {
-    hintSlot.replaceChildren(renderNeeds(state), renderBuilds(state, colonyDispatch));
+    hintSlot.replaceChildren(
+      renderNeeds(state),
+      renderRoom(state),
+      renderBuilds(state, colonyDispatch),
+    );
   } else {
     hintSlot.replaceChildren(
       renderColonyHint(state),
