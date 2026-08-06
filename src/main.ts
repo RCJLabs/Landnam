@@ -32,6 +32,7 @@ import {
   renderLesson,
   renderRunEnd,
   renderTitle,
+  renderWall,
   renderWarband,
 } from './render/cards';
 import { deedsFor, renderDeeds } from './render/deeds';
@@ -73,6 +74,8 @@ import {
 import type { AmbienceProfile } from './data/sounds';
 import { lessonDue } from './sim/lessons';
 import { forgetTeaching, markTaught, taught } from './taught';
+import { fallen, remember } from './memorial';
+import { fallenOf } from './sim/fallen';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('missing #app');
@@ -91,6 +94,8 @@ let picked: string | null = null;
 let colonyTab: ColonyTab = 'work';
 /** The chart overlay. A view of the save, not part of it. */
 let mapOpen = false;
+/** The memorial, opened from the title screen. */
+let wallOpen = false;
 /** The day's-work sheet behind the Act button. */
 let actOpen = false;
 /** The send-out card: who is ticked, and what for. Both are view state. */
@@ -192,6 +197,10 @@ function dispatch(action: Action): void {
   // What changed IS what the game sounds like — see src/audio/cues.ts. Doing
   // it here rather than inside the sim keeps every reducer pure.
   playAll(cuesFor(before, next, action));
+  // The wall outlives the run, so it is written the moment the run is over
+  // rather than when the ending card is dismissed — a player who closes the
+  // tab on the death screen has still lost those people.
+  if (!before.end && next.end) remember(fallenOf(next));
   render();
 }
 
@@ -257,7 +266,18 @@ function showTitle(): void {
   travelView = null;
   air = null;
   hushAmbience();
+  if (wallOpen) {
+    app!.replaceChildren(
+      renderWall(fallen(), () => {
+        wallOpen = false;
+        showTitle();
+      }),
+    );
+    return;
+  }
+
   const beenTaught = taught().length > 0;
+  const anyDead = fallen().length > 0;
   app!.replaceChildren(
     renderTitle(
       hasSave(),
@@ -266,6 +286,12 @@ function showTitle(): void {
       beenTaught
         ? () => {
             forgetTeaching();
+            showTitle();
+          }
+        : undefined,
+      anyDead
+        ? () => {
+            wallOpen = true;
             showTitle();
           }
         : undefined,

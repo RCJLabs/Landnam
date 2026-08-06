@@ -80,7 +80,7 @@ Order negotiable; each is a shippable minor version.
 
 - [x] **5.1 Sound** — WebAudio synth: wind, drums, horn, UI ticks. Mute toggle. *Done when: the game has a voice, makes no request to get it, and is silent until touched.*
 - [x] **5.2 Onboarding** — First-run guided prompts woven into events (no tutorial screens). *Done when: a new player is taught by the game reaching a state, a veteran sees nothing, and the teaching changes the run not at all.*
-- [ ] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall.
+- [~] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall. *Curve harness and memorial shipped; the landing fix and animation polish are still open — see the changelog.*
 - [ ] **5.4 Release** — v1.0 tag, `landnam.rcjlabs.com` CNAME. THEN decide TWA/Capacitor wrap (stay web during development).
 
 ---
@@ -90,6 +90,40 @@ Order negotiable; each is a shippable minor version.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 5.3 (part): the curve, measured — and a wall** — The
+  difficulty of this game had never been measured, only felt. It is now: a
+  scripted player of roughly average competence — walks toward timber when
+  short, goes looking for ground it can settle, heeds the winter mark, and
+  fights back when steel comes out — played across thirty seeds, asserted in
+  CI as a wide band rather than a number, so a change that makes the game
+  unwinnable or trivial cannot land quietly. Measured today: **80% reach the
+  first winter, 47% see spring, 47% reach the two-winter mark** the Thing
+  needs.
+  Writing the harness was worth more than the numbers. Its own first draft did
+  not fight back on the battlefield — it passed turns until somebody died —
+  which put "slain" at the top of the death table and made the game look far
+  crueller than it is. Teaching the bot to swing moved survival to the second
+  winter from 0% to 51%. A later rewrite of the same file disagreed with
+  itself by forty points. Both are recorded in the test's own header, because
+  a harness is code and can be wrong in exactly the direction that flatters
+  whatever it measures.
+  Two findings are recorded but deliberately NOT acted on yet. The late game
+  is flat — a band through its first winter reached the second in 41 of 43
+  cases, so one season holds the entire difficulty; raid pressure is the
+  obvious lever and moving it at three different magnitudes changed the curve
+  by nothing, so it needs real work rather than a number nudged at the end of
+  a session. And the landing is chosen for loneliness alone, which puts
+  settleable ground a median 5 and up to 11 hexes from the beach; the fix is
+  written and measured (worst case 11 hexes down to 4) but it moves every
+  seed's world and destabilises four seeded fixtures elsewhere, so it wants
+  its own pass.
+  Shipped alongside: the wall. Everyone who did not come back, across every
+  run this player has started, with the fate and the day the saga already
+  recorded — the third thing to outlive a run, stored beside the mute and the
+  teaching rather than in the save, because a memorial that died with the band
+  would not be one. Deliberately not a stats screen: no counts, no bests, only
+  names. 477 tests.
 
 - **2026-08-06 — 5.2 Onboarding** — Nine lessons, and not one of them a
   tutorial screen. Each is triggered by the game reaching a state where the

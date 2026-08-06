@@ -1212,3 +1212,40 @@ button.relearn {
   font-size: 13px;
   text-decoration: underline;
 }
+
+/* --- The memorial wall ---
+   A list of names, not a stats screen. The only number is the day each life
+   stops at, and it is set quiet so the names carry the row. */
+
+.wall-list {
+  margin-top: 12px;
+  max-height: 52vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.wall-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(70, 60, 44, 0.5);
+}
+
+.wall-name {
+  color: var(--parchment);
+  font-weight: 700;
+}
+
+.wall-day {
+  color: var(--parchment-dim);
+  font-size: 12px;
+  align-self: center;
+}
+
+.wall-fate {
+  grid-column: 1 / -1;
+  color: var(--parchment-dim);
+  font-size: 13px;
+  font-style: italic;
+}

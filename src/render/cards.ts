@@ -18,6 +18,7 @@ import {
 } from '../sim/expedition';
 import { FEUD_THRESHOLD } from '../data/feuds';
 import type { LessonDef } from '../data/lessons';
+import type { Fallen } from '../memorial';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import type { GameState, Person, Purpose } from '../state/types';
 import { button, el } from './svg';
@@ -29,6 +30,8 @@ export function renderTitle(
   onNew: (seed: string) => void,
   /** Present only for a player who has already been taught something. */
   onRelearn?: () => void,
+  /** Present only once somebody has actually died. */
+  onWall?: () => void,
 ): HTMLElement {
   const seedInput = el('input', {
     class: 'seed-input',
@@ -58,6 +61,7 @@ export function renderTitle(
       seedInput,
       // Offered only to someone who has been taught, because to anyone else
       // it is a control for turning on a thing that is already on.
+      ...(onWall ? [button('Those who did not come back', onWall, { class: 'relearn wall-link' })] : []),
       ...(onRelearn ? [button('Show the guidance again', onRelearn, { class: 'relearn' })] : []),
       // Which build this is. The only way, from a phone, to tell a fresh
       // deploy from a cached one.
@@ -90,6 +94,41 @@ export function renderEventCard(state: GameState, dispatch: Dispatch): HTMLEleme
     card.append(choices);
   }
 
+  return el('div', { class: 'overlay' }, [card]);
+}
+
+/**
+ * The wall: everyone who did not come back, across every run this player has
+ * ever started. Deliberately not a stats screen — no counts, no bests, no
+ * "runs completed". A memorial is a list of names, and the only number on it
+ * is the day each one stops at.
+ */
+export function renderWall(dead: Fallen[], onClose: () => void): HTMLElement {
+  const card = el('div', { class: 'card wall-card' }, [
+    el('h2', {}, ['Those Who Did Not Come Back']),
+  ]);
+
+  if (dead.length === 0) {
+    card.append(
+      el('p', { class: 'event-body' }, [
+        'Nobody yet. Every band that has gone out is still out there, or has not gone.',
+      ]),
+    );
+  } else {
+    const list = el('div', { class: 'wall-list' });
+    for (const person of dead) {
+      list.append(
+        el('div', { class: 'wall-row' }, [
+          el('span', { class: 'wall-name' }, [`${person.name} ${person.byname}`]),
+          el('span', { class: 'wall-fate' }, [person.fate]),
+          el('span', { class: 'wall-day' }, [`day ${person.day}`]),
+        ]),
+      );
+    }
+    card.append(list);
+  }
+
+  card.append(button('Back', onClose, { class: 'primary wide' }));
   return el('div', { class: 'overlay' }, [card]);
 }
 
