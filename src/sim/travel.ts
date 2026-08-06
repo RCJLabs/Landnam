@@ -152,6 +152,9 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const changedGround = state.world.tiles[key(party.at)]?.terrain !== tile.terrain;
       party.at = action.to;
       party.hasCamped = false;
+      // Remember the route, not just the view: the map draws where we walked.
+      const there = key(action.to);
+      if (state.world.trod[there] === undefined) state.world.trod[there] = state.day;
       advance(state, days);
       if (state.end) return state;
       reveal(state);

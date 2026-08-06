@@ -38,6 +38,10 @@ export interface World {
   seen: Record<HexKey, Visibility>;
   /** Where the knarr made landfall — the run's anchor point. */
   landing: Hex;
+  /** What the landing was called, so the map can label it. */
+  landingName: string;
+  /** Hexes the party has actually stood on, keyed to the day they first did. */
+  trod: Record<HexKey, number>;
 }
 
 // --- People ---

@@ -116,10 +116,17 @@ button[disabled='true'] {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Never shrink. Flex items shrink by default, which squeezed a long value
+     (a fighter's name) below its own width — and since the value is nowrap
+     with no clipping, it painted straight over the next stat. The bar is
+     meant to scroll sideways instead. */
+  flex: 0 0 auto;
   min-width: 48px;
+  max-width: 40vw;
   padding: 2px 6px;
   border-radius: 5px;
   background: #2a241b;
+  overflow: hidden;
 }
 
 .stat-label {
@@ -127,6 +134,10 @@ button[disabled='true'] {
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--parchment-dim);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stat-value {
@@ -135,6 +146,9 @@ button[disabled='true'] {
   line-height: 1.15;
   /* The bar scrolls sideways rather than growing a second row. */
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat.warn .stat-value {
@@ -238,6 +252,25 @@ button.wide {
 
 .saga.expanded .saga-entries {
   max-height: 46vh;
+}
+
+/*
+ * The blow-by-blow is always "expanded", so it would otherwise creep toward
+ * 46vh as the fight went on and squeeze the battlefield down to a strip.
+ * The field is the game; the log is a footnote that scrolls itself.
+ */
+.saga.fight .saga-entries {
+  max-height: 74px;
+}
+
+.saga.fight .saga-line {
+  font-size: 13px;
+  line-height: 1.4;
+  padding: 1px 0;
+}
+
+.saga.fight .saga-toggle {
+  min-height: 26px;
 }
 
 .saga-line {
@@ -771,6 +804,57 @@ h2.grim {
 
 .needs-mark.ready {
   color: var(--moss);
+}
+
+
+/* --- The chart --- */
+
+.chart-card {
+  max-width: 560px;
+}
+
+.chart-note {
+  color: var(--parchment-dim);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.chart-frame {
+  background: var(--sea);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  padding: 4px;
+  /* Tall enough to read on a phone, capped so the legend and the close
+     button never fall off the bottom of the card. */
+  height: 42vh;
+}
+
+.chart {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.chart-legend {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--parchment-dim);
+}
+
+.chart-key {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-swatch {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  display: block;
+  overflow: visible;
 }
 
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */

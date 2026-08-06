@@ -91,6 +91,21 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — The chart, and two battle-layout bugs** — A **Chart** overlay
+  on the travel screen: everything the band has seen, fitted to one screen,
+  with the knarr where it came ashore, the steading, where the party is
+  standing, and the route actually walked. The world now records `trod` —
+  the day each hex was first stood on — so the trail is history rather than
+  decoration; segments join only where two steps are genuinely adjacent, since
+  revisits are not re-recorded. Legend swatches are the same glyphs the chart
+  draws. Two layout bugs from a phone screenshot: the battle top bar let a
+  fighter's name overflow its cell and paint over the next stat (flex items
+  shrink by default, which defeated the bar's own horizontal scroll — the name
+  is now the label and the health the value), and the fight log reused the
+  saga's expanded 46vh cap, so it grew as the fight went on and squeezed the
+  battlefield down to a strip. Verified over a seventeen-round fight: no
+  overlap, log pinned at 74px, field steady. `SAVE_VERSION` 9 with a
+  migration. 299 tests.
 - **2026-08-06 — v0.3 "Landnám"** — Phase 3 all but complete and the full loop
   closed: land, fight, settle, work, build, and hold the winter.
 - **2026-08-06 — 3.4 The First Winter** — Winter is now a season you survive on

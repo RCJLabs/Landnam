@@ -9,7 +9,8 @@
 // v6 (3.1): the root gained the optional `settlement`.
 // v7 (3.2): Settlement gained plots/shelter/watch; Person gained job.
 // v8 (3.3): Settlement gained built/queue/works.
-export const SAVE_VERSION = 8;
+// v9 (map): World gained trod and landingName.
+export const SAVE_VERSION = 9;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

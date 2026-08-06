@@ -28,11 +28,11 @@ export function renderBattleBar(state: GameState): HTMLElement {
   if (person && active) {
     const links = wallLinks(battle, active).length;
     bar.append(
-      stat(
-        active.side === 'warband' ? 'Acting' : 'Their turn',
-        `${person.name} ${person.health}/${person.maxHealth}`,
-        person.health <= person.maxHealth * 0.3,
-      ),
+      // The name is the label and the health is the value: one long string
+      // holding both was what overflowed the cell in the first place, and
+      // whose turn it is already reads off the hint line.
+      stat(person.name, `${person.health}/${person.maxHealth}`,
+        person.health <= person.maxHealth * 0.3),
       stat('Nerve', active.broken ? 'BROKEN' : `${Math.round(active.nerve)}`, active.nerve < 30),
       stat('Wall', links > 0 ? `+${wallBonus(battle, active)}` : '—', links === 0),
       stat('Steps', `${active.movesLeft}`, active.movesLeft === 0),
@@ -115,7 +115,7 @@ export function renderBattleLog(state: GameState): HTMLElement {
   for (const line of battle.log.slice(-40)) {
     list.append(el('p', { class: 'saga-line' }, [line]));
   }
-  const panel = el('div', { class: 'saga expanded' }, [
+  const panel = el('div', { class: 'saga expanded fight' }, [
     el('div', { class: 'saga-toggle' }, ['The fight']),
     list,
   ]);

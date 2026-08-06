@@ -13,6 +13,7 @@ import { apply, type Action } from './sim/actions';
 import { createTravelView } from './render/travel';
 import { createBattleView } from './render/battle';
 import { createColonyView } from './render/colony';
+import { renderMap } from './render/map';
 import {
   renderBuilds,
   renderColonyActions,
@@ -67,6 +68,8 @@ let foundingOpen = false;
 let picked: string | null = null;
 /** Which half of the steading you are looking at: the work, or the building. */
 let colonyTab: ColonyTab = 'work';
+/** The chart overlay. A view of the save, not part of it. */
+let mapOpen = false;
 /** Which action a tap on a foe performs. Resets to Strike each turn. */
 let aim: Aim = 'strike';
 let aimTurnKey = '';
@@ -100,7 +103,7 @@ function dispatch(action: Action): void {
 }
 
 function onHexTap(target: Hex): void {
-  if (!state || state.event || state.aftermath || state.end || foundingOpen) return;
+  if (!state || state.event || state.aftermath || state.end || foundingOpen || mapOpen) return;
   if (equals(target, state.party.at)) return;
   dispatch({ type: 'MOVE', to: target });
 }
@@ -129,6 +132,7 @@ function startRun(seed: string): void {
   foundingOpen = false;
   picked = null;
   colonyTab = 'work';
+  mapOpen = false;
   mountGame();
 }
 
@@ -255,10 +259,18 @@ function render(): void {
   travelView.update(state);
   hintSlot.replaceChildren(renderHint(state), renderWinterMark(state), renderSitePanel(state));
 
-  const actions = renderActionBar(state, dispatch, () => {
-    foundingOpen = true;
-    render();
-  });
+  const actions = renderActionBar(
+    state,
+    dispatch,
+    () => {
+      foundingOpen = true;
+      render();
+    },
+    () => {
+      mapOpen = true;
+      render();
+    },
+  );
   if (!state.end && !state.event) {
     actions.append(
       button('Band', () => {
@@ -281,6 +293,13 @@ function render(): void {
       renderRunEnd(state, () => {
         clearSave();
         showTitle();
+      }),
+    );
+  } else if (mapOpen) {
+    overlaySlot.replaceChildren(
+      renderMap(state, () => {
+        mapOpen = false;
+        render();
       }),
     );
   } else if (foundingOpen && canFound(state, state.party.at)) {

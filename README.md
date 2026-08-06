@@ -88,6 +88,9 @@ no audio files, no network.
   built in the autumn or not at all. Cold nights bring sickness that docks
   stats and will not mend until the thaw. If the colony dies in the dark, the
   number was on screen for two seasons — and the ending will say so.
+- **The chart** shows everything you have seen on one screen: where the knarr
+  came ashore, where the steading stands, where you are now, and the ground
+  you actually walked to get there.
 - **The saga log** writes down what happened, in chronicle voice. It is the
   record of the run.
 - **Reaching spring** on day 73 with anyone still alive is the win.

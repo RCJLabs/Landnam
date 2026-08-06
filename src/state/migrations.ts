@@ -98,6 +98,22 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 8 };
   },
+
+  // v8 -> v9: the world remembers where the party has walked. An older save
+  // has no record of the route, so it starts from where the band is standing
+  // — the map draws honestly from here rather than inventing a history.
+  8: (save) => {
+    const world = save['world'] as Record<string, unknown> | undefined;
+    const party = save['party'] as { at?: { q: number; r: number } } | undefined;
+    if (world) {
+      if (!world['trod']) {
+        const at = party?.at;
+        world['trod'] = at ? { [`${at.q},${at.r}`]: 1 } : {};
+      }
+      if (!world['landingName']) world['landingName'] = 'the landing';
+    }
+    return { ...save, version: 9 };
+  },
 };
 
 export interface MigrationResult {

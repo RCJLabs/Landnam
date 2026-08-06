@@ -1,6 +1,7 @@
 // New-run construction. Everything derives from the seed: same seed, same
 // coast, same warband, same weather in the bones of the world.
 
+import { key } from '../hex';
 import { stream } from '../rng';
 import { LANDING_NAMES } from '../data/names';
 import { effectsOn } from '../sim/calendar';
@@ -17,6 +18,8 @@ export function newGame(seed: string): GameState {
   const world = generateWorld(stream(seed, 'worldgen'));
   const people = makeWarband(stream(seed, 'party'));
   const landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
+  world.landingName = landingName;
+  world.trod = { [key(world.landing)]: 1 };
 
   const state: GameState = {
     version: SAVE_VERSION,

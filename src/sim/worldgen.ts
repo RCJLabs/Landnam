@@ -169,7 +169,7 @@ function generateOnce(rng: Rng, width: number, height: number): World | null {
   if (!landing) return null;
   if (landmassFrom(landing, tiles).size < MIN_LANDMASS) return null;
 
-  return { width, height, tiles, seen: {}, landing };
+  return { width, height, tiles, seen: {}, landing, landingName: '', trod: {} };
 }
 
 /** Generates a world, rerolling with derived seeds until one is worth playing. */

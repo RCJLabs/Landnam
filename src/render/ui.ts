@@ -90,6 +90,7 @@ export function renderActionBar(
   state: GameState,
   dispatch: Dispatch,
   onSettle?: () => void,
+  onMap?: () => void,
 ): HTMLElement {
   const bar = el('div', { class: 'actionbar' });
   if (state.end || state.event) return bar;
@@ -129,6 +130,9 @@ export function renderActionBar(
         title: 'Set your people to work.',
       }),
     );
+  }
+  if (onMap) {
+    bar.append(button('Chart', onMap, { class: 'action secondary', title: 'What we have seen.' }));
   }
   return bar;
 }
