@@ -45,3 +45,10 @@ export function makeCrewMember(rng: Rng, id: string, isCaptain: boolean): CrewMe
 export function makeRecruit(rng: Rng, n: number): CrewMember {
   return makeCrewMember(rng, `crew_${n}`, false);
 }
+
+/** Stat after injury penalties, floored at 1. */
+export function effStat(c: CrewMember, stat: 'might' | 'skill' | 'guts' | 'sea'): number {
+  let value = c[stat];
+  for (const inj of c.injuries) value += inj[stat] ?? 0;
+  return Math.max(1, value);
+}

@@ -18,6 +18,8 @@ import {
   routChecks,
   tryBrace,
   tryMove,
+  tryPush,
+  tryRally,
   tryStrike,
   unitById,
 } from '../tactical/actions';
@@ -112,6 +114,19 @@ function checkRunEnd(run: GameRun, events: SimEvent[]): boolean {
 
 /** Everything that ticks after the ship acts: weather drift, storm damage, checks. */
 function endOfTurn(run: GameRun, events: SimEvent[], rng: Rng) {
+  // Wounds knit slowly at sea.
+  for (const c of run.crew) {
+    if (!c.alive) continue;
+    c.injuries = c.injuries.filter((inj) => {
+      inj.healTurns -= 1;
+      if (inj.healTurns <= 0) {
+        log(run, events, `${c.name}'s ${inj.label.toLowerCase()} has healed.`, 'good');
+        return false;
+      }
+      return true;
+    });
+  }
+
   const w = run.weather;
   // Wind wanders.
   const windRng = rng.fork('wind');
@@ -234,6 +249,21 @@ function stepBattle(
       }
       break;
     }
+    case 'T_PUSH': {
+      const unit = unitById(battle, intent.unitId);
+      const target = unitById(battle, intent.targetId);
+      if (unit && target && unit.side === 'player') {
+        acted = tryPush(battle, unit, target, brng.fork('push'), blog);
+      }
+      break;
+    }
+    case 'T_RALLY': {
+      const unit = unitById(battle, intent.unitId);
+      if (unit && unit.side === 'player' && unit.alive && !unit.escaped) {
+        acted = tryRally(battle, unit, blog);
+      }
+      break;
+    }
     case 'T_END_TURN': {
       acted = true;
       refreshSide(battle, 'enemy');
@@ -350,8 +380,14 @@ export function stepStrategic(
       run.turn += 1;
       run.chart.shipAt = intent.to;
       events.push({ type: 'MOVED', from, to: intent.to });
-      // Higher cost = harder leg = supplies consumed once per cost point.
+      // Higher cost = harder leg = supplies consumed once per cost point,
+      // and hard rowing tires the crew (they carry it into any fight).
       for (let i = 0; i < cost; i++) consumeSupplies(run, events, rng);
+      if (cost > 1) {
+        for (const c of run.crew) if (c.alive) c.fatigue = Math.min(8, c.fatigue + 1);
+      } else {
+        for (const c of run.crew) if (c.alive) c.fatigue = Math.max(0, c.fatigue - 1);
+      }
       discoverAround(run, events);
 
       // Victory check: reaching Vinland's coast.

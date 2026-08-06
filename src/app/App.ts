@@ -28,6 +28,7 @@ export class App {
   private meta = loadMeta();
   private crewPanelOpen = false;
   private selectedUnitId: string | null = null;
+  private pendingPush = false;
   /** Which layer the camera is set up for. */
   private boardMode: 'chart' | 'battle' = 'chart';
   private overlayRoot = must<HTMLDivElement>('overlay-root');
@@ -114,6 +115,7 @@ export class App {
 
     if (clicked && clicked.side === 'player') {
       this.selectedUnitId = clicked.id === this.selectedUnitId ? null : clicked.id;
+      this.pendingPush = false;
       this.renderAll();
       return;
     }
@@ -122,7 +124,13 @@ export class App {
       : undefined;
     if (!sel) return;
     if (clicked && clicked.side === 'enemy') {
-      this.dispatch({ type: 'T_STRIKE', unitId: sel.id, targetId: clicked.id });
+      const push = this.pendingPush;
+      this.pendingPush = false;
+      this.dispatch(
+        push
+          ? { type: 'T_PUSH', unitId: sel.id, targetId: clicked.id }
+          : { type: 'T_STRIKE', unitId: sel.id, targetId: clicked.id },
+      );
       return;
     }
     if (!clicked && canAct(sel) === false && sel.movesLeft <= 0) return;
@@ -196,8 +204,17 @@ export class App {
     }
 
     if (run.phase === 'battle' && run.activeBattle) {
-      renderBattleHud(this.hudRoot, run, run.activeBattle, this.selectedUnitId, (i) =>
-        this.dispatch(i),
+      renderBattleHud(
+        this.hudRoot,
+        run,
+        run.activeBattle,
+        this.selectedUnitId,
+        this.pendingPush,
+        () => {
+          this.pendingPush = !this.pendingPush;
+          this.renderAll();
+        },
+        (i) => this.dispatch(i),
       );
     } else {
       renderHud(this.hudRoot, run, (intent) => this.dispatch(intent), this.toggleCrewPanel);

@@ -319,6 +319,25 @@ export const EVENTS: EventDef[] = [
     ],
   },
   {
+    id: 'longship-sighted',
+    title: 'A Sail on the Horizon',
+    text: 'Another longship, low and fast, alters course toward you. Her rail glitters with spearpoints. Sea-wolves — and they think you are the prey.',
+    weight: 7,
+    conditions: [{ c: 'dangerMin', tier: 1 }, { c: 'turnMin', turn: 6 }],
+    options: [
+      {
+        label: 'Turn and board THEM',
+        success: { text: 'Your helmsman grins and leans on the steering oar. Grappling lines whistle across the gap.', effects: [{ t: 'startBattle', raidId: 'boarding' }] },
+      },
+      {
+        label: 'Run for it',
+        check: { stat: 'sea', who: 'captain', dc: 9 },
+        success: { text: 'You show them your wake until dark swallows their sail.', effects: [{ t: 'morale', amount: 2 }] },
+        failure: { text: 'They close anyway. The fight comes to you on their terms — tired arms and all.', effects: [{ t: 'startBattle', raidId: 'boarding' }] },
+      },
+    ],
+  },
+  {
     id: 'old-charts',
     title: 'The Old Hand Remembers',
     text: 'The oldest sailor aboard squints at the coastline and claims he shipped this way as a boy.',

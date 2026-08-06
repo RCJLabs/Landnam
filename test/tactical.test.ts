@@ -30,7 +30,7 @@ describe('raid content lint', () => {
       for (const row of raid.template) {
         expect(row.length).toBe(w);
         for (const ch of row) {
-          expect('.s,~#^PE'.includes(ch)).toBe(true);
+          expect('.s,~#^PEd'.includes(ch)).toBe(true);
           if (ch === 'P') p++;
           if (ch === 'E') e++;
         }
@@ -80,6 +80,8 @@ describe('combat math', () => {
       guts: 4,
       move: 3,
       damage: 3,
+      isLeader: false,
+      fatigue: 0,
       statuses: [],
       movesLeft: 3,
       hasActed: false,

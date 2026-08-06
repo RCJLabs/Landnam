@@ -51,6 +51,13 @@ export function isFlanking(battle: Battle, attacker: Unit, defender: Unit): bool
   });
 }
 
+/** Fatigue drag: at 6+ a unit fights a point worse on both sides of the die. */
+export const FATIGUE_LIMIT = 6;
+
+export function fatiguePenalty(u: Unit): number {
+  return u.fatigue >= FATIGUE_LIMIT ? 1 : 0;
+}
+
 export interface AttackProfile {
   atk: number;
   effDef: number;
@@ -63,8 +70,8 @@ export function attackProfile(battle: Battle, attacker: Unit, defender: Unit): A
   const tile = battle.grid[key(defender.at)];
   const braced = defender.statuses.includes('braced') ? 2 : 0;
   const wall = flanked ? 0 : wallBonus(battle, defender);
-  const atk = attacker.atk + (flanked ? 1 : 0);
-  const effDef = defender.def + wall + braced + (tile?.cover ?? 0);
+  const atk = attacker.atk + (flanked ? 1 : 0) - fatiguePenalty(attacker);
+  const effDef = defender.def + wall + braced + (tile?.cover ?? 0) - fatiguePenalty(defender);
   const need = TO_HIT_TARGET - atk + effDef;
   let ways = 0;
   for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) if (a + b >= need) ways++;

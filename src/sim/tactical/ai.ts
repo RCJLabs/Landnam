@@ -13,8 +13,8 @@ import { findPath, reachable } from '../../core/path';
 import { Rng } from '../../core/rng';
 import { enemyById } from '../../content/enemies';
 import { Battle, Unit } from '../types';
-import { BattleLogLine, tryBrace, tryMove, tryStrike } from './actions';
-import { attackProfile, isRouting, livingUnits, moveCost } from './combatMath';
+import { BattleLogLine, tryBrace, tryMove, tryRally, tryStrike } from './actions';
+import { attackProfile, isRouting, livingUnits, moveCost, wallPartners } from './combatMath';
 
 function bestTarget(battle: Battle, unit: Unit): Unit | null {
   const adjacent = livingUnits(battle, 'player').filter((p) => distance(p.at, unit.at) === 1);
@@ -36,10 +36,25 @@ export function runEnemyTurn(battle: Battle, rng: Rng, log: BattleLogLine[]): vo
     const brave =
       unit.kind === 'crew' ? true : enemyById(unit.kind).brave || battle.round > 3;
 
+    // Leaders call routed friends back before anything else.
+    if (unit.isLeader) {
+      const shaken = battle.units.some(
+        (a) => a.side === unit.side && a.alive && !a.escaped && isRouting(a) && distance(a.at, unit.at) <= 2,
+      );
+      if (shaken && tryRally(battle, unit, log)) continue;
+    }
+
     // Strike immediately if already adjacent.
     let target = bestTarget(battle, unit);
     if (target) {
       tryStrike(battle, unit, target, rng.fork(`strike:${unit.id}`), log);
+      continue;
+    }
+
+    // Wall discipline: a unit standing in a formed line with no reachable
+    // target holds rather than conga-lining out of formation.
+    if (wallPartners(battle, unit).length >= 2 && battle.round <= 3) {
+      tryBrace(unit);
       continue;
     }
 

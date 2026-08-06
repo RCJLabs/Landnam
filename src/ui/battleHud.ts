@@ -18,6 +18,8 @@ export function renderBattleHud(
   run: GameRun,
   battle: Battle,
   selectedId: string | null,
+  pendingPush: boolean,
+  onTogglePush: () => void,
   dispatch: (intent: TacticalIntent) => void,
 ): void {
   const strip = el('div', { class: 'hud-strip' }, [
@@ -52,18 +54,31 @@ export function renderBattleHud(
   ) {
     actions.append(
       button('Brace', () => dispatch({ type: 'T_BRACE', unitId: selected.id }), {
-        title: '+2 defense until your next turn',
+        title: '+2 defense until your next turn; shakes off fatigue',
+      }),
+      button(pendingPush ? 'Push: pick a foe…' : 'Push', onTogglePush, {
+        title: 'Contested shove — a foe pushed into water is finished',
+        class: pendingPush ? 'btn-primary' : '',
       }),
     );
+    if (selected.isLeader) {
+      actions.append(
+        button('Rally', () => dispatch({ type: 'T_RALLY', unitId: selected.id }), {
+          title: 'Steady the line: +3 morale, nearby routing allies recover',
+        }),
+      );
+    }
   }
   actions.append(
     button('End turn', () => dispatch({ type: 'T_END_TURN' }), { class: 'btn-primary' }),
   );
 
   const hint = el('div', { class: 'battle-hint' }, [
-    selected
-      ? 'Click a dashed hex to move · click an adjacent foe to strike'
-      : 'Click one of your warriors to command them',
+    pendingPush
+      ? 'Click an adjacent foe to shove them'
+      : selected
+        ? 'Click a dashed hex to move · click an adjacent foe to strike'
+        : 'Click one of your warriors to command them',
   ]);
 
   const logBox = el('div', { class: 'log-box' });

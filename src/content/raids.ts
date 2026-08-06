@@ -2,9 +2,9 @@
 // rows = offset rows), enemy rosters by danger tier, and loot.
 //
 // Template chars:
-//   .  grass      s  sand       ,  floor (inside buildings)
+//   .  grass      s  sand       ,  floor (inside buildings)   d  ship deck
 //   ~  water      #  wall       ^  rock (impassable, blocks sight)
-//   P  player deploy (sand)     E  enemy deploy (grass/floor)
+//   P  player deploy            E  enemy deploy
 
 import { Effect } from '../sim/types';
 
@@ -74,6 +74,36 @@ export const RAIDS: RaidDef[] = [
     fame: 5,
   },
 ];
+
+const BOARDING: RaidDef = {
+  id: 'boarding',
+  title: 'Boarding Action',
+  // Two hulls lashed together — a seam of deck between open water.
+  // Push a foe over the rail and the sea keeps them.
+  template: [
+    '~~~~~~~~~~~~',
+    '~Pddd~~~~~~~',
+    '~Pdddddd~~~~',
+    '~PddddddE~~~',
+    '~PdddddddE~~',
+    '~PddddddE~~~',
+    '~PdddddddE~~',
+    '~~~~~~~~~~~~',
+  ],
+  roster: [
+    ['seawolf', 'seawolf', 'seawolf', 'wolfchief'],
+    ['seawolf', 'seawolf', 'seawolf', 'wolfchief'],
+    ['seawolf', 'seawolf', 'seawolf', 'seawolf', 'wolfchief'],
+    ['seawolf', 'seawolf', 'seawolf', 'seawolf', 'wolfchief', 'warrior'],
+  ],
+  lootText: 'Their hold: silver, good timber, and a chest of sea-charts.',
+  loot: [
+    { t: 'res', silver: 14, timber: 3, food: 4 },
+    { t: 'fame', amount: 10 },
+  ],
+  fame: 10,
+};
+RAIDS.push(BOARDING);
 
 export function raidById(id: string): RaidDef {
   const def = RAIDS.find((r) => r.id === id);

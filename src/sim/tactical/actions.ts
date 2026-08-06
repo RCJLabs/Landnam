@@ -1,11 +1,19 @@
 // Tactical action resolution: move, strike, brace. Pure helpers that
 // mutate a Battle in place; the strategic reducer owns cloning.
 
-import { Axial, distance } from '../../core/hex';
+import { Axial, distance, dirTo, neighbor, key } from '../../core/hex';
 import { findPath } from '../../core/path';
 import { Rng } from '../../core/rng';
 import { Battle, Unit } from '../types';
-import { attackProfile, isRouting, moveCost, TO_HIT_TARGET, unitAt } from './combatMath';
+import {
+  attackProfile,
+  fatiguePenalty,
+  isRouting,
+  moveCost,
+  passable,
+  TO_HIT_TARGET,
+  unitAt,
+} from './combatMath';
 
 export interface BattleLogLine {
   text: string;
@@ -25,8 +33,11 @@ export function tryMove(battle: Battle, unit: Unit, to: Axial): boolean {
   if (isRouting(unit) || unit.movesLeft <= 0) return false;
   const { path, cost } = findPath(unit.at, to, (h) => moveCost(battle, h), 2000);
   if (path.length === 0 || cost > unit.movesLeft) return false;
+  const movedBefore = unit.move - unit.movesLeft;
   unit.at = to;
   unit.movesLeft -= cost;
+  // Sprinting the whole allowance tires a warrior.
+  if (movedBefore + cost > 2) unit.fatigue += 1;
   return true;
 }
 
@@ -47,6 +58,7 @@ export function tryStrike(
   attacker.hasActed = true;
   attacker.statuses = attacker.statuses.filter((s) => s !== 'braced');
 
+  attacker.fatigue += 1;
   const flankNote = profile.flanked ? ' from the flank' : '';
   if (hit) {
     defender.hp -= attacker.damage;
@@ -54,7 +66,7 @@ export function tryStrike(
     if (defender.hp <= 0) {
       defender.hp = 0;
       defender.alive = false;
-      battle.sideMorale[defender.side] -= 3;
+      battle.sideMorale[defender.side] -= defender.isLeader ? 5 : 3;
       log.push({
         text: `${attacker.name} strikes${flankNote} — ${defender.name} falls!`,
         tone: playerHit ? 'good' : 'bad',
@@ -79,6 +91,80 @@ export function tryBrace(unit: Unit): boolean {
   if (unit.hasActed || isRouting(unit)) return false;
   unit.hasActed = true;
   if (!unit.statuses.includes('braced')) unit.statuses.push('braced');
+  unit.fatigue = Math.max(0, unit.fatigue - 2);
+  return true;
+}
+
+/**
+ * Push: contested shove on an adjacent enemy. Winner drives the loser one hex
+ * straight back. Into water, the sea takes them — the boarding fight's crown.
+ */
+export function tryPush(
+  battle: Battle,
+  attacker: Unit,
+  defender: Unit,
+  rng: Rng,
+  log: BattleLogLine[],
+): boolean {
+  if (attacker.hasActed || isRouting(attacker)) return false;
+  if (attacker.side === defender.side || !defender.alive || defender.escaped) return false;
+  if (distance(attacker.at, defender.at) !== 1) return false;
+  const dir = dirTo(attacker.at, defender.at);
+  if (dir < 0) return false;
+  const behind = neighbor(defender.at, dir);
+  const tile = battle.grid[key(behind)];
+  const intoWater = tile?.terrain === 'water';
+  // Needs somewhere to push them: open ground or open water.
+  if (!intoWater && (!passable(battle, behind) || unitAt(battle, behind))) return false;
+
+  attacker.hasActed = true;
+  attacker.statuses = attacker.statuses.filter((s) => s !== 'braced');
+  attacker.fatigue += 1;
+
+  const atkRoll = rng.roll(2, 6) + attacker.atk - fatiguePenalty(attacker);
+  const defBonus = defender.statuses.includes('braced') ? 2 : 0;
+  const defRoll = rng.roll(2, 6) + defender.atk + defBonus - fatiguePenalty(defender);
+  if (atkRoll <= defRoll) {
+    log.push({ text: `${defender.name} holds against ${attacker.name}'s shove.`, tone: 'info' });
+    return true;
+  }
+  if (intoWater) {
+    defender.alive = false;
+    defender.hp = 0;
+    battle.sideMorale[defender.side] -= defender.isLeader ? 6 : 4;
+    battle.sideMorale[attacker.side] += 1;
+    log.push({
+      text: `${attacker.name} heaves ${defender.name} over the side — the sea takes them!`,
+      tone: attacker.side === 'player' ? 'good' : 'bad',
+    });
+  } else {
+    defender.at = behind;
+    defender.statuses = defender.statuses.filter((s) => s !== 'braced');
+    log.push({ text: `${attacker.name} drives ${defender.name} back a step.`, tone: 'info' });
+  }
+  return true;
+}
+
+/** Rally (leaders only): steady the line, call routing friends back to it. */
+export function tryRally(battle: Battle, unit: Unit, log: BattleLogLine[]): boolean {
+  if (!unit.isLeader || unit.hasActed || isRouting(unit)) return false;
+  unit.hasActed = true;
+  battle.sideMorale[unit.side] += 3;
+  let recovered = 0;
+  for (const ally of battle.units) {
+    if (ally.side !== unit.side || !ally.alive || ally.escaped) continue;
+    if (distance(ally.at, unit.at) <= 2 && isRouting(ally)) {
+      ally.statuses = ally.statuses.filter((s) => s !== 'routing');
+      recovered++;
+    }
+  }
+  log.push({
+    text:
+      recovered > 0
+        ? `${unit.name} roars the war-cry — ${recovered} shaken warrior${recovered > 1 ? 's' : ''} turn${recovered > 1 ? '' : 's'} back to the line!`
+        : `${unit.name} steadies the line with the old war-cry.`,
+    tone: unit.side === 'player' ? 'good' : 'bad',
+  });
   return true;
 }
 

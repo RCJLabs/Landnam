@@ -4,12 +4,14 @@ import { Axial, key, offsetToAxial } from '../../core/hex';
 import { Rng } from '../../core/rng';
 import { RaidDef } from '../../content/raids';
 import { enemyById } from '../../content/enemies';
+import { effStat } from '../strategic/crewGen';
 import { Battle, BattleTile, BattleTerrain, CrewMember, Unit } from '../types';
 
 const CHAR_TERRAIN: Record<string, BattleTerrain> = {
   '.': 'grass',
   s: 'sand',
   ',': 'floor',
+  d: 'deck',
   '~': 'water',
   '#': 'wall',
   '^': 'rock',
@@ -30,11 +32,13 @@ export function unitFromCrew(c: CrewMember, at: Axial): Unit {
     at,
     hp: c.hp,
     hpMax: c.hpMax,
-    atk: c.might + weaponBonus,
-    def: Math.ceil(c.skill / 2) + armorBonus,
-    guts: c.guts,
+    atk: effStat(c, 'might') + weaponBonus,
+    def: Math.ceil(effStat(c, 'skill') / 2) + armorBonus,
+    guts: effStat(c, 'guts'),
     move: 3,
     damage: weaponDamage,
+    isLeader: c.isCaptain,
+    fatigue: c.fatigue,
     statuses: [],
     movesLeft: 3,
     hasActed: false,
@@ -55,11 +59,13 @@ export function makeBattle(
   const height = raid.template.length;
   const width = raid.template[0]!.length;
 
+  // On shipboard maps, deploy zones are deck rather than beach/grass.
+  const afloat = raid.template.some((row) => row.includes('d'));
   raid.template.forEach((row, r) => {
     for (let col = 0; col < row.length; col++) {
       const ch = row[col]!;
       const h = offsetToAxial(col, r);
-      const terrain = CHAR_TERRAIN[ch] ?? 'grass';
+      const terrain = ch === 'P' || ch === 'E' ? (afloat ? 'deck' : CHAR_TERRAIN[ch]!) : (CHAR_TERRAIN[ch] ?? 'grass');
       grid[key(h)] = { terrain, cover: terrain === 'floor' ? 1 : 0 };
       if (ch === 'P') playerSpots.push(h);
       if (ch === 'E') enemySpots.push(h);
@@ -89,6 +95,8 @@ export function makeBattle(
       guts: def.guts,
       move: def.move,
       damage: def.damage,
+      isLeader: def.leader ?? false,
+      fatigue: 0,
       statuses: [],
       movesLeft: def.move,
       hasActed: false,

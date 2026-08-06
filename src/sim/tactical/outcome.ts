@@ -2,6 +2,7 @@
 
 import { key } from '../../core/hex';
 import { Rng } from '../../core/rng';
+import { INJURY_TABLE } from '../../content/injuries';
 import { Battle, GameRun, SimEvent } from '../types';
 import { applyEffects } from '../events/effects';
 
@@ -17,14 +18,27 @@ export function applyBattleOutcome(
     const crew = run.crew.find((c) => c.id === unit.crewId);
     if (!crew) continue;
     if (!unit.alive) {
-      // A downed viking has a chance to be dragged back to the ship alive.
-      const saved = rng.roll(2, 6) + crew.guts >= 10;
-      if (saved && battle.result === 'won') {
+      // A downed viking rolls against death: dragged aboard whole, dragged
+      // aboard maimed, or gone to Valhalla. Losing the field is deadlier.
+      const roll = rng.roll(2, 6) + crew.guts;
+      const dc = battle.result === 'won' ? 9 : 11;
+      if (roll >= dc + 2) {
         crew.hp = 1;
         const entry = {
           turn: run.turn,
           text: `${crew.name} is carried back aboard, bloodied but breathing.`,
           tone: 'info' as const,
+        };
+        run.log.push(entry);
+        events.push({ type: 'LOG', entry });
+      } else if (roll >= dc) {
+        crew.hp = 1;
+        const template = rng.pick(INJURY_TABLE);
+        crew.injuries.push({ ...template, id: `inj_${run.turn}_${crew.id}` });
+        const entry = {
+          turn: run.turn,
+          text: `${crew.name} survives, but the wound is grievous: ${template.label.toLowerCase()}.`,
+          tone: 'bad' as const,
         };
         run.log.push(entry);
         events.push({ type: 'LOG', entry });
@@ -42,6 +56,7 @@ export function applyBattleOutcome(
       }
     } else {
       crew.hp = Math.max(1, unit.hp);
+      crew.fatigue = Math.min(8, unit.fatigue);
     }
   }
 

@@ -204,6 +204,9 @@ export interface Unit {
   guts: number;
   move: number;
   damage: number;
+  /** Leaders can Rally; their death costs extra side morale. */
+  isLeader: boolean;
+  fatigue: number;
   statuses: UnitStatus[];
   /** Hexes of movement left this round. */
   movesLeft: number;
@@ -232,6 +235,8 @@ export interface Battle {
 export type TacticalIntent =
   | { type: 'T_MOVE'; unitId: string; to: Axial }
   | { type: 'T_STRIKE'; unitId: string; targetId: string }
+  | { type: 'T_PUSH'; unitId: string; targetId: string }
+  | { type: 'T_RALLY'; unitId: string }
   | { type: 'T_BRACE'; unitId: string }
   | { type: 'T_END_TURN' }
   | { type: 'BATTLE_CONTINUE' };
