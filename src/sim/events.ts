@@ -11,6 +11,7 @@ import { raidDifficulty } from './raid';
 import { settleFeud } from './minds';
 import { purposeDef } from './expedition';
 import { bonus, knows, learn } from './lore';
+import { takeIn } from './joining';
 import { angerLevel, angriest, friendliest, goodwillLevel, shiftStanding, stirFactor } from './neighbours';
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
@@ -228,6 +229,9 @@ function applyEffect(state: GameState, effect: Effect): void {
     }
     case 'learn':
       learn(state, effect.lore);
+      break;
+    case 'join':
+      takeIn(state, effect.n ?? 1, effect.why);
       break;
   }
 }

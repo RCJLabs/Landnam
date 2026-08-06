@@ -46,7 +46,8 @@ import { moveOptions, canGather, canFish } from '../src/sim/travel';
 import { canFound, siteReport } from '../src/sim/site';
 import { assign, queueBuild } from '../src/sim/colony';
 import { BAND_BASE, foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
-import { SWORN_MAX, sworn } from '../src/sim/people';
+import { SWORN_MAX, hands, living, sworn } from '../src/sim/people';
+import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle } from '../src/sim/battleTurn';
 import { capacity, crowding } from '../src/sim/colony';
@@ -60,7 +61,13 @@ import type { JobId } from '../src/data/jobs';
 import { forecast, markVisible } from '../src/sim/winter';
 
 const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
-const WANT = ['longhouse','farm-plots','smokehouse','palisade'];
+// NOTE: 'farmplots' has no hyphen. The first version of this list wrote
+// 'farm-plots', which matches no building, so that entry silently never
+// queued and the measured bot had been building three things while this file
+// claimed four. A búð is on the list because 6.2 gave the band a way to grow
+// and a harness that cannot grow reports growth as worthless — the same
+// mistake as the bot that would not fight back.
+const WANT = ['longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade'];
 
 /**
  * A competent-but-not-clairvoyant player: walks toward timber when the
@@ -570,5 +577,99 @@ describe('a steading holds who it has room for', () => {
     const before = capacity(state);
     state.settlement!.built.push('bud');
     expect(capacity(state)).toBeGreaterThan(before);
+  });
+});
+
+// --- 6.2: the ways in, and the way out ---
+
+describe('a band that can grow, and can bleed', () => {
+  function roofed(seed: string, rooms: string[] = ['longhouse']): GameState {
+    for (let i = 0; i < 60; i += 1) {
+      const state = structuredClone(newGame(`${seed}-${i}`));
+      if (foundSettlement(state)) {
+        state.settlement!.built.push(...rooms);
+        return state;
+      }
+    }
+    throw new Error('nothing foundable');
+  }
+
+  it('takes people in as hands, never as fighters', () => {
+    const state = roofed('join', ['longhouse', 'bud']);
+    const joined = takeIn(state, 2, 'they had nowhere else to be');
+    expect(joined).toHaveLength(2);
+    expect(joined.every((p) => p.bond === 'hand')).toBe(true);
+    expect(sworn(state.party.people)).toHaveLength(SWORN_MAX);
+  });
+
+  it('turns people away when there is no bed, and says nothing about it', () => {
+    // A full hall refusing help is the whole reason capacity exists — and it
+    // is what makes a búð worth five timber.
+    const full = roofed('full');
+    expect(roomLeft(full)).toBe(0);
+    expect(takeIn(full, 2, 'they had nowhere else to be')).toHaveLength(0);
+    expect(living(full.party.people)).toHaveLength(6);
+  });
+
+  it('takes as many as there is room for and no more', () => {
+    const state = roofed('partial', ['longhouse', 'bud']);
+    expect(roomLeft(state)).toBe(4);
+    expect(takeIn(state, 9, 'word had got round that we had ground')).toHaveLength(4);
+    expect(roomLeft(state)).toBe(0);
+  });
+
+  it('writes every arrival into the saga with the reason they came', () => {
+    const state = roofed('saga', ['longhouse', 'bud']);
+    const before = state.saga.length;
+    takeIn(state, 1, 'she came out of the trees with nothing');
+    expect(state.saga.length).toBeGreaterThan(before);
+    expect(state.saga.at(-1)!.text).toContain('trees');
+  });
+
+  it('lets a miserable hand walk, and never a sworn one', () => {
+    const state = roofed('leaving', ['longhouse', 'bud']);
+    takeIn(state, 3, 'they had nowhere else to be');
+    state.day += 1;
+    for (const person of state.party.people) person.morale = 1;
+
+    let walked = 0;
+    for (let day = 0; day < 25; day += 1) {
+      state.day += 1;
+      walked += handsLeave(state).length;
+    }
+    expect(walked).toBeGreaterThan(0);
+    // The warband cannot evaporate. A fight must never be a morale check
+    // before it is a fight.
+    expect(sworn(state.party.people)).toHaveLength(SWORN_MAX);
+  });
+
+  it('keeps a hand who has thrown their lot in', () => {
+    const state = roofed('stayer', ['longhouse', 'bud']);
+    takeIn(state, 2, 'they had nowhere else to be');
+    for (const person of hands(state.party.people)) person.morale = 1;
+    state.day += SETTLED_IN + 1;
+    expect(handsLeave(state)).toHaveLength(0);
+  });
+
+  it('keeps a contented hand whatever the weather', () => {
+    const state = roofed('content', ['longhouse', 'bud']);
+    takeIn(state, 3, 'they had nowhere else to be');
+    for (const person of hands(state.party.people)) person.morale = 80;
+    for (let day = 0; day < 25; day += 1) {
+      state.day += 1;
+      expect(handsLeave(state)).toHaveLength(0);
+    }
+  });
+
+  it('empties a hall that is too crowded to bear', () => {
+    // Capacity with teeth: taking in more than there is room for makes
+    // everyone miserable, and misery is what makes hands walk.
+    const state = roofed('overfull', ['longhouse', 'bud', 'meadhall']);
+    takeIn(state, 7, 'word had got round that we had ground');
+    const packed = crowding(state);
+    for (const person of state.party.people) person.morale = 20;
+    // Now take the room away, as a burnt búð or a bad winter would.
+    state.settlement!.built = ['longhouse'];
+    expect(crowding(state)).toBeGreaterThan(packed);
   });
 });

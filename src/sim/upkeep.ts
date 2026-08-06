@@ -10,6 +10,7 @@ import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
 import { driftStandings } from './neighbours';
+import { handsLeave } from './joining';
 import { bonus } from './lore';
 import { chronicle } from './saga';
 
@@ -182,6 +183,9 @@ export function passDay(state: GameState): boolean {
   );
   const pressure = { hungry, cold, grieving };
   driftMoods(state, pressure);
+  // Moods have just moved, so this is the moment somebody decides they have
+  // had enough. Only hands ever do — the sworn are sworn.
+  handsLeave(state);
   stirGrudges(state, pressure);
   feudsComeDue(state);
   // The coast forgets slowly, and only a little each day.

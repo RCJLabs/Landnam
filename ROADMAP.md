@@ -95,13 +95,14 @@ because by year two it has more labour than uses for it.
   so long-range stockpiling is a gamble rather than arithmetic. *Shipped, and
   measured at no change to the curve — see the changelog. It is a prerequisite
   for 6.2, not a fix on its own.*
-- [~] **6.2 Hands** — The band can grow: thralls taken, survivors taken in, a
+- [x] **6.2 Hands** — The band can grow: thralls taken, survivors taken in, a
   neighbour's sons. Losing people becomes recoverable, which is what makes
   losing them affordable to inflict — and the labour surplus becomes a choice
   instead of a given. THE unlock for everything below.
-  *Done: the fire scales with the band, a person is sworn or a hand, and the
-  steading holds who it has room for. Still to come: the four ways in, and
-  hands walking away.*
+  *Done: the fire scales with the band, a person is sworn or a hand, the
+  steading holds who it has room for, three cards bring people in, and hands
+  who have had enough walk out. The curve did not move — growth is possible
+  but rare, and it takes 6.3's pressure to make a bigger band necessary.*
 - [ ] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
   answer is walls, allies and standing rather than a bigger woodpile. Makes
   4.3's neighbours load-bearing.
@@ -116,6 +117,31 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 6.2 completes: people come, and people go** — Three ways in,
+  each hanging off a system that already existed rather than a counter
+  ticking over: two from along the coast when a neighbour thinks well enough
+  of you (4.3), somebody out of the trees at dusk in winter with nothing on
+  them (3.4), and two left standing after a raid whom nobody is going to walk
+  home (3.5). Every one of them can be refused, and refusing costs something
+  real — standing, food, or the band's own opinion of itself.
+  Everyone arrives as a hand, and a hall with no spare bed turns them away
+  with nothing said, which is what makes a búð worth five timber. Hands who
+  have had enough walk out; the sworn never do, because a warband that could
+  evaporate would make every fight a morale check before it was a fight. A
+  hand who has been with the band a month has thrown their lot in and stays,
+  so a steading that carries people through a bad patch keeps them.
+  The curve did not move — 73% reach the first winter, 47% see spring, 47%
+  reach the second. Growth is possible and rare by design: three once-only
+  cards behind real gates. What is missing is a REASON to grow, and that is
+  6.3's job — nothing yet threatens a band badly enough that more hands are
+  the answer.
+  The harness taught the same lesson a third time. Its build list said
+  'farm-plots' where the building is 'farmplots', so that entry had silently
+  never queued and the bot had been building three things while the file
+  claimed four; and it never built a búð, so the measured player could not
+  grow at all. Fixing both moved the first winter from 80% to 73% — a truer
+  reading of the same game, not a change to it. 516 tests.
 
 - **2026-08-06 — 6.2: room to put people** — Buildings now grant room, and a
   steading holds who it has room for. The longhouse sleeps six; a búð —

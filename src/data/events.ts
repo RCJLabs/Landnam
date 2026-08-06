@@ -52,7 +52,13 @@ export type Effect =
   /** Moves what one neighbour thinks of you. Cards say which one they mean. */
   | { t: 'standing'; n: number; who: 'angriest' | 'friendliest' }
   /** The band works something out. See data/lore.ts. */
-  | { t: 'learn'; lore: LoreId };
+  | { t: 'learn'; lore: LoreId }
+  /**
+   * Somebody throws their lot in with the band, as a hand. Turned away with
+   * nothing said if there is no bed for them, which is what makes a búð worth
+   * building. See sim/joining.ts.
+   */
+  | { t: 'join'; n?: number; why: string };
 
 export interface Outcome {
   text: string;
@@ -853,6 +859,87 @@ export const EVENTS: EventDef[] = [
       },
     ],
   },
+  // --- 6.2: the ways in ---
+  //
+  // Three, and every one of them hangs off a system that already exists: a
+  // coast that likes you (4.3), a winter that hurts (3.4), and a raid you
+  // held (3.5). Nobody joins because a counter ticked over.
+  {
+    id: 'sons-of-the-camp',
+    title: 'Two From Along the Coast',
+    body: 'They walked up in the afternoon with their own bedding and stood about until somebody spoke to them. Their people have more mouths than ground, and word has got round that we do not.',
+    weight: 3,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 30 }],
+    choices: [
+      {
+        label: 'Find them somewhere to sleep',
+        success: {
+            text: 'They were put in with the others and set to work the same morning. Neither of them complained about it, which was noticed.',
+            effects: [{ t: 'join', n: 2, why: 'their own coast had more mouths than ground' }],
+        },
+      },
+      {
+        label: 'Send them home',
+        success: {
+            text: 'They took it better than expected and walked back the way they came. Their people did not take it as well.',
+            effects: [{ t: 'standing', n: -12, who: 'friendliest' }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-half-frozen',
+    title: 'Somebody At the Door',
+    body: 'A woman came out of the trees at dusk with nothing on her but what she was wearing, and would not say what had happened to whoever she had been with. She has been standing at the edge of the firelight for an hour.',
+    weight: 3,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'season', any: ['winter'] }],
+    choices: [
+      {
+        label: 'Bring her in',
+        success: {
+            text: 'She ate what was put in front of her and slept a day and a half. She has been working since, and still has not said what happened.',
+            effects: [{ t: 'join', n: 1, why: 'she came out of the trees at dusk with nothing' }],
+        },
+      },
+      {
+        label: 'Give her food and send her on',
+        success: {
+            text: 'She took the bag without a word. Nobody in the hall enjoyed watching her go, and one or two said so.',
+            effects: [
+              { t: 'food', n: -4 },
+              { t: 'morale', n: -6 },
+            ],
+        },
+      },
+    ],
+  },
+  {
+    id: 'taken-off-the-field',
+    title: 'What Was Left Standing',
+    body: 'Two of the ones who came at us are alive and disarmed, sitting where they were put. They are somebody, from somewhere, and nobody here is going to walk them home.',
+    weight: 3,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'anger', min: 20 }],
+    choices: [
+      {
+        label: 'Set them to work',
+        success: {
+            text: 'They were put on the wood and the water and watched for a while. The watching stopped before the work did.',
+            effects: [{ t: 'join', n: 2, why: 'they were left standing after the raid and nobody walked them home' }],
+        },
+      },
+      {
+        label: 'Turn them loose',
+        success: {
+            text: 'They went east without looking back. Whoever sent them knows now that we do not kill people who have stopped fighting.',
+            effects: [{ t: 'standing', n: 10, who: 'angriest' }],
+        },
+      },
+    ],
+  },
+
 ];
 
 export function eventById(id: string): EventDef | undefined {

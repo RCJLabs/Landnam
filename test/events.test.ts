@@ -67,7 +67,7 @@ describe('content lint: events', () => {
   it('every effect is a known shape with sane numbers', () => {
     const known = [
       'food', 'firewood', 'morale', 'wound', 'heal', 'injure', 'kill', 'flag', 'reveal', 'battle',
-      'raid', 'standing', 'learn',
+      'raid', 'standing', 'learn', 'join',
     ];
     for (const event of EVENTS) {
       for (const choice of event.choices) {
@@ -80,6 +80,13 @@ describe('content lint: events', () => {
               if (effect.count !== undefined) expect(effect.count).toBeGreaterThan(0);
             }
             if (effect.t === 'reveal') expect(effect.radius).toBeGreaterThan(0);
+            if (effect.t === 'join') {
+              // A card that takes people in has to say why, because the line
+              // goes straight into the saga as the reason they came.
+              expect(effect.why.length, `${event.id}: join needs a why`).toBeGreaterThan(10);
+              expect(effect.n ?? 1).toBeGreaterThan(0);
+              expect(effect.n ?? 1).toBeLessThanOrEqual(3);
+            }
             if (effect.t === 'learn') {
               // A card that teaches something nobody has heard of is a typo
               // that would silently do nothing at all.
