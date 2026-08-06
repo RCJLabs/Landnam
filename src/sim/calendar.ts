@@ -48,7 +48,10 @@ export interface SeasonEffects {
 const EFFECTS: Record<Season, SeasonEffects> = {
   summer: { forage: 1.35, travelPenalty: 0, sight: 3, firewood: 1, label: 'Summer' },
   autumn: { forage: 1.0, travelPenalty: 0, sight: 2, firewood: 2, label: 'Autumn' },
-  winter: { forage: 0.15, travelPenalty: 1, sight: 1, firewood: 4, label: 'Winter' },
+  // Six a night is what makes winter a season you survive on stores rather
+  // than one you work through: no crew of woodcutters can cut that fast in
+  // the dark, so the stack has to be built in the autumn.
+  winter: { forage: 0.15, travelPenalty: 1, sight: 1, firewood: 6, label: 'Winter' },
   spring: { forage: 0.7, travelPenalty: 0, sight: 2, firewood: 2, label: 'Spring' },
 };
 

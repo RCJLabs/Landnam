@@ -9,7 +9,9 @@ import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
-import { applyTravel } from '../src/sim/travel';
+import { applyTravel, canGather } from '../src/sim/travel';
+import { assign, makePlots } from '../src/sim/colony';
+import { stream } from '../src/rng';
 import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
 import {
@@ -358,7 +360,8 @@ describe('home ground pays for itself', () => {
       name: 'Testholt',
       foundedOn: 1,
       report,
-      plots: [],
+      // Real ground, or no job that needs a field or a shore can be assigned.
+      plots: makePlots(report, state.party.at, stream(seed, 'colony').derive('plots')),
       shelter: 0,
       watch: 0,
       built: [],
@@ -368,25 +371,53 @@ describe('home ground pays for itself', () => {
     return state;
   }
 
-  it('a good site foraged beats a poor site foraged, on the same ground', () => {
+  /**
+   * Since 3.2 the site's payoff is paid through the steading's jobs, not
+   * through foraging on your own doorstep — the party and the workforce are
+   * the same six people, and paying both was paying twice.
+   */
+  it('rich soil feeds the steading and bare soil does not', () => {
     let rich = 0;
     let poor = 0;
     for (let i = 0; i < 20; i++) {
-      const before = homed(`yield-${i}`, {}).party.food;
-      const good = applyTravel(homed(`yield-${i}`, { soil: 5 }), { type: 'FORAGE' });
-      const bad = applyTravel(homed(`yield-${i}`, { soil: 0 }), { type: 'FORAGE' });
-      // Net of the stores they set out with and the day's eating.
+      const good = homed(`yield-${i}`, { soil: 5 });
+      const bad = homed(`yield-${i}`, { soil: 0 });
+      for (const person of good.party.people) {
+        expect(assign(good, person.id, 'farmer')).toBe(true);
+      }
+      for (const person of bad.party.people) assign(bad, person.id, 'farmer');
+      const before = good.party.food;
+      passDay(good);
+      passDay(bad);
       rich += good.party.food - before;
       poor += bad.party.food - before;
     }
     // eslint-disable-next-line no-console
-    console.log(`forage at home over 20 days — rich soil ${rich} food gained, bare soil ${poor}`);
+    console.log(`twenty days farmed — rich soil ${rich} food gained, bare soil ${poor}`);
     expect(rich).toBeGreaterThan(poor);
   });
 
+  it('the party cannot forage its own doorstep on top of the day\'s work', () => {
+    const state = homed('double-pay', { soil: 5, timber: 5 });
+    expect(canGather(state)).toBe(false);
+    for (const action of [{ type: 'FORAGE' }, { type: 'HUNT' }, { type: 'FISH' }] as const) {
+      expect(applyTravel(state, action), action.type).toBe(state);
+    }
+    // Resting at home still passes the day and still mends, but nobody is
+    // assigned to cut, so the stack only goes down by the night's burn.
+    const before = state.party.firewood;
+    const rested = applyTravel(state, { type: 'CAMP' });
+    expect(rested).not.toBe(state);
+    expect(rested.party.firewood).toBeLessThan(before);
+  });
+
   it('timber pays out in firewood, and a night at home mends more', () => {
-    const wooded = applyTravel(homed('wood', { timber: 5 }), { type: 'CAMP' });
-    const bare = applyTravel(homed('wood', { timber: 0 }), { type: 'CAMP' });
+    const woodedHome = homed('wood', { timber: 5 });
+    const bareHome = homed('wood', { timber: 0 });
+    for (const person of woodedHome.party.people) assign(woodedHome, person.id, 'woodcutter');
+    for (const person of bareHome.party.people) assign(bareHome, person.id, 'woodcutter');
+    const wooded = applyTravel(woodedHome, { type: 'CAMP' });
+    const bare = applyTravel(bareHome, { type: 'CAMP' });
     expect(wooded.party.firewood).toBeGreaterThan(bare.party.firewood);
 
     // Same hex, same night — but one band has a roof of their own.

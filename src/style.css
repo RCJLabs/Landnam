@@ -714,6 +714,65 @@ h2.grim {
   opacity: 0.45;
 }
 
+
+/* --- The winter mark (3.4) --- */
+
+.winter-mark {
+  padding: 6px 10px;
+  background: #2a1c14;
+  border-top: 1px solid var(--blood);
+  font-size: 12px;
+}
+
+.winter-mark.ready {
+  background: var(--ink-soft);
+  border-top-color: var(--moss);
+}
+
+.mark-head {
+  color: var(--blood);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 3px;
+}
+
+.winter-mark.ready .mark-head {
+  color: var(--moss);
+}
+
+.mark-row {
+  display: grid;
+  grid-template-columns: 3.5em auto 1fr;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--parchment-dim);
+}
+
+.mark-value {
+  color: var(--parchment);
+  font-variant-numeric: tabular-nums;
+}
+
+.mark-gap {
+  text-align: right;
+  font-style: italic;
+}
+
+.mark-row.short .mark-gap {
+  color: var(--blood);
+}
+
+.needs-mark {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--edge);
+  color: var(--blood);
+}
+
+.needs-mark.ready {
+  color: var(--moss);
+}
+
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {

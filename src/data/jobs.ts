@@ -84,7 +84,10 @@ export const JOBS: JobDef[] = [
     produces: 'firewood',
     floor: 0.2,
     perPoint: 0.4,
-    seasonal: 0.15,
+    // Short days, deep snow, frozen timber. A cutter still works in winter,
+    // but at well under half — otherwise the woodpile never has to be built
+    // ahead of time and the season has no teeth.
+    seasonal: 0.45,
   },
   {
     id: 'builder',

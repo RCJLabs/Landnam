@@ -13,6 +13,7 @@ import { chronicle } from './saga';
 import { atHome } from './site';
 import { WATCH_QUIET } from '../data/jobs';
 import { effectiveReport } from './colony';
+import { sickCount } from './winter';
 import { checkRunEnd } from './upkeep';
 
 /** Chance an event fires after a travel action. */
@@ -39,6 +40,16 @@ function conditionHolds(state: GameState, condition: Condition): boolean {
       return (state.flags[condition.flag] ?? 0) === 0;
     case 'nearWater':
       return nearWater(state);
+    case 'settled':
+      return !!state.settlement;
+    case 'atHome':
+      return atHome(state);
+    case 'foodMax':
+      return state.party.food <= condition.value;
+    case 'firewoodMax':
+      return state.party.firewood <= condition.value;
+    case 'sick':
+      return sickCount(state) > 0;
   }
 }
 

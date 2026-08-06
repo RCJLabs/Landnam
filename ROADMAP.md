@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 3.4**
+> **CURRENT MILESTONE: 3.5**
 
 ---
 
@@ -62,7 +62,7 @@ Goal: the full loop closes — travel, fight, settle, survive winter.
 - [x] **3.1 Land-taking** — Any claimable hex shows site quality derived from surroundings (fresh water, soil, timber, harbor, defensibility). Founding is a one-way ritual moment. *Done when: choosing where to settle is a real decision.*
 - [x] **3.2 Colony view & jobs** — COLONY mode: zoomed local map of the settled hex. Assign warband to jobs: farmer, hunter, fisher, woodcutter, builder, warrior. Day-tick resolves labor into stockpiles. *Done when: job assignment visibly moves the numbers.*
 - [x] **3.3 Needs & buildings** — Needs: food, warmth, rest, morale. Build queue: longhouse, smokehouse, farm plots, palisade, dock, mead hall. Buildings unlock capacity and jobs. *Done when: a build order emerges naturally from scarcity.*
-- [ ] **3.4 The First Winter** — Winter as boss fight: no forage, firewood burn, sickness events, morale spiral. Stockpile targets telegraphed in autumn. *Done when: an unprepared colony dies and it's clearly your fault — ship v0.3 (full loop).*
+- [x] **3.4 The First Winter** — Winter as boss fight: no forage, firewood burn, sickness events, morale spiral. Stockpile targets telegraphed in autumn. *Done when: an unprepared colony dies and it's clearly your fault — ship v0.3 (full loop).*
 - [ ] **3.5 Raid defense** — Rival clans attack the colony; battle layer reuses the colony map with palisade/buildings as terrain. Losses damage structures and people. *Done when: the palisade earns its lumber.*
 
 ## Phase 4 — Depth passes → v0.4–v0.9
@@ -91,6 +91,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — v0.3 "Landnám"** — Phase 3 all but complete and the full loop
+  closed: land, fight, settle, work, build, and hold the winter.
+- **2026-08-06 — 3.4 The First Winter** — Winter is now a season you survive on
+  stores rather than one you work through: six firewood a night, and a
+  woodcutter at well under half in the dark. From the turn of autumn the game
+  prints the mark — the food and firewood the stores must reach to see spring
+  — and it is a forecast, not a rule of thumb: it walks every remaining day
+  with YOUR people on YOUR jobs at the season factors they will actually
+  face, so a band with everyone in the fields is told, correctly, that its
+  fields are about to stop. Cold nights bring sickness that docks stats,
+  drags the whole band, and will not mend while the ground is frozen. Five
+  winter cards, gated on the actual state of the store, the woodpile and who
+  is ill. The ending says whether the band was warned. Measured over eight
+  winters: heeding the mark survives 7 of 8, ignoring it 2 of 8, and going
+  into the dark with an empty store kills all 8. One long-standing bug the
+  playtest caught: camping at home gathered firewood while the steading's
+  woodcutters were also working, paying the same six people twice — 664 wood
+  by day 72 made winter a formality. Gathering is now for the road only.
+  292 tests.
 - **2026-08-06 — 3.3 Needs & buildings** — Four needs read off the state and
   named plainly — food, warmth, rest, heart — each saying what it actually is
   ("seven nights of fire, and no more") rather than showing a bar. Six

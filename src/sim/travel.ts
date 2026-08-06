@@ -104,18 +104,12 @@ function marchLine(
 }
 
 /**
- * What your own hearth is worth, per point of the measure that feeds it.
- *
- * This is the teeth in 3.1: a site's scores are a promise, and these are how
- * the promise gets paid. Without them the readout would be a number the player
- * has no reason to weigh.
+ * Gathering is for the road. On your own ground the steading's assigned work
+ * IS the day's work, and letting the party forage on top of it paid the same
+ * six people twice — enough firewood to make winter a formality.
  */
-export const HOME_BONUS_PER_POINT = 0.12;
-
-/** Multiplier on a home-ground action, from the measure that governs it. */
-export function homeYield(state: GameState, measure: 'soil' | 'timber' | 'harbour'): number {
-  if (!atHome(state)) return 1;
-  return 1 + state.settlement!.report[measure] * HOME_BONUS_PER_POINT;
+export function canGather(state: GameState): boolean {
+  return !atHome(state);
 }
 
 interface Gather {
@@ -171,12 +165,11 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const rng = actionRng(state, 'camp');
       const hands = living(party.people).length;
       const home = atHome(state);
-      const wood = Math.max(
-        0,
-        Math.round(
-          def.wood * (0.5 + hands * 0.18) * rng.float(0.8, 1.2) * homeYield(state, 'timber'),
-        ),
-      );
+      // At home the woodcutters have already been counted; camping there is
+      // rest, not a second day's felling.
+      const wood = home
+        ? 0
+        : Math.max(0, Math.round(def.wood * (0.5 + hands * 0.18) * rng.float(0.8, 1.2)));
       party.firewood += wood;
       party.hasCamped = true;
 
@@ -195,7 +188,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       chronicle(
         state,
         home
-          ? `We slept at ${state.settlement!.name}${wood > 0 ? `, and put ${wood} of firewood by` : ', and it was ours'}.`
+          ? `We rested at ${state.settlement!.name}, and the work went on around us.`
           : wood > 0
             ? `We made camp and cut ${wood} of firewood.`
             : 'We made camp. There was nothing here worth burning.',
@@ -205,16 +198,10 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
     }
 
     case 'FORAGE': {
+      if (!canGather(state)) return prev;
       const here = state.world.tiles[key(party.at)]!;
       const def = terrainDef(here.terrain);
-      // Worked ground gives back more than wild ground: this is what the
-      // soil score was a promise of.
-      const { amount, scout } = gather(
-        state,
-        def.forage * homeYield(state, 'soil'),
-        'wits',
-        'forage',
-      );
+      const { amount, scout } = gather(state, def.forage, 'wits', 'forage');
       party.food += amount;
       advance(state, 1);
       if (state.end) return state;
@@ -230,6 +217,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
     }
 
     case 'HUNT': {
+      if (!canGather(state)) return prev;
       const here = state.world.tiles[key(party.at)]!;
       const def = terrainDef(here.terrain);
       const { amount, scout } = gather(state, def.hunt, 'wits', 'hunt');
@@ -258,11 +246,11 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
     }
 
     case 'FISH': {
-      if (!canFish(state)) return prev;
+      if (!canFish(state) || !canGather(state)) return prev;
       const here = state.world.tiles[key(party.at)]!;
       const def = terrainDef(here.terrain);
       const base = Math.max(def.fish, here.river ? 3 : 0, 2);
-      const { amount } = gather(state, base * homeYield(state, 'harbour'), 'wits', 'fish');
+      const { amount } = gather(state, base, 'wits', 'fish');
       party.food += amount;
       advance(state, 1);
       if (state.end) return state;

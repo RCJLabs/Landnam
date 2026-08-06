@@ -12,7 +12,16 @@ export type Condition =
   | { c: 'dayMin'; day: number }
   | { c: 'moraleMax'; value: number }
   | { c: 'flagUnset'; flag: string }
-  | { c: 'nearWater' };
+  | { c: 'nearWater' }
+  /** The posts are in the ground somewhere. */
+  | { c: 'settled' }
+  /** Standing on your own hearth. */
+  | { c: 'atHome' }
+  /** The store is at or below this. Lets scarcity pull its own events. */
+  | { c: 'foodMax'; value: number }
+  | { c: 'firewoodMax'; value: number }
+  /** Someone in the band is carrying an illness. */
+  | { c: 'sick' };
 
 export type Effect =
   | { t: 'food'; n: number }
@@ -382,6 +391,102 @@ export const EVENTS: EventDef[] = [
         check: { stat: 'spirit', dc: 14 },
         success: { text: 'We walked through the worst of it and were warmer for walking.', effects: [{ t: 'morale', n: -1 }] },
         failure: { text: 'The cold got into all of us. One went down and did not get up quickly.', effects: [{ t: 'wound', n: 4, count: 3 }, { t: 'morale', n: -7 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-long-dark',
+    title: 'The Long Dark',
+    body: 'The sun clears the ridge for an hour and is gone again. Nobody has seen a clear day in a fortnight, and the talk in the hall has gone quiet and strange.',
+    weight: 14,
+    when: [{ c: 'season', any: ['winter'] }, { c: 'settled' }],
+    choices: [
+      {
+        label: 'Keep everyone to a routine',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'We set hours and kept them, dark or not. It held the shape of the days together.', effects: [{ t: 'morale', n: 6 }] },
+        failure: { text: 'The hours slipped. People slept when they liked and stopped speaking at meals.', effects: [{ t: 'morale', n: -7 }] },
+      },
+      {
+        label: 'Burn wood and tell stories',
+        success: { text: 'We built the fire past what it needed and talked until it burned low. Worth it.', effects: [{ t: 'firewood', n: -4 }, { t: 'morale', n: 9 }] },
+      },
+    ],
+  },
+  {
+    id: 'lung-sickness',
+    title: 'It Goes Through the Hall',
+    body: 'It starts as one cough in the night and by the third day half the hall has it. The smoke does not help. Nothing helps.',
+    weight: 15,
+    when: [{ c: 'season', any: ['winter'] }, { c: 'settled' }, { c: 'sick' }],
+    choices: [
+      {
+        label: 'Nurse them and burn wood to keep the hall warm',
+        success: { text: 'We kept the fire high and sat with them in turns. Most of it passed.', effects: [{ t: 'firewood', n: -6 }, { t: 'heal', n: 4 }, { t: 'morale', n: 2 }] },
+      },
+      {
+        label: 'Brew what the old ones brewed',
+        check: { stat: 'craft', dc: 13 },
+        success: { text: 'Bitter, and it worked. They were sitting up in two days.', effects: [{ t: 'heal', n: 6 }, { t: 'morale', n: 4 }] },
+        failure: { text: 'Whatever it was, it did nothing but make them sicker for a night.', effects: [{ t: 'wound', n: 3, count: 3 }, { t: 'morale', n: -4 }] },
+      },
+    ],
+  },
+  {
+    id: 'empty-store',
+    title: 'The Bottom of the Store',
+    body: 'Someone comes back from the store with an honest face and says what everyone already knew. There is less in there than there should be, and it is a long way to spring.',
+    weight: 16,
+    when: [{ c: 'season', any: ['winter'] }, { c: 'settled' }, { c: 'foodMax', value: 14 }],
+    choices: [
+      {
+        label: 'Cut the ration and say so plainly',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'Half rations, announced to everyone at once. Nobody liked it. Nobody argued.', effects: [{ t: 'food', n: 4 }, { t: 'morale', n: -4 }] },
+        failure: { text: 'The cut was announced badly and taken worse. Two of them stopped speaking to the rest.', effects: [{ t: 'food', n: 3 }, { t: 'morale', n: -10 }] },
+      },
+      {
+        label: 'Go out onto the ice after seals',
+        check: { stat: 'wits', dc: 14 },
+        success: { text: 'Three days on the ice, and we came back dragging enough to matter.', effects: [{ t: 'food', n: 14 }, { t: 'morale', n: 6 }] },
+        failure: { text: 'Three days on the ice for nothing, and one of us went through it to the waist.', effects: [{ t: 'wound', n: 5 }, { t: 'morale', n: -6 }] },
+      },
+    ],
+  },
+  {
+    id: 'wood-runs-low',
+    title: 'Counting the Stack',
+    body: 'The woodpile has a shape to it now that everyone can read at a glance, and the shape is wrong for the time of year.',
+    weight: 15,
+    when: [{ c: 'season', any: ['winter'] }, { c: 'settled' }, { c: 'firewoodMax', value: 12 }],
+    choices: [
+      {
+        label: 'Go out and cut in the snow',
+        check: { stat: 'might', dc: 13 },
+        success: { text: 'Frozen wood and frozen hands, but we came back with a load.', effects: [{ t: 'firewood', n: 12 }, { t: 'wound', n: 2, count: 2 }] },
+        failure: { text: 'We got nothing worth the walk and one of us cannot feel two fingers.', effects: [{ t: 'wound', n: 4 }, { t: 'morale', n: -5 }] },
+      },
+      {
+        label: 'Burn what the steading can spare',
+        success: { text: 'A bench, a spare rafter, the frame of something we would want later. It burned.', effects: [{ t: 'firewood', n: 8 }, { t: 'morale', n: -5 }] },
+      },
+    ],
+  },
+  {
+    id: 'midwinter',
+    title: 'Midwinter',
+    body: 'The shortest day. From here the light comes back, a little at a time, whatever the cold does. Someone says it out loud and it lands harder than expected.',
+    weight: 10,
+    once: true,
+    when: [{ c: 'season', any: ['winter'] }, { c: 'dayMin', day: 58 }],
+    choices: [
+      {
+        label: 'Keep the feast, whatever it costs',
+        success: { text: 'We ate what should have been three days of food in one night, and every one of us needed it.', effects: [{ t: 'food', n: -6 }, { t: 'morale', n: 16 }] },
+      },
+      {
+        label: 'Mark it and eat as usual',
+        success: { text: 'A word said over the fire and nothing more. It was still something.', effects: [{ t: 'morale', n: 4 }] },
       },
     ],
   },

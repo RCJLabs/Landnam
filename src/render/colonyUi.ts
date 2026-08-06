@@ -21,6 +21,7 @@ import {
   type BlockReason,
 } from '../sim/colony';
 import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
+import { forecast, readiness, sickCount } from '../sim/winter';
 import { effectiveStat, living } from '../sim/people';
 import { plotTally } from './colony';
 import type { Dispatch } from './ui';
@@ -45,6 +46,8 @@ export function renderColonyBar(state: GameState): HTMLElement {
     stat('Watch', `${home.watch.toFixed(1)}/${WATCH_MAX}`),
     stat('Idle', `${take.idle}`, take.idle > 0),
   ]);
+  const ill = sickCount(state);
+  if (ill > 0) bar.append(stat('Sick', `${ill}`, true));
   if (building) {
     bar.append(
       stat(
@@ -74,6 +77,15 @@ export function renderNeeds(state: GameState): HTMLElement {
   const needs = [...readNeeds(state)].sort((a, b) => a.level - b.level);
   const panel = el('div', { class: 'needs' });
   panel.append(el('div', { class: 'needs-head' }, [pressureLine(state)]));
+  // From autumn, the mark is the most important thing on this screen.
+  if (state.day >= 25 && state.settlement && !state.end) {
+    const f = forecast(state);
+    if (f.days > 0) {
+      panel.append(
+        el('div', { class: `needs-mark${f.ready ? ' ready' : ''}` }, [readiness(state)]),
+      );
+    }
+  }
   for (const need of needs) {
     const pips = Math.round(need.level * 5);
     panel.append(

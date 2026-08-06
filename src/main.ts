@@ -37,6 +37,7 @@ import {
   renderSagaLog,
   renderSitePanel,
   renderTopBar,
+  renderWinterMark,
 } from './render/ui';
 import {
   renderBattleActions,
@@ -252,7 +253,7 @@ function render(): void {
 
   topbarSlot.replaceChildren(renderTopBar(state));
   travelView.update(state);
-  hintSlot.replaceChildren(renderHint(state), renderSitePanel(state));
+  hintSlot.replaceChildren(renderHint(state), renderWinterMark(state), renderSitePanel(state));
 
   const actions = renderActionBar(state, dispatch, () => {
     foundingOpen = true;

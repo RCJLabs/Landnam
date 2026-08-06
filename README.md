@@ -12,7 +12,7 @@ including a phone browser, and ships as a **single self-contained
 `index.html`** that works offline from a `file://` open — no images, no fonts,
 no audio files, no network.
 
-## Playing (v0.2 + the land-taking)
+## Playing (v0.3 — the full loop)
 
 - **Travel** by tapping a marked hex. Rough country costs more days than open
   ground, and each day eats food and burns firewood.
@@ -80,10 +80,17 @@ no audio files, no network.
   measure. Builders work a queue, timber is paid when you commit, and what
   gets finished changes the ground itself. The panel names the scarcity and
   marks the answer, so the order comes out of your winter rather than a wiki.
+- **The winter is the boss.** From the turn of autumn the game prints the
+  mark: the food and firewood your stores must reach to see spring. It is a
+  forecast of *your* plan, not a rule of thumb — put everyone in the fields
+  and it will tell you your fields are about to stop. Six firewood a night in
+  the dark, and a woodcutter works at well under half, so the stack has to be
+  built in the autumn or not at all. Cold nights bring sickness that docks
+  stats and will not mend until the thaw. If the colony dies in the dark, the
+  number was on screen for two seasons — and the ending will say so.
 - **The saga log** writes down what happened, in chronicle voice. It is the
   record of the run.
-- **Winter** starts on day 49 and stops the land from giving. Reaching spring
-  on day 73 with anyone still alive is the win.
+- **Reaching spring** on day 73 with anyone still alive is the win.
 
 Runs are fully seeded — enter a seed on the title screen to replay or share a
 coast.

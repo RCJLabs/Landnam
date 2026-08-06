@@ -5,6 +5,7 @@ import type { GameState, Person, RunEnd } from '../state/types';
 import { effectsOn, seasonOf } from './calendar';
 import { living } from './people';
 import { noteFirstWork, shelterSaving, workTheDay } from './colony';
+import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { chronicle } from './saga';
 
 /** Winter arrives on day 49; spring on day 73 is survival. */
@@ -41,9 +42,13 @@ function endRun(state: GameState, cause: RunEnd['cause'], title: string, lines: 
 
 /** Heals injuries and knits wounds over time. */
 function mendInjuries(state: GameState): void {
+  // Nothing mends in a cold hall on short rations. Winter illness that ticked
+  // down like a summer scratch would take the teeth out of the whole season.
+  const frozen = seasonOf(state.day) === 'winter';
   for (const person of state.party.people) {
     if (!person.alive) continue;
     person.injuries = person.injuries.filter((injury) => {
+      if (frozen && injury.id.startsWith('ill_')) return true;
       injury.heals -= 1;
       if (injury.heals <= 0) {
         chronicle(state, `${person.name}'s ${injury.label.toLowerCase()} had mended.`, 'good');
@@ -102,7 +107,16 @@ export function passDay(state: GameState): boolean {
       for (const person of living(party.people)) wound(state, person, bite, 'the cold');
       chronicle(state, 'The fire went out in the night. We did not sleep.', 'grim');
     }
+    // A night without fire in the dark half of the year is how people get
+    // ill, and illness is what turns a bad winter into a fatal one.
+    if (season === 'winter' || season === 'autumn') {
+      coldNight(state, season === 'winter' ? 3 : 0);
+    }
   }
+
+  // Illness drags on everyone, not only the one carrying it.
+  const ill = sickCount(state);
+  if (ill > 0) party.morale = Math.max(0, party.morale - ill * 0.8);
 
   // A well-kept camp slowly restores nerve.
   if (!hungry && !cold) {
@@ -111,6 +125,7 @@ export function passDay(state: GameState): boolean {
 
   mendInjuries(state);
   noteFirstWork(state, labour);
+  telegraphWinter(state);
 
   // Season turned?
   if ((state.day - 1) % 24 === 0) {
@@ -160,6 +175,7 @@ export function checkRunEnd(state: GameState, _forage: number): void {
         : 'We never set a post in the ground. We wintered where we stood, and moved on.',
       'The land had not taken us. Not this year.',
     ]);
+    appendVerdict(state);
     return;
   }
 
@@ -172,6 +188,7 @@ export function checkRunEnd(state: GameState, _forage: number): void {
       'No One Came Back',
       [`The warband ended on day ${state.day}.`, 'The sea keeps no account of who it carries out.'],
     );
+    appendVerdict(state);
     return;
   }
 
@@ -180,5 +197,15 @@ export function checkRunEnd(state: GameState, _forage: number): void {
       `On day ${state.day} what was left of us stopped listening to each other.`,
       'Some walked inland. Some walked into the water. None of it was a plan.',
     ]);
+    appendVerdict(state);
   }
+}
+
+/**
+ * Adds the winter's verdict to the ending. A colony that dies in the dark is
+ * always told, on the last screen, that it was told in the autumn.
+ */
+function appendVerdict(state: GameState): void {
+  const verdict = winterVerdict(state);
+  if (verdict && state.end) state.end.lines.push(verdict);
 }

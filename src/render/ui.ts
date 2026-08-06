@@ -17,6 +17,7 @@ import {
   verdictFor,
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
+import { forecast } from '../sim/winter';
 import { button, el } from './svg';
 
 export type Dispatch = (action: Action) => void;
@@ -52,6 +53,39 @@ export function renderTopBar(state: GameState): HTMLElement {
   return bar;
 }
 
+/**
+ * The winter mark: what the stores must reach, and where they stand. Shown
+ * from the turn of autumn onward and nowhere else, because a number the player
+ * cannot act on yet is noise.
+ *
+ * This is the milestone's whole apparatus. If a colony dies in the dark, this
+ * panel was on screen for two seasons telling it the number.
+ */
+export function renderWinterMark(state: GameState): HTMLElement {
+  if (state.end || state.day < 25 || !state.settlement) return el('div');
+  const f = forecast(state);
+  if (f.days <= 0) return el('div');
+
+  const row = (label: string, have: number, need: number, gap: number): HTMLElement =>
+    el('div', { class: `mark-row${gap < 0 ? ' short' : ''}` }, [
+      el('span', { class: 'mark-name' }, [label]),
+      el('span', { class: 'mark-value' }, [`${Math.round(have)} / ${need}`]),
+      el('span', { class: 'mark-gap' }, [
+        gap < 0 ? `${-gap} short` : `${gap} spare`,
+      ]),
+    ]);
+
+  return el('div', { class: `winter-mark${f.ready ? ' ready' : ''}` }, [
+    el('div', { class: 'mark-head' }, [
+      f.days > 24
+        ? `The mark for spring, ${f.days} days out`
+        : `${f.days} days of winter left`,
+    ]),
+    row('Food', state.party.food, f.food, f.foodGap),
+    row('Wood', state.party.firewood, f.firewood, f.firewoodGap),
+  ]);
+}
+
 export function renderActionBar(
   state: GameState,
   dispatch: Dispatch,
@@ -60,16 +94,25 @@ export function renderActionBar(
   const bar = el('div', { class: 'actionbar' });
   if (state.end || state.event) return bar;
 
+  const home = atHome(state);
   bar.append(
-    button('Camp', () => dispatch({ type: 'CAMP' }), {
+    button(home ? 'Rest' : 'Camp', () => dispatch({ type: 'CAMP' }), {
       class: 'action',
-      title: 'Rest, mend, and cut firewood. Costs a day.',
+      title: home
+        ? 'Pass the day at the steading. The work goes on around you.'
+        : 'Rest, mend, and cut firewood. Costs a day.',
     }),
-    button('Forage', () => dispatch({ type: 'FORAGE' }), { class: 'action' }),
-    button('Hunt', () => dispatch({ type: 'HUNT' }), { class: 'action' }),
   );
-  if (canFish(state)) {
-    bar.append(button('Fish', () => dispatch({ type: 'FISH' }), { class: 'action' }));
+  // On your own ground the steading's jobs are the day's work; offering
+  // foraging as well would pay the same people twice.
+  if (!home) {
+    bar.append(
+      button('Forage', () => dispatch({ type: 'FORAGE' }), { class: 'action' }),
+      button('Hunt', () => dispatch({ type: 'HUNT' }), { class: 'action' }),
+    );
+    if (canFish(state)) {
+      bar.append(button('Fish', () => dispatch({ type: 'FISH' }), { class: 'action' }));
+    }
   }
   if (onSettle && canFound(state, state.party.at)) {
     bar.append(
