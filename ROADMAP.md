@@ -99,9 +99,9 @@ because by year two it has more labour than uses for it.
   neighbour's sons. Losing people becomes recoverable, which is what makes
   losing them affordable to inflict — and the labour surplus becomes a choice
   instead of a given. THE unlock for everything below.
-  *Groundwork done: the fire now scales with the band round it, so growth has
-  a price before growth is offered. Still to come: capacity from buildings,
-  the four ways in, and whether a thrall is a full person (SAVE_VERSION 17).*
+  *Groundwork done: the fire scales with the band round it, and a person is
+  now sworn or a hand — six bear arms, everyone else works. Still to come:
+  capacity from buildings, the four ways in, and hands walking away.*
 - [ ] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
   answer is walls, allies and standing rather than a bigger woodpile. Makes
   4.3's neighbours load-bearing.
@@ -116,6 +116,21 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 6.2: six bear arms, the rest work** — A person is now sworn
+  or a hand. The sworn are the warband and there are never more than six of
+  them, because six is what came off the knarr and every fight in the game is
+  balanced against a line that wide; a steading that could answer a raid by
+  turning up with more bodies would make 2.3's shield wall a headcount
+  contest. Hands do everything else: they hold jobs, they eat, they need
+  warming, they can be killed, and — once the ways in exist — they can walk
+  away. They never see a battlefield. Growth therefore buys labour and never
+  an army, which is the whole bargain of the milestone.
+  With the hearth change from earlier, taking somebody in now costs food AND
+  firewood, so a bigger hall is a real decision rather than a free hand.
+  `SAVE_VERSION` 17 with a migration: everyone in an older save comes forward
+  sworn, which is exactly what they were — they all came off the knarr with a
+  weapon. 503 tests.
 
 - **2026-08-06 — 6.2 groundwork: the fire scales with the band** — Before the
   band can grow, growing has to cost something. Food already scaled with

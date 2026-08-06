@@ -46,6 +46,9 @@ import { moveOptions, canGather, canFish } from '../src/sim/travel';
 import { canFound, siteReport } from '../src/sim/site';
 import { assign, queueBuild } from '../src/sim/colony';
 import { BAND_BASE, foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
+import { SWORN_MAX, sworn } from '../src/sim/people';
+import { migrate } from '../src/state/migrations';
+import { startBattle } from '../src/sim/battleTurn';
 import { distance, key, fromKey, neighbors } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
 import { terrainDef } from '../src/data/terrain';
@@ -443,5 +446,67 @@ describe('the fire scales with the band round it', () => {
     const large = bandOf(12, MIDWINTER);
     expect(foodPerDay(large)).toBeGreaterThan(foodPerDay(small));
     expect(firewoodPerNight(large)).toBeGreaterThan(firewoodPerNight(small));
+  });
+});
+
+// --- 6.2: who bears arms ---
+
+describe('the warband is six, whatever the steading holds', () => {
+  /** A band with `armed` sworn and `workers` hands. */
+  function household(armed: number, workers: number): GameState {
+    const state = structuredClone(newGame('household'));
+    const template = state.party.people[0]!;
+    state.party.people = [
+      ...Array.from({ length: armed }, (_, i) => ({
+        ...template, id: `sworn-${i}`, bond: 'sworn' as const, alive: true,
+      })),
+      ...Array.from({ length: workers }, (_, i) => ({
+        ...template, id: `hand-${i}`, bond: 'hand' as const, alive: true,
+      })),
+    ];
+    return state;
+  }
+
+  it('never fields more than six however many are at home', () => {
+    for (const workers of [0, 4, 9, 20]) {
+      const state = household(6, workers);
+      expect(sworn(state.party.people)).toHaveLength(SWORN_MAX);
+    }
+  });
+
+  it('caps the sworn even if a save somehow holds more', () => {
+    expect(sworn(household(10, 0).party.people)).toHaveLength(SWORN_MAX);
+  });
+
+  it('keeps the hands off the field entirely', () => {
+    const state = household(4, 8);
+    startBattle(state, 'meadow', 0);
+    const ours = state.battle!.combatants.filter((c) => c.side === 'warband');
+    // Four sworn, eight hands, four on the field. More people at the steading
+    // must never become a wider shield wall.
+    expect(ours).toHaveLength(4);
+    for (const c of ours) expect(c.personId.startsWith('sworn-')).toBe(true);
+  });
+
+  it('counts the hands as mouths and as bodies round the fire', () => {
+    // They do not fight, but they eat and they need warming — which is what
+    // stops taking people in from being free.
+    const lean = household(6, 0);
+    const full = household(6, 6);
+    lean.day = 60;
+    full.day = 60;
+    expect(foodPerDay(full)).toBeGreaterThan(foodPerDay(lean));
+    expect(firewoodPerNight(full)).toBeGreaterThan(firewoodPerNight(lean));
+  });
+
+  it('brings an older save forward with everyone sworn', () => {
+    // Everyone in a pre-6.2 save came off the knarr with a weapon.
+    const old = structuredClone(newGame('older')) as unknown as Record<string, unknown>;
+    old['version'] = 16;
+    const party = old['party'] as { people: Record<string, unknown>[] };
+    for (const person of party.people) delete person['bond'];
+    const migrated = migrate(old).save;
+    const people = (migrated['party'] as { people: Record<string, unknown>[] }).people;
+    expect(people.every((p) => p['bond'] === 'sworn')).toBe(true);
   });
 });

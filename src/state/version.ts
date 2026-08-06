@@ -17,7 +17,8 @@
 // v14 (4.4): the root gained lore.
 // v15 (4.5): the root gained the tally.
 // v16 (4.6): RunEnd gained the 'jarl' cause.
-export const SAVE_VERSION = 16;
+// v17 (6.2): a Person is sworn or a hand.
+export const SAVE_VERSION = 17;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

@@ -87,6 +87,19 @@ export interface Person {
   xp: number;
   /** What they spend their days on once there is a steading. Absent = idle. */
   job?: string;
+  /**
+   * What this person is to the band.
+   *
+   * `sworn` are the ones who bear arms — capped at SWORN_MAX, because a
+   * shield wall is only as wide as the people who have stood in one, and an
+   * unbounded warband would make every fight a matter of turning up with more
+   * bodies. `hand` covers everyone else the steading takes in: they work,
+   * they eat, they can be killed, and they can walk away. They never see a
+   * battlefield.
+   */
+  bond: 'sworn' | 'hand';
+  /** The day they joined. Absent for the six who came off the knarr. */
+  joinedOn?: number;
   alive: boolean;
   /** Cause of death, for the saga. */
   fate?: string;

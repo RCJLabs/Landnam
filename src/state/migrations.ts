@@ -175,6 +175,18 @@ export const MIGRATIONS: Record<number, Migration> = {
   // save simply has no ending with that cause, which is exactly true of it —
   // but the registry refuses silent gaps, so the bump ships this anyway.
   15: (save) => ({ ...save, version: 16 }),
+
+  // v16 -> v17: the band can grow, so a person is now either sworn — one of
+  // the ones who bear arms — or a hand who works the steading and never sees
+  // a field. Everyone in an older save came off the knarr with a weapon, so
+  // they all come forward sworn, which is exactly what they were.
+  16: (save) => {
+    const party = save['party'] as { people?: Record<string, unknown>[] } | undefined;
+    if (party?.people) {
+      party.people = party.people.map((person) => ({ bond: 'sworn', ...person }));
+    }
+    return { ...save, version: 17 };
+  },
 };
 
 export interface MigrationResult {

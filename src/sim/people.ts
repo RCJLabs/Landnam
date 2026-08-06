@@ -35,7 +35,33 @@ function applyTrait(stats: Stats, traitId: string): Stats {
   return out;
 }
 
-export function makePerson(rng: Rng, id: string): Person {
+/**
+ * The most who can bear arms at once.
+ *
+ * Six, because six is what came off the knarr and every fight in the game is
+ * balanced against a line that wide. The steading can grow past this — Phase
+ * 6.2 — but the warband cannot, so growth buys you labour and never a bigger
+ * army. A band that could simply out-number what came for it would make 2.3's
+ * shield wall a matter of turning up with more bodies.
+ */
+export const SWORN_MAX = 6;
+
+/** The ones who bear arms. Never more than SWORN_MAX. */
+export function sworn(people: Person[]): Person[] {
+  return living(people).filter((p) => p.bond === 'sworn').slice(0, SWORN_MAX);
+}
+
+/** Everyone else the steading has taken in. They work; they never fight. */
+export function hands(people: Person[]): Person[] {
+  return living(people).filter((p) => p.bond !== 'sworn');
+}
+
+/** Whether the band could swear another. */
+export function canSwear(people: Person[]): boolean {
+  return sworn(people).length < SWORN_MAX;
+}
+
+export function makePerson(rng: Rng, id: string, bond: Person['bond'] = 'sworn'): Person {
   const woman = rng.chance(0.35);
   const name = rng.pick(woman ? WOMEN : MEN);
   const trait = rng.pick(TRAITS).id;
@@ -52,6 +78,7 @@ export function makePerson(rng: Rng, id: string): Person {
     health: maxHealth,
     maxHealth,
     morale: 70,
+    bond,
     injuries: [],
     xp: 0,
     alive: true,

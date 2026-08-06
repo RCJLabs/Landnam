@@ -17,7 +17,7 @@ import {
 } from '../data/foes';
 import type { Battle, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
-import { effectiveStat } from './people';
+import { effectiveStat, sworn } from './people';
 import { fieldCrew, homeCrew } from './expedition';
 import { raidSource } from './neighbours';
 import { note } from './tally';
@@ -95,6 +95,9 @@ function makeFoe(rng: Rng, archetypeId: string, index: number): Person {
   }
   const maxHealth = Math.max(4, 8 + stats.might * 2 + archetype.toughness);
   return {
+    // A foe is a Person like anyone else, and every foe on a field is there
+    // to fight — there is no such thing as a raider's kitchen hand.
+    bond: 'sworn',
     id: `foe_${index}`,
     name: rng.pick(FOE_NAMES),
     byname: rng.pick(FOE_BYNAMES),
@@ -176,7 +179,10 @@ export function beginBattle(
   // A raid is fought by whoever stayed at the steading; a fight out on the
   // road is fought by whoever went. Sending your warriors away is exactly the
   // decision this makes real.
-  const ourSide = raid ? homeCrew(state) : fieldCrew(state);
+  // Only the sworn stand in a line. The hands are at the steading and stay
+  // there whatever is happening outside — that is the whole bargain of 6.2:
+  // more people is more work done, never a wider shield wall.
+  const ourSide = sworn(raid ? homeCrew(state) : fieldCrew(state));
   const foes = rollFoes(rng.derive('foes'), Math.max(1, ourSide.length), difficulty, raid);
 
   const battle: Battle = {
