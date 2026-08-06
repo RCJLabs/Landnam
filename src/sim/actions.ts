@@ -7,11 +7,16 @@ import type { Hex } from '../hex';
 import { chooseOption, dismissEvent, maybeFireEvent } from './events';
 import { applyTravel, type TravelAction } from './travel';
 import { isWarbandTurn } from './battle';
-import { doMove, doStrike, endTurn, leaveBattle } from './battleTurn';
+import { doDash, doDefend, doMove, doShove, doStrike, doThrow } from './battleActions';
+import { endTurn, leaveBattle } from './battleTurn';
 
 export type BattleAction =
   | { type: 'B_MOVE'; to: Hex }
   | { type: 'B_STRIKE'; targetId: string }
+  | { type: 'B_THROW'; targetId: string }
+  | { type: 'B_SHOVE'; targetId: string }
+  | { type: 'B_DEFEND' }
+  | { type: 'B_DASH' }
   | { type: 'B_END_TURN' }
   | { type: 'B_LEAVE' };
 
@@ -21,7 +26,16 @@ export type Action =
   | { type: 'CHOOSE'; index: number }
   | { type: 'DISMISS_EVENT' };
 
-const BATTLE_TYPES = new Set(['B_MOVE', 'B_STRIKE', 'B_END_TURN', 'B_LEAVE']);
+const BATTLE_TYPES = new Set([
+  'B_MOVE',
+  'B_STRIKE',
+  'B_THROW',
+  'B_SHOVE',
+  'B_DEFEND',
+  'B_DASH',
+  'B_END_TURN',
+  'B_LEAVE',
+]);
 
 export function apply(state: GameState, action: Action): GameState {
   if (state.end) return state;
@@ -37,6 +51,18 @@ export function apply(state: GameState, action: Action): GameState {
         return next;
       case 'B_STRIKE':
         if (!isWarbandTurn(next) || !doStrike(next, action.targetId)) return state;
+        return next;
+      case 'B_THROW':
+        if (!isWarbandTurn(next) || !doThrow(next, action.targetId)) return state;
+        return next;
+      case 'B_SHOVE':
+        if (!isWarbandTurn(next) || !doShove(next, action.targetId)) return state;
+        return next;
+      case 'B_DEFEND':
+        if (!isWarbandTurn(next) || !doDefend(next)) return state;
+        return next;
+      case 'B_DASH':
+        if (!isWarbandTurn(next) || !doDash(next)) return state;
         return next;
       case 'B_END_TURN':
         // Deliberately not gated on whose turn it is: ending a turn must

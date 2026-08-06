@@ -20,6 +20,7 @@ import {
   renderBattleHint,
   renderBattleLog,
   renderBattleResult,
+  type Aim,
 } from './render/battleUi';
 import { combatantAt, isWarbandTurn } from './sim/battle';
 import { startBattle } from './sim/battleTurn';
@@ -33,6 +34,9 @@ let travelView: ReturnType<typeof createTravelView> | null = null;
 let battleView: ReturnType<typeof createBattleView> | null = null;
 let sagaExpanded = false;
 let rosterOpen = false;
+/** Which action a tap on a foe performs. Resets to Strike each turn. */
+let aim: Aim = 'strike';
+let aimTurnKey = '';
 
 // Chrome that persists across renders, so the map keeps its camera.
 const topbarSlot = el('div', { class: 'slot topbar-slot' });
@@ -68,12 +72,16 @@ function onHexTap(target: Hex): void {
   dispatch({ type: 'MOVE', to: target });
 }
 
-/** On the field, a tap is either a step or a blow, depending what is there. */
+/** On the field, a tap is either a step or the armed action on a foe. */
 function onFieldTap(target: Hex): void {
   if (!state?.battle || state.battle.outcome || !isWarbandTurn(state)) return;
   const occupant = combatantAt(state.battle, target);
   if (occupant) {
-    if (occupant.side === 'foe') dispatch({ type: 'B_STRIKE', targetId: occupant.personId });
+    if (occupant.side !== 'foe') return;
+    const id = occupant.personId;
+    if (aim === 'throw') dispatch({ type: 'B_THROW', targetId: id });
+    else if (aim === 'shove') dispatch({ type: 'B_SHOVE', targetId: id });
+    else dispatch({ type: 'B_STRIKE', targetId: id });
     return;
   }
   dispatch({ type: 'B_MOVE', to: target });
@@ -122,10 +130,22 @@ function renderBattle(): void {
   if (mapSlot.firstChild !== battleView.root) {
     mapSlot.replaceChildren(battleView.root);
   }
+  // A fresh fighter starts with a sword in hand, not a spear cocked.
+  const turnKey = `${state.battle.round}:${state.battle.turnIndex}`;
+  if (turnKey !== aimTurnKey) {
+    aimTurnKey = turnKey;
+    aim = 'strike';
+  }
+
   topbarSlot.replaceChildren(renderBattleBar(state));
-  battleView.update(state);
-  hintSlot.replaceChildren(renderBattleHint(state));
-  actionSlot.replaceChildren(renderBattleActions(state, dispatch));
+  battleView.update(state, aim);
+  hintSlot.replaceChildren(renderBattleHint(state, aim));
+  actionSlot.replaceChildren(
+    renderBattleActions(state, aim, (next) => {
+      aim = next;
+      render();
+    }, dispatch),
+  );
   sagaSlot.replaceChildren(renderBattleLog(state));
   overlaySlot.replaceChildren(
     state.battle.outcome ? renderBattleResult(state, dispatch) : document.createTextNode(''),

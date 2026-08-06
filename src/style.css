@@ -71,7 +71,24 @@ body,
 }
 
 button[disabled='true'] {
-  opacity: 0.45;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Two rows of battle actions, each row still clearing the touch target. */
+.action-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.action-stack .actionbar {
+  border-top: none;
+  padding-bottom: 0;
+}
+
+.action-stack .actionbar:last-child {
+  padding-top: 6px;
+  padding-bottom: 7px;
 }
 
 .sea {

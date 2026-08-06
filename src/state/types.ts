@@ -147,6 +147,10 @@ export interface Combatant {
   movesLeft: number;
   /** The one action per turn has been spent. */
   hasActed: boolean;
+  /** Spears and hand-axes: thrown once and gone. */
+  throwsLeft: number;
+  /** Shield up — harder to hit until this fighter's next turn. */
+  defending: boolean;
   /** Dropped: out of this fight, but not necessarily dead (see 2.4). */
   down: boolean;
 }

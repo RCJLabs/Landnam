@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 2.2**
+> **CURRENT MILESTONE: 2.3**
 
 ---
 
@@ -51,7 +51,7 @@ Goal: land on a hostile coast, explore, and survive to winter.
 Goal: encounters zoom into battles worth winning.
 
 - [x] **2.1 Battle scene** — Combat events push BATTLE mode: small hex battlefield (7×9, portrait) generated from the overworld hex's terrain. Initiative order from stats. Move + one action per turn. *Done when: a full battle round-trips back to travel.*
-- [ ] **2.2 Actions & AI** — Strike, throw (axe/spear), shove, defend, dash. Facing-free, zone-of-control melee. Simple enemy AI (aggressive / cautious / flanker archetypes). *Done when: fights are winnable and losable on purpose.*
+- [x] **2.2 Actions & AI** — Strike, throw (axe/spear), shove, defend, dash. Facing-free, zone-of-control melee. Simple enemy AI (aggressive / cautious / flanker archetypes). *Done when: fights are winnable and losable on purpose.*
 - [ ] **2.3 Shield wall & morale** — Adjacent allied warriors form a shield wall: shared defense bonus that shatters when a link falls. Unit morale: breaking, fleeing, rallying. *Done when: formation play beats brawling.*
 - [ ] **2.4 Consequences** — Persistent injuries, permadeath, loot, XP → stat growth. Deaths written into the saga. *Done when: losing a veteran hurts — ship v0.2.*
 
@@ -91,6 +91,16 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 2.2 Actions & AI** — Five actions: Strike, Throw (range 2–3,
+  needs a clear lane, spends a carried spear), Shove (contested might; into
+  water the sea finishes it), Shield (+3 to be hit, until your next turn) and
+  Run (trade the action for a second move). Facing-free zone of control in two
+  clauses: stepping into a threatened hex ends your move, leaving engagement
+  costs 2 — and Run is the answer to both. Foes come in three temperaments
+  (aggressive, cautious, flanker) that score the field differently, with
+  patience running out after round 12 so careful sides cannot circle forever.
+  Measured against the milestone's bar: playing well wins 10 of 14 seeds where
+  standing still wins none. `SAVE_VERSION` 3 with a migration. 158 tests.
 - **2026-08-06 — 2.1 Battle scene** — BATTLE mode pushes over travel and pops
   back. Foes are `Person` objects like anyone else, so a `Combatant` carries
   only position and turn state. Battlefield generated from the overworld hex's

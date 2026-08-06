@@ -23,7 +23,17 @@ no audio files, no network.
   2d6 plus your best hand for the job; they are meant to be lost sometimes.
 - **Fights** zoom into a hex battlefield made from the ground you were
   standing on. Turn order comes from wits; each fighter gets a move and one
-  action. Tap a dashed hex to step, a ringed foe to strike. Win or lose, you
+  action: **Strike**, **Throw** a spear (two or three hexes, clear line only,
+  and then it is gone), **Shove** (contested — into water, the sea finishes
+  it), **Shield** (harder to hit until your next turn) or **Run** (trade the
+  action for a second move).
+- **Hold the line.** Every standing enemy threatens the six hexes around
+  them: step into that ground and your move stops there, and stepping back
+  out costs extra. Run is how you break away. A line is something to be
+  broken, not walked around.
+
+  Enemies fight to type — raiders close and swing, scouts throw and keep
+  their distance, skirmishers hunt whoever is already busy. Win or lose, you
   come back to the road.
 - **The saga log** writes down what happened, in chronicle voice. It is the
   record of the run.

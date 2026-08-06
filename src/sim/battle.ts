@@ -4,10 +4,17 @@
 // Fighters are Person objects on both sides; a Combatant only says where
 // they stand and what they have left this turn.
 
-import { column, distance, equals, key, reachable, type Hex } from '../hex';
+import { column, distance, equals, fromKey, key, type Hex } from '../hex';
+import { reachWithZoc } from './zoc';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
-import { FOE_ARCHETYPES, FOE_BYNAMES, FOE_NAMES, archetypeById } from '../data/foes';
+import {
+  FOE_ARCHETYPES,
+  FOE_BYNAMES,
+  FOE_NAMES,
+  archetypeById,
+  type FoeArchetype,
+} from '../data/foes';
 import type { Battle, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
 import { effectiveStat } from './people';
@@ -16,7 +23,6 @@ import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
   generateBattlefield,
-  groundCost,
   groundName,
   isPassable,
 } from './battlefield';
@@ -24,6 +30,15 @@ import {
 export const BASE_MOVES = 3;
 
 // --- Lookups ---
+
+/**
+ * A foe's archetype, recovered from the trait we stamped at generation.
+ * Warband members have no archetype — they have traits instead.
+ */
+export function archetypeOf(person: Person): FoeArchetype | undefined {
+  if (!person.trait.startsWith('foe:')) return undefined;
+  return archetypeById(person.trait.slice(4));
+}
 
 export function fighterPerson(state: GameState, personId: string): Person | undefined {
   return (
@@ -176,6 +191,9 @@ export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0):
       initiative: 0,
       movesLeft: BASE_MOVES,
       hasActed: false,
+      // Everyone carries something worth throwing once.
+      throwsLeft: 1,
+      defending: false,
       down: false,
     });
   }
@@ -191,6 +209,8 @@ export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0):
       initiative: 0,
       movesLeft: BASE_MOVES,
       hasActed: false,
+      throwsLeft: archetypeOf(foe)?.throws ?? 1,
+      defending: false,
       down: false,
     });
   }
@@ -206,25 +226,18 @@ export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0):
 
 // --- Movement and reach ---
 
-export function battleMoveCost(battle: Battle, h: Hex): number {
-  const tile = battle.grid[key(h)];
-  if (!tile) return Infinity;
-  if (combatantAt(battle, h)) return Infinity;
-  return groundCost(tile.ground);
-}
-
-/** Hexes the active fighter can still reach this turn. */
+/** Hexes the active fighter can still reach this turn, zone of control included. */
 export function reachableHexes(battle: Battle): Hex[] {
   const active = activeCombatant(battle);
   if (!active || battle.outcome || active.movesLeft <= 0) return [];
-  const found = reachable(active.at, active.movesLeft, (h) => battleMoveCost(battle, h));
-  const out: Hex[] = [];
-  for (const k of found.keys()) {
-    const i = k.indexOf(',');
-    const h = { q: Number(k.slice(0, i)), r: Number(k.slice(i + 1)) };
-    if (!equals(h, active.at)) out.push(h);
-  }
-  return out;
+  return [...reachWithZoc(battle, active).keys()].map(fromKey);
+}
+
+/** What reaching each hex would cost — used to preview a step. */
+export function reachCosts(battle: Battle): Map<string, number> {
+  const active = activeCombatant(battle);
+  if (!active || battle.outcome || active.movesLeft <= 0) return new Map();
+  return reachWithZoc(battle, active);
 }
 
 /** Enemies the active fighter could strike right now. */
@@ -242,6 +255,8 @@ function refreshTurn(battle: Battle): void {
   if (!active) return;
   active.movesLeft = BASE_MOVES;
   active.hasActed = false;
+  // A raised shield lasts until your own next turn, and no longer.
+  active.defending = false;
 }
 
 export { refreshTurn };

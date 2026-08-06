@@ -19,6 +19,21 @@ export const MIGRATIONS: Record<number, Migration> = {
   // means "no fight in progress", so a v1 save needs no reshaping — but the
   // bump still ships a migration, because the registry refuses silent gaps.
   1: (save) => ({ ...save, version: 2 }),
+
+  // v2 -> v3: fighters carry throwables and can raise a shield. A fight saved
+  // mid-swing predates both, so give everyone one throw and a lowered shield
+  // rather than leaving the fields undefined.
+  2: (save) => {
+    const battle = save['battle'] as { combatants?: Record<string, unknown>[] } | undefined;
+    if (battle?.combatants) {
+      battle.combatants = battle.combatants.map((c) => ({
+        throwsLeft: 1,
+        defending: false,
+        ...c,
+      }));
+    }
+    return { ...save, version: 3 };
+  },
 };
 
 export interface MigrationResult {

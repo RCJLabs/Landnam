@@ -1,9 +1,12 @@
 // BATTLE renderer: the field as layered SVG. Pure view — reads state, emits
 // a hex tap. Fighters are drawn from their Person, same as anywhere else.
 
-import { cornerPoints, fromKey, fromPixel, toPixel, type Hex } from '../hex';
+import { cornerPoints, fromKey, fromPixel, key, toPixel, type Hex } from '../hex';
 import type { Battle, GameState, Ground } from '../state/types';
 import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '../sim/battle';
+import { shoveDestination, throwTargets } from '../sim/battleActions';
+import { isThreatened } from '../sim/zoc';
+import type { Aim } from './battleUi';
 import { svgEl } from './svg';
 
 const HEX = 30;
@@ -17,7 +20,7 @@ const GROUND_FILL: Record<Ground, string> = {
 
 export interface BattleView {
   root: SVGSVGElement;
-  update(state: GameState): void;
+  update(state: GameState, aim: Aim): void;
 }
 
 export function createBattleView(onTap: (h: Hex) => void): BattleView {
@@ -55,7 +58,7 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     );
   }
 
-  function paint(state: GameState): void {
+  function paint(state: GameState, aim: Aim): void {
     latest = state;
     const battle = state.battle;
     if (!battle) return;
@@ -82,8 +85,21 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
 
     const active = activeCombatant(battle);
 
-    // Where the active fighter can go, and who they can hit.
     if (active?.side === 'warband' && !battle.outcome) {
+      // Ground the enemy threatens: step in here and your move stops.
+      for (const k of Object.keys(battle.grid)) {
+        const h = fromKey(k);
+        if (!isThreatened(battle, h, 'warband')) continue;
+        const p = toPixel(h, HEX);
+        layers.overlay.append(
+          svgEl('polygon', {
+            points: cornerPoints(p.x, p.y, HEX - 0.5),
+            fill: '#b23b2e',
+            opacity: 0.13,
+          }),
+        );
+      }
+
       for (const h of reachableHexes(battle)) {
         const p = toPixel(h, HEX);
         layers.overlay.append(
@@ -97,16 +113,37 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
           }),
         );
       }
-      for (const target of strikeTargets(state)) {
+
+      // Whoever the armed action can actually reach.
+      const marked = aim === 'throw' ? throwTargets(state) : strikeTargets(state);
+      for (const target of marked) {
         const p = toPixel(target.at, HEX);
         layers.overlay.append(
           svgEl('polygon', {
             points: cornerPoints(p.x, p.y, HEX - 2),
             fill: 'none',
-            stroke: '#b23b2e',
+            stroke: aim === 'throw' ? '#d3a441' : '#b23b2e',
             'stroke-width': 3,
+            'stroke-dasharray': aim === 'throw' ? '6 4' : '',
           }),
         );
+        // Show where a shove would send them.
+        if (aim === 'shove') {
+          const to = shoveDestination(active, target);
+          const tile = to ? battle.grid[key(to)] : undefined;
+          if (to && tile) {
+            const q = toPixel(to, HEX);
+            layers.overlay.append(
+              svgEl('polygon', {
+                points: cornerPoints(q.x, q.y, HEX - 6),
+                fill: tile.ground === 'water' ? '#2e5468' : 'none',
+                stroke: '#d3a441',
+                'stroke-width': 2,
+                opacity: 0.9,
+              }),
+            );
+          }
+        }
       }
     }
 
@@ -117,7 +154,14 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       const p = toPixel(combatant.at, HEX);
       const isActive = active?.personId === combatant.personId;
       layers.fighters.append(
-        fighter(p.x, p.y, combatant.side === 'warband', person.health / person.maxHealth, isActive),
+        fighter(
+          p.x,
+          p.y,
+          combatant.side === 'warband',
+          person.health / person.maxHealth,
+          isActive,
+          combatant.defending,
+        ),
       );
     }
   }
@@ -139,8 +183,8 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
 
   return {
     root,
-    update(state) {
-      paint(state);
+    update(state, aim) {
+      paint(state, aim);
     },
   };
 }
@@ -177,9 +221,25 @@ function fighter(
   friendly: boolean,
   healthFraction: number,
   isActive: boolean,
+  defending: boolean,
 ): SVGGElement {
   const g = svgEl('g');
   const radius = HEX * 0.42;
+
+  // A braced shield reads as a heavier rim.
+  if (defending) {
+    g.append(
+      svgEl('circle', {
+        cx,
+        cy,
+        r: radius + 3,
+        fill: 'none',
+        stroke: '#cfd8dc',
+        'stroke-width': 4,
+        opacity: 0.85,
+      }),
+    );
+  }
 
   if (isActive) {
     g.append(

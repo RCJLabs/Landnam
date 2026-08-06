@@ -3,6 +3,7 @@
 
 import type { GameState } from '../state/types';
 import { activeCombatant, fighterPerson, isWarbandTurn, standing } from '../sim/battle';
+import { throwTargets } from '../sim/battleActions';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';
 
@@ -36,36 +37,72 @@ export function renderBattleBar(state: GameState): HTMLElement {
   return bar;
 }
 
-export function renderBattleActions(state: GameState, dispatch: Dispatch): HTMLElement {
+/** Which tap-target action the player has armed. */
+export type Aim = 'strike' | 'throw' | 'shove';
+
+export function renderBattleActions(
+  state: GameState,
+  aim: Aim,
+  setAim: (aim: Aim) => void,
+  dispatch: Dispatch,
+): HTMLElement {
   const battle = state.battle!;
   const bar = el('div', { class: 'actionbar' });
   if (battle.outcome) return bar;
 
   const active = activeCombatant(battle);
-  const person = active ? fighterPerson(state, active.personId) : undefined;
+  if (!isWarbandTurn(state) || !active) return bar;
 
-  if (isWarbandTurn(state) && active && person) {
-    bar.append(
-      button(
-        active.hasActed ? 'Struck' : 'Strike: tap a foe',
-        () => undefined,
-        { class: 'action', disabled: active.hasActed ? 'true' : 'false' },
-      ),
-      button('End turn', () => dispatch({ type: 'B_END_TURN' }), { class: 'action primary' }),
-    );
-  }
-  return bar;
+  const spent = active.hasActed;
+  const aimButton = (id: Aim, label: string, enabled: boolean) => {
+    const node = button(label, () => setAim(id), {
+      class: `action${aim === id ? ' primary' : ''}`,
+    });
+    if (!enabled) node.setAttribute('disabled', 'true');
+    return node;
+  };
+
+  bar.append(
+    aimButton('strike', 'Strike', !spent),
+    aimButton('throw', `Throw${active.throwsLeft > 0 ? ` ${active.throwsLeft}` : ''}`,
+      !spent && active.throwsLeft > 0 && throwTargets(state).length > 0),
+    aimButton('shove', 'Shove', !spent),
+  );
+
+  const second = el('div', { class: 'actionbar' });
+  const defend = button('Shield', () => dispatch({ type: 'B_DEFEND' }), { class: 'action' });
+  if (spent) defend.setAttribute('disabled', 'true');
+  const dash = button('Run', () => dispatch({ type: 'B_DASH' }), { class: 'action' });
+  if (spent) dash.setAttribute('disabled', 'true');
+  second.append(
+    defend,
+    dash,
+    button('End turn', () => dispatch({ type: 'B_END_TURN' }), { class: 'action primary' }),
+  );
+
+  const wrap = el('div', { class: 'action-stack' }, [bar, second]);
+  return wrap;
 }
 
-export function renderBattleHint(state: GameState): HTMLElement {
+const AIM_HINT: Record<Aim, string> = {
+  strike: 'tap a ringed foe to strike',
+  throw: 'tap a marked foe to throw',
+  shove: 'tap a ringed foe to shove them back',
+};
+
+export function renderBattleHint(state: GameState, aim: Aim): HTMLElement {
   const battle = state.battle!;
   if (battle.outcome) return el('div', { class: 'hint' }, ['The field is settled.']);
   if (!isWarbandTurn(state)) return el('div', { class: 'hint' }, ['They are moving.']);
   const active = activeCombatant(battle);
   const person = active ? fighterPerson(state, active.personId) : undefined;
-  return el('div', { class: 'hint' }, [
-    person ? `${person.name}: tap a dashed hex to move, a ringed foe to strike` : 'Waiting',
-  ]);
+  if (!person || !active) return el('div', { class: 'hint' }, ['Waiting']);
+
+  const parts: string[] = [];
+  if (active.movesLeft > 0) parts.push('tap a dashed hex to move');
+  if (!active.hasActed) parts.push(AIM_HINT[aim]);
+  if (parts.length === 0) parts.push('nothing left this turn — end it');
+  return el('div', { class: 'hint' }, [`${person.name}: ${parts.join(' · ')}`]);
 }
 
 export function renderBattleLog(state: GameState): HTMLElement {
