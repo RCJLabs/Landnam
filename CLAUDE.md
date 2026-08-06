@@ -14,7 +14,7 @@ Viking survival-strategy game: hex-map travel → turn-based tactical combat →
 - `npm run build` — production build; MUST emit a single self-contained `dist/index.html` (vite-plugin-singlefile)
 - `npm run test` — Vitest (hex math, RNG, sim logic, save migrations)
 - `npm run release` — build + zip source to `release/landnam-src.zip`
-- `npm run publish` — build + copy to the repo-root `index.html` that Pages serves
+- `npm run publish` — build + copy to `docs/index.html`, which Pages serves
 
 ## Architecture (load-bearing rules)
 
@@ -68,11 +68,18 @@ update ROADMAP.md statuses + changelog, tag `v0.X`, push. Deliverables are
 always: `index.html` + source zip + updated `ROADMAP.md`.
 
 **Deploying is a committed file, not a workflow.** GitHub Pages serves
-`index.html` from the root of `main`. `npm run publish` copies the build there
-and writes `build.txt` next to it. There is no Deploy action: the old one
+`main` / `/docs`. `npm run publish` builds and writes `docs/index.html`,
+`docs/build.txt` and `docs/.nojekyll`. There is no Deploy action: the old one
 pushed to `gh-pages` and left GitHub's own `pages build and deployment` to
 publish it, which failed repeatedly inside `actions/deploy-pages` with
 "Invalid actions OIDC token" and left the live site hours behind the branch.
-Committing the artifact is what the other RCJ Labs games do and it has no
-moving parts. Run `npm run publish` in any commit that should change what is
-live — a source-only commit will otherwise leave the site on the old build.
+A committed artifact has no moving parts.
+
+The build output goes in `docs/`, never the repo root — the root `index.html`
+is Vite's source entry. Publishing over it makes Vite build the built page as
+its own input: four modules instead of sixty-five, a frozen build stamp, and a
+file that grows every run. `scripts/publish.mjs` refuses to run if the entry
+stops looking like an entry, but do not put it back.
+
+Run `npm run publish` in any commit that should change what is live — a
+source-only commit will otherwise leave the site on the old build.
