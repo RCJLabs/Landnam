@@ -27,6 +27,11 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: touch dist/.nojekyll
+      # Stamp every deploy so the gh-pages tree always changes. Without this,
+      # an identical build produces no commit, Pages never rebuilds, and a
+      # stale deployment silently stays live.
+      - name: Stamp the build
+        run: echo "${{ github.sha }} $(date -u +%FT%TZ)" > dist/build.txt
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
