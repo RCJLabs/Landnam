@@ -1,0 +1,116 @@
+// App shell: owns the current run, the board, and screen transitions.
+// Flow: UI/board input -> StrategicIntent -> stepStrategic -> apply -> persist -> re-render.
+
+import { distance } from '../core/hex';
+import { generateSeed } from '../core/rng';
+import { GameRun, StrategicIntent } from '../sim/types';
+import { newRun } from '../sim/strategic/state';
+import { stepStrategic } from '../sim/strategic/sail';
+import { loadMeta, saveMeta, loadRun, saveRun, clearRun } from '../save/persist';
+import { HexBoard } from '../render/canvasHex';
+import { drawChart } from '../render/chartRender';
+import { renderHud } from '../ui/hud';
+import { renderRunEnd } from '../ui/runEnd';
+import { renderTitle } from '../ui/title';
+import { must, replaceChildren } from '../ui/dom';
+
+export class App {
+  private run: GameRun | null = null;
+  private board: HexBoard | null = null;
+  private meta = loadMeta();
+  private overlayRoot = must<HTMLDivElement>('overlay-root');
+  private hudRoot = must<HTMLDivElement>('hud-root');
+  private canvas = must<HTMLCanvasElement>('board');
+
+  start(): void {
+    const saved = loadRun();
+    if (saved && saved.phase !== 'ended') {
+      this.showTitle(true);
+    } else {
+      this.showTitle(false);
+    }
+  }
+
+  private showTitle(hasSave: boolean): void {
+    replaceChildren(
+      this.overlayRoot,
+      renderTitle(
+        this.meta,
+        hasSave,
+        () => {
+          const saved = loadRun();
+          if (saved) this.beginRun(saved);
+          else this.startNewRun();
+        },
+        (seed) => this.startNewRun(seed),
+      ),
+    );
+  }
+
+  private startNewRun(seed?: string): void {
+    const finalSeed = seed || generateSeed(this.entropy());
+    const run = newRun(finalSeed);
+    saveRun(run);
+    this.beginRun(run);
+  }
+
+  /** User-triggered entropy: derived from meta so it changes per run without Date.now in sim. */
+  private entropy(): number {
+    return (this.meta.runsPlayed + 1) * 7919 + this.meta.fame * 13 + performance.now() | 0;
+  }
+
+  private beginRun(run: GameRun): void {
+    this.run = run;
+    replaceChildren(this.overlayRoot);
+    if (!this.board) {
+      this.board = new HexBoard(this.canvas, 26, {
+        draw: (ctx, board) => {
+          if (this.run) drawChart(ctx, board, this.run);
+        },
+        onClick: (hex) => this.onHexClick(hex),
+        onHover: () => {},
+      });
+    }
+    this.board.centerOn(run.chart.shipAt);
+    this.renderAll();
+  }
+
+  private onHexClick(hex: { q: number; r: number }): void {
+    const run = this.run;
+    if (!run || run.phase !== 'voyage') return;
+    if (distance(hex, run.chart.shipAt) === 1) {
+      this.dispatch({ type: 'SAIL', to: hex });
+    }
+  }
+
+  private dispatch(intent: StrategicIntent): void {
+    const run = this.run;
+    if (!run) return;
+    const { run: next, events } = stepStrategic(run, intent);
+    if (next === run) return; // rejected intent
+    this.run = next;
+    saveRun(next);
+
+    if (next.phase === 'ended' && next.end) {
+      this.meta.fame += next.end.fame;
+      this.meta.runsPlayed += 1;
+      if (next.end.outcome === 'victory') this.meta.victories += 1;
+      saveMeta(this.meta);
+      clearRun();
+      replaceChildren(this.overlayRoot, renderRunEnd(next, () => this.startNewRun()));
+    }
+
+    // Keep the camera loosely following the ship.
+    for (const e of events) {
+      if (e.type === 'MOVED' && this.board) this.board.centerOn(e.to);
+    }
+    this.renderAll();
+  }
+
+  private renderAll(): void {
+    const run = this.run;
+    if (!run) return;
+    renderHud(this.hudRoot, run, (intent) => this.dispatch(intent));
+    this.board?.requestDraw();
+  }
+}
