@@ -37,6 +37,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
+import { effectsOn, winterDepth } from '../src/sim/calendar';
+import { markHaze } from '../src/sim/winter';
 import { fallenOf } from '../src/sim/fallen';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
@@ -340,5 +342,40 @@ describe('the chrome points at what changed', () => {
     expect(bar({ food: 20 }).food).toBe(false);
     // The other bar has seen nothing, so it is still on its first reading.
     expect(other({ food: 20 })).toEqual({});
+  });
+});
+
+// --- Winters that differ, and a mark that admits it ---
+
+describe('no two winters are the same, and the mark says so', () => {
+  it('fixes each winter with the run seed, so replays stay stable', () => {
+    const a = winterDepth('same-saga', 150);
+    expect(winterDepth('same-saga', 150)).toBe(a);
+    expect(winterDepth('same-saga', 160)).toBe(a);
+  });
+
+  it('gives different sagas different winters', () => {
+    const depths = new Set(
+      Array.from({ length: 20 }, (_, i) => winterDepth(`saga-${i}`, 150)),
+    );
+    expect(depths.size).toBeGreaterThan(1);
+  });
+
+  it('leaves the first winter alone — it is the early game and it is tuned', () => {
+    for (let i = 0; i < 20; i += 1) expect(winterDepth(`saga-${i}`, 60)).toBe(0);
+  });
+
+  it('makes later winters cost more than the first, whatever the luck', () => {
+    for (let i = 0; i < 20; i += 1) {
+      expect(effectsOn(150, `saga-${i}`).firewood).toBeGreaterThan(effectsOn(60).firewood);
+    }
+  });
+
+  it('is exact close to, and admits its vagueness far out', () => {
+    // 3.4's promise was that the game tells you the number. It still does,
+    // where you can act on it — the haze only clouds long-range planning.
+    expect(markHaze(150)).toBe(0);
+    expect(markHaze(100)).toBeGreaterThan(0);
+    expect(markHaze(90)).toBeGreaterThan(markHaze(110));
   });
 });

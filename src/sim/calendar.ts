@@ -2,6 +2,7 @@
 // which is the whole point of Phase 1 — get ready or die.
 
 import type { Season } from '../state/types';
+import { stream } from '../rng';
 
 export const SEASON_LENGTH = 24;
 
@@ -87,6 +88,76 @@ export function seasonEffects(season: Season): SeasonEffects {
   return EFFECTS[season];
 }
 
-export function effectsOn(day: number): SeasonEffects {
-  return EFFECTS[seasonOf(day)];
+/**
+ * Extra firewood a night for every winter the band has already come through.
+ *
+ * Tried once on its own and it changed survival by exactly zero, because the
+ * winter mark was a perfect forecast: raise the cost and the mark simply
+ * reported a bigger number that the band stocked to. It ships now because the
+ * mark has been made vague at long range (see markHaze), so a deeper winter
+ * is a deeper winter you cannot see the bottom of.
+ *
+ * The FIRST winter is deliberately untouched. It is the shape of the early
+ * game, it is already tuned, and 80% of bands reaching it is the number we
+ * want.
+ */
+export const WINTER_DEEPENING = 2;
+export const WINTER_DEPTH_MAX = 6;
+
+/** Which winter of the saga a day belongs to. 0 is the first. */
+export function winterIndex(day: number): number {
+  return wintersStood(day);
+}
+
+/**
+ * How much harder this particular winter is than the first.
+ *
+ * Two parts, and the second is the point. A floor that grows with the years —
+ * the sagas' own logic, that the winters which follow a good run are the ones
+ * that kill — plus a SEEDED bite that varies from year to year and is not
+ * knowable in advance. A run's winters are fixed the moment its seed is, so
+ * replays stay stable; what the player cannot do is see which kind of winter
+ * is coming until it is close.
+ *
+ * That variance is the whole mechanism. A fixed deepening was tried on its
+ * own and moved survival by exactly zero, because the mark simply reported
+ * the bigger number and the band stocked to it. A winter that might be mild
+ * and might be terrible is a decision; a winter that is reliably worse is
+ * arithmetic.
+ */
+export function winterDepth(seed: string, day: number): number {
+  if (seasonOf(day) !== 'winter') return 0;
+  return Math.min(WINTER_DEPTH_MAX, floorDepth(day) + bite(seed, day));
+}
+
+/** The part that grows with the years, and that the band can count on. */
+export function floorDepth(day: number): number {
+  return wintersStood(day) * WINTER_DEEPENING;
+}
+
+/**
+ * The part it cannot: 0..WINTER_BITE_MAX, fixed per run and per winter.
+ *
+ * Zero for the FIRST winter. That season is the shape of the early game, it
+ * is tuned to 80% of bands reaching it, and a run that opens with an unlucky
+ * roll it could not have seen coming is not a harder game — it is a coin
+ * toss before the player has had a chance to be good or bad at anything.
+ */
+export function bite(seed: string, day: number): number {
+  if (winterIndex(day) === 0) return 0;
+  return stream(seed, 'worldgen').derive(`winter:${winterIndex(day)}`).int(0, WINTER_BITE_MAX);
+}
+
+/** The widest a single winter's luck can swing. */
+export const WINTER_BITE_MAX = 4;
+
+/**
+ * Season effects as they actually bite. Needs the seed, because how hard THIS
+ * winter is was decided when the run was.
+ */
+export function effectsOn(day: number, seed = ''): SeasonEffects {
+  const base = EFFECTS[seasonOf(day)];
+  const deeper = seed ? winterDepth(seed, day) : 0;
+  if (deeper === 0) return base;
+  return { ...base, firewood: base.firewood + deeper };
 }

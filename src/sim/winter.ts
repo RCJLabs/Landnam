@@ -9,7 +9,15 @@
 // thumb someone tuned by feel.
 
 import type { GameState, Injury, Person } from '../state/types';
-import { effectsOn, nextThaw, seasonOf } from './calendar';
+import {
+  effectsOn,
+  floorDepth,
+  nextThaw,
+  seasonOf,
+  winterDepth,
+  WINTER_BITE_MAX,
+  WINTER_DEPTH_MAX,
+} from './calendar';
 import { dayLabour, jobOf, output, seasonFactor, shelterSaving } from './colony';
 import { living } from './people';
 import { chronicle } from './saga';
@@ -30,6 +38,13 @@ export const PRUDENCE = 1.15;
  */
 export const MARK_WINDOW = 48;
 
+/** Inside this many days the mark is exact, as it always was. */
+export const HAZE_CLEARS = 20;
+/** Over this many further days the haze grows to its full width. */
+export const HAZE_RANGE = 40;
+/** The most the mark can be out by, as a fraction of what it asks for. */
+export const HAZE_MAX = 0.3;
+
 export interface Forecast {
   /** Days between now and the ice breaking. */
   days: number;
@@ -42,6 +57,11 @@ export interface Forecast {
   firewoodGap: number;
   /** True when both stores clear the target. */
   ready: boolean;
+  /**
+   * How far the true figure may sit either side of the one shown, as a
+   * fraction. Zero once winter is close enough to read properly.
+   */
+  haze: number;
 }
 
 /**
@@ -66,7 +86,10 @@ export function forecast(state: GameState): Forecast {
     const day = state.day + i;
     const mouths = Math.max(1, Math.ceil(crew.length / 2));
     // Same helper the day tick burns from, so the mark cannot lie.
-    const fire = Math.max(0, effectsOn(day).firewood - saved);
+    // What the band can HONESTLY plan on. Close to, it knows this winter;
+    // far out it knows only the floor and the middle of the range, which is
+    // exactly the gamble — stock to the mark and a hard year catches you.
+    const fire = Math.max(0, plannedFirewood(state, day) - saved);
 
     let grown = 0;
     let cut = 0;
@@ -85,16 +108,61 @@ export function forecast(state: GameState): Forecast {
     firewood += Math.max(0, fire - cut);
   }
 
+  const haze = markHaze(state.day);
   const needFood = Math.round(food * PRUDENCE);
   const needWood = Math.round(firewood * PRUDENCE);
   return {
     days,
+    haze,
     food: needFood,
     firewood: needWood,
     foodGap: Math.round(state.party.food) - needFood,
     firewoodGap: Math.round(state.party.firewood) - needWood,
     ready: state.party.food >= needFood && state.party.firewood >= needWood,
   };
+}
+
+/**
+ * How vague the mark is, as a fraction of what it asks for.
+ *
+ * This is the answer to a measured failure. Three separate attempts to make
+ * the late game dangerous — raid pressure at three magnitudes, winters that
+ * deepen with the years — moved survival to the second winter by exactly
+ * zero, and the reason was this function's absence: the mark walked every
+ * remaining day with your actual people on their actual jobs and told you the
+ * true number, so raising winter's cost only raised a figure the player was
+ * handed for free and could always out-work.
+ *
+ * A forecast far out is a guess. Close to, it is a reading. The haze shuts
+ * fully once the ice is near enough to see, so 3.4's promise — the game told
+ * you the number — still holds where the band can act on it, and the risk
+ * lands on the long-range planning where it belongs.
+ */
+export function markHaze(day: number): number {
+  const out = Math.max(0, nextThaw(day) - day);
+  if (out <= HAZE_CLEARS) return 0;
+  const far = Math.min(1, (out - HAZE_CLEARS) / HAZE_RANGE);
+  return HAZE_MAX * far;
+}
+
+/**
+ * The firewood a night the band should plan for.
+ *
+ * Once the haze has cleared this is simply the truth. Before that it is the
+ * floor the years guarantee plus the MIDDLE of the range the luck can add —
+ * so a band that stocks exactly to the mark has provisioned for an average
+ * winter and will come up short in a bad one. That shortfall is the entire
+ * point: the forecast used to be an oracle, and an oracle is what made every
+ * attempt to threaten the late game bounce off.
+ */
+function plannedFirewood(state: GameState, day: number): number {
+  if (seasonOf(day) !== 'winter') return effectsOn(day).firewood;
+  const base = effectsOn(day).firewood + floorDepth(day);
+  if (markHaze(state.day) === 0) return effectsOn(day, state.seed).firewood;
+  return Math.min(
+    effectsOn(day).firewood + WINTER_DEPTH_MAX,
+    base + Math.round(WINTER_BITE_MAX / 2),
+  );
 }
 
 /** Re-scales today's output to another day's season. */
@@ -165,7 +233,8 @@ export function coldNight(state: GameState, severity: number): Person[] {
       shelter +
       // Knowing what to do for a cold body is worth as much as the roof over it.
       bonus(state, 'physic');
-    if (roll >= SICKNESS_BASE_DC + severity) continue;
+    // Later winters do not merely burn more wood; they are colder.
+    if (roll >= SICKNESS_BASE_DC + severity + Math.floor(winterDepth(state.seed, state.day) / 2)) continue;
 
     if (alreadyIll) {
       person.health = Math.max(0, person.health - 2);

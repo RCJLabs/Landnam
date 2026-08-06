@@ -24,8 +24,12 @@ export function foodPerDay(state: GameState): number {
   return Math.max(1, Math.ceil(living(state.party.people).length / 2));
 }
 
+/**
+ * What tonight actually costs. Seeded, because how hard THIS winter is was
+ * decided when the run was — see winterDepth in calendar.ts.
+ */
 export function firewoodPerNight(state: GameState): number {
-  return effectsOn(state.day).firewood;
+  return effectsOn(state.day, state.seed).firewood;
 }
 
 function weakest(people: Person[]): Person | undefined {

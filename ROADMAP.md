@@ -83,6 +83,29 @@ Order negotiable; each is a shippable minor version.
 - [x] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall. *Done when: the curve is measured and asserted in CI, the dead outlive the run, and the screen stops cutting. Two findings left open and written down rather than rushed — see the changelog.*
 - [ ] **5.4 Release** — v1.0 tag, `landnam.rcjlabs.com` CNAME. THEN decide TWA/Capacitor wrap (stay web during development).
 
+## Phase 6 — The long saga (post-1.0 direction)
+
+Goal: a run that can go on as long as you can hold it, and a late game that
+can actually kill you. Set from a design conversation after the 5.3
+measurements: the material survival loop cannot threaten a settled band,
+because by year two it has more labour than uses for it.
+
+- [~] **6.1 Winters that vary** — Each winter's severity is fixed by the run
+  seed and grows with the years; the mark is exact close to and vague far out,
+  so long-range stockpiling is a gamble rather than arithmetic. *Shipped, and
+  measured at no change to the curve — see the changelog. It is a prerequisite
+  for 6.2, not a fix on its own.*
+- [ ] **6.2 Hands** — The band can grow: thralls taken, survivors taken in, a
+  neighbour's sons. Losing people becomes recoverable, which is what makes
+  losing them affordable to inflict — and the labour surplus becomes a choice
+  instead of a given. THE unlock for everything below.
+- [ ] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
+  answer is walls, allies and standing rather than a bigger woodpile. Makes
+  4.3's neighbours load-bearing.
+- [ ] **6.4 No last winter** — Remove the five-winter forced ending; a run
+  goes as long as it is held. The Thing becomes a milestone in a saga rather
+  than its final page.
+
 ---
 
 ## Parking Lot (ideas, not commitments)
@@ -90,6 +113,29 @@ Order negotiable; each is a shippable minor version.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 6.1 Winters that vary, and a mark that admits it** — Each
+  winter now has a severity fixed by the run's own seed: a floor that grows
+  with the years, plus a bite of nought to four that varies from winter to
+  winter and cannot be seen coming. The first winter is exempt — it is the
+  shape of the early game, it is tuned to 80% of bands reaching it, and a run
+  that opens on an unlucky roll is a coin toss rather than a harder game. A
+  test caught that exemption missing on the first pass.
+  The winter mark stops being an oracle. It is still exact inside twenty days
+  — 3.4's promise was that the game tells you the number, and it still does
+  where you can act on it — but further out it plans on the floor plus the
+  MIDDLE of the range, so a band that stocks exactly to the mark has
+  provisioned for an average winter and comes up short in a bad one.
+  Measured honestly: the curve did not move. 80% reach the first winter, 50%
+  see spring, 50% reach the second — against 80/47/47 before. That is the
+  third distinct lever to bounce off the same wall, and the diagnosis is now
+  certain rather than suspected: six people with no competing demands
+  out-produce any burn you can set, so nothing priced in firewood can
+  threaten a settled band. The fix is not a bigger number, it is fewer hands
+  or a foe that hands cannot answer — Phase 6.2 and 6.3. This milestone ships
+  because it changes what the player DECIDES (a range they can be wrong
+  about, rather than a number they cannot), and because a varying winter is
+  what 6.2 needs underneath it. 493 tests.
 
 - **2026-08-06 — A save-migration bug, and the ground a wall needs** — Two
   audit items. The first found a real bug within a minute of existing: a
