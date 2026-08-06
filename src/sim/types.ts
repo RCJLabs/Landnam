@@ -105,14 +105,75 @@ export interface Weather {
   storms: Axial[];
 }
 
-// --- Events (engine lands in P2; the types are here so tiles can carry them) ---
+// --- Events ---
+
+export type Cond =
+  | { c: 'region'; is: Region[] }
+  | { c: 'dangerMin'; tier: number }
+  | { c: 'turnMin'; turn: number }
+  | { c: 'moraleMax'; value: number }
+  | { c: 'flagUnset'; flag: string }
+  | { c: 'flagMin'; flag: string; value: number }
+  | { c: 'onFeature'; kind: FeatureKind };
+
+export type Effect =
+  | { t: 'res'; food?: number; water?: number; silver?: number; timber?: number; hull?: number }
+  | { t: 'morale'; amount: number }
+  | { t: 'hurtRandom'; amount: number; count?: number }
+  | { t: 'healAll'; amount: number }
+  | { t: 'killWeakest' }
+  | { t: 'recruitCastaway' }
+  | { t: 'setFlag'; flag: string; value: number }
+  | { t: 'fame'; amount: number }
+  | { t: 'markUsed' };
+
+export interface StatCheck {
+  stat: 'might' | 'skill' | 'guts' | 'sea';
+  who: 'captain' | 'best' | 'crewAvg';
+  dc: number; // 2d6 + stat >= dc
+}
+
+export interface EventOption {
+  label: string;
+  check?: StatCheck;
+  success: { text: string; effects: Effect[] };
+  failure?: { text: string; effects: Effect[] };
+}
+
+export interface EventDef {
+  id: string;
+  title: string;
+  text: string;
+  weight: number;
+  once?: boolean;
+  conditions?: Cond[];
+  options: EventOption[];
+}
 
 export interface ActiveEvent {
   eventId: string;
-  /** Snapshot of resolved text/options at fire time. */
   title: string;
   text: string;
-  options: { label: string; detail?: string; disabled?: boolean }[];
+  options: { label: string; detail?: string }[];
+  /** Set after the player picks: the outcome text awaiting a Continue. */
+  outcome?: { text: string; success: boolean };
+}
+
+// --- Ports ---
+
+export interface PortStock {
+  foodPrice: number;
+  waterPrice: number;
+  timberPrice: number;
+  repairPricePerHull: number;
+  recruits: CrewMember[];
+}
+
+export interface ActivePort {
+  featureId: string;
+  name: string;
+  isHome: boolean;
+  stock: PortStock;
 }
 
 // --- Run ---
@@ -147,6 +208,7 @@ export interface GameRun {
   weather: Weather;
   flags: Record<string, number>;
   activeEvent?: ActiveEvent;
+  activePort?: ActivePort;
   log: LogEntry[];
   idCounter: number;
   end?: RunEnd;
@@ -158,7 +220,14 @@ export type StrategicIntent =
   | { type: 'SAIL'; to: Axial }
   | { type: 'WAIT' }
   | { type: 'REPAIR' }
-  | { type: 'ABANDON_RUN' };
+  | { type: 'ABANDON_RUN' }
+  | { type: 'CHOOSE_OPTION'; index: number }
+  | { type: 'EVENT_CONTINUE' }
+  | { type: 'DOCK' }
+  | { type: 'PORT_BUY'; item: 'food' | 'water' | 'timber'; qty: number }
+  | { type: 'PORT_REPAIR' }
+  | { type: 'PORT_RECRUIT'; recruitId: string }
+  | { type: 'PORT_LEAVE' };
 
 export type SimEvent =
   | { type: 'MOVED'; from: Axial; to: Axial }

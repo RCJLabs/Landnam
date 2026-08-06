@@ -2,12 +2,14 @@
 
 import { GameRun, StrategicIntent } from '../sim/types';
 import { livingCrew } from '../sim/strategic/sail';
+import { portHere } from '../sim/strategic/ports';
 import { el, button, replaceChildren } from './dom';
 
 export function renderHud(
   root: HTMLElement,
   run: GameRun,
   dispatch: (intent: StrategicIntent) => void,
+  onToggleCrew: () => void,
 ): void {
   const stat = (label: string, value: string, warn = false) =>
     el('div', { class: `stat${warn ? ' stat-warn' : ''}` }, [
@@ -27,7 +29,14 @@ export function renderHud(
   ]);
 
   const actions = el('div', { class: 'hud-actions' });
+  actions.append(button('Crew', onToggleCrew, { title: 'View the crew roster' }));
   if (run.phase === 'voyage') {
+    const port = portHere(run);
+    if (port) {
+      actions.append(
+        button(`Dock at ${port.name}`, () => dispatch({ type: 'DOCK' }), { class: 'btn-primary' }),
+      );
+    }
     actions.append(
       button('Hold position', () => dispatch({ type: 'WAIT' }), { title: 'Rest a turn: recover a little, spend supplies' }),
     );

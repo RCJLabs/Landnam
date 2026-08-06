@@ -12,12 +12,16 @@ import { drawChart } from '../render/chartRender';
 import { renderHud } from '../ui/hud';
 import { renderRunEnd } from '../ui/runEnd';
 import { renderTitle } from '../ui/title';
+import { renderEventPanel } from '../ui/eventPanel';
+import { renderPortPanel } from '../ui/portPanel';
+import { renderCrewPanel } from '../ui/crewPanel';
 import { must, replaceChildren } from '../ui/dom';
 
 export class App {
   private run: GameRun | null = null;
   private board: HexBoard | null = null;
   private meta = loadMeta();
+  private crewPanelOpen = false;
   private overlayRoot = must<HTMLDivElement>('overlay-root');
   private hudRoot = must<HTMLDivElement>('hud-root');
   private canvas = must<HTMLCanvasElement>('board');
@@ -97,7 +101,6 @@ export class App {
       if (next.end.outcome === 'victory') this.meta.victories += 1;
       saveMeta(this.meta);
       clearRun();
-      replaceChildren(this.overlayRoot, renderRunEnd(next, () => this.startNewRun()));
     }
 
     // Keep the camera loosely following the ship.
@@ -107,10 +110,28 @@ export class App {
     this.renderAll();
   }
 
+  private toggleCrewPanel = (): void => {
+    this.crewPanelOpen = !this.crewPanelOpen;
+    this.renderAll();
+  };
+
   private renderAll(): void {
     const run = this.run;
     if (!run) return;
-    renderHud(this.hudRoot, run, (intent) => this.dispatch(intent));
+    renderHud(this.hudRoot, run, (intent) => this.dispatch(intent), this.toggleCrewPanel);
+
+    // Overlay per phase.
+    if (run.phase === 'ended' && run.end) {
+      replaceChildren(this.overlayRoot, renderRunEnd(run, () => this.startNewRun()));
+    } else if (this.crewPanelOpen) {
+      replaceChildren(this.overlayRoot, renderCrewPanel(run, this.toggleCrewPanel));
+    } else if (run.phase === 'event' && run.activeEvent) {
+      replaceChildren(this.overlayRoot, renderEventPanel(run, (i) => this.dispatch(i)));
+    } else if (run.phase === 'port' && run.activePort) {
+      replaceChildren(this.overlayRoot, renderPortPanel(run, (i) => this.dispatch(i)));
+    } else {
+      replaceChildren(this.overlayRoot);
+    }
     this.board?.requestDraw();
   }
 }

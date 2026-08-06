@@ -13,7 +13,7 @@ export const BALANCE = {
   },
   ship: {
     hullMax: 20,
-    cargoMax: 60,
+    cargoMax: 110,
     stormHullDamage: [2, 4] as const,
     stormMoraleHit: 8,
   },

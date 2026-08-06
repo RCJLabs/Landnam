@@ -8,6 +8,8 @@ import { BALANCE } from '../../content/balance';
 import { GameRun, SimEvent, StrategicIntent, RunEnd } from '../types';
 import { turnRng } from './state';
 import { Rng } from '../../core/rng';
+import { activate, pickEvent, resolveOption } from '../events/engine';
+import { buy, dock, portHere, recruit, repairAtPort } from './ports';
 
 export interface StepResult {
   run: GameRun;
@@ -58,6 +60,43 @@ function computeFame(run: GameRun, victory: boolean): number {
   return fame;
 }
 
+/** Lethal-state checks shared by turn-end and event resolution. */
+function checkRunEnd(run: GameRun, events: SimEvent[]): boolean {
+  if (run.phase === 'ended') return true;
+  if (run.ship.hull <= 0) {
+    log(run, events, `The sea claims the ${run.ship.name}. No one reaches shore.`, 'saga');
+    endRun(run, events, {
+      outcome: 'sunk',
+      fame: computeFame(run, false),
+      summary: [`Sunk on turn ${run.turn}.`],
+    });
+    return true;
+  }
+  if (livingCrew(run) === 0) {
+    endRun(run, events, {
+      outcome: 'slain',
+      fame: computeFame(run, false),
+      summary: [`The crew perished on turn ${run.turn}.`],
+    });
+    return true;
+  }
+  if (run.moraleShip <= 0) {
+    const starving = run.food <= 0 || run.water <= 0;
+    if (starving) {
+      log(run, events, 'Hollow-eyed and silent, the crew stops rowing. The sea does the rest.', 'saga');
+    } else {
+      log(run, events, 'The crew has had enough. They turn the ship for home without you.', 'saga');
+    }
+    endRun(run, events, {
+      outcome: starving ? 'starved' : 'mutiny',
+      fame: computeFame(run, false),
+      summary: [starving ? `Starved at sea on turn ${run.turn}.` : `Mutiny on turn ${run.turn}.`],
+    });
+    return true;
+  }
+  return false;
+}
+
 /** Everything that ticks after the ship acts: weather drift, storm damage, checks. */
 function endOfTurn(run: GameRun, events: SimEvent[], rng: Rng) {
   const w = run.weather;
@@ -84,37 +123,7 @@ function endOfTurn(run: GameRun, events: SimEvent[], rng: Rng) {
     log(run, events, `A storm hammers the ${run.ship.name}. The hull groans (-${dmg} hull).`, 'bad');
   }
 
-  // Death checks.
-  if (run.ship.hull <= 0) {
-    log(run, events, `The sea claims the ${run.ship.name}. No one reaches shore.`, 'saga');
-    endRun(run, events, {
-      outcome: 'sunk',
-      fame: computeFame(run, false),
-      summary: [`Sunk on turn ${run.turn}.`],
-    });
-    return;
-  }
-  if (livingCrew(run) === 0) {
-    endRun(run, events, {
-      outcome: 'slain',
-      fame: computeFame(run, false),
-      summary: [`The crew perished on turn ${run.turn}.`],
-    });
-    return;
-  }
-  if (run.moraleShip <= 0) {
-    const starving = run.food <= 0 || run.water <= 0;
-    if (starving) {
-      log(run, events, 'Hollow-eyed and silent, the crew stops rowing. The sea does the rest.', 'saga');
-    } else {
-      log(run, events, 'The crew has had enough. They turn the ship for home without you.', 'saga');
-    }
-    endRun(run, events, {
-      outcome: starving ? 'starved' : 'mutiny',
-      fame: computeFame(run, false),
-      summary: [starving ? `Starved at sea on turn ${run.turn}.` : `Mutiny on turn ${run.turn}.`],
-    });
-  }
+  checkRunEnd(run, events);
 }
 
 function consumeSupplies(run: GameRun, events: SimEvent[], rng: Rng) {
@@ -162,13 +171,70 @@ function discoverAround(run: GameRun, events: SimEvent[]) {
   }
 }
 
+/** Roll for (and fire) a voyage event on the current tile. */
+function maybeFireEvent(run: GameRun, rng: Rng): void {
+  const tile = run.chart.tiles[key(run.chart.shipAt)];
+  const onEventFeature =
+    tile?.feature &&
+    !tile.feature.used &&
+    ['wreck', 'village', 'monastery', 'mythic'].includes(tile.feature.kind);
+  const eventRng = rng.fork('event-roll');
+  const fires =
+    onEventFeature || eventRng.chance(0.2 + (tile?.dangerTier ?? 0) * 0.05);
+  if (!fires) return;
+  const def = pickEvent(run, eventRng.fork('pick'));
+  if (!def) return;
+  run.activeEvent = activate(run, def);
+  run.phase = 'event';
+}
+
 export function stepStrategic(prev: GameRun, intent: StrategicIntent): StepResult {
   const run = structuredClone(prev);
   const events: SimEvent[] = [];
+  const rng = turnRng(run);
+
+  // Phase-gated intents outside the voyage phase.
+  if (run.phase === 'event') {
+    if (intent.type === 'CHOOSE_OPTION') {
+      resolveOption(run, events, intent.index, rng.fork(`resolve:${run.turn}`));
+      if (run.activeEvent?.outcome) {
+        log(run, events, run.activeEvent.outcome.text, run.activeEvent.outcome.success ? 'good' : 'bad');
+      }
+      checkRunEnd(run, events);
+      return { run, events };
+    }
+    if (intent.type === 'EVENT_CONTINUE' && run.activeEvent?.outcome) {
+      delete run.activeEvent;
+      run.phase = 'voyage';
+      // Landing on a port right after an event (e.g. arrival event) still docks.
+      if (portHere(run)) dock(run, events);
+      return { run, events };
+    }
+    return { run: prev, events: [] };
+  }
+
+  if (run.phase === 'port') {
+    switch (intent.type) {
+      case 'PORT_BUY':
+        return buy(run, intent.item, intent.qty) ? { run, events } : { run: prev, events: [] };
+      case 'PORT_REPAIR':
+        return repairAtPort(run) ? { run, events } : { run: prev, events: [] };
+      case 'PORT_RECRUIT':
+        return recruit(run, intent.recruitId) ? { run, events } : { run: prev, events: [] };
+      case 'PORT_LEAVE': {
+        delete run.activePort;
+        run.phase = 'voyage';
+        log(run, events, 'Lines cast off. The open sea again.');
+        return { run, events };
+      }
+      default:
+        return { run: prev, events: [] };
+    }
+  }
+
   if (run.phase !== 'voyage') {
     return { run: prev, events: [] };
   }
-  const rng = turnRng(run);
 
   switch (intent.type) {
     case 'SAIL': {
@@ -198,6 +264,14 @@ export function stepStrategic(prev: GameRun, intent: StrategicIntent): StepResul
         return { run, events };
       }
       endOfTurn(run, events, rng);
+      if (run.phase === 'voyage') {
+        // Ports auto-dock; other unused features (or plain sea) may fire events.
+        if (portHere(run)) {
+          dock(run, events);
+        } else {
+          maybeFireEvent(run, rng);
+        }
+      }
       return { run, events };
     }
     case 'WAIT': {
@@ -234,5 +308,10 @@ export function stepStrategic(prev: GameRun, intent: StrategicIntent): StepResul
       });
       return { run, events };
     }
+    case 'DOCK': {
+      return dock(run, events) ? { run, events } : { run: prev, events: [] };
+    }
+    default:
+      return { run: prev, events: [] };
   }
 }
