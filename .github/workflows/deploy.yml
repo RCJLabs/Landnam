@@ -11,9 +11,20 @@ on:
 permissions:
   contents: write
 
+# Deploys queue; they never cancel each other.
+#
+# This was `cancel-in-progress: true`, on the reasoning that only the newest
+# build matters. That is true right up until three pushes land while runners
+# are slow: each one cancels the one before it, none of them ever reaches the
+# runner, and the live site sits on whatever last succeeded. It did exactly
+# that on 2026-08-06 — the site stayed two feature-commits behind for 54
+# minutes while three deploys chain-cancelled each other, which read from the
+# outside as "the deploy is broken".
+#
+# Serialised, a burst costs a few minutes of latency and every commit lands.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
