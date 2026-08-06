@@ -1,16 +1,21 @@
 name: CI
 
-# Only main, and pull requests.
+# Work branches, and pull requests. Deliberately NOT main.
 #
-# This used to be branches: ['**']. Every change is pushed to the feature
-# branch AND to main, so one change spawned two identical runs of the same
-# commit — and on a congested runner pool those sat in the queue ahead of the
-# `pages build and deployment` run that decides whether the site updates at
-# all. Testing the same SHA twice is not worth starving the deploy.
+# This used to be branches: ['**']. Every change is pushed to the work branch
+# AND to main, so one change spawned two identical runs of the same commit —
+# and on a congested runner pool those sat in the queue ahead of the `pages
+# build and deployment` run that decides whether the site updates at all.
+#
+# Main is the deploy branch, so a push to it must have the runner pool to
+# itself. The commit is already verified by the time it lands there: it is the
+# same SHA CI ran on the work branch a moment earlier. Testing it twice is not
+# worth starving the deploy.
 on:
   push:
-    branches: [main]
+    branches: ['claude/**']
   pull_request:
+  workflow_dispatch:
 
 # A push supersedes the one before it. Without this every push leaves its CI
 # run queued forever, and on a busy runner pool those stale runs sit ahead of
