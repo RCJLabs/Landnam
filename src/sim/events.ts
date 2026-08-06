@@ -8,6 +8,7 @@ import type { ActiveEvent, GameState, Stats } from '../state/types';
 import { seasonOf } from './calendar';
 import { startBattle, startRaid } from './battleTurn';
 import { raidDifficulty } from './raid';
+import { settleFeud } from './minds';
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
@@ -202,6 +203,15 @@ function applyEffect(state: GameState, effect: Effect): void {
 export function chooseOption(state: GameState, index: number): void {
   const active = state.event;
   if (!active || active.outcome) return;
+
+  // A feud is a card like any other to the player, but its choices are about
+  // two named people rather than about the world.
+  if (active.feud) {
+    active.outcome = settleFeud(state, index);
+    chronicle(state, active.outcome.text, active.outcome.good ? 'good' : 'grim');
+    checkRunEnd(state, 1);
+    return;
+  }
   const def = eventById(active.id);
   const choice = def?.choices[index];
   if (!def || !choice) return;

@@ -94,6 +94,15 @@ no audio files, no network.
   you are waiting, one at a time, with no footing and no shield wall. Lose the
   yard and they carry off two fifths of the store and put a torch to
   something. The longhouse burns last, because it is full of people.
+- **They have their own minds.** Every one of them carries a mood that follows
+  what is actually happening to them — going hungry, sleeping cold, carrying a
+  wound that will not mend, being given work they are no good at or no work at
+  all. Some ride it out and some do not. Put two who grate on each other
+  through a hard enough week and they fall out, and the band has bad blood
+  with a name on it. Past a point it comes to you: pay the wergild out of the
+  stores, hold a Thing and let it be argued out, or tell them to get back to
+  work — which costs nothing today, hardens the quarrel, and eventually comes
+  to knives in the dark.
 - **The chart** shows everything you have seen on one screen: where the knarr
   came ashore, where the steading stands, where you are now, and the ground
   you actually walked to get there.

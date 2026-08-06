@@ -857,6 +857,39 @@ h2.grim {
   overflow: visible;
 }
 
+
+/* --- Minds and feuds (4.1) --- */
+
+.person-mood {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--parchment-dim);
+}
+
+.mood-content {
+  color: var(--moss);
+}
+
+.mood-bitter,
+.mood-breaking {
+  color: var(--blood);
+}
+
+.grudge {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 4px 0 4px 10px;
+  border-left: 2px solid var(--edge);
+  color: var(--parchment-dim);
+}
+
+.grudge.ripe {
+  border-left-color: var(--blood);
+  color: #d98a80;
+}
+
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {

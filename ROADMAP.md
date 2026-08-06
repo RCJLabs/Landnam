@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 4.1**
+> **CURRENT MILESTONE: 4.2**
 
 ---
 
@@ -69,7 +69,7 @@ Goal: the full loop closes — travel, fight, settle, survive winter.
 
 Order negotiable; each is a shippable minor version.
 
-- [ ] **4.1 Minds & feuds** — Moods from needs/events; trait interactions; grudges between settlers; feud events with blood-price resolutions.
+- [x] **4.1 Minds & feuds** — Moods from needs/events; trait interactions; grudges between settlers; feud events with blood-price resolutions.
 - [ ] **4.2 Expeditions** — Launch parties FROM the colony back onto the world map (raid, trade, explore) while the colony sims on. The loop becomes a wheel.
 - [ ] **4.3 Neighbors** — Persistent rival clans and native settlements: reputation, trade, tribute, alliances, escalation.
 - [ ] **4.4 Knowledge** — Discovery-driven progression (runes, shipwright, smithing) unlocked by exploration and events, not a tech-tree menu.
@@ -91,6 +91,23 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 4.1 Minds & feuds** — Personal morale is live at last: each
+  day a person drifts toward a target built from hunger, cold, their own
+  wounds, whether the job they were given suits them, and the room. Traits
+  decide how hard they swing — Steadfast barely moves, Quarrelsome swings
+  nearly four times as far — and each mood has a word on the roster. Traits
+  also grate: a Quarrelsome and a Berserk sharing a bad week fall out, where
+  a Hardy and a Leechcraft do not. Bad blood is stored by pair with the line
+  that started it, deepens on hard days and fades on good ones — unless the
+  band was asked about it and walked away, in which case it hardens and sits
+  there. Past a threshold it becomes a card: pay the wergild, hold a Thing,
+  or tell them to get back to work. Left long enough it comes to knives.
+  Phase 4 sets no bar in the roadmap, so this milestone held itself to two:
+  feuds come out of pressure rather than dice (over twelve bands and forty
+  days, a fed band produced 0 grudges and a starving one 38, of which 12
+  ripened), and settling beats ignoring (over ten bands a season on: 0 knifed
+  and more mood and strength, against 3 knifed). `SAVE_VERSION` 11 with a
+  migration. 334 tests.
 - **2026-08-06 — 3.5 Raid defense — Phase 3 complete** — Rival clans come for
   the store and the roof, and the fight happens on the ground you built: the
   hall at your back, your fields and woods in the middle, raiders coming in

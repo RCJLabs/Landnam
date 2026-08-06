@@ -119,6 +119,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // is one. A fight saved mid-swing before this was on open ground by
   // definition — an absent flag already means exactly that.
   9: (save) => ({ ...save, version: 10 }),
+
+  // v10 -> v11: people keep a tally of each other. A band from before this
+  // existed was getting along by definition, so it comes forward with none.
+  10: (save) => ({ grudges: [], ...save, version: 11 }),
 };
 
 export interface MigrationResult {

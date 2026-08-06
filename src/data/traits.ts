@@ -12,6 +12,13 @@ export interface Trait {
   stats: Partial<Stats>;
   /** Queried by sim and events, e.g. 'forager', 'hardy'. */
   tags: string[];
+  /**
+   * Tags this one grates against. Two people sharing a hard winter is one
+   * thing; a Quarrelsome and a Berserk sharing it is another.
+   */
+  frictions?: string[];
+  /** How hard their own mood swings. 1 is ordinary; the volatile swing more. */
+  temper?: number;
 }
 
 export const TRAITS: Trait[] = [
@@ -35,6 +42,8 @@ export const TRAITS: Trait[] = [
     blurb: 'Goes somewhere else when the shields meet.',
     stats: { might: 1, spirit: -1 },
     tags: ['fighter', 'volatile'],
+    frictions: ['volatile', 'anchor'],
+    temper: 1.6,
   },
   {
     id: 'hardy',
@@ -42,6 +51,7 @@ export const TRAITS: Trait[] = [
     blurb: 'Cold is just weather to them.',
     stats: { spirit: 1 },
     tags: ['hardy'],
+    temper: 0.6,
   },
   {
     id: 'healer',
@@ -63,6 +73,9 @@ export const TRAITS: Trait[] = [
     blurb: 'Keeps a tally of every slight.',
     stats: { might: 1, wits: -1 },
     tags: ['volatile'],
+    // Keeps a tally of every slight, and everyone is a slight eventually.
+    frictions: ['volatile', 'hardy', 'anchor', 'healer'],
+    temper: 1.8,
   },
   {
     id: 'steadfast',
@@ -70,6 +83,7 @@ export const TRAITS: Trait[] = [
     blurb: 'The last to break, always.',
     stats: { spirit: 1 },
     tags: ['hardy', 'anchor'],
+    temper: 0.5,
   },
   {
     id: 'sharpeyed',
@@ -93,4 +107,19 @@ export function traitById(id: string): Trait | undefined {
 
 export function hasTag(traitId: string, tag: string): boolean {
   return traitById(traitId)?.tags.includes(tag) ?? false;
+}
+
+/** How badly these two grate on each other, 0 upward. */
+export function friction(aTrait: string, bTrait: string): number {
+  const a = traitById(aTrait);
+  const b = traitById(bTrait);
+  if (!a || !b) return 0;
+  const oneWay = (from: Trait, to: Trait) =>
+    (from.frictions ?? []).filter((tag) => to.tags.includes(tag)).length;
+  return oneWay(a, b) + oneWay(b, a);
+}
+
+/** How hard this person's mood swings. */
+export function temperOf(traitId: string): number {
+  return traitById(traitId)?.temper ?? 1;
 }

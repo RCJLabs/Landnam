@@ -11,7 +11,8 @@
 // v8 (3.3): Settlement gained built/queue/works.
 // v9 (map): World gained trod and landingName.
 // v10 (3.5): Ground gained 'wall'; Battle gained the optional raid flag.
-export const SAVE_VERSION = 10;
+// v11 (4.1): the root gained grudges.
+export const SAVE_VERSION = 11;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

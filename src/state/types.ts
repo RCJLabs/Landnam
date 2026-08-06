@@ -120,13 +120,40 @@ export interface SagaEntry {
 // --- Events ---
 
 export interface ActiveEvent {
-  /** Event id from data/events. */
+  /** Event id from data/events, or 'feud' for a quarrel between two people. */
   id: string;
   title: string;
   body: string;
   choices: { label: string; hint?: string }[];
   /** Set once a choice resolves; the card then shows an outcome + Continue. */
   outcome?: { text: string; good: boolean };
+  /** Present on a feud card: whose quarrel this is. */
+  feud?: { a: string; b: string };
+}
+
+// --- Minds ---
+
+/**
+ * Bad blood between two named people. Stored rather than derived, because it
+ * is a history: it is exactly the thing that should not quietly reset when
+ * circumstances improve.
+ */
+export interface Grudge {
+  a: string;
+  b: string;
+  /** How bad it has got. Past FEUD_THRESHOLD it demands answering. */
+  weight: number;
+  /** The line that started it, already named. */
+  cause: string;
+  /** The day it started. */
+  since: number;
+  /** Set once a Thing or a wergild has settled it; it will not fire again. */
+  settled?: boolean;
+  /**
+   * Set when the band was asked and walked away. A quarrel that was refused
+   * in front of everyone does not quietly fade the way one nobody named does.
+   */
+  hardened?: boolean;
 }
 
 // --- Battle ---
@@ -285,6 +312,8 @@ export interface GameState {
   aftermath?: Aftermath;
   /** Where the land was taken. Set once, never moved, never unset. */
   settlement?: Settlement;
+  /** Bad blood, by pair. Empty on a band that is getting along. */
+  grudges: Grudge[];
   end?: RunEnd;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;

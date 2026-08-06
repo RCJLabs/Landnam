@@ -43,6 +43,7 @@ export function newGame(seed: string): GameState {
       },
     ],
     flags: { landingNamed: 1 },
+    grudges: [],
     nextId: 1,
   };
 

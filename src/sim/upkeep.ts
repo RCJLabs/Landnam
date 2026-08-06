@@ -6,6 +6,7 @@ import { effectsOn, seasonOf } from './calendar';
 import { living } from './people';
 import { noteFirstWork, shelterSaving, workTheDay } from './colony';
 import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
+import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { chronicle } from './saga';
 
 /** Winter arrives on day 49; spring on day 73 is survival. */
@@ -127,6 +128,16 @@ export function passDay(state: GameState): boolean {
   noteFirstWork(state, labour);
   telegraphWinter(state);
 
+  // What the band makes of all this. Moods move first, then bad blood, then
+  // whatever bad blood has been left to go bad.
+  const grieving = state.party.people.some(
+    (p) => !p.alive && p.diedOn !== undefined && state.day - p.diedOn <= 3,
+  );
+  const pressure = { hungry, cold, grieving };
+  driftMoods(state, pressure);
+  stirGrudges(state, pressure);
+  feudsComeDue(state);
+
   // Season turned?
   if ((state.day - 1) % 24 === 0) {
     chronicle(state, seasonOpening(season), 'saga');
@@ -137,6 +148,9 @@ export function passDay(state: GameState): boolean {
   }
 
   checkRunEnd(state, effects.forage);
+  // A quarrel that has ripened waits for the road, not for the middle of a
+  // fight — maybeFireFeud refuses while a battle or another card is up.
+  if (!state.end) maybeFireFeud(state);
   return !state.end;
 }
 

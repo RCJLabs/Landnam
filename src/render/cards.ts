@@ -6,6 +6,8 @@ import { fullName, effectiveStat } from '../sim/people';
 import { exploredFraction } from '../sim/fog';
 import { XP_PER_ADVANCE } from '../sim/consequences';
 import { scoreWord, siteReport, strongestOf, verdictFor } from '../sim/site';
+import { moodOf, MOOD_WORD } from '../sim/minds';
+import { FEUD_THRESHOLD } from '../data/feuds';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import type { GameState, Person } from '../state/types';
 import { button, el } from './svg';
@@ -195,8 +197,12 @@ function personRow(person: Person): HTMLElement {
     })
     .join(' · ');
 
+  const mood = person.alive ? MOOD_WORD[moodOf(person)] : '';
   return el('div', { class: `person${person.alive ? '' : ' dead'}` }, [
-    el('div', { class: 'person-name' }, [fullName(person)]),
+    el('div', { class: 'person-name' }, [
+      fullName(person),
+      ...(mood ? [el('span', { class: `person-mood mood-${moodOf(person)}` }, [mood])] : []),
+    ]),
     el('div', { class: 'person-stats' }, [statLine]),
     el('div', { class: 'person-meta' }, [
       person.alive ? `${person.health}/${person.maxHealth} · ${condition}` : condition,
@@ -207,13 +213,26 @@ function personRow(person: Person): HTMLElement {
 }
 
 export function renderWarband(state: GameState, close: () => void): HTMLElement {
-  return el('div', { class: 'overlay' }, [
-    el('div', { class: 'card roster' }, [
-      el('h2', {}, ['The Warband']),
-      ...state.party.people.map(personRow),
-      button('Close', close, { class: 'primary wide' }),
-    ]),
+  const card = el('div', { class: 'card roster' }, [
+    el('h2', {}, ['The Warband']),
+    ...state.party.people.map(personRow),
   ]);
+
+  // Bad blood is a fact about the band, so it belongs on the band's page.
+  const open = state.grudges.filter((g) => !g.settled);
+  if (open.length > 0) {
+    card.append(el('h3', {}, ['Bad Blood']));
+    for (const grudge of open.sort((a, b) => b.weight - a.weight)) {
+      card.append(
+        el('p', { class: `grudge${grudge.weight >= FEUD_THRESHOLD ? ' ripe' : ''}` }, [
+          grudge.cause,
+        ]),
+      );
+    }
+  }
+
+  card.append(button('Close', close, { class: 'primary wide' }));
+  return el('div', { class: 'overlay' }, [card]);
 }
 
 export function renderRunEnd(state: GameState, onRestart: () => void): HTMLElement {
