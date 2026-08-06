@@ -1,63 +1,73 @@
-# Whale Road
+# Landnám
 
-*A saga of salt, silver, and the long way west.*
+*The land-taking. Sail, fight, claim, survive.*
 
-Whale Road is a single-player Viking voyage roguelike that runs entirely in the
-browser. Sail a longship hex by hex across a procedurally generated North
-Atlantic — Norway, Shetland, the Faroes, Iceland, Greenland, and at last
-Vinland — managing food, water, hull, and the tempers of your named crew.
-Raids and boardings zoom into small tactical hex battles where shield-walls,
-flanking, and a well-timed shove over the rail decide who sails home.
+Six of you step off a knarr onto a coast with no name you know. Behind you,
+open sea. Ahead, a country that does not care whether you live. Winter comes
+on the forty-ninth day.
 
-Death is permanent. Fame is not: it buys legacy unlocks that make the next
-bloodline's voyage a little less doomed.
+Landnám is a Viking survival-strategy game: hex-map travel, turn-based tactical
+combat, and colony survival, sharing one data model. It runs in a browser,
+including a phone browser, and ships as a **single self-contained
+`index.html`** that works offline from a `file://` open — no images, no fonts,
+no audio files, no network.
 
-## How to play
+## Playing (v0.1 — the overworld)
 
-- **Sail** by clicking a hex next to your ship. West is Vinland; west is the win.
-- **Supplies**: every leg costs food and water. Hard legs (headwinds, storms)
-  cost more and tire the crew. **Hold position** to fish, catch rain, and rest.
-- **Ports** (anchor icon) sell supplies, repairs, and hired hands. Silver is
-  earned the old way: raiding.
-- **Raids**: monasteries and villages trigger tactical hex battles. Keep your
-  warriors adjacent for shield-wall bonuses (+1 defense per steady neighbor,
-  max +2), flank to ignore theirs, **Brace** to hold a line, **Push** foes into
-  the sea on boarding fights, and **Rally** with your captain when the line
-  shakes. The dead stay dead; the maimed heal slowly.
-- **Weather is terrain**: storms drift, sink ships, and fill your water barrels
-  if you shadow them at a respectful distance.
-- **Winter is the clock.** Linger past ~60 turns and morale bleeds until the
-  crew turns for home without you.
-- **Fame** from deeds and raids persists across runs — spend it on the title
-  screen (war-chest, hardy crew, crow's nest, sealskin sails, and more).
+- **Travel** by tapping a marked hex. Rough country costs more days than open
+  ground, and each day eats food and burns firewood.
+- **Camp** to rest, mend wounds, and cut firewood. **Forage**, **Hunt**, and
+  **Fish** to eat — yields depend on terrain, season, and who in the band is
+  best suited to the work.
+- **Events** put choices in front of you with the odds shown. Checks roll
+  2d6 plus your best hand for the job; they are meant to be lost sometimes.
+- **The saga log** writes down what happened, in chronicle voice. It is the
+  record of the run.
+- **Winter** starts on day 49 and stops the land from giving. Reaching spring
+  on day 73 with anyone still alive is the win.
 
-Runs are seeded: enter a seed on the title screen to replay or share a chart.
+Runs are fully seeded — enter a seed on the title screen to replay or share a
+coast.
 
 ## Development
 
 ```bash
 npm install
 npm run dev       # dev server
-npm test          # vitest suite incl. headless autoplay balance harness
-npm run build     # typecheck + production build (deployable to GitHub Pages)
+npm test          # vitest: hex math, RNG, worldgen, sim, saves, content lint
+npm run build     # typecheck + single-file dist/index.html
+npm run release   # build, verify self-containment, zip source
 ```
 
-The game is a Vite + TypeScript app with zero runtime dependencies, rendered
-on a single Canvas (both the sea chart and the battlefields share one hex-math
-core) with DOM panels for chrome. All game logic is pure and deterministic —
-every run derives from its seed string, randomness flows through forked
-seeded streams, and the full game is playable headlessly in tests (see
-`test/autoplay.test.ts`, which bots complete voyages through the real
-reducers and asserts the difficulty stays in a sane band).
+`npm run release` is a real check, not a formality: it fails the build if
+`dist/` contains anything but `index.html`, or if the page references an
+external script, stylesheet, or URL.
 
-### Layout
+## Architecture
+
+The load-bearing rules live in [`CLAUDE.md`](./CLAUDE.md); the plan and its
+status live in [`ROADMAP.md`](./ROADMAP.md). In brief:
+
+- **One data model, three renderers.** A `Person` is one object — a party
+  token in travel, a unit in battle, a worker in colony. Never duplicated.
+- **Everything is turn-based.** Day turns, initiative turns, season ticks.
+  No `requestAnimationFrame` game loops.
+- **Pure sim, dumb renderers.** Logic is `(state, action) => state` in
+  `src/sim/`, fully unit-tested. `src/render/` reads state and draws SVG.
+- **Deterministic RNG.** `Math.random` is banned. Everything flows through
+  seeded, independently-named streams in `src/rng.ts`.
+- **Data-driven content.** Events, traits, and terrain are typed data in
+  `src/data/`; adding content never touches engine code.
+- **Saves never break.** `SAVE_VERSION` bumps ship with a migration.
 
 ```
-src/core      hex math, A*, FOV, seeded RNG      (pure)
-src/procgen   North Atlantic chart generation    (pure)
-src/sim       voyage + battle reducers, events   (pure)
-src/content   data: events, raids, enemies, balance knobs
-src/render    canvas painters (chart + battle skins)
-src/ui        DOM panels (HUD, events, ports, crew, title)
-src/save      versioned localStorage persistence
+src/
+  main.ts        boot + mode router
+  modes.ts       TRAVEL | BATTLE | COLONY stack
+  hex/           shared hex math — world map AND battle grid
+  rng.ts         seeded streams
+  state/         GameState, saves, migrations
+  sim/           pure logic: worldgen, travel, events, upkeep, calendar
+  render/        SVG views + UI chrome
+  data/          events, traits, terrain, names
 ```

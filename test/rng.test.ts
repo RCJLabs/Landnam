@@ -1,76 +1,91 @@
 import { describe, it, expect } from 'vitest';
-import { makeRng, hashString, generateSeed } from '../src/core/rng';
+import { hashString, makeRng, makeSeedPhrase, stream } from '../src/rng';
 
 describe('seeded rng', () => {
-  it('same seed produces the same sequence', () => {
-    const a = makeRng('whale-road');
-    const b = makeRng('whale-road');
-    for (let i = 0; i < 100; i++) expect(a.next()).toBe(b.next());
+  it('is reproducible for a given seed', () => {
+    const a = makeRng('landnam');
+    const b = makeRng('landnam');
+    for (let i = 0; i < 200; i++) expect(a.next()).toBe(b.next());
   });
 
-  it('different seeds produce different sequences', () => {
-    const a = makeRng('seed-a');
-    const b = makeRng('seed-b');
-    const seqA = Array.from({ length: 10 }, () => a.next());
-    const seqB = Array.from({ length: 10 }, () => b.next());
-    expect(seqA).not.toEqual(seqB);
+  it('differs between seeds', () => {
+    const draw = (seed: string) => {
+      const rng = makeRng(seed);
+      return Array.from({ length: 12 }, () => rng.next());
+    };
+    expect(draw('a')).not.toEqual(draw('b'));
   });
 
-  it('forked streams are independent of parent draws', () => {
-    // Fork, then draw different amounts from parents; forks must match.
-    const p1 = makeRng('parent');
-    const p2 = makeRng('parent');
-    p1.next(); // perturb p1 only
-    p1.next();
-    p1.next();
-    const f1 = p1.fork('chart');
-    const f2 = p2.fork('chart');
-    for (let i = 0; i < 50; i++) expect(f1.next()).toBe(f2.next());
+  it('named streams are independent of one another', () => {
+    // Draining `combat` must not shift what `worldgen` produces.
+    const combat = stream('seed-x', 'combat');
+    for (let i = 0; i < 50; i++) combat.next();
+    const worldA = stream('seed-x', 'worldgen');
+    const worldB = stream('seed-x', 'worldgen');
+    for (let i = 0; i < 50; i++) expect(worldA.next()).toBe(worldB.next());
   });
 
-  it('int stays in bounds and hits both endpoints', () => {
-    const r = makeRng('int-bounds');
+  it('derived streams are stable and distinct', () => {
+    const base = makeRng('root');
+    const one = base.derive('day:3');
+    const two = makeRng('root').derive('day:3');
+    const other = makeRng('root').derive('day:4');
+    for (let i = 0; i < 30; i++) expect(one.next()).toBe(two.next());
+    expect(makeRng('root').derive('day:3').next()).not.toBe(other.next());
+  });
+
+  it('int covers its range inclusively', () => {
+    const rng = makeRng('ints');
     const seen = new Set<number>();
-    for (let i = 0; i < 1000; i++) {
-      const v = r.int(1, 6);
-      expect(v).toBeGreaterThanOrEqual(1);
-      expect(v).toBeLessThanOrEqual(6);
-      seen.add(v);
+    for (let i = 0; i < 2000; i++) {
+      const value = rng.int(1, 6);
+      expect(value).toBeGreaterThanOrEqual(1);
+      expect(value).toBeLessThanOrEqual(6);
+      seen.add(value);
     }
     expect(seen.size).toBe(6);
   });
 
-  it('roll(2,6) is within [2,12]', () => {
-    const r = makeRng('dice');
-    for (let i = 0; i < 500; i++) {
-      const v = r.roll(2, 6);
-      expect(v).toBeGreaterThanOrEqual(2);
-      expect(v).toBeLessThanOrEqual(12);
+  it('roll(2,6) stays within 2..12', () => {
+    const rng = makeRng('dice');
+    for (let i = 0; i < 800; i++) {
+      const value = rng.roll(2, 6);
+      expect(value).toBeGreaterThanOrEqual(2);
+      expect(value).toBeLessThanOrEqual(12);
     }
   });
 
-  it('weightedPick respects zero weights', () => {
-    const r = makeRng('weighted');
-    const items = ['a', 'b', 'c'];
+  it('weighted honours zero weights', () => {
+    const rng = makeRng('weights');
     for (let i = 0; i < 200; i++) {
-      expect(r.weightedPick(items, (x) => (x === 'b' ? 1 : 0))).toBe('b');
+      expect(rng.weighted(['a', 'b', 'c'], (x) => (x === 'b' ? 3 : 0))).toBe('b');
     }
   });
 
-  it('shuffle is a permutation', () => {
-    const r = makeRng('shuffle');
-    const arr = [1, 2, 3, 4, 5, 6, 7, 8];
-    const shuffled = r.shuffle([...arr]);
-    expect([...shuffled].sort((a, b) => a - b)).toEqual(arr);
+  it('shuffle produces a permutation', () => {
+    const rng = makeRng('shuffle');
+    const original = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const shuffled = rng.shuffle([...original]);
+    expect([...shuffled].sort((a, b) => a - b)).toEqual(original);
   });
 
-  it('hashString is stable', () => {
-    expect(hashString('whale-road')).toBe(hashString('whale-road'));
+  it('float stays in range', () => {
+    const rng = makeRng('floats');
+    for (let i = 0; i < 400; i++) {
+      const value = rng.float(2, 5);
+      expect(value).toBeGreaterThanOrEqual(2);
+      expect(value).toBeLessThan(5);
+    }
+  });
+
+  it('hashString is stable and discriminating', () => {
+    expect(hashString('landnam')).toBe(hashString('landnam'));
     expect(hashString('a')).not.toBe(hashString('b'));
   });
 
-  it('generateSeed is deterministic per entropy value', () => {
-    expect(generateSeed(123)).toBe(generateSeed(123));
-    expect(generateSeed(1)).not.toBe(generateSeed(2));
+  it('seed phrases are deterministic per entropy value', () => {
+    expect(makeSeedPhrase(42)).toBe(makeSeedPhrase(42));
+    expect(makeSeedPhrase(1)).not.toBe(makeSeedPhrase(2));
+    expect(makeSeedPhrase(7)).toMatch(/^[a-z]+-[a-z]+-\d{3}$/);
   });
 });

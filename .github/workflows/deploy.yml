@@ -1,7 +1,7 @@
-name: Deploy to GitHub Pages
+name: Deploy
 
-# Publishes the built site to the gh-pages branch. GitHub auto-enables
-# Pages for that branch, so no manual settings step is needed.
+# Publishes the single-file build to the gh-pages branch.
+# Enable once in Settings -> Pages -> Deploy from a branch -> gh-pages / root.
 
 on:
   push:
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

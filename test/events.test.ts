@@ -1,160 +1,231 @@
 import { describe, it, expect } from 'vitest';
-import { EVENTS } from '../src/content/events';
-import { checkOdds, eligible, eventById } from '../src/sim/events/engine';
-import { newRun } from '../src/sim/strategic/state';
-import { stepStrategic, sailCost } from '../src/sim/strategic/sail';
-import { neighbors } from '../src/core/hex';
-import { GameRun, StrategicIntent } from '../src/sim/types';
+import { EVENTS, eventById } from '../src/data/events';
+import { TRAITS, traitById } from '../src/data/traits';
+import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
+import { checkOdds, isEligible, presentEvent } from '../src/sim/events';
+import { newGame } from '../src/state/create';
+import { apply } from '../src/sim/actions';
+import { moveOptions } from '../src/sim/travel';
+import { encode } from '../src/state/save';
+import type { GameState, Terrain } from '../src/state/types';
 
-describe('event content lint', () => {
-  it('ids are unique and stable-looking', () => {
+const ALL_TERRAIN: Terrain[] = ['ocean', ...LAND_TERRAINS];
+const SEASONS = ['summer', 'autumn', 'winter', 'spring'];
+const STATS = ['might', 'wits', 'spirit', 'craft'];
+
+describe('content lint: events', () => {
+  it('ids are unique and slug-shaped', () => {
     const ids = EVENTS.map((e) => e.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ids) expect(id).toMatch(/^[a-z0-9-]+$/);
   });
 
-  it('every event has 1-4 options with non-empty text', () => {
-    for (const e of EVENTS) {
-      expect(e.title.length).toBeGreaterThan(0);
-      expect(e.text.length).toBeGreaterThan(0);
-      expect(e.options.length).toBeGreaterThanOrEqual(1);
-      expect(e.options.length).toBeLessThanOrEqual(4);
-      for (const o of e.options) {
-        expect(o.label.length).toBeGreaterThan(0);
-        expect(o.success.text.length).toBeGreaterThan(0);
-        if (o.check) {
-          expect(o.failure).toBeDefined();
-          expect(o.check.dc).toBeGreaterThanOrEqual(5);
-          expect(o.check.dc).toBeLessThanOrEqual(12);
+  it('ships at least fifteen events', () => {
+    expect(EVENTS.length).toBeGreaterThanOrEqual(15);
+  });
+
+  it('every event is well formed', () => {
+    for (const event of EVENTS) {
+      expect(event.title.length, event.id).toBeGreaterThan(0);
+      expect(event.body.length, event.id).toBeGreaterThan(20);
+      expect(event.weight, event.id).toBeGreaterThan(0);
+      expect(event.choices.length, event.id).toBeGreaterThanOrEqual(1);
+      expect(event.choices.length, event.id).toBeLessThanOrEqual(4);
+
+      for (const choice of event.choices) {
+        expect(choice.label.length, event.id).toBeGreaterThan(0);
+        expect(choice.success.text.length, event.id).toBeGreaterThan(0);
+        if (choice.check) {
+          // A check without a failure branch is a silent always-success bug.
+          expect(choice.failure, `${event.id}: checked choice needs a failure`).toBeDefined();
+          expect(STATS).toContain(choice.check.stat);
+          // 2d6 + a best-of-band stat (typically 4-6) meets DC 11 about
+          // seven times in ten and DC 14 about three. Outside 10..16 a
+          // check is either a formality or a punishment.
+          expect(choice.check.dc, event.id).toBeGreaterThanOrEqual(10);
+          expect(choice.check.dc, event.id).toBeLessThanOrEqual(16);
         }
       }
     }
   });
 
-  it('weights are positive', () => {
-    for (const e of EVENTS) expect(e.weight).toBeGreaterThan(0);
+  it('every condition references real terrain and seasons', () => {
+    for (const event of EVENTS) {
+      for (const condition of event.when ?? []) {
+        if (condition.c === 'terrain') {
+          for (const terrain of condition.any) expect(ALL_TERRAIN, event.id).toContain(terrain);
+        }
+        if (condition.c === 'season') {
+          for (const season of condition.any) expect(SEASONS, event.id).toContain(season);
+        }
+        if (condition.c === 'dayMin') expect(condition.day).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('every effect is a known shape with sane numbers', () => {
+    const known = ['food', 'firewood', 'morale', 'wound', 'heal', 'injure', 'kill', 'flag', 'reveal'];
+    for (const event of EVENTS) {
+      for (const choice of event.choices) {
+        for (const branch of [choice.success, choice.failure]) {
+          if (!branch) continue;
+          for (const effect of branch.effects) {
+            expect(known, `${event.id}: ${effect.t}`).toContain(effect.t);
+            if (effect.t === 'wound') {
+              expect(effect.n).toBeGreaterThan(0);
+              if (effect.count !== undefined) expect(effect.count).toBeGreaterThan(0);
+            }
+            if (effect.t === 'reveal') expect(effect.radius).toBeGreaterThan(0);
+          }
+        }
+      }
+    }
   });
 });
 
-describe('event engine', () => {
-  it('checkOdds is monotonic in stat and bounded', () => {
+describe('content lint: traits and terrain', () => {
+  it('trait ids are unique and resolvable', () => {
+    const ids = TRAITS.map((t) => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) expect(traitById(id)).toBeDefined();
+    for (const trait of TRAITS) {
+      expect(trait.blurb.length).toBeGreaterThan(0);
+      expect(trait.tags.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('every terrain has a definition and land is walkable', () => {
+    for (const terrain of ALL_TERRAIN) {
+      const def = terrainDef(terrain);
+      expect(def.id).toBe(terrain);
+      expect(def.fill).toMatch(/^#[0-9a-f]{6}$/i);
+      if (terrain === 'ocean') expect(Number.isFinite(def.cost)).toBe(false);
+      else expect(def.cost).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('stat checks', () => {
+  it('odds rise with the stat and stay bounded', () => {
     for (let dc = 5; dc <= 12; dc++) {
-      let prev = 0;
+      let previous = -1;
       for (let stat = 1; stat <= 6; stat++) {
-        const p = checkOdds(stat, dc);
-        expect(p).toBeGreaterThanOrEqual(prev);
-        expect(p).toBeGreaterThanOrEqual(0);
-        expect(p).toBeLessThanOrEqual(1);
-        prev = p;
+        const odds = checkOdds(stat, dc);
+        expect(odds).toBeGreaterThanOrEqual(previous);
+        expect(odds).toBeGreaterThanOrEqual(0);
+        expect(odds).toBeLessThanOrEqual(1);
+        previous = odds;
       }
     }
-    expect(checkOdds(6, 5)).toBe(1); // needs -1 on 2d6
   });
 
-  it('once-events become ineligible after being seen', () => {
-    const run = newRun('event-once');
-    const def = eventById('castaway')!;
-    const eligibleBefore = eligible({ ...run, turn: 10 } as GameRun, def);
-    expect(eligibleBefore).toBe(true);
-    const seen = structuredClone(run);
-    seen.turn = 10;
-    seen.flags['seen_castaway'] = 1;
-    expect(eligible(seen, def)).toBe(false);
+  it('matches the 2d6 distribution at the edges', () => {
+    // DC 5 with stat 6 needs a roll of -1: impossible to fail.
+    expect(checkOdds(6, 5)).toBe(1);
+    // DC 12 with stat 1 needs 11+: (5,6) (6,5) (6,6) — three ways in 36.
+    expect(checkOdds(1, 12)).toBeCloseTo(3 / 36, 5);
+    // DC 12 with stat 0 needs 12: one way in 36.
+    expect(checkOdds(0, 12)).toBeCloseTo(1 / 36, 5);
+    // Needing 7+ is the classic 21-in-36.
+    expect(checkOdds(0, 7)).toBeCloseTo(21 / 36, 5);
+  });
+});
+
+describe('eligibility', () => {
+  it('once-only events stop being eligible after they fire', () => {
+    const state = newGame('once-seed');
+    const def = eventById('standing-stones')!;
+    const seen = structuredClone(state);
+    seen.flags['seen_standing-stones'] = 1;
+    expect(isEligible(seen, def)).toBe(false);
   });
 
-  it('feature events only fire on their features', () => {
-    const run = newRun('event-feature');
-    // Ship starts on home port, not a wreck.
-    expect(eligible(run, eventById('wreck-pickings')!)).toBe(false);
+  it('a winter event is ineligible in summer', () => {
+    const state = newGame('season-seed');
+    expect(state.day).toBe(1);
+    expect(isEligible(state, eventById('hard-frost')!)).toBe(false);
+  });
+
+  it('no checked choice is a formality or a hopeless case', () => {
+    // A fresh band is the benchmark: its best stat is what the player sees.
+    const state = newGame('odds-seed');
+    for (const def of EVENTS) {
+      for (const choice of def.choices) {
+        if (!choice.check) continue;
+        const stat = Math.max(
+          ...state.party.people.map((p) => p.stats[choice.check!.stat]),
+        );
+        const odds = checkOdds(stat, choice.check.dc);
+        expect(odds, `${def.id}: "${choice.label}"`).toBeLessThan(0.95);
+        expect(odds, `${def.id}: "${choice.label}"`).toBeGreaterThan(0.1);
+      }
+    }
+  });
+
+  it('cards present a hint for every checked choice', () => {
+    const state = newGame('present-seed');
+    for (const def of EVENTS) {
+      const card = presentEvent(state, def);
+      expect(card.choices).toHaveLength(def.choices.length);
+      def.choices.forEach((choice, i) => {
+        if (choice.check) expect(card.choices[i]!.hint, def.id).toMatch(/\d+%/);
+        else expect(card.choices[i]!.hint).toBeUndefined();
+      });
+    }
   });
 });
 
 describe('events in play', () => {
-  function playUntilEvent(seed: string, maxSteps = 120): GameRun | null {
-    let run = newRun(seed);
-    let steps = 0;
-    while (run.phase !== 'event' && run.phase !== 'ended' && steps < maxSteps) {
-      steps++;
-      if (run.phase === 'port') {
-        run = stepStrategic(run, { type: 'PORT_LEAVE' }).run;
-        continue;
-      }
-      const options = neighbors(run.chart.shipAt).filter((n) => sailCost(run, n) !== null);
-      const intent: StrategicIntent =
-        options.length === 0 ? { type: 'WAIT' } : { type: 'SAIL', to: options[steps % options.length]! };
-      run = stepStrategic(run, intent).run;
+  function playUntilEvent(seed: string, limit = 200): GameState | null {
+    let state = newGame(seed);
+    for (let i = 0; i < limit && !state.end; i++) {
+      if (state.event) return state;
+      const options = moveOptions(state);
+      state = options[i % options.length]
+        ? apply(state, { type: 'MOVE', to: options[i % options.length]! })
+        : apply(state, { type: 'CAMP' });
     }
-    return run.phase === 'event' ? run : null;
+    return null;
   }
 
-  it('events fire during sailing and resolve cleanly', () => {
-    const run = playUntilEvent('event-play-seed');
-    expect(run).not.toBeNull();
-    const active = run!.activeEvent!;
-    expect(active.options.length).toBeGreaterThan(0);
+  it('events fire while travelling and resolve cleanly', () => {
+    const state = playUntilEvent('event-fires');
+    expect(state).not.toBeNull();
+    const card = state!.event!;
+    expect(card.choices.length).toBeGreaterThan(0);
 
-    // Choose option 0, get an outcome, continue back to voyage.
-    const afterChoice = stepStrategic(run!, { type: 'CHOOSE_OPTION', index: 0 }).run;
-    expect(afterChoice.activeEvent?.outcome).toBeDefined();
-    const afterContinue = stepStrategic(afterChoice, { type: 'EVENT_CONTINUE' }).run;
-    if (afterContinue.phase !== 'ended') {
-      expect(['voyage', 'port']).toContain(afterContinue.phase);
-      expect(afterContinue.activeEvent).toBeUndefined();
+    const chosen = apply(state!, { type: 'CHOOSE', index: 0 });
+    expect(chosen.event?.outcome).toBeDefined();
+    // The outcome is chronicled in the saga.
+    expect(chosen.saga[chosen.saga.length - 1]!.text).toBe(chosen.event!.outcome!.text);
+
+    const dismissed = apply(chosen, { type: 'DISMISS_EVENT' });
+    if (!dismissed.end) expect(dismissed.event).toBeUndefined();
+  });
+
+  it('travel is blocked while a card is on the table', () => {
+    const state = playUntilEvent('event-blocks');
+    expect(state).not.toBeNull();
+    const target = moveOptions(state!)[0]!;
+    expect(apply(state!, { type: 'MOVE', to: target })).toBe(state);
+    expect(apply(state!, { type: 'CAMP' })).toBe(state);
+  });
+
+  it('resolving the same choice twice from the same state is identical', () => {
+    const state = playUntilEvent('event-determinism');
+    expect(state).not.toBeNull();
+    const a = apply(state!, { type: 'CHOOSE', index: 0 });
+    const b = apply(state!, { type: 'CHOOSE', index: 0 });
+    expect(encode(a)).toBe(encode(b));
+  });
+
+  it('a fired card always matches a real event definition', () => {
+    for (const seed of ['card-a', 'card-b', 'card-c', 'card-d']) {
+      const state = playUntilEvent(seed);
+      if (!state) continue;
+      const def = eventById(state.event!.id);
+      expect(def, state.event!.id).toBeDefined();
+      expect(state.event!.choices).toHaveLength(def!.choices.length);
     }
-  });
-
-  it('choice resolution is deterministic', () => {
-    const run = playUntilEvent('event-det-seed');
-    expect(run).not.toBeNull();
-    const a = stepStrategic(run!, { type: 'CHOOSE_OPTION', index: 0 }).run;
-    const b = stepStrategic(run!, { type: 'CHOOSE_OPTION', index: 0 }).run;
-    expect(JSON.stringify(a.activeEvent)).toBe(JSON.stringify(b.activeEvent));
-  });
-
-  it('sailing intents are rejected during an event', () => {
-    const run = playUntilEvent('event-block-seed');
-    expect(run).not.toBeNull();
-    const to = neighbors(run!.chart.shipAt)[0]!;
-    const { events } = stepStrategic(run!, { type: 'SAIL', to });
-    expect(events).toHaveLength(0);
-  });
-});
-
-describe('ports in play', () => {
-  it('docking at home offers trade and departure works', () => {
-    // A new run starts on the home port tile; sail off and back to dock,
-    // or use DOCK directly since we start there.
-    const run = newRun('port-seed');
-    const { run: docked } = stepStrategic(run, { type: 'DOCK' });
-    expect(docked.phase).toBe('port');
-    expect(docked.activePort?.isHome).toBe(true);
-
-    const bought = stepStrategic(docked, { type: 'PORT_BUY', item: 'food', qty: 5 }).run;
-    expect(bought.food).toBe(run.food + 5);
-    expect(bought.silver).toBeLessThan(run.silver);
-
-    const left = stepStrategic(bought, { type: 'PORT_LEAVE' }).run;
-    expect(left.phase).toBe('voyage');
-    expect(left.activePort).toBeUndefined();
-  });
-
-  it('cannot buy beyond your silver', () => {
-    const run = newRun('port-poor-seed');
-    const docked = stepStrategic(run, { type: 'DOCK' }).run;
-    const poor = structuredClone(docked);
-    poor.silver = 0;
-    const { events } = stepStrategic(poor, { type: 'PORT_BUY', item: 'food', qty: 5 });
-    expect(events).toHaveLength(0);
-  });
-
-  it('recruiting adds a crew member and costs silver', () => {
-    const run = newRun('port-recruit-seed');
-    const docked = stepStrategic(run, { type: 'DOCK' }).run;
-    const recruits = docked.activePort!.stock.recruits;
-    if (recruits.length === 0) return; // seed-dependent; other seeds cover it
-    const before = docked.crew.length;
-    const hired = stepStrategic(docked, { type: 'PORT_RECRUIT', recruitId: recruits[0]!.id }).run;
-    expect(hired.crew.length).toBe(before + 1);
-    expect(hired.silver).toBe(docked.silver - 5);
   });
 });

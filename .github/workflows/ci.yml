@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test-and-build:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,4 +17,6 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm test
-      - run: npm run build
+      # The single-file constraint is load-bearing: release.mjs fails the
+      # build if dist/index.html is not self-contained.
+      - run: npm run release
