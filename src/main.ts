@@ -55,6 +55,7 @@ import { combatantAt, isWarbandTurn } from './sim/battle';
 import { canFound } from './sim/site';
 import { startBattle, startRaid } from './sim/battleTurn';
 import { button, el } from './render/svg';
+import { watchForNewBuild } from './freshness';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('missing #app');
@@ -321,6 +322,8 @@ function render(): void {
       renderRunEnd(state, () => {
         clearSave();
         showTitle();
+// If the server has moved on since this page was cached, say so.
+watchForNewBuild();
       }),
     );
   } else if (launchOpen && state.settlement && !state.expedition) {
@@ -469,3 +472,5 @@ window.landnam = {
 };
 
 showTitle();
+// If the server has moved on since this page was cached, say so.
+watchForNewBuild();

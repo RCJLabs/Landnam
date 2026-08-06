@@ -25,7 +25,10 @@ try {
   fail('dist/index.html missing — run npm run build first');
 }
 
-const stray = readdirSync(DIST).filter((name) => name !== 'index.html');
+// build.txt is the deploy's own stamp and .nojekyll is Pages plumbing —
+// neither is something the PAGE loads, which is what this check is about.
+const ALLOWED = new Set(['index.html', 'build.txt', '.nojekyll']);
+const stray = readdirSync(DIST).filter((name) => !ALLOWED.has(name));
 if (stray.length > 0) {
   fail(`dist should hold only index.html, found: ${stray.join(', ')}`);
 }

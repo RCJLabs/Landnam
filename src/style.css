@@ -1040,6 +1040,35 @@ h2.grim {
 }
 
 
+/* --- Stale-build banner --- */
+
+.stale-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: #3b3020;
+  border-bottom: 1px solid var(--gold);
+  color: var(--gold);
+  font-size: 13px;
+  text-align: center;
+}
+
+.stale-reload {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 /* --- Build stamp --- */
 
 .build-stamp {
@@ -1047,7 +1076,9 @@ h2.grim {
   text-align: center;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: var(--edge);
+  /* Quiet, but the whole point of it is being readable when you go looking. */
+  color: var(--parchment-dim);
+  opacity: 0.75;
 }
 
 /* --- The Thing (4.6) --- */
