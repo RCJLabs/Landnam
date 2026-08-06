@@ -28,7 +28,7 @@ import {
 import { MEASURE_MAX } from '../data/sites';
 import type { GameState, Person, Plot, SiteReport, Settlement } from '../state/types';
 import { effectsOn } from './calendar';
-import { effectiveStat } from './people';
+import { effectiveStat, living, SWORN_MAX } from './people';
 import { homeCrew } from './expedition';
 import { chronicle } from './saga';
 import { bonus, learn } from './lore';
@@ -332,6 +332,35 @@ export function dayLabour(state: GameState): DayLabour {
  * sites, because the day tick and the winter forecast MUST agree — a mark that
  * is computed differently from the burn it predicts is worse than no mark.
  */
+/**
+ * How many the steading has room for.
+ *
+ * Six under the longhouse roof and no more, until something is built for
+ * them. This is what stops 6.2's recruitment from being free the moment
+ * there is food, and it gives the build queue a reason to go on existing
+ * after the winter is beaten — the first thing in this game that does.
+ *
+ * A band with no steading is sleeping under a boat and carries its own
+ * ceiling: the six who came off the knarr.
+ */
+export function capacity(state: GameState): number {
+  const built = (state.settlement?.built ?? []).reduce(
+    (room, id) => room + (buildingById(id)?.room ?? 0),
+    0,
+  );
+  // The knarr and what they can rig off it always sleeps the six who came in
+  // it. Without this floor, planting the posts would make a band WORSE off
+  // than one still camping — crowded on its own ground until the longhouse
+  // went up — and the whole point of the roof is that it is what lets you
+  // grow past six, not what lets you have six.
+  return Math.max(SWORN_MAX, built);
+}
+
+/** How far past its room the steading is. Zero when there is space. */
+export function crowding(state: GameState): number {
+  return Math.max(0, living(state.party.people).length - capacity(state));
+}
+
 export function shelterSaving(state: GameState): number {
   const home = state.settlement;
   // A banked fire is banked wherever you are; a roof needs a roof.

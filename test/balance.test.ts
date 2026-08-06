@@ -49,6 +49,9 @@ import { BAND_BASE, foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
 import { SWORN_MAX, sworn } from '../src/sim/people';
 import { migrate } from '../src/state/migrations';
 import { startBattle } from '../src/sim/battleTurn';
+import { capacity, crowding } from '../src/sim/colony';
+import { moodTarget } from '../src/sim/minds';
+import { foundSettlement } from '../src/sim/site';
 import { distance, key, fromKey, neighbors } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
 import { terrainDef } from '../src/data/terrain';
@@ -508,5 +511,64 @@ describe('the warband is six, whatever the steading holds', () => {
     const migrated = migrate(old).save;
     const people = (migrated['party'] as { people: Record<string, unknown>[] }).people;
     expect(people.every((p) => p['bond'] === 'sworn')).toBe(true);
+  });
+});
+
+// --- 6.2: room to put people ---
+
+describe('a steading holds who it has room for', () => {
+  function settledAt(seed: string): GameState {
+    for (let i = 0; i < 60; i += 1) {
+      const state = structuredClone(newGame(`${seed}-${i}`));
+      if (foundSettlement(state)) return state;
+    }
+    throw new Error('nothing foundable');
+  }
+
+  it('gives a band with no steading room only for the six it landed with', () => {
+    expect(capacity(structuredClone(newGame('roofless')))).toBe(SWORN_MAX);
+  });
+
+  it('opens room only when something is built for it', () => {
+    const state = settledAt('room');
+    // Posts in and nothing raised: still the six the boat sleeps. Settling
+    // must never make a band worse off than camping.
+    expect(capacity(state)).toBe(SWORN_MAX);
+    state.settlement!.built.push('longhouse');
+    expect(capacity(state)).toBe(6);
+    state.settlement!.built.push('bud');
+    expect(capacity(state)).toBe(10);
+    state.settlement!.built.push('meadhall');
+    expect(capacity(state)).toBe(13);
+  });
+
+  it('counts nobody as crowded while there is space', () => {
+    const state = settledAt('space');
+    state.settlement!.built.push('longhouse');
+    expect(crowding(state)).toBe(0);
+  });
+
+  it('bites harder the further past the roof the band is', () => {
+    const state = settledAt('packed');
+    state.settlement!.built.push('longhouse');
+    const template = state.party.people[0]!;
+    const roomy = moodTarget(state, template, { hungry: false, cold: false, grieving: false });
+
+    for (let i = 0; i < 4; i += 1) {
+      state.party.people.push({ ...template, id: `hand-${i}`, bond: 'hand', alive: true });
+    }
+    expect(crowding(state)).toBe(4);
+    const packed = moodTarget(state, template, { hungry: false, cold: false, grieving: false });
+    expect(packed).toBeLessThan(roomy);
+  });
+
+  it('makes the build queue worth keeping after the winter is beaten', () => {
+    // The point of capacity: raising a búð is what lets a band grow, so the
+    // queue stops being a thing you finish and becomes a thing you extend.
+    const state = settledAt('queue');
+    state.settlement!.built.push('longhouse');
+    const before = capacity(state);
+    state.settlement!.built.push('bud');
+    expect(capacity(state)).toBeGreaterThan(before);
   });
 });

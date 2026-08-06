@@ -18,7 +18,7 @@ import {
 } from '../data/feuds';
 import { stream } from '../rng';
 import type { GameState, Grudge, Person } from '../state/types';
-import { jobOf } from './colony';
+import { crowding, jobOf } from './colony';
 import { checkOdds } from './events';
 import { bestStat, effectiveStat, living } from './people';
 import { chronicle } from './saga';
@@ -43,6 +43,9 @@ export interface Pressure {
  * room, but it is only one term: a hardy man in a miserable band stays
  * steadier than the room, and a quarrelsome one is worse than it.
  */
+/** What each body past the steading's room takes off everyone's mood. */
+export const CROWDING_BITE = 5;
+
 export function moodTarget(state: GameState, person: Person, pressure: Pressure): number {
   let target = 55;
 
@@ -52,6 +55,13 @@ export function moodTarget(state: GameState, person: Person, pressure: Pressure)
   if (pressure.hungry) target -= 26;
   if (pressure.cold) target -= 16;
   if (pressure.grieving) target -= 14;
+
+  // Sleeping on the floor of somebody else's hall. Per head over the roof's
+  // room, so a steading one body past its capacity is merely uncomfortable
+  // and one that has taken in a dozen with nowhere to put them is a place
+  // people leave. This is what stops taking hands in from being free once
+  // there is food in the store.
+  target -= crowding(state) * CROWDING_BITE;
 
   // Work they are suited to is worth a great deal; being given nothing to do
   // is worse than being given something hard.

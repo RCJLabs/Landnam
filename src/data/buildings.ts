@@ -12,6 +12,7 @@ import type { JobId } from './jobs';
 
 export type BuildingId =
   | 'longhouse'
+  | 'bud'
   | 'smokehouse'
   | 'farmplots'
   | 'palisade'
@@ -44,6 +45,14 @@ export interface BuildingDef {
   heart?: number;
   /** A job this building makes possible regardless of the ground. */
   unlocks?: JobId;
+  /**
+   * Bodies this building gives somewhere to sleep.
+   *
+   * A steading holds who it has room for. Without this, taking people in
+   * would be free the moment there was food, and the build queue would go on
+   * being a thing you finish rather than a thing you extend.
+   */
+  room?: number;
 }
 
 export const BUILDINGS: BuildingDef[] = [
@@ -56,6 +65,9 @@ export const BUILDINGS: BuildingDef[] = [
     works: 6,
     shelter: 3,
     heart: 1,
+    // Room for the six who came ashore and no more. Everything past the
+    // original band has to be built for.
+    room: 6,
   },
   {
     id: 'farmplots',
@@ -100,6 +112,17 @@ export const BUILDINGS: BuildingDef[] = [
     raises: { defence: 2 },
   },
   {
+    id: 'bud',
+    name: 'Búð',
+    blurb: 'Turf walls and a low roof, thrown up against the longhouse. Nobody wants to sleep in it and people do.',
+    answers: 'rest',
+    timber: 5,
+    works: 4,
+    after: ['longhouse'],
+    room: 4,
+    shelter: 1,
+  },
+  {
     id: 'meadhall',
     name: 'Mead hall',
     blurb: 'Somewhere to drink and boast and settle things without knives. Worth more than it looks on a ledger.',
@@ -107,6 +130,8 @@ export const BUILDINGS: BuildingDef[] = [
     timber: 7,
     works: 8,
     after: ['longhouse'],
+    // People sleep in the hall. They always did.
+    room: 3,
     shelter: 1,
     heart: 3,
   },

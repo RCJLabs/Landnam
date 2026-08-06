@@ -99,9 +99,9 @@ because by year two it has more labour than uses for it.
   neighbour's sons. Losing people becomes recoverable, which is what makes
   losing them affordable to inflict — and the labour surplus becomes a choice
   instead of a given. THE unlock for everything below.
-  *Groundwork done: the fire scales with the band round it, and a person is
-  now sworn or a hand — six bear arms, everyone else works. Still to come:
-  capacity from buildings, the four ways in, and hands walking away.*
+  *Done: the fire scales with the band, a person is sworn or a hand, and the
+  steading holds who it has room for. Still to come: the four ways in, and
+  hands walking away.*
 - [ ] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
   answer is walls, allies and standing rather than a bigger woodpile. Makes
   4.3's neighbours load-bearing.
@@ -116,6 +116,25 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 6.2: room to put people** — Buildings now grant room, and a
+  steading holds who it has room for. The longhouse sleeps six; a búð —
+  turf walls and a low roof thrown up against it, that nobody wants to sleep
+  in and people do — adds four; the mead hall three, because people slept in
+  the hall and always did. Thirteen at the outside, which is a roster that
+  still reads on a phone.
+  Past that room, everyone's mood drops five a head per night. That is what
+  stops taking hands in from being free the moment there is food in the
+  store, and it gives the build queue the first reason it has ever had to go
+  on existing after the winter is beaten: a búð is not a thing you finish, it
+  is how the band grows.
+  One correction on the way. The first cut gave a steading with the posts in
+  but nothing raised a capacity of nought — so planting posts made a band
+  WORSE off than one still camping, crowded on its own ground until the
+  longhouse went up. Capacity now floors at the six the knarr sleeps: the
+  roof is what lets you grow past six, not what lets you have six. Curve
+  re-measured either side of that fix — 80/50/47 with the perverse dip,
+  80/50/50 without, matching where it stood before. 508 tests.
 
 - **2026-08-06 — 6.2: six bear arms, the rest work** — A person is now sworn
   or a hand. The sworn are the warband and there are never more than six of
