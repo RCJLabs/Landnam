@@ -1,8 +1,15 @@
 name: CI
 
+# Only main, and pull requests.
+#
+# This used to be branches: ['**']. Every change is pushed to the feature
+# branch AND to main, so one change spawned two identical runs of the same
+# commit — and on a congested runner pool those sat in the queue ahead of the
+# `pages build and deployment` run that decides whether the site updates at
+# all. Testing the same SHA twice is not worth starving the deploy.
 on:
   push:
-    branches: ['**']
+    branches: [main]
   pull_request:
 
 # A push supersedes the one before it. Without this every push leaves its CI
