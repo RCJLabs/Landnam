@@ -85,11 +85,20 @@ the Thing is a lap of honour rather than a climax.
    results at every setting, because neither binds: the foe count is
    `round(6 × 0.9) + difficulty`, so a typical raid fields about nine
    whatever the ceiling says.
-   What actually loses them is that the harness charges the nearest foe and
-   never forms a shield wall — and `test/wall.test.ts` already measures that
-   charging loses. So "0 held" is very likely the SIXTH harness artifact of
-   the day rather than a game defect, and it cannot be told apart from one
-   until the bot can stand in a line. Do that first; re-measure after.
+   What loses them is that the harness charges the nearest foe and never
+   forms a shield wall. That much is now CONFIRMED: a first attempt at a
+   wall-forming rule — score a hex by shoulders gained minus ground lost —
+   took raids held from 0 of 15 to 6 of 29.
+   It was reverted, because it is not good enough yet. Weighting shoulders
+   that heavily makes the band huddle instead of closing, which helps a
+   defensive raid and wrecks an open-field fight: the survival curve fell from
+   77/47/47 to 77/20/13, and a bot that plays WORSE overall cannot be used to
+   judge whether raids are fair. `SACK_TAKES` 2 → 1 changed that by nothing,
+   which rules the sacking out as the cause.
+   What is needed is a rule that forms a line WHILE advancing — hold shoulders
+   only once contact is close, or weight them behind closing until the sides
+   meet. Judge it on BOTH numbers: raids held should rise and the curve should
+   not collapse.
 6. **[ ] Triple the event deck** (39 → ~100). Cheapest quality per hour in the
    project: pure data, guarded by the content lint, no engine risk.
 7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
@@ -236,6 +245,22 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — The bot cannot form a line, confirmed and half-solved** —
+  The suspicion was right: a wall-forming rule for the balance harness — score
+  a hex by shoulders gained minus ground lost — took raids held from 0 of 15
+  to 6 of 29. The raids were never broken; the instrument was, which makes it
+  the sixth harness artifact of the day.
+  The rule is reverted anyway, because it is not good enough. Weighting
+  shoulders that heavily makes the band huddle rather than close, which helps
+  a defensive raid and wrecks an open-field fight: the survival curve fell
+  from 77/47/47 to 77/20/13. A bot that plays worse overall cannot be used to
+  judge whether raids are fair, and shipping it would have replaced one bad
+  measurement with another. `SACK_TAKES` 2 → 1 moved that by exactly nothing,
+  which rules the sacking out as the cause and leaves the movement rule.
+  What it needs is to form a line WHILE advancing rather than instead of it,
+  and to be judged on both numbers at once — raids held up, curve not
+  collapsed. Written into the queue with the figures. 532 tests.
 
 - **2026-08-06 — The raids may not be broken; the bot cannot form a line** —
   Fifteen raids came across twenty sagas and none were held, which looked like
