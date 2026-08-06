@@ -4,8 +4,16 @@
 import { popMode } from '../modes';
 import type { Battle, GameState, Terrain } from '../state/types';
 import { chronicle } from './saga';
-import { activeCombatant, beginBattle, fighterPerson, refreshTurn, standing } from './battle';
+import {
+  activeCombatant,
+  beginBattle,
+  effective,
+  fighterPerson,
+  refreshTurn,
+  standing,
+} from './battle';
 import { takeFoeTurn } from './battleAi';
+import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 
 /**
  * Pure safety net on the auto-played foe turns. Generous enough never to fire
@@ -23,13 +31,23 @@ export const ROUND_LIMIT = 50;
 
 export function checkOutcome(battle: Battle): void {
   if (battle.outcome) return;
+  // A side is beaten when nobody is left standing, and equally when everyone
+  // still up has lost their nerve — a broken line has already lost the field.
   const ours = standing(battle, 'warband').length;
   const theirs = standing(battle, 'foe').length;
+  const oursWilling = effective(battle, 'warband').length;
+  const theirsWilling = effective(battle, 'foe').length;
 
   if (theirs === 0) {
     battle.outcome = 'won';
   } else if (ours === 0) {
     battle.outcome = 'lost';
+  } else if (theirsWilling === 0 && oursWilling > 0) {
+    battle.outcome = 'won';
+    battle.log.push('Their line broke, and what was left of it ran.');
+  } else if (oursWilling === 0 && theirsWilling > 0) {
+    battle.outcome = 'lost';
+    battle.log.push('Our line broke. There was nothing to do but run.');
   } else if (battle.round > ROUND_LIMIT) {
     battle.outcome = ours >= theirs ? 'won' : 'lost';
     battle.log.push('Neither side could finish it. We drew apart in the dark.');
@@ -67,6 +85,25 @@ function playUntilOurTurn(state: GameState): void {
       refreshTurn(battle);
       continue;
     }
+
+    // Pressure comes first, because standing surrounded can be the thing
+    // that breaks them — and a fighter who breaks right now must be handled
+    // as broken, not handed to the player with no legal orders.
+    pressureAtTurnStart(state, active);
+
+    // A fighter who has lost their nerve is not taking orders, from the
+    // player or from anyone. They rally or they run, and the turn moves on.
+    if (active.broken) {
+      takeBrokenTurn(state, active);
+      checkOutcome(battle);
+      if (battle.outcome) return;
+      // A rally hands the turn back to whoever it belongs to.
+      if (!active.broken && active.side === 'warband') return;
+      advanceTurn(battle);
+      refreshTurn(battle);
+      continue;
+    }
+
     if (active.side === 'warband') return;
 
     takeFoeTurn(state);
@@ -111,6 +148,7 @@ export function leaveBattle(state: GameState): void {
 
   const won = battle.outcome === 'won';
   const fallen: string[] = [];
+  const ran: string[] = [];
   for (const combatant of battle.combatants) {
     if (combatant.side !== 'warband') continue;
     const person = fighterPerson(state, combatant.personId);
@@ -118,7 +156,19 @@ export function leaveBattle(state: GameState): void {
     if (combatant.down) {
       person.health = 1;
       fallen.push(person.name);
+    } else if (combatant.fled) {
+      ran.push(person.name);
     }
+  }
+
+  // Running is remembered. It costs the band's heart even in victory.
+  if (ran.length > 0) {
+    state.party.morale = Math.max(0, state.party.morale - ran.length * 4);
+    chronicle(
+      state,
+      `${ran.join(' and ')} ran, and came back to us later saying nothing.`,
+      'grim',
+    );
   }
 
   if (won) {

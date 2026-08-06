@@ -3,7 +3,8 @@
 
 // v2 (2.1): GameState gained the optional `battle` field.
 // v3 (2.2): Combatant gained throwsLeft and defending.
-export const SAVE_VERSION = 3;
+// v4 (2.3): Combatant gained nerve, broken and fled.
+export const SAVE_VERSION = 4;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

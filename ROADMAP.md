@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 2.3**
+> **CURRENT MILESTONE: 2.4**
 
 ---
 
@@ -52,7 +52,7 @@ Goal: encounters zoom into battles worth winning.
 
 - [x] **2.1 Battle scene** — Combat events push BATTLE mode: small hex battlefield (7×9, portrait) generated from the overworld hex's terrain. Initiative order from stats. Move + one action per turn. *Done when: a full battle round-trips back to travel.*
 - [x] **2.2 Actions & AI** — Strike, throw (axe/spear), shove, defend, dash. Facing-free, zone-of-control melee. Simple enemy AI (aggressive / cautious / flanker archetypes). *Done when: fights are winnable and losable on purpose.*
-- [ ] **2.3 Shield wall & morale** — Adjacent allied warriors form a shield wall: shared defense bonus that shatters when a link falls. Unit morale: breaking, fleeing, rallying. *Done when: formation play beats brawling.*
+- [x] **2.3 Shield wall & morale** — Adjacent allied warriors form a shield wall: shared defense bonus that shatters when a link falls. Unit morale: breaking, fleeing, rallying. *Done when: formation play beats brawling.*
 - [ ] **2.4 Consequences** — Persistent injuries, permadeath, loot, XP → stat growth. Deaths written into the saga. *Done when: losing a veteran hurts — ship v0.2.*
 
 ## Phase 3 — Landnám (settlement) → v0.3
@@ -91,6 +91,18 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 2.3 Shield wall & morale** — Standing shoulder to shoulder
+  is worth +2 defence, +3 with two mates, and it shatters the moment a link
+  falls. Being surrounded is the other half: every enemy past the first on you
+  is worth 2 to all their blows, so the warrior who runs in alone dies and the
+  one with mates at both shoulders does not. A shield adds only +1 inside a
+  wall — in a line, the shield IS the wall — which also stops evasion stacking
+  past anything an attack roll can reach. Nerve breaks, flees for its own edge,
+  and rallies (helped by steady shoulder-mates); shoulder-mates also absorb a
+  quarter of any shock each, so a lone fighter breaks first. A side whose
+  survivors have all broken has lost the field. Measured at contested odds:
+  the line wins 13 of 24 and keeps 67 warriors standing, charging wins 12 and
+  keeps 57. `SAVE_VERSION` 4 with a migration. 176 tests.
 - **2026-08-06 — 2.2 Actions & AI** — Five actions: Strike, Throw (range 2–3,
   needs a clear lane, spends a carried spear), Shove (contested might; into
   water the sea finishes it), Shield (+3 to be hit, until your next turn) and

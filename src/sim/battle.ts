@@ -19,6 +19,7 @@ import type { Battle, Combatant, GameState, Person, Stats, Terrain } from '../st
 import { pushMode } from '../modes';
 import { effectiveStat } from './people';
 import { chronicle } from './saga';
+import { startingNerve } from './morale';
 import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
@@ -48,16 +49,22 @@ export function fighterPerson(state: GameState, personId: string): Person | unde
 }
 
 export function combatantAt(battle: Battle, h: Hex): Combatant | undefined {
-  return battle.combatants.find((c) => !c.down && equals(c.at, h));
+  return battle.combatants.find((c) => !c.down && !c.fled && equals(c.at, h));
 }
 
+/** Still on the field: not dropped, not run off. Broken fighters still count. */
 export function standing(battle: Battle, side: Combatant['side']): Combatant[] {
-  return battle.combatants.filter((c) => c.side === side && !c.down);
+  return battle.combatants.filter((c) => c.side === side && !c.down && !c.fled);
+}
+
+/** Still fighting: standing AND willing. What decides a fight. */
+export function effective(battle: Battle, side: Combatant['side']): Combatant[] {
+  return standing(battle, side).filter((c) => !c.broken);
 }
 
 export function activeCombatant(battle: Battle): Combatant | undefined {
   const personId = battle.order[battle.turnIndex % battle.order.length];
-  return battle.combatants.find((c) => c.personId === personId && !c.down);
+  return battle.combatants.find((c) => c.personId === personId && !c.down && !c.fled);
 }
 
 export function isWarbandTurn(state: GameState): boolean {
@@ -194,6 +201,9 @@ export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0):
       // Everyone carries something worth throwing once.
       throwsLeft: 1,
       defending: false,
+      nerve: 0,
+      broken: false,
+      fled: false,
       down: false,
     });
   }
@@ -211,11 +221,16 @@ export function beginBattle(state: GameState, terrain: Terrain, difficulty = 0):
       hasActed: false,
       throwsLeft: archetypeOf(foe)?.throws ?? 1,
       defending: false,
+      nerve: 0,
+      broken: false,
+      fled: false,
       down: false,
     });
   }
 
   state.battle = battle;
+  // Nerve needs the battle in place, because it reads each fighter's Person.
+  for (const c of battle.combatants) c.nerve = startingNerve(state, c.personId);
   battle.order = rollInitiative(state, battle, rng.derive('initiative'));
   battle.log.push(
     `They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.`,

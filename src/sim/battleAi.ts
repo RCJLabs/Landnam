@@ -7,6 +7,7 @@ import type { Temperament } from '../data/foes';
 import { activeCombatant, archetypeOf, fighterPerson, standing } from './battle';
 import { canThrowAt, doDefend, doShove, doStrike, doThrow, evasion } from './battleActions';
 import { reachWithZoc, threatCount } from './zoc';
+import { canAnchor } from './wall';
 import { effectiveStat } from './people';
 
 /**
@@ -58,6 +59,17 @@ function positionScore(
   const gap = Math.min(...enemies.map((e) => distance(at, e.at)));
   const threats = threatCount(battle, at, active.side);
   let score = -gap * 10;
+
+  // Everyone wants a shoulder-mate. Standing in a line is worth real
+  // defence, and the foes know it as well as the warband does.
+  const mates = battle.combatants.filter(
+    (c) =>
+      c.personId !== active.personId &&
+      c.side === active.side &&
+      canAnchor(c) &&
+      distance(c.at, at) === 1,
+  ).length;
+  score += Math.min(mates, 2) * 12;
 
   switch (temperament) {
     case 'aggressive':

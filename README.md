@@ -31,6 +31,16 @@ no audio files, no network.
   them: step into that ground and your move stops there, and stepping back
   out costs extra. Run is how you break away. A line is something to be
   broken, not walked around.
+- **The shield wall is the whole game.** A warrior with a shoulder-mate is
+  harder to kill; with two, harder still — and the wall shatters the instant
+  a link falls. Meanwhile every enemy past the first standing on you makes
+  all of their blows land easier. Charge in alone and you will be surrounded
+  and cut down; hold the line and your flanks are somebody else's problem.
+- **Nerve breaks.** Wounds, a shoulder-mate falling, being surrounded — it
+  all wears a fighter down, though the men beside you absorb some of it. When
+  nerve runs out they stop taking orders, run for their own edge, and may
+  rally if steady hands are near. A side whose survivors have all broken has
+  lost the field, however many are still standing.
 
   Enemies fight to type — raiders close and swing, scouts throw and keep
   their distance, skirmishers hunt whoever is already busy. Win or lose, you

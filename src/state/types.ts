@@ -151,6 +151,12 @@ export interface Combatant {
   throwsLeft: number;
   /** Shield up — harder to hit until this fighter's next turn. */
   defending: boolean;
+  /** Nerve, 0..100. At zero it breaks. Battle-local; see morale.ts. */
+  nerve: number;
+  /** Nerve gone: will not fight, runs for its own edge, may rally. */
+  broken: boolean;
+  /** Ran off the field. Out of the fight, alive. */
+  fled: boolean;
   /** Dropped: out of this fight, but not necessarily dead (see 2.4). */
   down: boolean;
 }

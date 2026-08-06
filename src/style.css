@@ -133,6 +133,8 @@ button[disabled='true'] {
   font-size: 17px;
   font-weight: 700;
   line-height: 1.15;
+  /* The bar scrolls sideways rather than growing a second row. */
+  white-space: nowrap;
 }
 
 .stat.warn .stat-value {

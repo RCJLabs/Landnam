@@ -6,6 +6,7 @@ import type { Battle, GameState, Ground } from '../state/types';
 import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '../sim/battle';
 import { shoveDestination, throwTargets } from '../sim/battleActions';
 import { isThreatened } from '../sim/zoc';
+import { wallPairs } from '../sim/wall';
 import type { Aim } from './battleUi';
 import { svgEl } from './svg';
 
@@ -147,8 +148,27 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       }
     }
 
+    // The wall itself: a bar of shields between shoulder-mates. Drawn under
+    // the fighters so the line reads as something they are standing in.
+    for (const [a, b] of wallPairs(battle)) {
+      const pa = toPixel(a.at, HEX);
+      const pb = toPixel(b.at, HEX);
+      layers.overlay.append(
+        svgEl('line', {
+          x1: pa.x,
+          y1: pa.y,
+          x2: pb.x,
+          y2: pb.y,
+          stroke: a.side === 'warband' ? '#e8dcc0' : '#9fb0c4',
+          'stroke-width': 6,
+          'stroke-linecap': 'round',
+          opacity: 0.5,
+        }),
+      );
+    }
+
     for (const combatant of battle.combatants) {
-      if (combatant.down) continue;
+      if (combatant.down || combatant.fled) continue;
       const person = fighterPerson(state, combatant.personId);
       if (!person) continue;
       const p = toPixel(combatant.at, HEX);
@@ -161,6 +181,7 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
           person.health / person.maxHealth,
           isActive,
           combatant.defending,
+          combatant.broken,
         ),
       );
     }
@@ -222,8 +243,9 @@ function fighter(
   healthFraction: number,
   isActive: boolean,
   defending: boolean,
+  broken: boolean,
 ): SVGGElement {
-  const g = svgEl('g');
+  const g = svgEl('g', broken ? { opacity: '0.6' } : {});
   const radius = HEX * 0.42;
 
   // A braced shield reads as a heavier rim.
@@ -267,6 +289,16 @@ function fighter(
     }),
     svgEl('circle', { cx, cy, r: radius * 0.28, fill: '#e8dcc0' }),
   );
+
+  // Broken: a fighter with nothing left, marked so you can see the line go.
+  if (broken) {
+    g.append(
+      svgEl('path', {
+        d: `M ${cx - radius * 0.5} ${cy - radius - 6} l ${radius} 0 l ${-radius * 0.5} ${-radius * 0.6} Z`,
+        fill: '#d3a441',
+      }),
+    );
+  }
 
   // Health bar under the shield.
   const width = radius * 2;

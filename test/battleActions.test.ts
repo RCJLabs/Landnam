@@ -420,7 +420,8 @@ describe('fights are winnable and losable on purpose', () => {
 
   const SEEDS = Array.from({ length: 14 }, (_, i) => `purpose-${i}`);
 
-  it('playing well wins more often than standing still', () => {
+  // 28 whole battles; same reason as the formation harness.
+  it('playing well wins more often than standing still', { timeout: 60_000 }, () => {
     let passiveWins = 0;
     let playedWins = 0;
     for (const seed of SEEDS) {

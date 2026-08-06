@@ -3,10 +3,12 @@
 
 import { distance, key, neighbor, directionTo, type Hex } from '../hex';
 import { stream, type Rng } from '../rng';
-import type { Battle, Combatant, GameState, Person } from '../state/types';
+import type { Combatant, GameState, Person } from '../state/types';
 import { activeCombatant, fighterPerson, BASE_MOVES } from './battle';
 import { groundCost } from './battlefield';
-import { hasShot, reachWithZoc } from './zoc';
+import { hasShot, reachWithZoc, threatCount } from './zoc';
+import { defenceBonus } from './wall';
+import { NERVE_HIT, shakeNerve, witnessFall } from './morale';
 import { effectiveStat } from './people';
 
 export const THROW_RANGE = 3;
@@ -20,15 +22,43 @@ function actionRng(state: GameState, label: string): Rng {
   );
 }
 
-/** How hard this fighter is to land a blow on right now. */
+/**
+ * Each enemy past the first on you is worth this much to all of their blows.
+ * It has to bite: it is the whole reason a warrior who runs in alone dies,
+ * and a warrior with mates at both shoulders does not.
+ */
+export const OUTNUMBERED_PENALTY = 2;
+export const MAX_OUTNUMBERED = 2;
+
+/**
+ * How hard this fighter is to land a blow on right now.
+ *
+ * The wall protects you and being surrounded exposes you, and between them
+ * they are why a line beats a charge: shoulder-mates cover the sides that
+ * would otherwise be open, and the man who runs in alone ends up with three
+ * of them on him and nothing at his back.
+ */
 export function evasion(state: GameState, target: Combatant): number {
   const person = fighterPerson(state, target.personId);
   const wits = person ? effectiveStat(person, 'wits') : 1;
-  return 7 + wits + (target.defending ? DEFEND_BONUS : 0);
+  const battle = state.battle;
+  if (!battle) return 7 + wits;
+
+  const shelter = target.broken ? 0 : defenceBonus(battle, target, DEFEND_BONUS);
+  const surrounded = Math.min(
+    MAX_OUTNUMBERED,
+    Math.max(0, threatCount(battle, target.at, target.side) - 1),
+  );
+  return 7 + wits + shelter - surrounded * OUTNUMBERED_PENALTY;
 }
 
-function drop(battle: Battle, target: Combatant, person: Person, cause: string): void {
+function drop(state: GameState, target: Combatant, person: Person, cause: string): void {
+  const battle = state.battle!;
+  // Nerve has to be shaken while the fallen fighter is still counted as a
+  // link, or nobody registers that the wall just opened.
+  witnessFall(state, target);
   target.down = true;
+  target.defending = false;
   person.health = 0;
   if (target.side === 'foe') person.alive = false;
   battle.log.push(cause);
@@ -39,7 +69,7 @@ function drop(battle: Battle, target: Combatant, person: Person, cause: string):
 export function doMove(state: GameState, to: Hex): boolean {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
-  if (!battle || !active || battle.outcome) return false;
+  if (!battle || !active || battle.outcome || active.broken) return false;
 
   const reach = reachWithZoc(battle, active);
   const cost = reach.get(key(to));
@@ -55,7 +85,7 @@ export function doMove(state: GameState, to: Hex): boolean {
 export function doStrike(state: GameState, targetPersonId: string): boolean {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
-  if (!battle || !active || active.hasActed || battle.outcome) return false;
+  if (!battle || !active || active.hasActed || battle.outcome || active.broken) return false;
 
   const target = battle.combatants.find((c) => c.personId === targetPersonId && !c.down);
   if (!target || target.side === active.side) return false;
@@ -82,9 +112,10 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
   defender.health = Math.max(0, defender.health - damage);
   if (defender.health > 0) {
     battle.log.push(`${attacker.name} struck ${defender.name} (${damage}).`);
+    shakeNerve(state, target, NERVE_HIT);
   } else {
     drop(
-      battle,
+      state,
       target,
       defender,
       target.side === 'foe'
@@ -98,8 +129,8 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
 // --- Throw ---
 
 export function canThrowAt(state: GameState, active: Combatant, target: Combatant): boolean {
-  if (active.throwsLeft <= 0 || active.hasActed) return false;
-  if (target.down || target.side === active.side) return false;
+  if (active.throwsLeft <= 0 || active.hasActed || active.broken) return false;
+  if (target.down || target.fled || target.side === active.side) return false;
   const gap = distance(active.at, target.at);
   if (gap < 2 || gap > THROW_RANGE) return false;
   return hasShot(state.battle!, active.at, target.at);
@@ -120,6 +151,7 @@ export function doThrow(state: GameState, targetPersonId: string): boolean {
 
   const target = battle.combatants.find((c) => c.personId === targetPersonId && !c.down);
   if (!target || !canThrowAt(state, active, target)) return false;
+  if (active.broken) return false;
 
   const thrower = fighterPerson(state, active.personId);
   const defender = fighterPerson(state, target.personId);
@@ -140,8 +172,9 @@ export function doThrow(state: GameState, targetPersonId: string): boolean {
   defender.health = Math.max(0, defender.health - damage);
   if (defender.health > 0) {
     battle.log.push(`${thrower.name} put a spear into ${defender.name} (${damage}).`);
+    shakeNerve(state, target, NERVE_HIT);
   } else {
-    drop(battle, target, defender, `${thrower.name}'s throw dropped ${defender.name}.`);
+    drop(state, target, defender, `${thrower.name}'s throw dropped ${defender.name}.`);
   }
   return true;
 }
@@ -157,7 +190,7 @@ export function shoveDestination(active: Combatant, target: Combatant): Hex | nu
 export function doShove(state: GameState, targetPersonId: string): boolean {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
-  if (!battle || !active || active.hasActed || battle.outcome) return false;
+  if (!battle || !active || active.hasActed || battle.outcome || active.broken) return false;
 
   const target = battle.combatants.find((c) => c.personId === targetPersonId && !c.down);
   if (!target || target.side === active.side) return false;
@@ -191,14 +224,14 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
     if (shoved.health > 0) {
       battle.log.push(`${shover.name} slammed ${shoved.name} into what was behind them (2).`);
     } else {
-      drop(battle, target, shoved, `${shoved.name} was crushed against the rocks.`);
+      drop(state, target, shoved, `${shoved.name} was crushed against the rocks.`);
     }
     return true;
   }
 
   if (tile.ground === 'water') {
     // The old trick: put them in the water and let it do the work.
-    drop(battle, target, shoved, `${shover.name} put ${shoved.name} into the water.`);
+    drop(state, target, shoved, `${shover.name} put ${shoved.name} into the water.`);
     return true;
   }
 
@@ -213,7 +246,7 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
 export function doDefend(state: GameState): boolean {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
-  if (!battle || !active || active.hasActed || battle.outcome) return false;
+  if (!battle || !active || active.hasActed || battle.outcome || active.broken) return false;
   const person = fighterPerson(state, active.personId);
   active.hasActed = true;
   active.defending = true;
@@ -225,7 +258,7 @@ export function doDefend(state: GameState): boolean {
 export function doDash(state: GameState): boolean {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
-  if (!battle || !active || active.hasActed || battle.outcome) return false;
+  if (!battle || !active || active.hasActed || battle.outcome || active.broken) return false;
   active.hasActed = true;
   active.movesLeft += BASE_MOVES;
   const person = fighterPerson(state, active.personId);

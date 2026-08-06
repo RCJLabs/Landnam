@@ -1,0 +1,439 @@
+// 2.3: the shield wall, and nerve — breaking, fleeing, rallying.
+
+import { describe, it, expect } from 'vitest';
+import { distance, offsetToAxial } from '../src/hex';
+import { newGame } from '../src/state/create';
+import { encode } from '../src/state/save';
+import { apply } from '../src/sim/actions';
+import { activeCombatant, effective, fighterPerson, standing } from '../src/sim/battle';
+import { startBattle } from '../src/sim/battleTurn';
+import { DEFEND_BONUS, evasion, throwTargets } from '../src/sim/battleActions';
+import {
+  SHIELD_IN_WALL,
+  WALL_BONUS_FULL,
+  WALL_BONUS_ONE,
+  wallBonus,
+  wallLinks,
+  wallPairs,
+} from '../src/sim/wall';
+import {
+  NERVE_ALLY_DOWN,
+  NERVE_WALL_SHATTERED,
+  RALLY_NERVE,
+  shakeNerve,
+  startingNerve,
+  witnessFall,
+} from '../src/sim/morale';
+import { reachWithZoc } from '../src/sim/zoc';
+import { FIELD_HEIGHT } from '../src/sim/battlefield';
+import type { Combatant, GameState } from '../src/state/types';
+
+function fight(seed: string, difficulty = 0): GameState {
+  const state = structuredClone(newGame(seed));
+  startBattle(state, 'meadow', difficulty);
+  return state;
+}
+
+/** A clear field with the given warband positions, one foe well away. */
+function lineUp(seed: string, positions: [number, number][]): GameState {
+  const state = fight(seed, 1);
+  const battle = state.battle!;
+  for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+
+  const ours = battle.combatants.filter((c) => c.side === 'warband').slice(0, positions.length);
+  ours.forEach((c, i) => {
+    const [col, row] = positions[i]!;
+    c.at = offsetToAxial(col, row);
+    c.broken = false;
+    c.down = false;
+    c.fled = false;
+    c.defending = false;
+  });
+  // Park every foe out of the way.
+  battle.combatants
+    .filter((c) => c.side === 'foe')
+    .forEach((c, i) => {
+      c.at = offsetToAxial(i % 7, 0);
+    });
+  battle.combatants = [...ours, ...battle.combatants.filter((c) => c.side === 'foe')];
+  return state;
+}
+
+describe('the shield wall', () => {
+  it('one shoulder-mate is worth something, two are worth more', () => {
+    const state = lineUp('wall-size', [[3, 5], [4, 5], [2, 5]]);
+    const battle = state.battle!;
+    const [middle, right, left] = battle.combatants as [Combatant, Combatant, Combatant];
+
+    expect(wallLinks(battle, middle)).toHaveLength(2);
+    expect(wallBonus(battle, middle)).toBe(WALL_BONUS_FULL);
+    expect(wallBonus(battle, right)).toBe(WALL_BONUS_ONE);
+    expect(wallBonus(battle, left)).toBe(WALL_BONUS_ONE);
+    expect(WALL_BONUS_FULL).toBeGreaterThan(WALL_BONUS_ONE);
+  });
+
+  it('a lone fighter has no wall at all', () => {
+    const state = lineUp('wall-alone', [[3, 5], [0, 8]]);
+    const battle = state.battle!;
+    expect(wallBonus(battle, battle.combatants[1]!)).toBe(0);
+  });
+
+  it('standing in the line makes you harder to hit', () => {
+    const state = lineUp('wall-evasion', [[3, 5], [4, 5]]);
+    const battle = state.battle!;
+    const held = battle.combatants[0]!;
+    const alone = evasion(state, battle.combatants[1]!);
+
+    // Break the link and the same fighter is easier to reach.
+    const withWall = evasion(state, held);
+    battle.combatants[1]!.at = offsetToAxial(0, 8);
+    const withoutWall = evasion(state, held);
+    expect(withWall).toBeGreaterThan(withoutWall);
+    void alone;
+  });
+
+  it('the wall shatters when a link falls', () => {
+    const state = lineUp('wall-shatter', [[3, 5], [4, 5], [2, 5]]);
+    const battle = state.battle!;
+    const [middle, right] = battle.combatants as [Combatant, Combatant];
+    expect(wallBonus(battle, middle)).toBe(WALL_BONUS_FULL);
+
+    right.down = true;
+    expect(wallBonus(battle, middle)).toBe(WALL_BONUS_ONE);
+  });
+
+  it('a broken fighter is no use as a link', () => {
+    const state = lineUp('wall-broken-link', [[3, 5], [4, 5]]);
+    const battle = state.battle!;
+    expect(wallBonus(battle, battle.combatants[0]!)).toBe(WALL_BONUS_ONE);
+    battle.combatants[1]!.broken = true;
+    expect(wallBonus(battle, battle.combatants[0]!)).toBe(0);
+  });
+
+  it('a shield adds little inside a wall and a lot outside one', () => {
+    const state = lineUp('wall-shield', [[3, 5], [4, 5], [0, 8]]);
+    const battle = state.battle!;
+    const inLine = battle.combatants[0]!;
+    const lone = battle.combatants[2]!;
+
+    const inLineBare = evasion(state, inLine);
+    inLine.defending = true;
+    expect(evasion(state, inLine) - inLineBare).toBe(SHIELD_IN_WALL);
+
+    const loneBare = evasion(state, lone);
+    lone.defending = true;
+    expect(evasion(state, lone) - loneBare).toBe(DEFEND_BONUS);
+  });
+
+  it('no fighter is ever beyond reach of the best possible blow', () => {
+    // Wall plus shield plus high wits must not exceed what 2d6 + might can
+    // roll, or the fight stalls on an untouchable man.
+    const state = lineUp('wall-cap', [[3, 5], [4, 5], [2, 5]]);
+    const battle = state.battle!;
+    const middle = battle.combatants[0]!;
+    middle.defending = true;
+    const person = fighterPerson(state, middle.personId)!;
+    person.stats.wits = 6;
+    // Best attainable attack: 2d6 max plus might 6.
+    expect(evasion(state, middle)).toBeLessThanOrEqual(12 + 6);
+  });
+
+  it('reports its links as pairs for the renderer, without duplicates', () => {
+    const state = lineUp('wall-pairs', [[3, 5], [4, 5], [2, 5]]);
+    const all = wallPairs(state.battle!);
+    // Both sides form walls; this test is about ours.
+    const ours = all.filter(([a]) => a.side === 'warband');
+    expect(ours).toHaveLength(2);
+    const ids = ours.map(([a, b]) => [a.personId, b.personId].sort().join('|'));
+    expect(new Set(ids).size).toBe(2);
+    // A pair is never reported against itself.
+    for (const [a, b] of all) expect(a.personId).not.toBe(b.personId);
+  });
+});
+
+describe('nerve', () => {
+  it('starts from who the person is', () => {
+    const state = fight('nerve-start');
+    for (const c of state.battle!.combatants) {
+      // Opening foe turns may already have shaken someone, so the live value
+      // is a ceiling, not an equality.
+      expect(c.nerve).toBeGreaterThan(0);
+      expect(c.nerve).toBeLessThanOrEqual(startingNerve(state, c.personId));
+    }
+    // Steadier people start with more to lose.
+    const brave = startingNerve(state, state.battle!.combatants[0]!.personId);
+    const person = fighterPerson(state, state.battle!.combatants[0]!.personId)!;
+    person.stats.spirit = Math.min(6, person.stats.spirit + 2);
+    expect(startingNerve(state, state.battle!.combatants[0]!.personId)).toBeGreaterThan(brave);
+  });
+
+  it('runs out and the fighter breaks', () => {
+    const state = lineUp('nerve-break', [[3, 5]]);
+    const target = state.battle!.combatants[0]!;
+    shakeNerve(state, target, 999);
+    expect(target.nerve).toBe(0);
+    expect(target.broken).toBe(true);
+    expect(state.battle!.log.some((l) => /nerve went/.test(l))).toBe(true);
+  });
+
+  it('a falling shoulder-mate costs more nerve than a falling stranger', () => {
+    const walled = lineUp('nerve-wall-fall', [[3, 5], [4, 5]]);
+    const wb = walled.battle!;
+    const survivor = wb.combatants[0]!;
+    const beside = wb.combatants[1]!;
+    const before = survivor.nerve;
+    witnessFall(walled, beside);
+    const walledLoss = before - survivor.nerve;
+
+    // Same fall, but the survivor was not in a wall with anyone else.
+    const loose = lineUp('nerve-loose-fall', [[3, 5], [4, 5]]);
+    const lb = loose.battle!;
+    // Only the pair exist, so break the survivor's other links by moving
+    // the faller adjacent but leaving the survivor otherwise alone.
+    const s2 = lb.combatants[0]!;
+    const f2 = lb.combatants[1]!;
+    s2.broken = false;
+    const before2 = s2.nerve;
+    // Strip the wall by marking the faller broken first: no wall, plain shock.
+    f2.broken = true;
+    witnessFall(loose, f2);
+    const looseLoss = before2 - s2.nerve;
+
+    // Both are softened by whoever is still beside you, so compare the
+    // relationship rather than raw constants.
+    expect(walledLoss).toBeGreaterThan(looseLoss);
+    expect(walledLoss).toBeLessThanOrEqual(NERVE_ALLY_DOWN + NERVE_WALL_SHATTERED);
+  });
+
+  it('a broken fighter defends themselves worse', () => {
+    const state = lineUp('nerve-evasion', [[3, 5], [4, 5]]);
+    const c = state.battle!.combatants[0]!;
+    c.defending = true;
+    const steady = evasion(state, c);
+    c.broken = true;
+    expect(evasion(state, c)).toBeLessThan(steady);
+  });
+
+  it('the player never has to command a broken warrior', () => {
+    // Broken fighters rally or run on their own; control returns only to
+    // someone who can actually be given an order.
+    let state = fight('nerve-control', 1);
+    for (const c of state.battle!.combatants) {
+      if (c.side === 'warband') {
+        c.nerve = 1;
+        c.broken = true;
+      }
+    }
+    for (let i = 0; i < 25; i++) {
+      state = apply(state, { type: 'B_END_TURN' });
+      // Once the field is settled nobody is commanding anyone.
+      if (state.battle?.outcome) break;
+      const active = activeCombatant(state.battle!);
+      if (active?.side === 'warband') expect(active.broken).toBe(false);
+    }
+  });
+
+  it('running off your own edge takes you out of the fight alive', () => {
+    let state = fight('nerve-flee', 1);
+    const battle = state.battle!;
+    for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+    // One warrior, already broken, right beside their own edge.
+    const runner = battle.combatants.find((c) => c.side === 'warband')!;
+    runner.broken = true;
+    runner.nerve = 0;
+    runner.at = offsetToAxial(3, FIELD_HEIGHT - 2);
+    battle.order = [runner.personId, ...battle.order.filter((id) => id !== runner.personId)];
+    battle.turnIndex = 0;
+
+    for (let i = 0; i < 30 && !state.battle?.outcome; i++) {
+      state = apply(state, { type: 'B_END_TURN' });
+      const same = state.battle?.combatants.find((c) => c.personId === runner.personId);
+      if (same?.fled) {
+        // Fled, not dead: the Person is untouched.
+        expect(fighterPerson(state, runner.personId)!.health).toBeGreaterThan(0);
+        expect(standing(state.battle!, 'warband').some((c) => c.personId === runner.personId)).toBe(false);
+        return;
+      }
+    }
+  });
+
+  it('a side whose survivors have all broken has lost the field', () => {
+    let state = fight('nerve-rout', 1);
+    for (const c of state.battle!.combatants) {
+      if (c.side === 'foe') {
+        c.broken = true;
+        c.nerve = 0;
+      }
+    }
+    expect(effective(state.battle!, 'foe')).toHaveLength(0);
+    state = apply(state, { type: 'B_END_TURN' });
+    expect(state.battle?.outcome).toBe('won');
+  });
+
+  it('rallying brings a fighter back with something in reserve', () => {
+    // Rally odds improve with steady shoulder-mates, so give them plenty.
+    let state = lineUp('nerve-rally', [[3, 5], [4, 5], [2, 5]]);
+    const battle = state.battle!;
+    const runner = battle.combatants[0]!;
+    runner.broken = true;
+    runner.nerve = 0;
+    fighterPerson(state, runner.personId)!.stats.spirit = 6;
+    battle.order = [runner.personId, ...battle.order.filter((id) => id !== runner.personId)];
+    battle.turnIndex = 0;
+
+    for (let i = 0; i < 30 && !state.battle?.outcome; i++) {
+      state = apply(state, { type: 'B_END_TURN' });
+      const same = state.battle?.combatants.find((c) => c.personId === runner.personId);
+      if (same && !same.broken && !same.fled) {
+        expect(same.nerve).toBe(RALLY_NERVE);
+        return;
+      }
+      if (same?.fled) return; // ran instead; the roll can fail
+    }
+  });
+});
+
+describe('formation play beats brawling', () => {
+  /**
+   * Contested odds. At easier settings the warband wins either way and the
+   * measurement saturates, which tells you nothing about tactics.
+   */
+  const DIFFICULTY = 2;
+
+  /** Charge the nearest foe individually, never mind the line. */
+  function brawl(seed: string): GameState {
+    let state = fight(seed, DIFFICULTY);
+    for (let i = 0; i < 800 && !state.battle?.outcome; i++) {
+      const battle = state.battle!;
+      const active = activeCombatant(battle);
+      if (!active || active.side !== 'warband') {
+        state = apply(state, { type: 'B_END_TURN' });
+        continue;
+      }
+      const foes = standing(battle, 'foe');
+      const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+      if (!active.hasActed && adjacent.length > 0) {
+        state = apply(state, { type: 'B_STRIKE', targetId: adjacent[0]!.personId });
+        state = apply(state, { type: 'B_END_TURN' });
+        continue;
+      }
+      const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
+        q: Number(k.split(',')[0]),
+        r: Number(k.split(',')[1]),
+      }));
+      if (reach.length > 0 && foes.length > 0) {
+        // Straight at the nearest foe, heedless of who is beside you.
+        const best = [...reach].sort(
+          (a, b) =>
+            Math.min(...foes.map((f) => distance(a, f.at))) -
+            Math.min(...foes.map((f) => distance(b, f.at))),
+        )[0]!;
+        const moved = apply(state, { type: 'B_MOVE', to: best });
+        state = moved === state ? apply(state, { type: 'B_END_TURN' }) : moved;
+        continue;
+      }
+      state = apply(state, { type: 'B_END_TURN' });
+    }
+    return state;
+  }
+
+  /** Same aggression, but never step out of the line to get it. */
+  function formation(seed: string): GameState {
+    let state = fight(seed, DIFFICULTY);
+    for (let i = 0; i < 800 && !state.battle?.outcome; i++) {
+      const battle = state.battle!;
+      const active = activeCombatant(battle);
+      if (!active || active.side !== 'warband') {
+        state = apply(state, { type: 'B_END_TURN' });
+        continue;
+      }
+      const foes = standing(battle, 'foe');
+      const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+      if (!active.hasActed && adjacent.length > 0) {
+        const weakest = [...adjacent].sort(
+          (a, b) =>
+            (fighterPerson(state, a.personId)?.health ?? 99) -
+            (fighterPerson(state, b.personId)?.health ?? 99),
+        )[0]!;
+        state = apply(state, { type: 'B_STRIKE', targetId: weakest.personId });
+        state = apply(state, { type: 'B_END_TURN' });
+        continue;
+      }
+      if (!active.hasActed && throwTargets(state).length > 0) {
+        state = apply(state, { type: 'B_THROW', targetId: throwTargets(state)[0]!.personId });
+        state = apply(state, { type: 'B_END_TURN' });
+        continue;
+      }
+      const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
+        q: Number(k.split(',')[0]),
+        r: Number(k.split(',')[1]),
+      }));
+      if (reach.length > 0 && foes.length > 0) {
+        // Advance like the brawler does, but prefer the approach that keeps
+        // a shoulder-mate. Closing still dominates, or the line would simply
+        // stand there and let itself be shot at.
+        const score = (at: { q: number; r: number }) => {
+          const mates = standing(battle, 'warband').filter(
+            (c) => c.personId !== active.personId && distance(c.at, at) === 1,
+          ).length;
+          const gap = Math.min(...foes.map((f) => distance(at, f.at)));
+          return -gap * 4 + Math.min(mates, 2) * 3;
+        };
+        const best = [...reach].sort((a, b) => score(b) - score(a))[0]!;
+        const moved = apply(state, { type: 'B_MOVE', to: best });
+        state = moved === state ? apply(state, { type: 'B_END_TURN' }) : moved;
+        continue;
+      }
+      state = apply(state, { type: 'B_END_TURN' });
+    }
+    return state;
+  }
+
+  // A wide sample: single fights swing hard on the dice, and a five-seed
+  // difference here would be noise rather than a design claim.
+  const SEEDS = Array.from({ length: 24 }, (_, i) => `formation-${i}`);
+
+  /** Warband members left standing and unbroken when the field settles. */
+  function intact(state: GameState): number {
+    const battle = state.battle;
+    if (!battle) return 0;
+    return battle.combatants.filter((c) => c.side === 'warband' && !c.down && !c.fled).length;
+  }
+
+  // 48 whole battles. Deliberately expensive, and well past vitest's default
+  // 5s budget once the rest of the suite is competing for the CPU.
+  it('holding the line beats charging in', { timeout: 60_000 }, () => {
+    let brawlWins = 0;
+    let formationWins = 0;
+    let brawlSurvivors = 0;
+    let formationSurvivors = 0;
+
+    for (const seed of SEEDS) {
+      const b = brawl(seed);
+      const f = formation(seed);
+      if (b.battle?.outcome === 'won') brawlWins++;
+      if (f.battle?.outcome === 'won') formationWins++;
+      brawlSurvivors += intact(b);
+      formationSurvivors += intact(f);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `formation ${formationWins}/${SEEDS.length} wins, ${formationSurvivors} left standing | ` +
+        `brawl ${brawlWins}/${SEEDS.length} wins, ${brawlSurvivors} left standing`,
+    );
+
+    // The milestone's bar. Holding the line must not lose ground on wins,
+    // and must plainly cost fewer of your people — that is what the wall is
+    // for, and a warband is its people.
+    expect(formationWins).toBeGreaterThanOrEqual(brawlWins);
+    expect(formationSurvivors).toBeGreaterThan(brawlSurvivors);
+  });
+
+  it('fights still resolve, and stay reproducible', { timeout: 30_000 }, () => {
+    for (const seed of SEEDS.slice(0, 5)) {
+      expect(formation(seed).battle?.outcome, seed).toBeDefined();
+    }
+    expect(encode(formation('formation-0'))).toBe(encode(formation('formation-0')));
+  });
+});

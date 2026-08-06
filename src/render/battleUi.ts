@@ -4,6 +4,7 @@
 import type { GameState } from '../state/types';
 import { activeCombatant, fighterPerson, isWarbandTurn, standing } from '../sim/battle';
 import { throwTargets } from '../sim/battleActions';
+import { wallBonus, wallLinks } from '../sim/wall';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';
 
@@ -25,12 +26,15 @@ export function renderBattleBar(state: GameState): HTMLElement {
   ]);
 
   if (person && active) {
+    const links = wallLinks(battle, active).length;
     bar.append(
       stat(
         active.side === 'warband' ? 'Acting' : 'Their turn',
         `${person.name} ${person.health}/${person.maxHealth}`,
         person.health <= person.maxHealth * 0.3,
       ),
+      stat('Nerve', active.broken ? 'BROKEN' : `${Math.round(active.nerve)}`, active.nerve < 30),
+      stat('Wall', links > 0 ? `+${wallBonus(battle, active)}` : '—', links === 0),
       stat('Steps', `${active.movesLeft}`, active.movesLeft === 0),
     );
   }
@@ -125,6 +129,7 @@ export function renderBattleResult(state: GameState, dispatch: Dispatch): HTMLEl
   const battle = state.battle!;
   const won = battle.outcome === 'won';
   const downed = battle.combatants.filter((c) => c.side === 'warband' && c.down).length;
+  const ran = battle.combatants.filter((c) => c.side === 'warband' && c.fled).length;
 
   const lines: string[] = [];
   if (won) {
@@ -135,6 +140,9 @@ export function renderBattleResult(state: GameState, dispatch: Dispatch): HTMLEl
     );
   } else {
     lines.push('We could not hold. What we left behind, we left behind.');
+  }
+  if (ran > 0) {
+    lines.push(`${ran} of us ran, and nobody spoke of it afterward.`);
   }
 
   return el('div', { class: 'overlay' }, [

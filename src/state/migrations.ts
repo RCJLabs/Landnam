@@ -34,6 +34,21 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 3 };
   },
+
+  // v3 -> v4: fighters have nerve and can break. A fight saved before that
+  // had nobody broken, so everyone comes forward steady.
+  3: (save) => {
+    const battle = save['battle'] as { combatants?: Record<string, unknown>[] } | undefined;
+    if (battle?.combatants) {
+      battle.combatants = battle.combatants.map((c) => ({
+        nerve: 70,
+        broken: false,
+        fled: false,
+        ...c,
+      }));
+    }
+    return { ...save, version: 4 };
+  },
 };
 
 export interface MigrationResult {
