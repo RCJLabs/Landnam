@@ -13,7 +13,13 @@ name: CI
 # worth starving the deploy.
 on:
   push:
-    branches: ['claude/**']
+    # Everywhere EXCEPT the deploy branch, stated as the rule itself rather
+    # than as a pattern that has to match the branch names we happen to use.
+    # An earlier attempt said branches: ['claude/**'] and matched nothing at
+    # all — three pushes to the work branch produced no CI run whatsoever,
+    # which is a worse failure than the double-run it was fixing, because it
+    # is silent.
+    branches-ignore: [main]
   pull_request:
   workflow_dispatch:
 
