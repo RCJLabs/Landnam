@@ -50,6 +50,8 @@ import { SWORN_MAX, hands, living, sworn } from '../src/sim/people';
 import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle } from '../src/sim/battleTurn';
+import { MAX_RAIDERS, MAX_RAIDERS_FAMED, raiderCap } from '../src/sim/battle';
+import { raidDifficulty } from '../src/sim/raid';
 import { capacity, crowding } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
@@ -671,5 +673,65 @@ describe('a band that can grow, and can bleed', () => {
     // Now take the room away, as a burnt búð or a bad winter would.
     state.settlement!.built = ['longhouse'];
     expect(crowding(state)).toBeGreaterThan(packed);
+  });
+});
+
+// --- 6.3: force that outscales the warband ---
+
+describe('a steading worth taking draws more than six can hold', () => {
+  function famed(seed: string, built: string[], winters: number): GameState {
+    for (let i = 0; i < 150; i += 1) {
+      const state = structuredClone(newGame(`${seed}-${i}`));
+      if (!foundSettlement(state)) continue;
+      state.settlement!.built.push(...built);
+      // wintersStood counts from the first thaw, so winters=0 has to stay
+      // BEFORE it — 73 is already one winter come through, not none.
+      state.day = winters === 0 ? 30 : 73 + (winters - 1) * 96;
+      return state;
+    }
+    throw new Error('nothing foundable');
+  }
+
+  it('brings the old nine against a steading nobody has heard of', () => {
+    expect(raiderCap(famed('new', ['longhouse'], 0))).toBe(MAX_RAIDERS);
+  });
+
+  it('brings more against a hall that has stood years and been built up', () => {
+    const young = raiderCap(famed('young', ['longhouse'], 0));
+    const old = raiderCap(famed('old', ['longhouse', 'bud', 'meadhall', 'palisade'], 3));
+    expect(old).toBeGreaterThan(young);
+  });
+
+  it('never fields more than the ground can hold', () => {
+    const enormous = famed('huge', ['longhouse', 'bud', 'meadhall', 'palisade', 'smokehouse', 'dock'], 12);
+    expect(raiderCap(enormous)).toBeLessThanOrEqual(MAX_RAIDERS_FAMED);
+  });
+
+  it('lets a coast that hates you actually send more', () => {
+    // The measured dead end this exists to fix: with six sworn, rollFoes hit
+    // the old cap of nine at difficulty four, so every point of pressure past
+    // that was discarded by a Math.min and raid pressure measured as
+    // worthless at three separate magnitudes. The lever was disconnected from
+    // the thing it moved. What matters is that provocation now reaches the
+    // field, not that it clears any particular number.
+    const liked = famed('liked', ['longhouse', 'bud', 'meadhall'], 2);
+    liked.party.food = 400;
+    for (const n of liked.neighbours) n.standing = 60;
+
+    const hated = structuredClone(liked);
+    for (const n of hated.neighbours) n.standing = -100;
+
+    expect(raidDifficulty(hated)).toBeGreaterThan(raidDifficulty(liked));
+  });
+
+  it('cannot be answered by fielding more of your own', () => {
+    // Growth buys labour, never a wider line. That is what forces the answer
+    // to be the wall, the watch, and who on this coast owes you anything.
+    const state = famed('answer', ['longhouse', 'bud', 'meadhall'], 3);
+    for (let i = 0; i < 7; i += 1) {
+      state.party.people.push({ ...state.party.people[0]!, id: `hand-${i}`, bond: 'hand', alive: true });
+    }
+    expect(sworn(state.party.people)).toHaveLength(SWORN_MAX);
+    expect(raiderCap(state)).toBeGreaterThan(SWORN_MAX);
   });
 });

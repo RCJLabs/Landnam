@@ -18,6 +18,7 @@ import {
 import type { Battle, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
 import { effectiveStat, sworn } from './people';
+import { wintersStood } from './calendar';
 import { fieldCrew, homeCrew } from './expedition';
 import { raidSource } from './neighbours';
 import { note } from './tally';
@@ -118,6 +119,35 @@ export const MAX_FOES = 6;
 export const MAX_RAIDERS = 9;
 
 /**
+ * The most a raid can bring against a steading worth coming for.
+ *
+ * Two deployment rows of seven is fourteen bodies, and that is the hard
+ * ceiling — a raid that cannot be put on the field is not a raid.
+ */
+export const MAX_RAIDERS_FAMED = 14;
+
+/**
+ * How many they actually field. This is 6.3's whole mechanism, and it exists
+ * because of a measured dead end: raising raid PRESSURE did nothing at three
+ * separate magnitudes, and the reason turned out to be arithmetic rather than
+ * design. With six sworn, `rollFoes` reaches the old cap of nine at
+ * difficulty four, so every point of pressure past that was being thrown away
+ * by a Math.min. The lever was disconnected from the thing it moved.
+ *
+ * A hall that has stood years, is full of building, and has a store worth
+ * crossing the country for, now draws more than nine — and the warband is
+ * capped at six for good, so the answer can never be to field more of your
+ * own. It has to be the wall, the watch, and who on this coast owes you
+ * anything.
+ */
+export function raiderCap(state: GameState): number {
+  const home = state.settlement;
+  if (!home) return MAX_RAIDERS;
+  const fame = wintersStood(state.day) + home.built.length * 0.5;
+  return Math.min(MAX_RAIDERS_FAMED, MAX_RAIDERS + Math.floor(fame));
+}
+
+/**
  * What the warband is up against, scaled loosely to its own strength.
  *
  * A raid brings more than a chance meeting does: nobody crosses the country
@@ -125,8 +155,13 @@ export const MAX_RAIDERS = 9;
  * band behind a palisade simply cannot be threatened, and the wall stops
  * being a mitigation and becomes an off-switch.
  */
-function rollFoes(rng: Rng, warbandSize: number, difficulty: number, raid = false): Person[] {
-  const cap = raid ? MAX_RAIDERS : MAX_FOES;
+function rollFoes(
+  rng: Rng,
+  warbandSize: number,
+  difficulty: number,
+  raid = false,
+  cap = raid ? MAX_RAIDERS : MAX_FOES,
+): Person[] {
   const count = Math.max(1, Math.min(cap, Math.round(warbandSize * (raid ? 0.9 : 0.6)) + difficulty));
   const foes: Person[] = [];
   for (let i = 0; i < count; i++) {
@@ -183,7 +218,13 @@ export function beginBattle(
   // there whatever is happening outside — that is the whole bargain of 6.2:
   // more people is more work done, never a wider shield wall.
   const ourSide = sworn(raid ? homeCrew(state) : fieldCrew(state));
-  const foes = rollFoes(rng.derive('foes'), Math.max(1, ourSide.length), difficulty, raid);
+  const foes = rollFoes(
+    rng.derive('foes'),
+    Math.max(1, ourSide.length),
+    difficulty,
+    raid,
+    raid ? raiderCap(state) : MAX_FOES,
+  );
 
   const battle: Battle = {
     terrain,

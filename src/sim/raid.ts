@@ -45,7 +45,10 @@ export function raidDifficulty(state: GameState): number {
   // when both are already bringing everything they have. Clamping at the foe
   // cap would flatten the two into the same number and quietly delete the
   // reason to build a palisade.
-  return Math.max(-1, Math.min(6, Math.round(worthTaking - warned + raidPressure(state))));
+  // Ten, not six. The old ceiling sat at the point where rollFoes saturated
+  // against a band of six, so anything the coast felt about you past that was
+  // silently discarded — which is why raid pressure measured as worthless.
+  return Math.max(-1, Math.min(10, Math.round(worthTaking - warned + raidPressure(state))));
 }
 
 /**

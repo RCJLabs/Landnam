@@ -103,9 +103,13 @@ because by year two it has more labour than uses for it.
   steading holds who it has room for, three cards bring people in, and hands
   who have had enough walk out. The curve did not move — growth is possible
   but rare, and it takes 6.3's pressure to make a bigger band necessary.*
-- [ ] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
+- [~] **6.3 Overwhelming force** — Raids that outscale six warriors, so the
   answer is walls, allies and standing rather than a bigger woodpile. Makes
   4.3's neighbours load-bearing.
+  *The disconnected lever is fixed: raids can now field up to fourteen and
+  provocation reaches the field. The curve still has not moved, because raids
+  are rare — roughly three runs in four see one at all. Frequency is the next
+  thing to look at, not size.*
 - [ ] **6.4 No last winter** — Remove the five-winter forced ending; a run
   goes as long as it is held. The Thing becomes a milestone in a saga rather
   than its final page.
@@ -117,6 +121,25 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — 6.3 part: the lever was disconnected** — Raid pressure had
+  been measured as worthless at three separate magnitudes, and the reason
+  turned out to be arithmetic rather than design. Raids were capped at nine
+  raiders; against six sworn, the roll saturates that cap at difficulty four;
+  and the difficulty itself was clamped at six. Everything the coast felt
+  about you past that point was being discarded by a `Math.min` before it
+  reached a battlefield. The lever had never been connected to the thing it
+  moved.
+  A hall that has stood years and been built up now draws more than nine, to
+  a ceiling of fourteen — two deployment rows, the most ground that can hold
+  a raid. The difficulty clamp goes to ten so provocation reaches the field.
+  And because the warband is fixed at six for good, none of it can be
+  answered by fielding more of your own: the answer has to be the wall, the
+  watch, and who on this coast owes you anything.
+  The curve still did not move: 73% reach the first winter, 47% see spring,
+  47% reach the second. Raids are simply rare — roughly three runs in four
+  see one at all across a whole saga — so their size is not yet what decides
+  a run. Frequency, not force, is the next thing to look at. 521 tests.
 
 - **2026-08-06 — 6.2 completes: people come, and people go** — Three ways in,
   each hanging off a system that already existed rather than a counter
