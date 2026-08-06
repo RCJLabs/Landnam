@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "build:singlefile": "npm run build && node scripts/build-singlefile.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
