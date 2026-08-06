@@ -940,6 +940,183 @@ export const EVENTS: EventDef[] = [
     ],
   },
 
+  // --- Deck expansion, batch one ---
+  //
+  // The deck is what the game has instead of scenery: it is the only thing
+  // that happens on a quiet day, and thirty-nine cards across four seasons
+  // and four phases repeat inside a single run. These lean on conditions the
+  // engine already has, so none of them costs a line of engine code.
+  {
+    id: 'the-drowned-field',
+    title: 'Water Where the Grass Was',
+    body: 'The river has come up over its bank in the night and is standing in the low ground. It will go down. What is under it may not come back up.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'season', any: ['spring', 'autumn'] }],
+    choices: [
+      {
+        label: 'Dig a cut and let it run off',
+        check: { stat: 'craft', dc: 12 },
+        success: { text: 'We cut a channel down to the old bed and the water went where it was told.', effects: [{ t: 'morale', n: 4 }] },
+        failure: { text: 'The cut filled faster than we dug it and took a week of growing with it.', effects: [{ t: 'food', n: -8 }, { t: 'morale', n: -4 }] },
+      },
+      { label: 'Let it do what it will', success: { text: 'We left it. It went down in its own time and left silt behind, which is not the worst thing.', effects: [{ t: 'food', n: -3 }] } },
+    ],
+  },
+  {
+    id: 'whale-fall',
+    title: 'A Whale on the Sand',
+    body: 'It came in on the tide sometime in the night and it is bigger than the boat. The smell has already carried. So has the news, probably.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'terrain', any: ['shore'] }],
+    choices: [
+      {
+        label: 'Cut and carry all of it',
+        check: { stat: 'might', dc: 12 },
+        success: { text: 'Three days of filthy work and we came away with more meat than we could smoke. It fed us for weeks.', effects: [{ t: 'food', n: 15 }, { t: 'morale', n: 6 }] },
+        failure: { text: 'We worked two days and it turned before we were half done. Most of it went back to the birds.', effects: [{ t: 'food', n: 5 }, { t: 'wound', n: 2, count: 2 }] },
+      },
+      { label: 'Take what we can carry today', success: { text: 'We took the good cuts off the top and left the rest to whoever came next.', effects: [{ t: 'food', n: 7 }] } },
+    ],
+  },
+  {
+    id: 'bog-iron',
+    title: 'Rust in the Water',
+    body: 'The pool at the low end runs orange and leaves a skin on everything that sits in it. Somebody says that is iron, and that it can be got out.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'terrain', any: ['bog'] }, { c: 'unknown', lore: 'smithing' }],
+    choices: [
+      {
+        label: 'Rake it and try to work it',
+        check: { stat: 'craft', dc: 13 },
+        success: { text: 'Four days of failing at it and then, on the fifth, something that would take an edge.', effects: [{ t: 'learn', lore: 'smithing' }, { t: 'morale', n: 5 }] },
+        failure: { text: 'We came away orange to the elbow and no wiser. The pool is still there.', effects: [{ t: 'morale', n: -3 }] },
+      },
+      { label: 'Leave it; there is walking to do', success: { text: 'We noted where it was and went on.', effects: [] } },
+    ],
+  },
+  {
+    id: 'the-quiet-camp',
+    title: 'Nobody At Home',
+    body: 'Somebody was living here until recently. The fire is cold but the bedding is dry, and there is a pot still hanging over it. No sign of them at all.',
+    weight: 7,
+    when: [{ c: 'terrain', any: ['forest', 'valley', 'hills'] }, { c: 'dayMin', day: 8 }],
+    choices: [
+      {
+        label: 'Take what is useful',
+        success: { text: 'We took the pot and what food was left and did not talk about it much afterwards.', effects: [{ t: 'food', n: 4 }, { t: 'morale', n: -4 }] },
+      },
+      {
+        label: 'Look for whoever left it',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'We found the tracks going east, all of them going, none coming back. We left the camp as we found it.', effects: [{ t: 'reveal', radius: 4 }, { t: 'morale', n: 2 }] },
+        failure: { text: 'We spent half a day casting about and found nothing at all. The pot was still there when we came back.', effects: [{ t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-sunless-noon',
+    title: 'The Sun Does Not Get Up',
+    body: 'It is grey at what should be noon and dark again by the middle of the afternoon. Nobody says anything about it, which is worse than if they did.',
+    weight: 9,
+    when: [{ c: 'season', any: ['winter'] }, { c: 'settled' }],
+    choices: [
+      {
+        label: 'Keep everyone working',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'Work is work whether you can see it or not. The days went by and were got through.', effects: [{ t: 'morale', n: 2 }] },
+        failure: { text: 'People worked slowly and badly and two of them stopped altogether for a while.', effects: [{ t: 'morale', n: -7 }] },
+      },
+      {
+        label: 'Burn wood and tell stories',
+        success: { text: 'We built the fire up past what was sensible and somebody told the one about the seal-wife. It helped more than the wood cost.', effects: [{ t: 'firewood', n: -6 }, { t: 'morale', n: 9 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-boundary-stone',
+    title: 'Somebody Else\'s Mark',
+    body: 'A stone set upright at the edge of the good grazing, with a mark cut into the face of it. It is not weathered. Somebody put it there this year.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 10 }],
+    choices: [
+      {
+        label: 'Leave it standing and keep our beasts off',
+        success: { text: 'We grazed the near side and nothing was said. Some things are cheaper honoured than argued.', effects: [{ t: 'food', n: -4 }, { t: 'standing', n: 12, who: 'friendliest' }] },
+      },
+      {
+        label: 'Put it on its back',
+        success: { text: 'It took three of us to lay it down. Word of that will have gone somewhere.', effects: [{ t: 'standing', n: -20, who: 'friendliest' }, { t: 'morale', n: 3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-old-hand',
+    title: 'The One Who Has Done This Before',
+    body: 'One of the older ones has been quietly banking the fire a particular way all week — turf on the windward side, a hollow underneath. It burns half the night on what we were putting into an hour.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'unknown', lore: 'skywatch' }, { c: 'season', any: ['autumn', 'winter'] }],
+    choices: [
+      {
+        label: 'Have them show everyone',
+        success: { text: 'It took an evening to teach and it changed what a night costs us.', effects: [{ t: 'learn', lore: 'skywatch' }, { t: 'morale', n: 4 }] },
+      },
+      { label: 'Let them get on with it', success: { text: 'Nobody asked and nobody was told. The fire went on burning well at one end of the hall.', effects: [] } },
+    ],
+  },
+  {
+    id: 'gulls-inland',
+    title: 'Gulls a Long Way From Water',
+    body: 'They are working the ground behind us in numbers, and gulls do not come this far in for nothing. Something has been turned over, or something is dying.',
+    weight: 7,
+    when: [{ c: 'terrain', any: ['meadow', 'valley', 'hills'] }],
+    choices: [
+      {
+        label: 'Go and see',
+        check: { stat: 'wits', dc: 11 },
+        success: { text: 'A deer, down a week and mostly gone, but the ground around it was thick with what the gulls had missed.', effects: [{ t: 'food', n: 6 }] },
+        failure: { text: 'We walked out to it and it was nothing worth the walk. The gulls went up and came straight back down.', effects: [{ t: 'morale', n: -2 }] },
+      },
+      { label: 'Keep walking', success: { text: 'We left the birds to it.', effects: [] } },
+    ],
+  },
+  {
+    id: 'the-rotten-roof',
+    title: 'Turf Coming Through',
+    body: 'There is a wet patch over the sleeping end that was not there in the autumn, and the turf above it has gone soft. It is dripping on somebody every night.',
+    weight: 7,
+    when: [{ c: 'built', building: 'longhouse' }, { c: 'season', any: ['spring', 'autumn', 'winter'] }],
+    choices: [
+      {
+        label: 'Strip it back and re-lay it',
+        check: { stat: 'craft', dc: 11 },
+        success: { text: 'A cold wet day on the roof and it has been dry ever since.', effects: [{ t: 'firewood', n: -3 }, { t: 'morale', n: 5 }] },
+        failure: { text: 'We opened more than we could close before dark and it rained on all of us that night.', effects: [{ t: 'wound', n: 2, count: 2 }, { t: 'morale', n: -5 }] },
+      },
+      { label: 'Move the bedding and live with it', success: { text: 'We shifted everyone up the hall. The drip went on all winter and everyone learned to sleep through it.', effects: [{ t: 'morale', n: -3 }] } },
+    ],
+  },
+  {
+    id: 'the-sea-mark',
+    title: 'A Stack Off the Point',
+    body: 'A pillar of rock standing off the headland with the sea working through the foot of it, and every gull on the coast on top. From the water it would be visible for a day\'s sailing.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'terrain', any: ['shore', 'ocean'] }],
+    choices: [
+      {
+        label: 'Fix it in the mind and take a bearing off it',
+        check: { stat: 'wits', dc: 10 },
+        success: { text: 'We put it against the hills behind and now we know this piece of coast from the water.', effects: [{ t: 'reveal', radius: 6 }] },
+        failure: { text: 'We looked at it a long while. It is a rock with birds on it.', effects: [] },
+      },
+      { label: 'Take eggs off the foot of it', success: { text: 'Wet, cold, and worth it. Eggs by the basket.', effects: [{ t: 'food', n: 4 }, { t: 'wound', n: 1 }] } },
+    ],
+  },
+
 ];
 
 export function eventById(id: string): EventDef | undefined {

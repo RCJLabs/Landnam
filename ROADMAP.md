@@ -43,9 +43,9 @@ in this document):
 
 | milestone | reached |
 | --- | --- |
-| the first winter (day 49) | 73% |
-| spring (day 73) | 47% |
-| the second winter — the Thing's window (day 169) | 47% |
+| the first winter (day 49) | 80% |
+| spring (day 73) | 40% |
+| the second winter — the Thing's window (day 169) | 37% |
 
 Five levers have now been aimed at that 47% and none has shifted it. Four of
 them were priced in food, firewood or timber; the fifth was a clamp. The
@@ -99,7 +99,7 @@ the Thing is a lap of honour rather than a climax.
    only once contact is close, or weight them behind closing until the sides
    meet. Judge it on BOTH numbers: raids held should rise and the curve should
    not collapse.
-6. **[ ] Triple the event deck** (39 → ~100). Cheapest quality per hour in the
+6. **[~] Triple the event deck** (39 → 49 → ~100). *First batch of ten in.* Cheapest quality per hour in the
    project: pure data, guarded by the content lint, no engine risk.
 7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
    and they blur. Also the cleanest way to make the palisade read as ground
@@ -245,6 +245,24 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — Ten more cards, and what they quietly did to the curve** —
+  The deck goes from thirty-nine to forty-nine: a river over its bank, a whale
+  on the sand, bog iron in an orange pool, a camp whose people are simply
+  gone, the sun not getting up, somebody else's boundary stone, an old hand
+  who banks a fire in a particular way, gulls a long way inland, turf coming
+  through the roof, and a stack off the point worth taking a bearing from.
+  Every one leans on conditions the engine already has, so not a line of
+  engine code changed.
+  They are not free, though, and the harness said so before anybody played
+  them. The first draft took the first winter from 77% to 90% — a whale worth
+  twenty-six food, found on the shore where every band starts, is most of a
+  season's larder handed over on day two. Trimmed to fifteen, with the other
+  food cards cut back alongside, and the curve settles at 80/40/37.
+  Worth stating plainly: content is balance. Ten cards written purely for
+  flavour moved the game's opening difficulty by thirteen points, and the only
+  reason that was caught before it shipped is that the deck expansion ran
+  through the same measurement as everything else. 532 tests.
 
 - **2026-08-06 — The bot cannot form a line, confirmed and half-solved** —
   The suspicion was right: a wall-forming rule for the balance harness — score
