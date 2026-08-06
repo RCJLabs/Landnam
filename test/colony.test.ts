@@ -15,6 +15,7 @@ import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
 import { seasonOf } from '../src/sim/calendar';
 import { suggestedBuild } from '../src/sim/needs';
+import { launch } from '../src/sim/expedition';
 import {
   assign,
   availableJobs,
@@ -381,18 +382,36 @@ describe('building and watching', () => {
 // --- Home and away ---
 
 describe('the work only happens where the work is', () => {
-  it('a band on the road works nothing, however it is assigned', () => {
+  /**
+   * Since 4.2 the steading is worked by whoever is standing in it rather than
+   * by "everyone, if nobody has wandered off". Hands sent out on an
+   * expedition are hands not farming; hands that stayed keep working.
+   */
+  it('the hands you send out are hands not farming', () => {
     const state = putEveryoneOn(withReport('away', { soil: 5 }), 'farmer');
-    expect(dayLabour(state).food).toBeGreaterThan(0);
+    const whole = dayLabour(state).food;
+    expect(whole).toBeGreaterThan(0);
 
-    // Walk off the steading. The jobs stay assigned — you have not resigned,
-    // you are simply not there.
-    state.party.at = { q: state.settlement!.at.q + 3, r: state.settlement!.at.r };
-    const away = dayLabour(state);
-    expect(away.food).toBe(0);
-    expect(away.byPerson).toHaveLength(0);
+    const crew = state.party.people.filter((p) => p.alive);
+    const going = crew.slice(0, crew.length - 1).map((p) => p.id);
+    expect(launch(state, going, 'explore')).toBe(true);
+
+    const short = dayLabour(state);
+    // One pair of hands left, so the fields still produce — just far less.
+    expect(short.food).toBeGreaterThan(0);
+    expect(short.food).toBeLessThan(whole);
+    expect(short.byPerson).toHaveLength(1);
+    // Nobody resigned; they are simply not there.
     expect(state.party.people.every((p) => p.job === 'farmer')).toBe(true);
-    expect(shelterSaving(state)).toBe(0);
+  });
+
+  it('a roof keeps the hall warm whether or not a party is out under it', () => {
+    const state = withReport('roof-away', { timber: 3 });
+    state.settlement!.shelter = 4;
+    expect(shelterSaving(state)).toBeGreaterThan(0);
+    const crew = state.party.people.filter((p) => p.alive);
+    launch(state, crew.slice(0, 2).map((p) => p.id), 'explore');
+    expect(shelterSaving(state)).toBeGreaterThan(0);
   });
 
   it('an unsettled band has no jobs to give', () => {

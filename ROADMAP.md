@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 4.2**
+> **CURRENT MILESTONE: 4.3**
 
 ---
 
@@ -70,7 +70,7 @@ Goal: the full loop closes — travel, fight, settle, survive winter.
 Order negotiable; each is a shippable minor version.
 
 - [x] **4.1 Minds & feuds** — Moods from needs/events; trait interactions; grudges between settlers; feud events with blood-price resolutions.
-- [ ] **4.2 Expeditions** — Launch parties FROM the colony back onto the world map (raid, trade, explore) while the colony sims on. The loop becomes a wheel.
+- [x] **4.2 Expeditions** — Launch parties FROM the colony back onto the world map (raid, trade, explore) while the colony sims on. The loop becomes a wheel.
 - [ ] **4.3 Neighbors** — Persistent rival clans and native settlements: reputation, trade, tribute, alliances, escalation.
 - [ ] **4.4 Knowledge** — Discovery-driven progression (runes, shipwright, smithing) unlocked by exploration and events, not a tech-tree menu.
 - [ ] **4.5 The Saga** — Run-end saga generator: your whole game retold as a short prose saga from the log. Shareable seed + saga.
@@ -91,6 +91,21 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 4.2 Expeditions** — Once the posts are in, the steading is
+  where the band lives: to go anywhere at all you send a party, and the map
+  only opens up while one is out. Three purposes — look at the country, go out
+  to barter, go out under arms — each changing how much finds you out there.
+  The band splits in two: whoever went walks the map and fights the fights,
+  whoever stayed works the steading every single day. That split is the whole
+  milestone, and it cuts both ways: a hall whose warriors are three days out
+  is exactly the one worth raiding, and the raid is defended by whoever
+  stayed. Provisions come out of the store on the way out and what is left
+  comes back; a trading party comes home with timber the steading could not
+  cut for itself. Measured over eight settled years: never leaving survives 4
+  of 8 with 122 wood; sending two out to barter survives 6 with 872; sending
+  five out brings home the MOST timber of all — 1478 — and survives 1, because
+  the fields went untended for weeks to get it. `SAVE_VERSION` 12 with a
+  migration. 350 tests.
 - **2026-08-06 — 4.1 Minds & feuds** — Personal morale is live at last: each
   day a person drifts toward a target built from hunger, cold, their own
   wounds, whether the job they were given suits them, and the room. Traits

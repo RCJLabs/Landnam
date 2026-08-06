@@ -7,9 +7,16 @@ import { exploredFraction } from '../sim/fog';
 import { XP_PER_ADVANCE } from '../sim/consequences';
 import { scoreWord, siteReport, strongestOf, verdictFor } from '../sim/site';
 import { moodOf, MOOD_WORD } from '../sim/minds';
+import { jobOf } from '../sim/colony';
+import {
+  LAUNCH_REASON,
+  launchBlocker,
+  provisionsFor,
+  PURPOSES,
+} from '../sim/expedition';
 import { FEUD_THRESHOLD } from '../data/feuds';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
-import type { GameState, Person } from '../state/types';
+import type { GameState, Person, Purpose } from '../state/types';
 import { button, el } from './svg';
 import type { Dispatch } from './ui';
 
@@ -176,6 +183,80 @@ export function renderFounding(
       ]),
     ]),
   ]);
+}
+
+/**
+ * Choosing who goes out. Kept as one card rather than a mode of its own,
+ * because the decision is small and the trade-off — every name you tick is a
+ * pair of hands off the fields — should be visible in one glance.
+ */
+export function renderLaunch(
+  state: GameState,
+  picked: Set<string>,
+  toggle: (id: string) => void,
+  purpose: Purpose,
+  setPurpose: (p: Purpose) => void,
+  dispatch: Dispatch,
+  close: () => void,
+): HTMLElement {
+  const crew = state.party.people.filter((p) => p.alive);
+  const going = crew.filter((p) => picked.has(p.id));
+  const blocker = launchBlocker(state, [...picked]);
+
+  const card = el('div', { class: 'card' }, [
+    el('h2', {}, ['Send a Party Out']),
+    el('p', { class: 'event-body' }, [
+      `${state.settlement!.name} keeps working while they are gone — with however many hands are left.`,
+    ]),
+  ]);
+
+  const roster = el('div', { class: 'launch-crew' });
+  for (const person of crew) {
+    const on = picked.has(person.id);
+    const row = button('', () => toggle(person.id), {
+      class: `crew-row${on ? ' selected' : ''}`,
+    });
+    row.replaceChildren(
+      el('span', { class: 'crew-name' }, [person.name]),
+      el('span', { class: 'crew-job' }, [on ? 'going' : (jobOf(person)?.name ?? 'idle')]),
+      el('span', { class: 'crew-take' }, [`${MOOD_WORD[moodOf(person)]}`]),
+    );
+    roster.append(row);
+  }
+  card.append(roster);
+
+  const purposes = el('div', { class: 'jobs' });
+  for (const def of PURPOSES) {
+    const node = button('', () => setPurpose(def.id), {
+      class: `job${purpose === def.id ? ' primary' : ''}`,
+      title: def.blurb,
+    });
+    node.replaceChildren(
+      el('span', { class: 'job-name' }, [def.name]),
+      el('span', { class: 'job-why' }, [def.blurb]),
+    );
+    purposes.append(node);
+  }
+  card.append(purposes);
+
+  card.append(
+    el('p', { class: blocker ? 'outcome grim' : 'outcome good' }, [
+      blocker
+        ? LAUNCH_REASON[blocker]
+        : `${going.length} out, ${crew.length - going.length} left at the steading · ` +
+          `${provisionsFor(going.length)} food provisioned.`,
+    ]),
+  );
+
+  const choices = el('div', { class: 'choices' });
+  const go = button('Set out', () => dispatch({ type: 'LAUNCH', members: [...picked], purpose }), {
+    class: 'choice primary',
+  });
+  if (blocker) go.setAttribute('disabled', 'true');
+  choices.append(go, button('Not today', close, { class: 'choice' }));
+  card.append(choices);
+
+  return el('div', { class: 'overlay' }, [card]);
 }
 
 function personRow(person: Person): HTMLElement {

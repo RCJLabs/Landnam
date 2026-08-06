@@ -10,6 +10,7 @@ import { revealAround, sightRadius } from './fog';
 import { bestAt, effectiveStat, living } from './people';
 import { chronicle } from './saga';
 import { atHome, foundSettlement } from './site';
+import { fieldCrew, permittedStep } from './expedition';
 import { passDay } from './upkeep';
 
 export type TravelAction =
@@ -37,13 +38,22 @@ export function daysForMove(state: GameState, to: Hex): number | null {
   return effort === null ? null : Math.max(1, Math.ceil(effort / 2));
 }
 
+/**
+ * Once the posts are in, the band lives at the steading and only a launched
+ * expedition walks the map. Before that, everyone walks together.
+ */
 export function canMove(state: GameState, to: Hex): boolean {
+  if (state.settlement && !state.expedition) return false;
+  if (!permittedStep(state, to)) return false;
   return distance(state.party.at, to) === 1 && moveEffort(state, to) !== null;
 }
 
 /** Hexes the party could step into right now. */
 export function moveOptions(state: GameState): Hex[] {
-  return neighbors(state.party.at).filter((h) => moveEffort(state, h) !== null);
+  if (state.settlement && !state.expedition) return [];
+  return neighbors(state.party.at).filter(
+    (h) => moveEffort(state, h) !== null && permittedStep(state, h),
+  );
 }
 
 export function canFish(state: GameState): boolean {
@@ -112,6 +122,11 @@ export function canGather(state: GameState): boolean {
   return !atHome(state);
 }
 
+/** Whoever is on the map right now: the expedition, or the whole band. */
+export function roadCrew(state: GameState): Person[] {
+  return fieldCrew(state);
+}
+
 interface Gather {
   amount: number;
   scout?: Person;
@@ -125,7 +140,7 @@ function gather(
   label: string,
 ): Gather {
   const effects = effectsOn(state.day);
-  const scout = bestAt(state.party.people, stat);
+  const scout = bestAt(fieldCrew(state), stat);
   const skill = scout ? effectiveStat(scout, stat) : 1;
   const rng = actionRng(state, label);
   const roll = rng.float(0.7, 1.3);
@@ -166,7 +181,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const here = state.world.tiles[key(party.at)]!;
       const def = terrainDef(here.terrain);
       const rng = actionRng(state, 'camp');
-      const hands = living(party.people).length;
+      const hands = fieldCrew(state).length;
       const home = atHome(state);
       // At home the woodcutters have already been counted; camping there is
       // rest, not a second day's felling.
@@ -180,7 +195,9 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // mends them faster than a night under a cloak.
       const fed = party.food > 0;
       const mend = fed ? (home ? 4 : 2) : 0;
-      for (const person of living(party.people)) {
+      // Resting mends whoever is resting: the party on the road, or everyone
+      // if there is no steading yet.
+      for (const person of home ? living(party.people) : fieldCrew(state)) {
         person.health = Math.min(person.maxHealth, person.health + mend);
       }
       party.morale = Math.min(100, party.morale + (fed ? (home ? 7 : 5) : 1));

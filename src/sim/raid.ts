@@ -10,7 +10,6 @@ import type { GameState } from '../state/types';
 import { effectiveReport } from './colony';
 import { standing } from './battle';
 import { chronicle } from './saga';
-import { atHome } from './site';
 
 /** What share of the store a successful sack carries off. */
 export const SACK_SHARE = 0.4;
@@ -38,9 +37,13 @@ export function raidDifficulty(state: GameState): number {
   return Math.max(-1, Math.min(4, Math.round(worthTaking - warned)));
 }
 
-/** True when a raid could happen here at all. */
+/**
+ * True when a raid could happen at all. Deliberately not gated on the band
+ * being home: a steading whose warriors are three days out is exactly the one
+ * worth coming for, and that is the cost of sending them.
+ */
 export function raidable(state: GameState): boolean {
-  return !!state.settlement && atHome(state) && state.day >= RAID_EARLIEST_DAY;
+  return !!state.settlement && state.day >= RAID_EARLIEST_DAY;
 }
 
 /**

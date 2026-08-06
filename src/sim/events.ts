@@ -9,6 +9,7 @@ import { seasonOf } from './calendar';
 import { startBattle, startRaid } from './battleTurn';
 import { raidDifficulty } from './raid';
 import { settleFeud } from './minds';
+import { purposeDef } from './expedition';
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
@@ -98,6 +99,9 @@ export function presentEvent(state: GameState, def: EventDef): ActiveEvent {
  * most valuable thing there is.
  */
 export function eventChance(state: GameState): number {
+  // Out on the road, what the party went out FOR changes how much finds them.
+  const out = state.expedition;
+  if (out) return BASE_EVENT_CHANCE * purposeDef(out.purpose).stir;
   if (!atHome(state)) return BASE_EVENT_CHANCE;
   const home = state.settlement!;
   // Ground you can watch, what you have raised on it, and people actually
@@ -249,7 +253,7 @@ export function dismissEvent(state: GameState): void {
     delete state.flags['pendingRaid'];
     delete state.flags['pendingBattleDifficulty'];
 
-    if (raiding && state.settlement && atHome(state)) {
+    if (raiding && state.settlement) {
       // Raiders bring what the place is worth taking.
       startRaid(state, difficulty + raidDifficulty(state));
     } else {

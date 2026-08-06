@@ -335,7 +335,7 @@ describe('a sacked steading', () => {
 // --- Triggering ---
 
 describe('raids arrive', () => {
-  it('there are raid cards, and they only fire at a steading you are standing in', () => {
+  it('there are raid cards, and they need a steading to come for', () => {
     const raidCards = EVENTS.filter((e) =>
       e.choices.some((c) =>
         [c.success, c.failure].some((o) => o?.effects.some((f) => f.t === 'raid')),
@@ -351,9 +351,10 @@ describe('raids arrive', () => {
     home.day = 40;
     expect(raidCards.some((def) => isEligible(home, def))).toBe(true);
 
-    // Standing away from the steading, nobody raids the empty hall.
+    // And since 4.2, a hall whose warriors are three days out is exactly the
+    // one worth coming for — that is the cost of sending them.
     home.party.at = { q: home.settlement!.at.q + 3, r: home.settlement!.at.r };
-    for (const def of raidCards) expect(isEligible(home, def), `away: ${def.id}`).toBe(false);
+    expect(raidCards.some((def) => isEligible(home, def))).toBe(true);
   });
 
   it('nobody crosses the country for a hovel on day one', () => {

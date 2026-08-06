@@ -123,6 +123,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // v10 -> v11: people keep a tally of each other. A band from before this
   // existed was getting along by definition, so it comes forward with none.
   10: (save) => ({ grudges: [], ...save, version: 11 }),
+
+  // v11 -> v12: parties go out from the steading. An absent expedition means
+  // everyone is home, which is exactly what an older save describes.
+  11: (save) => ({ ...save, version: 12 }),
 };
 
 export interface MigrationResult {

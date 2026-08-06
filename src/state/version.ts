@@ -12,7 +12,8 @@
 // v9 (map): World gained trod and landingName.
 // v10 (3.5): Ground gained 'wall'; Battle gained the optional raid flag.
 // v11 (4.1): the root gained grudges.
-export const SAVE_VERSION = 11;
+// v12 (4.2): the root gained the optional expedition.
+export const SAVE_VERSION = 12;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

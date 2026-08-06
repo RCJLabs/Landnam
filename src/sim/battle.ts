@@ -18,6 +18,7 @@ import {
 import type { Battle, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
 import { effectiveStat } from './people';
+import { fieldCrew, homeCrew } from './expedition';
 import { chronicle } from './saga';
 import { startingNerve } from './morale';
 import {
@@ -170,12 +171,11 @@ export function beginBattle(
           rng.derive('ground'),
         )
       : generateBattlefield(terrain, rng.derive('ground'));
-  const foes = rollFoes(
-    rng.derive('foes'),
-    state.party.people.filter((p) => p.alive).length,
-    difficulty,
-    raid,
-  );
+  // A raid is fought by whoever stayed at the steading; a fight out on the
+  // road is fought by whoever went. Sending your warriors away is exactly the
+  // decision this makes real.
+  const ourSide = raid ? homeCrew(state) : fieldCrew(state);
+  const foes = rollFoes(rng.derive('foes'), Math.max(1, ourSide.length), difficulty, raid);
 
   const battle: Battle = {
     terrain,
@@ -224,7 +224,7 @@ export function beginBattle(
   };
 
   const ourLine: Hex[] = [];
-  for (const person of state.party.people.filter((p) => p.alive)) {
+  for (const person of ourSide) {
     const at = place(warbandSpots, ourLine);
     if (!at) continue;
     battle.combatants.push({

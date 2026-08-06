@@ -7,6 +7,7 @@ import { living } from './people';
 import { noteFirstWork, shelterSaving, workTheDay } from './colony';
 import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
+import { arriveHome, pruneExpedition } from './expedition';
 import { chronicle } from './saga';
 
 /** Winter arrives on day 49; spring on day 73 is survival. */
@@ -125,6 +126,10 @@ export function passDay(state: GameState): boolean {
   }
 
   mendInjuries(state);
+  // A party standing on its own doorstep is home; a party with nobody left
+  // in it is simply gone.
+  pruneExpedition(state);
+  arriveHome(state);
   noteFirstWork(state, labour);
   telegraphWinter(state);
 

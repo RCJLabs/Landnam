@@ -1,9 +1,9 @@
 // COLONY logic: the steading's own ground, who works what, and what a day of
 // that work is worth.
 //
-// Labour only happens on days the band is at home. A warband walking the map
-// is not tending a farm, and the whole point of settling is that staying put
-// starts to pay.
+// The steading is worked by whoever is standing in it. Before there is one,
+// nobody works at all; after, the home crew works every day and the hands you
+// send out on an expedition are hands that are not farming.
 
 import { key, range, type Hex } from '../hex';
 import type { Rng } from '../rng';
@@ -28,8 +28,8 @@ import {
 import { MEASURE_MAX } from '../data/sites';
 import type { GameState, Person, Plot, SiteReport, Settlement } from '../state/types';
 import { effectsOn } from './calendar';
-import { effectiveStat, living } from './people';
-import { atHome } from './site';
+import { effectiveStat } from './people';
+import { homeCrew } from './expedition';
 import { chronicle } from './saga';
 
 /** Rings of local ground around the hall. Nineteen hexes at radius two. */
@@ -256,7 +256,7 @@ export function assign(state: GameState, personId: string, job: JobId | null): b
 
 /** Everyone alive with nothing to do. Idleness is its own small problem. */
 export function idlers(state: GameState): Person[] {
-  return living(state.party.people).filter((p) => !p.job);
+  return homeCrew(state).filter((p) => !p.job);
 }
 
 // --- A day's work ---
@@ -304,9 +304,13 @@ export function dayLabour(state: GameState): DayLabour {
     byPerson: [],
     idle: 0,
   };
-  if (!state.settlement || !atHome(state)) return out;
+  // The steading is worked by whoever is standing in it. Since 4.2 that is
+  // the home crew rather than "everyone, if nobody has wandered off" — hands
+  // sent out on an expedition are hands not farming, which is the whole cost
+  // of sending them.
+  if (!state.settlement) return out;
 
-  for (const person of living(state.party.people)) {
+  for (const person of homeCrew(state)) {
     const job = jobOf(person);
     if (!job) {
       out.idle += 1;
@@ -322,7 +326,8 @@ export function dayLabour(state: GameState): DayLabour {
 /** Firewood a night costs after what the builders have put up. */
 export function shelterSaving(state: GameState): number {
   const home = state.settlement;
-  if (!home || !atHome(state)) return 0;
+  // The roof keeps the hall warm whether or not a party is out under it.
+  if (!home) return 0;
   return home.shelter * SHELTER_SAVES;
 }
 

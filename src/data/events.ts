@@ -497,7 +497,7 @@ export const EVENTS: EventDef[] = [
     title: 'Smoke on the Ridge',
     body: 'A thread of smoke where no smoke should be, and it has moved since morning. Somebody is camped within a day of us and taking no trouble to hide it.',
     weight: 13,
-    when: [{ c: 'settled' }, { c: 'atHome' }, { c: 'dayMin', day: 12 }],
+    when: [{ c: 'settled' }, { c: 'dayMin', day: 12 }],
     choices: [
       {
         label: 'Go out and meet them before they come to us',
@@ -516,7 +516,7 @@ export const EVENTS: EventDef[] = [
     title: 'They Came at Dawn',
     body: 'No warning worth the name. The dogs went off and then there were men in the yard, and after that there was no time to decide anything.',
     weight: 12,
-    when: [{ c: 'settled' }, { c: 'atHome' }, { c: 'dayMin', day: 20 }],
+    when: [{ c: 'settled' }, { c: 'dayMin', day: 20 }],
     choices: [
       {
         label: 'Form up in front of the hall',
@@ -529,7 +529,7 @@ export const EVENTS: EventDef[] = [
     title: 'A Price Is Asked',
     body: 'Six of them at the edge of the field, weapons grounded, and one walks forward to say what it would cost to make them go away.',
     weight: 11,
-    when: [{ c: 'settled' }, { c: 'atHome' }, { c: 'dayMin', day: 16 }],
+    when: [{ c: 'settled' }, { c: 'dayMin', day: 16 }],
     choices: [
       {
         label: 'Pay them and be rid of it',

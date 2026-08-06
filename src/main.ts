@@ -8,7 +8,7 @@ import { currentMode } from './modes';
 import { makeSeedPhrase } from './rng';
 import { newGame } from './state/create';
 import { clearSave, hasSave, load, save } from './state/save';
-import type { GameState } from './state/types';
+import type { GameState, Purpose } from './state/types';
 import { apply, type Action } from './sim/actions';
 import { createTravelView } from './render/travel';
 import { createBattleView } from './render/battle';
@@ -28,6 +28,7 @@ import {
   renderAftermath,
   renderEventCard,
   renderFounding,
+  renderLaunch,
   renderRunEnd,
   renderTitle,
   renderWarband,
@@ -70,6 +71,10 @@ let picked: string | null = null;
 let colonyTab: ColonyTab = 'work';
 /** The chart overlay. A view of the save, not part of it. */
 let mapOpen = false;
+/** The send-out card: who is ticked, and what for. Both are view state. */
+let launchOpen = false;
+let launchPicked = new Set<string>();
+let launchPurpose: Purpose = 'explore';
 /** Which action a tap on a foe performs. Resets to Strike each turn. */
 let aim: Aim = 'strike';
 let aimTurnKey = '';
@@ -103,7 +108,7 @@ function dispatch(action: Action): void {
 }
 
 function onHexTap(target: Hex): void {
-  if (!state || state.event || state.aftermath || state.end || foundingOpen || mapOpen) return;
+  if (!state || state.event || state.aftermath || state.end || foundingOpen || mapOpen || launchOpen) return;
   if (equals(target, state.party.at)) return;
   dispatch({ type: 'MOVE', to: target });
 }
@@ -133,6 +138,9 @@ function startRun(seed: string): void {
   picked = null;
   colonyTab = 'work';
   mapOpen = false;
+  launchOpen = false;
+  launchPicked = new Set();
+  launchPurpose = 'explore';
   mountGame();
 }
 
@@ -270,6 +278,11 @@ function render(): void {
       mapOpen = true;
       render();
     },
+    () => {
+      launchOpen = true;
+      launchPicked = new Set();
+      render();
+    },
   );
   if (!state.end && !state.event) {
     actions.append(
@@ -294,6 +307,31 @@ function render(): void {
         clearSave();
         showTitle();
       }),
+    );
+  } else if (launchOpen && state.settlement && !state.expedition) {
+    overlaySlot.replaceChildren(
+      renderLaunch(
+        state,
+        launchPicked,
+        (id) => {
+          if (launchPicked.has(id)) launchPicked.delete(id);
+          else launchPicked.add(id);
+          render();
+        },
+        launchPurpose,
+        (p) => {
+          launchPurpose = p;
+          render();
+        },
+        (action) => {
+          launchOpen = false;
+          dispatch(action);
+        },
+        () => {
+          launchOpen = false;
+          render();
+        },
+      ),
     );
   } else if (mapOpen) {
     overlaySlot.replaceChildren(

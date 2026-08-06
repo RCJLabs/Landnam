@@ -890,6 +890,24 @@ h2.grim {
   color: #d98a80;
 }
 
+
+/* --- Expeditions (4.2) --- */
+
+.hint.out {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.launch-crew {
+  display: grid;
+  gap: 3px;
+  margin: 12px 0;
+}
+
+.launch-crew .crew-row {
+  background: var(--ink);
+}
+
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {

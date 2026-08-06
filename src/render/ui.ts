@@ -18,6 +18,7 @@ import {
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast } from '../sim/winter';
+import { everyoneHome, expeditionLine } from '../sim/expedition';
 import { button, el } from './svg';
 
 export type Dispatch = (action: Action) => void;
@@ -91,6 +92,7 @@ export function renderActionBar(
   dispatch: Dispatch,
   onSettle?: () => void,
   onMap?: () => void,
+  onLaunch?: () => void,
 ): HTMLElement {
   const bar = el('div', { class: 'actionbar' });
   if (state.end || state.event) return bar;
@@ -128,6 +130,23 @@ export function renderActionBar(
       button('Steading', () => dispatch({ type: 'ENTER_COLONY' }), {
         class: 'action settle',
         title: 'Set your people to work.',
+      }),
+    );
+  }
+  // Once the posts are in, only a launched party walks the map.
+  if (onLaunch && everyoneHome(state) && atHome(state)) {
+    bar.append(
+      button('Send out', onLaunch, {
+        class: 'action settle',
+        title: 'Send a party out from the steading.',
+      }),
+    );
+  }
+  if (state.expedition && !state.expedition.returning) {
+    bar.append(
+      button('Turn back', () => dispatch({ type: 'TURN_HOME' }), {
+        class: 'action secondary',
+        title: 'Head for the steading.',
       }),
     );
   }
@@ -222,5 +241,9 @@ export function renderHint(state: GameState): HTMLElement {
   if (!state.settlement) {
     return el('div', { class: 'hint' }, ['Find ground worth holding · tap a marked hex to travel']);
   }
-  return el('div', { class: 'hint' }, ['Tap a marked hex to travel · drag to look about']);
+  const out = expeditionLine(state);
+  if (out) return el('div', { class: 'hint out' }, [out]);
+  return el('div', { class: 'hint' }, [
+    'The band is at the steading · send a party out to go anywhere',
+  ]);
 }

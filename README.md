@@ -103,6 +103,13 @@ no audio files, no network.
   stores, hold a Thing and let it be argued out, or tell them to get back to
   work — which costs nothing today, hardens the quarrel, and eventually comes
   to knives in the dark.
+- **Send a party out.** Once the posts are in, the steading is where everyone
+  lives — the map only opens up when you send somebody. Pick who goes and what
+  for: look at the country, go out to barter, or go out under arms. Everyone
+  you send is a pair of hands off the fields, and the steading keeps working
+  with whatever is left. It cuts both ways: a hall whose warriors are three
+  days away is exactly the one worth raiding, and the raid is fought by
+  whoever stayed behind.
 - **The chart** shows everything you have seen on one screen: where the knarr
   came ashore, where the steading stands, where you are now, and the ground
   you actually walked to get there.

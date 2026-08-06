@@ -15,6 +15,8 @@ import { stream } from '../rng';
 import { key } from '../hex';
 import type { JobId } from '../data/jobs';
 import type { BuildingId } from '../data/buildings';
+import type { Purpose } from '../state/types';
+import { launch, turnForHome } from './expedition';
 
 export type BattleAction =
   | { type: 'B_MOVE'; to: Hex }
@@ -25,6 +27,10 @@ export type BattleAction =
   | { type: 'B_DASH' }
   | { type: 'B_END_TURN' }
   | { type: 'B_LEAVE' };
+
+export type ExpeditionAction =
+  | { type: 'LAUNCH'; members: string[]; purpose: Purpose }
+  | { type: 'TURN_HOME' };
 
 export type ColonyAction =
   | { type: 'ENTER_COLONY' }
@@ -37,6 +43,7 @@ export type Action =
   | TravelAction
   | BattleAction
   | ColonyAction
+  | ExpeditionAction
   | { type: 'CHOOSE'; index: number }
   | { type: 'DISMISS_EVENT' }
   | { type: 'DISMISS_AFTERMATH' };
@@ -149,6 +156,21 @@ export function apply(state: GameState, action: Action): GameState {
   }
 
   if (COLONY_TYPES.has(action.type)) return state;
+
+  // --- Expeditions ---
+
+  if (action.type === 'LAUNCH') {
+    if (currentMode(state) !== 'TRAVEL' || state.event || state.aftermath) return state;
+    const next = structuredClone(state);
+    if (!launch(next, action.members, action.purpose)) return state;
+    return next;
+  }
+  if (action.type === 'TURN_HOME') {
+    if (currentMode(state) !== 'TRAVEL' || state.event) return state;
+    const next = structuredClone(state);
+    if (!turnForHome(next)) return state;
+    return next;
+  }
 
   // The reckoning from a fight blocks the road until it has been read. It is
   // the only place the player is told who did not get up.

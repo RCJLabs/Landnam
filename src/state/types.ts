@@ -283,6 +283,26 @@ export interface Settlement {
   works: number;
 }
 
+// --- Expeditions ---
+
+export type Purpose = 'raid' | 'trade' | 'explore';
+
+/**
+ * A party sent out from the steading. Once there is a settlement this is the
+ * only thing that moves on the world map — the rest of the band is at home
+ * working, which is the whole trade-off.
+ */
+export interface Expedition {
+  /** personIds. Everyone else is the home crew. */
+  members: string[];
+  purpose: Purpose;
+  launchedOn: number;
+  /** Provisions taken from the store. Eaten first, and the rest comes home. */
+  carried: number;
+  /** Set when they turn for home; the map then only offers the way back. */
+  returning?: boolean;
+}
+
 // --- Run end ---
 
 export interface RunEnd {
@@ -314,6 +334,8 @@ export interface GameState {
   settlement?: Settlement;
   /** Bad blood, by pair. Empty on a band that is getting along. */
   grudges: Grudge[];
+  /** A party out from the steading. Absent means everyone is home. */
+  expedition?: Expedition;
   end?: RunEnd;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;
