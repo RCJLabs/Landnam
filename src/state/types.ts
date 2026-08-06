@@ -81,6 +81,8 @@ export interface Person {
   injuries: Injury[];
   /** Earned by fighting. Enough of it and a stat goes up for good. */
   xp: number;
+  /** What they spend their days on once there is a steading. Absent = idle. */
+  job?: string;
   alive: boolean;
   /** Cause of death, for the saga. */
   fate?: string;
@@ -219,12 +221,24 @@ export interface SiteReport {
   total: number;
 }
 
+/** One hex of the steading's own ground, in COLONY mode. */
+export interface Plot {
+  at: Hex;
+  kind: 'hall' | 'field' | 'wood' | 'water' | 'rough' | 'watchpost';
+}
+
 export interface Settlement {
   at: Hex;
   name: string;
   /** The day the posts went in. There is only ever one. */
   foundedOn: number;
   report: SiteReport;
+  /** The local map, generated once from the report. */
+  plots: Plot[];
+  /** Walls and roofs raised so far, 0..SHELTER_MAX. Cuts the firewood burn. */
+  shelter: number;
+  /** How well the watch is kept, 0..WATCH_MAX. Decays if nobody stands it. */
+  watch: number;
 }
 
 // --- Run end ---

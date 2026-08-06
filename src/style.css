@@ -521,6 +521,111 @@ h2.grim {
   font-size: 14px;
 }
 
+
+/* --- The steading (3.2) --- */
+
+.steading-map {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--ink);
+}
+
+.crew {
+  display: grid;
+  gap: 3px;
+  padding: 6px 8px;
+  background: var(--ink-soft);
+  border-top: 1px solid var(--edge);
+  /* The hint slot is a flex child that grows, and a grid inside it stretches
+     its rows to fill. Pin the rows to their content instead. */
+  align-content: start;
+  overflow-y: auto;
+}
+
+.crew-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  text-align: left;
+  height: var(--tap);
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+.crew-row.selected {
+  border-color: var(--gold);
+  background: #33291d;
+}
+
+.crew-name {
+  color: var(--parchment);
+}
+
+.crew-job {
+  color: var(--gold);
+  font-size: 12px;
+}
+
+.crew-job.idle {
+  color: var(--blood);
+  font-style: italic;
+}
+
+.crew-take {
+  color: var(--parchment-dim);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  min-width: 5.5em;
+  text-align: right;
+}
+
+.jobs {
+  display: grid;
+  /* Two columns of full-height targets: six jobs plus stand-down fit a phone
+     without scrolling the picker off the bottom. */
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 7px 8px;
+  background: var(--ink-soft);
+  border-top: 1px solid var(--edge);
+}
+
+.job {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+  padding: 6px 10px;
+  min-height: var(--tap);
+}
+
+.job.secondary {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--parchment-dim);
+}
+
+.job-name {
+  font-size: 14px;
+}
+
+.job-take {
+  font-size: 11px;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.job-why {
+  font-size: 10px;
+  color: var(--parchment-dim);
+  text-transform: capitalize;
+}
+
+.job[disabled] {
+  opacity: 0.45;
+}
+
 /* Landscape and larger screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {

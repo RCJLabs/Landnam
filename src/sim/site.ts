@@ -20,6 +20,7 @@ import {
 import { stream } from '../rng';
 import type { GameState, SiteReport, Terrain, World } from '../state/types';
 import { chronicle } from './saga';
+import { makePlots } from './colony';
 import { bestAt } from './people';
 
 function clamp(value: number): number {
@@ -210,8 +211,17 @@ export function foundSettlement(state: GameState): boolean {
   if (!canFound(state, at)) return false;
   const report = siteReport(state.world, at)!;
   const name = nameFor(state, at, report);
+  const rng = stream(state.seed, 'colony').derive(`found:${key(at)}`);
 
-  state.settlement = { at: { q: at.q, r: at.r }, name, foundedOn: state.day, report };
+  state.settlement = {
+    at: { q: at.q, r: at.r },
+    name,
+    foundedOn: state.day,
+    report,
+    plots: makePlots(report, { q: at.q, r: at.r }, rng.derive('plots')),
+    shelter: 0,
+    watch: 0,
+  };
   // The land-taking is the moment the run stops being a walk, so it is
   // written in saga voice rather than as another day's line.
   const eldest = bestAt(state.party.people, 'spirit');

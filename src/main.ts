@@ -12,6 +12,14 @@ import type { GameState } from './state/types';
 import { apply, type Action } from './sim/actions';
 import { createTravelView } from './render/travel';
 import { createBattleView } from './render/battle';
+import { createColonyView } from './render/colony';
+import {
+  renderColonyActions,
+  renderColonyBar,
+  renderColonyFooter,
+  renderColonyHint,
+  renderCrew,
+} from './render/colonyUi';
 import {
   renderAftermath,
   renderEventCard,
@@ -46,10 +54,13 @@ if (!app) throw new Error('missing #app');
 let state: GameState | null = null;
 let travelView: ReturnType<typeof createTravelView> | null = null;
 let battleView: ReturnType<typeof createBattleView> | null = null;
+let colonyView: ReturnType<typeof createColonyView> | null = null;
 let sagaExpanded = false;
 let rosterOpen = false;
 /** The land-taking card is UI state — the decision itself is the only thing saved. */
 let foundingOpen = false;
+/** Who is selected in the steading. Selection is a view concern, not a save. */
+let picked: string | null = null;
 /** Which action a tap on a foe performs. Resets to Strike each turn. */
 let aim: Aim = 'strike';
 let aimTurnKey = '';
@@ -110,6 +121,7 @@ function startRun(seed: string): void {
   sagaExpanded = false;
   rosterOpen = false;
   foundingOpen = false;
+  picked = null;
   mountGame();
 }
 
@@ -169,11 +181,43 @@ function renderBattle(): void {
   );
 }
 
+function renderColony(): void {
+  if (!state?.settlement) return;
+  if (!colonyView) colonyView = createColonyView();
+  if (mapSlot.firstChild !== colonyView.root) mapSlot.replaceChildren(colonyView.root);
+
+  // A dead or departed selection must not strand the picker open.
+  if (picked && !state.party.people.some((p) => p.id === picked && p.alive)) picked = null;
+
+  // Setting someone to work returns you to the roster, so the next person is
+  // one tap away rather than two. On a phone that is the difference between
+  // the panel being usable and being a chore.
+  const colonyDispatch = (action: Action): void => {
+    if (action.type === 'ASSIGN') picked = null;
+    dispatch(action);
+  };
+
+  colonyView.update(state);
+  topbarSlot.replaceChildren(renderColonyBar(state));
+  hintSlot.replaceChildren(renderColonyHint(state), renderCrew(state, picked, (id) => {
+    picked = id;
+    render();
+  }));
+  actionSlot.replaceChildren(renderColonyActions(state, picked, colonyDispatch));
+  sagaSlot.replaceChildren(renderColonyFooter(state));
+  overlaySlot.replaceChildren();
+}
+
 function render(): void {
   if (!state || !travelView) return;
 
   if (currentMode(state) === 'BATTLE' && state.battle) {
     renderBattle();
+    return;
+  }
+
+  if (currentMode(state) === 'COLONY') {
+    renderColony();
     return;
   }
 

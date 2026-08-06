@@ -353,7 +353,15 @@ describe('home ground pays for itself', () => {
     const base = siteReport(state.world, state.party.at)!;
     const report = { ...base, ...override };
     report.total = KEYS.reduce((sum, k) => sum + report[k], 0);
-    state.settlement = { at: state.party.at, name: 'Testholt', foundedOn: 1, report };
+    state.settlement = {
+      at: state.party.at,
+      name: 'Testholt',
+      foundedOn: 1,
+      report,
+      plots: [],
+      shelter: 0,
+      watch: 0,
+    };
     return state;
   }
 

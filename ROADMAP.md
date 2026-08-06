@@ -23,7 +23,7 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 3.2**
+> **CURRENT MILESTONE: 3.3**
 
 ---
 
@@ -60,7 +60,7 @@ Goal: encounters zoom into battles worth winning.
 Goal: the full loop closes — travel, fight, settle, survive winter.
 
 - [x] **3.1 Land-taking** — Any claimable hex shows site quality derived from surroundings (fresh water, soil, timber, harbor, defensibility). Founding is a one-way ritual moment. *Done when: choosing where to settle is a real decision.*
-- [ ] **3.2 Colony view & jobs** — COLONY mode: zoomed local map of the settled hex. Assign warband to jobs: farmer, hunter, fisher, woodcutter, builder, warrior. Day-tick resolves labor into stockpiles. *Done when: job assignment visibly moves the numbers.*
+- [x] **3.2 Colony view & jobs** — COLONY mode: zoomed local map of the settled hex. Assign warband to jobs: farmer, hunter, fisher, woodcutter, builder, warrior. Day-tick resolves labor into stockpiles. *Done when: job assignment visibly moves the numbers.*
 - [ ] **3.3 Needs & buildings** — Needs: food, warmth, rest, morale. Build queue: longhouse, smokehouse, farm plots, palisade, dock, mead hall. Buildings unlock capacity and jobs. *Done when: a build order emerges naturally from scarcity.*
 - [ ] **3.4 The First Winter** — Winter as boss fight: no forage, firewood burn, sickness events, morale spiral. Stockpile targets telegraphed in autumn. *Done when: an unprepared colony dies and it's clearly your fault — ship v0.3 (full loop).*
 - [ ] **3.5 Raid defense** — Rival clans attack the colony; battle layer reuses the colony map with palisade/buildings as terrain. Losses damage structures and people. *Done when: the palisade earns its lumber.*
@@ -91,6 +91,21 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-06 — 3.2 Colony view & jobs** — COLONY mode pushes over travel:
+  nineteen hexes of your own ground, laid out from the site reading, so the
+  local map is a picture of the choice you already made. Six jobs — farmer,
+  hunter, fisher, woodcutter, builder, warrior — each leaning on one stat and
+  one measure of the ground, so a site is good at some and bad at others and
+  the move is finding where your people and your land agree. Builder raises
+  shelter, which cuts the firewood burn; warrior keeps the watch, which decays
+  the moment nobody stands it and which makes the steading quieter while it
+  holds. The season owns the fields entirely and the watch not at all: a
+  farmer in midwinter produces almost nothing, which is what stops the colony
+  from making the clock meaningless. Labour resolves only on days the band is
+  home — walking away from the farm costs you the farm. Measured over four
+  settled years on ground a careful player would pick: a balanced steading
+  survives 3 of 4 and averages 67 days, all-farmers freeze at 43, all-cutters
+  starve at 23. `SAVE_VERSION` 7 with a migration. 246 tests.
 - **2026-08-06 — 3.1 Land-taking** — Every hex you stand on is read on five
   measures: fresh water, soil, timber, harbour and defensibility, each 0–5,
   each derived from the hex AND its ring, because a steading is not one hex —

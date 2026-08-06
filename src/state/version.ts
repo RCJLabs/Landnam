@@ -7,7 +7,8 @@
 // v5 (2.4): Person gained xp (and diedOn), Combatant gained kills, and the
 //           root gained the optional post-battle `aftermath`.
 // v6 (3.1): the root gained the optional `settlement`.
-export const SAVE_VERSION = 6;
+// v7 (3.2): Settlement gained plots/shelter/watch; Person gained job.
+export const SAVE_VERSION = 7;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

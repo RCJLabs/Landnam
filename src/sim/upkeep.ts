@@ -4,6 +4,7 @@
 import type { GameState, Person, RunEnd } from '../state/types';
 import { effectsOn, seasonOf } from './calendar';
 import { living } from './people';
+import { noteFirstWork, shelterSaving, workTheDay } from './colony';
 import { chronicle } from './saga';
 
 /** Winter arrives on day 49; spring on day 73 is survival. */
@@ -65,14 +66,18 @@ export function passDay(state: GameState): boolean {
   const season = seasonOf(state.day);
   const effects = effectsOn(state.day);
 
+  // Work comes before eating: what the day produced is available to the mouths
+  // it has to feed that same evening.
+  const labour = workTheDay(state);
+
   // Mouths.
   const needed = foodPerDay(state);
   const eaten = Math.min(party.food, needed);
   party.food -= eaten;
   const hungry = eaten < needed;
 
-  // Fire.
-  const wood = firewoodPerNight(state);
+  // Fire. A roof of your own is worth firewood you do not have to cut.
+  const wood = Math.max(0, firewoodPerNight(state) - shelterSaving(state));
   const burned = Math.min(party.firewood, wood);
   party.firewood -= burned;
   const cold = burned < wood;
@@ -105,6 +110,7 @@ export function passDay(state: GameState): boolean {
   }
 
   mendInjuries(state);
+  noteFirstWork(state, labour);
 
   // Season turned?
   if ((state.day - 1) % 24 === 0) {

@@ -11,6 +11,7 @@ import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
 import { atHome } from './site';
+import { WATCH_QUIET } from '../data/jobs';
 import { checkRunEnd } from './upkeep';
 
 /** Chance an event fires after a travel action. */
@@ -84,7 +85,10 @@ export function presentEvent(state: GameState, def: EventDef): ActiveEvent {
  */
 export function eventChance(state: GameState): number {
   if (!atHome(state)) return BASE_EVENT_CHANCE;
-  return BASE_EVENT_CHANCE * (1 - state.settlement!.report.defence * 0.09);
+  const home = state.settlement!;
+  // Ground you can watch, plus people actually watching it.
+  const quiet = home.report.defence * 0.09 + home.watch * WATCH_QUIET;
+  return BASE_EVENT_CHANCE * Math.max(0.15, 1 - quiet);
 }
 
 /** Rolls for an event after a travel action. Mutates the state clone. */

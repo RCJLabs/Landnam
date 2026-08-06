@@ -63,6 +63,15 @@ no audio files, no network.
   name from whatever it is best at. After that, your own ground gives back —
   more from the fields, more firewood, deeper sleep, and fewer things walking
   up on you in the night.
+- **Set them to work.** Once the posts are in, **Steading** opens your own
+  ground: nineteen hexes of field, wood, water and rough laid out from the
+  site you chose. Put people on six jobs — farmer, hunter, fisher,
+  woodcutter, builder, warrior. Each leans on one stat and one thing about
+  the land, and the panel shows you what *that* person would produce at
+  *that* job before you commit. Builders raise shelter and burn less
+  firewood; warriors keep a watch that goes quiet the moment nobody stands
+  it. Nothing grows in a frozen field, so what you bank in summer is what you
+  eat in winter — and nobody works on the days you are away walking.
 - **The saga log** writes down what happened, in chronicle voice. It is the
   record of the run.
 - **Winter** starts on day 49 and stops the land from giving. Reaching spring

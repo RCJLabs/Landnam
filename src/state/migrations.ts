@@ -74,6 +74,18 @@ export const MIGRATIONS: Record<number, Migration> = {
   // "still walking", so a v5 save needs no reshaping — but the registry
   // refuses silent gaps, so the bump ships this anyway.
   5: (save) => ({ ...save, version: 6 }),
+
+  // v6 -> v7: the steading has ground of its own and people have jobs. A save
+  // made before COLONY existed has a settlement with no plots, so give it an
+  // empty list rather than undefined — the renderer iterates it, and a run
+  // mid-flight must not crash on load. The plots regenerate on next entry.
+  6: (save) => {
+    const settlement = save['settlement'] as Record<string, unknown> | undefined;
+    if (settlement) {
+      save['settlement'] = { plots: [], shelter: 0, watch: 0, ...settlement };
+    }
+    return { ...save, version: 7 };
+  },
 };
 
 export interface MigrationResult {

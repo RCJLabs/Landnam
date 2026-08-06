@@ -79,6 +79,14 @@ export function renderActionBar(
       }),
     );
   }
+  if (atHome(state)) {
+    bar.append(
+      button('Steading', () => dispatch({ type: 'ENTER_COLONY' }), {
+        class: 'action settle',
+        title: 'Set your people to work.',
+      }),
+    );
+  }
   return bar;
 }
 
@@ -118,7 +126,7 @@ export function renderSitePanel(state: GameState): HTMLElement {
   // blocker, the blocker IS the headline.
   const refused = !!blocker && blocker !== 'settled' && blocker !== 'ended';
   const head = home
-    ? `${state.settlement!.name} — our own ground`
+    ? `${state.settlement!.name} — our own ground · tap Steading to set the work`
     : state.settlement
       ? `This ground: ${verdict.label}`
       : refused
