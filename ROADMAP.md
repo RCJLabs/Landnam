@@ -112,9 +112,10 @@ the Thing is a lap of honour rather than a climax.
 7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
    and they blur. Also the cleanest way to make the palisade read as ground
    rather than as a number.
-8. **[ ] Split `data/events.ts` (946 lines) and `main.ts` (609).** `main.ts`
-   is the risk: a boot router carrying UI state for eight overlays, and every
-   milestone adds another.
+8. **[~] Split `data/events.ts` (1,150 lines) and `main.ts`.** The console
+   levers are out (`debug.ts`), taking main.ts from 614 to 554. Still to go:
+   the overlay chain and the UI-state bag out of main.ts, and events.ts into
+   per-phase files.
 9. **[x] Version the localStorage preferences.** One `store.ts`, a version
    stamp, and a migration for the mute's old format. *(The audit's claim that
    `fallen` grew unboundedly was wrong — it has been capped at 60 since it
@@ -255,6 +256,21 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The console levers move out of the boot router** — main.ts
+  had grown to six hundred and fourteen lines and every milestone added to
+  it. The debug handle went first, because it is the part with no business
+  being in a boot router at all: it is not how the game starts, it is a set of
+  levers for dropping onto a battlefield, filling the store, or winding the
+  calendar past two years of honest turns.
+  It takes its hooks rather than reaching for main.ts's module-level state,
+  which is what lets it be a separate file — and it means every lever now goes
+  through the same save-and-render path a real dispatch uses instead of
+  quietly maintaining a second one. Each also works on a clone and hands it
+  back, the way a reducer does.
+  Verified in a browser rather than assumed: `state()` reads, `stock()` fills,
+  `fight()` puts the band on a field, no console errors. 554 lines and 108,
+  where there were 614. 535 tests.
 
 - **2026-08-07 — One way to store a preference** — Three things outlive a run
   beside the save — the mute, the teaching, the memorial — and each had grown

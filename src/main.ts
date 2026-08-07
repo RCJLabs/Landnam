@@ -3,7 +3,7 @@
 
 import './style.css';
 
-import { equals, key, type Hex } from './hex';
+import { equals, type Hex } from './hex';
 import { currentMode } from './modes';
 import { makeSeedPhrase } from './rng';
 import { newGame } from './state/create';
@@ -57,7 +57,6 @@ import {
 } from './render/battleUi';
 import { combatantAt, isWarbandTurn } from './sim/battle';
 import { canFound } from './sim/site';
-import { startBattle, startRaid } from './sim/battleTurn';
 import { button, el } from './render/svg';
 import { watchForNewBuild } from './freshness';
 import {
@@ -77,6 +76,7 @@ import { lessonDue } from './sim/lessons';
 import { forgetTeaching, markTaught, taught } from './taught';
 import { fallen, remember } from './memorial';
 import { fallenOf } from './sim/fallen';
+import { installDebug } from './debug';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('missing #app');
@@ -533,82 +533,21 @@ function render(): void {
   }
 }
 
-// A small hand-hold for testing and for poking at a run from the console:
-// inspect the state, or drop straight onto a battlefield rather than
-// wandering until a combat event happens to fire.
-declare global {
-  interface Window {
-    landnam?: {
-      state(): GameState | null;
-      fight(difficulty?: number): void;
-      raid(difficulty?: number): void;
-      visit(id?: string): void;
-      stock(food?: number, firewood?: number): void;
-      skip(days?: number): void;
-    };
-  }
-}
-window.landnam = {
-  state: () => state,
-  fight(difficulty = 0) {
-    if (!state || currentMode(state) !== 'TRAVEL') return;
-    const next = structuredClone(state);
-    const here = next.world.tiles[key(next.party.at)]?.terrain ?? 'meadow';
-    startBattle(next, here, difficulty);
-    state = next;
-    save(state);
-    render();
-  },
-  raid(difficulty = 0) {
-    if (!state || currentMode(state) !== 'TRAVEL' || !state.settlement) return;
-    const next = structuredClone(state);
-    next.party.at = { ...next.settlement!.at };
-    startRaid(next, difficulty);
-    state = next;
-    save(state);
-    render();
-  },
-  // Fills the store, so a playtest can spend its days on the thing being
-  // tested rather than on not starving.
-  stock(food = 200, firewood = 200) {
-    if (!state) return;
-    const next = structuredClone(state);
-    next.party.food = food;
-    next.party.firewood = firewood;
-    next.party.morale = Math.max(next.party.morale, 70);
-    state = next;
-    save(state);
-    render();
-  },
-  // Winds the calendar on. Reaching the endgame honestly is two years of
-  // turns, which is a fine thing to ask of a player and a poor thing to ask
-  // of a playtest.
-  skip(days = 96) {
-    if (!state || currentMode(state) !== 'TRAVEL') return;
-    const next = structuredClone(state);
-    next.day += days;
-    state = next;
-    save(state);
-    render();
-  },
-  // Stands the band in somebody else's yard, which otherwise takes a walk of
-  // several days and the luck to have looked in the right direction.
-  visit(id?: string) {
-    if (!state || currentMode(state) !== 'TRAVEL') return;
-    const next = structuredClone(state);
-    const target = id ? next.neighbours.find((n) => n.id === id) : next.neighbours[0];
-    if (!target) return;
-    next.party.at = { ...target.at };
-    target.found = true;
-    state = next;
-    save(state);
-    render();
-  },
-};
-
 paintMute();
 document.body.append(muteSlot);
 armAudio();
+
+// Console levers for testing. See src/debug.ts — they go through the same
+// save-and-render path a real dispatch does.
+installDebug({
+  get: () => state,
+  commit: (next) => {
+    state = next;
+    save(state);
+    render();
+  },
+});
+
 showTitle();
 // If the server has moved on since this page was cached, say so.
 watchForNewBuild();
