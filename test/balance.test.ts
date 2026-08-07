@@ -55,7 +55,7 @@ import { moveOptions, canGather, canFish } from '../src/sim/travel';
 import { canFound, siteReport } from '../src/sim/site';
 import { assign, queueBuild } from '../src/sim/colony';
 import { BAND_BASE, foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
-import { SWORN_MAX, hands, living, sworn } from '../src/sim/people';
+import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
 import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle } from '../src/sim/battleTurn';
@@ -104,6 +104,14 @@ function step(state: GameState): Action {
     const foes = b.combatants.filter(c => c.side === 'foe' && !c.down && !c.fled);
     if (foes.length === 0) return { type:'B_END_TURN' };
     const near = foes.reduce((a,c)=>distance(c.at,me.at)<distance(a.at,me.at)?a=c:a, foes[0]!);
+    // The game gained the war-cry, so the bot cries it in the same commit.
+    // The average player spends the leader's action on it when the press is
+    // real — two or more foes in earshot — and never on a stray skirmisher.
+    if (!me.hasActed && !b.warCried && !me.broken
+      && me.personId === leaderOf(state.party.people)?.id
+      && foes.filter(f => distance(f.at, me.at) <= 2).length >= 2) {
+      return { type:'B_WARCRY' };
+    }
     if (!me.hasActed && distance(near.at, me.at) === 1) {
       return { type:'B_STRIKE', targetId: near.personId };
     }

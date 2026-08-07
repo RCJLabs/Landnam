@@ -11,6 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { key, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
+import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { startBattle } from '../src/sim/battleTurn';
 import { MAX_FOES } from '../src/sim/battle';
@@ -142,8 +143,10 @@ describe('the hull and the packs are the stake', () => {
     const old = structuredClone(newGame('sea-migrate')) as unknown as Record<string, unknown>;
     old['version'] = 19;
     delete (old['party'] as { hullHoled?: unknown }).hullHoled;
+    // Migration walks all the way to the CURRENT version — pinning a literal
+    // here is how this assertion broke on the very next bump.
     const migrated = migrate(old).save;
-    expect(migrated['version']).toBe(20);
+    expect(migrated['version']).toBe(SAVE_VERSION);
     expect((migrated['party'] as { hullHoled?: boolean }).hullHoled).toBeUndefined();
   });
 });

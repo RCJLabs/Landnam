@@ -22,7 +22,8 @@
 // v19 (plunder): Battle gained the optional campId; ClanKindDef gained
 //                plunder (data, not save — the bump is for the Battle field).
 // v20 (sea): Party gained the optional hullHoled.
-export const SAVE_VERSION = 20;
+// v21 (combat): Battle gained warCried and lastBlow.
+export const SAVE_VERSION = 21;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

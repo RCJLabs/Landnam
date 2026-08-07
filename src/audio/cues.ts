@@ -105,6 +105,12 @@ export function cuesFor(before: GameState, after: GameState, action: Action): Cu
   // Steel drawn: the horn goes up the moment a field exists that did not.
   if (!wasFighting && isFighting) cues.push('horn');
 
+  // The leader's cry sounds like what it is. State-derived like everything
+  // here: the horn blows because the cry HAPPENED, not because a button did.
+  if (wasFighting && isFighting && !before.battle?.warCried && after.battle?.warCried) {
+    cues.push('horn');
+  }
+
   // --- On the road ---
 
   if (!wasFighting && !isFighting) {

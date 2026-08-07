@@ -51,6 +51,16 @@ export function sworn(people: Person[]): Person[] {
   return living(people).filter((p) => p.bond === 'sworn').slice(0, SWORN_MAX);
 }
 
+/**
+ * Who leads. The first living sworn in the roster — the one who stepped off
+ * the knarr first, which the saga said was afterwards remembered. When the
+ * leader falls, the next in that first-ashore order carries it: leadership
+ * passes by seniority, never by vote, and never to a hand.
+ */
+export function leaderOf(people: Person[]): Person | undefined {
+  return sworn(people)[0];
+}
+
 /** Everyone else the steading has taken in. They work; they never fight. */
 export function hands(people: Person[]): Person[] {
   return living(people).filter((p) => p.bond !== 'sworn');

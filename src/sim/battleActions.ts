@@ -7,10 +7,10 @@ import type { Combatant, GameState, Person } from '../state/types';
 import { activeCombatant, fighterPerson, BASE_MOVES } from './battle';
 import { groundCost } from './battlefield';
 import { hasShot, reachWithZoc, threatCount } from './zoc';
-import { defenceBonus } from './wall';
+import { defenceBonus, wallLinks } from './wall';
 import { bonus } from './lore';
-import { NERVE_HIT, shakeNerve, witnessFall } from './morale';
-import { effectiveStat } from './people';
+import { NERVE_HIT, shakeNerve, startingNerve, witnessFall } from './morale';
+import { effectiveStat, leaderOf } from './people';
 
 export const THROW_RANGE = 3;
 /** Raising a shield is worth this much to the roll needed to hit you. */
@@ -53,6 +53,41 @@ export const MAX_OUTNUMBERED = 2;
  */
 function ourBite(state: GameState, attacker: Combatant): number {
   return attacker.side === 'warband' ? bonus(state, 'bite') : 0;
+}
+
+/**
+ * The wall pushes. Shoulder-mates were always worth something to a
+ * fighter's DEFENCE; now they add weight to the blow as well — one mate is
+ * +1 to hit, two are +2, same shape as the wall bonus itself. This is what
+ * "more synergy with your band" means mechanically: the line is not a place
+ * you hide, it is a thing that hits. Symmetric, because their line is a
+ * line too.
+ */
+export const WALL_PUSH_MAX = 2;
+
+export function wallPush(state: GameState, attacker: Combatant): number {
+  const battle = state.battle;
+  if (!battle) return 0;
+  return Math.min(WALL_PUSH_MAX, wallLinks(battle, attacker).length);
+}
+
+/** Records the blow where the renderer's effects layer can find it. */
+function noteBlow(
+  state: GameState,
+  attacker: Combatant,
+  target: Combatant,
+  amount: number,
+  glancing = false,
+): void {
+  const battle = state.battle!;
+  const n = (battle.lastBlow?.n ?? 0) + 1;
+  battle.lastBlow = {
+    n,
+    attacker: attacker.personId,
+    target: target.personId,
+    amount,
+    ...(glancing ? { glancing: true } : {}),
+  };
 }
 
 export function evasion(state: GameState, target: Combatant): number {
@@ -125,13 +160,29 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
 
   active.hasActed = true;
   const rng = actionRng(state, `strike:${active.personId}`);
-  const roll = rng.roll(2, 6) + effectiveStat(attacker, 'might');
+  const roll = rng.roll(2, 6) + effectiveStat(attacker, 'might') + wallPush(state, active);
 
   if (roll < evasion(state, target)) {
+    // A swing that fails to land still lands SOMEWHERE: a glancing blow
+    // chips one, cannot kill, and keeps a whiffed turn from being a dead
+    // one. The old clean miss made half of every fight feel like waiting.
+    //
+    // Unless the target stands in a FULL wall. Overlapping shields are what
+    // a line is for, and without this the chip bled the wall's survival
+    // edge to nothing: sixty measured fights went from formation up ~15
+    // bodies to a dead heat. The full wall turns glances; a lone fighter
+    // or a single link still takes the wear.
+    if (wallLinks(battle, target).length >= 2) {
+      noteBlow(state, active, target, 0, true);
+      battle.log.push(`${defender.name}'s shield-brothers turned ${attacker.name}'s blow aside.`);
+      return true;
+    }
+    defender.health = Math.max(1, defender.health - 1);
+    noteBlow(state, active, target, 1, true);
     battle.log.push(
       target.defending
-        ? `${attacker.name} beat on ${defender.name}'s shield to no effect.`
-        : `${attacker.name} swung at ${defender.name} and missed.`,
+        ? `${attacker.name} hammered ${defender.name}'s shield until the rim split (1).`
+        : `${attacker.name}'s blow glanced off ${defender.name} (1).`,
     );
     return true;
   }
@@ -139,6 +190,7 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
   const damage =
     rng.roll(1, 6) + Math.floor(effectiveStat(attacker, 'might') / 2) + ourBite(state, active);
   defender.health = Math.max(0, defender.health - damage);
+  noteBlow(state, active, target, damage);
   if (defender.health > 0) {
     battle.log.push(`${attacker.name} struck ${defender.name} (${damage}).`);
     shakeNerve(state, target, NERVE_HIT);
@@ -153,6 +205,59 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
       active,
     );
   }
+  return true;
+}
+
+// --- The leader's war-cry ---
+
+/** How far the cry carries, in hexes. */
+export const WARCRY_RANGE = 2;
+/** What it puts back into every friendly heart in range. */
+export const WARCRY_HEART = 6;
+/** What it takes out of every hostile one. */
+export const WARCRY_DREAD = 4;
+
+/** Whether this combatant is the band's leader, standing on this field. */
+export function isLeader(state: GameState, combatant: Combatant): boolean {
+  return combatant.side === 'warband' && leaderOf(state.party.people)?.id === combatant.personId;
+}
+
+export function canWarCry(state: GameState): boolean {
+  const battle = state.battle;
+  const active = battle ? activeCombatant(battle) : undefined;
+  if (!battle || !active || battle.outcome || battle.warCried) return false;
+  return !active.hasActed && !active.broken && isLeader(state, active);
+}
+
+/**
+ * The war-cry: the leader's action, once a fight. Every friendly heart in
+ * range takes some nerve back; every hostile one is shaken, which can break
+ * it outright. It spends the turn — a leader roaring is a leader not
+ * swinging — and it is the leader's ALONE, which is most of what makes
+ * having one mean anything.
+ */
+export function doWarCry(state: GameState): boolean {
+  if (!canWarCry(state)) return false;
+  const battle = state.battle!;
+  const active = activeCombatant(battle)!;
+  const person = fighterPerson(state, active.personId)!;
+
+  active.hasActed = true;
+  battle.warCried = true;
+
+  for (const c of battle.combatants) {
+    if (c.down || c.fled || distance(c.at, active.at) > WARCRY_RANGE) continue;
+    if (c.side === active.side) {
+      if (!c.broken) {
+        c.nerve = Math.min(startingNerve(state, c.personId), c.nerve + WARCRY_HEART);
+      }
+    } else {
+      shakeNerve(state, c, WARCRY_DREAD);
+    }
+  }
+  battle.log.push(
+    `${person.name} raised the war-cry, and the whole field heard whose ground this was.`,
+  );
   return true;
 }
 

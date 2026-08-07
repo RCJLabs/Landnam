@@ -42,7 +42,7 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-fight',
     title: 'Steel',
-    body: 'Fights are turn-based on a small field. Stand your people SHOULDER TO SHOULDER: the shield wall makes everyone in it harder to kill, and it is worth more than any single blow. Tap a foe to strike; the buttons switch a tap to throwing or shoving. Nerve breaks before bodies do — a side whose fighters all break has lost.',
+    body: 'Fights are turn-based on a small field. Stand your people SHOULDER TO SHOULDER: the shield wall guards everyone in it and adds weight to their blows. The gold pennant marks the leader, whose war-cry — once a fight — puts heart into every friend in earshot and dread into every foe. Tap a foe to strike; even a miss chips at the shield. Nerve breaks before bodies do — a side whose fighters all break has lost.',
   },
   {
     id: 'the-coast',

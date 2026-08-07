@@ -1410,3 +1410,102 @@ button.gear {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* --- Battle effects --- */
+
+/* Spawned by render/battle.ts into the .fx layer and removed on a timer.
+   Everything here is decoration; the layer is never populated at all when
+   the player asked for stillness, so no .still guards are needed. */
+
+.fx line.blow {
+  stroke: var(--parchment);
+  stroke-width: 3;
+  stroke-linecap: round;
+  animation: fx-blow 450ms ease-out both;
+}
+
+.fx line.blow.glance {
+  stroke: var(--parchment-dim);
+  stroke-width: 2;
+  stroke-dasharray: 4 5;
+}
+
+@keyframes fx-blow {
+  0% { opacity: 0.95; }
+  100% { opacity: 0; }
+}
+
+.fx .hit-flash {
+  fill: var(--blood);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fx-flash 450ms ease-out both;
+}
+
+@keyframes fx-flash {
+  0% { opacity: 0.7; transform: scale(0.4); }
+  100% { opacity: 0; transform: scale(1.25); }
+}
+
+.fx .float-dmg {
+  fill: var(--parchment);
+  font-size: 15px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--ink);
+  stroke-width: 3px;
+  animation: fx-float 900ms ease-out both;
+}
+
+.fx .float-dmg.glance {
+  fill: var(--parchment-dim);
+  font-size: 12px;
+}
+
+@keyframes fx-float {
+  0% { opacity: 0; transform: translateY(4px); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-16px); }
+}
+
+/* The cry: two rings rolling out from the leader, one on the other's heels. */
+.fx .cry-ring {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 2.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fx-cry 900ms ease-out both;
+}
+
+.fx .cry-ring.late {
+  animation-delay: 180ms;
+}
+
+@keyframes fx-cry {
+  0% { opacity: 0.9; transform: scale(0.5); }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+
+.fx .fall-fade {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fx-fall 900ms ease-in both;
+}
+
+@keyframes fx-fall {
+  0% { opacity: 0.85; transform: none; }
+  100% { opacity: 0; transform: scale(0.7) rotate(24deg); }
+}
+
+/* The leader's mark on the mast is state, not effect — it never animates. */
+
+button.warcry {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+button.warcry:disabled {
+  border-color: var(--edge);
+  color: var(--parchment-dim);
+}

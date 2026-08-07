@@ -7,7 +7,8 @@ import type { Hex } from '../hex';
 import { chooseOption, dismissEvent, maybeFireEvent } from './events';
 import { applyTravel, type TravelAction } from './travel';
 import { isWarbandTurn } from './battle';
-import { doDash, doDefend, doMove, doShove, doStrike, doThrow } from './battleActions';
+import { doDash, doDefend, doMove, doShove, doStrike, doThrow, doWarCry,
+} from './battleActions';
 import { endTurn, leaveBattle } from './battleTurn';
 import { assign, makePlots, queueBuild, unqueueBuild } from './colony';
 import { atHome } from './site';
@@ -24,6 +25,7 @@ export type BattleAction =
   | { type: 'B_THROW'; targetId: string }
   | { type: 'B_SHOVE'; targetId: string }
   | { type: 'B_DEFEND' }
+  | { type: 'B_WARCRY' }
   | { type: 'B_DASH' }
   | { type: 'B_END_TURN' }
   | { type: 'B_LEAVE' };
@@ -62,6 +64,7 @@ const BATTLE_TYPES = new Set([
   'B_THROW',
   'B_SHOVE',
   'B_DEFEND',
+  'B_WARCRY',
   'B_DASH',
   'B_END_TURN',
   'B_LEAVE',
@@ -90,6 +93,9 @@ export function apply(state: GameState, action: Action): GameState {
         return next;
       case 'B_DEFEND':
         if (!isWarbandTurn(next) || !doDefend(next)) return state;
+        return next;
+      case 'B_WARCRY':
+        if (!isWarbandTurn(next) || !doWarCry(next)) return state;
         return next;
       case 'B_DASH':
         if (!isWarbandTurn(next) || !doDash(next)) return state;

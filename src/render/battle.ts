@@ -4,13 +4,18 @@
 import { cornerPoints, fromKey, fromPixel, key, toPixel, type Hex } from '../hex';
 import type { Battle, GameState, Ground } from '../state/types';
 import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '../sim/battle';
-import { shoveDestination, throwTargets } from '../sim/battleActions';
+import { isLeader, shoveDestination, throwTargets } from '../sim/battleActions';
 import { isThreatened } from '../sim/zoc';
 import { wallPairs } from '../sim/wall';
 import type { Aim } from './battleUi';
 import { svgEl } from './svg';
 
 const HEX = 30;
+
+/** The leader, if they are standing on this field at all. */
+function isLeaderHere(state: GameState, combatant: { personId: string; side: string }): boolean {
+  return isLeader(state, combatant as Parameters<typeof isLeader>[1]);
+}
 
 const GROUND_FILL: Record<Ground, string> = {
   open: '#5e6b40',
@@ -35,10 +40,97 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     ground: svgEl('g'),
     overlay: svgEl('g'),
     fighters: svgEl('g'),
+    // Effects survive repaints and remove themselves: paint() rebuilds the
+    // other layers wholesale, and an animation that gets rebuilt mid-flight
+    // is an animation that never happened.
+    effects: svgEl('g', { class: 'fx' }),
   };
-  root.append(layers.ground, layers.overlay, layers.fighters);
+  root.append(layers.ground, layers.overlay, layers.fighters, layers.effects);
 
   let latest: GameState | null = null;
+  // What the effects layer has already reacted to.
+  let blowSeen = 0;
+  let criedSeen = false;
+  const downSeen = new Set<string>();
+
+  /** Effects are decoration; a player who asked for stillness gets none. */
+  function still(): boolean {
+    return (
+      document.documentElement.classList.contains('still') ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+  }
+
+  /** A one-shot effect node that cleans up after itself. */
+  function spawn(node: SVGElement, life = 750): void {
+    layers.effects.append(node);
+    window.setTimeout(() => node.remove(), life);
+  }
+
+  function playEffects(state: GameState): void {
+    const battle = state.battle;
+    if (!battle) return;
+
+    const blow = battle.lastBlow;
+    if (blow && blow.n !== blowSeen) {
+      blowSeen = blow.n;
+      const from = battle.combatants.find((c) => c.personId === blow.attacker);
+      const to = battle.combatants.find((c) => c.personId === blow.target);
+      if (from && to && !still()) {
+        const a = toPixel(from.at, HEX);
+        const b = toPixel(to.at, HEX);
+        // The blow itself: a streak from attacker to target.
+        spawn(
+          svgEl('line', {
+            x1: a.x, y1: a.y, x2: b.x, y2: b.y,
+            class: `blow${blow.glancing ? ' glance' : ''}`,
+          }),
+          450,
+        );
+        // The landing and the cost — unless the wall turned it (amount 0),
+        // where the streak alone tells the story and "−0" would be noise.
+        if (blow.amount > 0) {
+          spawn(svgEl('circle', { cx: b.x, cy: b.y, r: HEX * 0.5, class: 'hit-flash' }), 450);
+          const text = svgEl('text', {
+            x: b.x, y: b.y - HEX * 0.55,
+            class: `float-dmg${blow.glancing ? ' glance' : ''}`,
+            'text-anchor': 'middle',
+          });
+          text.textContent = `−${blow.amount}`;
+          spawn(text, 900);
+        }
+      }
+    }
+
+    if (battle.warCried && !criedSeen) {
+      criedSeen = true;
+      const leader = battle.combatants.find((c) => isLeaderHere(state, c));
+      if (leader && !still()) {
+        const p = toPixel(leader.at, HEX);
+        spawn(svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.6, class: 'cry-ring' }), 900);
+        spawn(svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.6, class: 'cry-ring late' }), 1100);
+      }
+    }
+    if (!battle.warCried) criedSeen = false;
+
+    for (const c of battle.combatants) {
+      if ((c.down || c.fled) && !downSeen.has(c.personId)) {
+        downSeen.add(c.personId);
+        if (!still() && c.down) {
+          // The fall: the shield stays where it fell for a breath.
+          const p = toPixel(c.at, HEX);
+          spawn(
+            svgEl('circle', {
+              cx: p.x, cy: p.y, r: HEX * 0.42,
+              class: 'fall-fade',
+              fill: c.side === 'warband' ? '#b23b2e' : '#3f4a5a',
+            }),
+            900,
+          );
+        }
+      }
+    }
+  }
 
   function fitViewBox(battle: Battle): void {
     // Frame the whole field with a little breathing room.
@@ -186,9 +278,12 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
           isActive,
           combatant.defending,
           combatant.broken,
+          isLeaderHere(state, combatant),
         ),
       );
     }
+
+    playEffects(state);
   }
 
   root.addEventListener('pointerup', (e) => {
@@ -248,9 +343,28 @@ function fighter(
   isActive: boolean,
   defending: boolean,
   broken: boolean,
+  leader = false,
 ): SVGGElement {
   const g = svgEl('g', broken ? { opacity: '0.6' } : {});
   const radius = HEX * 0.42;
+
+  // The leader carries the banner: a gold pennant over the shield, readable
+  // from any zoom, on the one shield that can raise the war-cry.
+  if (leader) {
+    const mastX = cx + radius * 0.55;
+    const top = cy - radius - 12;
+    g.append(
+      svgEl('line', {
+        x1: mastX, y1: cy - radius * 0.4, x2: mastX, y2: top,
+        stroke: '#e8dcc0', 'stroke-width': 1.6,
+      }),
+      svgEl('path', {
+        d: `M ${mastX} ${top} l 11 3.5 l -11 3.5 Z`,
+        fill: '#d3a441',
+        class: 'leader-pennant',
+      }),
+    );
+  }
 
   // A braced shield reads as a heavier rim.
   if (defending) {

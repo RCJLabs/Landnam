@@ -414,6 +414,31 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — The combat overhaul: a leader worth following** — The band
+  now HAS a leader on the field: the first living sworn — first off the
+  knarr, succession by seniority, never a hand — marked by a gold pennant
+  on the mast so there is no guessing who. The leader alone carries the
+  war-cry, once a fight: heart back into every friend within two hexes
+  (capped at where their nerve started), dread into every foe, and the
+  horn sounds it. The wall pushes as well as guards — one shoulder-mate
+  is +1 to hit, two are +2, symmetric because their line is a line too.
+  Misses stopped being dead turns: a whiffed swing glances for a chip of
+  one that can never kill — UNLESS the target stands in a full wall,
+  whose overlapping shields turn glances aside. That last rule was
+  measured in, not guessed: with the chip alone, sixty fights took the
+  formation bot's ~15-body survival edge to a dead heat (167 vs 169);
+  with the full wall turning glances it stands at 38/60 wins and 166
+  standing against 35/60 and 163. And the field finally moves: an
+  effects layer that survives repaints draws the blow streak, the hit
+  flash, the floating cost, the cry's double ring, and the fall's fade —
+  all self-removing nodes, all silenced by reduced-motion or the
+  stillness setting. The bot cries the cry in the same commit
+  (two-plus foes in earshot, leader's turn), per the standing rule.
+  Curve after all of it: winter 72%, spring 18%, two winters 7% —
+  within noise of 78/23/10. Twelve new tests in test/leader.test.ts;
+  SAVE_VERSION 21. Also caught sea.test pinning a version literal the
+  way places.test once did; it asserts SAVE_VERSION now.
+
 - **2026-08-07 — A wider country, and a quieter first week** — Off a phone
   playtest that hit the world's edge on day four. The world grows from
   40x30 to 52x36 — half again the area — with a wider sea

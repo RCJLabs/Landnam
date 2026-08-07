@@ -3,7 +3,7 @@
 
 import type { GameState } from '../state/types';
 import { activeCombatant, fighterPerson, isWarbandTurn, standing } from '../sim/battle';
-import { throwTargets } from '../sim/battleActions';
+import { throwTargets, canWarCry, isLeader } from '../sim/battleActions';
 import { wallBonus, wallLinks } from '../sim/wall';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';
@@ -78,9 +78,18 @@ export function renderBattleActions(
   if (spent) defend.setAttribute('disabled', 'true');
   const dash = button('Run', () => dispatch({ type: 'B_DASH' }), { class: 'action' });
   if (spent) dash.setAttribute('disabled', 'true');
+  second.append(defend, dash);
+  // The leader's button, and only the leader's: its absence on everyone
+  // else's turn is what makes leading mean something.
+  if (isLeader(state, active)) {
+    const cry = button('War-cry', () => dispatch({ type: 'B_WARCRY' }), {
+      class: 'action warcry',
+      title: 'Once a fight: heart into every friend in earshot, dread into every foe.',
+    });
+    if (!canWarCry(state)) cry.setAttribute('disabled', 'true');
+    second.append(cry);
+  }
   second.append(
-    defend,
-    dash,
     button('End turn', () => dispatch({ type: 'B_END_TURN' }), { class: 'action primary' }),
   );
 

@@ -264,6 +264,14 @@ export interface Battle {
   placeId?: string;
   /** Set when the band fell on a neighbour — winning is what empties them. */
   campId?: string;
+  /** The leader's war-cry has been spent. Once a fight, and it shows. */
+  warCried?: boolean;
+  /**
+   * The most recent blow, for the renderer's effects layer: a lunge, a
+   * flash, a number that floats. `n` only ever rises, so the view can tell
+   * a new blow from a repaint of the old one.
+   */
+  lastBlow?: { n: number; attacker: string; target: string; amount: number; glancing?: boolean };
   width: number;
   height: number;
   grid: Record<HexKey, BattleTile>;

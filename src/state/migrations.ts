@@ -207,6 +207,9 @@ export const MIGRATIONS: Record<number, Migration> = {
   // Party gained the optional hullHoled. An old save's hull is sound —
   // nothing had ever been able to hole it.
   19: (save) => ({ ...save, version: 20 }),
+  // Battle gained warCried and lastBlow. An old save's fight has cried no
+  // cry and struck no recorded blow, which is also the truth.
+  20: (save) => ({ ...save, version: 21 }),
 };
 
 export interface MigrationResult {
