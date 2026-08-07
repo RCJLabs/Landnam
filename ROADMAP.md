@@ -214,11 +214,17 @@ measuring bot has never once used the offensive half.
    as day 7. A word-has-spread scalar (years + the player's own sackings)
    feeding event-battle difficulty and archetype weights. Per the Math.min
    lesson: prove each knob binds before measuring it.
-4. **[ ] Diagnose the mid-winter cliff before tuning it.** The honest curve
-   says 78% reach the first winter and 25% see spring — HALF the game's
-   deaths are days 49-73, and nobody knows the cause table. Put deaths-by-
-   cause back into the harness first; tune second. A cliff nobody can read
-   is opaque-hard, not fun-hard.
+4. **[x] Diagnose the mid-winter cliff before tuning it.** Done, and the
+   diagnosis is clean: the cliff is NOT material. The harness now prints a
+   deaths-by-fate table for the wall window (day 40-73) beside the curve.
+   Measured over 60 seeds: sickness 28, and five battle fates totalling 52
+   — while starvation and cold END just 10 of 48 dead runs between them.
+   The top run-killer is DESPAIR at 26, twice "slain" at 12: fights and
+   winter sickness take people, every death drags the band's heart, and the
+   morale spiral is what actually closes the saga. The five-lever
+   conclusion is confirmed from the honest side — the game already kills
+   through people and grief, never stores. The tuning levers, when wanted:
+   bereavement stacking, winter sickness, winter fight frequency. NOT food.
 5. **[ ] Ships are a terrain skin, not a system.** Sea fights are the ocean
    ground mix; the knarr cannot be lost, damaged, or fought FOR. Authored
    sea battlefields (the raidFields pattern reused: lashed hulls, a
@@ -238,12 +244,14 @@ measuring bot has never once used the offensive half.
    after the Thing the jarldom is a bigger prize on the same coast — item
    3's scalar keeps climbing, and holding what you claimed becomes the
    long game. The Thing stops being the last page.
-9. **[ ] Give farming its year, and wire the promise already made.** The
-   seed-corn card charges 6 food and 4 morale to set a `sowed` flag that
-   NOTHING reads — a paid promise, unwired. Farming has a seasonal factor
-   but no decisions: a sowing window in spring (seed as real cost), a
-   harvest event in autumn the count card can be wrong about, winter eating
-   the result.
+9. **[x] Give farming its year, and wire the promise already made.** Done:
+   the vocabulary gains `flagSet` (the mirror `flagUnset` always implied),
+   and the sowed flag is finally read. Seed-corn is now gated on the flag
+   being CLEAR, so one crop is paid for once; a new autumn card — "What the
+   Spring Kept Back" — opens only over a sown field, pays 8-20 food on a
+   cut-now-or-gamble-a-week choice, and clears the flag so the year can
+   turn and the bargain come round again. The deck stands at 101; a
+   player's paid promise is now a kept one.
 10. **[ ] Teach the bot the offensive half, in the same commits.** The
     balance bot has never launched an expedition, bartered, or fallen on
     anyone — every measurement of trade, growth and provocation is blind,
@@ -388,6 +396,28 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The cliff has a name, and the seed comes up** — Two audit
+  items in one sitting, an instrument and a promise.
+  Item 4: the harness now prints a deaths-by-fate table for the wall
+  window, day 40 to 73, where the curve falls from 78 to 20. The table
+  settles a question nobody could answer before it existed: the cliff is
+  not material. Over sixty seeds — sickness 28, battle fates 52, while
+  starvation and cold together end ten runs of forty-eight. The top
+  run-killer is despair at 26, double "slain" at 12. Fights and winter
+  sickness take people; every death drags on the band's heart harder than
+  any victory lifts it; and it is the MORALE spiral that closes the saga.
+  The five-lever lesson stands confirmed from the honest side: this game
+  kills through people and grief, never through stores — so the levers
+  that matter, when tuning is wanted, are bereavement, sickness, and how
+  often winter draws steel. Deliberately measured and NOT tuned.
+  Item 9: the sowed flag is read at last. The vocabulary gains `flagSet`
+  (the mirror its `flagUnset` always implied), seed-corn is gated so one
+  crop is paid for once, and a new autumn card — What the Spring Kept
+  Back — opens only over a sown field, pays out on a cut-now-or-gamble-
+  a-week choice, and clears the flag so the year can turn. The deck
+  stands at 101, and a promise a player pays for is now a promise the
+  game keeps. 564 tests. Published.
 
 - **2026-08-07 — What winning is worth** — The audit's second item: the
   plunder economy. Falling on a neighbour used to dock 45 standing on the

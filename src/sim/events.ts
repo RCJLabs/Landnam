@@ -50,6 +50,8 @@ export function conditionHolds(state: GameState, condition: Condition): boolean 
       return state.party.morale <= condition.value;
     case 'flagUnset':
       return (state.flags[condition.flag] ?? 0) === 0;
+    case 'flagSet':
+      return (state.flags[condition.flag] ?? 0) > 0;
     case 'nearWater':
       return nearWater(state);
     case 'settled':

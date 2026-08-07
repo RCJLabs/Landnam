@@ -3,7 +3,7 @@ import { EVENTS, eventById } from '../src/data/events';
 import { TRAITS, traitById } from '../src/data/traits';
 import { LORE } from '../src/data/lore';
 import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
-import { checkOdds, isEligible, presentEvent } from '../src/sim/events';
+import { checkOdds, chooseOption, isEligible, presentEvent } from '../src/sim/events';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
 import { moveOptions } from '../src/sim/travel';
@@ -199,6 +199,50 @@ describe('eligibility', () => {
         else expect(card.choices[i]!.hint).toBeUndefined();
       });
     }
+  });
+});
+
+describe('the sown field pays off', () => {
+  // Item 9 of the audit: the seed-corn card charged 6 food and 4 morale to
+  // set a flag that NOTHING read. These tests are the promise, kept: sowing
+  // opens the harvest card, harvesting pays and clears the flag, and the
+  // year can come round again.
+  const AUTUMN_DAY = 25; // day 25 of a 96-day year cycle sits in autumn
+  function sownSteading(sowed: boolean): GameState {
+    const state = structuredClone(newGame('sown'));
+    state.settlement = {
+      at: state.party.at, name: 'Testholt', foundedOn: 1, plots: [],
+      built: [], queue: [], works: 0, shelter: 0, watch: 0,
+    } as unknown as GameState['settlement'];
+    state.day = AUTUMN_DAY;
+    if (sowed) state.flags['sowed'] = 1;
+    return state;
+  }
+
+  it('the harvest card opens only over a sown field', () => {
+    const harvest = eventById('the-seed-came-up')!;
+    expect(isEligible(sownSteading(true), harvest)).toBe(true);
+    expect(isEligible(sownSteading(false), harvest)).toBe(false);
+  });
+
+  it('the seed card does not collect its price twice for one crop', () => {
+    const seed = eventById('seed-corn')!;
+    const state = sownSteading(true);
+    state.day = 60; // winter, the card's own season
+    state.party.food = 10;
+    expect(isEligible(state, seed)).toBe(false);
+  });
+
+  it('harvesting pays, clears the flag, and lets the year turn', () => {
+    const state = sownSteading(true);
+    const harvest = eventById('the-seed-came-up')!;
+    state.event = presentEvent(state, harvest);
+    const foodBefore = state.party.food;
+
+    chooseOption(state, 0);
+    expect(state.party.food).toBeGreaterThan(foodBefore + 10);
+    expect(state.flags['sowed']).toBe(0);
+    expect(isEligible(state, harvest)).toBe(false);
   });
 });
 

@@ -1089,7 +1089,10 @@ export const EVENTS: EventDef[] = [
     title: 'The Last of the Seed',
     body: 'What is in the bottom of the sack is either next year\'s crop or this month\'s bread. It cannot be both, and it will not keep for ever.',
     weight: 8,
-    when: [{ c: 'settled' }, { c: 'season', any: ['winter', 'spring'] }, { c: 'foodMax', value: 30 }],
+    // flagUnset: a crop already in the ground is a promise already made —
+    // this card must not collect the price twice before the payout card
+    // (the-seed-came-up) has cleared it.
+    when: [{ c: 'settled' }, { c: 'season', any: ['winter', 'spring'] }, { c: 'foodMax', value: 30 }, { c: 'flagUnset', flag: 'sowed' }],
     choices: [
       {
         label: 'Keep it back for the ground',
@@ -1098,6 +1101,29 @@ export const EVENTS: EventDef[] = [
       {
         label: 'Eat it',
         success: { text: 'It was a good week and a bad year. Everyone knew which they were choosing.', effects: [{ t: 'food', n: 9 }, { t: 'morale', n: 5 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-seed-came-up',
+    title: 'What the Spring Kept Back',
+    body: 'The rows that cost bread in the lean weeks stand heavy-headed and gold. Nobody says the word out loud until it is cut — but the count is already plain, and so is who was right.',
+    weight: 14,
+    // The other half of seed-corn's bargain, and the audit's ninth finding:
+    // the sowed flag was set, paid for, and read by NOTHING. Now it is read
+    // here, and cleared, so the year can turn and the choice come round
+    // again. A promise a player pays for is a promise the game keeps.
+    when: [{ c: 'settled' }, { c: 'season', any: ['autumn'] }, { c: 'flagSet', flag: 'sowed' }],
+    choices: [
+      {
+        label: 'Cut it now, while the weather holds',
+        success: { text: 'Two days with every knife in the steading, and the store took what the spring had promised it.', effects: [{ t: 'food', n: 15 }, { t: 'morale', n: 6 }, { t: 'flag', flag: 'sowed', n: -1 }] },
+      },
+      {
+        label: 'Let it stand a week for the last of the fat',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'The week held, and the heads filled. It came in heavy and everyone carried some.', effects: [{ t: 'food', n: 20 }, { t: 'morale', n: 7 }, { t: 'flag', flag: 'sowed', n: -1 }] },
+        failure: { text: 'The weather turned on the fifth day and beat half of it flat into the mud.', effects: [{ t: 'food', n: 8 }, { t: 'morale', n: -4 }, { t: 'flag', flag: 'sowed', n: -1 }] },
       },
     ],
   },

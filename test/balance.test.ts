@@ -295,6 +295,14 @@ interface Curve {
   sawSpring: number;
   twoWinters: number;
   settledByWinter: number;
+  /**
+   * Item 4 of the audit: WHAT kills bands in the wall window (day 40-73,
+   * where the curve falls from ~78% to ~25%). Keyed by the person's own
+   * fate string, raw and uninterpreted — the instrument counts, it does
+   * not editorialise. Run-endings over the same window count beside it.
+   */
+  deaths: Record<string, number>;
+  ends: Record<string, number>;
 }
 
 let cached: Curve | null = null;
@@ -310,14 +318,28 @@ let cached: Curve | null = null;
  */
 async function measured(): Promise<Curve> {
   if (cached) return cached;
-  const total: Curve = { reachedWinter: 0, sawSpring: 0, twoWinters: 0, settledByWinter: 0 };
+  const total: Curve = {
+    reachedWinter: 0, sawSpring: 0, twoWinters: 0, settledByWinter: 0,
+    deaths: {}, ends: {},
+  };
   for (let s = 0; s < SEEDS; s += 1) {
     const atWinter = run(`curve-${s}`, 49);
     if (!atWinter.end) {
       total.reachedWinter += 1;
       if (atWinter.settlement) total.settledByWinter += 1;
     }
-    if (!run(`curve-${s}`, 73).end) total.sawSpring += 1;
+    const atSpring = run(`curve-${s}`, 73);
+    if (!atSpring.end) total.sawSpring += 1;
+    // The wall window: who died between the first frost and the thaw, and of
+    // what. `left` is excluded — walking out is not a death, per item 2 of
+    // the LAST audit, and this table must not repeat that lie.
+    for (const p of atSpring.party.people) {
+      if (p.alive || p.left) continue;
+      if ((p.diedOn ?? 0) < 40 || (p.diedOn ?? 0) > 73) continue;
+      const fate = p.fate ?? 'unrecorded';
+      total.deaths[fate] = (total.deaths[fate] ?? 0) + 1;
+    }
+    if (atSpring.end) total.ends[atSpring.end.cause] = (total.ends[atSpring.end.cause] ?? 0) + 1;
     if (!run(`curve-${s}`, 169).end) total.twoWinters += 1;
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
@@ -363,6 +385,25 @@ describe('the difficulty curve', () => {
     // and that failure should be a mistake rather than the default.
     const m = await measured();
     expect(m.settledByWinter * 2).toBeGreaterThan(m.reachedWinter);
+  });
+
+  it('names what the wall window kills with', { timeout: CURVE_TIMEOUT }, async () => {
+    // Item 4 of the audit. Half the game's deaths land between day 40 and
+    // 73, and until this table existed nobody could say of WHAT — which is
+    // the difference between a hard game and an opaque one. No bars on the
+    // shape: the table is an instrument, and the one assertion is that it
+    // cannot silently go blind.
+    const m = await measured();
+    const deaths = Object.entries(m.deaths).sort((a, b) => b[1] - a[1]);
+    const ends = Object.entries(m.ends).sort((a, b) => b[1] - a[1]);
+    // eslint-disable-next-line no-console
+    console.log(
+      `the wall window (day 40-73) over ${SEEDS} seeds — deaths: ` +
+        deaths.map(([fate, n]) => `${fate} ${n}`).join(', ') +
+        ` | runs ended: ${ends.map(([cause, n]) => `${cause} ${n}`).join(', ')}`,
+    );
+    const total = deaths.reduce((sum, [, n]) => sum + n, 0);
+    expect(total).toBeGreaterThan(0);
   });
 });
 

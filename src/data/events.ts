@@ -15,6 +15,8 @@ export type Condition =
   | { c: 'dayMin'; day: number }
   | { c: 'moraleMax'; value: number }
   | { c: 'flagUnset'; flag: string }
+  /** The flag has been raised. How one card's choice opens another card. */
+  | { c: 'flagSet'; flag: string }
   | { c: 'nearWater' }
   /** The posts are in the ground somewhere. */
   | { c: 'settled' }
