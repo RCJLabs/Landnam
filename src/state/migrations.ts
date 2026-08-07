@@ -221,6 +221,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // save ever walked off one — champions died with their battle — so an
   // absent `champion` is the truth about every one of them.
   23: (save) => ({ ...save, version: 24 }),
+  // The country has a temper now. Every save written before this was played
+  // on the terms the game was balanced against, so they come forward as
+  // 'even' — which is also what an absent field reads as.
+  24: (save) => ({ hardship: 'even', ...save, version: 25 }),
 };
 
 export interface MigrationResult {

@@ -1566,3 +1566,38 @@ button.warcry:disabled {
   color: var(--blood);
   font-weight: 700;
 }
+
+/* --- How hard the country is --- */
+
+/* Three chips on the title screen. A row on a phone, wrapping if the names
+   grow; the chosen one carries the same gold as every other primary. */
+.hardship-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 8px;
+}
+
+button.hardship-chip {
+  flex: 1 1 30%;
+  min-width: 0;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.hardship-note {
+  margin: 0 0 4px;
+  color: var(--parchment-dim);
+  font-size: 12.5px;
+  line-height: 1.45;
+  min-height: 3.6em;
+}
+
+/* A settings row that states rather than toggles. */
+.settings-row.settings-static {
+  border: 1px solid var(--edge);
+  border-radius: 7px;
+  background: var(--panel);
+  min-height: var(--tap);
+  cursor: default;
+}

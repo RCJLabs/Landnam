@@ -24,11 +24,13 @@ import { MEASURES, MEASURE_MAX } from '../data/sites';
 import type { GameState, Person, Purpose } from '../state/types';
 import { button, el } from './svg';
 import type { Dispatch } from './ui';
+import { HARDSHIPS, hardshipById, type HardshipId } from '../data/hardship';
+import { lastHardship } from '../hardshipPref';
 
 export function renderTitle(
   hasExistingSave: boolean,
   onContinue: () => void,
-  onNew: (seed: string) => void,
+  onNew: (seed: string, hardship: HardshipId) => void,
   /** Present only for a player who has already been taught something. */
   onRelearn?: () => void,
   /** Present only once somebody has actually died. */
@@ -43,14 +45,37 @@ export function renderTitle(
     'aria-label': 'World seed',
   });
 
+  // How hard the country is, chosen HERE because it is a term of the run
+  // rather than a preference — a saga carries the terms it was played under,
+  // and a shared seed has to mean the same thing to two people.
+  let picked: HardshipId = lastHardship();
+  const hardshipRow = el('div', { class: 'hardship-pick' });
+  const hardshipNote = el('p', { class: 'hardship-note' }, []);
+  const paintHardship = (): void => {
+    hardshipRow.replaceChildren(
+      ...HARDSHIPS.map((terms) => {
+        const chip = button(terms.name, () => {
+          picked = terms.id;
+          paintHardship();
+        }, { class: `hardship-chip${picked === terms.id ? ' primary' : ''}` });
+        return chip;
+      }),
+    );
+    const terms = hardshipById(picked);
+    hardshipNote.replaceChildren(`${terms.blurb} ${terms.measured}`);
+  };
+  paintHardship();
+
   const buttons = el('div', { class: 'title-buttons' });
   if (hasExistingSave) {
     buttons.append(button('Continue', onContinue, { class: 'primary' }));
   }
   buttons.append(
-    button(hasExistingSave ? 'New landing' : 'Take the land', () => onNew(seedInput.value.trim()), {
-      class: hasExistingSave ? '' : 'primary',
-    }),
+    button(
+      hasExistingSave ? 'New landing' : 'Take the land',
+      () => onNew(seedInput.value.trim(), picked),
+      { class: hasExistingSave ? '' : 'primary' },
+    ),
   );
 
   return el('div', { class: 'overlay title' }, [
@@ -60,6 +85,8 @@ export function renderTitle(
       el('p', { class: 'blurb' }, [
         'Six of you step off the knarr onto a coast with no name you know. Winter comes on the forty-ninth day.',
       ]),
+      hardshipRow,
+      hardshipNote,
       buttons,
       seedInput,
       // The guide is for everyone; the two below are offered only to
@@ -404,6 +431,8 @@ export interface SettingsOptions {
   onToggleMotion: () => void;
   /** The current run's seed, when a run exists — the shareable thing. */
   seed?: string;
+  /** The terms the current run is being played on. Shown, never edited. */
+  hardship?: HardshipId;
   /** Present only for a player who has been taught something. */
   onRelearn?: () => void;
   /** Present only once somebody has died, ever. */
@@ -435,6 +464,19 @@ export function renderSettings(opts: SettingsOptions): HTMLElement {
       opts.onToggleMotion,
     ),
   ]);
+
+  // The terms this run is being played on. Shown and not editable: hardship
+  // is chosen when the keel touches sand and belongs to the saga after that,
+  // so a shared seed means the same game to two people. Changing it is what
+  // the next landing is for.
+  if (opts.hardship) {
+    const terms = hardshipById(opts.hardship);
+    const row = el('div', { class: 'settings-row settings-static' }, [
+      el('span', { class: 'settings-name' }, ['This country']),
+      el('span', { class: 'settings-value' }, [terms.name]),
+    ]);
+    card.append(row);
+  }
 
   if (opts.seed) {
     const seed = opts.seed;

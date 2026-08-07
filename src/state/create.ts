@@ -12,12 +12,14 @@ import { placeNeighbours } from '../sim/neighbours';
 import { seedPlaces } from '../sim/places';
 import { emptyTally } from '../sim/tally';
 import type { GameState } from './types';
+import { DEFAULT_HARDSHIP, hardshipById, type HardshipId } from '../data/hardship';
 import { SAVE_VERSION } from './version';
 
 export const START_FOOD = 24;
 export const START_FIREWOOD = 8;
 
-export function newGame(seed: string): GameState {
+export function newGame(seed: string, hardship: HardshipId = DEFAULT_HARDSHIP): GameState {
+  const terms = hardshipById(hardship);
   const world = generateWorld(stream(seed, 'worldgen'));
   const people = makeWarband(stream(seed, 'party'));
   const landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
@@ -30,14 +32,15 @@ export function newGame(seed: string): GameState {
   const state: GameState = {
     version: SAVE_VERSION,
     seed,
+    hardship,
     day: 1,
     modes: ['TRAVEL'],
     world,
     party: {
       at: world.landing,
       people,
-      food: START_FOOD,
-      firewood: START_FIREWOOD,
+      food: Math.round(START_FOOD * terms.stores),
+      firewood: Math.round(START_FIREWOOD * terms.stores),
       morale: 70,
       hasCamped: false,
     },

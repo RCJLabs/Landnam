@@ -12,6 +12,7 @@ import { standing } from './battle';
 import { angerLevel, raidPressure } from './neighbours';
 import { hands } from './people';
 import { wintersStood } from './calendar';
+import { hardshipById } from '../data/hardship';
 import { chronicle } from './saga';
 import { learn } from './lore';
 import { note } from './tally';
@@ -126,7 +127,7 @@ export function raidOdds(state: GameState): number {
   const warned = effectiveReport(state)!.defence * 0.22 + home.watch * 0.16;
 
   const drawn = Math.max(0, worth + grievance - warned);
-  return Math.min(RAID_CHANCE_MAX, drawn * CHANCE_PER_WORTH);
+  return Math.min(RAID_CHANCE_MAX, drawn * CHANCE_PER_WORTH * hardshipById(state.hardship).raid);
 }
 
 /**

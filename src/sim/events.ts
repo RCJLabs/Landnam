@@ -11,6 +11,7 @@ import { raidDifficulty } from './raid';
 import { settleFeud } from './minds';
 import { purposeDef } from './expedition';
 import { bonus, knows, learn } from './lore';
+import { hardshipById } from '../data/hardship';
 import { takeIn } from './joining';
 import { angerLevel, angriest, friendliest, goodwillLevel, shiftStanding, stirFactor } from './neighbours';
 import { hasLineOfSight } from './fog';
@@ -139,14 +140,17 @@ export function presentEvent(state: GameState, def: EventDef): ActiveEvent {
  * most valuable thing there is.
  */
 export function eventChance(state: GameState): number {
+  // How hard this country is, applied once at the end rather than sprinkled
+  // through the branches — see data/hardship.ts.
+  const terms = hardshipById(state.hardship).stir;
   // The opening days are quiet on purpose: a new sail takes a few days to
   // be noticed, and a new player takes a few days to find their feet. The
   // same playtest that called the cards relentless was three days in.
   const noticed = Math.min(1, state.day / SETTLING_IN_DAYS);
   // Out on the road, what the party went out FOR changes how much finds them.
   const out = state.expedition;
-  if (out) return BASE_EVENT_CHANCE * purposeDef(out.purpose).stir * noticed;
-  if (!atHome(state)) return BASE_EVENT_CHANCE * noticed;
+  if (out) return BASE_EVENT_CHANCE * purposeDef(out.purpose).stir * noticed * terms;
+  if (!atHome(state)) return BASE_EVENT_CHANCE * noticed * terms;
   const home = state.settlement!;
   // Ground you can watch, what you have raised on it, and people actually
   // watching. A palisade counts here because it reads through the effective
@@ -156,7 +160,7 @@ export function eventChance(state: GameState): number {
   // A coast with a grievance against you is a busier coast. Quiet ground is
   // still quieter than loud ground, but it does not buy you peace you have
   // spent elsewhere.
-  return BASE_EVENT_CHANCE * Math.max(0.15, 1 - quiet) * stirFactor(state) * noticed;
+  return BASE_EVENT_CHANCE * Math.max(0.15, 1 - quiet) * stirFactor(state) * noticed * terms;
 }
 
 /** Rolls for an event after a travel action. Mutates the state clone. */

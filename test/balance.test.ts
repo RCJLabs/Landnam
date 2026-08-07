@@ -74,6 +74,7 @@ import { canFallOn, neighbourHere } from '../src/sim/neighbours';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
+import { HARDSHIPS, type HardshipId } from '../src/data/hardship';
 import { forecast, markVisible, reachable } from '../src/sim/winter';
 
 const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
@@ -283,8 +284,9 @@ function run(
   maxDay: number,
   /** Called with every state transition, for measurements the tally misses. */
   watch?: (before: GameState, after: GameState) => void,
+  hardship: HardshipId = 'even',
 ): GameState {
-  let state = structuredClone(newGame(seed));
+  let state = structuredClone(newGame(seed, hardship));
   let jobsSet = false;
 
   for (let i = 0; i < 6000 && !state.end && state.day <= maxDay; i += 1) {
@@ -1154,6 +1156,50 @@ describe('the rhythm of interruption', () => {
     expect(cards).toBeGreaterThan(0);
     expect(battles).toBeGreaterThan(0);
     await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+});
+
+describe('how hard the country is', () => {
+  /**
+   * Item 3, and the reason it is a test rather than four numbers in a data
+   * file: a difficulty setting whose labels are not measured is a lie told
+   * three times. Every hardship runs the same sixty seeds through the same
+   * bot, so "A Fair Country" means something a player can be told.
+   */
+  it('each setting is measured, and they are ordered', { timeout: CURVE_TIMEOUT }, async () => {
+    const rows: string[] = [];
+    const spring: Record<string, number> = {};
+    for (const terms of HARDSHIPS) {
+      let reachedWinter = 0;
+      let sawSpring = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        const state = run(`curve-${s}`, 73, undefined, terms.id);
+        if (state.day >= 49 || !state.end) reachedWinter += 1;
+        if (!state.end) sawSpring += 1;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      spring[terms.id] = sawSpring / SEEDS;
+      rows.push(
+        `${terms.name.padEnd(16)} reached winter ${Math.round((reachedWinter / SEEDS) * 100)}%, ` +
+          `saw spring ${Math.round((sawSpring / SEEDS) * 100)}% (${sawSpring}/${SEEDS})`,
+      );
+    }
+    // eslint-disable-next-line no-console
+    console.log(`hardship over ${SEEDS} seeds each:\n  ${rows.join('\n  ')}`);
+
+    // The bar: the order has to be real AND outside what this harness can
+    // resolve. A setting called kinder that is only six points kinder is
+    // indistinguishable from noise, which is how the first cut of these
+    // numbers read — 33% against 27% — and it is exactly what an unmeasured
+    // difficulty ships with. Ten points is the floor this file has used
+    // since the event-chance sweep taught it the lesson.
+    expect(spring['fair']! - spring['even']!).toBeGreaterThan(0.1);
+    expect(spring['even']! - spring['hard']!).toBeGreaterThan(0.1);
+
+    // And every setting says what it was measured at, in words.
+    for (const terms of HARDSHIPS) {
+      expect(terms.measured.length, terms.id).toBeGreaterThan(10);
+    }
   });
 });
 

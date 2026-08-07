@@ -4,6 +4,7 @@
 import type { GameState, Person, RunEnd } from '../state/types';
 import { effectsOn, nextThaw, seasonOf, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from './calendar';
 import { LONG_LIFE_WINTERS } from '../data/thing';
+import { hardshipById } from '../data/hardship';
 import { living } from './people';
 import { stream } from '../rng';
 import { noteFirstWork, shelterSaving, workTheDay } from './colony';
@@ -82,7 +83,10 @@ export const HEARTH_SHARE = 0.55;
  */
 export function firewoodPerNight(state: GameState): number {
   const heads = living(state.party.people).length;
-  const base = effectsOn(state.day, state.seed).firewood;
+  // The winter's bite, by how hard this country is. Applied HERE, on the
+  // actual burn, and mirrored in winter.ts's plannedFirewood — the mark and
+  // the fire have to move together or the mark is lying to the player.
+  const base = effectsOn(state.day, state.seed).firewood * hardshipById(state.hardship).winter;
   const share = HEARTH_SHARE + (1 - HEARTH_SHARE) * (heads / BAND_BASE);
   // Never below one: a fire is a fire. Rounded up, because you cannot burn
   // half a log and the alternative is a band that quietly gets free nights.

@@ -324,7 +324,9 @@ would be measured, because an item that cannot be measured is a wish.
    reach spring from here; go raiding or move" is a fair thing to be told
    on day 26 and a brutal thing to discover on day 50.
 
-3. **[ ] No difficulty setting.** The settings menu shipped with sound,
+3. **[x] No difficulty setting.** Done: three countries, each measured over
+   the same sixty seeds — 75% / 27% / 10% seeing the first spring — chosen at
+   the landing and carried on the run rather than in preferences. The settings menu shipped with sound,
    motion and the guide; difficulty is the obvious hole. Three named
    settings driving the knobs the harness can already read — event chance,
    raid pressure, winter severity, starting stores — with each one MEASURED
@@ -513,6 +515,31 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — Three countries, and every one of them measured** — Item 3.
+  A Fair Country, As It Lies, A Hard Country, turning four knobs the harness
+  already reads: what finds you on the road, how often they come for the
+  steading, what the fire costs in deep winter, and what came off the knarr.
+  Deliberately no further in — a difficulty that reached into the dice of a
+  fight would make the shield wall mean something different at each setting,
+  and then no measurement of the wall would mean anything at all.
+  The names are earned rather than asserted. The harness runs all sixty
+  seeds through every setting: 75% / 27% / 10% see the first spring, and the
+  title screen quotes it — "Three bands in four saw the first spring." The
+  first cut of the gentle setting read 33% against 27%, a six-point gap that
+  is inside the ±10 this harness can resolve, so it was strengthened until
+  the difference was real; the test now asserts a TEN-POINT margin rather
+  than mere ordering, because a setting called kinder that is only
+  noise-kinder is exactly what an unmeasured difficulty ships with.
+  The terms ride on the RUN, not on the device: a saga carries the country
+  it was played in, and a shared seed means the same game to two people.
+  Settings shows it and will not edit it — changing the terms is what the
+  next landing is for. 'even' is pinned to 1/1/1/1 by test, so every other
+  measurement in this repo keeps its meaning. SAVE_VERSION 25; old saves
+  come forward as 'even', which is what they were played on. Nine tests in
+  test/hardship.test.ts, one per knob, each checking the number the player
+  actually meets — this project's oldest bug is a knob a clamp downstream
+  throws away.
 
 - **2026-08-07 — The mark learns to say the one thing it never could** —
   Item 2, and it began as a measurement because the complaint arrived as a

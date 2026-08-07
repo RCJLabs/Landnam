@@ -3,6 +3,9 @@
 // Everything here must be JSON-serializable: no Maps, Sets, or class instances.
 
 import type { Hex, HexKey } from '../hex';
+import type { HardshipId } from '../data/hardship';
+
+export type { HardshipId };
 
 export type Mode = 'TRAVEL' | 'BATTLE' | 'COLONY';
 
@@ -484,6 +487,13 @@ export interface GameState {
   /** What the band did, for the saga to read back. */
   tally: Tally;
   end?: RunEnd;
+  /**
+   * How hard this country is. Chosen when the keel touches sand and kept
+   * ON THE RUN rather than in preferences, so a saga carries the terms it
+   * was played under and a shared seed means the same thing to two people.
+   * Absent reads as 'even', which is what every save before this was.
+   */
+  hardship?: HardshipId;
   /** Set once the Thing has carried and the band rules the coast. */
   jarl?: Jarldom;
   /** Monotonic counter making generated ids deterministic. */

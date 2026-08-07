@@ -21,6 +21,7 @@ import {
 import { availableJobs, dayLabour, jobOf, output, seasonFactor, shelterSaving } from './colony';
 import { SHELTER_SAVES } from '../data/jobs';
 import { buildingById } from '../data/buildings';
+import { hardshipById } from '../data/hardship';
 import { living } from './people';
 import { chronicle } from './saga';
 import { bonus } from './lore';
@@ -158,12 +159,15 @@ export function markHaze(day: number): number {
  * attempt to threaten the late game bounce off.
  */
 function plannedFirewood(state: GameState, day: number): number {
+  const terms = hardshipById(state.hardship).winter;
   if (seasonOf(day) !== 'winter') return effectsOn(day).firewood;
   const base = effectsOn(day).firewood + floorDepth(day);
-  if (markHaze(state.day) === 0) return effectsOn(day, state.seed).firewood;
-  return Math.min(
-    effectsOn(day).firewood + WINTER_DEPTH_MAX,
-    base + Math.round(WINTER_BITE_MAX / 2),
+  if (markHaze(state.day) === 0) return effectsOn(day, state.seed).firewood * terms;
+  return (
+    Math.min(
+      effectsOn(day).firewood + WINTER_DEPTH_MAX,
+      base + Math.round(WINTER_BITE_MAX / 2),
+    ) * terms
   );
 }
 

@@ -26,6 +26,8 @@ import {
 } from './render/colonyUi';
 import { renderGuide, renderLesson, renderSettings, renderTitle, renderWall } from './render/cards';
 import { applyMotionPref, motionPref, setMotionPref } from './motion';
+import { lastHardship, rememberHardship } from './hardshipPref';
+import type { HardshipId } from './data/hardship';
 import { deedsFor } from './render/deeds';
 import {
   renderActionBar,
@@ -160,6 +162,7 @@ function paintSettingsCard(): void {
         paintSettingsCard();
       },
       motionStill: motionPref() === 'still',
+      ...(state?.hardship ? { hardship: state.hardship } : {}),
       onToggleMotion: () => {
         setMotionPref(motionPref() === 'still' ? 'system' : 'still');
         paintSettingsCard();
@@ -285,9 +288,12 @@ function onFieldTap(target: Hex): void {
   dispatch({ type: 'B_MOVE', to: target });
 }
 
-function startRun(seed: string): void {
+function startRun(seed: string, hardship: HardshipId = lastHardship()): void {
   const finalSeed = seed || makeSeedPhrase(Date.now());
-  state = newGame(finalSeed);
+  // Remembered for the next title screen only; the terms themselves ride on
+  // the run, so a saga carries the country it was played in.
+  rememberHardship(hardship);
+  state = newGame(finalSeed, hardship);
   save(state);
   resetForRun(ui);
   mountGame();
@@ -329,7 +335,7 @@ function showTitle(): void {
   // The teaching reset and the memorial live in Settings now — the pinned
   // gear reaches them from here and from every mode.
   app!.replaceChildren(
-    renderTitle(hasSave(), continueRun, (seed) => startRun(seed), undefined, undefined, () => {
+    renderTitle(hasSave(), continueRun, (seed, hardship) => startRun(seed, hardship), undefined, undefined, () => {
       ui.guideOpen = true;
       showTitle();
     }),
