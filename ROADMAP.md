@@ -68,7 +68,9 @@ finally tells the truth. And the five-lever conclusion — that a settled band
 replaces material faster than anything can take it — was drawn entirely on
 the broken instrument. It may still hold; it is no longer evidence.
 
-**The queue** (from the audit of 2026-08-06, in order):
+**The finished queue** (from the audit of 2026-08-06 — every item done but
+the release's two at-home steps, kept here for item 10's checklist and for
+the figures the entries carry):
 
 1. **[x] Surface 6.2 in the UI.** `bond`, `capacity`, `crowding` and
    `roomLeft` appear in ZERO renderer files. Who fights, who works and how
@@ -171,10 +173,70 @@ the broken instrument. It may still hold; it is no longer evidence.
     the honest harness. If play says that is an overshoot, tuning it is
     v1.0.1 — a patch on a truthful instrument, not a blocker on a stamp.
 
-**Known and not urgent:** the event deck is thin (~39 cards); there is no
-meta-progression and no daily seed; accessibility is minimal (keyboard play
-is not possible); and `data/events.ts`, `main.ts` and `render/travel.ts` all
-breach the ~300-line guidance, `main.ts` most of all.
+**The queue (from the audit of 2026-08-07)** — the loop audit, taken against
+the game the pitch describes: travel, sea-fights, raiding, settling,
+defending, keeping people. The finding under most of it: **the game's whole
+threat economy is defensive.** The player's offensive verbs exist but have no
+economy behind them, nothing outside the steading ever escalates, and the
+measuring bot has never once used the offensive half.
+
+1. **[ ] The map needs destinations.** "Go out under arms" is a stir
+   multiplier (1.45) with no target: nothing on the map is worth walking to.
+   Seed worldgen with a few persistent PLACES — a monastery rich and soft, a
+   town rich and hard, an ore seam, a wreck — that expeditions can aim at.
+   This is the raid fantasy in the pitch, and it feeds 6.3: robbing the
+   coast is how the player CHOOSES escalation.
+2. **[ ] A plunder economy.** Falling on a neighbour docks 45 standing
+   immediately and pays 2 food + 1 wood per foe downed — strictly worse
+   than bartering. Sacking must be symmetric: they have stores, as we do
+   (`sackSteading` is the template). Victory under arms should out-pay
+   trade AND cost standing, or the choice is fake.
+3. **[ ] The world must escalate with the years, everywhere.** Home raids
+   grow with winters stood, built and food; NOTHING else does — travel and
+   sea fights draw the same four archetypes at the same weights on day 700
+   as day 7. A word-has-spread scalar (years + the player's own sackings)
+   feeding event-battle difficulty and archetype weights. Per the Math.min
+   lesson: prove each knob binds before measuring it.
+4. **[ ] Diagnose the mid-winter cliff before tuning it.** The honest curve
+   says 78% reach the first winter and 25% see spring — HALF the game's
+   deaths are days 49-73, and nobody knows the cause table. Put deaths-by-
+   cause back into the harness first; tune second. A cliff nobody can read
+   is opaque-hard, not fun-hard.
+5. **[ ] Ships are a terrain skin, not a system.** Sea fights are the ocean
+   ground mix; the knarr cannot be lost, damaged, or fought FOR. Authored
+   sea battlefields (the raidFields pattern reused: lashed hulls, a
+   boarding action, a fight in the shallows), and sea stakes — cargo that
+   can go over the side, a hull that can be holed short of sunk.
+6. **[ ] Raids need a face.** raidSource names a clan; the raid itself is
+   anonymous men. A named raid-leader per hostile neighbour — persistent, a
+   huscarl, carrying the grudge history — who can be felled (pressure
+   breaks, saga names him) or keep coming back (he remembers too). Rides
+   the Person model and the feud system that already exist.
+7. **[ ] The build queue must not end.** After the búð there is nothing to
+   spend a surplus on, and surplus labour is the diagnosed root of the flat
+   material game. Late buildings as data: wall tiers (the authored fields
+   read them), a beacon for the watch, a feasting-hall tier the Thing
+   reads. Spending surplus is the player's answer to escalation (item 3).
+8. **[ ] 6.4, shaped as escalation.** Remove the five-winter guillotine;
+   after the Thing the jarldom is a bigger prize on the same coast — item
+   3's scalar keeps climbing, and holding what you claimed becomes the
+   long game. The Thing stops being the last page.
+9. **[ ] Give farming its year, and wire the promise already made.** The
+   seed-corn card charges 6 food and 4 morale to set a `sowed` flag that
+   NOTHING reads — a paid promise, unwired. Farming has a seasonal factor
+   but no decisions: a sowing window in spring (seed as real cost), a
+   harvest event in autumn the count card can be wrong about, winter eating
+   the result.
+10. **[ ] Teach the bot the offensive half, in the same commits.** The
+    balance bot has never launched an expedition, bartered, or fallen on
+    anyone — every measurement of trade, growth and provocation is blind,
+    which is this project's oldest lesson wearing new clothes. And the
+    raid-outcome tally needs its bigger sample (it swung 4/33 → 23/39 →
+    7/28 on deck edits) before anyone tunes raid fairness on it.
+
+**Known and not urgent:** there is no meta-progression and no daily seed;
+accessibility is minimal (keyboard play is not possible); and
+`render/travel.ts` still breaches the ~300-line guidance.
 
 ## Dead ends — measured, and not to be repeated
 
@@ -309,6 +371,22 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The loop audit: the game only defends** — Ten new queue
+  items from an audit taken against the pitch's own loop. The finding under
+  most of them: the threat economy is entirely defensive. "Go out under
+  arms" is a stir multiplier with no destination — nothing on the map is
+  worth walking to; falling on a neighbour docks 45 standing and pays 2
+  food a foe, strictly worse than bartering; nothing outside the steading
+  escalates, ever — the same four archetypes at the same weights on day 700
+  as day 7; the knarr cannot be lost or fought for; and the balance bot has
+  never launched an expedition, so every measurement of the offensive half
+  is blind. Two smaller catches with teeth: the seed-corn card charges 6
+  food and 4 morale to set a `sowed` flag nothing reads — a paid promise,
+  unwired — and the honest curve's real wall is mid-winter (78% reach it,
+  25% come out), with no deaths-by-cause table to say why. The new queue
+  orders the fixes; the finished 2026-08-06 queue stays above it for its
+  figures and the release checklist. 540 tests.
 
 - **2026-08-07 — v1.0** — The first tag this repository has ever carried,
   and it goes on a release-ritual build: `npm run release` zips the source
