@@ -27,7 +27,19 @@ import { checkRunEnd } from './upkeep';
 // designer's ear outranks a knob the harness has already proven it cannot
 // resolve (the 0.28/0.34/0.40 sweep was non-monotonic). The curve bars
 // still guard the outcome.
-const BASE_EVENT_CHANCE = 0.23;
+/**
+ * How often a day on the road is interrupted at all.
+ *
+ * Set by ear, deliberately, and lowered twice on playtest reports of the
+ * cards being relentless: 0.28 → 0.23 → 0.19. It cannot be set any other
+ * way — sweeping it through 0.28/0.34/0.40 gave 53/30/43% at the two-winter
+ * mark, a swing that went the WRONG WAY in the middle, which is noise being
+ * read as signal. What CAN be measured is the count, and the rhythm test in
+ * test/balance.test.ts records it: at 0.19, with the steel cards' weights
+ * raised by half, the game interrupts a hundred days about seventeen times
+ * instead of twenty-one, and more of those interruptions are a fight.
+ */
+const BASE_EVENT_CHANCE = 0.19;
 
 /** The country takes this many days to notice a new sail on its coast. */
 const SETTLING_IN_DAYS = 6;

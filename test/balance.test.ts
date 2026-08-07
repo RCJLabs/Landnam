@@ -265,7 +265,12 @@ function step(state: GameState): Action {
  * points, which is a good reminder that a harness is code and can be wrong in
  * exactly the direction that flatters whatever it is measuring.
  */
-function run(seed: string, maxDay: number): GameState {
+function run(
+  seed: string,
+  maxDay: number,
+  /** Called with every state transition, for measurements the tally misses. */
+  watch?: (before: GameState, after: GameState) => void,
+): GameState {
   let state = structuredClone(newGame(seed));
   let jobsSet = false;
 
@@ -320,6 +325,7 @@ function run(seed: string, maxDay: number): GameState {
       next = apply(state, { type: 'B_END_TURN' });
     }
     if (next === state) break;
+    if (watch) watch(state, next);
     state = next;
   }
   return state;
@@ -1068,6 +1074,58 @@ describe('losing a raid costs the one thing that is scarce', () => {
     const before = living(state.party.people).length;
     sackSteading(state);
     expect(living(state.party.people).length).toBeLessThan(before);
+  });
+});
+
+describe('the rhythm of interruption', () => {
+  /**
+   * How often the game STOPS the player, and what for.
+   *
+   * The curve cannot resolve this — sweeping the event chance through
+   * 0.28/0.34/0.40 once gave 53/30/43% at two winters, which is noise being
+   * read as signal, and it is why the base chance is set by ear. But the
+   * COUNTS are not noise: they are tallies over sixty sagas, and they move
+   * exactly as much as the knobs move. So the ear picks the number and this
+   * records what the number actually did, which is the only honest way to
+   * tune something the survival bars cannot see.
+   */
+  it('counts cards and fights per hundred days', { timeout: CURVE_TIMEOUT }, async () => {
+    let cards = 0;
+    let days = 0;
+    let battles = 0;
+    let raids = 0;
+    // Where a fight came FROM. Without this split the knob cannot be read:
+    // the bot also starts fights by falling on places, and those are deaf to
+    // the event chance entirely.
+    let fromCard = 0;
+    let fromUs = 0;
+    for (let s = 0; s < SEEDS; s += 1) {
+      let seen = 0;
+      const state = run(`curve-${s}`, 169, (before, after) => {
+        if (!before.event && after.event) seen += 1;
+        if (!before.battle && after.battle && !after.battle.raid) {
+          if (before.event) fromCard += 1;
+          else fromUs += 1;
+        }
+      });
+      cards += seen;
+      days += state.day;
+      battles += state.tally.battles;
+      raids += state.tally.raids;
+    }
+    const per100 = (n: number) => ((n / days) * 100).toFixed(2);
+    // eslint-disable-next-line no-console
+    console.log(
+      `rhythm over ${SEEDS} sagas (${days} days): ` +
+        `cards ${cards} (${per100(cards)}/100d), open fights ${battles - raids} ` +
+        `(${per100(battles - raids)}/100d) — ${fromCard} off a card, ${fromUs} of our own ` +
+        `making — raids ${raids} (${per100(raids)}/100d)`,
+    );
+    // Tripwires only: a game with no cards and a game that is nothing but
+    // cards are both broken, and both have been shipped by accident before.
+    expect(cards).toBeGreaterThan(0);
+    expect(battles).toBeGreaterThan(0);
+    await new Promise((resolve) => setTimeout(resolve, 0));
   });
 });
 

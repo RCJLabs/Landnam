@@ -181,7 +181,7 @@ export const EVENTS: EventDef[] = [
     id: 'scouts',
     title: 'Watchers at the Treeline',
     body: 'Two men at the edge of the wood, armed, making no attempt to hide. They watch us pass, and then they are not there.',
-    weight: 7,
+    weight: 13,
     when: [{ c: 'dayMin', day: 12 }, { c: 'terrain', any: ['forest', 'hills', 'meadow', 'valley'] }],
     choices: [
       {
@@ -201,7 +201,7 @@ export const EVENTS: EventDef[] = [
     id: 'landing-party',
     title: 'Another Keel on the Sand',
     body: 'A ship drawn up where ours should be, and men around a fire who stand when they see us. They have the same look we do: too far from home, and not going back empty.',
-    weight: 9,
+    weight: 16,
     when: [{ c: 'dayMin', day: 7 }, { c: 'terrain', any: ['shore', 'meadow', 'valley'] }],
     choices: [
       {
@@ -226,7 +226,7 @@ export const EVENTS: EventDef[] = [
     id: 'wolves-press',
     title: 'The Pack Comes In',
     body: 'The wolves that shadowed us have stopped shadowing. They are between us and the open ground, and they are not pacing any more.',
-    weight: 7,
+    weight: 13,
     when: [{ c: 'dayMin', day: 14 }, { c: 'terrain', any: ['forest', 'hills', 'bog'] }],
     choices: [
       {
@@ -447,7 +447,7 @@ export const EVENTS: EventDef[] = [
     id: 'smoke-on-the-ridge',
     title: 'Smoke on the Ridge',
     body: 'A thread of smoke where no smoke should be, and it has moved since morning. Somebody is camped within a day of us and taking no trouble to hide it.',
-    weight: 13,
+    weight: 23,
     when: [{ c: 'settled' }, { c: 'dayMin', day: 12 }],
     choices: [
       {
@@ -1426,7 +1426,7 @@ export const EVENTS: EventDef[] = [
     id: 'the-second-keel',
     title: 'A Sail Standing In',
     body: 'One sail, square and patched, standing in past the point on a falling wind. Whoever they are, they will be on the beach by dark, and they have seen the smoke of us.',
-    weight: 7,
+    weight: 13,
     when: [{ c: 'settled' }, { c: 'dayMin', day: 24 }],
     choices: [
       {
@@ -1445,7 +1445,7 @@ export const EVENTS: EventDef[] = [
     id: 'wolves-at-the-byre',
     title: 'Tracks Round the Byre',
     body: 'Every morning the snow around the byre is written over with pad-marks, and every morning they are closer to the door. Last night something tried the hinge-end.',
-    weight: 8,
+    weight: 14,
     when: [{ c: 'settled' }, { c: 'season', any: ['winter'] }],
     choices: [
       {
@@ -1675,7 +1675,7 @@ export const EVENTS: EventDef[] = [
     id: 'the-old-road',
     title: 'A Way Through the Wood',
     body: 'A trodden line through the trees, too wide for deer and too old for yesterday — but not too old for last week. Roads go where people are.',
-    weight: 7,
+    weight: 13,
     when: [{ c: 'terrain', any: ['forest', 'valley'] }, { c: 'dayMin', day: 6 }],
     choices: [
       {
@@ -2006,7 +2006,7 @@ export const EVENTS: EventDef[] = [
     id: 'a-lean-sail',
     title: 'A Lean Sail Closing',
     body: 'She has been on the same tack as us for an hour and she is faster. A crew that eats shows it in the rowing; this one rows like men who have not, and they are not closing to trade news.',
-    weight: 8,
+    weight: 14,
     when: [{ c: 'terrain', any: ['ocean'] }, { c: 'dayMin', day: 5 }],
     choices: [
       {

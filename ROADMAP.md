@@ -508,6 +508,28 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — Quieter days, and more of them end in steel** — Asked for
+  directly: fewer cards, slightly more fights. Two independent knobs, and
+  the second is what makes it possible — the base event chance comes down
+  0.23 → 0.19, and the eight cards that draw steel have their weights
+  raised to 1.8× (66 → 119 of the deck's 911), taking the steel share of a
+  draw from 7.7% to 13.1%. Raid cards were left alone; raids have their
+  own pressure system and the gauntlet to measure it.
+  This knob has defeated the harness before — sweeping the chance through
+  0.28/0.34/0.40 gave 53/30/43% at two winters, a swing that went the
+  wrong way in the middle — so the survival bars were never going to show
+  it. COUNTS are not noise, though, so the harness gained a rhythm test
+  that tallies interruptions per hundred days across the same sixty
+  sagas, split by where a fight came from. Before: 21.32 cards, 1.76 open
+  fights, 1.01 raids. After: 17.25 cards, 2.10 open fights, 1.00 raids.
+  Fewer interruptions by a fifth, more fights by a fifth, raids untouched.
+  The split earned its keep immediately: the first attempt (weights ×1.5)
+  read as fights going DOWN, because a fight is a SHARE of cards and
+  cutting the draw rate cuts everything — the share had to outrun the cut,
+  not merely rise. Curve moved 78/20/10 → 83/27/7: the early marks are
+  easier, which is the honest cost of fewer cards, since the deck nets
+  harm; two winters is unchanged inside the ±10 the harness can resolve.
+
 - **2026-08-07 — The build panel was a trap, reported from a phone** — A
   photograph of the Build tab on a real handset: ten rows running off the
   bottom of the screen, no scroll, and no way out of the panel. The hint
