@@ -69,6 +69,7 @@ const BLOCK_WORD: Record<BlockReason, string> = {
   ground: 'the ground will not take it',
   after: 'needs a longhouse first',
   timber: 'not enough timber',
+  room: 'another would stand empty',
 };
 
 /**
@@ -195,11 +196,13 @@ export function renderBuilds(state: GameState, dispatch: Dispatch): HTMLElement 
   }
 
   if (home.built.length > 0) {
-    wrap.append(
-      el('div', { class: 'builds-head' }, [
-        `Standing: ${home.built.map((id) => buildingById(id)?.name ?? id).join(', ')}.`,
-      ]),
+    // Repeatables stack, and "Búð, Búð, Búð" reads like a stutter — count.
+    const counts = new Map<string, number>();
+    for (const id of home.built) counts.set(id, (counts.get(id) ?? 0) + 1);
+    const names = [...counts].map(
+      ([id, n]) => `${buildingById(id)?.name ?? id}${n > 1 ? ` ×${n}` : ''}`,
     );
+    wrap.append(el('div', { class: 'builds-head' }, [`Standing: ${names.join(', ')}.`]));
   }
   return wrap;
 }

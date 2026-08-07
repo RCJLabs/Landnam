@@ -17,7 +17,10 @@ export type BuildingId =
   | 'farmplots'
   | 'palisade'
   | 'dock'
-  | 'meadhall';
+  | 'meadhall'
+  | 'storehouse'
+  | 'watchtower'
+  | 'hof';
 
 /** The need a building is the answer to. Drives the panel's suggestion. */
 export type Answers = 'warmth' | 'food' | 'rest' | 'heart' | 'safety';
@@ -53,6 +56,21 @@ export interface BuildingDef {
    * being a thing you finish rather than a thing you extend.
    */
   room?: number;
+  /**
+   * When this can be raised AGAIN once one stands. This is what makes the
+   * build queue a thing that never ends rather than a checklist: a steading
+   * that keeps taking people in keeps needing roofs, forever.
+   *
+   * `crowded` is the honest kind and the only kind shipped: another hut is
+   * offered when there is nobody to sleep in it. The unconditional version
+   * was measured and withdrawn — it turned the panel's own suggestion into
+   * an infinite timber sink, and a band that kept taking the advice went
+   * into winter a hundred firewood short with a row of empty búðs.
+   *
+   * Everything a repeatable grants stacks per copy, so keep them to room
+   * and shelter — a stacking foodKeep would compound into a food printer.
+   */
+  repeat?: 'crowded';
 }
 
 export const BUILDINGS: BuildingDef[] = [
@@ -114,13 +132,14 @@ export const BUILDINGS: BuildingDef[] = [
   {
     id: 'bud',
     name: 'Búð',
-    blurb: 'Turf walls and a low roof, thrown up against the longhouse. Nobody wants to sleep in it and people do.',
+    blurb: 'Turf walls and a low roof, thrown up against the longhouse. Nobody wants to sleep in it and people do. There is always room for another.',
     answers: 'rest',
     timber: 5,
     works: 4,
     after: ['longhouse'],
     room: 4,
     shelter: 1,
+    repeat: 'crowded',
   },
   {
     id: 'meadhall',
@@ -134,6 +153,37 @@ export const BUILDINGS: BuildingDef[] = [
     room: 3,
     shelter: 1,
     heart: 3,
+  },
+  // --- The late tier: what a steading that has beaten winter builds next ---
+  {
+    id: 'storehouse',
+    name: 'Storehouse',
+    blurb: 'Raised on posts against the rats and the damp. What the smoke keeps, the loft keeps longer.',
+    answers: 'food',
+    timber: 5,
+    works: 5,
+    after: ['smokehouse'],
+    foodKeep: 1.15,
+  },
+  {
+    id: 'watchtower',
+    name: 'Watchtower',
+    blurb: 'A platform above the stakes and a pair of sharp eyes on it. Trouble seen far off is trouble met dressed.',
+    answers: 'safety',
+    timber: 5,
+    works: 5,
+    after: ['palisade'],
+    raises: { defence: 1 },
+  },
+  {
+    id: 'hof',
+    name: 'Hof',
+    blurb: 'A god-house under the trees. What is owed gets paid, and the paying settles people.',
+    answers: 'heart',
+    timber: 7,
+    works: 7,
+    after: ['meadhall'],
+    heart: 2,
   },
 ];
 

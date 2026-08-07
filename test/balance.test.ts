@@ -83,7 +83,10 @@ const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrio
 // claimed four. A búð is on the list because 6.2 gave the band a way to grow
 // and a harness that cannot grow reports growth as worthless — the same
 // mistake as the bot that would not fight back.
-const WANT = ['longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade'];
+const WANT = [
+  'longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade',
+  'storehouse', 'watchtower', 'meadhall', 'hof', 'dock',
+];
 
 /**
  * A competent-but-not-clairvoyant player: walks toward timber when the
@@ -265,7 +268,6 @@ function step(state: GameState): Action {
 function run(seed: string, maxDay: number): GameState {
   let state = structuredClone(newGame(seed));
   let jobsSet = false;
-  let queued = false;
 
   for (let i = 0; i < 6000 && !state.end && state.day <= maxDay; i += 1) {
     if (state.settlement && !jobsSet) {
@@ -274,9 +276,26 @@ function run(seed: string, maxDay: number): GameState {
         .forEach((p, ix) => assign(state, p.id, CREW[ix % CREW.length]!));
       jobsSet = true;
     }
-    if (state.settlement && !queued) {
-      for (const b of WANT) queueBuild(state, b as never);
-      queued = true;
+    // Keep the queue fed. The old one-shot queued the whole list on settle
+    // day and never came back — anything unaffordable that day was silently
+    // never built. Now: whenever the queue is empty, take the first thing on
+    // the list that will queue, and once nothing on it will, keep raising
+    // búðs while the steading is over-full. The first roof goes up whatever
+    // the woodpile says; after that a winter's burn stays in hand first —
+    // firewood spent on posts is firewood not spent on nights.
+    if (state.settlement && state.settlement.queue.length === 0) {
+      const buffer = state.settlement.built.length === 0 ? 0 : 16;
+      if (state.party.firewood >= buffer) {
+        for (const b of WANT) {
+          // One of each off the list — the repeatable búð would otherwise
+          // win this loop forever and the late tier would never be reached.
+          if (state.settlement.built.includes(b as never)) continue;
+          if (queueBuild(state, b as never)) break;
+        }
+        if (state.settlement.queue.length === 0 && crowding(state) > 0) {
+          queueBuild(state, 'bud');
+        }
+      }
     }
     // Heed the mark: the game states what the stores must reach, so a
     // competent player moves people onto whatever is short.

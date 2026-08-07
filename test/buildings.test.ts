@@ -19,10 +19,12 @@ import {
   buildable,
   buildBlocker,
   buildProgress,
+  capacity,
   effectiveReport,
   finishBuilds,
   foodKeeping,
   hasBuilt,
+  heartFromBuildings,
   offerable,
   output,
   queueBuild,
@@ -34,6 +36,7 @@ import {
 import { daysOfFood, nightsOfFire, readNeeds, suggestedBuild, worstNeed } from '../src/sim/needs';
 import { BUILDINGS, buildingById, type BuildingId } from '../src/data/buildings';
 import { jobById, type JobId } from '../src/data/jobs';
+import { living } from '../src/sim/people';
 import type { GameState } from '../src/state/types';
 
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
@@ -465,6 +468,79 @@ describe('a build order emerges naturally from scarcity', () => {
     // Three pressures, three answers. If any two agreed, the panel would be
     // telling the player the same thing whatever was wrong.
     expect(new Set(picks.values()).size).toBe(3);
+  });
+});
+
+// --- Item 7: the queue must not end ---
+
+describe('the queue never ends', () => {
+  it('another búð goes up only for people with nowhere to sleep', () => {
+    const state = stocked('repeat-bud', 400);
+    const home = state.settlement!;
+    home.built.push('longhouse');
+    const bud = buildingById('bud')!;
+    const before = capacity(state);
+
+    expect(buildBlocker(state, bud)).toBeNull();
+    home.built.push('bud');
+    expect(capacity(state)).toBe(before + bud.room!);
+
+    // Standing already, and not "built" — but with room to spare, another
+    // would stand empty. This gate is not tidiness: without it the panel's
+    // own suggestion becomes an infinite timber sink, measured at a hundred
+    // firewood off a first winter.
+    expect(buildBlocker(state, bud)).toBe('room');
+
+    // Fill it past the roofs it has and the hut is worth raising again.
+    const spare = state.party.people[0]!;
+    while (living(state.party.people).length <= capacity(state)) {
+      state.party.people.push({ ...structuredClone(spare), id: `extra_${state.party.people.length}` });
+    }
+    expect(buildBlocker(state, bud)).toBeNull();
+
+    // One-shots have not changed their minds.
+    home.built.push('meadhall');
+    expect(buildBlocker(state, buildingById('meadhall')!)).toBe('built');
+  });
+
+  it('with every last thing standing, the panel still has a row to show', () => {
+    const state = stocked('repeat-offer', 400);
+    state.settlement!.built.push(...BUILDINGS.map((b) => b.id));
+    const offered = offerable(state);
+    // Not "nothing left" — the repeatable stays on the panel, disabled with
+    // its reason, so the player can see the queue has a tail at all.
+    expect(offered.length).toBeGreaterThan(0);
+    expect(offered.every((b) => b.repeat)).toBe(true);
+  });
+
+  it('repeatables grant only what can safely stack', () => {
+    // A repeatable foodKeep would compound into a food printer, a stacking
+    // heart into free morale. Room and shelter are the safe currencies:
+    // room is the POINT, and shelter is capped by the sim.
+    for (const b of BUILDINGS.filter((x) => x.repeat)) {
+      expect(b.foodKeep, b.id).toBeUndefined();
+      expect(b.heart, b.id).toBeUndefined();
+      expect(b.raises, b.id).toBeUndefined();
+      expect(b.unlocks, b.id).toBeUndefined();
+    }
+  });
+
+  it('the late tier pulls real weight: loft, tower and god-house all bind', () => {
+    const fed = stocked('late-store');
+    fed.settlement!.built.push('longhouse', 'smokehouse', 'storehouse');
+    expect(foodKeeping(fed)).toBeCloseTo(1.25 * 1.15, 6);
+
+    const watched = stocked('late-watch');
+    watched.settlement!.report = { ...watched.settlement!.report, defence: 1 };
+    const bare = effectiveReport(watched)!.defence;
+    watched.settlement!.built.push('palisade', 'watchtower');
+    expect(effectiveReport(watched)!.defence).toBe(bare + 3);
+
+    const pious = stocked('late-hof');
+    pious.settlement!.built.push('longhouse', 'meadhall');
+    const merry = heartFromBuildings(pious);
+    pious.settlement!.built.push('hof');
+    expect(heartFromBuildings(pious)).toBe(merry + 2);
   });
 });
 

@@ -414,6 +414,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — The build queue stops being a checklist** — Item 7. Three
+  late-tier buildings for a steading that has beaten its first winter: the
+  storehouse (after the smokehouse, another 15% of what is caught), the
+  watchtower (after the palisade, another point of defence) and the hof
+  (after the mead hall, standing heart). And one repeatable — the búð,
+  which can go up again and again, each one four more beds. That is the
+  tail that makes the queue endless: a steading that keeps taking people
+  in keeps needing roofs.
+  The first cut of the repeatable was UNCONDITIONAL, and the harness
+  caught it inside one run: the expedition comparison lost a seed and the
+  never-leaving arm went into winter a hundred firewood light, because
+  any bot taking the panel's own suggestion poured wood into empty huts
+  forever. So a repeatable is gated on the honest reason to raise one —
+  `repeat: 'crowded'`, offered only when there are more people than beds,
+  and shown on the panel with its reason ("another would stand empty")
+  rather than silently vanishing. The seed came straight back: trading 6
+  against never-leaving 5, as before. Curve 78/20/10, unmoved. The
+  standing line counts duplicates now (Búð ×3) instead of stuttering.
+
 - **2026-08-07 — The bot's offensive half, and a raid number worth reading**
   — Item 10, in two parts. The balance bot now plays the plunder game the
   runs are built around: with five sworn and food to fight on it sacks the

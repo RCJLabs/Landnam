@@ -145,13 +145,20 @@ export function heartFromBuildings(state: GameState): number {
 
 // --- The build queue ---
 
-export type BlockReason = 'built' | 'queued' | 'ground' | 'after' | 'timber';
+export type BlockReason = 'built' | 'queued' | 'ground' | 'after' | 'timber' | 'room';
 
 /** Why this cannot be raised, or null if it can. */
 export function buildBlocker(state: GameState, building: BuildingDef): BlockReason | null {
   const home = state.settlement;
   if (!home) return 'ground';
-  if (home.built.includes(building.id)) return 'built';
+  if (home.built.includes(building.id)) {
+    // A repeatable is never simply "already built" — that is the whole of
+    // what it is — but another hut with nobody to sleep in it is timber
+    // burned. The queue goes on forever only while the steading keeps
+    // outgrowing itself, which is the honest reason to raise another.
+    if (building.repeat !== 'crowded') return 'built';
+    if (crowding(state) <= 0) return 'room';
+  }
   if (home.queue.includes(building.id)) return 'queued';
   for (const id of building.after ?? []) {
     if (!home.built.includes(id)) return 'after';
@@ -173,7 +180,9 @@ export function canBuild(state: GameState, building: BuildingDef): boolean {
 export function offerable(state: GameState): BuildingDef[] {
   const home = state.settlement;
   if (!home) return [];
-  return BUILDINGS.filter((b) => !home.built.includes(b.id) && !home.queue.includes(b.id));
+  return BUILDINGS.filter(
+    (b) => (b.repeat || !home.built.includes(b.id)) && !home.queue.includes(b.id),
+  );
 }
 
 /** What can be raised right now, timber in hand and all. */
