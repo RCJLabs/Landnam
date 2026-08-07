@@ -115,8 +115,10 @@ the Thing is a lap of honour rather than a climax.
 8. **[ ] Split `data/events.ts` (946 lines) and `main.ts` (609).** `main.ts`
    is the risk: a boot router carrying UI state for eight overlays, and every
    milestone adds another.
-9. **[ ] Version the localStorage preferences.** Four keys and only `save` has
-   a version and a migration. `fallen` grows unboundedly toward a quota.
+9. **[x] Version the localStorage preferences.** One `store.ts`, a version
+   stamp, and a migration for the mute's old format. *(The audit's claim that
+   `fallen` grew unboundedly was wrong — it has been capped at 60 since it
+   shipped.)*
 10. **[ ] 5.4 Release** — v1.0 and the CNAME. Last, and now for a sharper
     reason: tagging with 6.2 invisible would ship a version whose central new
     system the player cannot see.
@@ -253,6 +255,25 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — One way to store a preference** — Three things outlive a run
+  beside the save — the mute, the teaching, the memorial — and each had grown
+  its own try/catch, its own JSON parse, and its own idea of what to do when a
+  browser refuses storage. Three copies of the same twenty lines, none of them
+  stamped with a version.
+  They now go through one `store.ts`: read with a type guard and a fallback,
+  write with a version stamp, and never throw. A browser with storage disabled
+  is simply a player with no preferences, which is a perfectly good thing to
+  be, and there is now somewhere for a future shape change to hook.
+  The mute needed an actual migration on the way. It shipped as the raw string
+  `'1'`, so anybody who silenced the game yesterday had that in their browser
+  today; it is read in the old form once and rewritten in the new one. Four
+  lines, and the difference between a preference honoured and one silently
+  lost — which is the same failure as the `Person.morale` bug, in the one
+  place that had no safety net.
+  One correction to the audit that ordered this work: it claimed the memorial
+  grew unboundedly toward a quota. It does not, and never did — `WALL_LIMIT`
+  has capped it at sixty names since the day it shipped. 535 tests.
 
 - **2026-08-06 — The harness cannot be tuned on, and now says so** — An audit
   went to fix the deck-dilution drift by lifting the base event chance to

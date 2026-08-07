@@ -7,6 +7,8 @@
 //
 // The reading and writing is here; the wall itself is drawn in render/cards.
 
+import { forget, read, write } from './store';
+
 /** Fallen from older runs, newest first. */
 const FALLEN_KEY = 'landnam_fallen';
 
@@ -25,15 +27,11 @@ export interface Fallen {
   seed: string;
 }
 
+const isFallenList = (value: unknown): value is Fallen[] =>
+  Array.isArray(value) && value.every(isFallen);
+
 export function fallen(): Fallen[] {
-  try {
-    const raw = localStorage.getItem(FALLEN_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isFallen) : [];
-  } catch {
-    return [];
-  }
+  return read(FALLEN_KEY, isFallenList, []);
 }
 
 function isFallen(value: unknown): value is Fallen {
@@ -61,17 +59,9 @@ export function remember(dead: Fallen[]): void {
   const already = new Set(wall.map((f) => `${f.seed}:${f.name}:${f.day}`));
   const fresh = dead.filter((f) => !already.has(`${f.seed}:${f.name}:${f.day}`));
   if (fresh.length === 0) return;
-  try {
-    localStorage.setItem(FALLEN_KEY, JSON.stringify([...fresh, ...wall].slice(0, WALL_LIMIT)));
-  } catch {
-    // A full or refused store is not worth interrupting an ending for.
-  }
+  write(FALLEN_KEY, [...fresh, ...wall].slice(0, WALL_LIMIT));
 }
 
 export function clearWall(): void {
-  try {
-    localStorage.removeItem(FALLEN_KEY);
-  } catch {
-    // Nothing to do.
-  }
+  forget(FALLEN_KEY);
 }

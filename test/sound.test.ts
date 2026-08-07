@@ -192,6 +192,7 @@ describe('the engine is inert until it is welcome', () => {
   });
 
   it('muted means no nodes at all, not merely no volume', async () => {
+    // The pre-store form. Reading it and rewriting it is the migration.
     (globalThis as Record<string, unknown>).localStorage = fakeStorage({ landnam_mute: '1' });
     withAudio();
     const engine = await import('../src/audio/engine');
@@ -216,12 +217,12 @@ describe('the engine is inert until it is welcome', () => {
   });
 
   it('remembers the mute across a reload', async () => {
-    const held = fakeStorage({ landnam_mute: '1' });
+    const held = fakeStorage({ landnam_mute: 'true' });
     (globalThis as Record<string, unknown>).localStorage = held;
     const engine = await import('../src/audio/engine');
     expect(engine.isMuted()).toBe(true);
     expect(engine.toggleMute()).toBe(false);
-    expect(held.getItem('landnam_mute')).toBe('0');
+    expect(held.getItem('landnam_mute')).toBe('false');
 
     // A fresh load reads it back rather than defaulting.
     vi.resetModules();
@@ -420,5 +421,66 @@ describe('ambience follows the ground and the season', () => {
     expect(sameAir(ambienceFor(state), ambienceFor(structuredClone(state)))).toBe(true);
     const moved = standingOn(state, 'mountains');
     expect(sameAir(ambienceFor(state), ambienceFor(moved))).toBe(false);
+  });
+});
+
+describe('preferences that outlive a run', () => {
+  it('carries a mute set before the shared store forward', async () => {
+    // Shipped as the raw string '1'. A player who silenced the game yesterday
+    // must still find it silent today, and the value must be rewritten in the
+    // new shape so the migration only runs once.
+    const held = (() => {
+      const map = new Map<string, string>([['landnam_mute', '1']]);
+      return {
+        getItem: (k: string) => map.get(k) ?? null,
+        setItem: (k: string, v: string) => void map.set(k, v),
+        removeItem: (k: string) => void map.delete(k),
+        clear: () => map.clear(),
+        key: () => null,
+        length: 0,
+      };
+    })();
+    vi.resetModules();
+    (globalThis as Record<string, unknown>).localStorage = held;
+    const engine = await import('../src/audio/engine');
+    expect(engine.isMuted()).toBe(true);
+    expect(held.getItem('landnam_mute')).toBe('true');
+    delete (globalThis as Record<string, unknown>).localStorage;
+  });
+
+  it('stamps a version whenever anything is written', async () => {
+    const map = new Map<string, string>();
+    (globalThis as Record<string, unknown>).localStorage = {
+      getItem: (k: string) => map.get(k) ?? null,
+      setItem: (k: string, v: string) => void map.set(k, v),
+      removeItem: (k: string) => void map.delete(k),
+      clear: () => map.clear(),
+      key: () => null,
+      length: 0,
+    };
+    vi.resetModules();
+    const store = await import('../src/store');
+    expect(store.storedVersion()).toBe(0);
+    store.write('landnam_taught', ['the-day']);
+    expect(store.storedVersion()).toBe(store.PREFS_VERSION);
+    delete (globalThis as Record<string, unknown>).localStorage;
+  });
+
+  it('treats a browser that refuses storage as a player with no preference', async () => {
+    (globalThis as Record<string, unknown>).localStorage = {
+      getItem: () => { throw new Error('denied'); },
+      setItem: () => { throw new Error('denied'); },
+      removeItem: () => { throw new Error('denied'); },
+      clear: () => {},
+      key: () => null,
+      length: 0,
+    };
+    vi.resetModules();
+    const store = await import('../src/store');
+    expect(store.read('landnam_taught', store.isStringList, [])).toEqual([]);
+    expect(() => store.write('landnam_taught', ['x'])).not.toThrow();
+    expect(() => store.forget('landnam_taught')).not.toThrow();
+    expect(store.storedVersion()).toBe(0);
+    delete (globalThis as Record<string, unknown>).localStorage;
   });
 });

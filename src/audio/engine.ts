@@ -11,6 +11,7 @@
 // the audio thread rather than in a timer. The game stays turn-based.
 
 import { soundDef, type AmbienceProfile, type CueId } from '../data/sounds';
+import { read, write } from '../store';
 
 /** Preferences are not part of a run, so this is deliberately not in the save. */
 const MUTE_KEY = 'landnam_mute';
@@ -41,9 +42,23 @@ let muted = readMute();
  */
 let nudge = 0;
 
+/**
+ * The mute, with a one-line migration in it.
+ *
+ * It shipped as the raw string '1' before the preferences went through a
+ * shared store, so a player who silenced the game yesterday has that in their
+ * browser today. Reading the old form and rewriting it in the new one costs
+ * four lines and is the difference between a preference honoured and a
+ * preference silently lost — which is exactly the failure the version stamp
+ * exists to make visible.
+ */
 function readMute(): boolean {
+  const stored = read(MUTE_KEY, (v): v is boolean => typeof v === 'boolean', null as unknown as boolean);
+  if (typeof stored === 'boolean') return stored;
   try {
-    return localStorage.getItem(MUTE_KEY) === '1';
+    const legacy = localStorage.getItem(MUTE_KEY) === '1';
+    if (legacy) write(MUTE_KEY, true);
+    return legacy;
   } catch {
     return false;
   }
@@ -56,11 +71,7 @@ export function isMuted(): boolean {
 /** Flips the mute and remembers it. Returns the new state. */
 export function toggleMute(): boolean {
   muted = !muted;
-  try {
-    localStorage.setItem(MUTE_KEY, muted ? '1' : '0');
-  } catch {
-    // A browser refusing storage is not a reason to refuse sound.
-  }
+  write(MUTE_KEY, muted);
   if (master && ctx) {
     master.gain.cancelScheduledValues(ctx.currentTime);
     master.gain.setTargetAtTime(muted ? 0 : MASTER, ctx.currentTime, 0.05);
