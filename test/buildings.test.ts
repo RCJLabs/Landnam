@@ -513,6 +513,16 @@ describe('the queue never ends', () => {
     expect(offered.every((b) => b.repeat)).toBe(true);
   });
 
+  it('every prerequisite names a real building', () => {
+    // The panel now tells the player WHICH building a locked row waits on,
+    // by looking the id up. A typo here would have printed a blank reason.
+    for (const b of BUILDINGS) {
+      for (const id of b.after ?? []) {
+        expect(buildingById(id), `${b.id} waits on unknown "${id}"`).toBeTruthy();
+      }
+    }
+  });
+
   it('repeatables grant only what can safely stack', () => {
     // A repeatable foodKeep would compound into a food printer, a stacking
     // heart into free morale. Room and shelter are the safe currencies:

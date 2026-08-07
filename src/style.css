@@ -46,6 +46,29 @@ body,
   flex: 0 0 auto;
 }
 
+/*
+ * No panel may ever push the buttons off the bottom of the phone.
+ *
+ * The hint slot holds whatever the current mode wants to say — and in the
+ * steading that is the needs panel, the room mark and the WHOLE build list.
+ * It was `flex: 0 0 auto` with no ceiling, so once the build tree grew past
+ * about seven rows the list simply extended past the viewport, taking the
+ * Work/Build tabs and "Back to the land" with it. #app has `overflow:
+ * hidden`, so there was no page scroll to rescue it: a player who opened
+ * Build could not scroll the list and could not leave the screen. Reported
+ * from a phone with a photograph, which is the only way this class of bug
+ * ever gets found.
+ *
+ * A ceiling in vh plus its own scroll fixes the whole family at once —
+ * a long crew roster does the same thing on the Work tab.
+ */
+.hint-slot {
+  max-height: 62vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 .map-slot {
   flex: 1 1 auto;
   min-height: 0;
@@ -1341,6 +1364,12 @@ button.relearn {
 
 .room-mark.short {
   border-color: var(--blood);
+}
+
+/* The winter mark's labels are "Food" and "Wood"; this one's is "Under the
+   roof", which folded into three lines inside a 3.5em column. */
+.room-mark .mark-row {
+  grid-template-columns: max-content auto 1fr;
 }
 
 /* The guide reads as a book: headed sections, scrolling as one page. */

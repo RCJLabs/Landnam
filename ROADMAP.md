@@ -421,6 +421,27 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — The build panel was a trap, reported from a phone** — A
+  photograph of the Build tab on a real handset: ten rows running off the
+  bottom of the screen, no scroll, and no way out of the panel. The hint
+  slot was `flex: 0 0 auto` with no ceiling, so it grew to whatever it
+  held and pushed the Work/Build tabs and "Back to the land" past the
+  viewport — and `#app` has `overflow: hidden`, so there was no page
+  scroll to rescue it. Seven rows fit; the late tier made it ten and
+  turned a tight fit into a dead end. The fix is general rather than
+  per-panel — the hint slot is capped at 62vh and scrolls itself, which
+  covers a long crew roster on the Work tab too. Verified at 390×844 in
+  the built page: "Back to the land" bottoms out at y=799, and the list
+  scrolls.
+  The same shot showed two more: every locked row read "needs a longhouse
+  first", a hardcoded string that was true of all three prerequisites the
+  day it was written and became a lie the day the late tier landed — the
+  panel told players the watchtower wanted a longhouse when it wants a
+  palisade. It names the actual building now, with a data lint so a typo
+  in an `after` id cannot print a blank. And "Under the roof" was folding
+  into three lines inside the winter mark's 3.5em label column; the room
+  mark gets its own width and is one 18px line.
+
 - **2026-08-07 — No last winter: the jarldom you can go on living in** —
   Item 8, and roadmap 6.4 with it. The Thing carrying no longer writes an
   ending. It grants the rule — `state.jarl`, a name and the day it carried

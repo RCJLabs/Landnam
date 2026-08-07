@@ -6,7 +6,7 @@
 // numbers are on a different screen.
 
 import { JOBS, jobById, SHELTER_MAX, WATCH_MAX, type JobId } from '../data/jobs';
-import { buildingById, type BuildingId } from '../data/buildings';
+import { buildingById, type BuildingDef, type BuildingId } from '../data/buildings';
 import type { GameState, Person } from '../state/types';
 import {
   availableJobs,
@@ -67,10 +67,28 @@ const BLOCK_WORD: Record<BlockReason, string> = {
   built: 'standing',
   queued: 'on the stocks',
   ground: 'the ground will not take it',
-  after: 'needs a longhouse first',
+  // Overridden by blockWord below, which can name the actual building.
+  after: 'something has to come first',
   timber: 'not enough timber',
   room: 'another would stand empty',
 };
+
+/**
+ * Why this cannot be raised, in words, naming the thing it waits on.
+ *
+ * The flat map said "needs a longhouse first" for every prerequisite, which
+ * was true of the only three buildings that had one when it was written and
+ * became a lie the day the late tier landed — the panel cheerfully told a
+ * player the watchtower wanted a longhouse when it wants a palisade.
+ */
+function blockWord(state: GameState, building: BuildingDef, reason: BlockReason): string {
+  if (reason !== 'after') return BLOCK_WORD[reason];
+  const missing = (building.after ?? []).find(
+    (id) => !state.settlement?.built.includes(id),
+  );
+  const name = missing ? buildingById(missing)?.name : undefined;
+  return name ? `needs a ${name.toLowerCase()} first` : BLOCK_WORD.after;
+}
 
 /**
  * The four needs, worst first, each saying what it actually is. This is where
@@ -187,7 +205,7 @@ export function renderBuilds(state: GameState, dispatch: Dispatch): HTMLElement 
       el('span', { class: 'build-name' }, [building.name]),
       el('span', { class: 'build-note' }, [
         blocker
-          ? BLOCK_WORD[blocker]
+          ? blockWord(state, building, blocker)
           : `${building.timber} timber · ${building.works} days · for ${building.answers}`,
       ]),
     );
