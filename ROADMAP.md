@@ -112,10 +112,11 @@ the Thing is a lap of honour rather than a climax.
 7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
    and they blur. Also the cleanest way to make the palisade read as ground
    rather than as a number.
-8. **[~] Split `data/events.ts` (1,150 lines) and `main.ts`.** The console
-   levers are out (`debug.ts`), taking main.ts from 614 to 554. Still to go:
-   the overlay chain and the UI-state bag out of main.ts, and events.ts into
-   per-phase files.
+8. **[~] Split `data/events.ts` and `main.ts`.** Done: the console levers
+   (`debug.ts`), the deck out of the vocabulary (`eventCards.ts`, 1,294 → 91),
+   and the UI-state bag (`uistate.ts`). main.ts is 614 → 524. Still to go: the
+   overlay chain itself, which is now liftable because its nine branches no
+   longer close over ten loose `let`s.
 9. **[x] Version the localStorage preferences.** One `store.ts`, a version
    stamp, and a migration for the mute's old format. *(The audit's claim that
    `fallen` grew unboundedly was wrong — it has been capped at 60 since it
@@ -256,6 +257,24 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — Two cuts, and the third made possible** — `data/events.ts`
+  had grown to 1,294 lines by holding the event VOCABULARY — conditions,
+  effects, the shapes a card can take — in the same file as every card written
+  against it. Two different things with two different reasons to change: the
+  vocabulary moves when the engine gains a capability, the deck moves whenever
+  somebody writes a card. The deck is now `eventCards.ts` and the vocabulary
+  is 91 lines, re-exporting it so no consumer had to move.
+  Then the ten loose `let`s at the top of main.ts — which overlay is open, who
+  is selected in the steading, which action a tap on a foe performs — became
+  one `uistate.ts`. That is the change that matters, and not for the sixty
+  lines: the overlay chain could not be lifted out of main.ts while its nine
+  branches each closed over module-level variables that existed nowhere else.
+  Now they can be handed what they need, so the chain is the next cut rather
+  than an impossible one.
+  Verified in a browser, which was worth doing: the Act sheet opens to five
+  deeds, acting closes it and advances the day, and Chart correctly refuses to
+  open while a card is up. main.ts 614 → 524. 535 tests.
 
 - **2026-08-07 — The console levers move out of the boot router** — main.ts
   had grown to six hundred and fourteen lines and every milestone added to

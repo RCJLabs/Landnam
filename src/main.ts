@@ -8,7 +8,7 @@ import { currentMode } from './modes';
 import { makeSeedPhrase } from './rng';
 import { newGame } from './state/create';
 import { clearSave, hasSave, load, save } from './state/save';
-import type { GameState, Purpose } from './state/types';
+import type { GameState } from './state/types';
 import { apply, type Action } from './sim/actions';
 import { createTravelView } from './render/travel';
 import { createBattleView } from './render/battle';
@@ -23,7 +23,6 @@ import {
   renderCrew,
   renderNeeds,
   renderRoom,
-  type ColonyTab,
 } from './render/colonyUi';
 import {
   renderAftermath,
@@ -53,7 +52,6 @@ import {
   renderBattleHint,
   renderBattleLog,
   renderBattleResult,
-  type Aim,
 } from './render/battleUi';
 import { combatantAt, isWarbandTurn } from './sim/battle';
 import { canFound } from './sim/site';
@@ -77,6 +75,7 @@ import { forgetTeaching, markTaught, taught } from './taught';
 import { fallen, remember } from './memorial';
 import { fallenOf } from './sim/fallen';
 import { installDebug } from './debug';
+import { freshUi, resetForRun } from './uistate';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('missing #app');
@@ -85,27 +84,8 @@ let state: GameState | null = null;
 let travelView: ReturnType<typeof createTravelView> | null = null;
 let battleView: ReturnType<typeof createBattleView> | null = null;
 let colonyView: ReturnType<typeof createColonyView> | null = null;
-let sagaExpanded = false;
-let rosterOpen = false;
-/** The land-taking card is UI state — the decision itself is the only thing saved. */
-let foundingOpen = false;
-/** Who is selected in the steading. Selection is a view concern, not a save. */
-let picked: string | null = null;
-/** Which half of the steading you are looking at: the work, or the building. */
-let colonyTab: ColonyTab = 'work';
-/** The chart overlay. A view of the save, not part of it. */
-let mapOpen = false;
-/** The memorial, opened from the title screen. */
-let wallOpen = false;
-/** The day's-work sheet behind the Act button. */
-let actOpen = false;
-/** The send-out card: who is ticked, and what for. Both are view state. */
-let launchOpen = false;
-let launchPicked = new Set<string>();
-let launchPurpose: Purpose = 'explore';
-/** Which action a tap on a foe performs. Resets to Strike each turn. */
-let aim: Aim = 'strike';
-let aimTurnKey = '';
+/** Everything on screen that is not in the save. See src/uistate.ts. */
+const ui = freshUi();
 
 /** The last air we asked for, so an unchanged profile is not re-eased every render. */
 let air: AmbienceProfile | null = null;
@@ -207,7 +187,7 @@ function dispatch(action: Action): void {
 
 function onHexTap(target: Hex): void {
   if (!state || state.event || state.aftermath || state.end) return;
-  if (foundingOpen || mapOpen || launchOpen || actOpen) return;
+  if (ui.foundingOpen || ui.mapOpen || ui.launchOpen || ui.actOpen) return;
   if (equals(target, state.party.at)) return;
   dispatch({ type: 'MOVE', to: target });
 }
@@ -219,8 +199,8 @@ function onFieldTap(target: Hex): void {
   if (occupant) {
     if (occupant.side !== 'foe') return;
     const id = occupant.personId;
-    if (aim === 'throw') dispatch({ type: 'B_THROW', targetId: id });
-    else if (aim === 'shove') dispatch({ type: 'B_SHOVE', targetId: id });
+    if (ui.aim === 'throw') dispatch({ type: 'B_THROW', targetId: id });
+    else if (ui.aim === 'shove') dispatch({ type: 'B_SHOVE', targetId: id });
     else dispatch({ type: 'B_STRIKE', targetId: id });
     return;
   }
@@ -231,16 +211,7 @@ function startRun(seed: string): void {
   const finalSeed = seed || makeSeedPhrase(Date.now());
   state = newGame(finalSeed);
   save(state);
-  sagaExpanded = false;
-  rosterOpen = false;
-  foundingOpen = false;
-  picked = null;
-  colonyTab = 'work';
-  mapOpen = false;
-  actOpen = false;
-  launchOpen = false;
-  launchPicked = new Set();
-  launchPurpose = 'explore';
+  resetForRun(ui);
   mountGame();
 }
 
@@ -267,10 +238,10 @@ function showTitle(): void {
   travelView = null;
   air = null;
   hushAmbience();
-  if (wallOpen) {
+  if (ui.wallOpen) {
     app!.replaceChildren(
       renderWall(fallen(), () => {
-        wallOpen = false;
+        ui.wallOpen = false;
         showTitle();
       }),
     );
@@ -292,7 +263,7 @@ function showTitle(): void {
         : undefined,
       anyDead
         ? () => {
-            wallOpen = true;
+            ui.wallOpen = true;
             showTitle();
           }
         : undefined,
@@ -310,17 +281,17 @@ function renderBattle(): void {
   }
   // A fresh fighter starts with a sword in hand, not a spear cocked.
   const turnKey = `${state.battle.round}:${state.battle.turnIndex}`;
-  if (turnKey !== aimTurnKey) {
-    aimTurnKey = turnKey;
-    aim = 'strike';
+  if (turnKey !== ui.aimTurnKey) {
+    ui.aimTurnKey = turnKey;
+    ui.aim = 'strike';
   }
 
   topbarSlot.replaceChildren(renderBattleBar(state));
-  battleView.update(state, aim);
-  hintSlot.replaceChildren(renderBattleHint(state, aim));
+  battleView.update(state, ui.aim);
+  hintSlot.replaceChildren(renderBattleHint(state, ui.aim));
   actionSlot.replaceChildren(
-    renderBattleActions(state, aim, (next) => {
-      aim = next;
+    renderBattleActions(state, ui.aim, (next) => {
+      ui.aim = next;
       render();
     }, dispatch),
   );
@@ -336,13 +307,13 @@ function renderColony(): void {
   if (mapSlot.firstChild !== colonyView.root) mapSlot.replaceChildren(colonyView.root);
 
   // A dead or departed selection must not strand the picker open.
-  if (picked && !state.party.people.some((p) => p.id === picked && p.alive)) picked = null;
+  if (ui.picked && !state.party.people.some((p) => p.id === ui.picked && p.alive)) ui.picked = null;
 
   // Setting someone to work returns you to the roster, so the next person is
   // one tap away rather than two. On a phone that is the difference between
   // the panel being usable and being a chore.
   const colonyDispatch = (action: Action): void => {
-    if (action.type === 'ASSIGN') picked = null;
+    if (action.type === 'ASSIGN') ui.picked = null;
     dispatch(action);
   };
 
@@ -351,7 +322,7 @@ function renderColony(): void {
 
   // Work and Build are two views of the same steading. Selecting a person
   // always wins, because the picker replaces the action bar.
-  if (colonyTab === 'build' && !picked) {
+  if (ui.colonyTab === 'build' && !ui.picked) {
     hintSlot.replaceChildren(
       renderNeeds(state),
       renderRoom(state),
@@ -360,17 +331,17 @@ function renderColony(): void {
   } else {
     hintSlot.replaceChildren(
       renderColonyHint(state),
-      renderCrew(state, picked, (id) => {
-        picked = id;
+      renderCrew(state, ui.picked, (id) => {
+        ui.picked = id;
         render();
       }),
     );
   }
 
   actionSlot.replaceChildren(
-    renderColonyActions(state, picked, colonyTab, (tab) => {
-      colonyTab = tab;
-      picked = null;
+    renderColonyActions(state, ui.picked, ui.colonyTab, (tab) => {
+      ui.colonyTab = tab;
+      ui.picked = null;
       render();
     }, colonyDispatch),
   );
@@ -410,27 +381,27 @@ function render(): void {
     state,
     dispatch,
     () => {
-      foundingOpen = true;
+      ui.foundingOpen = true;
       render();
     },
     () => {
-      launchOpen = true;
-      launchPicked = new Set();
+      ui.launchOpen = true;
+      ui.launchPicked = new Set();
       render();
     },
   );
 
   const actions = renderActionBar(state, deeds.length, () => {
-    actOpen = true;
+    ui.actOpen = true;
     render();
   }, () => {
-    mapOpen = true;
+    ui.mapOpen = true;
     render();
   });
   if (!state.end && !state.event) {
     actions.append(
       button('Band', () => {
-        rosterOpen = true;
+        ui.rosterOpen = true;
         render();
       }, { class: 'action secondary' }),
     );
@@ -438,8 +409,8 @@ function render(): void {
   actionSlot.replaceChildren(actions);
 
   sagaSlot.replaceChildren(
-    renderSagaLog(state, sagaExpanded, () => {
-      sagaExpanded = !sagaExpanded;
+    renderSagaLog(state, ui.sagaExpanded, () => {
+      ui.sagaExpanded = !ui.sagaExpanded;
       render();
     }),
   );
@@ -451,63 +422,63 @@ function render(): void {
         showTitle();
       }),
     );
-  } else if (launchOpen && state.settlement && !state.expedition) {
+  } else if (ui.launchOpen && state.settlement && !state.expedition) {
     overlaySlot.replaceChildren(
       renderLaunch(
         state,
-        launchPicked,
+        ui.launchPicked,
         (id) => {
-          if (launchPicked.has(id)) launchPicked.delete(id);
-          else launchPicked.add(id);
+          if (ui.launchPicked.has(id)) ui.launchPicked.delete(id);
+          else ui.launchPicked.add(id);
           render();
         },
-        launchPurpose,
+        ui.launchPurpose,
         (p) => {
-          launchPurpose = p;
+          ui.launchPurpose = p;
           render();
         },
         (action) => {
-          launchOpen = false;
+          ui.launchOpen = false;
           dispatch(action);
         },
         () => {
-          launchOpen = false;
+          ui.launchOpen = false;
           render();
         },
       ),
     );
-  } else if (actOpen) {
+  } else if (ui.actOpen) {
     overlaySlot.replaceChildren(
       renderDeeds(deeds, () => {
-        actOpen = false;
+        ui.actOpen = false;
         render();
       }),
     );
-  } else if (mapOpen) {
+  } else if (ui.mapOpen) {
     overlaySlot.replaceChildren(
       renderMap(state, () => {
-        mapOpen = false;
+        ui.mapOpen = false;
         render();
       }),
     );
-  } else if (foundingOpen && canFound(state, state.party.at)) {
+  } else if (ui.foundingOpen && canFound(state, state.party.at)) {
     overlaySlot.replaceChildren(
       renderFounding(
         state,
         () => {
-          foundingOpen = false;
+          ui.foundingOpen = false;
           dispatch({ type: 'FOUND' });
         },
         () => {
-          foundingOpen = false;
+          ui.foundingOpen = false;
           render();
         },
       ),
     );
-  } else if (rosterOpen) {
+  } else if (ui.rosterOpen) {
     overlaySlot.replaceChildren(
       renderWarband(state, () => {
-        rosterOpen = false;
+        ui.rosterOpen = false;
         render();
       }),
     );
