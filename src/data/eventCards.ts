@@ -1599,4 +1599,399 @@ export const EVENTS: EventDef[] = [
     ],
   },
 
+  // --- Deck expansion, batch four: the hundred ---
+  //
+  // The last batch of item 6. Same bargain as batch three — costly or a
+  // trade almost throughout — and it deliberately spends the corners of the
+  // vocabulary the deck had never used: a card gated on lore the band KNOWS,
+  // one on the palisade, one on the smokehouse. Measured either side on the
+  // honest harness, with batch three's warning live: a second ten-point
+  // winter drop makes the drift real and buys a trim.
+  {
+    id: 'the-cairn',
+    title: 'A Cairn on the High Ground',
+    body: 'Stones stacked shoulder-high on the rise, grey with lichen at the base and pale at the crown. People have been adding to it for longer than anyone has been counting.',
+    weight: 6,
+    when: [{ c: 'terrain', any: ['hills', 'mountains', 'meadow'] }],
+    choices: [
+      {
+        label: 'Put a stone on it and go on',
+        success: { text: 'Each of us carried one up. The way is watched, the old ones say, and it does no harm to be polite to it.', effects: [{ t: 'morale', n: 4 }] },
+      },
+      {
+        label: 'Read the country from the rise',
+        check: { stat: 'wits', dc: 11 },
+        success: { text: 'From the cairn the land laid itself out like a told story: the water, the woods, the ways between.', effects: [{ t: 'reveal', radius: 3 }] },
+        failure: { text: 'Cloud sat down on the rise while we stood there, and we came down knowing what we already knew.', effects: [{ t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'hail-out-of-a-blue-sky',
+    title: 'Hail Out of a Blue Sky',
+    body: 'The first stones bounce off the packs like slung shot and the sky is still half blue. It is on us before anyone has finished saying what it is.',
+    weight: 7,
+    when: [{ c: 'season', any: ['summer', 'autumn'] }, { c: 'terrain', any: ['meadow', 'valley', 'hills'] }],
+    choices: [
+      {
+        label: 'Cover the packs with our own backs',
+        success: { text: 'We knelt over the food and took it on the shoulders. The stores came through dry and whole; not everyone did.', effects: [{ t: 'wound', n: 2, count: 2 }, { t: 'morale', n: -2 }] },
+      },
+      {
+        label: 'Run for the treeline',
+        check: { stat: 'wits', dc: 11 },
+        success: { text: 'We made the trees with the worst of it hammering the ground behind us.', effects: [{ t: 'morale', n: 1 }] },
+        failure: { text: 'The run scattered us and the packs. What the hail did not bruise, the wet got.', effects: [{ t: 'food', n: -4 }, { t: 'morale', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-old-road',
+    title: 'A Way Through the Wood',
+    body: 'A trodden line through the trees, too wide for deer and too old for yesterday — but not too old for last week. Roads go where people are.',
+    weight: 7,
+    when: [{ c: 'terrain', any: ['forest', 'valley'] }, { c: 'dayMin', day: 6 }],
+    choices: [
+      {
+        label: 'Follow it and see who made it',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'It ran to a ford and a summer shieling, empty this season. We know this country better for the walking of it.', effects: [{ t: 'reveal', radius: 4 }] },
+        failure: { text: 'It had been walked more recently than we thought, and the walkers heard us first.', effects: [{ t: 'battle', difficulty: 0 }] },
+      },
+      {
+        label: 'Cross it and leave it alone',
+        success: { text: 'We stepped over it like a stream and put ground between us and it before dark.', effects: [{ t: 'morale', n: -1 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-masterless-dog',
+    title: 'A Dog With No One Behind It',
+    body: 'It has been keeping pace at the edge of sight since morning — a rough grey working dog, ribs showing, collar of plaited hide and no one in the world at the end of it.',
+    weight: 6,
+    when: [{ c: 'dayMin', day: 10 }],
+    choices: [
+      {
+        label: 'Feed it and let it choose',
+        success: { text: 'It ate at arm\'s length for two days and then one morning it was lying against the packs as if it had always been ours. It hears things we do not.', effects: [{ t: 'food', n: -3 }, { t: 'morale', n: 5 }, { t: 'flag', flag: 'dog', n: 1 }] },
+      },
+      {
+        label: 'Drive it off — we cannot feed it',
+        success: { text: 'Stones thrown to miss, and it understood them. It sat at the ridgeline a long time before it went.', effects: [{ t: 'morale', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'midge-summer',
+    title: 'The Air Is Alive',
+    body: 'The wind has dropped and the low ground has come up in a haze of midges, in every eye and every mouthful. The beasts of the country have all gone to the high bare places, which says something.',
+    weight: 6,
+    when: [{ c: 'season', any: ['summer'] }, { c: 'terrain', any: ['bog', 'forest', 'valley'] }],
+    choices: [
+      {
+        label: 'Burn smudge-fires and sit in the smoke',
+        success: { text: 'Green wood and smoke thick enough to lean on. Eyes streamed either way, but the smoke was ours.', effects: [{ t: 'firewood', n: -3 }] },
+      },
+      {
+        label: 'Push through to the high ground',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'A foul afternoon, walked through with hoods up and mouths shut, and clean wind on the far side of it.', effects: [{ t: 'morale', n: -1 }] },
+        failure: { text: 'The band came apart into a dozen swatting, cursing islands. Tempers went before the daylight did.', effects: [{ t: 'wound', n: 1, count: 3 }, { t: 'morale', n: -4 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-hot-pool',
+    title: 'Steam Off the Water',
+    body: 'A pool in the rocks with steam standing over it and no fire anywhere: the ground itself is doing it. The water smells faintly of eggs and holds its warmth like a grudge.',
+    weight: 5,
+    once: true,
+    when: [{ c: 'terrain', any: ['hills', 'mountains'] }],
+    choices: [
+      {
+        label: 'Halt a day and soak the road out of everyone',
+        success: { text: 'A day lost and worth double. Old aches came out in the steam, and the band walked on the next morning like new-shod horses.', effects: [{ t: 'food', n: -2 }, { t: 'heal', n: 3 }, { t: 'morale', n: 6 }] },
+      },
+      {
+        label: 'Mark it and keep walking',
+        success: { text: 'We fixed the place in memory, each of us privately planning to come back, and went on.', effects: [{ t: 'morale', n: -1 }] },
+      },
+    ],
+  },
+  {
+    id: 'over-the-ice',
+    title: 'The Short Way Is White',
+    body: 'The water that cost half a day to walk around in autumn is a flat white road now. Somewhere under the snow-crust is ice, and the only question that matters is how much.',
+    weight: 7,
+    when: [{ c: 'season', any: ['winter'] }, { c: 'nearWater' }],
+    choices: [
+      {
+        label: 'Test it and cross spread out',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'An axe-head through the crust showed a hand-span of good black ice. We crossed a spear-length apart, and the lake talked under us the whole way.', effects: [{ t: 'morale', n: 2 }] },
+        failure: { text: 'It held until it did not. We got them out by the rope, but the cold had its bite first, and the packs drank.', effects: [{ t: 'wound', n: 5 }, { t: 'firewood', n: -3 }, { t: 'morale', n: -4 }] },
+      },
+      {
+        label: 'Go the long way round',
+        success: { text: 'We walked the shore like people with time to spend, which we were not.', effects: [{ t: 'food', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-dry-summer',
+    title: 'The Barley Is Asking',
+    body: 'No rain since the last quarter-moon and none in the sky. The barley has gone grey-green and quiet, and the stream the plots drink from is a stride narrower than it was.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'season', any: ['summer'] }, { c: 'built', building: 'farmplots' }],
+    choices: [
+      {
+        label: 'Carry water till it rains',
+        check: { stat: 'might', dc: 12 },
+        success: { text: 'Yoke and bucket, dawn and dusk, every back in the steading. The crop held on until the sky remembered us.', effects: [{ t: 'morale', n: 2 }, { t: 'wound', n: 1 }] },
+        failure: { text: 'We carried until shoulders gave, and it was a cup of water on a burning house. The near rows lived; the far ones stand like straw.', effects: [{ t: 'food', n: -6 }, { t: 'wound', n: 1, count: 2 }, { t: 'morale', n: -3 }] },
+      },
+      {
+        label: 'Let the sky decide',
+        success: { text: 'It rained nine days too late. What came off the plots was thin and knew it.', effects: [{ t: 'food', n: -5 }, { t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'salt-runs-short',
+    title: 'The Salt Is Counted',
+    body: 'The smokehouse is hung full and the salt-crock is not equal to it. Meat half-cured is meat on a timer, and everybody who has wintered before knows what the timer sounds like.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'built', building: 'smokehouse' }, { c: 'season', any: ['autumn'] }],
+    choices: [
+      {
+        label: 'Boil sea-water down at the pans',
+        success: { text: 'Days of fire under the pans for a crock of grey salt that tasted of the whole coast. It was enough, barely.', effects: [{ t: 'firewood', n: -6 }] },
+      },
+      {
+        label: 'Smoke it harder and hang it higher',
+        check: { stat: 'craft', dc: 12 },
+        success: { text: 'Cold-smoked long and slow, high in the peak where the draught lives. It kept. It also bent every knife that met it.', effects: [{ t: 'morale', n: 2 }] },
+        failure: { text: 'The middle of the hang went soft in the first warm week, and the smell told everyone at once.', effects: [{ t: 'food', n: -7 }, { t: 'morale', n: -4 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-net-lifter',
+    title: 'The Nets Come Up Light',
+    body: 'Three mornings running, the nets have come up wrong — lifted, picked, and set back almost right. The water is feeding somebody, and it is not us.',
+    weight: 6,
+    when: [{ c: 'settled' }, { c: 'built', building: 'dock' }],
+    choices: [
+      {
+        label: 'Lie out on the water overnight',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'A boat with no lamp, two hours before dawn. We rose alongside and said good morning. The nets have come up honest ever since, and heavier.', effects: [{ t: 'food', n: 5 }, { t: 'morale', n: 4 }] },
+        failure: { text: 'A cold wet night of nothing. Whoever it is knew we were out, and the nets were lifted at the far end instead.', effects: [{ t: 'food', n: -3 }, { t: 'morale', n: -4 }] },
+      },
+      {
+        label: 'Let the water keep its thief',
+        success: { text: 'We set the nets shallower and nearer, and counted the far water lost. It grated every single morning.', effects: [{ t: 'food', n: -4 }, { t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-winter-guest',
+    title: 'An Old Man Out of the Weather',
+    body: 'One of theirs, old enough to have stopped counting, walked in ahead of the storm with frost in his beard and his hands inside his shirt. Guest-right is guest-right on every coast there is.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'season', any: ['winter'] }, { c: 'goodwill', min: 15 }],
+    choices: [
+      {
+        label: 'Bed him by the fire till the weather turns',
+        success: { text: 'He stayed four days, ate like a bird, and told stories that made the hall forget the wind. His people came for him with thanks that were not just words.', effects: [{ t: 'food', n: -5 }, { t: 'standing', n: 14, who: 'friendliest' }, { t: 'morale', n: 3 }] },
+      },
+      {
+        label: 'Feed him once and point at the sky',
+        success: { text: 'He took the bowl, ate it standing, and went back into the weather with a straight back. The story of that walked the coast faster than he did.', effects: [{ t: 'standing', n: -12, who: 'friendliest' }, { t: 'morale', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'lights-on-the-barrow',
+    title: 'Lights Where the Dead Live',
+    body: 'Twice now the night-watch has seen it: a pale light moving on the old barrow, there and gone. Nobody has said the word for what walks with a light and no lantern, and everybody is thinking it.',
+    weight: 6,
+    when: [{ c: 'settled' }, { c: 'season', any: ['winter'] }],
+    choices: [
+      {
+        label: 'Walk up to the barrow and look',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'Foxfire on wet rot, and the marks of a fox that had been at it. We carried a piece of the glowing wood home, and the hall laughed at itself for a week.', effects: [{ t: 'morale', n: 6 }] },
+        failure: { text: 'Whatever it was, it was not there when we were, and the dark on the way home had eyes in it. Nobody slept well after.', effects: [{ t: 'morale', n: -6 }] },
+      },
+      {
+        label: 'Bar the door and build the fire high',
+        success: { text: 'The fire was kept up and the door kept barred, and nobody looked out. The wood knew what the nerves cost.', effects: [{ t: 'firewood', n: -4 }, { t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-fosterling',
+    title: 'They Offer a Son',
+    body: 'The offer is made formally, with witnesses: a boy of theirs, twelve winters, to live under our roof and learn our ways — and to be, in the way of these things, a knot tied between the coasts.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 35 }],
+    choices: [
+      {
+        label: 'Take him in and stand for him',
+        success: { text: 'He came with his own knife and a change of clothes, homesick and hiding it well. He works, he listens, and two peoples now have one boy in common.', effects: [{ t: 'join', n: 1, why: 'his people sent him to learn our ways, and to be a knot tied between the coasts' }, { t: 'standing', n: 15, who: 'friendliest' }] },
+      },
+      {
+        label: 'Decline, with every courtesy there is',
+        success: { text: 'It was declined so politely that nobody could name the insult, and everybody could feel it.', effects: [{ t: 'standing', n: -10, who: 'friendliest' }] },
+      },
+    ],
+  },
+  {
+    id: 'the-autumn-meeting',
+    title: 'The Coast Comes to Market',
+    body: 'Word goes round the way it does: at the river-mouth, at the full moon, whoever has surplus and whoever has need. Half the coast will be on that gravel, trading and looking each other over.',
+    weight: 6,
+    when: [{ c: 'settled' }, { c: 'season', any: ['autumn'] }, { c: 'goodwill', min: 20 }],
+    choices: [
+      {
+        label: 'Go down with meat to trade',
+        success: { text: 'Smoked meat went across the blankets and seasoned timber came back, and names were put to faces on both sides. Worth the walk twice over.', effects: [{ t: 'food', n: -6 }, { t: 'firewood', n: 10 }, { t: 'standing', n: 8, who: 'friendliest' }] },
+      },
+      {
+        label: 'Stay home this year',
+        success: { text: 'We kept our meat and our own company. The coast met, traded, and talked — and was told we had not come.', effects: [{ t: 'standing', n: -4, who: 'friendliest' }] },
+      },
+    ],
+  },
+  {
+    id: 'the-mocking-verse',
+    title: 'A Verse Is Going Round',
+    body: 'Somebody over there has made a verse about us — tidy, cruel, and easy to remember, which is the dangerous kind. It has already crossed the water. A verse left standing becomes the truth.',
+    weight: 6,
+    when: [{ c: 'settled' }, { c: 'anger', min: 15 }],
+    choices: [
+      {
+        label: 'Answer it verse for verse',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'Ours was better. It came back to us within the month off a trader\'s tongue, and word is even their own hall laughed — which ends a verse-war cleaner than blood does.', effects: [{ t: 'morale', n: 6 }, { t: 'standing', n: 6, who: 'angriest' }] },
+        failure: { text: 'Ours limped. Theirs got a second life out of mocking it, and now there are two verses.', effects: [{ t: 'morale', n: -5 }, { t: 'standing', n: -6, who: 'angriest' }] },
+      },
+      {
+        label: 'Let it wear itself out',
+        success: { text: 'We said nothing, which was dignified, and heard it hummed at us from a passing boat, which was not.', effects: [{ t: 'morale', n: -4 }] },
+      },
+    ],
+  },
+  {
+    id: 'a-wedding-asked',
+    title: 'Two of Them Stand Up Together',
+    body: 'One of ours and one of theirs, and neither of them is asking permission so much as announcing terms. The two coasts have been many things to each other; married is not yet one of them.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 40 }],
+    choices: [
+      {
+        label: 'Hold the feast under our roof',
+        success: { text: 'Both peoples under one roof for two days, and the only fight was over who sang worse. There is a hearth on this coast now that belongs to both sides of the water.', effects: [{ t: 'food', n: -10 }, { t: 'standing', n: 25, who: 'friendliest' }, { t: 'morale', n: 8 }] },
+      },
+      {
+        label: 'Forbid it',
+        success: { text: 'It was forbidden, and it happened anyway, at their hall instead of ours. We lost the marriage and kept the bill.', effects: [{ t: 'standing', n: -15, who: 'friendliest' }, { t: 'morale', n: -5 }] },
+      },
+    ],
+  },
+  {
+    id: 'frost-heave',
+    title: 'The Wall Has Moved',
+    body: 'A length of the palisade has heaved with the frost and leans out like a drunk against a doorpost. A wall that leans is a wall that teaches people to try it.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'built', building: 'palisade' }, { c: 'season', any: ['winter', 'spring'] }],
+    choices: [
+      {
+        label: 'Dig it and reset it now, frost or no',
+        check: { stat: 'might', dc: 11 },
+        success: { text: 'Frozen ground fought us for every post-hole, and lost. The line stands true again, and was seen being made to.', effects: [{ t: 'morale', n: 2 }] },
+        failure: { text: 'A post came free wrong and took two of us down the bank with it. The wall stands, but it cost more than timber.', effects: [{ t: 'wound', n: 3, count: 2 }, { t: 'morale', n: -2 }] },
+      },
+      {
+        label: 'Wedge it and wait for soft ground',
+        success: { text: 'Props and wedges and a promise to do it properly in the thaw. Every day it leans, somebody looks at it.', effects: [{ t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'rot-under-the-thatch',
+    title: 'A Smell in the Store',
+    body: 'Sweetish, faint, and wrong, somewhere at the back of the stack. Damp has got in under the thatch and something in there has started to turn. Rot spreads at the speed of touching.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'season', any: ['autumn'] }],
+    choices: [
+      {
+        label: 'Turn the whole stack and dry it by the fire',
+        success: { text: 'Everything out, everything sniffed, the bad cut away and the damp dried at the hearth. Two days of work bought with firewood, and the stack went back sound.', effects: [{ t: 'firewood', n: -4 }, { t: 'food', n: -2 }] },
+      },
+      {
+        label: 'Trust the stack and watch it',
+        check: { stat: 'craft', dc: 12 },
+        success: { text: 'It was one bag, caught early, and the stack around it was sound. This time.', effects: [{ t: 'food', n: -1 }] },
+        failure: { text: 'By the time the smell was strong enough to argue about, the rot had walked through the whole corner.', effects: [{ t: 'food', n: -8 }, { t: 'morale', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-drift-net',
+    title: 'Somebody\'s Net, Nobody\'s Fish',
+    body: 'A torn net is coming down the tide, floats and all, and it is heavy with a catch nobody stayed to claim. Whatever tore it loose from its owner had weather in it.',
+    weight: 6,
+    when: [{ c: 'terrain', any: ['shore', 'ocean'] }],
+    choices: [
+      {
+        label: 'Haul it in',
+        check: { stat: 'might', dc: 11 },
+        success: { text: 'It came in fighting the whole way, full of fish and weed and one very angry crab. The net will mend; the catch went on the racks.', effects: [{ t: 'food', n: 6 }] },
+        failure: { text: 'It wrapped a leg on the third pull and nearly took its haulier with it down the tide. We cut it free and watched it go.', effects: [{ t: 'wound', n: 3 }, { t: 'morale', n: -2 }] },
+      },
+      {
+        label: 'Let the sea keep what it took',
+        success: { text: 'It went past and out, floats winking. Somebody up-coast is poorer tonight, and it is not us, and it could have been.', effects: [{ t: 'morale', n: -1 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-white-owl',
+    title: 'The White Owl',
+    body: 'It has taken to hunting the in-field at dusk, white as washed wool and silent as the inside of a drum. Every head in the steading turns to watch it. Nobody agrees on what it means.',
+    weight: 5,
+    when: [{ c: 'settled' }, { c: 'season', any: ['winter'] }],
+    choices: [
+      {
+        label: 'Call it good hunting and a clean winter',
+        success: { text: 'It was said aloud at the fire — an owl that fat means mice, and mice mean grain, and grain means we are richer than we feel. The hall chose to believe it.', effects: [{ t: 'morale', n: 5 }] },
+      },
+      {
+        label: 'Say nothing and count heads',
+        success: { text: 'Somebody said, too quietly and not quietly enough, whose face it had. It was nobody\'s face. It was an owl. The saying still sat at the fire all evening.', effects: [{ t: 'morale', n: -4 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-cold-forge',
+    title: 'The Forge Stands Cold',
+    body: 'The band knows iron now, and knowing is not burning: the charcoal is gone, and bog-ore is patient in a way that edges are not. Every dull axe in the steading has an opinion.',
+    weight: 6,
+    when: [{ c: 'settled' }, { c: 'known', lore: 'smithing' }],
+    choices: [
+      {
+        label: 'Burn a stack down to charcoal',
+        success: { text: 'A turf-covered stack, three days of smoke and judgement, and sacks of good black charcoal at the end of it. The forge rang again the same evening.', effects: [{ t: 'firewood', n: -8 }, { t: 'morale', n: 3 }] },
+      },
+      {
+        label: 'Let it stand cold till there is wood to spare',
+        success: { text: 'The smith\'s hands went back to hauling and the whetstone did what it could. Everything cuts a little worse than it ought to.', effects: [{ t: 'morale', n: -3 }] },
+      },
+    ],
+  },
+
 ];

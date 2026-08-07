@@ -106,22 +106,20 @@ the broken instrument. It may still hold; it is no longer evidence.
    33 — even by a defender who forms a line, and each loss compounds. That
    is the cliff in the head of this document, and pricing it is a design
    decision, not a bot fix.
-6. **[~] NEXT — Triple the event deck** (39 → 59 → 79 → ~100). *Three batches
-   in. The deck's SIZE is a difficulty knob in its own right — but the teeth
-   of that finding have dulled since 6.3: raids now arrive by a daily roll
-   off the steading, not from the deck, so dilution only waters down the
-   weather, sickness and steel draws. Batch three (79 cards, costly or a
-   trade almost throughout, two of them able to draw blood) moved the
-   honest curve 78/30/7 → 68/22/12 — the winter drop sits exactly at the
-   harness's ±10 resolution and was NOT tuned on; if batch four drifts the
-   same way the pair is real and wants a trim. Raids held jumped 4 of 33 to
-   23 of 39, with three unconfirmed candidate mechanisms, all design-
-   positive: leaner stores shrink the raid's worth-taking, two new steel
-   cards feed the band XP before raids come, and the new neighbour cards
-   let standing pay grievance down — which is what 6.3 said walls and
-   allies were for. One batch (~20 cards) to go.* Cheapest quality per hour
-   in the project: pure data, guarded by the content lint, no engine risk.
-7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
+6. **[x] Triple the event deck** (39 → 59 → 79 → 100). *Done, four batches.
+   The dilution finding's teeth have dulled since 6.3: raids arrive by a
+   daily roll off the steading, not from the deck, so deck size only waters
+   down the weather, sickness and steel draws. Batches three and four were
+   the first measured on the honest harness, and they bracketed the noise
+   floor neatly: winter read 78 → 68 → 78 across them, so batch three's
+   drop that looked like drift was the instrument, and nothing was trimmed.
+   A second lesson came free: the raid tally over twenty sagas is far more
+   volatile than the curve — raids held read 4/33, then 23/39, then 7/28
+   across three deck states that should not move it — so nobody should tune
+   raid fairness on that number without a much bigger sample.* The deck now
+   exercises every corner of the vocabulary, including `known` lore, the
+   palisade and the smokehouse.
+7. **[ ] NEXT — Authored raid battlefields.** Still none; every fight is procedural
    and they blur. Also the cleanest way to make the palisade read as ground
    rather than as a number.
 8. **[~] Split `data/events.ts` and `main.ts`.** Done: the console levers
@@ -275,6 +273,36 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The hundred, and a correction about raids** — Batch four
+  closes item 6: twenty-one cards, and the deck stands at exactly one
+  hundred. A cairn on the high ground, hail out of a blue sky, a road
+  through the wood that was walked more recently than it looked, a
+  masterless dog, the midge-haze, a hot pool in the rocks, black ice
+  crossed a spear-length apart, barley asking for rain, salt that does not
+  equal the smokehouse, nets coming up light, an old man out of the weather
+  and the guest-right he is owed, foxfire on the barrow, a fosterling
+  offered with witnesses, the coast at market, a mocking verse answered
+  verse for verse, a wedding neither side asked permission for, a palisade
+  heaved by frost, rot under the thatch, a drift-net heavy with nobody's
+  fish, a white owl nobody agrees about, and a forge standing cold for
+  want of charcoal — that last gated on lore the band KNOWS, a corner of
+  the vocabulary the deck had never spent, alongside first uses of the
+  palisade and the smokehouse.
+  The measurement mattered more than the cards. Batch three had dropped
+  the first winter to 68% — flagged as exactly at the resolution floor,
+  with a trim promised if batch four drifted the same way. It did the
+  opposite: 78/25/10, winter back precisely where it started. There is no
+  drift; there was never a drift; the instrument's own noise walked ten
+  points down and ten points back, which is what a ±5-per-reading harness
+  does. Nothing was trimmed, and batch three's caution is hereby retired.
+  And a correction to yesterday's entry: raids held read 4 of 33, then 23
+  of 39, then 7 of 28, across three deck states that should barely move
+  it. The three mechanisms offered for the jump were honest guesses and
+  are hereby demoted — the raid tally at twenty sagas is simply volatile,
+  and nobody should tune raid fairness on it without a far bigger sample.
+  Written into the queue where the raid work will happen. 535 tests.
+  Published.
 
 - **2026-08-07 — Twenty cards that bite, measured on the honest instrument** —
   Batch three, and the deck stands at seventy-nine: a ford in spate, loose
