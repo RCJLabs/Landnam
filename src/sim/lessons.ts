@@ -13,6 +13,9 @@ import { markVisible } from './winter';
 import { wintersStood } from './calendar';
 import { WINTERS_TO_JARL } from '../data/thing';
 import { LESSONS, type LessonDef, type LessonWhen } from '../data/lessons';
+import { placeHere } from './places';
+import { hands } from './people';
+import { wordBump } from './word';
 import type { GameState } from '../state/types';
 
 function holds(state: GameState, when: LessonWhen): boolean {
@@ -31,6 +34,14 @@ function holds(state: GameState, when: LessonWhen): boolean {
       return Boolean(state.expedition);
     case 'couldClaim':
       return Boolean(state.settlement) && wintersStood(state.day) >= WINTERS_TO_JARL;
+    case 'atPlace':
+      return Boolean(placeHere(state)?.sackedOn === undefined && placeHere(state));
+    case 'hasHands':
+      return hands(state.party.people).length > 0;
+    case 'holed':
+      return Boolean(state.party.hullHoled);
+    case 'famous':
+      return wordBump(state) > 0;
     default:
       // Everything else is an ordinary event condition, interpreted by the
       // event engine so the two can never drift apart.

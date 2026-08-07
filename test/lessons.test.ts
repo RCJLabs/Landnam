@@ -105,10 +105,13 @@ describe('lessons arrive when the thing matters', () => {
     expect(lessonDue(fresh(), NOBODY_TAUGHT)).toBeUndefined();
   });
 
-  it('teaches the first thing on the second day', () => {
+  it('teaches the shape of the saga first, then the day', () => {
+    // The audit of the tutorial found the one thing no lesson ever said:
+    // what the player is FOR. The goal comes first now, controls second.
     const state = fresh();
     state.day = 2;
-    expect(lessonDue(state, NOBODY_TAUGHT)?.id).toBe('the-day');
+    expect(lessonDue(state, NOBODY_TAUGHT)?.id).toBe('the-saga-ahead');
+    expect(lessonDue(state, ['the-saga-ahead'])?.id).toBe('the-day');
   });
 
   it('never repeats one that has been read', () => {
@@ -252,6 +255,37 @@ describe('lessons arrive when the thing matters', () => {
         s.day = SEASON_LENGTH * 4 * WINTERS_TO_JARL + 1;
         return s;
       },
+      'the-saga-ahead': () => {
+        const s = fresh();
+        s.day = 2;
+        return s;
+      },
+      'the-hands': () => {
+        const s = settled('hands');
+        s.party.people.push({ ...s.party.people[0]!, id: 'hand-1', bond: 'hand', alive: true });
+        return s;
+      },
+      'the-place': () => {
+        for (let i = 0; i < 30; i += 1) {
+          const s = fresh(`reach-place-${i}`);
+          const place = s.world.places[0];
+          if (!place) continue;
+          s.party.at = { ...place.at };
+          return s;
+        }
+        throw new Error('no seed produced a place to stand on');
+      },
+      'the-hull': () => {
+        const s = fresh('hull');
+        s.party.hullHoled = true;
+        return s;
+      },
+      'the-word': () => {
+        const s = fresh('word');
+        s.day = 2;
+        s.tally.sackings = 6; // word 3: enough for the coast to have heard
+        return s;
+      },
     };
 
     for (const lesson of LESSONS) {
@@ -313,5 +347,25 @@ describe('being taught costs the run nothing', () => {
     const worldBefore = JSON.stringify(state.world.tiles[key(state.party.at)]);
     expect(lessonDue(state, NOBODY_TAUGHT)).toBeDefined();
     expect(JSON.stringify(state.world.tiles[key(state.party.at)])).toBe(worldBefore);
+  });
+});
+
+// --- 4. The guide is content, so it gets a lint ---
+
+describe('content lint: the guide', () => {
+  it('covers the whole loop in sections a phone can read', async () => {
+    const { GUIDE } = await import('../src/data/guide');
+    const ids = GUIDE.map((s) => s.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(GUIDE.length).toBeGreaterThanOrEqual(8);
+    for (const section of GUIDE) {
+      expect(section.title.length, section.id).toBeGreaterThan(3);
+      expect(section.body.length, section.id).toBeGreaterThan(60);
+      expect(section.body.length, section.id).toBeLessThan(600);
+    }
+    // The first section states the goal, because "what am I even doing" is
+    // the question this book exists to answer.
+    expect(GUIDE[0]!.body).toMatch(/Thing/);
+    expect(GUIDE[0]!.body).toMatch(/winter/i);
   });
 });

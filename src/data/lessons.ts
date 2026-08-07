@@ -35,7 +35,15 @@ export type LessonWhen =
   /** A party is out from the steading. */
   | { c: 'away' }
   /** The band has come far enough that the Thing is worth explaining. */
-  | { c: 'couldClaim' };
+  | { c: 'couldClaim' }
+  /** Standing on a place — somewhere that is somewhere. */
+  | { c: 'atPlace' }
+  /** The band holds its first hand: somebody who works and does not fight. */
+  | { c: 'hasHands' }
+  /** The knarr is holed and limping. */
+  | { c: 'holed' }
+  /** Word of the band has begun to draw harder men. */
+  | { c: 'famous' };
 
 export interface LessonDef {
   id: string;
@@ -53,6 +61,13 @@ export interface LessonDef {
  * A player who settles on day three is told about the posts before the wind.
  */
 export const LESSONS: LessonDef[] = [
+  {
+    id: 'the-saga-ahead',
+    title: 'The Shape of the Saga',
+    body: 'Nobody sailed this far to wander. The old hands say it plainly: find ground worth holding and put posts in it before the first winter lands, stand what the winters and the coast send, and after two winters stood a band with a hall and friends can call a Thing — and be made jarls of a country that had no name for itself.',
+    point: 'Settle before winter. Survive two of them. Call the Thing. Everything else serves that.',
+    when: [{ c: 'dayMin', day: 2 }],
+  },
   {
     id: 'the-day',
     title: 'The First Day',
@@ -113,6 +128,34 @@ export const LESSONS: LessonDef[] = [
     body: 'It started over nothing, the way these things do, and by the second week nobody was pretending otherwise. Hunger and cold and bad work make quarrels; the quarrels do not go away because the weather improved.',
     point: 'Settle it, or it comes to knives. A quarrel the band refused to name hardens instead of fading.',
     when: [{ c: 'grudge' }],
+  },
+  {
+    id: 'the-hands',
+    title: 'Hands',
+    body: 'They came with nothing and were put to work by noon. A hand is not sworn: they hold jobs, eat at the fire, and need a bed under a roof — and they never stand in the line, because six came off the knarr and six is the line. A hand who is miserable long enough walks out.',
+    point: 'Growth buys labour, never a wider wall. Build room before you take people in, and keep their hearts up.',
+    when: [{ c: 'hasHands' }],
+  },
+  {
+    id: 'the-place',
+    title: 'Somewhere That Is Somewhere',
+    body: 'The country is not empty. A house of the White Christ, a trading town, a wreck, a seam of iron — places worth walking to, and some worth taking. What is taken is taken once, and word of an armed band travels faster than the band does.',
+    point: 'Open Act while standing on a place to take what it holds. The guarded ones pay best and cost most.',
+    when: [{ c: 'atPlace' }],
+  },
+  {
+    id: 'the-hull',
+    title: 'What the Sea Took',
+    body: 'She is making water where the strake sprang, and half of every stroke is spent baling. A holed hull is not a sunk one — but she will not run, and she will not fight well, until she has been over on a beach with somebody who knows hulls.',
+    point: 'Camp ashore to mend her. It takes a night and a little timber, and she swims like herself after.',
+    when: [{ c: 'holed' }],
+  },
+  {
+    id: 'the-word',
+    title: 'Word Travels',
+    body: 'The men who came at us knew the name of this band before steel was out. Stand long enough, or take enough, and the coast starts sending people who have heard — and the ones who come looking for famous men are not scouts.',
+    point: 'Fame is bought with winters and with sackings. Harder fights are the price of both.',
+    when: [{ c: 'famous' }],
   },
   {
     id: 'the-thing',

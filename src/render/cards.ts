@@ -18,6 +18,7 @@ import {
 } from '../sim/expedition';
 import { FEUD_THRESHOLD } from '../data/feuds';
 import type { LessonDef } from '../data/lessons';
+import { GUIDE } from '../data/guide';
 import type { Fallen } from '../memorial';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import type { GameState, Person, Purpose } from '../state/types';
@@ -32,6 +33,8 @@ export function renderTitle(
   onRelearn?: () => void,
   /** Present only once somebody has actually died. */
   onWall?: () => void,
+  /** The whole shape of the game, for whoever asks. Always offered. */
+  onGuide?: () => void,
 ): HTMLElement {
   const seedInput = el('input', {
     class: 'seed-input',
@@ -59,8 +62,9 @@ export function renderTitle(
       ]),
       buttons,
       seedInput,
-      // Offered only to someone who has been taught, because to anyone else
-      // it is a control for turning on a thing that is already on.
+      // The guide is for everyone; the two below are offered only to
+      // someone with a reason to want them.
+      ...(onGuide ? [button('How to play', onGuide, { class: 'relearn' })] : []),
       ...(onWall ? [button('Those who did not come back', onWall, { class: 'relearn wall-link' })] : []),
       ...(onRelearn ? [button('Show the guidance again', onRelearn, { class: 'relearn' })] : []),
       // Which build this is. The only way, from a phone, to tell a fresh
@@ -366,7 +370,11 @@ function personRow(person: Person): HTMLElement {
  * history, and the map is the game. Now the map breathes and the chronicle
  * is one tap away, whole instead of three lines at a time.
  */
-export function renderSagaBook(state: GameState, onClose: () => void): HTMLElement {
+export function renderSagaBook(
+  state: GameState,
+  onClose: () => void,
+  onGuide?: () => void,
+): HTMLElement {
   const list = el('div', { class: 'saga-book' });
   for (const entry of state.saga.slice(-120)) {
     list.append(
@@ -379,12 +387,31 @@ export function renderSagaBook(state: GameState, onClose: () => void): HTMLEleme
   const card = el('div', { class: 'card saga-card' }, [
     el('h2', {}, ['The Saga So Far']),
     list,
+    ...(onGuide ? [button('How to play', onGuide, { class: 'relearn' })] : []),
     button('Back', onClose, { class: 'primary wide' }),
   ]);
   // Newest line should be the one you arrive on.
   queueMicrotask(() => {
     list.scrollTop = list.scrollHeight;
   });
+  return el('div', { class: 'overlay' }, [card]);
+}
+
+/**
+ * How to play, whole. The lessons stay event-shaped and state-triggered;
+ * this is the reference for whoever wants the shape all at once — chosen,
+ * never imposed, which is what buys it the right to name buttons.
+ */
+export function renderGuide(onClose: () => void): HTMLElement {
+  const card = el('div', { class: 'card guide-card' }, [el('h2', {}, ['How to Play'])]);
+  const list = el('div', { class: 'guide-book' });
+  for (const section of GUIDE) {
+    list.append(
+      el('h3', {}, [section.title]),
+      el('p', { class: 'event-body guide-body' }, [section.body]),
+    );
+  }
+  card.append(list, button('Back', onClose, { class: 'primary wide' }));
   return el('div', { class: 'overlay' }, [card]);
 }
 

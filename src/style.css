@@ -1333,3 +1333,18 @@ button.relearn {
 .room-mark.short {
   border-color: var(--blood);
 }
+
+/* The guide reads as a book: headed sections, scrolling as one page. */
+.guide-book {
+  max-height: 62vh;
+  overflow-y: auto;
+  margin: 4px 0 10px;
+}
+
+.guide-book h3 {
+  margin: 12px 0 2px;
+}
+
+.guide-body {
+  margin: 4px 0 8px;
+}

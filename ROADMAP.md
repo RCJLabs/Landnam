@@ -414,6 +414,31 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — The game finally says what it is for** — The tutorial,
+  diagnosed before it was built: 5.2's nine lessons teach mechanics the
+  moment they matter, but not one of them ever stated the GOAL — and
+  everything built since 5.2 (places, plunder, hands, the hull, word) had
+  no lesson at all. Three fixes, none of them a tutorial screen.
+  First, the shape of the saga is now the FIRST lesson: settle before
+  winter, stand two of them, call the Thing — said once, on day two, in
+  chronicle voice, before the game explains any button.
+  Second, a How to Play book: ten short sections covering the whole loop —
+  the day, the ground, winter and the mark, the steading, steel, the
+  coast, places, the sea, the long game — reachable from the title screen
+  and from inside the saga book. Chosen rather than imposed, which is what
+  buys it the right to name buttons; 5.2's no-tutorial-screens rule
+  stands untouched, and the lessons' byte-identical guarantee still holds
+  over the grown set.
+  Third, four new lessons for the systems that had none: hands (growth
+  buys labour, never a wider wall), places (some worth taking, taken
+  once), the holed hull (camp ashore to mend her), and word (fame draws
+  harder men, and sackings feed it). The lesson vocabulary gained four
+  conditions to carry them.
+  Driven in a browser end to end: the guide opens from the title with the
+  goal in it, the shape-of-the-saga card fires in play on day two, the
+  saga book hands off to the guide and back, no console errors. 583
+  tests. Published.
+
 - **2026-08-07 — The map gets the screen** — Off a phone playtest: the
   saga panel sat pinned under the travel map, an eighth of a phone screen
   spent on history, and the map is the game. The chronicle now lives

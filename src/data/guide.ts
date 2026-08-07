@@ -1,0 +1,67 @@
+// How to play, as a book the player opens on purpose.
+//
+// 5.2's rule stands: no tutorial SCREEN ever interrupts anyone — the lessons
+// fire when the game reaches the state they explain, and they are free. This
+// is the other thing: a reference, sitting behind a link on the title screen
+// and a button in the saga book, for the player who wants the whole shape at
+// once. Because it is chosen rather than imposed, it is allowed to name
+// buttons plainly.
+
+export interface GuideSection {
+  id: string;
+  title: string;
+  body: string;
+}
+
+export const GUIDE: GuideSection[] = [
+  {
+    id: 'the-shape',
+    title: 'The Shape of It',
+    body: 'Find ground worth holding and settle it before the first winter lands on day 49. Stand what the winters and the coast send. After two winters stood, a band with a mead hall, food for a feast, and a friend on the coast can call a Thing — win it, and the saga ends in a jarldom. Everything below serves that.',
+  },
+  {
+    id: 'the-day',
+    title: 'The Day',
+    body: 'Everything costs a day: walking a hex, foraging, camping, bartering, fighting. The Act button lists what this ground offers today, with each deed\'s cost and gain — greyed deeds tell you why they are refused. Days are the resource that actually runs out.',
+  },
+  {
+    id: 'the-ground',
+    title: 'Ground Worth Holding',
+    body: 'The panel under the map reads any hex you stand on: water, soil, timber, harbour, defensibility. Founding needs fresh water outright, and the posts go in ONCE — there is no second steading. Settle lean rather than late: a band still walking when winter lands cannot stockpile.',
+  },
+  {
+    id: 'the-winter',
+    title: 'Winter and the Mark',
+    body: 'From autumn the winter mark shows what the stores must reach and how short you stand. It walks every remaining day with your people on their jobs — trust it near, gamble on it far, because later winters vary and the far forecast is deliberately vague. Sickness and grief kill more bands than hunger; keep hearts up, not just sacks full.',
+  },
+  {
+    id: 'the-steading',
+    title: 'The Steading',
+    body: 'Once settled, tap the hall to enter the steading. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. People taken in arrive as hands: labour, never fighters, and only if there is a bed.',
+  },
+  {
+    id: 'the-fight',
+    title: 'Steel',
+    body: 'Fights are turn-based on a small field. Stand your people SHOULDER TO SHOULDER: the shield wall makes everyone in it harder to kill, and it is worth more than any single blow. Tap a foe to strike; the buttons switch a tap to throwing or shoving. Nerve breaks before bodies do — a side whose fighters all break has lost.',
+  },
+  {
+    id: 'the-coast',
+    title: 'The Coast',
+    body: 'Four neighbours share this coast, and they remember everything. Barter feeds standing; tribute buys peace; falling on a camp pays in stores and sometimes a thrall — and costs standing the moment steel is out. The angriest neighbour is where raids come from. The watch and the palisade buy raid-chance down.',
+  },
+  {
+    id: 'the-places',
+    title: 'Places',
+    body: 'The map holds fixed places: a monastery rich and soft, a town rich and hard, a wreck and an iron seam free for the working. Stand on one and Act offers the taking. Each is taken once, some teach the band something, and robbing the coast is remembered.',
+  },
+  {
+    id: 'the-sea',
+    title: 'The Sea',
+    body: 'The knarr rows coastal water — sea with land in sight — faster than legs walk. Fights afloat are fought hull to hull, and losing one puts cargo over the side and holes the hull; camp ashore a night to mend her. The nets are best at sea, but there is no forage and no firewood out there.',
+  },
+  {
+    id: 'the-long-game',
+    title: 'The Long Game',
+    body: 'Stand long enough, or take enough, and word travels: harder men come looking, in bigger numbers. Growth answers it — hands to work, walls to hold, friends to call on. The Thing checklist appears at the steading after the first thaw and names exactly what a jarl still lacks.',
+  },
+];

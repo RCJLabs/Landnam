@@ -24,7 +24,7 @@ import {
   renderNeeds,
   renderRoom,
 } from './render/colonyUi';
-import { renderLesson, renderTitle, renderWall } from './render/cards';
+import { renderGuide, renderLesson, renderTitle, renderWall } from './render/cards';
 import { deedsFor } from './render/deeds';
 import {
   renderActionBar,
@@ -235,6 +235,15 @@ function showTitle(): void {
     );
     return;
   }
+  if (ui.guideOpen) {
+    app!.replaceChildren(
+      renderGuide(() => {
+        ui.guideOpen = false;
+        showTitle();
+      }),
+    );
+    return;
+  }
 
   const beenTaught = taught().length > 0;
   const anyDead = fallen().length > 0;
@@ -255,6 +264,10 @@ function showTitle(): void {
             showTitle();
           }
         : undefined,
+      () => {
+        ui.guideOpen = true;
+        showTitle();
+      },
     ),
   );
 }
