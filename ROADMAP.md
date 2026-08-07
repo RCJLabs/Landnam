@@ -148,11 +148,15 @@ the broken instrument. It may still hold; it is no longer evidence.
    stamp, and a migration for the mute's old format. *(The audit's claim that
    `fallen` grew unboundedly was wrong — it has been capped at 60 since it
    shipped.)*
-10. **[~] 5.4 Release** — v1.0 is TAGGED (the repo's first tag) on a
-    release-ritual build: source zipped to `release/landnam-src.zip`, the
-    built page verified standalone from a `file://` open, published to both
-    Pages roots. What remains is the domain, and both steps live outside
-    this repo:
+10. **[~] 5.4 Release** — the v1.0 build is DONE and pushed on the release
+    ritual: source zipped to `release/landnam-src.zip`, the built page
+    verified standalone from a `file://` open, published to both Pages
+    roots, release commit `52e6673`. The remote tag is NOT: this session's
+    credentials can push branches but 403 on tags, so minting `v1.0` rides
+    along with the steps that already live outside the repo:
+    0. **GitHub → Releases → New release**: tag `v1.0`, target `main`
+       (commit `52e6673`), attach `release/landnam-src.zip`. Creating the
+       release creates the tag.
     1. **DNS** (at rcjlabs.com's provider): a CNAME record,
        `landnam` → `rcjlabs.github.io`.
     2. **GitHub → Settings → Pages → Custom domain**: enter
