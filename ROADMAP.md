@@ -208,12 +208,21 @@ measuring bot has never once used the offensive half.
    one, so the second visit is dearer than the first: escalation the
    player chose. `SAVE_VERSION` 19. The bot robs a hostile doorstep only
    when starving; the curve did not move (75/20/8, unchanged). 560 tests.
-3. **[ ] The world must escalate with the years, everywhere.** Home raids
-   grow with winters stood, built and food; NOTHING else does — travel and
-   sea fights draw the same four archetypes at the same weights on day 700
-   as day 7. A word-has-spread scalar (years + the player's own sackings)
-   feeding event-battle difficulty and archetype weights. Per the Math.min
-   lesson: prove each knob binds before measuring it.
+3. **[x] The world must escalate with the years, everywhere.** Done:
+   `sim/word.ts` — word of the band, built from exactly two things, winters
+   stood and sackings chosen. It feeds OPEN-FIELD fights only (the home
+   raid has its own machinery, and sackings already reach it through
+   standing — one deed is never counted twice): a difficulty bump, a foe
+   cap that grows with word so the bump can BIND past the old MAX_FOES
+   swallow (the Math.min lesson, applied in advance, with tests proving
+   count, mix and cap all move), and archetype weights that lean huscarl
+   and raider as word grows — the same six men, but a harder six, which is
+   the knob that binds even at the cap. Word is nought through the whole
+   tuned first year for a band that robs nobody; the fight log says "They
+   had heard of us" whenever word is why the fight is worse. Curve
+   unchanged at 75/20/8 and the Thing's 4/4 promise holds — the effect
+   lives in year three and beyond, past the harness's day-169 horizon,
+   which is exactly where the audit said the game went flat. 582 tests.
 4. **[x] Diagnose the mid-winter cliff before tuning it.** Done, and the
    diagnosis is clean: the cliff is NOT material. The harness now prints a
    deaths-by-fate table for the wall window (day 40-73) beside the curve.
@@ -404,6 +413,32 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The coast learns your name** — The audit's third item:
+  the world escalates with the years, everywhere. `sim/word.ts` holds the
+  scalar — word of the band, winters stood plus sackings chosen, so a
+  quiet band ages into mild fame and a band that robs the coast buys its
+  escalation by hand. It reaches open-field and sea fights only; the home
+  raid keeps its own machinery, and a sacking already reaches it through
+  standing, so no deed is counted twice.
+  Three knobs, each PROVEN to bind before anything was measured, because
+  this project once spent a day discovering that three escalation levers
+  were being swallowed by a Math.min: the difficulty bump is paired with
+  a word-grown foe cap so it reaches the field past the old six-man
+  swallow (tested: a famous band fights more than MAX_FOES); the
+  archetype weights lean huscarl and raider as word grows, which binds
+  even at the cap — the same six men, but a harder six (tested: the
+  huscarl share rises); and the raid path is tested UNTOUCHED by the
+  tally. Word is nought through the whole tuned first year for a band
+  that has robbed nobody, and the fight log says "They had heard of us"
+  whenever word is why the fight is worse — escalation is never a hidden
+  punishment.
+  The curve did not move (75/20/8; the Thing's four-of-four promise
+  holds), and this time that is the DESIGN: the effect lives in year
+  three and beyond, past the harness's day-169 horizon, exactly where
+  the audit said the long game went flat. Measuring it properly is 6.4's
+  business, when the five-winter guillotine comes off. 582 tests.
+  Published.
 
 - **2026-08-07 — The sea gets its teeth** — The audit's fifth item: ships
   stop being a terrain skin. A fight afloat used to be the ocean's random

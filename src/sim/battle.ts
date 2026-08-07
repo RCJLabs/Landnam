@@ -24,6 +24,7 @@ import { raidSource } from './neighbours';
 import { note } from './tally';
 import { chronicle } from './saga';
 import { startingNerve } from './morale';
+import { weightFor, wordBump, wordOf } from './word';
 import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
@@ -158,17 +159,34 @@ export function raiderCap(state: GameState): number {
  * band behind a palisade simply cannot be threatened, and the wall stops
  * being a mitigation and becomes an off-switch.
  */
-function rollFoes(
+/**
+ * The most an open-field fight can bring, grown a little by word: a band the
+ * coast talks about draws crowds. Two extra at the very most — the warband
+ * is six and every fight is balanced against that width.
+ *
+ * This exists because of the Math.min lesson: with six sworn the count
+ * formula reaches MAX_FOES at difficulty two, so any escalation routed
+ * through difficulty alone was being thrown away by the cap. Raising the
+ * cap with word is what lets the difficulty bump BIND.
+ */
+export function foeCapFor(state: GameState): number {
+  return MAX_FOES + Math.min(2, Math.floor(wordOf(state) / 3));
+}
+
+/** Exported for the prove-it-binds tests: escalation has been swallowed by
+ *  a clamp before, and nobody trusts an unmeasured knob here any more. */
+export function rollFoes(
   rng: Rng,
   warbandSize: number,
   difficulty: number,
   raid = false,
   cap = raid ? MAX_RAIDERS : MAX_FOES,
+  word = 0,
 ): Person[] {
   const count = Math.max(1, Math.min(cap, Math.round(warbandSize * (raid ? 0.9 : 0.6)) + difficulty));
   const foes: Person[] = [];
   for (let i = 0; i < count; i++) {
-    const archetype = rng.weighted(FOE_ARCHETYPES, (a) => a.weight);
+    const archetype = rng.weighted(FOE_ARCHETYPES, (a) => weightFor(a, word));
     foes.push(makeFoe(rng, archetype.id, i + 1));
   }
   return foes;
@@ -223,12 +241,16 @@ export function beginBattle(
   // there whatever is happening outside — that is the whole bargain of 6.2:
   // more people is more work done, never a wider shield wall.
   const ourSide = sworn(raid ? homeCrew(state) : fieldCrew(state));
+  // Word reaches the open field only: the home raid has its own escalation,
+  // and sackings already arrive there through standing.
+  const word = raid ? 0 : wordOf(state);
   const foes = rollFoes(
     rng.derive('foes'),
     Math.max(1, ourSide.length),
-    difficulty,
+    raid ? difficulty : difficulty + wordBump(state),
     raid,
-    raid ? raiderCap(state) : MAX_FOES,
+    raid ? raiderCap(state) : foeCapFor(state),
+    word,
   );
 
   const battle: Battle = {
@@ -347,7 +369,10 @@ export function beginBattle(
     );
   } else {
     battle.log.push(
-      `${seaField ? `${seaField.line} ` : ''}They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.`,
+      `${seaField ? `${seaField.line} ` : ''}They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.` +
+        // Escalation must never be a hidden punishment: when word is what
+        // made this fight bigger or harder, the log says so.
+        (wordBump(state) > 0 ? ' They had heard of us.' : ''),
     );
     chronicle(state, `We were brought to a fight on ${groundName(terrain)}.`, 'grim');
   }
