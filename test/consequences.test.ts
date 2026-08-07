@@ -69,9 +69,15 @@ function fightAndLeave(state: GameState): GameState {
 // --- Permadeath ---
 
 describe('the dead stay dead', () => {
-  it('a fight can kill outright, and the killed never come back', () => {
+  // Sixteen whole battles plus twenty simulated days after each: fine on a
+  // dev box, but past vitest's 5s default on a 2-core CI runner with the
+  // rest of the suite competing for it — which is exactly how it flaked.
+  it('a fight can kill outright, and the killed never come back', { timeout: 120_000 }, async () => {
     let deaths = 0;
     for (let i = 0; i < 16; i++) {
+      // Breathe between fights: a long synchronous stretch starves the
+      // worker's RPC heartbeat on CI. See balance.test.ts.
+      await new Promise((resolve) => setTimeout(resolve, 0));
       const state = fresh(`death-${i}`);
       startBattle(state, 'meadow', 2);
       let after = fightAndLeave(state);
