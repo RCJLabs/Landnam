@@ -203,7 +203,21 @@ function run(seed: string, maxDay: number): GameState {
 
 // --- The bars ---
 
-const SEEDS = 30;
+/**
+ * Sixty, not thirty.
+ *
+ * Thirty was enough to be a tripwire and not enough to tune on, and an audit
+ * proved it: sweeping the base event chance through 0.28, 0.34 and 0.40 gave
+ * 53%, 30% and 43% at the two-winter mark — a fourteen-point swing that went
+ * the WRONG WAY in the middle. That is not a response curve, it is noise
+ * being read as signal. At a fixed setting the same measurement moved five
+ * points between thirty seeds and sixty, so anything smaller than about ten
+ * points is below what this harness can see.
+ *
+ * The bars below are deliberately wide for the same reason. They exist to
+ * catch "unwinnable" and "walkover", not to pin a number.
+ */
+const SEEDS = 60;
 
 interface Curve {
   reachedWinter: number;

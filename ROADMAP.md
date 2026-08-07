@@ -38,14 +38,16 @@ ends" table and pick the work up without re-deriving a day of measurement.*
 juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 
 **The measured curve** (30 seeds, a scripted player of roughly average
-competence — see `test/balance.test.ts`, which is the source of every number
-in this document):
+competence over SIXTY seeds — see `test/balance.test.ts`, which is the source
+of every number in this document. It resolves to about ±5 points; anything
+smaller than ten points is below what it can see, so treat every figure here
+as directional):
 
 | milestone | reached |
 | --- | --- |
 | the first winter (day 49) | 83% |
-| spring (day 73) | 60% |
-| the second winter — the Thing's window (day 169) | 53% |
+| spring (day 73) | 55% |
+| the second winter — the Thing's window (day 169) | 50% |
 
 Five levers have now been aimed at that 47% and none has shifted it. Four of
 them were priced in food, firewood or timber; the fifth was a clamp. The
@@ -99,10 +101,13 @@ the Thing is a lap of honour rather than a climax.
    only once contact is close, or weight them behind closing until the sides
    meet. Judge it on BOTH numbers: raids held should rise and the curve should
    not collapse.
-6. **[~] Triple the event deck** (39 → 59 → ~100). *Two batches in. NOTE: the
-   deck's SIZE is a difficulty knob in its own right — see the dilution
-   finding in the changelog. Further batches need either harm-weighted cards
-   or a compensating lift to the event chance.* Cheapest quality per hour in the
+6. **[~] Triple the event deck** (39 → 59 → ~100). *Two batches in. The deck's
+   SIZE is a difficulty knob in its own right — twenty cards moved the
+   two-winter figure by six points. An attempt to compensate by lifting the
+   base event chance was ABANDONED: the sweep was non-monotonic, which means
+   the effect is smaller than the harness can resolve. Weighting the harmful
+   cards up is the remaining option, and it needs a bigger sample than the
+   suite can afford to run on every commit.* Cheapest quality per hour in the
    project: pure data, guarded by the content lint, no engine risk.
 7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
    and they blur. Also the cleanest way to make the palisade read as ground
@@ -248,6 +253,24 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-06 — The harness cannot be tuned on, and now says so** — An audit
+  went to fix the deck-dilution drift by lifting the base event chance to
+  match the bigger deck. Sweeping it through 0.28, 0.34 and 0.40 gave 53%, 30%
+  and 43% at the two-winter mark — a fourteen-point swing that went the wrong
+  way in the middle. That is not a response curve. It is noise being read as
+  signal, and every one of today's tuning decisions was taken on the same
+  instrument.
+  So nothing was tuned. The event chance is back at 0.28 where it shipped, and
+  the sample went from thirty seeds to sixty instead. At a fixed setting the
+  same measurement moves about five points between the two, which puts the
+  floor of what this harness can see at roughly ten — comfortably larger than
+  several differences that were treated as real earlier today.
+  Both the test and the roadmap now state the resolution up front, and the
+  curve figures are labelled directional. The wide bars in the difficulty test
+  were already right for the wrong reason: they catch "unwinnable" and
+  "walkover", which is all a sixty-seed sample can honestly support.
+  532 tests.
 
 - **2026-08-06 — Ten cards that cost, and a lesson about decks** — Batch two,
   written deliberately against batch one's habit of ending in a find: a lame
