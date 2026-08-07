@@ -279,28 +279,6 @@ export function renderSitePanel(state: GameState): HTMLElement {
   return panel;
 }
 
-export function renderSagaLog(state: GameState, expanded: boolean, toggle: () => void): HTMLElement {
-  const entries = state.saga.slice(expanded ? -60 : -3);
-  const list = el('div', { class: 'saga-entries' });
-  for (const entry of entries) {
-    list.append(
-      el('p', { class: `saga-line tone-${entry.tone}` }, [
-        el('span', { class: 'saga-day' }, [`${entry.day}`]),
-        entry.text,
-      ]),
-    );
-  }
-
-  const panel = el('div', { class: `saga${expanded ? ' expanded' : ''}` }, [
-    button(expanded ? 'Close the saga' : 'The saga so far', toggle, { class: 'saga-toggle' }),
-    list,
-  ]);
-  // Newest line should always be the one you can see.
-  queueMicrotask(() => {
-    list.scrollTop = list.scrollHeight;
-  });
-  return panel;
-}
 
 /** A hint line telling the player what tapping the map will do. */
 export function renderHint(state: GameState): HTMLElement {

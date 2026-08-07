@@ -273,6 +273,13 @@ button.wide {
   min-height: 26px;
 }
 
+/* The saga opened as a page: tall enough to read, short enough to close. */
+.saga-book {
+  max-height: 58vh;
+  overflow-y: auto;
+  margin: 4px 0 10px;
+}
+
 .saga-line {
   font-size: 14px;
   line-height: 1.5;

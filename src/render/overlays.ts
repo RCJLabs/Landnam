@@ -22,6 +22,7 @@ import {
   renderFounding,
   renderLaunch,
   renderRunEnd,
+  renderSagaBook,
   renderWarband,
 } from './cards';
 
@@ -103,6 +104,13 @@ export function travelOverlay(
   if (ui.rosterOpen) {
     return renderWarband(state, () => {
       ui.rosterOpen = false;
+      rerender();
+    });
+  }
+
+  if (ui.sagaOpen) {
+    return renderSagaBook(state, () => {
+      ui.sagaOpen = false;
       rerender();
     });
   }

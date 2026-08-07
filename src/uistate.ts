@@ -15,7 +15,8 @@ import type { ColonyTab } from './render/colonyUi';
 import type { Aim } from './render/battleUi';
 
 export interface UiState {
-  sagaExpanded: boolean;
+  /** The saga book, opened from the action bar. The map owns the screen. */
+  sagaOpen: boolean;
   rosterOpen: boolean;
   /** The land-taking card. The decision itself is the only thing saved. */
   foundingOpen: boolean;
@@ -40,7 +41,7 @@ export interface UiState {
 
 export function freshUi(): UiState {
   return {
-    sagaExpanded: false,
+    sagaOpen: false,
     rosterOpen: false,
     foundingOpen: false,
     picked: null,
@@ -65,7 +66,7 @@ export function freshUi(): UiState {
  */
 export function resetForRun(ui: UiState): void {
   const fresh = freshUi();
-  ui.sagaExpanded = fresh.sagaExpanded;
+  ui.sagaOpen = fresh.sagaOpen;
   ui.rosterOpen = fresh.rosterOpen;
   ui.foundingOpen = fresh.foundingOpen;
   ui.picked = fresh.picked;

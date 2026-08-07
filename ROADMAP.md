@@ -414,6 +414,18 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — The map gets the screen** — Off a phone playtest: the
+  saga panel sat pinned under the travel map, an eighth of a phone screen
+  spent on history, and the map is the game. The chronicle now lives
+  behind a Saga button beside Chart and Band, opening as a full card —
+  the last hundred-odd entries, scrolled to the newest, one tap to close
+  — and the travel map takes the height the panel held. Battle keeps its
+  fight log and the colony its footer; only travel changes. The old
+  three-line panel renderer is deleted rather than stranded. Verified in
+  a driven browser: the panel is gone, the map measures a hundred pixels
+  taller, the book opens on the landing line and closes, and the other
+  buttons still work. 582 tests. Published.
+
 - **2026-08-07 — The coast learns your name** — The audit's third item:
   the world escalates with the years, everywhere. `sim/word.ts` holds the
   scalar — word of the band, winters stood plus sackings chosen, so a

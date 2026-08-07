@@ -30,7 +30,6 @@ import {
   renderActionBar,
   renderHint,
   renderMuteToggle,
-  renderSagaLog,
   renderSitePanel,
   renderThingMark,
   renderTopBar,
@@ -393,16 +392,17 @@ function render(): void {
         ui.rosterOpen = true;
         render();
       }, { class: 'action secondary' }),
+      button('Saga', () => {
+        ui.sagaOpen = true;
+        render();
+      }, { class: 'action secondary' }),
     );
   }
   actionSlot.replaceChildren(actions);
 
-  sagaSlot.replaceChildren(
-    renderSagaLog(state, ui.sagaExpanded, () => {
-      ui.sagaExpanded = !ui.sagaExpanded;
-      render();
-    }),
-  );
+  // The saga lives behind its button now — the map gets the height the
+  // panel used to hold. Battle and colony still use this slot for theirs.
+  sagaSlot.replaceChildren();
 
   // Which one card sits over the map is a priority chain with opinions of
   // its own — see render/overlays.ts.

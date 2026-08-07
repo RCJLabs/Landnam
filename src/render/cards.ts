@@ -360,6 +360,34 @@ function personRow(person: Person): HTMLElement {
   ]);
 }
 
+/**
+ * The saga as a page of its own. It lived for six phases as a panel pinned
+ * under the map; on a phone that was an eighth of the screen spent on
+ * history, and the map is the game. Now the map breathes and the chronicle
+ * is one tap away, whole instead of three lines at a time.
+ */
+export function renderSagaBook(state: GameState, onClose: () => void): HTMLElement {
+  const list = el('div', { class: 'saga-book' });
+  for (const entry of state.saga.slice(-120)) {
+    list.append(
+      el('p', { class: `saga-line tone-${entry.tone}` }, [
+        el('span', { class: 'saga-day' }, [`${entry.day}`]),
+        entry.text,
+      ]),
+    );
+  }
+  const card = el('div', { class: 'card saga-card' }, [
+    el('h2', {}, ['The Saga So Far']),
+    list,
+    button('Back', onClose, { class: 'primary wide' }),
+  ]);
+  // Newest line should be the one you arrive on.
+  queueMicrotask(() => {
+    list.scrollTop = list.scrollHeight;
+  });
+  return el('div', { class: 'overlay' }, [card]);
+}
+
 export function renderWarband(state: GameState, close: () => void): HTMLElement {
   const card = el('div', { class: 'card roster' }, [
     el('h2', {}, ['The Warband']),
