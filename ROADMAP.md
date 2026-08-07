@@ -134,18 +134,27 @@ the broken instrument. It may still hold; it is no longer evidence.
    The survival curve did not move (77/20/8 against 78/25/10 — all below
    resolution), which is the correct result: the fields change what a raid
    feels like, not what the game costs.
-8. **[~] NEXT — Split `data/events.ts` and `main.ts`.** Done: the console levers
-   (`debug.ts`), the deck out of the vocabulary (`eventCards.ts`, 1,294 → 91),
-   and the UI-state bag (`uistate.ts`). main.ts is 614 → 524. Still to go: the
-   overlay chain itself, which is now liftable because its nine branches no
-   longer close over ten loose `let`s.
+8. **[x] Split `data/events.ts` and `main.ts`.** Done in four cuts: the
+   console levers (`debug.ts`), the deck out of the vocabulary
+   (`eventCards.ts`, 1,294 → 91), the UI-state bag (`uistate.ts`), and
+   finally the overlay chain itself (`render/overlays.ts`) — the nine-branch
+   priority that decides which one card sits over the map, liftable exactly
+   because the `uistate` cut had already gathered what its branches closed
+   over. main.ts is 614 → 453 and is a boot router again. Verified in a
+   browser, per this file's own rule about tsc: the Act sheet, the Chart and
+   the Band roster all open and close through the lifted chain, and an event
+   card fires and resolves, with no console errors.
 9. **[x] Version the localStorage preferences.** One `store.ts`, a version
    stamp, and a migration for the mute's old format. *(The audit's claim that
    `fallen` grew unboundedly was wrong — it has been capped at 60 since it
    shipped.)*
-10. **[ ] 5.4 Release** — v1.0 and the CNAME. Last, and now for a sharper
-    reason: tagging with 6.2 invisible would ship a version whose central new
-    system the player cannot see.
+10. **[ ] NEXT — 5.4 Release** — v1.0 and the CNAME. The old blocker is gone:
+    6.2 is on screen, the queue above it is done, and the harness finally
+    tells the truth. What remains is a decision more than a task — tag v1.0,
+    point `landnam.rcjlabs.com` at the Pages site — and one open design
+    question worth settling first: whether 7-10% at the Thing's window is
+    the late game the Phase 6 head describes, or an overshoot to tune on
+    the honest instrument before the version is stamped.
 
 **Known and not urgent:** the event deck is thin (~39 cards); there is no
 meta-progression and no daily seed; accessibility is minimal (keyboard play
@@ -285,6 +294,24 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The overlay chain moves out, and main.ts is a boot router
+  again** — The last cut of item 8. The nine-branch priority that decides
+  which one card sits over the travel map — the run's end outranks
+  everything, what the player opened outranks what the game wants to say,
+  the game's cards outrank the teaching — is now `render/overlays.ts`, a
+  function that reads state and returns a node. It could not move while its
+  branches closed over ten loose module-level `let`s; the `uistate.ts` cut
+  gathered those, and this cut is what that one was for. main.ts ends the
+  item at 453 lines, from 614 when the item opened, and owns nothing now
+  but boot, the dispatch loop, and the slots.
+  Verified in a browser rather than assumed, per this file's own rule —
+  tsc has signed off on real breakage twice this session. A scripted
+  Chromium drove the built page through every path the lift touched: the
+  Act sheet opens to the day's deeds and closes, the Chart opens and
+  closes, the Band roster opens and closes, and a travel event fires its
+  card and resolves through a choice, with zero console errors. 540 tests.
+  Published.
 
 - **2026-08-07 — The ground remembers being built** — Item 7: raids stop
   being fought on rolled ground. Six approaches are drawn by hand in

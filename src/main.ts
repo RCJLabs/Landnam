@@ -13,7 +13,7 @@ import { apply, type Action } from './sim/actions';
 import { createTravelView } from './render/travel';
 import { createBattleView } from './render/battle';
 import { createColonyView } from './render/colony';
-import { renderMap } from './render/map';
+import { travelOverlay } from './render/overlays';
 import {
   renderBuilds,
   renderColonyActions,
@@ -24,18 +24,8 @@ import {
   renderNeeds,
   renderRoom,
 } from './render/colonyUi';
-import {
-  renderAftermath,
-  renderEventCard,
-  renderFounding,
-  renderLaunch,
-  renderLesson,
-  renderRunEnd,
-  renderTitle,
-  renderWall,
-  renderWarband,
-} from './render/cards';
-import { deedsFor, renderDeeds } from './render/deeds';
+import { renderLesson, renderTitle, renderWall } from './render/cards';
+import { deedsFor } from './render/deeds';
 import {
   renderActionBar,
   renderHint,
@@ -54,7 +44,6 @@ import {
   renderBattleResult,
 } from './render/battleUi';
 import { combatantAt, isWarbandTurn } from './sim/battle';
-import { canFound } from './sim/site';
 import { button, el } from './render/svg';
 import { watchForNewBuild } from './freshness';
 import {
@@ -415,82 +404,22 @@ function render(): void {
     }),
   );
 
-  if (state.end) {
-    overlaySlot.replaceChildren(
-      renderRunEnd(state, () => {
-        clearSave();
-        showTitle();
+  // Which one card sits over the map is a priority chain with opinions of
+  // its own — see render/overlays.ts.
+  overlaySlot.replaceChildren(
+    ...asNodes(
+      travelOverlay(state, deeds, {
+        ui,
+        dispatch,
+        rerender: render,
+        onRunOver: () => {
+          clearSave();
+          showTitle();
+        },
+        lesson: lessonOverlay,
       }),
-    );
-  } else if (ui.launchOpen && state.settlement && !state.expedition) {
-    overlaySlot.replaceChildren(
-      renderLaunch(
-        state,
-        ui.launchPicked,
-        (id) => {
-          if (ui.launchPicked.has(id)) ui.launchPicked.delete(id);
-          else ui.launchPicked.add(id);
-          render();
-        },
-        ui.launchPurpose,
-        (p) => {
-          ui.launchPurpose = p;
-          render();
-        },
-        (action) => {
-          ui.launchOpen = false;
-          dispatch(action);
-        },
-        () => {
-          ui.launchOpen = false;
-          render();
-        },
-      ),
-    );
-  } else if (ui.actOpen) {
-    overlaySlot.replaceChildren(
-      renderDeeds(deeds, () => {
-        ui.actOpen = false;
-        render();
-      }),
-    );
-  } else if (ui.mapOpen) {
-    overlaySlot.replaceChildren(
-      renderMap(state, () => {
-        ui.mapOpen = false;
-        render();
-      }),
-    );
-  } else if (ui.foundingOpen && canFound(state, state.party.at)) {
-    overlaySlot.replaceChildren(
-      renderFounding(
-        state,
-        () => {
-          ui.foundingOpen = false;
-          dispatch({ type: 'FOUND' });
-        },
-        () => {
-          ui.foundingOpen = false;
-          render();
-        },
-      ),
-    );
-  } else if (ui.rosterOpen) {
-    overlaySlot.replaceChildren(
-      renderWarband(state, () => {
-        ui.rosterOpen = false;
-        render();
-      }),
-    );
-  } else if (state.aftermath) {
-    overlaySlot.replaceChildren(renderAftermath(state, dispatch));
-  } else if (state.event) {
-    overlaySlot.replaceChildren(renderEventCard(state, dispatch));
-  } else {
-    // Last, so nothing the game itself is saying is ever pushed aside by the
-    // teaching. lessonDue() enforces the same rule from the other side.
-    overlaySlot.replaceChildren(...asNodes(lessonOverlay()));
-  }
+    ),
+  );
 
   // Keep the party in view after it moves.
   if (currentMode(state) === 'TRAVEL') travelView.centreOn(state.party.at);
