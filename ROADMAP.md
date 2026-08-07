@@ -148,13 +148,24 @@ the broken instrument. It may still hold; it is no longer evidence.
    stamp, and a migration for the mute's old format. *(The audit's claim that
    `fallen` grew unboundedly was wrong — it has been capped at 60 since it
    shipped.)*
-10. **[ ] NEXT — 5.4 Release** — v1.0 and the CNAME. The old blocker is gone:
-    6.2 is on screen, the queue above it is done, and the harness finally
-    tells the truth. What remains is a decision more than a task — tag v1.0,
-    point `landnam.rcjlabs.com` at the Pages site — and one open design
-    question worth settling first: whether 7-10% at the Thing's window is
-    the late game the Phase 6 head describes, or an overshoot to tune on
-    the honest instrument before the version is stamped.
+10. **[~] 5.4 Release** — v1.0 is TAGGED (the repo's first tag) on a
+    release-ritual build: source zipped to `release/landnam-src.zip`, the
+    built page verified standalone from a `file://` open, published to both
+    Pages roots. What remains is the domain, and both steps live outside
+    this repo:
+    1. **DNS** (at rcjlabs.com's provider): a CNAME record,
+       `landnam` → `rcjlabs.github.io`.
+    2. **GitHub → Settings → Pages → Custom domain**: enter
+       `landnam.rcjlabs.com`, save, and tick Enforce HTTPS once the
+       certificate is issued. GitHub commits the CNAME file itself to
+       whichever source Pages serves; `scripts/publish.mjs` writes only its
+       own three files and will not clobber it. Do the DNS record FIRST —
+       the moment the CNAME file exists, the github.io address redirects to
+       the custom domain, so a domain without DNS is an outage.
+    The open design question is deliberately released as-is and stays on
+    the books: 7-10% of average-competence runs reach the Thing's window on
+    the honest harness. If play says that is an overshoot, tuning it is
+    v1.0.1 — a patch on a truthful instrument, not a blocker on a stamp.
 
 **Known and not urgent:** the event deck is thin (~39 cards); there is no
 meta-progression and no daily seed; accessibility is minimal (keyboard play
@@ -253,7 +264,7 @@ Order negotiable; each is a shippable minor version.
 - [x] **5.1 Sound** — WebAudio synth: wind, drums, horn, UI ticks. Mute toggle. *Done when: the game has a voice, makes no request to get it, and is silent until touched.*
 - [x] **5.2 Onboarding** — First-run guided prompts woven into events (no tutorial screens). *Done when: a new player is taught by the game reaching a state, a veteran sees nothing, and the teaching changes the run not at all.*
 - [x] **5.3 Balance & juice** — Difficulty curves, animation polish, dead-warrior memorial wall. *Done when: the curve is measured and asserted in CI, the dead outlive the run, and the screen stops cutting. Two findings left open and written down rather than rushed — see the changelog.*
-- [ ] **5.4 Release** — v1.0 tag, `landnam.rcjlabs.com` CNAME. THEN decide TWA/Capacitor wrap (stay web during development).
+- [~] **5.4 Release** — v1.0 tag, `landnam.rcjlabs.com` CNAME. THEN decide TWA/Capacitor wrap (stay web during development). *Tagged; the CNAME's two steps (DNS, Pages setting) are written into queue item 10.*
 
 ## Phase 6 — The long saga (post-1.0 direction)
 
@@ -294,6 +305,22 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — v1.0** — The first tag this repository has ever carried,
+  and it goes on a release-ritual build: `npm run release` zips the source
+  beside a page verified to run standalone from a `file://` open with no
+  console errors, and `npm run publish` puts the same build at both roots
+  Pages can serve. Everything the queue demanded before a stamp is in:
+  6.2 on screen, leavers told from corpses, raids that cost hands, a bot
+  that forms a line on an instrument that tells the truth, a hundred-card
+  deck, authored raid ground, and a main.ts that is a boot router again.
+  The domain is the one piece that cannot be done from inside the repo,
+  so its two steps — the DNS record, then the Pages custom-domain setting,
+  in that order — are written into queue item 10 rather than into hope.
+  Released with its eyes open: the honest curve says 7-10% of average
+  runs reach the Thing's window. If play calls that an overshoot, tuning
+  it is v1.0.1 on a truthful instrument, which is exactly what the last
+  two days of harness work were for. 540 tests. Published.
 
 - **2026-08-07 — The overlay chain moves out, and main.ts is a boot router
   again** — The last cut of item 8. The nine-branch priority that decides
