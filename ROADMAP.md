@@ -414,6 +414,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — The bot's offensive half, and a raid number worth reading**
+  — Item 10, in two parts. The balance bot now plays the plunder game the
+  runs are built around: with five sworn and food to fight on it sacks the
+  garrisoned town instead of only the soft targets, and on the road it
+  detours up to six hexes to any seen, unsacked place — travel, plunder,
+  THEN settle, which is the loop the audit said the game is for. The
+  open-field curve did not pay for the aggression: 78/22/12 against
+  75/22/12 before it, noise. Second part: the organic 20-saga raid tally
+  was proven a coin reading three deck-edits ago (4/33, 23/39, 7/28 with
+  no raid change in any of them), so raids-held now has a controlled
+  measurement — the raid gauntlet. Same stocked, palisaded steading,
+  thirty-two forced raids across difficulties 0-3, bot defending. First
+  reading: 11/32 held, and it is a real response curve at last —
+  6/8 at difficulty 0 falling to 0/8 at difficulty 3 — in under seven
+  seconds of harness time. Tripwires at 20% and 95% overall, wide on
+  purpose like every bar in this file. The organic tally stays, asserting
+  only its weak invariants; the gauntlet is the number future raid
+  tuning reads.
+
 - **2026-08-07 — Named raid leaders** — The men who come for the steading
   stopped being anonymous. Every raid of two or more is led: the toughest
   of them is raised to champion — a point of might and spirit, four more

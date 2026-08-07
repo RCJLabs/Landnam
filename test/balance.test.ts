@@ -58,7 +58,7 @@ import { BAND_BASE, foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
 import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
 import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
-import { startBattle } from '../src/sim/battleTurn';
+import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { MAX_RAIDERS, MAX_RAIDERS_FAMED, raiderCap } from '../src/sim/battle';
 import { RAID_CHANCE_MAX, SACK_TAKES, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
@@ -152,12 +152,15 @@ function step(state: GameState): Action {
   // A place worth taking, under our feet, still standing: take it. The rule
   // that put this here is the same one that taught the bot to swing — the
   // game gained raidable places, so the bot raids them in the same commit,
-  // or the measurement reports them as worthless. An average player robs
-  // the soft targets and leaves the town to a braver run.
+  // or the measurement reports them as worthless. Soft targets always; the
+  // garrisoned town only with a full-strength band and food to fight on —
+  // item 10's offensive half, because a bot that never fights FOR anything
+  // measures the whole plunder game as worthless.
+  const mighty = sworn(state.party.people).length >= 5 && days >= 3;
   const here2 = placeHere(state);
   if (here2 && here2.sackedOn === undefined) {
     const def = placeKind(here2.kind);
-    if (def.garrison === null || def.garrison <= 1) {
+    if (def.garrison === null || def.garrison <= 1 || mighty) {
       return { type:'SACK_PLACE', id: here2.id };
     }
   }
@@ -201,6 +204,24 @@ function step(state: GameState): Action {
     }
     if (larder) {
       const t = larder;
+      return { type:'MOVE', to: opts.reduce((a,b)=>distance(b,t)<distance(a,t)?b:a) };
+    }
+  }
+
+  // Wealth in sight and the strength to take it: the average player detours.
+  // Gated on the same strength as the town fight, and on a short walk — the
+  // fun loop the game is built around is travel, plunder, THEN settle, and
+  // a bot that beelines past every monastery measures none of it.
+  if (!state.settlement && mighty) {
+    let mark: {q:number;r:number}|null = null; let markD = 6;
+    for (const p of state.world.places) {
+      if (p.sackedOn !== undefined) continue;
+      if (state.world.seen[key(p.at)] === undefined) continue;
+      const d = distance(p.at, state.party.at);
+      if (d < markD) { markD = d; mark = p.at; }
+    }
+    if (mark) {
+      const t = mark;
       return { type:'MOVE', to: opts.reduce((a,b)=>distance(b,t)<distance(a,t)?b:a) };
     }
   }
@@ -1028,6 +1049,63 @@ describe('losing a raid costs the one thing that is scarce', () => {
     const before = living(state.party.people).length;
     sackSteading(state);
     expect(living(state.party.people).length).toBeLessThan(before);
+  });
+});
+
+describe('the raid gauntlet', () => {
+  /** A standing steading with the store and walls a raid comes for. */
+  function homestead(seed: string): GameState {
+    const state = structuredClone(newGame(seed));
+    for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
+    expect(foundAnywhere(state), `${seed}: nothing foundable`).toBe(true);
+    const home = state.settlement!;
+    home.built.push('longhouse', 'farmplots', 'palisade');
+    home.shelter = 3;
+    state.day = 120;
+    state.party.food = 60;
+    state.party.firewood = 60;
+    return state;
+  }
+
+  // Item 10's other half. The organic tally below is real but tiny — twenty
+  // sagas where seven see a raid is a coin reading, and three deck edits in
+  // a row proved it: 4/33, 23/39, 7/28 with no raid change in any of them.
+  // This is the controlled version: the same steading, the same defenders,
+  // raid after raid across the difficulty range, so held-rate is a number
+  // that moves only when the raid game moves.
+  it('measures holds at scale, difficulty by difficulty', { timeout: CURVE_TIMEOUT }, async () => {
+    const DIFFS = [0, 1, 2, 3];
+    const PER = 8;
+    const byDiff = new Map<number, { held: number; of: number }>();
+    for (let s = 0; s < PER; s += 1) {
+      for (const diff of DIFFS) {
+        let state = homestead(`gauntlet-${s}-${diff}`);
+        startRaid(state, diff);
+        for (let i = 0; i < 600 && state.battle && !state.battle.outcome; i += 1) {
+          let next = apply(state, step(state));
+          if (next === state) next = apply(state, { type: 'B_END_TURN' });
+          if (next === state) break;
+          state = next;
+        }
+        const row = byDiff.get(diff) ?? { held: 0, of: 0 };
+        row.of += 1;
+        if (state.battle?.outcome === 'won') row.held += 1;
+        byDiff.set(diff, row);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+    const table = DIFFS.map(
+      (d) => `d${d} ${byDiff.get(d)!.held}/${byDiff.get(d)!.of}`,
+    ).join(' | ');
+    const held = DIFFS.reduce((n, d) => n + byDiff.get(d)!.held, 0);
+    const total = PER * DIFFS.length;
+    // eslint-disable-next-line no-console
+    console.log(`raid gauntlet: ${held}/${total} held — ${table}`);
+
+    // Wide tripwires, same philosophy as the curve: they exist to catch
+    // "raids cannot be held" and "raids cannot be lost", not to pin a rate.
+    expect(held / total).toBeGreaterThanOrEqual(0.2);
+    expect(held / total).toBeLessThanOrEqual(0.95);
   });
 });
 
