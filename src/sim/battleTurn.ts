@@ -16,6 +16,7 @@ import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
 import { settlePlace } from './places';
+import { sackCamp } from './plunder';
 import { noteRaidSent } from './neighbours';
 import { bonus } from './lore';
 import { note } from './tally';
@@ -125,16 +126,25 @@ function playUntilOurTurn(state: GameState): void {
  * Opens a fight and settles it onto the warband's turn, so the field is
  * always playable the moment it appears — even when a foe wins initiative.
  */
+/** What a fight is FOR, beyond the people in it. */
+export interface Stake {
+  placeId?: string;
+  campId?: string;
+}
+
 export function startBattle(
   state: GameState,
   terrain: Terrain,
   difficulty = 0,
-  placeId?: string,
+  stake?: Stake,
 ): void {
   beginBattle(state, terrain, difficulty);
   // Stamped before any turn plays out, so a mid-fight save still knows what
-  // the fight is FOR.
-  if (placeId && state.battle) state.battle.placeId = placeId;
+  // the fight is for.
+  if (state.battle) {
+    if (stake?.placeId) state.battle.placeId = stake.placeId;
+    if (stake?.campId) state.battle.campId = stake.campId;
+  }
   playUntilOurTurn(state);
 }
 
@@ -185,9 +195,11 @@ export function leaveBattle(state: GameState): Aftermath | undefined {
     else sackSteading(state);
   }
 
-  // A fight FOR a place pays out only if the field was won. Losing leaves it
-  // standing — richer in story, and still there to come back for.
+  // A fight FOR something pays out only if the field was won. A place lost
+  // is left standing to come back for; a camp that threw you back keeps its
+  // stores and its opinion of you.
   if (battle.placeId && won) settlePlace(state, battle.placeId);
+  if (battle.campId && won) sackCamp(state, battle.campId);
 
   // Running is remembered. It costs the band's heart even in victory.
   if (aftermath.ran.length > 0) {

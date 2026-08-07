@@ -201,6 +201,9 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 18 };
   },
+  // Battle gained the optional campId. An old save's battle simply has no
+  // camp at stake, which is also what was true when it was written.
+  18: (save) => ({ ...save, version: 19 }),
 };
 
 export interface MigrationResult {

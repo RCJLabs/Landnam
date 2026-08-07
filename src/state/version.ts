@@ -19,7 +19,9 @@
 // v16 (4.6): RunEnd gained the 'jarl' cause.
 // v17 (6.2): a Person is sworn or a hand.
 // v18 (places): World gained places; Battle gained the optional placeId.
-export const SAVE_VERSION = 18;
+// v19 (plunder): Battle gained the optional campId; ClanKindDef gained
+//                plunder (data, not save — the bump is for the Battle field).
+export const SAVE_VERSION = 19;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

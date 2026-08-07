@@ -13,6 +13,11 @@ export interface ClanKindDef {
   opening: number;
   /** Multiplier on what a raid from them brings. */
   strength: number;
+  /**
+   * What their stores hold for whoever takes the place at a run. Scaled up
+   * by their might — a camp that can defend itself is a camp worth having.
+   */
+  plunder: { food: number; firewood: number };
 }
 
 export const CLAN_KINDS: ClanKindDef[] = [
@@ -22,6 +27,8 @@ export const CLAN_KINDS: ClanKindDef[] = [
     // Another Norse hall on the same coast is a rival before it is anything.
     opening: -10,
     strength: 1.15,
+    // A hall keeps timber: they build the way we build.
+    plunder: { food: 8, firewood: 22 },
   },
   {
     id: 'native',
@@ -29,6 +36,8 @@ export const CLAN_KINDS: ClanKindDef[] = [
     // The people already here have no quarrel until you give them one.
     opening: 10,
     strength: 0.9,
+    // A camp keeps food: smoked fish, dried meat, a winter's gathering.
+    plunder: { food: 14, firewood: 8 },
   },
 ];
 

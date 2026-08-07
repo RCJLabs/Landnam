@@ -70,6 +70,7 @@ import { isWarbandTurn } from '../src/sim/battle';
 import { reachWithZoc } from '../src/sim/zoc';
 import { placeHere } from '../src/sim/places';
 import { placeKind } from '../src/data/places';
+import { canFallOn, neighbourHere } from '../src/sim/neighbours';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
@@ -146,6 +147,14 @@ function step(state: GameState): Action {
     if (def.garrison === null || def.garrison <= 1) {
       return { type:'SACK_PLACE', id: here2.id };
     }
+  }
+
+  // Starving on a cold doorstep: the average player robs it before they die.
+  // Friends stay friends — this only fires on a camp that already dislikes
+  // the band, when there are under three days of food left.
+  const host = neighbourHere(state);
+  if (host && days < 3 && host.standing < 10 && canFallOn(state, host.id)) {
+    return { type:'FALL_ON', id: host.id };
   }
 
   if (state.settlement) return { type:'CAMP' };

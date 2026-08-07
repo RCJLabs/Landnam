@@ -198,7 +198,7 @@ describe('taking a place', () => {
 describe('the fight carries the stake', () => {
   it('startBattle stamps the placeId before any turn plays', () => {
     const state = standingOn('stamp', 'monastery')!;
-    startBattle(state, 'shore', 1, placeHere(state)!.id);
+    startBattle(state, 'shore', 1, { placeId: placeHere(state)!.id });
     expect(state.battle!.placeId).toBe(placeHere(state)!.id);
   });
 });
@@ -213,7 +213,7 @@ describe('old saves gain the country they always had', () => {
     const migrated = migrate(old).save;
     const world = migrated['world'] as { places: Place[] };
     expect(world.places).toEqual(fresh.world.places);
-    expect(migrated['version']).toBe(18);
+    expect(migrated['version']).toBe(19);
   });
 
   it('reseeding the same world twice gives the same places', () => {

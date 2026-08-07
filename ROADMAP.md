@@ -196,11 +196,18 @@ measuring bot has never once used the offensive half.
    soft targets when hungry, same commit; the curve did not move
    (75/20/8 against 77/20/8), which is right — places are opportunity,
    not pressure. 555 tests.
-2. **[ ] A plunder economy.** Falling on a neighbour docks 45 standing
-   immediately and pays 2 food + 1 wood per foe downed — strictly worse
-   than bartering. Sacking must be symmetric: they have stores, as we do
-   (`sackSteading` is the template). Victory under arms should out-pay
-   trade AND cost standing, or the choice is fake.
+2. **[x] A plunder economy.** Done: a camp that falls is emptied. Each clan
+   kind carries its stores in data (`plunder` on `ClanKindDef` — a hall
+   keeps timber, a camp keeps food), scaled up by their might, and paid
+   only when the field is WON — the fight carries `Battle.campId` the way
+   a place-fight carries `placeId`, and losing leaves their stores where
+   they were. The standing cost stays priced at the DECISION (−45 the
+   moment steel comes out), a thrall can be carried home as a hand when
+   the hall has a bed (takeIn owns the room question, and a band still
+   walking has no hall at all), and a sacked camp ARMS — might rises by
+   one, so the second visit is dearer than the first: escalation the
+   player chose. `SAVE_VERSION` 19. The bot robs a hostile doorstep only
+   when starving; the curve did not move (75/20/8, unchanged). 560 tests.
 3. **[ ] The world must escalate with the years, everywhere.** Home raids
    grow with winters stood, built and food; NOTHING else does — travel and
    sea fights draw the same four archetypes at the same weights on day 700
@@ -381,6 +388,29 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — What winning is worth** — The audit's second item: the
+  plunder economy. Falling on a neighbour used to dock 45 standing on the
+  spot and pay two of food a foe — strictly worse than bartering, an
+  aggressive choice with nothing behind it. Now the camp itself is the
+  stake: the fight carries `campId` beside the places' `placeId`, and a
+  WON field empties their stores — sized by who they are (a hall keeps
+  timber, a camp keeps food; plain data on the clan kind) and by their
+  might, because a camp that can defend itself is a camp worth having.
+  Losing pays nothing and leaves them untouched. The standing cost stays
+  priced at the decision, not the outcome — they saw who came over the
+  wall whether or not it went well for you.
+  Two consequences with teeth. A thrall can be carried home from a won
+  camp — as a HAND, through takeIn and its room rules, which makes
+  aggression the one way to buy the scarcest thing in the game and makes
+  a búð worth even more. And a sacked camp arms: might rises by one, so
+  the second visit is dearer than the first, and the player's own greed
+  is now a difficulty knob they turn themselves.
+  `SAVE_VERSION` 19. The bot learned the capability in the same commit at
+  the rate an average player would use it — it robs a hostile doorstep
+  only when there are under three days of food — and the curve did not
+  move: 75/20/8, unchanged, which is right for a lever the player has to
+  CHOOSE to pull. 560 tests. Published.
 
 - **2026-08-07 — Somewhere worth walking to** — The audit's first item: the
   map gains places. A house of the White Christ on a far shore, stone cells

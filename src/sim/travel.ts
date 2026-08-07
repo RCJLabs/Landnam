@@ -389,7 +389,8 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const difficulty = canFallOn(state, action.id) ? fallOn(state, action.id) : null;
       if (difficulty === null) return prev;
       const ground = state.world.tiles[key(party.at)]?.terrain ?? 'meadow';
-      startBattle(state, ground, difficulty);
+      // The camp is the stake: win the field and their stores come home.
+      startBattle(state, ground, difficulty, { campId: action.id });
       return state;
     }
 
@@ -402,7 +403,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const def = placeKind(place.kind);
       if (def.garrison !== null) {
         const ground = state.world.tiles[key(party.at)]?.terrain ?? 'meadow';
-        startBattle(state, ground, def.garrison, action.id);
+        startBattle(state, ground, def.garrison, { placeId: action.id });
         return state;
       }
       settlePlace(state, action.id);

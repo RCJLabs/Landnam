@@ -260,6 +260,8 @@ export interface Battle {
   raid?: boolean;
   /** Set when the fight is FOR a place — winning it is what sacks it. */
   placeId?: string;
+  /** Set when the band fell on a neighbour — winning is what empties them. */
+  campId?: string;
   width: number;
   height: number;
   grid: Record<HexKey, BattleTile>;

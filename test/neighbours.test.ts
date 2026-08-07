@@ -29,6 +29,7 @@ import { EVENTS } from '../src/data/events';
 import {
   BARTER_FOOD,
   CLAN_COUNT,
+  CLAN_KINDS,
   CLAN_MIN_GAP,
   REP_DRIFT,
   REP_RAIDED,
@@ -481,6 +482,91 @@ describe('falling on a neighbour, in play', () => {
     expect(next.day).toBe(day + 1);
     expect(next.party.food).toBeLessThan(state.party.food);
     expect(next.party.firewood).toBeGreaterThan(state.party.firewood);
+  });
+});
+
+describe('the plunder economy — winning a fight you picked pays', () => {
+  /** Fall on `target`, break their line, and walk off the field. */
+  function winFallOn(state: GameState, targetId: string): GameState {
+    let next = apply(state, { type: 'FALL_ON', id: targetId });
+    expect(next.battle, 'nobody drew steel').toBeTruthy();
+    expect(next.battle!.campId).toBe(targetId);
+    for (const c of next.battle!.combatants) {
+      if (c.side === 'foe') { c.broken = true; c.nerve = 0; }
+    }
+    next = apply(next, { type: 'B_END_TURN' });
+    expect(next.battle!.outcome).toBe('won');
+    return apply(next, { type: 'B_LEAVE' });
+  }
+
+  it('a won camp is emptied: their stores come home and it is chronicled', () => {
+    const state = settled('plunder-win');
+    const target = state.neighbours[0]!;
+    target.might = 2;
+    state.party.at = { ...target.at };
+    const before = state.party.food + state.party.firewood;
+
+    const after = winFallOn(state, target.id);
+    // Net of the fight's own loot and costs, the haul must be unmissable —
+    // this is the bar the audit set: aggression was strictly worse than
+    // bartering, and now it cannot be.
+    expect(after.party.food + after.party.firewood).toBeGreaterThan(before + 15);
+    expect(after.saga.some((e) => e.text.includes('took what a season had put there'))).toBe(true);
+  });
+
+  it('a lost fight pays nothing, and leaves their stores where they were', () => {
+    const state = settled('plunder-loss');
+    const target = state.neighbours[0]!;
+    state.party.at = { ...target.at };
+    const mightBefore = target.might;
+
+    let next = apply(state, { type: 'FALL_ON', id: target.id });
+    for (const c of next.battle!.combatants) {
+      if (c.side === 'warband') c.down = true;
+    }
+    next = apply(next, { type: 'B_END_TURN' });
+    expect(next.battle!.outcome).toBe('lost');
+    next = apply(next, { type: 'B_LEAVE' });
+    expect(next.saga.some((e) => e.text.includes('took what a season had put there'))).toBe(false);
+    expect(neighbourAt(next, target.at)!.might).toBe(mightBefore);
+  });
+
+  it('a sacked camp arms: the second visit is dearer than the first', () => {
+    const state = settled('plunder-arms');
+    const target = state.neighbours[0]!;
+    target.might = 1;
+    state.party.at = { ...target.at };
+    const after = winFallOn(state, target.id);
+    expect(neighbourAt(after, target.at)!.might).toBe(2);
+  });
+
+  it('somebody can be carried home as a hand, and only if there is a bed', () => {
+    // Odds are seeded per day and camp; sweep seeds until one lands. The
+    // claim under test is that the thrall arrives as a HAND through takeIn —
+    // room rules and all — not any particular roll.
+    for (let s = 0; s < 30; s += 1) {
+      const state = settled(`plunder-thrall-${s}`);
+      state.settlement!.built.push('longhouse', 'bud');
+      const target = state.neighbours[0]!;
+      state.party.at = { ...target.at };
+      const headsBefore = state.party.people.filter((p) => p.alive).length;
+      const after = winFallOn(state, target.id);
+      const heads = after.party.people.filter((p) => p.alive).length;
+      if (heads > headsBefore) {
+        const newest = after.party.people[after.party.people.length - 1]!;
+        expect(newest.bond).toBe('hand');
+        return;
+      }
+    }
+    throw new Error('no seed carried a thrall home in 30 tries — the odds are not wired');
+  });
+
+  it('the stores are data with a floor under them', () => {
+    // The audit's number: the old pay was 2 food a foe, ~15 a fight. Every
+    // kind's stores must beat that before might scaling even starts.
+    for (const kind of CLAN_KINDS) {
+      expect(kind.plunder.food + kind.plunder.firewood, kind.id).toBeGreaterThanOrEqual(20);
+    }
   });
 });
 
