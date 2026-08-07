@@ -23,7 +23,7 @@
 //                plunder (data, not save — the bump is for the Battle field).
 // v20 (sea): Party gained the optional hullHoled.
 // v21 (combat): Battle gained warCried and lastBlow.
-export const SAVE_VERSION = 23;
+export const SAVE_VERSION = 24;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

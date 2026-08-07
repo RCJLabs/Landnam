@@ -217,6 +217,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // ENDED it — so an absent `jarl` is exactly true of every old save,
   // including the ones that were proclaimed and closed on the spot.
   22: (save) => ({ ...save, version: 23 }),
+  // Neighbours can keep a champion who survived a field. Nobody in an older
+  // save ever walked off one — champions died with their battle — so an
+  // absent `champion` is the truth about every one of them.
+  23: (save) => ({ ...save, version: 24 }),
 };
 
 export interface MigrationResult {

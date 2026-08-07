@@ -16,7 +16,7 @@ import {
   archetypeById,
   type FoeArchetype,
 } from '../data/foes';
-import type { Battle, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
+import type { Battle, Champion, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
 import { effectiveStat, sworn } from './people';
 import { wintersStood } from './calendar';
@@ -201,17 +201,34 @@ export const CHAMPION_SPIRIT = 1;
 export const CHAMPION_TOUGHNESS = 4;
 
 /**
- * Raises the strongest of a band to lead it, and returns him. He keeps his
- * name and archetype and trades up everything else: a heavier byname, a
- * point of might and spirit, and hide enough to be worth singling out.
- * Nobody leads a band of one — callers gate on size.
+ * What each field he has walked off alive is worth to him.
+ *
+ * Capped, and capped low: a foe who compounds without limit stops being a
+ * recurring antagonist and becomes a wall the run ends against. Four scars
+ * is +4 might-or-nothing (the stat cap bites first) and +8 hide — worse
+ * every time, killable every time.
  */
-export function anointChampion(foes: Person[], rng: Rng): Person {
+export const SCAR_MAX = 4;
+export const SCAR_TOUGHNESS = 2;
+
+/**
+ * Raises the strongest of a band to lead it, and returns him. He keeps his
+ * archetype and trades up everything else: a heavier byname, a point of
+ * might and spirit, and hide enough to be worth singling out. Nobody leads
+ * a band of one — callers gate on size.
+ *
+ * `known` is a man who has done this before. He arrives under his own name
+ * with his scars on him, because the whole value of a recurring enemy is
+ * that the player recognises him.
+ */
+export function anointChampion(foes: Person[], rng: Rng, known?: Champion): Person {
   const champion = foes.reduce((a, b) => (b.maxHealth > a.maxHealth ? b : a));
-  champion.byname = rng.pick(CHAMPION_BYNAMES);
-  champion.stats.might = Math.min(6, champion.stats.might + CHAMPION_MIGHT);
+  const scars = Math.min(SCAR_MAX, known?.scars ?? 0);
+  champion.name = known?.name ?? champion.name;
+  champion.byname = known?.byname ?? rng.pick(CHAMPION_BYNAMES);
+  champion.stats.might = Math.min(6, champion.stats.might + CHAMPION_MIGHT + scars);
   champion.stats.spirit = Math.min(6, champion.stats.spirit + CHAMPION_SPIRIT);
-  champion.maxHealth += CHAMPION_TOUGHNESS;
+  champion.maxHealth += CHAMPION_TOUGHNESS + scars * SCAR_TOUGHNESS;
   champion.health = champion.maxHealth;
   return champion;
 }
@@ -281,15 +298,33 @@ export function beginBattle(
   // without somebody whose idea it was. The open field earns a name only
   // once word has spread: the same threshold that makes a fight bigger is
   // the one that makes it somebody's.
+  //
+  // A RAID's leader belongs to whoever sent it, and if that clan already has
+  // a man who walked off our field alive, it is him again — same name, same
+  // byname, one more scar. Open-field champions stay nameless-until-met:
+  // nobody sent them, so there is nobody for them to come back to.
+  const sender = raid ? raidSource(state) : undefined;
   const champion =
     foes.length >= 2 && (raid || wordBump(state) > 0)
-      ? anointChampion(foes, rng.derive('champion'))
+      ? anointChampion(foes, rng.derive('champion'), sender?.champion)
       : undefined;
+  const returning = (sender?.champion?.scars ?? 0) > 0;
+  if (champion && sender) {
+    // Remembered from the moment he sets foot on the field, so a save taken
+    // mid-fight still knows whose man he is.
+    sender.champion = {
+      name: champion.name,
+      byname: champion.byname,
+      scars: sender.champion?.scars ?? 0,
+      lastSeen: state.day,
+    };
+  }
 
   const battle: Battle = {
     terrain,
     ...(raid ? { raid: true } : {}),
     ...(champion ? { champion: champion.id } : {}),
+    ...(champion && sender ? { championOf: sender.id } : {}),
     width: FIELD_WIDTH,
     height: FIELD_HEIGHT,
     grid,
@@ -391,7 +426,11 @@ export function beginBattle(
     battle.log.push(
       `${raidField?.line ?? `They came at ${home.name} out of the trees.`}` +
         ` ${foes.length} against ${standing(battle, 'warband').length}.` +
-        (champion ? ` ${champion.name} ${champion.byname} led them.` : '') +
+        (champion
+          ? returning
+            ? ` ${champion.name} ${champion.byname} had come back for us.`
+            : ` ${champion.name} ${champion.byname} led them.`
+          : '') +
         (from ? ` ${from.name} had not forgotten us.` : '') +
         (home.built.includes('palisade') ? ' The palisade was between us.' : ''),
     );

@@ -117,8 +117,10 @@ function step(state: GameState): Action {
     }
     if (!me.hasActed && distance(near.at, me.at) === 1) {
       // The game gained named leaders, so the bot hunts them in the same
-      // commit: dropping the champion shakes his whole band, which makes
-      // him worth a blow that could have gone to anyone.
+      // commit: dropping the champion shakes his whole band, and now that he
+      // SURVIVES a field he did not die on, killing him is the only way he
+      // stops coming back. An average player goes for the man with the
+      // pennant when he is in reach.
       const marked = foes.find(
         f => f.personId === b.champion && distance(f.at, me.at) === 1);
       return { type:'B_STRIKE', targetId: (marked ?? near).personId };
@@ -1099,6 +1101,10 @@ describe('the rhythm of interruption', () => {
     // the event chance entirely.
     let fromCard = 0;
     let fromUs = 0;
+    // Named foes who came back. Persistence that is never observed in a real
+    // saga is persistence that does not exist.
+    let returns = 0;
+    let killed = 0;
     for (let s = 0; s < SEEDS; s += 1) {
       let seen = 0;
       const state = run(`curve-${s}`, 169, (before, after) => {
@@ -1106,6 +1112,16 @@ describe('the rhythm of interruption', () => {
         if (!before.battle && after.battle && !after.battle.raid) {
           if (before.event) fromCard += 1;
           else fromUs += 1;
+        }
+        if (!before.battle && after.battle?.championOf) {
+          const clan = before.neighbours.find((n) => n.id === after.battle!.championOf);
+          if ((clan?.champion?.scars ?? 0) > 0) returns += 1;
+        }
+        // A clan that had a champion and no longer does lost him for good.
+        for (const was of before.neighbours) {
+          if (!was.champion) continue;
+          const now = after.neighbours.find((n) => n.id === was.id);
+          if (now && !now.champion) killed += 1;
         }
       });
       cards += seen;
@@ -1119,7 +1135,8 @@ describe('the rhythm of interruption', () => {
       `rhythm over ${SEEDS} sagas (${days} days): ` +
         `cards ${cards} (${per100(cards)}/100d), open fights ${battles - raids} ` +
         `(${per100(battles - raids)}/100d) — ${fromCard} off a card, ${fromUs} of our own ` +
-        `making — raids ${raids} (${per100(raids)}/100d)`,
+        `making — raids ${raids} (${per100(raids)}/100d); named foes: ${returns} came back, ` +
+        `${killed} put down for good`,
     );
     // Tripwires only: a game with no cards and a game that is nothing but
     // cards are both broken, and both have been shipped by accident before.

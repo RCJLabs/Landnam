@@ -297,7 +297,10 @@ currently getting WRONG, the middle four are depth on systems that already
 exist and are underused, the last three are reach. Every one names how it
 would be measured, because an item that cannot be measured is a wish.
 
-1. **[ ] The champion should survive the battle.** Item 6 of the last
+1. **[x] The champion should survive the battle.** Done: he belongs to the
+   clan that sent him, walks off any field he was not put down on, and
+   comes back under his own name with his scars on him. Measured recurring
+   in real sagas — 6 came back, 17 were put down for good, over 60 runs. Item 6 of the last
    queue landed half: champions are born and die inside one fight. Give a
    beaten-but-not-killed champion an escape at low nerve, store him on the
    hostile neighbour that sent him, and let him come back harder, angrier
@@ -507,6 +510,26 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The Old Wolf comes back** — Next-queue item 1, and the
+  half of the old item 6 that did not land. A raid's champion now BELONGS
+  to the clan that sent it: he is stamped onto that neighbour the moment
+  he sets foot on the field, so a mid-fight save knows whose man he is.
+  Put him down and he is gone for good — the clan loses its leader and the
+  saga says so, which is what makes hunting the blood pennant worth a blow
+  that could have gone anywhere. Anything else — he fled, he was standing
+  when we broke, the fight ended around him — and he walks off with one
+  more scar, coming back under the same name and byname, +1 might and +2
+  hide per scar, capped at four so he stays killable rather than becoming
+  a wall the run ends against.
+  Open-field champions still belong to nobody, which is the honest reading:
+  nobody sent them, so there is nobody for them to return to.
+  Persistence that is never observed is persistence that does not exist,
+  so the rhythm test counts it: over sixty sagas, 6 named foes came back
+  and 17 were put down for good. The bot hunts the champion for the new
+  reason in the same commit. Curve 83/27/7 → 82/27/7, unmoved.
+  SAVE_VERSION 24; the returning raid driven in the built page, which
+  names him and says he came back.
 
 - **2026-08-07 — Quieter days, and more of them end in steel** — Asked for
   directly: fewer cards, slightly more fights. Two independent knobs, and

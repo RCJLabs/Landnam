@@ -273,6 +273,8 @@ export interface Battle {
    * of the men he led.
    */
   champion?: string;
+  /** Which neighbour's man he is, when he belongs to one and can come back. */
+  championOf?: string;
   /**
    * The most recent blow, for the renderer's effects layer: a lunge, a
    * flash, a number that floats. `n` only ever rises, so the view can tell
@@ -367,6 +369,23 @@ export interface Expedition {
  * derived because it is a memory: it is exactly the thing that must not reset
  * when you stop raiding them.
  */
+/**
+ * A foe who has led men against us and walked off the field alive.
+ *
+ * Kept on the NEIGHBOUR rather than on the battle, because that is the thing
+ * that outlives a fight. He comes back with the same name, the same byname,
+ * and one more scar than last time — which is the whole point: an enemy the
+ * saga can name twice is worth more than a hundred anonymous huscarls.
+ */
+export interface Champion {
+  name: string;
+  byname: string;
+  /** Fields he has walked off alive. Each one makes him worse to meet. */
+  scars: number;
+  /** The day he was last seen, so the log can say how long it has been. */
+  lastSeen: number;
+}
+
 export interface Neighbour {
   id: string;
   /** Clan kind id from data/clans. */
@@ -383,6 +402,8 @@ export interface Neighbour {
   lastDealt?: number;
   /** Raids traced back to them. */
   raidsSent: number;
+  /** Their man, if he is still alive and still coming. */
+  champion?: Champion;
 }
 
 // --- The tally ---

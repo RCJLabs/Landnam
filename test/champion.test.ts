@@ -5,7 +5,15 @@
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
-import { anointChampion, rollFoes, CHAMPION_TOUGHNESS } from '../src/sim/battle';
+import {
+  anointChampion,
+  rollFoes,
+  CHAMPION_TOUGHNESS,
+  SCAR_MAX,
+  SCAR_TOUGHNESS,
+} from '../src/sim/battle';
+import { leaveBattle } from '../src/sim/battleTurn';
+import { seeNeighbours } from '../src/sim/neighbours';
 import { CHAMPION_BYNAMES } from '../src/data/foes';
 import { doStrike } from '../src/sim/battleActions';
 import { NERVE_LEADER_FELL, fellLeading } from '../src/sim/morale';
@@ -173,6 +181,115 @@ describe('the fall of the one who led', () => {
     const battle = state.battle!;
     battle.champion = undefined;
     expect(fellLeading(state, target)).toBe(false);
+  });
+});
+
+describe('the man who comes back', () => {
+  /** A steading with one thoroughly hostile neighbour to send the raid. */
+  function besieged(seed: string): GameState {
+    const state = settled(seed);
+    seeNeighbours(state);
+    expect(state.neighbours.length).toBeGreaterThan(0);
+    state.neighbours.forEach((n, i) => {
+      n.found = true;
+      n.standing = i === 0 ? -80 : 20;
+    });
+    return state;
+  }
+
+  it('a raid leader belongs to whoever sent it', () => {
+    const state = besieged('champ-belongs');
+    startRaid(state, 2);
+    const battle = state.battle!;
+    expect(battle.champion).toBeTruthy();
+    expect(battle.championOf).toBe(state.neighbours[0]!.id);
+    // Remembered from the moment he sets foot on the field, so a mid-fight
+    // save still knows whose man he is.
+    const kept = state.neighbours[0]!.champion!;
+    const person = battle.foes.find((f) => f.id === battle.champion)!;
+    expect(kept.name).toBe(person.name);
+    expect(kept.byname).toBe(person.byname);
+    expect(kept.scars).toBe(0);
+  });
+
+  it('walking off the field alive earns him a scar and a saga line', () => {
+    const state = besieged('champ-escapes');
+    startRaid(state, 2);
+    const battle = state.battle!;
+    const clan = state.neighbours[0]!;
+    // Won the field, but their man was not among the fallen.
+    battle.outcome = 'won';
+    battle.combatants.find((c) => c.personId === battle.champion)!.down = false;
+
+    leaveBattle(state);
+    expect(clan.champion?.scars).toBe(1);
+    expect(clan.champion?.lastSeen).toBe(state.day);
+    expect(state.saga.some((e) => e.text.includes('got off the field alive'))).toBe(true);
+  });
+
+  it('putting him down is final — the clan loses him', () => {
+    const state = besieged('champ-dies');
+    startRaid(state, 2);
+    const battle = state.battle!;
+    const clan = state.neighbours[0]!;
+    const name = clan.champion!.name;
+    battle.outcome = 'won';
+    battle.combatants.find((c) => c.personId === battle.champion)!.down = true;
+
+    leaveBattle(state);
+    expect(clan.champion).toBeUndefined();
+    expect(state.saga.some((e) => e.text.includes(name) && e.text.includes('put down'))).toBe(true);
+  });
+
+  it('he comes back under his own name, and harder every time', () => {
+    const state = besieged('champ-returns');
+    const clan = state.neighbours[0]!;
+    clan.champion = { name: 'Starkad', byname: 'the Old Wolf', scars: 2, lastSeen: 1 };
+
+    startRaid(state, 2);
+    const battle = state.battle!;
+    const him = battle.foes.find((f) => f.id === battle.champion)!;
+    expect(him.name).toBe('Starkad');
+    expect(him.byname).toBe('the Old Wolf');
+    // The log says he is not new.
+    expect(battle.log[0]).toContain('had come back for us');
+    // And the scars are on him, not just in the text.
+    const fresh = structuredClone(besieged('champ-returns'));
+    startRaid(fresh, 2);
+    const stranger = fresh.battle!.foes.find((f) => f.id === fresh.battle!.champion)!;
+    expect(him.maxHealth).toBe(stranger.maxHealth + 2 * SCAR_TOUGHNESS);
+  });
+
+  it('the scars stop somewhere — he stays killable', () => {
+    const state = besieged('champ-cap');
+    const clan = state.neighbours[0]!;
+    clan.champion = { name: 'Starkad', byname: 'the Old Wolf', scars: 99, lastSeen: 1 };
+    startRaid(state, 2);
+    const him = state.battle!.foes.find((f) => f.id === state.battle!.champion)!;
+
+    const fresh = besieged('champ-cap');
+    startRaid(fresh, 2);
+    const stranger = fresh.battle!.foes.find((f) => f.id === fresh.battle!.champion)!;
+    expect(him.maxHealth).toBe(stranger.maxHealth + SCAR_MAX * SCAR_TOUGHNESS);
+    expect(him.stats.might).toBeLessThanOrEqual(6);
+
+    // And a capped champion who escapes does not overflow.
+    state.battle!.outcome = 'won';
+    state.battle!.combatants.find((c) => c.personId === state.battle!.champion)!.down = false;
+    leaveBattle(state);
+    expect(clan.champion!.scars).toBe(SCAR_MAX);
+  });
+
+  it('an open-field champion belongs to nobody and cannot return', () => {
+    const state = structuredClone(newGame('champ-nofield'));
+    state.tally.sackings = 8;
+    startBattle(state, 'meadow', 1);
+    expect(state.battle!.champion).toBeTruthy();
+    expect(state.battle!.championOf).toBeUndefined();
+    // Settling up must not throw or invent a clan for him.
+    state.battle!.outcome = 'won';
+    expect(() => leaveBattle(state)).not.toThrow();
+    expect(state.neighbours.every((n) => n.champion === undefined)).toBe(true);
   });
 });
 

@@ -11,6 +11,7 @@ import {
   refreshTurn,
   standing,
 } from './battle';
+import { SCAR_MAX } from './battle';
 import { takeFoeTurn } from './battleAi';
 import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
@@ -177,6 +178,37 @@ export function endTurn(state: GameState): boolean {
  * and picks the warband back up. This is where a battle stops being reversible
  * — the dead stay dead and the maimed carry it.
  */
+/**
+ * What became of the enemy's named man.
+ *
+ * Down means dead and gone: the clan loses its champion and has to find
+ * another, which is what makes hunting him on the field worth a blow that
+ * could have gone anywhere. Anything else — he fled, he was still standing
+ * when we broke, the fight simply ended around him — means he got away, and
+ * a man who gets away comes back worse.
+ */
+function settleChampion(state: GameState, battle: Battle): void {
+  const id = battle.champion;
+  const clanId = battle.championOf;
+  if (!id || !clanId) return;
+  const clan = state.neighbours.find((n) => n.id === clanId);
+  if (!clan?.champion) return;
+  const him = battle.combatants.find((c) => c.personId === id);
+  const name = `${clan.champion.name} ${clan.champion.byname}`;
+
+  if (him?.down) {
+    delete clan.champion;
+    chronicle(state, `${name} was put down, and ${clan.name} lost the man who led them.`, 'good');
+    return;
+  }
+  clan.champion = {
+    ...clan.champion,
+    scars: Math.min(SCAR_MAX, clan.champion.scars + 1),
+    lastSeen: state.day,
+  };
+  chronicle(state, `${name} got off the field alive. He will have marked us for it.`, 'grim');
+}
+
 export function leaveBattle(state: GameState): Aftermath | undefined {
   const battle = state.battle;
   if (!battle || !battle.outcome) return undefined;
@@ -203,6 +235,12 @@ export function leaveBattle(state: GameState): Aftermath | undefined {
   if (battle.campId && won) sackCamp(state, battle.campId);
   // Afloat, the hull and the packs are always at stake, both ways.
   if (isSeaFight(battle)) settleSeaFight(state, won);
+
+  // Their man, settled up. He is either dead for good or he is out there
+  // with one more scar and a longer memory — the recurring antagonist is
+  // the entire point, and it only works if killing him is FINAL and letting
+  // him go is not.
+  settleChampion(state, battle);
 
   // Running is remembered. It costs the band's heart even in victory.
   if (aftermath.ran.length > 0) {
