@@ -14,6 +14,7 @@ import { fieldCrew, permittedStep } from './expedition';
 import { bargain, bargainBlocker, canFallOn, fallOn, seeNeighbours } from './neighbours';
 import { placeById, sackBlocker, settlePlace } from './places';
 import { placeKind } from '../data/places';
+import { mendHull } from './sea';
 import { bonus } from './lore';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
@@ -66,7 +67,10 @@ export function moveEffort(state: GameState, to: Hex): number | null {
     if (!isCoastalWater(state, to)) return null;
     // A band that knows how a hull is meant to sit gets more out of a day on
     // the water. Never below one: a hex of sea is still a hex of sea.
-    return Math.max(1, SEA_EFFORT + penalty - bonus(state, 'sea'));
+    // A holed hull swims at half the pace — she is baled as much as rowed —
+    // but she swims: short of sunk, on purpose.
+    const holed = state.party.hullHoled ? SEA_EFFORT : 0;
+    return Math.max(1, SEA_EFFORT + holed + penalty - bonus(state, 'sea'));
   }
   const def = terrainDef(tile.terrain);
   if (!Number.isFinite(def.cost)) return null;
@@ -297,6 +301,10 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
           : Math.max(0, Math.round(def.wood * (0.5 + hands * 0.18) * rng.float(0.8, 1.2)));
       party.firewood += wood;
       party.hasCamped = true;
+
+      // A night on a beach is when a sprung strake gets seen to. Part of the
+      // night's work, not a new verb — see sim/sea.ts.
+      if (!afloat) mendHull(state);
 
       // Rest mends bodies, but only on a full stomach — and a roof of your own
       // mends them faster than a night under a cloak.

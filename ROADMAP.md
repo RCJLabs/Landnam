@@ -225,11 +225,19 @@ measuring bot has never once used the offensive half.
    conclusion is confirmed from the honest side — the game already kills
    through people and grief, never stores. The tuning levers, when wanted:
    bereavement stacking, winter sickness, winter fight frequency. NOT food.
-5. **[ ] Ships are a terrain skin, not a system.** Sea fights are the ocean
-   ground mix; the knarr cannot be lost, damaged, or fought FOR. Authored
-   sea battlefields (the raidFields pattern reused: lashed hulls, a
-   boarding action, a fight in the shallows), and sea stakes — cargo that
-   can go over the side, a hull that can be holed short of sunk.
+5. **[x] Ships are a terrain skin, not a system.** Done. Three authored sea
+   decks in `data/seaFields.ts` — hulls lashed rail to rail, a boarding
+   over locked bows, a scramble in the shallows among the skerries — linted
+   like the raid fields and picked with the fight's own rng; every ocean
+   battle now opens on one, with its line first in the log. And the sea has
+   stakes: losing puts ~35% of the packs over the side and HOLES the hull
+   (she rows at half pace until a night ashore and two of wood mend her —
+   short of sunk on purpose, because a run must end by decision); winning
+   strips their hull instead. A new ocean card, A Lean Sail Closing, makes
+   fights afloat actually reachable (deck 102). `SAVE_VERSION` 20; the
+   holed state is on the hint bar so it is never a hidden punishment; the
+   bot fights sea battles with the same line-forming policy and mends the
+   hull through its normal camping. Curve unchanged (75/20/8). 574 tests.
 6. **[ ] Raids need a face.** raidSource names a clan; the raid itself is
    anonymous men. A named raid-leader per hostile neighbour — persistent, a
    huscarl, carrying the grudge history — who can be felled (pressure
@@ -396,6 +404,31 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The sea gets its teeth** — The audit's fifth item: ships
+  stop being a terrain skin. A fight afloat used to be the ocean's random
+  ground mix — a meadow fight with a blue background. It is now fought on
+  one of three authored decks in `data/seaFields.ts`: two hulls lashed rail
+  to rail with no ground to give, a boarding action over locked bows with
+  one way across, and both keels on the sand fighting it out knee-deep in
+  the shallows. Linted like the raid fields — room for six a side, a line
+  four can hold, a way between the decks — and the fight's opening line
+  comes off the map itself.
+  And the sea finally has stakes. Losing a sea fight puts a third of the
+  packs over the side and holes the hull: she still swims, at half the
+  pace, baled as much as rowed, until a night camped ashore and two of
+  wood put a sound strake over the sprung one. Short of sunk on purpose —
+  a run must end by decision, not by one bad fight on the water. Winning
+  strips their hull instead. The holed state sits on the hint bar the
+  whole time it is true, because a halved pace with nothing on screen to
+  say so would be the exact hidden punishment this project's rules exist
+  to prevent. A new ocean card — A Lean Sail Closing, a hungry crew that
+  rows like men who have not eaten — makes fights afloat reachable at all;
+  the deck stands at 102. `SAVE_VERSION` 20 with a migration (an old
+  save's hull is sound; nothing had ever been able to hole it). The bot
+  needed no new verbs: it fights sea battles with the same line-forming
+  policy and mends the hull through its normal camping, and the curve did
+  not move — 75/20/8, unchanged. 574 tests. Published.
 
 - **2026-08-07 — The cliff has a name, and the seed comes up** — Two audit
   items in one sitting, an instrument and a promise.

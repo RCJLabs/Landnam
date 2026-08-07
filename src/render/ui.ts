@@ -306,6 +306,13 @@ export function renderSagaLog(state: GameState, expanded: boolean, toggle: () =>
 export function renderHint(state: GameState): HTMLElement {
   if (state.end) return el('div', { class: 'hint' }, ['The saga is finished.']);
   if (state.event) return el('div', { class: 'hint' }, ['Something needs answering.']);
+  // A holed hull is a fact the player must never have to remember unaided —
+  // it halves the pace of every sea hex until a night ashore mends it.
+  if (state.party.hullHoled) {
+    return el('div', { class: 'hint holed' }, [
+      'The knarr is making water — she rows at half pace. Camp ashore to mend her.',
+    ]);
+  }
   // Standing somewhere that is somewhere: the place introduces itself, and
   // the Act sheet holds the decision about it.
   const here = placeHere(state);

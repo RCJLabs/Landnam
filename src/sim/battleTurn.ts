@@ -17,6 +17,7 @@ import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
 import { settlePlace } from './places';
 import { sackCamp } from './plunder';
+import { isSeaFight, settleSeaFight } from './sea';
 import { noteRaidSent } from './neighbours';
 import { bonus } from './lore';
 import { note } from './tally';
@@ -200,6 +201,8 @@ export function leaveBattle(state: GameState): Aftermath | undefined {
   // stores and its opinion of you.
   if (battle.placeId && won) settlePlace(state, battle.placeId);
   if (battle.campId && won) sackCamp(state, battle.campId);
+  // Afloat, the hull and the packs are always at stake, both ways.
+  if (isSeaFight(battle)) settleSeaFight(state, won);
 
   // Running is remembered. It costs the band's heart even in victory.
   if (aftermath.ran.length > 0) {

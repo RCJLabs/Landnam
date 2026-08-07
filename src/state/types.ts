@@ -141,6 +141,8 @@ export interface Party {
   morale: number;
   /** Movement/effort spent today; a day ends when it runs out. */
   hasCamped: boolean;
+  /** The knarr took a strake's hurt in a sea fight. Mended by a night ashore. */
+  hullHoled?: boolean;
 }
 
 // --- Narrative ---

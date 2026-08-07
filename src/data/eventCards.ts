@@ -2003,6 +2003,29 @@ export const EVENTS: EventDef[] = [
     ],
   },
   {
+    id: 'a-lean-sail',
+    title: 'A Lean Sail Closing',
+    body: 'She has been on the same tack as us for an hour and she is faster. A crew that eats shows it in the rowing; this one rows like men who have not, and they are not closing to trade news.',
+    weight: 8,
+    when: [{ c: 'terrain', any: ['ocean'] }, { c: 'dayMin', day: 5 }],
+    choices: [
+      {
+        label: 'Ship oars and let them come alongside',
+        success: { text: 'We took the way off her and got the shields up along the rail. They came on.', effects: [{ t: 'battle', difficulty: 0 }] },
+      },
+      {
+        label: 'Throw them meat and pull away',
+        success: { text: 'A sack went over the side and they stopped for it, which told everyone what kind of winter they were having.', effects: [{ t: 'food', n: -5 }, { t: 'morale', n: -2 }] },
+      },
+      {
+        label: 'Race them for the shallows',
+        check: { stat: 'might', dc: 12 },
+        success: { text: 'We pulled until the oars bent and took her in over sand they did not dare follow across.', effects: [{ t: 'morale', n: 4 }] },
+        failure: { text: 'They had the legs of us, and we met them tired.', effects: [{ t: 'battle', difficulty: 1 }] },
+      },
+    ],
+  },
+  {
     id: 'the-cold-forge',
     title: 'The Forge Stands Cold',
     body: 'The band knows iron now, and knowing is not burning: the charcoal is gone, and bog-ore is patient in a way that edges are not. Every dull axe in the steading has an opinion.',

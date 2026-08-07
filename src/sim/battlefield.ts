@@ -5,6 +5,7 @@ import { key, offsetToAxial, type Hex, type HexKey } from '../hex';
 import type { Rng } from '../rng';
 import type { BattleTile, Ground, Terrain } from '../state/types';
 import { RAID_FIELDS, type RaidFieldDef } from '../data/raidFields';
+import { SEA_FIELDS, type SeaFieldDef } from '../data/seaFields';
 
 // Portrait: the field is taller than it is wide, because the phone is.
 // Seven columns is what lets a hex clear the 44px touch target at 390px.
@@ -167,6 +168,40 @@ export function widestStand(grid: Record<HexKey, BattleTile>, row: number): numb
     }
   }
   return best;
+}
+
+// --- A fight on the water ---
+
+/** Which authored sea fight this is. Picked with the battle's own rng. */
+export function pickSeaField(rng: Rng): SeaFieldDef {
+  return rng.pick(SEA_FIELDS);
+}
+
+/**
+ * The field for a fight afloat: two ships, parsed from an authored map.
+ * Deployment is the standard two rows at each end — their deck and ours.
+ */
+export function seaFieldFrom(
+  def: SeaFieldDef,
+): { grid: Record<HexKey, BattleTile>; warbandSpots: Hex[]; foeSpots: Hex[] } {
+  const grid: Record<HexKey, BattleTile> = {};
+  const warbandSpots: Hex[] = [];
+  const foeSpots: Hex[] = [];
+
+  for (let row = 0; row < FIELD_HEIGHT; row++) {
+    for (let col = 0; col < FIELD_WIDTH; col++) {
+      const h = offsetToAxial(col, row);
+      const mark = def.rows[row]?.[col] ?? '.';
+      let ground: Ground = 'open';
+      if (mark === ',') ground = 'rough';
+      else if (mark === '#') ground = 'block';
+      else if (mark === '~') ground = 'water';
+      grid[key(h)] = { ground };
+      if (row >= FIELD_HEIGHT - 2 && ground !== 'block' && ground !== 'water') warbandSpots.push(h);
+      if (row <= 1 && ground !== 'block' && ground !== 'water') foeSpots.push(h);
+    }
+  }
+  return { grid, warbandSpots, foeSpots };
 }
 
 // --- The steading under attack ---

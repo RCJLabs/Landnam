@@ -31,6 +31,8 @@ import {
   groundName,
   isPassable,
   pickRaidField,
+  pickSeaField,
+  seaFieldFrom,
   steadingFieldFrom,
 } from './battlefield';
 
@@ -202,15 +204,18 @@ export function beginBattle(
     `${raid ? 'raid' : 'battle'}:${state.day}:${key(state.party.at)}`,
   );
 
-  // A raid is fought on the ground you built, not on ground you wandered
-  // onto — one of a handful of authored approaches, picked by what the
-  // steading actually is. See data/raidFields.ts.
+  // A raid is fought on the ground you built, and a fight afloat on an
+  // authored pair of ships — everything else on ground rolled from the
+  // country. See data/raidFields.ts and data/seaFields.ts.
   const home = state.settlement;
   const raidField = raid && home ? pickRaidField(home.plots.map((p) => p.kind), rng.derive('ground')) : undefined;
+  const seaField = !raid && terrain === 'ocean' ? pickSeaField(rng.derive('ground')) : undefined;
   const { grid, warbandSpots, foeSpots } =
     raidField && home
       ? steadingFieldFrom(raidField, home.built.includes('palisade'))
-      : generateBattlefield(terrain, rng.derive('ground'));
+      : seaField
+        ? seaFieldFrom(seaField)
+        : generateBattlefield(terrain, rng.derive('ground'));
   // A raid is fought by whoever stayed at the steading; a fight out on the
   // road is fought by whoever went. Sending your warriors away is exactly the
   // decision this makes real.
@@ -342,7 +347,7 @@ export function beginBattle(
     );
   } else {
     battle.log.push(
-      `They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.`,
+      `${seaField ? `${seaField.line} ` : ''}They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.`,
     );
     chronicle(state, `We were brought to a fight on ${groundName(terrain)}.`, 'grim');
   }

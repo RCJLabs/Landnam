@@ -21,7 +21,8 @@
 // v18 (places): World gained places; Battle gained the optional placeId.
 // v19 (plunder): Battle gained the optional campId; ClanKindDef gained
 //                plunder (data, not save — the bump is for the Battle field).
-export const SAVE_VERSION = 19;
+// v20 (sea): Party gained the optional hullHoled.
+export const SAVE_VERSION = 20;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

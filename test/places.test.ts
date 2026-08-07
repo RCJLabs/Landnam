@@ -9,6 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { distance, key } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
+import { SAVE_VERSION } from '../src/state/version';
 import { stream } from '../src/rng';
 import { apply } from '../src/sim/actions';
 import { seedPlaces, placeHere, placeById, sackBlocker, settlePlace } from '../src/sim/places';
@@ -213,7 +214,9 @@ describe('old saves gain the country they always had', () => {
     const migrated = migrate(old).save;
     const world = migrated['world'] as { places: Place[] };
     expect(world.places).toEqual(fresh.world.places);
-    expect(migrated['version']).toBe(19);
+    // The CURRENT version, whatever it is by now — this assertion broke
+    // twice pinned to a literal, and the claim was never about the number.
+    expect(migrated['version']).toBe(SAVE_VERSION);
   });
 
   it('reseeding the same world twice gives the same places', () => {

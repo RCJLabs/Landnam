@@ -204,6 +204,9 @@ export const MIGRATIONS: Record<number, Migration> = {
   // Battle gained the optional campId. An old save's battle simply has no
   // camp at stake, which is also what was true when it was written.
   18: (save) => ({ ...save, version: 19 }),
+  // Party gained the optional hullHoled. An old save's hull is sound —
+  // nothing had ever been able to hole it.
+  19: (save) => ({ ...save, version: 20 }),
 };
 
 export interface MigrationResult {
