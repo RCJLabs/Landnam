@@ -247,11 +247,15 @@ measuring bot has never once used the offensive half.
    holed state is on the hint bar so it is never a hidden punishment; the
    bot fights sea battles with the same line-forming policy and mends the
    hull through its normal camping. Curve unchanged (75/20/8). 574 tests.
-6. **[ ] Raids need a face.** raidSource names a clan; the raid itself is
-   anonymous men. A named raid-leader per hostile neighbour — persistent, a
-   huscarl, carrying the grudge history — who can be felled (pressure
-   breaks, saga names him) or keep coming back (he remembers too). Rides
-   the Person model and the feud system that already exist.
+6. **[~] Raids need a face.** HALF done, and the half is worth naming
+   honestly. Shipped: a champion leads every raid and every word-drawn
+   open-field fight — boosted, grimly bynamed, blood pennant, named in the
+   log, and felling him shakes the whole side he led (symmetric with our
+   own leader falling). NOT shipped: persistence. He is born and dies
+   inside one battle; he does not belong to a hostile neighbour, does not
+   carry the grudge history, and cannot escape to come back. The
+   recurring antagonist is the better half of this idea and is item 1 of
+   the next queue.
 7. **[x] The build queue must not end.** Done: three late-tier buildings
    (storehouse, watchtower, hof) and one repeatable búð, gated on crowding
    after the unconditional version was measured as a timber sink. After the búð there is nothing to
@@ -284,6 +288,89 @@ measuring bot has never once used the offensive half.
 **Known and not urgent:** there is no meta-progression and no daily seed;
 accessibility is minimal (keyboard play is not possible); and
 `render/travel.ts` still breaches the ~300-line guidance.
+
+## The next queue — audit of 2026-08-07 (evening)
+
+Written after the first ten were cleared, with the phone photograph of the
+stuck build panel fresh. Ordered: the first three are things the game is
+currently getting WRONG, the middle four are depth on systems that already
+exist and are underused, the last three are reach. Every one names how it
+would be measured, because an item that cannot be measured is a wish.
+
+1. **[ ] The champion should survive the battle.** Item 6 of the last
+   queue landed half: champions are born and die inside one fight. Give a
+   beaten-but-not-killed champion an escape at low nerve, store him on the
+   hostile neighbour that sent him, and let him come back harder, angrier
+   and remembered — "the man who burned the smokehouse two winters ago".
+   The Person model, the feud system and the grudge weights all already
+   exist; this is mostly persistence plumbing on top of work that shipped
+   today. Measured by: a long-game harness run reporting how often a named
+   foe recurs, and the saga naming him more than once.
+
+2. **[ ] The first winter is a cliff nobody is warned about.** The reported
+   phone save was day 26 with 0 of 274 wood and 4 of 162 food, no roof, six
+   people — a run already lost that has not been told so. The deaths table
+   says the killer is grief, not stores, but that is measured over sixty
+   BOT runs that settle early and work perfectly. Measure the human case:
+   time-to-first-longhouse across seeds, and what fraction of settle-days
+   leave a band unable to reach the mark at all. Then either move the
+   opening or make the advisor say the true thing loudly — "you cannot
+   reach spring from here; go raiding or move" is a fair thing to be told
+   on day 26 and a brutal thing to discover on day 50.
+
+3. **[ ] No difficulty setting.** The settings menu shipped with sound,
+   motion and the guide; difficulty is the obvious hole. Three named
+   settings driving the knobs the harness can already read — event chance,
+   raid pressure, winter severity, starting stores — with each one MEASURED
+   over the 60-seed curve so the labels are honest rather than decorative.
+   This is also the cheapest answer to item 2 if the opening turns out to
+   be too hard rather than too quiet.
+
+4. **[ ] Reach weapons, and the wall gets deeper.** Everyone carries one
+   throw and then swings. Spears that strike at range 2 from the SECOND
+   rank would make the shield wall a formation with an inside and an
+   outside rather than a line of equals — the single highest-value combat
+   addition left, and it compounds directly with the wall-push and
+   glancing-turn rules that shipped today. Bows for foes as the pressure
+   answer. Measured by: the formation-vs-brawl bar must widen, not narrow.
+
+5. **[ ] Buildings should tier, not just multiply.** The late tier and the
+   repeatable búð answered "the queue must not end" horizontally. Vertical
+   is better: longhouse → great hall, palisade → earthworks, each
+   consuming the last and raising what it granted. It gives a surplus
+   somewhere to go that is not a row of huts, and the authored raid fields
+   can read the wall tier the way they already read the palisade.
+
+6. **[ ] The threat clock should be visible.** Watch and palisade buy raid
+   chance down invisibly; word and wealth push it up invisibly. A player
+   defending against a number they cannot see is guessing. Show the
+   pressure and what is driving it (winters stood, what you have taken,
+   who is angry, how rich the hall looks) — the same trick as the winter
+   mark, which is the single most successful UI in the game.
+
+7. **[ ] People need kin, not just stats.** Grudges, morale and traits
+   exist; relationships do not. Who is whose brother, who came off the
+   knarr together. Despair ends more runs than anything else, so grief is
+   already the game's chief killer — make it legible, and a death reshapes the
+   survivors in a way the player can see coming and work against.
+
+8. **[ ] The sea wants its own verbs.** Hull, cargo and sea fights shipped,
+   but rowing is still just walking on water. A coastal raiding run — load
+   the knarr, go out for N days, hit places along the coast, come home
+   heavy or not at all — would turn the sea into the game's risk engine
+   and give the plunder economy somewhere to point.
+
+9. **[ ] The long game is untested at scale.** The curve harness stops at
+   day 169; a jarldom needs two winters plus the Thing, so 6.4 shipped
+   with NO harness coverage of the thing it created. A day-500 run over
+   fewer seeds, reporting what actually kills a jarl and whether the
+   escalation keeps up, is the honest follow-through on today's work.
+
+10. **[ ] Seed challenges, and a saga worth showing.** Deterministic RNG
+    plus a copyable saga is most of a challenge mode already. A daily or
+    weekly seed, a compact result code, and a "compare sagas" flow costs
+    little and is the thing that makes anyone talk about the game to
+    anyone else. Meta-progression stays out — the run is the unit.
 
 ## Dead ends — measured, and not to be repeated
 
