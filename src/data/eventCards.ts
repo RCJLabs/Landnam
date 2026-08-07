@@ -1217,4 +1217,386 @@ export const EVENTS: EventDef[] = [
     ],
   },
 
+  // --- Deck expansion, batch three ---
+  //
+  // The dilution question, answered for this batch: since 6.3, raids arrive
+  // by a daily roll off the steading itself, not from this deck — so a bigger
+  // deck no longer waters the raid rate down, only the share of draws that
+  // are weather, sickness and steel. This batch keeps that share: it is
+  // costly or a trade almost throughout, and two of its cards can draw
+  // blood. Measured either side on the honest harness (see balance.test.ts);
+  // the drift is recorded in the roadmap changelog.
+  {
+    id: 'the-ford',
+    title: 'The Ford Is Up',
+    body: 'The river that was ankle-deep on the way out is brown and loud and carrying whole branches. The far bank is right there, and it might as well be another country.',
+    weight: 8,
+    when: [{ c: 'season', any: ['spring', 'autumn'] }, { c: 'nearWater' }],
+    choices: [
+      {
+        label: 'Rope up and cross now',
+        check: { stat: 'might', dc: 12 },
+        success: { text: 'We went over in a chain, shoulder to shoulder against the pull, and lost nothing but our breath.', effects: [{ t: 'morale', n: 3 }] },
+        failure: { text: 'The middle took somebody\'s feet from under them and the rope had to do the rest. The packs drank half the river.', effects: [{ t: 'wound', n: 3, count: 2 }, { t: 'firewood', n: -3 }, { t: 'morale', n: -4 }] },
+      },
+      {
+        label: 'Camp and let it fall',
+        success: { text: 'We sat a day watching the water argue with itself, and crossed the next morning dry.', effects: [{ t: 'food', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-scree',
+    title: 'Loose Ground Above the Path',
+    body: 'The slope over the trail is all broken stone, and some of it has come down recently enough that the scars are still pale. The only other way round is a long one.',
+    weight: 7,
+    when: [{ c: 'terrain', any: ['hills', 'mountains'] }],
+    choices: [
+      {
+        label: 'Read the slope and pick a line',
+        check: { stat: 'wits', dc: 11 },
+        success: { text: 'We went one at a time, quiet as church, and the mountain let us pass.', effects: [{ t: 'morale', n: 2 }] },
+        failure: { text: 'It went while the third of us was under it. Not the big stones, but big enough.', effects: [{ t: 'wound', n: 4 }, { t: 'morale', n: -4 }] },
+      },
+      {
+        label: 'Take the long way round',
+        success: { text: 'We gave the slope its room and paid for it in shoe-leather and daylight.', effects: [{ t: 'food', n: -2 }, { t: 'morale', n: -1 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-ship-grave',
+    title: 'A Keel Under the Grass',
+    body: 'A long mound above the tideline, and the grass grows in the shape of a ship. Whoever they laid in it went into the ground with everything a dead man is owed.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'terrain', any: ['shore'] }, { c: 'dayMin', day: 6 }],
+    choices: [
+      {
+        label: 'Open it for what is in there',
+        success: { text: 'Grave-oak burns as well as any other, and nobody said a word the whole time we carried it. The dead man kept his arm-rings; we could not make ourselves.', effects: [{ t: 'firewood', n: 6 }, { t: 'morale', n: -7 }, { t: 'flag', flag: 'openedShipGrave', n: 1 }] },
+      },
+      {
+        label: 'Leave the dead their boat',
+        success: { text: 'We walked the length of the mound once, said what is said, and left it riding there above the tide.', effects: [{ t: 'morale', n: 3 }] },
+      },
+    ],
+  },
+  {
+    id: 'sea-fog',
+    title: 'The Country Goes Missing',
+    body: 'It came in off the water between one look and the next, and now there is no ridge, no shore, and no sun — only grey, and the sound of everyone breathing.',
+    weight: 7,
+    when: [{ c: 'terrain', any: ['shore', 'ocean'] }],
+    choices: [
+      {
+        label: 'Hold a line by wind and water-sound',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'We kept the sea on the one hand and the slope on the other and came out where we meant to.', effects: [{ t: 'morale', n: 2 }] },
+        failure: { text: 'We walked a long circle and knew it when we found our own morning fire. A day gone into the grey.', effects: [{ t: 'food', n: -4 }, { t: 'morale', n: -4 }] },
+      },
+      {
+        label: 'Sit down where we stand',
+        success: { text: 'We stopped, ate cold, and waited for the world to come back. It did, eventually.', effects: [{ t: 'food', n: -2 }, { t: 'morale', n: -1 }] },
+      },
+    ],
+  },
+  {
+    id: 'adders',
+    title: 'A Nest in the Warm Stones',
+    body: 'The flat rocks above the camp have been holding the sun all day, and they are not empty. Somebody nearly learned that with a hand.',
+    weight: 6,
+    when: [{ c: 'season', any: ['summer'] }, { c: 'terrain', any: ['hills', 'meadow', 'valley'] }],
+    choices: [
+      {
+        label: 'Clear them off with a forked stick',
+        check: { stat: 'craft', dc: 11 },
+        success: { text: 'Slow work and nobody hurried it. The stones were ours by dusk.', effects: [{ t: 'morale', n: 2 }] },
+        failure: { text: 'One came off the stick. The arm went up like a bolster and the owner of it sweated out two bad days.', effects: [{ t: 'wound', n: 4 }, { t: 'morale', n: -3 }] },
+      },
+      {
+        label: 'Move the camp instead',
+        success: { text: 'We shifted everything a bowshot along the slope and let the stones keep their tenants.', effects: [{ t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-bull-seal',
+    title: 'The Strand Has an Owner',
+    body: 'A bull seal the size of a rowing bench has hauled out across the landing, and he has already sent one of us backwards over a thwart. He is not leaving.',
+    weight: 6,
+    when: [{ c: 'terrain', any: ['shore'] }],
+    choices: [
+      {
+        label: 'Take him',
+        check: { stat: 'might', dc: 12 },
+        success: { text: 'It was not quick and it was not pretty, but there is meat and oil in a bull that big to make it worth the bruises.', effects: [{ t: 'food', n: 8 }, { t: 'morale', n: 3 }] },
+        failure: { text: 'He broke somebody\'s forearm against the shingle and went down the strand at his own pace, unhurried and unmarked.', effects: [{ t: 'wound', n: 5 }, { t: 'morale', n: -4 }] },
+      },
+      {
+        label: 'Give him the strand until he tires of it',
+        success: { text: 'We worked around him for a day and a half. He left on his own tide, answering to nobody.', effects: [{ t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'rats-in-the-store',
+    title: 'Something Has Been at the Grain',
+    body: 'Droppings along the wall-foot and a corner of the best sack chewed through. However much is gone already, more goes every night this is not dealt with.',
+    weight: 8,
+    when: [{ c: 'settled' }, { c: 'dayMin', day: 20 }],
+    choices: [
+      {
+        label: 'Turn the whole store out and rebuild it',
+        check: { stat: 'craft', dc: 11 },
+        success: { text: 'Everything came out, the floor went up on stones, and everything went back in. What was lost was lost; nothing more went.', effects: [{ t: 'food', n: -3 }, { t: 'morale', n: 2 }] },
+        failure: { text: 'We turned the store out in a wet week and the damp got what the rats had missed.', effects: [{ t: 'food', n: -8 }, { t: 'morale', n: -4 }] },
+      },
+      {
+        label: 'Smoke the runs and hope',
+        success: { text: 'We burned green wood in the runs and lost less after that. Less is not none.', effects: [{ t: 'firewood', n: -4 }, { t: 'food', n: -4 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-foul-well',
+    title: 'The Water Has Turned',
+    body: 'It comes up with a smell on it and a slick that was not there last week. Somebody drank it anyway, and now everybody is watching them out of the sides of their eyes.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'dayMin', day: 30 }],
+    choices: [
+      {
+        label: 'Dig it out and sink it deeper',
+        check: { stat: 'might', dc: 12 },
+        success: { text: 'Two days in the cold and the dark of it, and the water came back sweet from below the bad layer.', effects: [{ t: 'morale', n: 4 }] },
+        failure: { text: 'The side slumped in on the digging and the well is worse than it was. We are carrying water now.', effects: [{ t: 'wound', n: 3, count: 2 }, { t: 'morale', n: -5 }] },
+      },
+      {
+        label: 'Boil every drop until it clears',
+        success: { text: 'Every pot in the steading on the fire, every day, until the well came round on its own. The woodpile paid for the water.', effects: [{ t: 'firewood', n: -6 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-hay-fire',
+    title: 'Smoke Over the Winter Feed',
+    body: 'Dry weeks, a hot wind, and now there is smoke standing over the stacked feed with nobody near it. It has a hold already, and it is between the stack and the water.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'built', building: 'farmplots' }, { c: 'season', any: ['summer', 'autumn'] }],
+    choices: [
+      {
+        label: 'Beat it out before it crowns',
+        check: { stat: 'might', dc: 12 },
+        success: { text: 'Cloaks, flails, and everyone who could stand. We lost the near end of the stack and kept the rest.', effects: [{ t: 'food', n: -4 }, { t: 'wound', n: 1, count: 2 }] },
+        failure: { text: 'The wind turned into it while we were winning. What the winter was going to eat went up in an afternoon.', effects: [{ t: 'food', n: -11 }, { t: 'wound', n: 2, count: 2 }, { t: 'morale', n: -6 }] },
+      },
+      {
+        label: 'Cut a break and give it the near stack',
+        success: { text: 'We tore up ground on the windward side and let it have what it already held. It died at the bare earth.', effects: [{ t: 'food', n: -7 }, { t: 'morale', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-second-keel',
+    title: 'A Sail Standing In',
+    body: 'One sail, square and patched, standing in past the point on a falling wind. Whoever they are, they will be on the beach by dark, and they have seen the smoke of us.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'dayMin', day: 24 }],
+    choices: [
+      {
+        label: 'Meet them at the tideline and hail them',
+        check: { stat: 'wits', dc: 12 },
+        success: { text: 'Traders, of a rough kind, blown off a coast they liked better. They told us more of the country than they meant to and left on the morning tide.', effects: [{ t: 'reveal', radius: 4 }, { t: 'morale', n: 3 }] },
+        failure: { text: 'They were not traders. The talking stopped when they had counted us.', effects: [{ t: 'battle', difficulty: 0 }] },
+      },
+      {
+        label: 'Stand armed on the strand and be counted',
+        success: { text: 'They read the beach, and what stood on it, and came in anyway.', effects: [{ t: 'battle', difficulty: -1 }] },
+      },
+    ],
+  },
+  {
+    id: 'wolves-at-the-byre',
+    title: 'Tracks Round the Byre',
+    body: 'Every morning the snow around the byre is written over with pad-marks, and every morning they are closer to the door. Last night something tried the hinge-end.',
+    weight: 8,
+    when: [{ c: 'settled' }, { c: 'season', any: ['winter'] }],
+    choices: [
+      {
+        label: 'Sit up in the cold and meet them',
+        success: { text: 'Two nights of nothing, and on the third the dark got up and came at the lantern.', effects: [{ t: 'battle', difficulty: -1 }] },
+      },
+      {
+        label: 'Give the winter its toll',
+        success: { text: 'We kept to the hall and counted the store short in the mornings. Cheaper than blood, everyone said, not quite believing it.', effects: [{ t: 'food', n: -7 }, { t: 'morale', n: -4 }] },
+      },
+    ],
+  },
+  {
+    id: 'snowed-under',
+    title: 'The Door Opens Inward',
+    body: 'It snowed all night without wind, and the drift is at the eaves. The hall is warm, dark, and buried, and the wood is stacked on the far side of the yard.',
+    weight: 8,
+    when: [{ c: 'settled' }, { c: 'season', any: ['winter'] }],
+    choices: [
+      {
+        label: 'Dig the yard out at once',
+        check: { stat: 'might', dc: 11 },
+        success: { text: 'We cut steps up into the daylight and trenched a path to the woodpile before it could set.', effects: [{ t: 'morale', n: 3 }] },
+        failure: { text: 'The digging went slow and wet, and the cold found hands and feet before the wood was reached.', effects: [{ t: 'wound', n: 3, count: 2 }, { t: 'firewood', n: -3 }] },
+      },
+      {
+        label: 'Burn close and wait for the thaw to help',
+        success: { text: 'We fed the fire from the near stack and let the sky decide when we owned a yard again.', effects: [{ t: 'firewood', n: -6 }, { t: 'morale', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-lean-weeks',
+    title: 'The Gap Before the Green',
+    body: 'The winter store is a memory and nothing in the ground is ready. These are the weeks the old ones would not talk about, and now nobody here needs telling why.',
+    weight: 9,
+    when: [{ c: 'settled' }, { c: 'season', any: ['spring'] }, { c: 'foodMax', value: 18 }],
+    choices: [
+      {
+        label: 'Grind bark into the last of the meal',
+        success: { text: 'Birch bark, dried and pounded, and bread that tasted of the woodshed. It filled people without feeding them.', effects: [{ t: 'food', n: 3 }, { t: 'morale', n: -6 }] },
+      },
+      {
+        label: 'Send the best two out beyond the far ridge',
+        check: { stat: 'wits', dc: 13 },
+        success: { text: 'Four days, and they came back bent under a good kill from country nobody had hunted.', effects: [{ t: 'food', n: 9 }, { t: 'morale', n: 4 }] },
+        failure: { text: 'Four days, and they came back with one thin hare and a limp between them.', effects: [{ t: 'wound', n: 3 }, { t: 'morale', n: -5 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-feast-bid',
+    title: 'An Invitation, of a Kind',
+    body: 'A man comes to say his people are holding a feast at the turn of the season, and that we would be welcome. It is friendliness, and it is also a counting of heads, and both sides know both things.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 20 }],
+    choices: [
+      {
+        label: 'Go, and go generous',
+        success: { text: 'We walked over with a full sack and ate a bigger one. Songs were traded, and by the end the counting of heads had stopped mattering to either side.', effects: [{ t: 'food', n: -8 }, { t: 'standing', n: 16, who: 'friendliest' }, { t: 'morale', n: 6 }] },
+      },
+      {
+        label: 'Send thanks and stay home',
+        success: { text: 'The thanks were carried back politely and received the same way, and something that had been warming cooled a little.', effects: [{ t: 'standing', n: -8, who: 'friendliest' }] },
+      },
+    ],
+  },
+  {
+    id: 'the-boundary-walk',
+    title: 'They Are Walking the Bounds',
+    body: 'A dozen of them, walking their boundary the old way, with witnesses. The line they are walking runs closer to our ground than it used to, and they have sent a boy to ask if we will stand witness too.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'anger', min: 10 }],
+    choices: [
+      {
+        label: 'Walk it with them and argue where it matters',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'We walked the whole of it and gave ground nowhere that counted. The line was cut in witness of both peoples, which is worth more than the ground was.', effects: [{ t: 'standing', n: 14, who: 'angriest' }, { t: 'morale', n: 2 }] },
+        failure: { text: 'It came to shouting at the third stone, and the line stands where they walked it, witnessed by their own.', effects: [{ t: 'standing', n: -8, who: 'angriest' }, { t: 'morale', n: -3 }] },
+      },
+      {
+        label: 'Refuse to dignify it',
+        success: { text: 'We stayed home and let them walk. A line walked unanswered has a way of becoming the line.', effects: [{ t: 'standing', n: -10, who: 'angriest' }, { t: 'morale', n: 2 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-wreck-wood',
+    title: 'A Wreck on the Shared Strand',
+    body: 'A ship\'s worth of good timber is coming ashore a plank at a time on the stretch of beach both coasts use, and both coasts have noticed. Wreck-right is a thing people here take seriously.',
+    weight: 6,
+    once: true,
+    when: [{ c: 'settled' }, { c: 'goodwill', min: 10 }, { c: 'terrain', any: ['shore', 'ocean', 'meadow', 'valley'] }],
+    choices: [
+      {
+        label: 'Split the strand and haul our half',
+        success: { text: 'We met at the mid-rock and divided the beach by eye, and both sides hauled till dark within their own ground.', effects: [{ t: 'firewood', n: 8 }, { t: 'standing', n: 8, who: 'friendliest' }] },
+      },
+      {
+        label: 'Work all night and take the whole of it',
+        success: { text: 'By morning there was nothing on the sand but drag-marks. Nobody came to argue. Nobody came at all, for a while.', effects: [{ t: 'firewood', n: 15 }, { t: 'standing', n: -18, who: 'friendliest' }, { t: 'morale', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'black-ice',
+    title: 'Glass on Every Stone',
+    body: 'Rain over frozen ground in the night, and now the whole country is poured glass. Standing still is work; the day\'s walking is somewhere between a joke and a wager.',
+    weight: 7,
+    when: [{ c: 'season', any: ['winter', 'spring'] }],
+    choices: [
+      {
+        label: 'Bind the shoes with cord and go on',
+        check: { stat: 'craft', dc: 11 },
+        success: { text: 'Corded soles and short steps. We moved like old people all day, and everyone arrived whole.', effects: [{ t: 'morale', n: 2 }] },
+        failure: { text: 'The cord wore through on the second slope. One went down hard on the point of an elbow, and we heard it.', effects: [{ t: 'wound', n: 4 }, { t: 'morale', n: -3 }] },
+      },
+      {
+        label: 'Make a cold camp and wait for the melt',
+        success: { text: 'We stood down where we stood and burned wood we had meant to keep, waiting for the world to get its grip back.', effects: [{ t: 'firewood', n: -4 }, { t: 'food', n: -2 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-ember',
+    title: 'Fire in the Bedding',
+    body: 'A spat ember, a straw tick, and half a breath of wind through the smoke-hole. The smell wakes the far end of the hall before the light does.',
+    weight: 7,
+    when: [{ c: 'settled' }, { c: 'season', any: ['autumn', 'winter'] }],
+    choices: [
+      {
+        label: 'Haul water in the dark',
+        check: { stat: 'might', dc: 11 },
+        success: { text: 'A bucket-chain in shirt-sleeves and it was out before it reached the wall-posts. The hall smelled of wet char for a fortnight.', effects: [{ t: 'wound', n: 1 }, { t: 'morale', n: 2 }] },
+        failure: { text: 'The chain fumbled in the dark and the fire got into the roof-end before the water won. Two burned hands and a bad corner of thatch.', effects: [{ t: 'wound', n: 4, count: 2 }, { t: 'morale', n: -6 }] },
+      },
+      {
+        label: 'Smother it with what is nearest',
+        success: { text: 'Cloaks and a winter blanket went onto it and stayed there. Cheap, counted against a hall; dear, counted against a winter\'s bedding.', effects: [{ t: 'morale', n: -4 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-rowing-song',
+    title: 'Somebody Starts the Old Song',
+    body: 'A bad day, a low fire, and out of the quiet somebody starts the rowing song from the crossing — the one with the stroke in it. One voice, then three.',
+    weight: 5,
+    when: [{ c: 'dayMin', day: 15 }, { c: 'moraleMax', value: 50 }],
+    choices: [
+      {
+        label: 'Take it up',
+        success: { text: 'The whole band came in on the stroke like they were pulling one oar. For the length of it, everyone was going home.', effects: [{ t: 'morale', n: 7 }] },
+      },
+      {
+        label: 'Let it die out',
+        success: { text: 'Nobody joined, and the singer let it go after a verse. The quiet afterwards was quieter than before.', effects: [{ t: 'morale', n: -3 }] },
+      },
+    ],
+  },
+  {
+    id: 'the-recount',
+    title: 'The Count Was Wrong',
+    body: 'The autumn count and the store disagree, and the store is the one telling the truth. Somewhere between the tally-sticks and the sacks, food that was written down was never there.',
+    weight: 8,
+    when: [{ c: 'settled' }, { c: 'season', any: ['autumn'] }],
+    choices: [
+      {
+        label: 'Say it plainly at the evening meal',
+        success: { text: 'The real number was said out loud once, to everyone, and the plans changed that night to fit it.', effects: [{ t: 'food', n: -4 }, { t: 'morale', n: -3 }] },
+      },
+      {
+        label: 'Quietly stretch the cooking instead',
+        check: { stat: 'spirit', dc: 12 },
+        success: { text: 'Thinner stews, no announcement. By the time anyone noticed, the gap had mostly been cooked across.', effects: [{ t: 'food', n: -2 }] },
+        failure: { text: 'People can count what is in a bowl. The quiet stretching was noticed, named, and resented more than the shortfall.', effects: [{ t: 'food', n: -4 }, { t: 'morale', n: -7 }] },
+      },
+    ],
+  },
+
 ];

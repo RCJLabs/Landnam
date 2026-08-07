@@ -106,14 +106,21 @@ the broken instrument. It may still hold; it is no longer evidence.
    33 — even by a defender who forms a line, and each loss compounds. That
    is the cliff in the head of this document, and pricing it is a design
    decision, not a bot fix.
-6. **[~] NEXT — Triple the event deck** (39 → 59 → ~100). *Two batches in. The deck's
-   SIZE is a difficulty knob in its own right — twenty cards moved the
-   two-winter figure by six points. An attempt to compensate by lifting the
-   base event chance was ABANDONED: the sweep was non-monotonic, which means
-   the effect is smaller than the harness can resolve. Weighting the harmful
-   cards up is the remaining option, and it needs a bigger sample than the
-   suite can afford to run on every commit.* Cheapest quality per hour in the
-   project: pure data, guarded by the content lint, no engine risk.
+6. **[~] NEXT — Triple the event deck** (39 → 59 → 79 → ~100). *Three batches
+   in. The deck's SIZE is a difficulty knob in its own right — but the teeth
+   of that finding have dulled since 6.3: raids now arrive by a daily roll
+   off the steading, not from the deck, so dilution only waters down the
+   weather, sickness and steel draws. Batch three (79 cards, costly or a
+   trade almost throughout, two of them able to draw blood) moved the
+   honest curve 78/30/7 → 68/22/12 — the winter drop sits exactly at the
+   harness's ±10 resolution and was NOT tuned on; if batch four drifts the
+   same way the pair is real and wants a trim. Raids held jumped 4 of 33 to
+   23 of 39, with three unconfirmed candidate mechanisms, all design-
+   positive: leaner stores shrink the raid's worth-taking, two new steel
+   cards feed the band XP before raids come, and the new neighbour cards
+   let standing pay grievance down — which is what 6.3 said walls and
+   allies were for. One batch (~20 cards) to go.* Cheapest quality per hour
+   in the project: pure data, guarded by the content lint, no engine risk.
 7. **[ ] Authored raid battlefields.** Still none; every fight is procedural
    and they blur. Also the cleanest way to make the palisade read as ground
    rather than as a number.
@@ -268,6 +275,30 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — Twenty cards that bite, measured on the honest instrument** —
+  Batch three, and the deck stands at seventy-nine: a ford in spate, loose
+  stone over the path, a keel-shaped mound above the tideline that nobody
+  felt good about opening, sea-fog that steals a day, adders in the warm
+  stones, a bull seal that owns the landing, rats in the grain, a well gone
+  foul, fire in the winter feed, a patched sail standing in, wolf-tracks at
+  the byre closer every morning, a hall snowed to the eaves, the lean weeks
+  before the green, a feast invitation that is also a counting of heads, a
+  boundary walked with witnesses, wreck-wood on a shared strand, black ice,
+  an ember in the bedding, the rowing song from the crossing, and an autumn
+  count the store contradicts. Costly or a trade almost throughout, per
+  batch two's lesson, and two of them can draw blood.
+  The dilution question every batch must answer has changed shape: since
+  6.3, raids arrive by a daily roll off the steading rather than from this
+  deck, so a bigger deck no longer waters the raid rate down. And this
+  batch is the first measured on the fixed harness: 78/30/7 → 68/22/12.
+  The winter drop sits exactly at the ±10 resolution floor, so by this
+  document's own rule nothing was tuned on it — recorded instead, with the
+  note that a second batch drifting the same way makes it real. Raids held
+  jumped from 4 of 33 to 23 of 39, mechanisms unconfirmed but all three
+  candidates design-positive: leaner stores shrink what a raid thinks the
+  steading is worth, two new fights feed the band XP before raids come, and
+  the neighbour cards give grievance a way to be paid down. 535 tests.
 
 - **2026-08-07 — The bot forms a line, and half the sample turns out to be
   fiction** — Item 5b. The wall rule that works was sitting in
