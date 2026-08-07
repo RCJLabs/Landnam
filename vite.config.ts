@@ -43,6 +43,14 @@ export default defineConfig({
     // Forked child processes tolerate a pegged CPU where worker threads do
     // not, and CI is the environment this config exists to survive.
     pool: 'forks',
+    // The same two cores make the 5s default test budget a lottery: any
+    // test that simulates a few whole battles or a month of days runs in
+    // under a second on a dev box and past 5s with the suite competing for
+    // the runner. Two consecutive CI runs failed GREEN suites on two
+    // DIFFERENT such tests. A minute is not a license for slow tests; it
+    // is the same test on slower hardware. The truly long harnesses still
+    // carry their own explicit, larger budgets.
+    testTimeout: 60_000,
   },
   build: {
     rollupOptions: { input: 'app.html' },
