@@ -26,10 +26,10 @@ export interface UiState {
   colonyTab: ColonyTab;
   /** The chart overlay. A view of the save, not part of it. */
   mapOpen: boolean;
-  /** The memorial, opened from the title screen. */
-  wallOpen: boolean;
   /** The how-to-play book — reachable from the title and the saga. */
   guideOpen: boolean;
+  /** The settings card. Lives in its own pinned slot, like the mute. */
+  settingsOpen: boolean;
   /** The day's-work sheet behind the Act button. */
   actOpen: boolean;
   /** The send-out card: who is ticked, and what for. */
@@ -49,8 +49,8 @@ export function freshUi(): UiState {
     picked: null,
     colonyTab: 'work',
     mapOpen: false,
-    wallOpen: false,
     guideOpen: false,
+    settingsOpen: false,
     actOpen: false,
     launchOpen: false,
     launchPicked: new Set(),
@@ -75,8 +75,8 @@ export function resetForRun(ui: UiState): void {
   ui.picked = fresh.picked;
   ui.colonyTab = fresh.colonyTab;
   ui.mapOpen = fresh.mapOpen;
-  ui.wallOpen = fresh.wallOpen;
   ui.guideOpen = fresh.guideOpen;
+  ui.settingsOpen = fresh.settingsOpen;
   ui.actOpen = fresh.actOpen;
   ui.launchOpen = fresh.launchOpen;
   ui.launchPicked = fresh.launchPicked;

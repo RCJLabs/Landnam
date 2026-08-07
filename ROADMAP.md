@@ -414,6 +414,30 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — A place for the switches** — Settings, and everything that
+  had been waiting for somewhere to live. A gear sits pinned under the
+  horn — outside the mode chrome for the same reason the horn is, so it is
+  reachable on the title screen and in all three modes — and opens one
+  card: the sound (the same preference the horn flips), the motion, the
+  seed, and the two links that had been crowding the title screen.
+  Motion is the new capability: the game has honoured the device's
+  reduced-motion setting since 5.3, but that is a switch buried in an OS
+  menu, and somebody who wants THIS game's screen still should not have
+  to still their whole phone. "Kept still" lives beside the mute in the
+  versioned preference store and puts a class on the root that the same
+  CSS rules read.
+  The seed is the other one: it has been the shareable name of a run
+  since 4.5, and it was invisible from inside the run. It now sits in
+  settings with copy-on-tap.
+  The teaching reset and the memorial moved off the title screen into the
+  card — and the memorial is reachable MID-RUN for the first time, opening
+  in the settings slot and coming back. The title screen ends the day
+  holding five things instead of seven.
+  Driven in a browser: the gear opens on the title and in a run, the
+  motion toggle flips the root class and survives a reload, the sound row
+  flips the horn, the seed shows in-run and not on the title, and Back
+  closes. 583 tests. Published.
+
 - **2026-08-07 — The game finally says what it is for** — The tutorial,
   diagnosed before it was built: 5.2's nine lessons teach mechanics the
   moment they matter, but not one of them ever stated the GOAL — and

@@ -1305,6 +1305,15 @@ button.relearn {
   }
 }
 
+/* The same stillness, chosen in the game's own settings rather than the
+   device's. src/motion.ts puts the class on the root. */
+:root.still .party-token,
+:root.still .overlay > .card,
+:root.still .stat.bumped .stat-value {
+  transition: none;
+  animation: none;
+}
+
 /* --- Who bears arms, and how full the hall is --- */
 
 .crew-bond {
@@ -1347,4 +1356,57 @@ button.relearn {
 
 .guide-body {
   margin: 4px 0 8px;
+}
+
+/* --- Settings --- */
+
+/* The gear, pinned under the horn: reachable in every mode, like the mute. */
+.menu-slot {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 114px);
+  right: 8px;
+  z-index: 40;
+}
+
+button.gear {
+  width: var(--tap);
+  height: var(--tap);
+  min-height: var(--tap);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(29, 26, 20, 0.82);
+}
+
+.gear-glyph {
+  width: 22px;
+  height: 22px;
+  stroke: var(--parchment-dim);
+  fill: none;
+  stroke-width: 1.8;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 9px;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.settings-name {
+  color: var(--parchment);
+}
+
+.settings-value {
+  color: var(--gold);
+  font-size: 13px;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -24,7 +24,8 @@ import {
   renderNeeds,
   renderRoom,
 } from './render/colonyUi';
-import { renderGuide, renderLesson, renderTitle, renderWall } from './render/cards';
+import { renderGuide, renderLesson, renderSettings, renderTitle, renderWall } from './render/cards';
+import { applyMotionPref, motionPref, setMotionPref } from './motion';
 import { deedsFor } from './render/deeds';
 import {
   renderActionBar,
@@ -96,6 +97,95 @@ function paintMute(): void {
         play('tap');
         if (state) setAmbience(ambienceFor(state));
       }
+    }),
+  );
+}
+
+/**
+ * The settings, pinned beside the mute and rendered outside the mode chrome
+ * for the same reason the mute is: they have to be reachable on the title
+ * screen and in all three modes, and they must survive every replaceChildren
+ * on #app.
+ */
+const settingsSlot = el('div', { class: 'settings-slot' });
+const menuSlot = el('div', { class: 'menu-slot' });
+
+function paintGear(): void {
+  const gear = button('', () => {
+    ui.settingsOpen = true;
+    paintSettingsCard();
+  }, { class: 'gear', title: 'Settings', 'aria-label': 'Settings' });
+  gear.append(gearGlyph());
+  menuSlot.replaceChildren(gear);
+}
+
+function gearGlyph(): SVGElement {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', 'gear-glyph');
+  svg.setAttribute('aria-hidden', 'true');
+  const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  ring.setAttribute('cx', '12');
+  ring.setAttribute('cy', '12');
+  ring.setAttribute('r', '4');
+  svg.append(ring);
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (Math.PI / 4) * i;
+    const spoke = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    spoke.setAttribute('x1', `${12 + Math.cos(angle) * 6.5}`);
+    spoke.setAttribute('y1', `${12 + Math.sin(angle) * 6.5}`);
+    spoke.setAttribute('x2', `${12 + Math.cos(angle) * 9.5}`);
+    spoke.setAttribute('y2', `${12 + Math.sin(angle) * 9.5}`);
+    svg.append(spoke);
+  }
+  return svg;
+}
+
+function paintSettingsCard(): void {
+  if (!ui.settingsOpen) {
+    settingsSlot.replaceChildren();
+    return;
+  }
+  settingsSlot.replaceChildren(
+    renderSettings({
+      muted: isMuted(),
+      onToggleSound: () => {
+        wake();
+        const nowMuted = toggleMute();
+        paintMute();
+        if (!nowMuted) {
+          play('tap');
+          if (state) setAmbience(ambienceFor(state));
+        }
+        paintSettingsCard();
+      },
+      motionStill: motionPref() === 'still',
+      onToggleMotion: () => {
+        setMotionPref(motionPref() === 'still' ? 'system' : 'still');
+        paintSettingsCard();
+      },
+      ...(state ? { seed: state.seed } : {}),
+      ...(taught().length > 0
+        ? {
+            onRelearn: () => {
+              forgetTeaching();
+              paintSettingsCard();
+            },
+          }
+        : {}),
+      ...(fallen().length > 0
+        ? {
+            onWall: () => {
+              // The memorial opens IN the settings slot and comes back to
+              // the settings, so it is reachable mid-run for the first time.
+              settingsSlot.replaceChildren(renderWall(fallen(), paintSettingsCard));
+            },
+          }
+        : {}),
+      onClose: () => {
+        ui.settingsOpen = false;
+        paintSettingsCard();
+      },
     }),
   );
 }
@@ -226,15 +316,6 @@ function showTitle(): void {
   travelView = null;
   air = null;
   hushAmbience();
-  if (ui.wallOpen) {
-    app!.replaceChildren(
-      renderWall(fallen(), () => {
-        ui.wallOpen = false;
-        showTitle();
-      }),
-    );
-    return;
-  }
   if (ui.guideOpen) {
     app!.replaceChildren(
       renderGuide(() => {
@@ -245,30 +326,13 @@ function showTitle(): void {
     return;
   }
 
-  const beenTaught = taught().length > 0;
-  const anyDead = fallen().length > 0;
+  // The teaching reset and the memorial live in Settings now — the pinned
+  // gear reaches them from here and from every mode.
   app!.replaceChildren(
-    renderTitle(
-      hasSave(),
-      continueRun,
-      (seed) => startRun(seed),
-      beenTaught
-        ? () => {
-            forgetTeaching();
-            showTitle();
-          }
-        : undefined,
-      anyDead
-        ? () => {
-            ui.wallOpen = true;
-            showTitle();
-          }
-        : undefined,
-      () => {
-        ui.guideOpen = true;
-        showTitle();
-      },
-    ),
+    renderTitle(hasSave(), continueRun, (seed) => startRun(seed), undefined, undefined, () => {
+      ui.guideOpen = true;
+      showTitle();
+    }),
   );
 }
 
@@ -447,7 +511,10 @@ function render(): void {
 }
 
 paintMute();
-document.body.append(muteSlot);
+document.body.append(muteSlot, menuSlot, settingsSlot);
+paintGear();
+// The stillness choice has to be on the root before anything animates.
+applyMotionPref();
 armAudio();
 
 // Console levers for testing. See src/debug.ts — they go through the same

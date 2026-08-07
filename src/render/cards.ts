@@ -397,6 +397,69 @@ export function renderSagaBook(
   return el('div', { class: 'overlay' }, [card]);
 }
 
+export interface SettingsOptions {
+  muted: boolean;
+  onToggleSound: () => void;
+  motionStill: boolean;
+  onToggleMotion: () => void;
+  /** The current run's seed, when a run exists — the shareable thing. */
+  seed?: string;
+  /** Present only for a player who has been taught something. */
+  onRelearn?: () => void;
+  /** Present only once somebody has died, ever. */
+  onWall?: () => void;
+  onClose: () => void;
+}
+
+/**
+ * The settings, gathered in one place: the sound, the motion, the seed,
+ * and the two links that used to crowd the title screen. Every row states
+ * its current value in words — a bare toggle with no label is a guess.
+ */
+export function renderSettings(opts: SettingsOptions): HTMLElement {
+  const toggleRow = (label: string, value: string, onTap: () => void): HTMLElement => {
+    const control = button('', onTap, { class: 'settings-row' });
+    control.append(
+      el('span', { class: 'settings-name' }, [label]),
+      el('span', { class: 'settings-value' }, [value]),
+    );
+    return control;
+  };
+
+  const card = el('div', { class: 'card settings-card' }, [
+    el('h2', {}, ['Settings']),
+    toggleRow('Sound', opts.muted ? 'Off' : 'On', opts.onToggleSound),
+    toggleRow(
+      'Motion',
+      opts.motionStill ? 'Kept still' : 'With the device',
+      opts.onToggleMotion,
+    ),
+  ]);
+
+  if (opts.seed) {
+    const seed = opts.seed;
+    const copy = toggleRow('Seed of this saga', seed, () => {
+      void navigator.clipboard?.writeText(seed).then(() => {
+        copy.querySelector('.settings-value')!.textContent = 'Copied';
+      });
+    });
+    card.append(copy);
+  }
+
+  if (opts.onRelearn) {
+    card.append(button('Show the guidance again', opts.onRelearn, { class: 'relearn' }));
+  }
+  if (opts.onWall) {
+    card.append(button('Those who did not come back', opts.onWall, { class: 'relearn wall-link' }));
+  }
+
+  card.append(
+    el('p', { class: 'build-stamp' }, [`build ${__BUILD__}`]),
+    button('Back', opts.onClose, { class: 'primary wide' }),
+  );
+  return el('div', { class: 'overlay' }, [card]);
+}
+
 /**
  * How to play, whole. The lessons stay event-shaped and state-triggered;
  * this is the reference for whoever wants the shape all at once — chosen,
