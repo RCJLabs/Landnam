@@ -517,6 +517,37 @@ export function renderWarband(state: GameState, close: () => void): HTMLElement 
   return el('div', { class: 'overlay' }, [card]);
 }
 
+/**
+ * The proclamation. The one card in the game that offers to END the game,
+ * and does not insist: 6.4's whole argument is that an endgame reached is
+ * not an endgame finished. It names what ruling on will cost, because a
+ * choice offered without its price is not a choice.
+ */
+export function renderProclamation(
+  state: GameState,
+  onRuleOn: () => void,
+  onClose: () => void,
+): HTMLElement {
+  const jarl = state.jarl!;
+  return el('div', { class: 'overlay' }, [
+    el('div', { class: 'card' }, [
+      el('h2', { class: 'good' }, ['The Thing Carried It']),
+      el('p', { class: 'event-body' }, [
+        `${jarl.name} is jarl of ${state.settlement?.name ?? 'this coast'}, and there was nobody ` +
+          'here at all when the keel first touched the sand.',
+      ]),
+      el('p', { class: 'event-body' }, [
+        'The saga can be closed on that. Or it can go on — and it will not go ' +
+          'on quietly. Every man on this coast now knows exactly whose hall is ' +
+          'the richest one, and they will come in greater numbers and better ' +
+          'armed than they ever came for a nobody.',
+      ]),
+      button('Rule on', onRuleOn, { class: 'primary wide' }),
+      button('Close the saga here', onClose, { class: 'action secondary wide' }),
+    ]),
+  ]);
+}
+
 export function renderRunEnd(state: GameState, onRestart: () => void): HTMLElement {
   const end = state.end!;
   const survived = end.cause === 'survived';

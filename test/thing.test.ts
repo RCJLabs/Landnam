@@ -23,7 +23,7 @@ import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
-import { nextThaw, wintersStood, YEAR_LENGTH } from '../src/sim/calendar';
+import { nextThaw, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from '../src/sim/calendar';
 import { checkOdds } from '../src/sim/events';
 import { shiftStanding, seeNeighbours } from '../src/sim/neighbours';
 import { forecast, markVisible } from '../src/sim/winter';
@@ -33,12 +33,17 @@ import {
   canCallThing,
   hasSpeakers,
   houseAtPeace,
+  layDownRule,
   thingCooldown,
   thingNeeds,
   thingOdds,
   thingReady,
   thingStanding,
+  yearsRuled,
 } from '../src/sim/thing';
+import { JARL_WORD, wordBump, wordOf } from '../src/sim/word';
+import { foeCapFor, raiderCap, rollFoes } from '../src/sim/battle';
+import { stream } from '../src/rng';
 import {
   FEAST_FOOD,
   LONG_LIFE_WINTERS,
@@ -57,22 +62,32 @@ import type { JobId } from '../src/data/jobs';
 
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
+/**
+ * The best ground within `radius` of the landing — and if that stretch of
+ * coast has none, the best anywhere. The widening is not a nicety: the
+ * 52x36 world put whole seeds' worth of settleable ground outside a
+ * fourteen-hex walk, and a fixture that gave up there failed on the seed
+ * rather than on the thing under test. Third fixture to learn this.
+ */
 function settled(seed: string, radius = 14): GameState {
   const state = structuredClone(newGame(seed));
   for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
   const landing = state.world.landing;
   let best: GameState['party']['at'] | null = null;
   let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    if (distance(at, landing) > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
+  for (const reach of [radius, Infinity]) {
+    for (const k of Object.keys(state.world.tiles)) {
+      const at = fromKey(k);
+      if (distance(at, landing) > reach) continue;
+      state.party.at = at;
+      if (!canFound(state, at)) continue;
+      const report = siteReport(state.world, at)!;
+      if (report.total > bestScore) {
+        bestScore = report.total;
+        best = at;
+      }
     }
+    if (best) break;
   }
   expect(best, `${seed}: nothing foundable`).toBeTruthy();
   state.party.at = best!;
@@ -307,7 +322,7 @@ describe('THE BAR — the odds are the odds', () => {
 });
 
 describe('holding one', () => {
-  it('carrying it ends the run in a jarldom, and the saga says so', () => {
+  it('carrying it grants the rule and does NOT end the run', () => {
     // The claim is capped below certainty by design, so find the seed-day on
     // which this band's roll actually carries rather than rigging the roll.
     let state = worthy('carried');
@@ -327,15 +342,88 @@ describe('holding one', () => {
     expect(result.proclaimed, 'never carried in forty attempts').toBe(true);
     state = attempt;
     expect(state.party.food).toBe(before - FEAST_FOOD);
+
+    // 6.4: the Thing carrying is no longer where the run stops. The rule is
+    // granted, the game goes on, and the closing belongs to the player.
+    expect(state.end).toBeUndefined();
+    expect(state.jarl?.name).toBe(result.jarl);
+    expect(state.jarl?.since).toBe(state.day);
+    expect(passDay(state)).toBe(true);
+    // And there is no second jarldom to win.
+    expect(canCallThing(state)).toBe(false);
+
+    // Closing it is one call, and it writes the ending the Thing used to.
+    expect(layDownRule(state)).toBe(true);
     expect(state.end?.cause).toBe('jarl');
     expect(state.end!.title).toContain(state.settlement!.name);
-    expect(result.jarl).toBeTruthy();
     expect(state.end!.title).toContain(result.jarl!);
+    // Once closed, it cannot be closed again.
+    expect(layDownRule(state)).toBe(false);
 
     const saga = sagaText(composeSaga(state));
     expect(saga).toContain('Jarl');
     expect(saga).toMatch(/weapons went up|carried it|appealed to/i);
     expect(saga).not.toMatch(/[{}]/);
+  });
+
+  it('the rule counts its winters, and the ending says how many', () => {
+    const state = worthy('ruled-years');
+    state.jarl = { name: 'Ketil the Quiet', since: state.day };
+    expect(yearsRuled(state)).toBe(0);
+
+    state.day += SEASON_LENGTH * 4 * 2;
+    expect(yearsRuled(state)).toBe(2);
+    expect(layDownRule(state)).toBe(true);
+    expect(state.end!.lines.join(' ')).toContain('2 winters were held');
+  });
+
+  it('ruling on makes the coast worse, which is the price of the choice', () => {
+    const quiet = worthy('word-quiet');
+    const ruling = structuredClone(quiet);
+    ruling.jarl = { name: 'Ketil the Quiet', since: ruling.day };
+
+    // A jarl is the loudest name on the coast: harder open-field fights...
+    expect(wordOf(ruling)).toBe(wordOf(quiet) + JARL_WORD);
+    expect(wordBump(ruling)).toBeGreaterThan(wordBump(quiet));
+    // ...and more men willing to cross the country for the richest hall.
+    expect(raiderCap(ruling)).toBeGreaterThan(raiderCap(quiet));
+
+    // And it BINDS. Escalation routed through a knob that a Math.min
+    // downstream throws away is this project's oldest bug; the rule is that
+    // no escalation ships without the fight it produces being counted.
+    let quietHard = 0;
+    let ruledHard = 0;
+    for (let i = 0; i < 40; i += 1) {
+      const seed = stream('jarl-binds', 'combat').derive(`roll:${i}`);
+      const a = rollFoes(seed, 6, 1, false, foeCapFor(quiet), wordOf(quiet));
+      const b = rollFoes(
+        stream('jarl-binds', 'combat').derive(`roll:${i}`),
+        6, 1, false, foeCapFor(ruling), wordOf(ruling),
+      );
+      quietHard += a.filter((f) => f.trait === 'foe:huscarl').length;
+      ruledHard += b.filter((f) => f.trait === 'foe:huscarl').length;
+    }
+    // eslint-disable-next-line no-console
+    console.log(`huscarls over 40 open-field rolls — nobody: ${quietHard}, a jarl: ${ruledHard}`);
+    expect(ruledHard).toBeGreaterThan(quietHard);
+  });
+
+  it('through the action path: rule on, then lay it down when ready', () => {
+    const state = worthy('rule-path');
+    state.jarl = { name: 'Ketil the Quiet', since: state.day };
+
+    const ruling = apply(state, { type: 'RULE_ON' });
+    expect(ruling).not.toBe(state);
+    expect(ruling.flags['ruleTaken']).toBe(state.day);
+    expect(ruling.end).toBeUndefined();
+    // Answering twice is a refusal, not a second answer.
+    expect(apply(ruling, { type: 'RULE_ON' })).toBe(ruling);
+
+    const closed = apply(ruling, { type: 'LAY_DOWN_RULE' });
+    expect(closed.end?.cause).toBe('jarl');
+    // A band that never won one has nothing to lay down.
+    const nobody = worthy('rule-nobody');
+    expect(apply(nobody, { type: 'LAY_DOWN_RULE' })).toBe(nobody);
   });
 
   it('losing it costs the feast, and it cannot be pressed again at once', () => {

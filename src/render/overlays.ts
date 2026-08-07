@@ -21,6 +21,7 @@ import {
   renderEventCard,
   renderFounding,
   renderLaunch,
+  renderProclamation,
   renderRunEnd,
   renderGuide,
   renderSagaBook,
@@ -47,6 +48,16 @@ export function travelOverlay(
 
   if (state.end) {
     return renderRunEnd(state, hooks.onRunOver);
+  }
+
+  // Proclaimed and not yet answered. Above everything the player opened,
+  // because it is the game asking whether there is any more game.
+  if (state.jarl && state.flags['ruleTaken'] === undefined) {
+    return renderProclamation(
+      state,
+      () => dispatch({ type: 'RULE_ON' }),
+      () => dispatch({ type: 'LAY_DOWN_RULE' }),
+    );
   }
 
   if (ui.launchOpen && state.settlement && !state.expedition) {

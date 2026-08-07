@@ -252,12 +252,17 @@ measuring bot has never once used the offensive half.
    huscarl, carrying the grudge history — who can be felled (pressure
    breaks, saga names him) or keep coming back (he remembers too). Rides
    the Person model and the feud system that already exist.
-7. **[ ] The build queue must not end.** After the búð there is nothing to
+7. **[x] The build queue must not end.** Done: three late-tier buildings
+   (storehouse, watchtower, hof) and one repeatable búð, gated on crowding
+   after the unconditional version was measured as a timber sink. After the búð there is nothing to
    spend a surplus on, and surplus labour is the diagnosed root of the flat
    material game. Late buildings as data: wall tiers (the authored fields
    read them), a beacon for the watch, a feasting-hall tier the Thing
    reads. Spending surplus is the player's answer to escalation (item 3).
-8. **[ ] 6.4, shaped as escalation.** Remove the five-winter guillotine;
+8. **[x] 6.4, shaped as escalation.** Done: the Thing grants the rule and
+   the run goes on; word and the raider cap both count the jarldom; the
+   saga closes when the player says it closes. Original note:
+   Remove the five-winter guillotine;
    after the Thing the jarldom is a bigger prize on the same coast — item
    3's scalar keeps climbing, and holding what you claimed becomes the
    long game. The Thing stops being the last page.
@@ -402,9 +407,11 @@ because by year two it has more labour than uses for it.
   the deck happens to offer it. The curve still has not moved — bands hold
   the raids. What a LOST raid costs is the remaining lever: it takes stores,
   and stores are the one thing a settled band always replaces.*
-- [ ] **6.4 No last winter** — Remove the five-winter forced ending; a run
-  goes as long as it is held. The Thing becomes a milestone in a saga rather
-  than its final page.
+- [x] **6.4 No last winter** — Done. A run goes as long as it is held: the
+  Thing grants a jarldom instead of writing an ending, and the closing is a
+  deed the player takes when they are ready. The rule costs what it is
+  worth — +3 word and +2 raiders, both proven to bind rather than vanish
+  into a clamp. The Thing is a milestone in a saga now, not its final page.
 
 ---
 
@@ -413,6 +420,28 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — No last winter: the jarldom you can go on living in** —
+  Item 8, and roadmap 6.4 with it. The Thing carrying no longer writes an
+  ending. It grants the rule — `state.jarl`, a name and the day it carried
+  — and the game keeps running. The proclamation card offers both answers
+  and names the price of the second one: rule on, or close the saga here.
+  Whichever is chosen, the closing stays one tap away forever, as a deed
+  on the Act sheet, because a run with no ending at all is worse than one
+  that ends too early.
+  Ruling costs what it is worth. A jarl's hall is the richest thing on the
+  coast and everyone knows where it is: +3 to word, +2 to the raider cap.
+  Both were checked against this project's oldest bug rather than assumed
+  — a knob that a downstream `Math.min` throws away is escalation that
+  never happened — so the test rolls forty open-field fights each way and
+  counts what actually turns up: 39 huscarls for a nobody, 72 for a jarl.
+  The top bar carries the rule in gold ("Ketil the Quiet, jarl — 1 winter
+  held"), the Call a Thing deed disappears once won, and the ending counts
+  the winters held after the proclamation rather than before it.
+  SAVE_VERSION 23; the whole flow driven in the built page. Also widened
+  thing.test's settled fixture to fall back to a world-wide search — the
+  third fixture the 52x36 world has broken this way, and the last one that
+  should have to learn it.
 
 - **2026-08-07 — The build queue stops being a checklist** — Item 7. Three
   late-tier buildings for a steading that has beaten its first winter: the

@@ -82,7 +82,40 @@ export function thingCooldown(state: GameState): number {
 
 export function canCallThing(state: GameState): boolean {
   if (state.end || state.event || state.battle) return false;
+  // A coast has one jarl. Once the Thing has carried there is nothing left
+  // to put to it — what remains is holding what it granted.
+  if (state.jarl) return false;
   return thingReady(state) && thingCooldown(state) === 0;
+}
+
+/** Winters held since the Thing carried. What the rule is actually worth. */
+export function yearsRuled(state: GameState): number {
+  if (!state.jarl) return 0;
+  return Math.max(0, wintersStood(state.day) - wintersStood(state.jarl.since));
+}
+
+/**
+ * Lays the rule down and closes the saga: the ending the proclamation used
+ * to force. It is a CHOICE now, available from the deeds sheet for as long
+ * as the jarldom stands — which is the whole of 6.4. An endgame that ends
+ * the moment it is reached is a trophy; one you can go on living in is a
+ * game, and the player is the only one who should decide which they want.
+ */
+export function layDownRule(state: GameState): boolean {
+  if (!state.jarl || state.end || state.battle || state.event) return false;
+  const years = yearsRuled(state);
+  state.end = {
+    cause: 'jarl',
+    title: `${state.jarl.name}, Jarl of ${state.settlement?.name ?? 'that coast'}`,
+    lines: [
+      `On day ${state.jarl.since} the Thing carried it, and there was a jarl on that coast where there had been nobody.`,
+      years > 0
+        ? `${years} winters were held after it, and every one of them was held on purpose.`
+        : `${wintersStood(state.day)} winters, and a hall full of people who came when they were called.`,
+    ],
+  };
+  chronicle(state, `${state.jarl.name} laid the rule down, and the saga was closed.`, 'saga');
+  return true;
 }
 
 /**
@@ -145,14 +178,11 @@ export function callThing(state: GameState): ThingResult | null {
   if (proclaimed) {
     const text = rng.derive('carried').pick(PROCLAIMED).replace(/\{name\}/g, name);
     chronicle(state, text, 'saga');
-    state.end = {
-      cause: 'jarl',
-      title: `${name}, Jarl of ${state.settlement!.name}`,
-      lines: [
-        `On day ${state.day} the Thing carried it, and there was a jarl on that coast where there had been nobody.`,
-        `${wintersStood(state.day)} winters, and a hall full of people who came when they were called.`,
-      ],
-    };
+    // Proclaimed, and the run goes ON. Where this used to write the ending
+    // and stop the game, it now grants the rule and leaves the closing to
+    // the player — see layDownRule. A coast that has just been told who
+    // lives on it starts behaving accordingly (sim/word.ts).
+    state.jarl = { name, since: state.day };
     return { proclaimed: true, text, jarl: name };
   }
 

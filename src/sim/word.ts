@@ -18,9 +18,22 @@ import type { GameState } from '../state/types';
 import type { FoeArchetype } from '../data/foes';
 import { wintersStood } from './calendar';
 
-/** How much the coast has heard: years stood, and deeds chosen. */
+/**
+ * What being proclaimed is worth to a band's fame, before a single winter
+ * of ruling has passed. A jarldom is the loudest thing that can happen to
+ * a name on this coast, and 6.4's endless rule would be a victory lap
+ * without it: the men who come looking after the Thing have to be worse
+ * than the men who came before it.
+ */
+export const JARL_WORD = 3;
+
+/** How much the coast has heard: years stood, deeds chosen, and rank. */
 export function wordOf(state: GameState): number {
-  return wintersStood(state.day) + state.tally.sackings * 0.5;
+  return (
+    wintersStood(state.day) +
+    state.tally.sackings * 0.5 +
+    (state.jarl ? JARL_WORD : 0)
+  );
 }
 
 /**

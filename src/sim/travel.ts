@@ -18,7 +18,7 @@ import { mendHull } from './sea';
 import { bonus } from './lore';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
-import { callThing } from './thing';
+import { callThing, layDownRule } from './thing';
 import { THING_OPENING } from '../data/thing';
 import { passDay } from './upkeep';
 
@@ -32,7 +32,9 @@ export type TravelAction =
   | { type: 'BARTER'; id: string }
   | { type: 'FALL_ON'; id: string }
   | { type: 'SACK_PLACE'; id: string }
-  | { type: 'CALL_THING' };
+  | { type: 'CALL_THING' }
+  | { type: 'RULE_ON' }
+  | { type: 'LAY_DOWN_RULE' };
 
 /** Effort to row a hex of coastal water. The knarr is faster than legs. */
 export const SEA_EFFORT = 2;
@@ -437,9 +439,10 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       advance(state, 3);
       if (state.end) return state;
       reveal(state);
-      // A claim carried ends the run, and the ending screen is the payoff. A
-      // claim refused has to be READ, or three days and a feast vanish into
-      // the log with nothing on screen to show for them.
+      // A claim carried grants the rule and leaves the run running — the
+      // proclamation card is what asks whether to close the saga here (see
+      // render/cards.ts). A claim refused has to be READ, or three days and
+      // a feast vanish into the log with nothing on screen to show for them.
       if (!result.proclaimed && !state.event) {
         state.event = {
           id: 'thing',
@@ -449,6 +452,20 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
           outcome: { text: result.text, good: false },
         };
       }
+      return state;
+    }
+
+    // The two answers to the proclamation. Ruling on costs no day and only
+    // marks the card as read; laying it down writes the ending the Thing
+    // used to write for you.
+    case 'RULE_ON': {
+      if (!state.jarl || state.flags['ruleTaken'] !== undefined) return prev;
+      state.flags['ruleTaken'] = state.day;
+      return state;
+    }
+
+    case 'LAY_DOWN_RULE': {
+      if (!layDownRule(state)) return prev;
       return state;
     }
 

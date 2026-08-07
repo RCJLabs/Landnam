@@ -148,7 +148,9 @@ export const MAX_RAIDERS_FAMED = 14;
 export function raiderCap(state: GameState): number {
   const home = state.settlement;
   if (!home) return MAX_RAIDERS;
-  const fame = wintersStood(state.day) + home.built.length * 0.5;
+  // A jarl's hall is the richest thing on the coast and everybody knows
+  // where it is. Ruling on has to COST, or 6.4 is a victory lap.
+  const fame = wintersStood(state.day) + home.built.length * 0.5 + (state.jarl ? 2 : 0);
   return Math.min(MAX_RAIDERS_FAMED, MAX_RAIDERS + Math.floor(fame));
 }
 

@@ -17,7 +17,7 @@ import {
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast, markVisible } from '../sim/winter';
 import { wintersStood } from '../sim/calendar';
-import { thingNeeds, thingOdds } from '../sim/thing';
+import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
 import { placeHere } from '../sim/places';
@@ -61,6 +61,19 @@ export function renderTopBar(state: GameState): HTMLElement {
     stat('Wood', `${wood}`, nightsOfWood <= 2, moved.wood),
     stat('Heart', `${heart}`, state.party.morale < 30, moved.heart),
   ]);
+
+  // The rule, counted in the only currency it is measured in. Without this
+  // the jarldom is a line in the log and nothing on the screen.
+  if (state.jarl) {
+    const years = yearsRuled(state);
+    bar.append(
+      el('div', { class: 'jarl-band' }, [
+        years > 0
+          ? `${state.jarl.name}, jarl — ${years} ${years === 1 ? 'winter' : 'winters'} held`
+          : `${state.jarl.name}, jarl of this coast`,
+      ]),
+    );
+  }
 
   if (untilWinter > 0 && untilWinter <= 16) {
     bar.append(el('div', { class: 'winter-warning' }, [`Winter in ${untilWinter} days`]));

@@ -1509,3 +1509,16 @@ button.warcry:disabled {
   border-color: var(--edge);
   color: var(--parchment-dim);
 }
+
+/* The rule, in the top bar. Gold rather than blood: the winter warning is a
+   threat and this is a standing. */
+.jarl-band {
+  align-self: center;
+  margin-left: auto;
+  padding: 3px 9px;
+  border: 1px solid var(--gold);
+  border-radius: 5px;
+  color: var(--gold);
+  font-size: 12px;
+  white-space: nowrap;
+}

@@ -416,6 +416,21 @@ export interface RunEnd {
   lines: string[];
 }
 
+/**
+ * The rule, once the Thing has carried it.
+ *
+ * Being proclaimed does not end the run any more — it changes what the run
+ * IS. The saga closes when the player says it closes, and every winter held
+ * after the proclamation is a winter a jarl held, against a coast that is
+ * now certain who lives here.
+ */
+export interface Jarldom {
+  /** Who the Thing named. The saga remembers them by it. */
+  name: string;
+  /** The day it carried. */
+  since: number;
+}
+
 // --- Root ---
 
 export interface GameState {
@@ -448,6 +463,8 @@ export interface GameState {
   /** What the band did, for the saga to read back. */
   tally: Tally;
   end?: RunEnd;
+  /** Set once the Thing has carried and the band rules the coast. */
+  jarl?: Jarldom;
   /** Monotonic counter making generated ids deterministic. */
   nextId: number;
 }

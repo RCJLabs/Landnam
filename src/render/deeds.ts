@@ -17,7 +17,7 @@ import { placeKind } from '../data/places';
 import { BARTER_FOOD } from '../data/clans';
 import { FEAST_FOOD } from '../data/thing';
 import { wintersStood } from '../sim/calendar';
-import { thingCooldown, thingNeeds, thingOdds } from '../sim/thing';
+import { thingCooldown, thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { button, el } from './svg';
 
 export interface Deed {
@@ -159,10 +159,27 @@ export function deedsFor(
     });
   }
 
+  // The off-ramp, for as long as the rule stands. A jarldom you cannot lay
+  // down would be a run with no ending at all, which is worse than one that
+  // ends too early — so the closing stays one tap away, forever.
+  if (state.jarl) {
+    const years = yearsRuled(state);
+    deeds.push({
+      id: 'laydown',
+      label: 'Lay down the rule',
+      blurb:
+        years > 0
+          ? `Close the saga here, ${years} winters into the jarldom. Nothing comes after it.`
+          : 'Close the saga here, with the rule newly granted. Nothing comes after it.',
+      tone: 'weighty',
+      run: () => dispatch({ type: 'LAY_DOWN_RULE' }),
+    });
+  }
+
   // The endgame. Offered from the first thaw onward so the player knows the
   // shape of what they are working toward, and blocked with the reason until
-  // the whole checklist is met.
-  if (state.settlement && wintersStood(state.day) >= 1) {
+  // the whole checklist is met. Gone once it has been won.
+  if (state.settlement && !state.jarl && wintersStood(state.day) >= 1) {
     const cooling = thingCooldown(state);
     const missing = thingNeeds(state).find((n) => !n.met);
     const blocked = cooling > 0

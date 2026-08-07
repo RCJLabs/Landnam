@@ -213,6 +213,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // Battle gained the optional champion. A fight saved before this was
   // against men nobody led, which is what an absent field already says.
   21: (save) => ({ ...save, version: 22 }),
+  // The jarldom. A run saved before this could not be ruling — the Thing
+  // ENDED it — so an absent `jarl` is exactly true of every old save,
+  // including the ones that were proclaimed and closed on the spot.
+  22: (save) => ({ ...save, version: 23 }),
 };
 
 export interface MigrationResult {
