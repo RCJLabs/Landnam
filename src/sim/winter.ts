@@ -18,7 +18,9 @@ import {
   WINTER_BITE_MAX,
   WINTER_DEPTH_MAX,
 } from './calendar';
-import { dayLabour, jobOf, output, seasonFactor, shelterSaving } from './colony';
+import { availableJobs, dayLabour, jobOf, output, seasonFactor, shelterSaving } from './colony';
+import { SHELTER_SAVES } from '../data/jobs';
+import { buildingById } from '../data/buildings';
 import { living } from './people';
 import { chronicle } from './saga';
 import { bonus } from './lore';
@@ -174,6 +176,130 @@ function ratio(today: number, then: number, seasonal: number): number {
 }
 
 /** One line naming where the band stands against the winter. */
+/**
+ * Whether the mark can still be met AT ALL, from here, at full effort.
+ *
+ * The winter mark has always told the truth about the gap and never about
+ * whether the gap can be closed. A phone playtest found the difference the
+ * hard way: day 26, no roof, nought wood of two hundred and seventy-four, a
+ * band with forty-seven days to spring and no arrangement of six people that
+ * reaches it — told only that they were "274 short", which reads like a
+ * target. The harness then put a number on it: a band that settles by day 16
+ * sees spring 21% of the time and one that settles on day 29 sees it 4%.
+ * That is a cliff, and a cliff nobody is warned about is not difficulty.
+ *
+ * Deliberately NOT a parallel model. It reassigns a clone and asks the very
+ * forecast the mark itself reads, so the two can never disagree — the same
+ * rule that keeps the mark honest against the day tick.
+ */
+export function reachable(state: GameState): boolean {
+  if (!state.settlement) return true;
+  if (forecast(state).ready) return true;
+
+  const crew = living(state.party.people);
+  if (crew.length === 0) return false;
+  const jobs = availableJobs(state);
+  const onFoodJob = jobs.find((j) => j.id === 'hunter') ?? jobs.find((j) => j.produces === 'food');
+  const onWoodJob = jobs.find((j) => j.produces === 'firewood');
+  if (!onFoodJob || !onWoodJob) return false;
+
+  // One projection, with the band free to move people between food and wood
+  // as each day demands. A FIXED split was the first attempt and it fired on
+  // 62 of 63 settled bands — no information at all beside a 76% base death
+  // rate — because no single split survives a whole year: real bands hunt
+  // while hunting is good and cut while the wood is dry, and a verdict has
+  // to grant them that much sense before calling them dead.
+  void crew;
+  void onFoodJob;
+  void onWoodJob;
+  return survivesWinter(state);
+}
+
+/**
+ * The shelter to plan the best case around.
+ *
+ * A roofless band burns firewood at a rate no six people can cut, which is
+ * most of what killed the reported save — so a projection that leaves them
+ * roofless condemns every band that has not built yet, including every band
+ * that is about to. The best case therefore assumes the longhouse goes up:
+ * free, instantly, timber and builder-days ignored. That is not a claim
+ * about what will happen, it is the ceiling on what could, and a verdict
+ * that only fires beneath the ceiling is a verdict worth trusting.
+ */
+function bestShelter(state: GameState): number {
+  const roof = buildingById('longhouse')?.shelter ?? 3;
+  return Math.max(shelterSaving(state), roof * SHELTER_SAVES + bonus(state, 'warmth'));
+}
+
+/**
+ * Walks the stores forward day by day, letting the band move between food
+ * and wood as each day demands, and reports whether they ever go under.
+ *
+ * This is NOT the forecast, and the difference is why the first cut of
+ * `reachable` was wrong twice. `forecast` answers "what must be banked
+ * TODAY", flooring each day's surplus at zero — deliberately, because a mark
+ * that spends an imagined autumn is a mark that lies. That makes it useless
+ * for "can they get there": it never credits the productive days still
+ * ahead, so a healthy day-10 band with twenty of each read as doomed.
+ * Replacing it with a projection under a FIXED split was the second miss —
+ * no single split survives a year, so it condemned 62 of 63 settled bands.
+ *
+ * Same per-day helpers as the forecast and the day tick, so the three cannot
+ * drift apart.
+ */
+function survivesWinter(state: GameState): boolean {
+  const days = Math.max(0, nextThaw(state.day) - state.day);
+  const crew = living(state.party.people);
+  const saved = bestShelter(state);
+  const jobs = availableJobs(state);
+  const foodJob = jobs.find((j) => j.id === 'hunter') ?? jobs.find((j) => j.produces === 'food');
+  const woodJob = jobs.find((j) => j.produces === 'firewood');
+  if (!foodJob || !woodJob) return false;
+
+  // What each person is worth on either job. Fixed for the run: output()
+  // reads the person and the steading, neither of which this changes.
+  const asFood = crew.map((p) => output(state, p, foodJob));
+  const asWood = crew.map((p) => output(state, p, woodJob));
+
+  let food = state.party.food;
+  let wood = state.party.firewood;
+
+  for (let i = 1; i <= days; i += 1) {
+    const day = state.day + i;
+    const mouths = Math.max(1, Math.ceil(crew.length / 2));
+    const fire = Math.max(0, plannedFirewood(state, day) - saved);
+    const foodRatio = ratio(state.day, day, foodJob.seasonal);
+    const woodRatio = ratio(state.day, day, woodJob.seasonal);
+
+    // Today's best arrangement: the one leaving the band furthest from
+    // running out of EITHER store, counted in days of cover so a day's food
+    // and a day's fire weigh the same. It is what a person would do.
+    let keepFood = -Infinity;
+    let keepWood = -Infinity;
+    let best = -Infinity;
+    for (let onFood = 0; onFood <= crew.length; onFood += 1) {
+      let grown = 0;
+      let cut = 0;
+      for (let p = 0; p < crew.length; p += 1) {
+        if (p < onFood) grown += asFood[p]! * foodRatio;
+        else cut += asWood[p]! * woodRatio;
+      }
+      const nextFood = food + grown - mouths;
+      const nextWood = wood + cut - fire;
+      const worst = Math.min(nextFood / Math.max(1, mouths), nextWood / Math.max(1, fire));
+      if (worst > best) {
+        best = worst;
+        keepFood = nextFood;
+        keepWood = nextWood;
+      }
+    }
+    food = keepFood;
+    wood = keepWood;
+    if (food < 0 || wood < 0) return false;
+  }
+  return true;
+}
+
 export function readiness(state: GameState): string {
   const f = forecast(state);
   // Out of season the mark is not a live target, so it does not read like one.
@@ -184,7 +310,15 @@ export function readiness(state: GameState): string {
   const short: string[] = [];
   if (f.foodGap < 0) short.push(`${-f.foodGap} short of food`);
   if (f.firewoodGap < 0) short.push(`${-f.firewoodGap} short of wood`);
-  return `To see spring we need ${f.food} food and ${f.firewood} wood. We are ${short.join(' and ')}.`;
+  const gap = `To see spring we need ${f.food} food and ${f.firewood} wood. We are ${short.join(' and ')}.`;
+  // The one thing the mark never said. Told plainly and told EARLY, with
+  // what is actually left to try — a band in this position can still rob
+  // the coast, and being told so on day 26 is fair where finding out on
+  // day 50 is not.
+  if (!reachable(state)) {
+    return `${gap} We cannot cut or hunt our way to that from here. What is left is taking it from somebody else, or walking out and wintering elsewhere.`;
+  }
+  return gap;
 }
 
 // --- Sickness ---

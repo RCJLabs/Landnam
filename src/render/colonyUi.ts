@@ -24,7 +24,7 @@ import {
 } from '../sim/colony';
 import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
 import { CROWDING_BITE } from '../sim/minds';
-import { forecast, readiness, sickCount } from '../sim/winter';
+import { forecast, reachable, readiness, sickCount } from '../sim/winter';
 import { effectiveStat, living } from '../sim/people';
 import { plotTally } from './colony';
 import type { Dispatch } from './ui';
@@ -133,7 +133,15 @@ export function renderNeeds(state: GameState): HTMLElement {
     const f = forecast(state);
     if (f.days > 0) {
       panel.append(
-        el('div', { class: `needs-mark${f.ready ? ' ready' : ''}` }, [readiness(state)]),
+        el(
+          'div',
+          {
+            class: `needs-mark${f.ready ? ' ready' : ''}${
+              !f.ready && !reachable(state) ? ' lost' : ''
+            }`,
+          },
+          [readiness(state)],
+        ),
       );
     }
   }

@@ -310,7 +310,10 @@ would be measured, because an item that cannot be measured is a wish.
    today. Measured by: a long-game harness run reporting how often a named
    foe recurs, and the saga naming him more than once.
 
-2. **[ ] The first winter is a cliff nobody is warned about.** The reported
+2. **[x] The first winter is a cliff nobody is warned about.** Done, and it
+   was measured before it was designed: settle by day 16 and 21% see spring;
+   settle on day 29 and 4% do. The cliff is real, so the mark now says when
+   it cannot be met — verified at 82% deadly against 0% for bands it clears. The reported
    phone save was day 26 with 0 of 274 wood and 4 of 162 food, no roof, six
    people — a run already lost that has not been told so. The deaths table
    says the killer is grief, not stores, but that is measured over sixty
@@ -510,6 +513,35 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The mark learns to say the one thing it never could** —
+  Item 2, and it began as a measurement because the complaint arrived as a
+  photograph rather than a number. Holding the bot off settling until a
+  given day and then playing it out: settle by day 16 and 21% see spring;
+  by day 24, 13%; by day 29, 4%. The cliff is real and it is around the
+  turn of autumn.
+  So the mark now answers the question it was silent on. `reachable()`
+  projects the stores forward to the thaw, day by day, letting the band
+  move between hunting and cutting as each day demands, and assuming a
+  roof it has not built yet — a deliberate CEILING, so "lost" means lost
+  even at the best the band could manage. When it is out of reach both the
+  travel mark and the steading's needs panel say so plainly, in blood, and
+  name what is left: take it from somebody else, or walk out and winter
+  elsewhere.
+  Three wrong versions were measured and thrown away before this one, and
+  each is written into the comments so it is not tried again. Building the
+  check on `forecast` was the first: the forecast floors each day's surplus
+  at zero — correctly, a mark that spends an imagined autumn lies — so it
+  never credits the productive days ahead and called a healthy day-10 band
+  doomed. A projection under one FIXED food/wood split was the second: no
+  single split survives a year, so it condemned 62 of 63 settled bands, a
+  verdict indistinguishable from "you have a steading". And the first
+  VALIDATION was wrong too — asking "did it ever fire" catches any band
+  having one bad week. Read once, on the first autumn day at home, the
+  verdict is worth having: 49 bands told they were lost, 40 died (82%); 6
+  cleared, none died. The 18% told they were lost who lived did it exactly
+  the way the message says — by taking it from somebody else.
+  Curve unmoved at 82/27/7, because this is a panel and not a knob.
 
 - **2026-08-07 — The Old Wolf comes back** — Next-queue item 1, and the
   half of the old item 6 that did not land. A raid's champion now BELONGS

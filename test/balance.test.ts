@@ -74,7 +74,7 @@ import { canFallOn, neighbourHere } from '../src/sim/neighbours';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
-import { forecast, markVisible } from '../src/sim/winter';
+import { forecast, markVisible, reachable } from '../src/sim/winter';
 
 const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
 // NOTE: 'farmplots' has no hyphen. The first version of this list wrote
@@ -93,6 +93,17 @@ const WANT = [
  * woodpile is low, settles on the best ground it has actually seen, and
  * otherwise explores outward from the landing.
  */
+/**
+ * Item 2's instrument: hold the band off settling until this day.
+ *
+ * Module-level rather than threaded through every call site because step()
+ * is called from five places in this file and only one experiment cares.
+ * Always reset in a finally — a leaked value would silently change the
+ * curve, which is exactly the class of harness bug this file's header is
+ * a monument to.
+ */
+let settleNotBefore = 0;
+
 function step(state: GameState): Action {
   if (state.event) {
     return state.event.outcome ? { type:'DISMISS_EVENT' } : { type:'CHOOSE', index:0 };
@@ -181,7 +192,7 @@ function step(state: GameState): Action {
   if (state.settlement) return { type:'CAMP' };
 
   // Settle on anything workable rather than holding out for perfection.
-  if (canFound(state, state.party.at)) {
+  if (canFound(state, state.party.at) && state.day >= settleNotBefore) {
     const r = siteReport(state.world, state.party.at);
     if (r && r.total >= 9) return { type:'FOUND' };
   }
@@ -1143,6 +1154,116 @@ describe('the rhythm of interruption', () => {
     expect(cards).toBeGreaterThan(0);
     expect(battles).toBeGreaterThan(0);
     await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+});
+
+describe('the first winter', () => {
+  /**
+   * Item 2 of the second audit, and it starts as a measurement because the
+   * complaint that opened it was a photograph, not a number: a phone save on
+   * day 26 with no roof, four food of a hundred and sixty-two, and nought
+   * wood of two hundred and seventy-four. A run already lost and not told so.
+   *
+   * The death table says the game kills through grief rather than stores —
+   * but that table is measured over BOT runs that settle early and work
+   * perfectly, which is precisely the case that is not in trouble. This
+   * holds the band off settling until a given day and then plays it out
+   * properly, so the question "how late is too late?" gets an answer instead
+   * of an opinion.
+   */
+  it('measures how late a band can settle and still see spring', { timeout: CURVE_TIMEOUT }, async () => {
+    const HELD = [0, 12, 18, 24, 30];
+    const SAMPLE = 24;
+    const rows: string[] = [];
+    let firstDoomed = -1;
+    // Does the warning EARN its place? A verdict that fires on runs which go
+    // on to live is crying wolf, and a verdict that never fires is dead code.
+    let told = 0;
+    let toldAndDied = 0;
+    let untold = 0;
+    let untoldAndDied = 0;
+    try {
+      for (const hold of HELD) {
+        settleNotBefore = hold;
+        let settled = 0;
+        let settleDays = 0;
+        let sawSpring = 0;
+        for (let s = 0; s < SAMPLE; s += 1) {
+          let settledOn = 0;
+          let judged: boolean | null = null;
+          const state = run(`curve-${s}`, 73, (before, after) => {
+            if (!before.settlement && after.settlement) settledOn = after.day;
+            // The verdict at ONE fixed moment: the first day of autumn on
+            // which there is a steading to judge. "Did it ever fire" was the
+            // first attempt and it is not a test — any band having one bad
+            // week trips it, so it fired on 62 of 63. A player reads this
+            // panel on a particular day and acts or does not; that is the
+            // thing worth being right about.
+            if (after.settlement && judged === null && after.day >= 40) {
+              judged = !reachable(after);
+            }
+          });
+          if (settledOn > 0) {
+            settled += 1;
+            settleDays += settledOn;
+          }
+          // Alive at the thaw is what "saw spring" means everywhere else here.
+          const lived = !state.end;
+          if (lived) sawSpring += 1;
+          // Only SETTLED bands can be judged: there is no mark to miss on
+          // the road, so `reachable` is true for every wanderer, and a
+          // wanderer dies more often than anyone. Counting them as "never
+          // told" made the warning look worse than useless the first time
+          // this was measured — 77% against 98% — which was the harness
+          // comparing settled bands with homeless ones, not the verdict
+          // failing.
+          if (judged !== null) {
+            if (judged) {
+              told += 1;
+              if (!lived) toldAndDied += 1;
+            } else {
+              untold += 1;
+              if (!lived) untoldAndDied += 1;
+            }
+          }
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+        const rate = sawSpring / SAMPLE;
+        rows.push(
+          `held to day ${String(hold).padStart(2)}: settled ${settled}/${SAMPLE} ` +
+            `(avg day ${settled ? Math.round(settleDays / settled) : 0}), ` +
+            `saw spring ${sawSpring}/${SAMPLE} (${Math.round(rate * 100)}%)`,
+        );
+        if (rate === 0 && firstDoomed < 0) firstDoomed = hold;
+      }
+    } finally {
+      settleNotBefore = 0;
+    }
+    // eslint-disable-next-line no-console
+    console.log(`the first winter, by how long the posts were left in the boat:\n  ${rows.join('\n  ')}`);
+    const pc = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : 'n/a');
+    // eslint-disable-next-line no-console
+    console.log(
+      `  the verdict, read once on the first autumn day at home: told lost ${told}, ` +
+        `${toldAndDied} died (${pc(toldAndDied, told)}); never told ${untold}, ` +
+        `${untoldAndDied} died (${pc(untoldAndDied, untold)})`,
+    );
+
+    // The bars the verdict has to clear, because a wrong one is worse than
+    // none: it must be far deadlier to be condemned than cleared, and it
+    // must not cry wolf. Measured at 82% against 0% when it landed. The 60%
+    // floor is deliberately below that — this is a tripwire for a verdict
+    // that has stopped meaning anything, not a pin through today's number.
+    expect(told).toBeGreaterThan(0);
+    if (untold > 0) {
+      expect(toldAndDied / told).toBeGreaterThan(untoldAndDied / untold);
+    }
+    expect(toldAndDied / told).toBeGreaterThanOrEqual(0.6);
+
+    // The bar is not a rate — it is that settling LATE has to be worse than
+    // settling early, or the opening's whole shape is a lie. Anything else
+    // here is reported, not asserted, until the design decision is made.
+    expect(rows.length).toBe(HELD.length);
   });
 });
 

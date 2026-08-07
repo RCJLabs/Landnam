@@ -1551,3 +1551,18 @@ button.warcry:disabled {
   font-size: 12px;
   white-space: nowrap;
 }
+
+/* The mark when the mark cannot be met. Not the same as "short": short is a
+   target and this is a verdict, so it does not borrow the warning colour it
+   has been sitting next to all autumn. */
+.winter-mark.lost,
+.needs-mark.lost {
+  border-color: var(--blood);
+  background: rgba(178, 59, 46, 0.14);
+  color: var(--parchment);
+}
+
+.winter-mark.lost .mark-head {
+  color: var(--blood);
+  font-weight: 700;
+}

@@ -15,7 +15,7 @@ import {
   verdictFor,
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
-import { forecast, markVisible } from '../sim/winter';
+import { forecast, markVisible, reachable } from '../sim/winter';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { WINTERS_TO_JARL } from '../data/thing';
@@ -102,11 +102,16 @@ export function renderWinterMark(state: GameState): HTMLElement {
       ]),
     ]);
 
-  return el('div', { class: `winter-mark${f.ready ? ' ready' : ''}` }, [
+  // Out of reach is the one thing this panel could never say, and the thing
+  // a band on day 26 with no roof most needs to hear. See sim/winter.ts.
+  const lost = !f.ready && !reachable(state);
+  return el('div', { class: `winter-mark${f.ready ? ' ready' : ''}${lost ? ' lost' : ''}` }, [
     el('div', { class: 'mark-head' }, [
-      f.days > 24
-        ? `The mark for spring, ${f.days} days out`
-        : `${f.days} days of winter left`,
+      lost
+        ? 'We will not reach spring on what this ground gives'
+        : f.days > 24
+          ? `The mark for spring, ${f.days} days out`
+          : `${f.days} days of winter left`,
     ]),
     row('Food', state.party.food, f.food, f.foodGap),
     row('Wood', state.party.firewood, f.firewood, f.firewoodGap),
