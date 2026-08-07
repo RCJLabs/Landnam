@@ -40,6 +40,13 @@ function settled(label: string): GameState {
   for (let i = 0; i < 60; i += 1) {
     const state = fresh(`${label}-${i}`);
     if (foundSettlement(state)) return state;
+    // The landing refused: found wherever the world allows. The fixture
+    // needs A steading, not a lucky beach.
+    for (const k of Object.keys(state.world.tiles)) {
+      const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
+      state.party.at = at;
+      if (canFound(state, at) && foundSettlement(state)) return state;
+    }
   }
   throw new Error('no seed in 60 put the band on foundable ground');
 }
@@ -213,6 +220,13 @@ describe('lessons arrive when the thing matters', () => {
         for (let i = 0; i < 30; i += 1) {
           const s = fresh(`reach-ground-${i}`);
           if (canFound(s, s.party.at)) return s;
+          for (const k of Object.keys(s.world.tiles)) {
+            const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
+            if (canFound(s, at)) {
+              s.party.at = at;
+              return s;
+            }
+          }
         }
         throw new Error('no seed put the band on foundable ground');
       },

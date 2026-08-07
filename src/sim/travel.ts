@@ -160,13 +160,20 @@ function marchLine(
   const rng = actionRng(state, `march:${terrain}`);
 
   // A day under oars is not a day's walking, and saying so is most of what
-  // makes the coast feel like a coast.
+  // makes the coast feel like a coast. Eight lines, not four: the wider
+  // worlds have real stretches of water now, and a pool the same size as
+  // the echo window stutters the moment a voyage outlasts it — the exact
+  // failure the land pool was widened for.
   if (terrain === 'ocean') {
     return fresh(state, rng, [
       'We put the knarr in the water and rowed the coast until the light went.',
       'A day on the water, with the land always on one hand.',
       'We worked along the shore under oars. It was faster than walking and colder.',
       'The sail took what wind there was and we made good water.',
+      'Grey sea, grey sky, and the stroke counted out until nobody was counting.',
+      'A seal watched us the whole morning and left when the rain came.',
+      'The oars traded hands at midday and the coast went by like a told story.',
+      'Salt in everything by evening. Nobody complained where the others could hear.',
     ]);
   }
   if (fromSea) {
@@ -174,6 +181,8 @@ function marchLine(
       `We ran the keel up and stepped out into ${ground}.`,
       `We came ashore on ${ground} and dragged the boat up past the tide.`,
       `The water shallowed and we walked her in. ${ground.charAt(0).toUpperCase()}${ground.slice(1)}, and dry feet.`,
+      `The keel took the sand and we were glad of ${ground} under us.`,
+      `We beached her below ${ground} and stretched legs that had forgotten walking.`,
     ]);
   }
 

@@ -23,7 +23,14 @@ import { sickCount } from './winter';
 import { checkRunEnd } from './upkeep';
 
 /** Chance an event fires after a travel action. */
-const BASE_EVENT_CHANCE = 0.28;
+// 0.23, down from 0.28 — a playtest called the cards relentless, and the
+// designer's ear outranks a knob the harness has already proven it cannot
+// resolve (the 0.28/0.34/0.40 sweep was non-monotonic). The curve bars
+// still guard the outcome.
+const BASE_EVENT_CHANCE = 0.23;
+
+/** The country takes this many days to notice a new sail on its coast. */
+const SETTLING_IN_DAYS = 6;
 
 function nearWater(state: GameState): boolean {
   const here = state.world.tiles[key(state.party.at)];
@@ -120,10 +127,14 @@ export function presentEvent(state: GameState, def: EventDef): ActiveEvent {
  * most valuable thing there is.
  */
 export function eventChance(state: GameState): number {
+  // The opening days are quiet on purpose: a new sail takes a few days to
+  // be noticed, and a new player takes a few days to find their feet. The
+  // same playtest that called the cards relentless was three days in.
+  const noticed = Math.min(1, state.day / SETTLING_IN_DAYS);
   // Out on the road, what the party went out FOR changes how much finds them.
   const out = state.expedition;
-  if (out) return BASE_EVENT_CHANCE * purposeDef(out.purpose).stir;
-  if (!atHome(state)) return BASE_EVENT_CHANCE;
+  if (out) return BASE_EVENT_CHANCE * purposeDef(out.purpose).stir * noticed;
+  if (!atHome(state)) return BASE_EVENT_CHANCE * noticed;
   const home = state.settlement!;
   // Ground you can watch, what you have raised on it, and people actually
   // watching. A palisade counts here because it reads through the effective
@@ -133,7 +144,7 @@ export function eventChance(state: GameState): number {
   // A coast with a grievance against you is a busier coast. Quiet ground is
   // still quieter than loud ground, but it does not buy you peace you have
   // spent elsewhere.
-  return BASE_EVENT_CHANCE * Math.max(0.15, 1 - quiet) * stirFactor(state);
+  return BASE_EVENT_CHANCE * Math.max(0.15, 1 - quiet) * stirFactor(state) * noticed;
 }
 
 /** Rolls for an event after a travel action. Mutates the state clone. */

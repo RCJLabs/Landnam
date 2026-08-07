@@ -6,12 +6,18 @@ import type { Rng } from '../rng';
 import type { Terrain, Tile, World } from '../state/types';
 import { makeFbm } from './noise';
 
-export const WORLD_WIDTH = 40;
-export const WORLD_HEIGHT = 30;
+// 52 by 36, up from 40 by 30. A playtest hit the world's edge inside the
+// first week: the landing sits on the westernmost shore, so the west was a
+// wall four hexes out and the whole country fit in two screens. Half again
+// the area gives the knarr real water and the interior real dark to walk
+// into. Only SEEN tiles are drawn, so the render cost arrives only as the
+// country is actually discovered.
+export const WORLD_WIDTH = 52;
+export const WORLD_HEIGHT = 36;
 
 const SEA_LEVEL = 0.5;
 /** Minimum contiguous land hexes reachable from the landing, else reroll. */
-const MIN_LANDMASS = 260;
+const MIN_LANDMASS = 400;
 
 interface Field {
   elevation: number;
@@ -34,7 +40,9 @@ function buildFields(rng: Rng, width: number, height: number): Map<HexKey, Field
 
       // West is always open sea; land firms up as you go east.
       const eastward = col / (width - 1);
-      const westBias = Math.min(1, Math.max(0, (eastward - 0.08) / 0.35));
+      // The sea keeps a wider margin now: open water is somewhere to BE, not
+      // just the edge of the picture.
+      const westBias = Math.min(1, Math.max(0, (eastward - 0.12) / 0.35));
 
       // Soften the north and south edges so the land reads as a coast,
       // not a rectangle clipped by the viewport.

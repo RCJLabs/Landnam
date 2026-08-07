@@ -272,6 +272,23 @@ function run(seed: string, maxDay: number): GameState {
   return state;
 }
 
+
+/**
+ * Founds at the landing if the landing will take posts, else wherever the
+ * world will. The wider sea margin (52x36 worldgen) made foundable LANDINGS
+ * rare, and a fixture that only ever tried the landing started failing on
+ * ground that exists eight hexes away.
+ */
+function foundAnywhere(state: GameState): boolean {
+  if (foundSettlement(state)) return true;
+  for (const k of Object.keys(state.world.tiles)) {
+    const at = fromKey(k);
+    state.party.at = at;
+    if (canFound(state, at) && foundSettlement(state)) return true;
+  }
+  return false;
+}
+
 // --- The bars ---
 
 /**
@@ -671,7 +688,7 @@ describe('a steading holds who it has room for', () => {
   function settledAt(seed: string): GameState {
     for (let i = 0; i < 60; i += 1) {
       const state = structuredClone(newGame(`${seed}-${i}`));
-      if (foundSettlement(state)) return state;
+      if (foundAnywhere(state)) return state;
     }
     throw new Error('nothing foundable');
   }
@@ -730,7 +747,7 @@ describe('a band that can grow, and can bleed', () => {
   function roofed(seed: string, rooms: string[] = ['longhouse']): GameState {
     for (let i = 0; i < 60; i += 1) {
       const state = structuredClone(newGame(`${seed}-${i}`));
-      if (foundSettlement(state)) {
+      if (foundAnywhere(state)) {
         state.settlement!.built.push(...rooms);
         return state;
       }
@@ -824,7 +841,7 @@ describe('a steading worth taking draws more than six can hold', () => {
   function famed(seed: string, built: string[], winters: number): GameState {
     for (let i = 0; i < 150; i += 1) {
       const state = structuredClone(newGame(`${seed}-${i}`));
-      if (!foundSettlement(state)) continue;
+      if (!foundAnywhere(state)) continue;
       state.settlement!.built.push(...built);
       // wintersStood counts from the first thaw, so winters=0 has to stay
       // BEFORE it — 73 is already one winter come through, not none.
@@ -882,7 +899,7 @@ describe('a steading worth taking is visited', () => {
   function steading(seed: string, built: string[], winters: number, food = 60): GameState {
     for (let i = 0; i < 150; i += 1) {
       const state = structuredClone(newGame(`${seed}-${i}`));
-      if (!foundSettlement(state)) continue;
+      if (!foundAnywhere(state)) continue;
       state.settlement!.built.push(...built);
       state.day = 73 + Math.max(0, winters - 1) * 96;
       state.party.food = food;
@@ -956,7 +973,7 @@ describe('losing a raid costs the one thing that is scarce', () => {
   function sacked(seed: string, extraHands: number): GameState {
     for (let i = 0; i < 150; i += 1) {
       const state = structuredClone(newGame(`${seed}-${i}`));
-      if (!foundSettlement(state)) continue;
+      if (!foundAnywhere(state)) continue;
       state.settlement!.built.push('longhouse', 'bud', 'meadhall');
       state.party.food = 120;
       state.party.firewood = 90;

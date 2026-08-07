@@ -414,6 +414,31 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — A wider country, and a quieter first week** — Off a phone
+  playtest that hit the world's edge on day four. The world grows from
+  40x30 to 52x36 — half again the area — with a wider sea
+  margin in the west, so open water is somewhere to BE rather than the edge
+  of the picture, and the interior is real dark to walk into. Only seen
+  tiles are drawn, so the render cost arrives only as the country is
+  discovered. Old saves keep the worlds they were born with; only new
+  landings get the bigger coast.
+  The same playtest called the cards relentless, three days in. Two
+  changes: the base event chance comes down from 0.28 to 0.23 — the
+  designer's ear outranks a knob the harness has already proven it cannot
+  resolve — and the opening is quiet ON PURPOSE: the country takes six
+  days to notice a new sail, so the chance ramps from nothing over the
+  first week while a new player finds their feet.
+  Measured: 78/23/10 against 75/20/8 — the beginning eases a shade, every
+  delta inside the noise floor, and the wall-window death table shows the
+  early battle deaths thinned exactly as intended. The Thing's
+  four-of-four promise holds.
+  Two fixture patterns broke honestly and were fixed at the root: helpers
+  that only ever tried to settle the LANDING hex (rare on the wider coast)
+  now found wherever the world allows, and the stutter guard caught the
+  hunger chronicle repeating its plateau line on long starving walks the
+  old small world never made possible — the escalation now never says the
+  same sentence two days running. 583 tests. Published.
+
 - **2026-08-07 — A place for the switches** — Settings, and everything that
   had been waiting for somewhere to live. A gear sits pinned under the
   horn — outside the mode chrome for the same reason the horn is, so it is

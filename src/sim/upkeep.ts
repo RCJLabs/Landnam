@@ -257,14 +257,28 @@ function daysUntilNextWinter(day: number): number {
   return start - day;
 }
 
-/** Hunger escalates rather than repeating itself day after day. */
+/**
+ * Hunger escalates rather than repeating itself day after day — and past the
+ * first week it must never say the same sentence two days running, because
+ * a starving band is exactly when the log is the only thing moving. The
+ * plateau lines used to be one sentence for days six-through-eight and one
+ * for everything after, and the stutter guard caught them the moment the
+ * wider worlds made long hungry walks real.
+ */
 function hungerLine(streak: number): string {
   if (streak === 1) return 'We ate nothing that day, and felt it in the morning.';
   if (streak === 2) return 'A second day with nothing. Nobody spoke much.';
   if (streak === 3) return 'Three days empty. We boiled leather and drank the water off it.';
   if (streak <= 5) return `${streak} days without food. The walking had gone slow and strange.`;
-  if (streak <= 8) return 'We had stopped feeling hungry, which the old hands said was the bad sign.';
-  return 'There was nothing left to eat and nothing left to say about it.';
+  if (streak === 6) return 'We had stopped feeling hungry, which the old hands said was the bad sign.';
+  if (streak === 7) return 'Somebody went down on the flat and took a long time getting up.';
+  if (streak === 8) return 'The talk had gone out of the band. We walked in a silence with edges.';
+  const late = [
+    'There was nothing left to eat and nothing left to say about it.',
+    'We chewed bark because mouths want work, and called it nothing.',
+    'The days had stopped having names. There was only the next ridge.',
+  ];
+  return late[streak % late.length]!;
 }
 
 function seasonOpening(season: string): string {
