@@ -37,28 +37,36 @@ ends" table and pick the work up without re-deriving a day of measurement.*
 **Shipped:** Phases 0–4 complete. 5.1 Sound, 5.2 Onboarding and 5.3 Balance &
 juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 
-**The measured curve** (30 seeds, a scripted player of roughly average
-competence over SIXTY seeds — see `test/balance.test.ts`, which is the source
-of every number in this document. It resolves to about ±5 points; anything
-smaller than ten points is below what it can see, so treat every figure here
-as directional):
+**The measured curve** (a scripted player of roughly average competence over
+SIXTY seeds — see `test/balance.test.ts`, which is the source of every number
+in this document. It resolves to about ±5 points; anything smaller than ten
+points is below what it can see, so treat every figure here as directional):
 
 | milestone | reached |
 | --- | --- |
-| the first winter (day 49) | 83% |
-| spring (day 73) | 55% |
-| the second winter — the Thing's window (day 169) | 50% |
+| the first winter (day 49) | 78% |
+| spring (day 73) | 30% |
+| the second winter — the Thing's window (day 169) | 7% |
 
-Five levers have now been aimed at that 47% and none has shifted it. Four of
-them were priced in food, firewood or timber; the fifth was a clamp. The
-conclusion the evidence supports is that **a settled band replaces material
-faster than anything can take it**, so the late game cannot be threatened
-through the survival loop at all — only through people.
+These are not yesterday's figures, and the game did not change: the
+instrument did. Every earlier curve was read off a run loop that treated a
+refused action as the end of the saga, under a bot that proposed battle
+moves without costing the ground — so HALF of sixty runs were cut off
+mid-battle, one as early as day 7, and every one counted as alive at every
+milestone after. 83/55/50 was those truncated sagas. The bot now forms a
+line while advancing (the rule `test/wall.test.ts` always said wins) and the
+loop plays every fight to its end; the same game, honestly played, reads
+78/30/7.
 
-**The open problem, and Phase 6's whole reason for existing:** the late game
-is flat. A band that gets through the first winter reaches the second in
-almost every case, so one season holds the entire difficulty of the game and
-the Thing is a lap of honour rather than a climax.
+**The open problem, inverted.** The late game is not flat — it is a cliff.
+Raids run about three to a saga and even a line-forming defender loses most
+of them (4 held of 33 across twenty sagas), and each loss burns a building,
+takes two fifths of the store and carries hands off, which compounds.
+Whether 7% at the Thing's window is the brutal late game Phase 6 wanted or
+an overshoot is now a design decision to be taken on an instrument that
+finally tells the truth. And the five-lever conclusion — that a settled band
+replaces material faster than anything can take it — was drawn entirely on
+the broken instrument. It may still hold; it is no longer evidence.
 
 **The queue** (from the audit of 2026-08-06, in order):
 
@@ -80,28 +88,25 @@ the Thing is a lap of honour rather than a climax.
 5. **[x] Measure raid outcomes.** Baseline: **15 raids came, 0 held**. Nothing counts how often a raid is LOST,
    only how often one fires. That is the number item 3 moves, and there is no
    baseline for it.
-5b. **[~] NEXT — teach the bot to form a line, THEN judge the raids.** The
-   baseline says 15 raids came and none were held, and the first instinct —
-   that 6.3's cap raise overshot — is wrong. Sweeping the raider cap
-   (14 → 11 → 10) and the difficulty clamp (10 → 8 → 7) gave **identical**
-   results at every setting, because neither binds: the foe count is
-   `round(6 × 0.9) + difficulty`, so a typical raid fields about nine
-   whatever the ceiling says.
-   What loses them is that the harness charges the nearest foe and never
-   forms a shield wall. That much is now CONFIRMED: a first attempt at a
-   wall-forming rule — score a hex by shoulders gained minus ground lost —
-   took raids held from 0 of 15 to 6 of 29.
-   It was reverted, because it is not good enough yet. Weighting shoulders
-   that heavily makes the band huddle instead of closing, which helps a
-   defensive raid and wrecks an open-field fight: the survival curve fell from
-   77/47/47 to 77/20/13, and a bot that plays WORSE overall cannot be used to
-   judge whether raids are fair. `SACK_TAKES` 2 → 1 changed that by nothing,
-   which rules the sacking out as the cause.
-   What is needed is a rule that forms a line WHILE advancing — hold shoulders
-   only once contact is close, or weight them behind closing until the sides
-   meet. Judge it on BOTH numbers: raids held should rise and the curve should
-   not collapse.
-6. **[~] Triple the event deck** (39 → 59 → ~100). *Two batches in. The deck's
+5b. **[x] Teach the bot to form a line, THEN judge the raids.** Done, and it
+   found the seventh harness artifact — the largest yet. The rule that works
+   was in `test/wall.test.ts` all along: closing at 4 a hex outweighs
+   shoulders at 3 a mate (two at most), scored over the full zone-of-control
+   reach — a line formed WHILE advancing, where the reverted first attempt
+   weighted shoulders above ground and huddled. In clean arena fights it
+   takes the old charge-in bot from 18/60 wins and 89 standing to 34/60 and
+   162. Wiring it in "collapsed" the curve — and checking the mechanism
+   before trusting the number showed the collapse belonged to the BASELINE:
+   the run loop ended the saga on any refused action, the old bot proposed
+   battle moves without costing the ground or the disengage, and half of
+   every sample truncated mid-battle and counted as alive. Honest figures:
+   old bot 78/22/2, wall bot 78/30/7 — better at every mark. Raids held went
+   1 of 15 to 4 of 33; the truncated sagas had been under-counting the raids
+   themselves. The verdict on the raids: they are genuinely lost — 29 of
+   33 — even by a defender who forms a line, and each loss compounds. That
+   is the cliff in the head of this document, and pricing it is a design
+   decision, not a bot fix.
+6. **[~] NEXT — Triple the event deck** (39 → 59 → ~100). *Two batches in. The deck's
    SIZE is a difficulty knob in its own right — twenty cards moved the
    two-winter figure by six points. An attempt to compensate by lifting the
    base event chance was ABANDONED: the sweep was non-monotonic, which means
@@ -151,14 +156,20 @@ past that was discarded by a `Math.min` before it reached a battlefield.
 **Before trusting any null result, check that the mechanism can physically
 produce a non-null one.**
 
-**The harness is code, and it has been wrong three times:** it did not fight
-back on the battlefield (which put "slain" at the top of the death table and
-made the game look far crueller than it is — teaching it to swing took the
-two-winter figure from 0% to 51%); a cheaper single-pass rewrite disagreed
-with itself by forty points; and its build list said `farm-plots` where the
-building is `farmplots`, so that entry silently never queued. **Every time the
-game gains a capability, the bot must gain it in the same commit**, or the
-measurement reports the new thing as worthless.
+**The harness is code, and it has now been wrong seven times.** The worst
+four: it did not fight back on the battlefield (which put "slain" at the top
+of the death table and made the game look far crueller than it is — teaching
+it to swing took the two-winter figure from 0% to 51%); a cheaper single-pass
+rewrite disagreed with itself by forty points; its build list said
+`farm-plots` where the building is `farmplots`, so that entry silently never
+queued; and — the largest — its run loop treated any refused action as the
+end of the saga while its bot proposed battle moves the engine refused, so
+HALF of every sixty-seed sample was truncated mid-battle and counted as
+alive at every milestone. Every curve figure this document carried before
+2026-08-07 sits on that artifact. **Every time the game gains a capability,
+the bot must gain it in the same commit**, or the measurement reports the
+new thing as worthless — and a run that stops must be a run that DIED, or
+the measurement reports the dead as living.
 
 ---
 
@@ -257,6 +268,35 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The bot forms a line, and half the sample turns out to be
+  fiction** — Item 5b. The wall rule that works was sitting in
+  `test/wall.test.ts` all along: closing at 4 a hex outweighs shoulders at 3
+  a mate, two mates at most, scored over the full zone-of-control reach — a
+  line formed WHILE advancing, where the reverted first attempt weighted
+  shoulders above ground and huddled. In clean arena fights at difficulty
+  two it takes the old charge-in bot from 18 of 60 wins and 89 left standing
+  to 34 and 162.
+  Wiring it into the balance harness "collapsed" the curve, 83/55/50 to
+  78/30/7 — which, by this session's own rule, meant checking the mechanism
+  before trusting the number. The mechanism was rotten. The harness's run
+  loop treats a refused action as the end of the saga, and the old bot
+  proposed battle moves without costing the ground or the disengage, so
+  `doMove` refused them — and THIRTY of sixty runs were being cut off
+  mid-battle, one as early as day 7, every one counted as alive at every
+  milestone thereafter. Those thirty truncated sagas are exactly where
+  83/55/50 came from: played out legally, the old bot reads 78/22/2. The
+  wall-forming bot reads 78/30/7 with zero refusals — better at every mark,
+  on fights that actually get fought. Raids held went 1 of 15 to 4 of 33,
+  because the truncated sagas had been under-counting the raids themselves.
+  The seventh harness artifact, and the largest.
+  Landed together: the loop now ends the turn instead of the saga when a
+  battle action is refused; the curve bars are re-based around the honest
+  reading, with the floor moved to spring because ±5 points of resolution
+  cannot honestly put a floor under 7%; and the head of this document tells
+  the new truth — the late game is not flat, it is a cliff, and every
+  "the curve did not move" verdict before today was delivered by an
+  instrument that discarded half its sample. 535 tests.
 
 - **2026-08-07 — Two cuts, and the third made possible** — `data/events.ts`
   had grown to 1,294 lines by holding the event VOCABULARY — conditions,

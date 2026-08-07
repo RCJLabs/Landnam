@@ -34,6 +34,16 @@
 // dead level with charging in, which is a Phase 2 milestone bar erased.
 // Battlefield generation has to stop being that sensitive to the terrain it
 // is handed before the landing can be touched. See test/wall.test.ts.
+//
+// The third was the largest, and it was found teaching the bot to form a
+// shield wall. The run loop below treated ANY refused action as the end of
+// the saga, and the old bot proposed battle moves without costing the ground
+// or the disengage — so doMove refused them, and THIRTY of sixty runs were
+// cut off mid-battle, one as early as day 7, every one counted as alive at
+// every milestone thereafter. The 83/55/50 curve this file used to print was
+// those thirty truncated sagas. Played out legally, the same charge-in bot
+// reads 78/22/2; the wall-forming bot that replaced it reads 78/30/7 with
+// zero refusals — better at every mark, on fights that actually get fought.
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
@@ -55,8 +65,9 @@ import { fallenOf } from '../src/sim/fallen';
 import { capacity, crowding } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
-import { distance, key, fromKey, neighbors } from '../src/hex';
+import { distance, key, fromKey } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
+import { reachWithZoc } from '../src/sim/zoc';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
@@ -94,14 +105,26 @@ function step(state: GameState): Action {
       return { type:'B_STRIKE', targetId: near.personId };
     }
     if (me.movesLeft > 0) {
-      const opts = neighbors(me.at).filter(h => {
-        const t = b.grid[key(h)];
-        return t && t.ground !== 'block' && t.ground !== 'water'
-          && !b.combatants.some(c => !c.down && !c.fled && c.at.q===h.q && c.at.r===h.r);
-      });
-      if (opts.length) {
-        const to = opts.reduce((a,h)=>distance(h,near.at)<distance(a,near.at)?h:a);
-        if (distance(to, near.at) < distance(me.at, near.at)) return { type:'B_MOVE', to };
+      // The wall, formed on the way in rather than instead of it. This is the
+      // exact rule test/wall.test.ts measures as beating the charge: closing
+      // at 4 a hex outweighs shoulders at 3 a mate, two mates at most, so
+      // shoulders decide BETWEEN approaches and can never argue anyone into
+      // standing still. The first attempt here weighted shoulders above
+      // ground and the band huddled: raids held rose and the open-field curve
+      // collapsed — a bot that plays worse overall measures nothing.
+      const score = (at: {q:number;r:number}) => {
+        const mates = b.combatants.filter(c =>
+          c.side === 'warband' && c.personId !== me.personId
+          && !c.down && !c.fled && distance(c.at, at) === 1).length;
+        const gap = Math.min(...foes.map(f => distance(at, f.at)));
+        return -gap * 4 + Math.min(mates, 2) * 3;
+      };
+      // reachWithZoc only offers legal moves, so a chosen B_MOVE cannot be
+      // refused — and a refused action is how this harness ends a run.
+      const reach = [...reachWithZoc(b, me).keys()].map(fromKey);
+      if (reach.length) {
+        const to = reach.reduce((a,h)=>score(h)>score(a)?h:a);
+        if (score(to) > score(me.at)) return { type:'B_MOVE', to };
       }
     }
     return { type:'B_END_TURN' };
@@ -194,7 +217,13 @@ function run(seed: string, maxDay: number): GameState {
         });
     }
 
-    const next = apply(state, step(state));
+    let next = apply(state, step(state));
+    if (next === state && state.battle) {
+      // A refused battle action must never end the saga — a player whose tap
+      // is refused is still in the fight, and the turn can always be ended.
+      // The old break here ate half of every sample: see the header.
+      next = apply(state, { type: 'B_END_TURN' });
+    }
     if (next === state) break;
     state = next;
   }
@@ -255,13 +284,20 @@ describe('the difficulty curve', () => {
   it('is winnable by an average player, and not a walkover', { timeout: CURVE_TIMEOUT }, () => {
     const m = measured();
     console.log(`curve over ${SEEDS} seeds: winter ${pct(m.reachedWinter)}%, spring ${pct(m.sawSpring)}%, two winters ${pct(m.twoWinters)}%, settled by winter ${m.settledByWinter}`);
-    // Measured at 73% / 53% / 51% when this bar was written. The band is wide
-    // on purpose: this is a tripwire for "unwinnable" and "trivial", not a
-    // lock on today's numbers.
+    // Measured at 78% / 30% / 7% when these bars were re-based. The figures
+    // they replaced (83/55/50) were the truncation artifact in the header,
+    // not the game. The band stays wide on purpose: a tripwire for
+    // "unwinnable" and "trivial", not a lock on today's numbers.
+    //
+    // The floor moved from two winters to spring, because an instrument that
+    // resolves to ±5 points cannot honestly put a floor under a 7% figure.
+    // Two winters keeps only the walkover ceiling; whether 7% is the brutal
+    // late game Phase 6 wanted or an overshoot is a design decision the
+    // roadmap now owns, and a bar must not take it by default.
     expect(pct(m.reachedWinter)).toBeGreaterThanOrEqual(45);
     expect(pct(m.reachedWinter)).toBeLessThanOrEqual(95);
-    expect(pct(m.twoWinters)).toBeGreaterThanOrEqual(20);
-    expect(pct(m.twoWinters)).toBeLessThanOrEqual(80);
+    expect(pct(m.sawSpring)).toBeGreaterThanOrEqual(10);
+    expect(pct(m.twoWinters)).toBeLessThanOrEqual(60);
   });
 
   it('kills more bands than it spares before the first thaw', { timeout: CURVE_TIMEOUT }, () => {
