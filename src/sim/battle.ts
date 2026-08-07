@@ -28,9 +28,10 @@ import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
   generateBattlefield,
-  generateSteadingField,
   groundName,
   isPassable,
+  pickRaidField,
+  steadingFieldFrom,
 } from './battlefield';
 
 export const BASE_MOVES = 3;
@@ -201,15 +202,14 @@ export function beginBattle(
     `${raid ? 'raid' : 'battle'}:${state.day}:${key(state.party.at)}`,
   );
 
-  // A raid is fought on the ground you built, not on ground you wandered onto.
+  // A raid is fought on the ground you built, not on ground you wandered
+  // onto — one of a handful of authored approaches, picked by what the
+  // steading actually is. See data/raidFields.ts.
   const home = state.settlement;
+  const raidField = raid && home ? pickRaidField(home.plots.map((p) => p.kind), rng.derive('ground')) : undefined;
   const { grid, warbandSpots, foeSpots } =
-    raid && home
-      ? generateSteadingField(
-          home.plots.map((p) => p.kind),
-          home.built.includes('palisade'),
-          rng.derive('ground'),
-        )
+    raidField && home
+      ? steadingFieldFrom(raidField, home.built.includes('palisade'))
       : generateBattlefield(terrain, rng.derive('ground'));
   // A raid is fought by whoever stayed at the steading; a fight out on the
   // road is fought by whoever went. Sending your warriors away is exactly the
@@ -324,9 +324,12 @@ export function beginBattle(
   if (raid && home) {
     // A raid with a name on it reads differently from weather. If nobody on
     // the coast has a quarrel with us, it is strangers and stays strangers.
+    // The approach line comes off the authored field, so the ground is the
+    // first thing the log says about the fight.
     const from = raidSource(state);
     battle.log.push(
-      `They came at ${home.name} out of the trees. ${foes.length} against ${standing(battle, 'warband').length}.` +
+      `${raidField?.line ?? `They came at ${home.name} out of the trees.`}` +
+        ` ${foes.length} against ${standing(battle, 'warband').length}.` +
         (from ? ` ${from.name} had not forgotten us.` : '') +
         (home.built.includes('palisade') ? ' The palisade was between us.' : ''),
     );

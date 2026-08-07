@@ -119,10 +119,22 @@ the broken instrument. It may still hold; it is no longer evidence.
    raid fairness on that number without a much bigger sample.* The deck now
    exercises every corner of the vocabulary, including `known` lore, the
    palisade and the smokehouse.
-7. **[ ] NEXT — Authored raid battlefields.** Still none; every fight is procedural
-   and they blur. Also the cleanest way to make the palisade read as ground
-   rather than as a number.
-8. **[~] Split `data/events.ts` and `main.ts`.** Done: the console levers
+7. **[x] Authored raid battlefields.** Done: six hand-drawn approaches in
+   `data/raidFields.ts` — the open in-field, the strand between wall and
+   water, the wood shouldering the wall, the hollow way, the double ford,
+   the burnt stubble — picked by what the steading actually holds (the sea
+   cannot flank a dry steading) and by the raid's own rng, so raids vary
+   and replays do not. Pure data with a content lint like the deck's: every
+   promise the old procedural field enforced in code (room for fourteen,
+   room for six, one gate, a climb-free lane, a four-wide stand, a
+   crossable field) is asserted against every map, walled and unwalled.
+   The opening log line now names the approach. The milestone bar
+   STRENGTHENED on authored ground: over ten paired raids, walled held 5
+   with 18 dead and 246 stolen against open's 0 held, 29 dead, 720 stolen.
+   The survival curve did not move (77/20/8 against 78/25/10 — all below
+   resolution), which is the correct result: the fields change what a raid
+   feels like, not what the game costs.
+8. **[~] NEXT — Split `data/events.ts` and `main.ts`.** Done: the console levers
    (`debug.ts`), the deck out of the vocabulary (`eventCards.ts`, 1,294 → 91),
    and the UI-state bag (`uistate.ts`). main.ts is 614 → 524. Still to go: the
    overlay chain itself, which is now liftable because its nine branches no
@@ -273,6 +285,32 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — The ground remembers being built** — Item 7: raids stop
+  being fought on rolled ground. Six approaches are drawn by hand in
+  `data/raidFields.ts` — ASCII maps, seven marks wide and nine tall — and a
+  raid picks among the ones its steading can actually offer: the strand and
+  the ford need water on the ground, the wood-shoulder needs trees, and the
+  open in-field, the hollow way and the burnt stubble fit anywhere. The
+  palisade is drawn INTO each map as a line that rises if the wall is built
+  and lies open if it is not, which is the item's whole phrase — the
+  palisade as ground rather than as a number — made literal. The opening
+  line of the battle log now says how they came, off the map itself.
+  The old procedural steading field enforced its promises in code; the
+  authored fields get them as a content lint instead, the same bargain as
+  the event deck: room for fourteen raiders and six sworn, exactly one
+  gate on the wall line, a way in that needs no climbing, somewhere four
+  can stand abreast, a field that can be crossed — every map, walled and
+  unwalled, or it does not ship. Adding a seventh approach is data and a
+  lint run, no engine code.
+  Measured both ways, and both results are the right ones. The curve did
+  not move (77/20/8 against 78/25/10, every delta below resolution) —
+  fields change what a raid feels like, not what the game costs. And the
+  3.5 milestone bar strengthened: over ten paired raids, a walled steading
+  held 5 with 18 dead and 246 stolen, against the open steading's none
+  held, 29 dead and 720 stolen. On ground with a real approach drawn on
+  it, the wall is worth more than it has ever measured. 540 tests.
+  Published.
 
 - **2026-08-07 — The hundred, and a correction about raids** — Batch four
   closes item 6: twenty-one cards, and the deck stands at exactly one

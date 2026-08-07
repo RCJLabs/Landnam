@@ -19,7 +19,22 @@ import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { throwTargets } from '../src/sim/battleActions';
 import { reachWithZoc } from '../src/sim/zoc';
 import { fighterPerson } from '../src/sim/battle';
-import { isPassable, groundCost, WALL_ROW, FIELD_HEIGHT, FIELD_WIDTH } from '../src/sim/battlefield';
+import {
+  FIELD_HEIGHT,
+  FIELD_WIDTH,
+  FRONT_WIDTH,
+  MIDDLE_ROWS,
+  WALL_ROW,
+  groundCost,
+  isPassable,
+  pickRaidField,
+  steadingFieldFrom,
+  widestStand,
+} from '../src/sim/battlefield';
+import { RAID_FIELDS } from '../src/data/raidFields';
+import { MAX_RAIDERS_FAMED } from '../src/sim/battle';
+import { SWORN_MAX } from '../src/sim/people';
+import { makeRng } from '../src/rng';
 import { raidDifficulty, RAID_EARLIEST_DAY, SACK_SHARE, sackSteading } from '../src/sim/raid';
 import { living } from '../src/sim/people';
 import type { GameState } from '../src/state/types';
@@ -139,11 +154,14 @@ describe('the steading under attack', () => {
     expect(battle.width).toBe(FIELD_WIDTH);
     expect(battle.height).toBe(FIELD_HEIGHT);
 
-    // The hall stands in the yard and cannot be walked through.
-    const hall = offsetToAxial(Math.floor(FIELD_WIDTH / 2), FIELD_HEIGHT - 1);
-    expect(battle.grid[key(hall)]!.ground).toBe('block');
-    // And nobody deployed inside it.
-    expect(battle.combatants.some((c) => key(c.at) === key(hall))).toBe(false);
+    // The hall stands in the yard and cannot be walked through. Authored
+    // fields place it where they like along the yard row; there is exactly
+    // one, and nobody deploys inside it.
+    const yardBlocks = Array.from({ length: FIELD_WIDTH }, (_, col) =>
+      offsetToAxial(col, FIELD_HEIGHT - 1),
+    ).filter((h) => battle.grid[key(h)]!.ground === 'block');
+    expect(yardBlocks).toHaveLength(1);
+    expect(battle.combatants.some((c) => key(c.at) === key(yardBlocks[0]!))).toBe(false);
   });
 
   it('raises the palisade only if one was built, with a gate in it', () => {
@@ -157,17 +175,122 @@ describe('the steading under attack', () => {
         state.battle!.grid[key(offsetToAxial(col, WALL_ROW))]!.ground,
       );
 
+    // Authored fields may end the wall against water or trees, so the line
+    // is "most of the row" rather than all-but-one — but there is still
+    // exactly one way through that is neither a climb nor a swim.
     const walls = wallRow(walled).filter((g) => g === 'wall').length;
-    expect(walls).toBe(FIELD_WIDTH - 1);
-    // Exactly one way through that is not a climb.
-    expect(wallRow(walled).filter((g) => g !== 'wall')).toHaveLength(1);
+    expect(walls).toBeGreaterThanOrEqual(4);
+    expect(wallRow(walled).filter((g) => g !== 'wall' && isPassable(g))).toHaveLength(1);
     expect(wallRow(open).filter((g) => g === 'wall')).toHaveLength(0);
+  });
+
+  it('fights different raids on different ground, and a replay on the same', () => {
+    // The whole complaint item 7 answers: every raid read as the last one.
+    // Across steadings the approach varies; replayed, it must not.
+    const a = stocked('ground-vary-0', true);
+    const b = structuredClone(a);
+    startRaid(a, 0);
+    startRaid(b, 0);
+    expect(a.battle!.log[0]).toBe(b.battle!.log[0]);
+
+    const openings = new Set<string>();
+    for (let i = 0; i < 8; i += 1) {
+      const state = stocked(`ground-vary-${i}`, true);
+      startRaid(state, 0);
+      openings.add(state.battle!.log[0]!.split('.')[0]!);
+    }
+    expect(openings.size).toBeGreaterThan(1);
   });
 
   it('slows them rather than stopping them — a sealed field would strand the AI', () => {
     expect(Number.isFinite(groundCost('wall'))).toBe(true);
     expect(groundCost('wall')).toBeGreaterThan(groundCost('rough'));
     expect(isPassable('wall')).toBe(true);
+  });
+});
+
+// --- Content lint: the authored fields ---
+//
+// The fields are data, so like the event deck they get a lint instead of
+// trust. Every promise the procedural field used to enforce in code is
+// asserted here against every map, walled and unwalled — a map that breaks
+// one cannot ship.
+
+describe('content lint: raid fields', () => {
+  it('ids are unique and slug-shaped, and every field says how they came', () => {
+    const ids = RAID_FIELDS.map((f) => f.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const field of RAID_FIELDS) {
+      expect(field.id).toMatch(/^[a-z0-9-]+$/);
+      expect(field.line.length, field.id).toBeGreaterThan(15);
+    }
+  });
+
+  it('is shaped like the battlefield, in legal marks only', () => {
+    for (const field of RAID_FIELDS) {
+      expect(field.rows, field.id).toHaveLength(FIELD_HEIGHT);
+      for (const row of field.rows) expect(row, field.id).toMatch(/^[.,#~=GH]{7}$/);
+      // One gate, on the wall line; one hall, in the yard; the wall only
+      // ever runs along its own row.
+      const flat = field.rows.join('');
+      expect(flat.split('G'), field.id).toHaveLength(2);
+      expect(flat.split('H'), field.id).toHaveLength(2);
+      expect(field.rows[WALL_ROW]!.includes('G'), field.id).toBe(true);
+      expect(field.rows[FIELD_HEIGHT - 1]!.includes('H'), field.id).toBe(true);
+      field.rows.forEach((row, i) => {
+        if (i !== WALL_ROW) expect(row.includes('='), `${field.id} row ${i}`).toBe(false);
+      });
+    }
+  });
+
+  it('keeps every promise, walled and unwalled', () => {
+    for (const field of RAID_FIELDS) {
+      for (const palisade of [true, false]) {
+        const label = `${field.id} ${palisade ? 'walled' : 'open'}`;
+        const { grid, warbandSpots, foeSpots } = steadingFieldFrom(field, palisade);
+
+        // Room for the biggest raid the game can send, and for six sworn.
+        const passableAt = (h: { q: number; r: number }) =>
+          isPassable(grid[key(h)]?.ground ?? 'block');
+        expect(foeSpots.filter(passableAt).length, label).toBeGreaterThanOrEqual(MAX_RAIDERS_FAMED);
+        expect(warbandSpots.filter(passableAt).length, label).toBeGreaterThanOrEqual(SWORN_MAX);
+
+        // A way in that needs no climbing: some column runs clear from the
+        // raiders' edge through the wall line.
+        const lane = Array.from({ length: FIELD_WIDTH }, (_, col) =>
+          Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[key(offsetToAxial(col, row))]!.ground)
+            .every((g) => g !== 'wall' && isPassable(g)),
+        );
+        expect(lane.some(Boolean), `${label}: no gate lane`).toBe(true);
+
+        // Ground a line can form on, and a field that can be crossed at all.
+        const widest = Math.max(...MIDDLE_ROWS.map((row) => widestStand(grid, row)));
+        expect(widest, `${label}: nowhere to form up`).toBeGreaterThanOrEqual(FRONT_WIDTH);
+        const crossable = Array.from({ length: FIELD_WIDTH }, (_, col) =>
+          MIDDLE_ROWS.every((row) => isPassable(grid[key(offsetToAxial(col, row))]!.ground)),
+        );
+        expect(crossable.some(Boolean), `${label}: cannot be crossed`).toBe(true);
+      }
+    }
+  });
+
+  it('never offers the sea to a dry steading, and always has something to offer', () => {
+    // At least two fields must fit ANY steading, or the picker collapses to
+    // one map and the raids blur again the day somebody edits the data.
+    expect(RAID_FIELDS.filter((f) => !f.needs).length).toBeGreaterThanOrEqual(2);
+
+    const rng = makeRng('field-pick');
+    for (let i = 0; i < 20; i += 1) {
+      const dry = pickRaidField(['field', 'rough'], rng.derive(`dry-${i}`));
+      expect(dry.needs, dry.id).not.toBe('water');
+      expect(dry.needs, dry.id).not.toBe('wood');
+    }
+    const wet = new Set<string>();
+    for (let i = 0; i < 40; i += 1) {
+      wet.add(pickRaidField(['water', 'wood', 'field'], rng.derive(`wet-${i}`)).id);
+    }
+    // A steading that has the ground can draw the fields that need it.
+    expect([...wet].some((id) => RAID_FIELDS.find((f) => f.id === id)?.needs)).toBe(true);
   });
 
   it('leaves a way in that does not need climbing', () => {
