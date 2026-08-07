@@ -113,7 +113,12 @@ function step(state: GameState): Action {
       return { type:'B_WARCRY' };
     }
     if (!me.hasActed && distance(near.at, me.at) === 1) {
-      return { type:'B_STRIKE', targetId: near.personId };
+      // The game gained named leaders, so the bot hunts them in the same
+      // commit: dropping the champion shakes his whole band, which makes
+      // him worth a blow that could have gone to anyone.
+      const marked = foes.find(
+        f => f.personId === b.champion && distance(f.at, me.at) === 1);
+      return { type:'B_STRIKE', targetId: (marked ?? near).personId };
     }
     if (me.movesLeft > 0) {
       // The wall, formed on the way in rather than instead of it. This is the

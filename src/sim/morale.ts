@@ -12,6 +12,7 @@ import { effectiveStat } from './people';
 import { fighterPerson } from './battle';
 import { canAnchor, wallLinks } from './wall';
 import { reachWithZoc, threatCount } from './zoc';
+import { leaderOf } from './people';
 
 export const NERVE_HIT = 10;
 export const NERVE_ALLY_DOWN = 20;
@@ -103,6 +104,39 @@ export function witnessFall(state: GameState, fallen: Combatant): void {
       steadyNerve(c, NERVE_KILL);
     }
   }
+}
+
+/** What a whole side loses when the one who led it goes down. */
+export const NERVE_LEADER_FELL = 25;
+
+/** Whether this fighter was leading their side of this field. */
+export function fellLeading(state: GameState, fallen: Combatant): boolean {
+  const battle = state.battle!;
+  if (fallen.side === 'foe') return battle.champion === fallen.personId;
+  return leaderOf(state.party.people)?.id === fallen.personId;
+}
+
+/**
+ * The leader is down and the whole side knows it — not just whoever stood
+ * beside them. Symmetric on purpose: OUR leader's fall shakes the band
+ * exactly as their champion's fall shakes the raid, which is what makes
+ * singling out the man with the pennant a real tactic on both sides of it.
+ * Distance does not soften this one; the news crosses any field.
+ */
+export function leaderFell(state: GameState, fallen: Combatant): void {
+  if (!fellLeading(state, fallen)) return;
+  const battle = state.battle!;
+  for (const c of battle.combatants) {
+    if (c.side === fallen.side && c.personId !== fallen.personId && canAnchor(c)) {
+      shakeNerve(state, c, NERVE_LEADER_FELL);
+    }
+  }
+  const person = fighterPerson(state, fallen.personId);
+  battle.log.push(
+    `${person?.name ?? 'Their leader'} fell, and the heart went out of those ${
+      fallen.side === 'foe' ? 'he had led' : 'left holding the line'
+    }.`,
+  );
 }
 
 /** Which edge row this side runs for. */

@@ -267,6 +267,13 @@ export interface Battle {
   /** The leader's war-cry has been spent. Once a fight, and it shows. */
   warCried?: boolean;
   /**
+   * personId of the foe who LEADS this band, when somebody does: every raid
+   * has one, and the open field grows one once word has spread. Boosted,
+   * grimly bynamed, and worth killing — when he drops, the heart goes out
+   * of the men he led.
+   */
+  champion?: string;
+  /**
    * The most recent blow, for the renderer's effects layer: a lunge, a
    * flash, a number that floats. `n` only ever rises, so the view can tell
    * a new blow from a repaint of the old one.

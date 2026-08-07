@@ -9,6 +9,7 @@ import { reachWithZoc } from './zoc';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
 import {
+  CHAMPION_BYNAMES,
   FOE_ARCHETYPES,
   FOE_BYNAMES,
   FOE_NAMES,
@@ -192,6 +193,27 @@ export function rollFoes(
   return foes;
 }
 
+/** What leading a band adds to the man who leads it. */
+export const CHAMPION_MIGHT = 1;
+export const CHAMPION_SPIRIT = 1;
+export const CHAMPION_TOUGHNESS = 4;
+
+/**
+ * Raises the strongest of a band to lead it, and returns him. He keeps his
+ * name and archetype and trades up everything else: a heavier byname, a
+ * point of might and spirit, and hide enough to be worth singling out.
+ * Nobody leads a band of one — callers gate on size.
+ */
+export function anointChampion(foes: Person[], rng: Rng): Person {
+  const champion = foes.reduce((a, b) => (b.maxHealth > a.maxHealth ? b : a));
+  champion.byname = rng.pick(CHAMPION_BYNAMES);
+  champion.stats.might = Math.min(6, champion.stats.might + CHAMPION_MIGHT);
+  champion.stats.spirit = Math.min(6, champion.stats.spirit + CHAMPION_SPIRIT);
+  champion.maxHealth += CHAMPION_TOUGHNESS;
+  champion.health = champion.maxHealth;
+  return champion;
+}
+
 // --- Setting up ---
 
 /** Initiative: quick wits act first, with a roll to break the ties. */
@@ -253,9 +275,19 @@ export function beginBattle(
     word,
   );
 
+  // Every raid is led — nobody crosses the country for another man's store
+  // without somebody whose idea it was. The open field earns a name only
+  // once word has spread: the same threshold that makes a fight bigger is
+  // the one that makes it somebody's.
+  const champion =
+    foes.length >= 2 && (raid || wordBump(state) > 0)
+      ? anointChampion(foes, rng.derive('champion'))
+      : undefined;
+
   const battle: Battle = {
     terrain,
     ...(raid ? { raid: true } : {}),
+    ...(champion ? { champion: champion.id } : {}),
     width: FIELD_WIDTH,
     height: FIELD_HEIGHT,
     grid,
@@ -357,6 +389,7 @@ export function beginBattle(
     battle.log.push(
       `${raidField?.line ?? `They came at ${home.name} out of the trees.`}` +
         ` ${foes.length} against ${standing(battle, 'warband').length}.` +
+        (champion ? ` ${champion.name} ${champion.byname} led them.` : '') +
         (from ? ` ${from.name} had not forgotten us.` : '') +
         (home.built.includes('palisade') ? ' The palisade was between us.' : ''),
     );
@@ -371,8 +404,10 @@ export function beginBattle(
     battle.log.push(
       `${seaField ? `${seaField.line} ` : ''}They met us on ${groundName(terrain)}. ${foes.length} against ${standing(battle, 'warband').length}.` +
         // Escalation must never be a hidden punishment: when word is what
-        // made this fight bigger or harder, the log says so.
-        (wordBump(state) > 0 ? ' They had heard of us.' : ''),
+        // made this fight bigger or harder, the log says so — and names
+        // the man it drew.
+        (wordBump(state) > 0 ? ' They had heard of us.' : '') +
+        (champion ? ` ${champion.name} ${champion.byname} had come to see for himself.` : ''),
     );
     chronicle(state, `We were brought to a fight on ${groundName(terrain)}.`, 'grim');
   }

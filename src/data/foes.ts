@@ -84,6 +84,16 @@ export const FOE_BYNAMES = [
   'Ill-Luck', 'the Thin', 'Wolf-Jaw', 'the Stranger', 'Cold-Iron',
 ];
 
+/**
+ * The men who LEAD bands wear heavier names than the men who fill them.
+ * A champion keeps his given name and trades up his byname — the byname is
+ * the reputation, and reputation is exactly what a named raid leader is.
+ */
+export const CHAMPION_BYNAMES = [
+  'Skull-Splitter', 'the Bloody', 'Hard-Counsel', 'Ship-Burner',
+  'the Old Wolf', 'Battle-Glad', 'Iron-Beard', 'the Unforgiven',
+];
+
 export function archetypeById(id: string): FoeArchetype | undefined {
   return FOE_ARCHETYPES.find((a) => a.id === id);
 }

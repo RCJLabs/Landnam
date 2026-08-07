@@ -414,6 +414,26 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-07 — Named raid leaders** — The men who come for the steading
+  stopped being anonymous. Every raid of two or more is led: the toughest
+  of them is raised to champion — a point of might and spirit, four more
+  health, and a byname out of the heavier pool (Skull-Splitter, the Old
+  Wolf, Ship-Burner) — and the raid log names him from the first line.
+  The open field earns a champion only once word has spread, on the same
+  wordBump threshold that already makes those fights bigger, so the log's
+  "They had heard of us" now arrives with the name of the man it drew.
+  On the field he flies a BLOOD pennant beside our leader's gold one, and
+  he is worth singling out: when a side's leader falls — theirs or ours,
+  symmetric on purpose — every man he led takes a 25-point nerve shock
+  that no distance softens, wall links damping it as they damp anything.
+  The bot hunts the champion in the same commit (prefers him among
+  adjacent targets), per the standing rule. Measured after: curve
+  75/22/12 against the 72/18/7 of the overhaul — noise; the formation
+  bar holds at 38/60 wins, 170 standing against 35/60 and 165. Raid
+  tally at 20 sagas read 3/12 held — recorded, not tuned on; that
+  sample's day is item 10's. SAVE_VERSION 22; seven tests in
+  test/champion.test.ts.
+
 - **2026-08-07 — The combat overhaul: a leader worth following** — The band
   now HAS a leader on the field: the first living sworn — first off the
   knarr, succession by seniority, never a hand — marked by a gold pennant

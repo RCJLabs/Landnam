@@ -9,7 +9,7 @@ import { groundCost } from './battlefield';
 import { hasShot, reachWithZoc, threatCount } from './zoc';
 import { defenceBonus, wallLinks } from './wall';
 import { bonus } from './lore';
-import { NERVE_HIT, shakeNerve, startingNerve, witnessFall } from './morale';
+import { NERVE_HIT, leaderFell, shakeNerve, startingNerve, witnessFall } from './morale';
 import { effectiveStat, leaderOf } from './people';
 
 export const THROW_RANGE = 3;
@@ -125,6 +125,8 @@ function drop(
   person.health = 0;
   if (target.side === 'foe') person.alive = false;
   battle.log.push(cause);
+  // After the cause, so the saga reads fall first, then what it did to them.
+  leaderFell(state, target);
 }
 
 // --- Move ---

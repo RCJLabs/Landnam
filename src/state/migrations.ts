@@ -210,6 +210,9 @@ export const MIGRATIONS: Record<number, Migration> = {
   // Battle gained warCried and lastBlow. An old save's fight has cried no
   // cry and struck no recorded blow, which is also the truth.
   20: (save) => ({ ...save, version: 21 }),
+  // Battle gained the optional champion. A fight saved before this was
+  // against men nobody led, which is what an absent field already says.
+  21: (save) => ({ ...save, version: 22 }),
 };
 
 export interface MigrationResult {

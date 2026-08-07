@@ -278,7 +278,11 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
           isActive,
           combatant.defending,
           combatant.broken,
-          isLeaderHere(state, combatant),
+          isLeaderHere(state, combatant)
+            ? 'gold'
+            : battle.champion === combatant.personId
+              ? 'blood'
+              : null,
         ),
       );
     }
@@ -343,14 +347,15 @@ function fighter(
   isActive: boolean,
   defending: boolean,
   broken: boolean,
-  leader = false,
+  pennant: 'gold' | 'blood' | null = null,
 ): SVGGElement {
   const g = svgEl('g', broken ? { opacity: '0.6' } : {});
   const radius = HEX * 0.42;
 
-  // The leader carries the banner: a gold pennant over the shield, readable
-  // from any zoom, on the one shield that can raise the war-cry.
-  if (leader) {
+  // Whoever leads carries the banner, readable from any zoom: gold over the
+  // one shield that can raise the war-cry, blood over the man the raid
+  // follows — the one worth singling out.
+  if (pennant) {
     const mastX = cx + radius * 0.55;
     const top = cy - radius - 12;
     g.append(
@@ -360,7 +365,7 @@ function fighter(
       }),
       svgEl('path', {
         d: `M ${mastX} ${top} l 11 3.5 l -11 3.5 Z`,
-        fill: '#d3a441',
+        fill: pennant === 'gold' ? '#d3a441' : '#b23b2e',
         class: 'leader-pennant',
       }),
     );
