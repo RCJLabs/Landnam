@@ -12,6 +12,8 @@ import { atHome, BLOCK_REASON, foundBlocker } from '../sim/site';
 import { atSea, canFish, canGather } from '../sim/travel';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
+import { placeHere } from '../sim/places';
+import { placeKind } from '../data/places';
 import { BARTER_FOOD } from '../data/clans';
 import { FEAST_FOOD } from '../data/thing';
 import { wintersStood } from '../sim/calendar';
@@ -87,6 +89,21 @@ export function deedsFor(
         run: () => dispatch({ type: 'FISH' }),
       });
     }
+  }
+
+  const here = placeHere(state);
+  if (here && here.sackedOn === undefined) {
+    const def = placeKind(here.kind);
+    deeds.push({
+      id: 'sack-place',
+      label: def.deed,
+      blurb:
+        def.garrison !== null
+          ? `${def.blurb} Steel first: whoever holds it will not hand it over.`
+          : `${def.blurb} A day's work.`,
+      ...(def.garrison !== null ? { tone: 'grim' as const } : {}),
+      run: () => dispatch({ type: 'SACK_PLACE', id: here.id }),
+    });
   }
 
   if (host) {

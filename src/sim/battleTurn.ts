@@ -15,6 +15,7 @@ import { takeFoeTurn } from './battleAi';
 import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
+import { settlePlace } from './places';
 import { noteRaidSent } from './neighbours';
 import { bonus } from './lore';
 import { note } from './tally';
@@ -124,8 +125,16 @@ function playUntilOurTurn(state: GameState): void {
  * Opens a fight and settles it onto the warband's turn, so the field is
  * always playable the moment it appears — even when a foe wins initiative.
  */
-export function startBattle(state: GameState, terrain: Terrain, difficulty = 0): void {
+export function startBattle(
+  state: GameState,
+  terrain: Terrain,
+  difficulty = 0,
+  placeId?: string,
+): void {
   beginBattle(state, terrain, difficulty);
+  // Stamped before any turn plays out, so a mid-fight save still knows what
+  // the fight is FOR.
+  if (placeId && state.battle) state.battle.placeId = placeId;
   playUntilOurTurn(state);
 }
 
@@ -175,6 +184,10 @@ export function leaveBattle(state: GameState): Aftermath | undefined {
     if (won) holdSteading(state, aftermath.foesDown);
     else sackSteading(state);
   }
+
+  // A fight FOR a place pays out only if the field was won. Losing leaves it
+  // standing — richer in story, and still there to come back for.
+  if (battle.placeId && won) settlePlace(state, battle.placeId);
 
   // Running is remembered. It costs the band's heart even in victory.
   if (aftermath.ran.length > 0) {

@@ -68,6 +68,8 @@ import { foundSettlement } from '../src/sim/site';
 import { distance, key, fromKey } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
 import { reachWithZoc } from '../src/sim/zoc';
+import { placeHere } from '../src/sim/places';
+import { placeKind } from '../src/data/places';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
@@ -133,6 +135,19 @@ function step(state: GameState): Action {
   const days = state.party.food / Math.max(1, foodPerDay(state));
   const nights = state.party.firewood / Math.max(1, firewoodPerNight(state));
 
+  // A place worth taking, under our feet, still standing: take it. The rule
+  // that put this here is the same one that taught the bot to swing — the
+  // game gained raidable places, so the bot raids them in the same commit,
+  // or the measurement reports them as worthless. An average player robs
+  // the soft targets and leaves the town to a braver run.
+  const here2 = placeHere(state);
+  if (here2 && here2.sackedOn === undefined) {
+    const def = placeKind(here2.kind);
+    if (def.garrison === null || def.garrison <= 1) {
+      return { type:'SACK_PLACE', id: here2.id };
+    }
+  }
+
   if (state.settlement) return { type:'CAMP' };
 
   // Settle on anything workable rather than holding out for perfection.
@@ -149,6 +164,24 @@ function step(state: GameState): Action {
 
   const opts = moveOptions(state);
   if (opts.length === 0) return { type:'CAMP' };
+
+  // Short on food with a soft larder in sight: the average player robs it.
+  if (days < 5) {
+    let larder: {q:number;r:number}|null = null; let larderD = 7;
+    for (const p of state.world.places) {
+      if (p.sackedOn !== undefined) continue;
+      const def = placeKind(p.kind);
+      if (def.garrison !== null && def.garrison > 1) continue;
+      if (def.loot.food <= 0) continue;
+      if (state.world.seen[key(p.at)] === undefined) continue;
+      const d = distance(p.at, state.party.at);
+      if (d < larderD) { larderD = d; larder = p.at; }
+    }
+    if (larder) {
+      const t = larder;
+      return { type:'MOVE', to: opts.reduce((a,b)=>distance(b,t)<distance(a,t)?b:a) };
+    }
+  }
 
   // Actually go and look for somewhere to live: among ground we have SEEN,
   // find the nearest hex that would take the posts and walk toward it.

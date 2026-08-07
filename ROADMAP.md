@@ -180,12 +180,22 @@ threat economy is defensive.** The player's offensive verbs exist but have no
 economy behind them, nothing outside the steading ever escalates, and the
 measuring bot has never once used the offensive half.
 
-1. **[ ] The map needs destinations.** "Go out under arms" is a stir
-   multiplier (1.45) with no target: nothing on the map is worth walking to.
-   Seed worldgen with a few persistent PLACES — a monastery rich and soft, a
-   town rich and hard, an ore seam, a wreck — that expeditions can aim at.
-   This is the raid fantasy in the pitch, and it feeds 6.3: robbing the
-   coast is how the player CHOOSES escalation.
+1. **[x] The map needs destinations.** Done: four kinds of place in
+   `data/places.ts` — a monastery rich and soft (garrison 1, and it can
+   teach runes), a trading town rich and hard (garrison 4), a wreck and an
+   iron seam free for the working (shipwright and smithing) — seeded one
+   each per world where the ground allows, discovered under the fog,
+   marked on the map, named by the hint panel, taken through the Act
+   sheet. A guarded place is a fight first (the battle carries `placeId`
+   and pays only if won; a lost fight leaves it standing to come back
+   for); every taking is once-only, goes to the saga, and moves the
+   NEAREST neighbour's standing by the kind's infamy — so robbing the
+   coast feeds the pressure machinery that was already listening.
+   `SAVE_VERSION` 18: old saves re-derive exactly the places their seed
+   would have been born with, against their SAVED tiles. The bot robs
+   soft targets when hungry, same commit; the curve did not move
+   (75/20/8 against 77/20/8), which is right — places are opportunity,
+   not pressure. 555 tests.
 2. **[ ] A plunder economy.** Falling on a neighbour docks 45 standing
    immediately and pays 2 food + 1 wood per foe downed — strictly worse
    than bartering. Sacking must be symmetric: they have stores, as we do
@@ -371,6 +381,30 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-07 — Somewhere worth walking to** — The audit's first item: the
+  map gains places. A house of the White Christ on a far shore, stone cells
+  and a bell and more in the store than in the yard; a trading town with a
+  watch that is paid to be awake; a wreck broken-backed on the rocks; a seam
+  of bog iron in an orange pool. One of each per world where the ground
+  allows, seeded from the run's own seed, hidden under the fog until
+  somebody lays eyes on them, drawn on the map with their own glyphs — and
+  dimmed to a memory once taken, because the mark is where the saga
+  happened. Standing on one, the hint panel introduces it and the Act sheet
+  offers the deed: a day's work for the free ones, steel first for the
+  guarded ones. The fight carries the stake — `Battle.placeId` — and pays
+  only if the field is won; losing leaves the place standing to come back
+  for. Taking one is once-only, is chronicled, can teach (runes off the
+  monastery's books, shipwright off the wreck's bones, smithing off the
+  seam), and moves the nearest neighbour's standing by the kind's infamy:
+  robbing the coast is now a CHOICE that feeds the pressure machinery 4.3
+  and 6.3 already built. `SAVE_VERSION` 18 with a migration that re-derives
+  places from the save's own seed against its SAVED tiles, so every old
+  save gains exactly the country it always had. The bot learned it in the
+  same commit — it robs a soft larder when hungry — and the curve did not
+  move (75/20/8 against 77/20/8, below resolution), which is the right
+  answer: a place is opportunity, and the game's difficulty was never
+  supposed to live there. 555 tests. Published.
 
 - **2026-08-07 — The loop audit: the game only defends** — Ten new queue
   items from an audit taken against the pitch's own loop. The finding under

@@ -42,6 +42,20 @@ export interface World {
   landingName: string;
   /** Hexes the party has actually stood on, keyed to the day they first did. */
   trod: Record<HexKey, number>;
+  /** Fixed points worth walking to — and some worth taking. See data/places. */
+  places: Place[];
+}
+
+/**
+ * A destination seeded at worldgen: somewhere on the map that is somewhere,
+ * not just terrain. The rich ones are what "go out under arms" is FOR.
+ */
+export interface Place {
+  id: string;
+  kind: 'monastery' | 'town' | 'wreck' | 'oreseam';
+  at: Hex;
+  /** Set the day it was sacked or picked clean. A place is taken once. */
+  sackedOn?: number;
 }
 
 // --- People ---
@@ -244,6 +258,8 @@ export interface Battle {
   terrain: Terrain;
   /** True when this is a raid on the steading: your ground, your buildings. */
   raid?: boolean;
+  /** Set when the fight is FOR a place — winning it is what sacks it. */
+  placeId?: string;
   width: number;
   height: number;
   grid: Record<HexKey, BattleTile>;

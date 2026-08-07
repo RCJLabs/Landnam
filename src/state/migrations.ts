@@ -9,6 +9,8 @@
 //   3. Migrations never throw on missing fields; they fill defaults.
 
 import { SAVE_VERSION } from './version';
+import { stream } from '../rng';
+import { seedPlaces } from '../sim/places';
 
 /** Migrates a save from version N to version N+1. */
 export type Migration = (save: Record<string, unknown>) => Record<string, unknown>;
@@ -186,6 +188,18 @@ export const MIGRATIONS: Record<number, Migration> = {
       party.people = party.people.map((person) => ({ bond: 'sworn', ...person }));
     }
     return { ...save, version: 17 };
+  },
+  // The world gains its places. Re-derived from the save's own seed with the
+  // same stream newGame uses, against the SAVED tiles — so an old save gains
+  // exactly the places its seed would have been born with, and a world whose
+  // generation has since changed still gets places that fit ITS ground.
+  17: (save) => {
+    const world = save['world'] as Parameters<typeof seedPlaces>[0] | undefined;
+    const seed = typeof save['seed'] === 'string' ? (save['seed'] as string) : '';
+    if (world && !Array.isArray((world as { places?: unknown }).places)) {
+      world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
+    }
+    return { ...save, version: 18 };
   },
 };
 

@@ -20,6 +20,8 @@ import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds } from '../sim/thing';
 import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
+import { placeHere } from '../sim/places';
+import { placeKind } from '../data/places';
 import { angriest, neighbourHere, neighbourLine, standingOf } from '../sim/neighbours';
 import { button, el } from './svg';
 import { makeWatch } from './motion';
@@ -304,6 +306,17 @@ export function renderSagaLog(state: GameState, expanded: boolean, toggle: () =>
 export function renderHint(state: GameState): HTMLElement {
   if (state.end) return el('div', { class: 'hint' }, ['The saga is finished.']);
   if (state.event) return el('div', { class: 'hint' }, ['Something needs answering.']);
+  // Standing somewhere that is somewhere: the place introduces itself, and
+  // the Act sheet holds the decision about it.
+  const here = placeHere(state);
+  if (here) {
+    const def = placeKind(here.kind);
+    return el('div', { class: 'hint place' }, [
+      here.sackedOn !== undefined
+        ? `What is left of ${def.name}. It was taken, and it shows.`
+        : `${def.name[0]!.toUpperCase()}${def.name.slice(1)}. ${def.blurb}`,
+    ]);
+  }
   if (!state.settlement) {
     return el('div', { class: 'hint' }, ['Find ground worth holding · tap a marked hex to travel']);
   }

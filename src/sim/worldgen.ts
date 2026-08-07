@@ -169,7 +169,9 @@ function generateOnce(rng: Rng, width: number, height: number): World | null {
   if (!landing) return null;
   if (landmassFrom(landing, tiles).size < MIN_LANDMASS) return null;
 
-  return { width, height, tiles, seen: {}, landing, landingName: '', trod: {} };
+  // Places are seeded by the caller from their own derived stream, so a
+  // migration can re-derive them for an old save without replaying worldgen.
+  return { width, height, tiles, seen: {}, landing, landingName: '', trod: {}, places: [] };
 }
 
 /** Generates a world, rerolling with derived seeds until one is worth playing. */

@@ -12,6 +12,8 @@ import { chronicle } from './saga';
 import { atHome, foundSettlement } from './site';
 import { fieldCrew, permittedStep } from './expedition';
 import { bargain, bargainBlocker, canFallOn, fallOn, seeNeighbours } from './neighbours';
+import { placeById, sackBlocker, settlePlace } from './places';
+import { placeKind } from '../data/places';
 import { bonus } from './lore';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
@@ -28,6 +30,7 @@ export type TravelAction =
   | { type: 'FOUND' }
   | { type: 'BARTER'; id: string }
   | { type: 'FALL_ON'; id: string }
+  | { type: 'SACK_PLACE'; id: string }
   | { type: 'CALL_THING' };
 
 /** Effort to row a hex of coastal water. The knarr is faster than legs. */
@@ -387,6 +390,25 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       if (difficulty === null) return prev;
       const ground = state.world.tiles[key(party.at)]?.terrain ?? 'meadow';
       startBattle(state, ground, difficulty);
+      return state;
+    }
+
+    case 'SACK_PLACE': {
+      // A guarded place is a fight first and a payoff after — the settling-up
+      // happens when the field is won (see leaveBattle). An unguarded one is
+      // a day's work, taken on the spot.
+      if (sackBlocker(state, action.id) !== null) return prev;
+      const place = placeById(state, action.id)!;
+      const def = placeKind(place.kind);
+      if (def.garrison !== null) {
+        const ground = state.world.tiles[key(party.at)]?.terrain ?? 'meadow';
+        startBattle(state, ground, def.garrison, action.id);
+        return state;
+      }
+      settlePlace(state, action.id);
+      advance(state, 1);
+      if (state.end) return state;
+      reveal(state);
       return state;
     }
 

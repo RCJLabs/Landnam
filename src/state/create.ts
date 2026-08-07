@@ -9,6 +9,7 @@ import { revealAround, sightRadius } from '../sim/fog';
 import { makeWarband } from '../sim/people';
 import { generateWorld } from '../sim/worldgen';
 import { placeNeighbours } from '../sim/neighbours';
+import { seedPlaces } from '../sim/places';
 import { emptyTally } from '../sim/tally';
 import type { GameState } from './types';
 import { SAVE_VERSION } from './version';
@@ -22,6 +23,9 @@ export function newGame(seed: string): GameState {
   const landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
   world.landingName = landingName;
   world.trod = { [key(world.landing)]: 1 };
+  // From its own derived stream, so the migration for pre-place saves can
+  // hand an old world exactly the places its seed would have been born with.
+  world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
 
   const state: GameState = {
     version: SAVE_VERSION,

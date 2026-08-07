@@ -3,7 +3,7 @@
 
 import { cornerPoints, fromKey, fromPixel, key, neighbors, toPixel, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
-import type { GameState, Neighbour, Tile } from '../state/types';
+import type { GameState, Neighbour, Place, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
 import { atSea, moveEffort } from '../sim/travel';
 import { mapDefs, svgEl } from './svg';
@@ -135,6 +135,12 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     for (const n of state.neighbours) {
       if (!n.found) continue;
       layerOverlay.append(neighbourMark(n));
+    }
+
+    // The fixed points of the country, once the fog has come off them.
+    for (const p of state.world.places) {
+      if (!state.world.seen[key(p.at)]) continue;
+      layerOverlay.append(placeMark(p));
     }
 
     // Where the keel first touched sand. Kept on the map because it is the
@@ -332,6 +338,53 @@ export const STANDING_INK: Record<string, string> = {
   friendly: '#7fa05a',
   sworn: '#5fa389',
 };
+
+/**
+ * A place on the map: a glyph you can read at map scale, dimmed to a memory
+ * once the place has been taken — the mark stays, because the saga happened
+ * there.
+ */
+function placeMark(place: Place): SVGGElement {
+  const p = toPixel(place.at, HEX_SIZE);
+  const taken = place.sackedOn !== undefined;
+  const g = svgEl('g', { class: `place place-${place.kind}`, opacity: taken ? 0.35 : 0.95 });
+  const r = HEX_SIZE * 0.3;
+  const ink = taken ? '#6f675a' : '#d9c9a3';
+
+  if (place.kind === 'monastery') {
+    // A cross over a low cell.
+    g.append(
+      svgEl('rect', { x: p.x - r * 0.8, y: p.y, width: r * 1.6, height: r * 0.7, fill: '#4a4133', stroke: ink, 'stroke-width': 1.4 }),
+      svgEl('path', { d: `M ${p.x} ${p.y - r * 1.1} V ${p.y} M ${p.x - r * 0.45} ${p.y - r * 0.7} H ${p.x + r * 0.45}`, stroke: ink, 'stroke-width': 1.8, fill: 'none' }),
+    );
+  } else if (place.kind === 'town') {
+    // Three gables shoulder to shoulder: more roofs than anywhere else has.
+    for (const dx of [-r * 0.9, 0, r * 0.9]) {
+      g.append(
+        svgEl('path', {
+          d: `M ${p.x + dx - r * 0.45} ${p.y + r * 0.5} V ${p.y} L ${p.x + dx} ${p.y - r * 0.6} L ${p.x + dx + r * 0.45} ${p.y} V ${p.y + r * 0.5} Z`,
+          fill: '#4a4133',
+          stroke: ink,
+          'stroke-width': 1.3,
+        }),
+      );
+    }
+  } else if (place.kind === 'wreck') {
+    // A hull broken-backed: two arcs that no longer meet.
+    g.append(
+      svgEl('path', { d: `M ${p.x - r} ${p.y} Q ${p.x - r * 0.3} ${p.y + r * 0.8} ${p.x - r * 0.05} ${p.y + r * 0.3}`, stroke: ink, 'stroke-width': 1.8, fill: 'none' }),
+      svgEl('path', { d: `M ${p.x + r} ${p.y - r * 0.2} Q ${p.x + r * 0.4} ${p.y + r * 0.7} ${p.x + r * 0.1} ${p.y + r * 0.35}`, stroke: ink, 'stroke-width': 1.8, fill: 'none' }),
+    );
+  } else {
+    // Ore: a stain in the ground with heavy stones in it.
+    g.append(
+      svgEl('circle', { cx: p.x, cy: p.y + r * 0.2, r: r * 0.55, fill: '#8a4f2d', opacity: 0.7 }),
+      svgEl('circle', { cx: p.x - r * 0.3, cy: p.y, r: r * 0.18, fill: ink }),
+      svgEl('circle', { cx: p.x + r * 0.25, cy: p.y + r * 0.35, r: r * 0.14, fill: ink }),
+    );
+  }
+  return g;
+}
 
 function neighbourMark(n: Neighbour): SVGGElement {
   const p = toPixel(n.at, HEX_SIZE);

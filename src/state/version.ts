@@ -18,7 +18,8 @@
 // v15 (4.5): the root gained the tally.
 // v16 (4.6): RunEnd gained the 'jarl' cause.
 // v17 (6.2): a Person is sworn or a hand.
-export const SAVE_VERSION = 17;
+// v18 (places): World gained places; Battle gained the optional placeId.
+export const SAVE_VERSION = 18;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';
