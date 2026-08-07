@@ -299,8 +299,16 @@ interface Curve {
 
 let cached: Curve | null = null;
 
-/** Measured once, read by every bar below. */
-function measured(): Curve {
+/**
+ * Measured once, read by every bar below.
+ *
+ * Async for one reason: the loop is minutes of solid computation, and a
+ * worker whose event loop never yields cannot answer the test runner's RPC
+ * heartbeat — CI then fails the run with "[vitest-worker]: Timeout calling
+ * onTaskUpdate" under 560 green tests. One yielded macrotask per seed keeps the
+ * loop breathing and costs nothing anyone can measure.
+ */
+async function measured(): Promise<Curve> {
   if (cached) return cached;
   const total: Curve = { reachedWinter: 0, sawSpring: 0, twoWinters: 0, settledByWinter: 0 };
   for (let s = 0; s < SEEDS; s += 1) {
@@ -311,6 +319,7 @@ function measured(): Curve {
     }
     if (!run(`curve-${s}`, 73).end) total.sawSpring += 1;
     if (!run(`curve-${s}`, 169).end) total.twoWinters += 1;
+    await new Promise((resolve) => setTimeout(resolve, 0));
   }
   cached = total;
   return total;
@@ -323,8 +332,8 @@ const CURVE_TIMEOUT = 120_000;
 describe('the difficulty curve', () => {
   const pct = (n: number) => Math.round((100 * n) / SEEDS);
 
-  it('is winnable by an average player, and not a walkover', { timeout: CURVE_TIMEOUT }, () => {
-    const m = measured();
+  it('is winnable by an average player, and not a walkover', { timeout: CURVE_TIMEOUT }, async () => {
+    const m = await measured();
     console.log(`curve over ${SEEDS} seeds: winter ${pct(m.reachedWinter)}%, spring ${pct(m.sawSpring)}%, two winters ${pct(m.twoWinters)}%, settled by winter ${m.settledByWinter}`);
     // Measured at 78% / 30% / 7% when these bars were re-based. The figures
     // they replaced (83/55/50) were the truncation artifact in the header,
@@ -342,17 +351,17 @@ describe('the difficulty curve', () => {
     expect(pct(m.twoWinters)).toBeLessThanOrEqual(60);
   });
 
-  it('kills more bands than it spares before the first thaw', { timeout: CURVE_TIMEOUT }, () => {
+  it('kills more bands than it spares before the first thaw', { timeout: CURVE_TIMEOUT }, async () => {
     // Whatever else moves, the first winter has to be the wall. If as many
     // bands see spring as reach winter, winter has stopped meaning anything.
-    const m = measured();
+    const m = await measured();
     expect(m.sawSpring).toBeLessThan(m.reachedWinter);
   });
 
-  it('gets most surviving bands settled before the dark', { timeout: CURVE_TIMEOUT }, () => {
+  it('gets most surviving bands settled before the dark', { timeout: CURVE_TIMEOUT }, async () => {
     // A band still walking when winter lands is a band that cannot stockpile,
     // and that failure should be a mistake rather than the default.
-    const m = measured();
+    const m = await measured();
     expect(m.settledByWinter * 2).toBeGreaterThan(m.reachedWinter);
   });
 });
@@ -952,7 +961,7 @@ describe('losing a raid costs the one thing that is scarce', () => {
 });
 
 describe('raids are measured, not assumed', () => {
-  it('records how often a raid comes and how often it is held', { timeout: CURVE_TIMEOUT }, () => {
+  it('records how often a raid comes and how often it is held', { timeout: CURVE_TIMEOUT }, async () => {
     // Item 5 of the audit: nothing counted how often a raid was LOST, only
     // how often one fired — so the change above had no baseline to move.
     let fired = 0;
@@ -963,6 +972,7 @@ describe('raids are measured, not assumed', () => {
       fired += state.tally.raids;
       held += state.tally.raidsHeld;
       if (state.tally.raids > 0) sagas += 1;
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
     // eslint-disable-next-line no-console
     console.log(`raids over 20 sagas: ${fired} came, ${held} held, ${fired - held} lost; ${sagas} sagas saw one`);

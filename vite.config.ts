@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
 /**
@@ -35,6 +35,15 @@ export default defineConfig({
   // published branch, and a Vite entry there (four lines that load
   // /src/main.ts) publishes as a blank screen with a dead script tag.
   server: { open: '/app.html' },
+  test: {
+    // The balance harness pegs a core for eighty seconds at a stretch, and
+    // on a two-core CI runner the default worker-thread pool misses its RPC
+    // heartbeat under that load — "[vitest-worker]: Timeout calling
+    // onTaskUpdate" — which fails the run with every one of 560 tests green.
+    // Forked child processes tolerate a pegged CPU where worker threads do
+    // not, and CI is the environment this config exists to survive.
+    pool: 'forks',
+  },
   build: {
     rollupOptions: { input: 'app.html' },
     target: 'es2022',

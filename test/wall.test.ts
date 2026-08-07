@@ -418,7 +418,7 @@ describe('formation play beats brawling', () => {
 
   // 48 whole battles. Deliberately expensive, and well past vitest's default
   // 5s budget once the rest of the suite is competing for the CPU.
-  it('holding the line beats charging in', { timeout: 180_000 }, () => {
+  it('holding the line beats charging in', { timeout: 180_000 }, async () => {
     let brawlWins = 0;
     let formationWins = 0;
     let brawlSurvivors = 0;
@@ -431,6 +431,9 @@ describe('formation play beats brawling', () => {
       if (f.battle?.outcome === 'won') formationWins++;
       brawlSurvivors += intact(b);
       formationSurvivors += intact(f);
+      // Breathe: a synchronous minute starves the runner's RPC heartbeat and
+      // CI fails the run with every test green. See balance.test.ts.
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
     // eslint-disable-next-line no-console
