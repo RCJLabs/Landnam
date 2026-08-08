@@ -9,7 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { neighbors, key } from '../src/hex';
+import { distance, neighbors, key } from '../src/hex';
 import { placeKind } from '../src/data/places';
 import { settlePlace } from '../src/sim/places';
 import { leaveBattle } from '../src/sim/battleTurn';
@@ -118,11 +118,16 @@ describe('what coming out of the water is worth', () => {
     expect(bySea.party.food - state.party.food).toBe(Math.round(def.loot.food * STRAND_HAUL));
     expect(bySea.party.food).toBeGreaterThan(byLand.party.food);
 
-    // Infamy is a negative shift, so "worse" is a lower standing.
-    const worstLand = Math.min(...byLand.neighbours.map((n) => n.standing));
-    const worstSea = Math.min(...bySea.neighbours.map((n) => n.standing));
+    // Infamy is a negative shift, so "worse" is a lower standing — and it
+    // lands on the neighbour NEAREST the smoke, not on whoever happens to
+    // like the band least. Reading the minimum across the coast was the
+    // fixture's own bug: it passed only while the two were the same person,
+    // and went quiet the moment placement moved anybody.
+    const moved = (s: GameState) =>
+      [...s.neighbours].sort((a, b) => distance(a.at, place.at) - distance(b.at, place.at))[0]!;
     expect(STRAND_INFAMY).toBeGreaterThan(1);
-    expect(worstSea).toBeLessThan(worstLand);
+    expect(moved(bySea).standing).toBeLessThan(moved(byLand).standing);
+    expect(moved(byLand).standing).toBeLessThan(moved(state).standing);
     expect(bySea.saga.some((e) => e.text.includes('loaded the knarr'))).toBe(true);
   });
 

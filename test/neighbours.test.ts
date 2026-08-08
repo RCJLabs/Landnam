@@ -12,7 +12,7 @@
 // the difference must still be there long after the deed.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey } from '../src/hex';
+import { distance, fromKey, neighbors } from '../src/hex';
 import { stream } from '../src/rng';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -20,7 +20,8 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
+import { canFound, foundBlocker, foundSettlement, siteReport } from '../src/sim/site';
+import { WATER_FLOOR } from '../src/data/sites';
 import { assign } from '../src/sim/colony';
 import { eventChance, isEligible } from '../src/sim/events';
 import { raidDifficulty } from '../src/sim/raid';
@@ -28,8 +29,11 @@ import { startRaid } from '../src/sim/battleTurn';
 import { EVENTS } from '../src/data/events';
 import {
   BARTER_FOOD,
+  CLAN_CALLS_EVERY,
   CLAN_COUNT,
+  CLAN_ELBOW,
   CLAN_KINDS,
+  CLAN_MAX_GAP,
   CLAN_MIN_GAP,
   REP_DRIFT,
   REP_RAIDED,
@@ -48,6 +52,8 @@ import {
   friendliest,
   goodwillLevel,
   neighbourAt,
+  neighboursCallOn,
+  noteRaidSent,
   placeNeighbours,
   raidPressure,
   seeNeighbours,
@@ -193,6 +199,58 @@ describe('the coast has people on it', () => {
     expect(native / natives).toBeGreaterThan(clan / clans);
   });
 
+  /**
+   * THE BAR THE COAST DID NOT HAVE.
+   *
+   * There was a floor on how close a neighbour could be placed and no
+   * ceiling at all, so on a landmass of eighteen hundred tiles the four of
+   * them scattered — measured at 23, 24, 25 and 38 hexes from one steading.
+   * A band sees two to seven percent of that map in five hundred days.
+   * Everything downstream (standing, barter, tribute, the friend a jarldom
+   * needs) was real code nobody could reach, and it took the long-game
+   * harness reporting "0 made a friend" over forty sagas to notice.
+   */
+  it('they share a coast, and a coast is something you can walk', () => {
+    for (const seed of SEEDS) {
+      const state = newGame(seed);
+      for (const n of state.neighbours) {
+        expect(
+          distance(n.at, state.world.landing),
+          `${seed}: ${n.name} is ${distance(n.at, state.world.landing)} hexes off — not a neighbour`,
+        ).toBeLessThanOrEqual(CLAN_MAX_GAP);
+      }
+    }
+  });
+
+  it('a walkable coast still leaves room to found a steading on it', () => {
+    // The ceiling brings them near the landing, so the ground they live on
+    // has to refuse the posts — otherwise the hall goes up in a native
+    // camp's home field and "neighbour" means "in the yard".
+    let refused = 0;
+    for (const seed of SEEDS) {
+      const state = structuredClone(newGame(seed));
+      for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
+      for (const n of state.neighbours) {
+        // Ground that would otherwise take a hall — so the refusal being
+        // measured is the elbow and not the water.
+        const wet = neighbors(n.at)
+          .concat([n.at])
+          .filter((at) => {
+            const t = state.world.tiles[`${at.q},${at.r}`];
+            if (!t || t.terrain === 'ocean' || t.terrain === 'mountains') return false;
+            const r = siteReport(state.world, at);
+            return !!r && r.water >= WATER_FLOOR;
+          });
+        for (const at of wet) {
+          expect(foundBlocker(state, at), `${seed}: founded in ${n.name}'s camp`).toBe('taken');
+          refused += 1;
+        }
+      }
+    }
+    expect(refused, 'no seed put foundable ground inside a camp').toBeGreaterThan(0);
+    expect(CLAN_ELBOW).toBeGreaterThan(0);
+  });
+
   it('a place is only on the map once somebody has seen it', () => {
     const state = structuredClone(newGame('nb-sight'));
     expect(state.neighbours.every((n) => !n.found)).toBe(true);
@@ -204,6 +262,65 @@ describe('the coast has people on it', () => {
     seeNeighbours(state);
     expect(target.found).toBe(true);
     expect(state.saga.some((e) => e.text.includes(target.name))).toBe(true);
+  });
+
+  /**
+   * The other half of the same fix. Walking onto somebody's exact hex was
+   * the only way to learn they existed — a search problem with no tools —
+   * and the harness measured what it was worth: nought of thirty-two clans
+   * met across eight full-length sagas. Being found is how it actually goes.
+   */
+  it('once the posts are in, the coast comes and looks at you', () => {
+    const state = settled('nb-callson');
+    // `settled` hands over a fully revealed map, which is the opposite of
+    // what this measures. Put the fog back over the camps and forget them.
+    for (const n of state.neighbours) {
+      n.found = false;
+      delete state.world.seen[`${n.at.q},${n.at.r}`];
+    }
+    state.settlement!.foundedOn = state.day;
+    expect(state.neighbours.some((n) => n.found), 'met somebody before settling').toBe(false);
+
+    // One a fortnight, nearest first, and all of them inside the first
+    // year. Driven by the rule rather than by passDay: a real steading is
+    // interrupted by weather, raids and cards, and this measures the
+    // schedule, not whether day 61 happened to be quiet.
+    const seenOrder: number[] = [];
+    const foundedOn = state.settlement!.foundedOn;
+    for (let i = 1; i <= state.neighbours.length; i += 1) {
+      state.day = foundedOn + CLAN_CALLS_EVERY * i - 1;
+      neighboursCallOn(state);
+      expect(state.neighbours.filter((n) => n.found).length, `called early, fortnight ${i}`)
+        .toBe(i - 1);
+      state.day = foundedOn + CLAN_CALLS_EVERY * i;
+      neighboursCallOn(state);
+      const after = state.neighbours.filter((n) => n.found);
+      expect(after.length, `no caller in fortnight ${i}`).toBe(i);
+      seenOrder.push(distance(after[after.length - 1]!.at, state.settlement!.at));
+    }
+
+    expect(state.neighbours.every((n) => n.found), 'somebody never came').toBe(true);
+    expect(state.day - foundedOn, 'the coast took longer than a year to notice').toBeLessThan(72);
+    // Nearest first: the order is non-decreasing in distance from home.
+    for (let i = 1; i < seenOrder.length; i += 1) {
+      expect(seenOrder[i]!, 'the far camp came before the near one').toBeGreaterThanOrEqual(seenOrder[i - 1]!);
+    }
+    // And found means findable — a marker under fog is not knowledge.
+    for (const n of state.neighbours) {
+      expect(state.world.seen[`${n.at.q},${n.at.r}`], `${n.name} named but not on the map`).toBeTruthy();
+    }
+  });
+
+  it('a raid names whoever sent it', () => {
+    const state = settled('nb-tracks');
+    for (const n of state.neighbours) n.found = false;
+    const worst = state.neighbours.reduce((a, b) => (b.standing < a.standing ? b : a));
+    worst.standing = -60;
+
+    noteRaidSent(state);
+    expect(worst.found, 'robbed by nobody in particular').toBe(true);
+    expect(worst.raidsSent).toBe(1);
+    expect(state.saga.some((e) => e.text.includes(worst.name))).toBe(true);
   });
 });
 

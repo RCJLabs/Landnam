@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { HARDSHIPS, DEFAULT_HARDSHIP, hardshipById } from '../src/data/hardship';
+import { BALANCED_HARDSHIP, DEFAULT_HARDSHIP, HARDSHIPS, hardshipById } from '../src/data/hardship';
 import { eventChance } from '../src/sim/events';
 import { raidOdds } from '../src/sim/raid';
 import { firewoodPerNight } from '../src/sim/upkeep';
@@ -53,10 +53,13 @@ describe('the three countries', () => {
       }
     }
     // 'even' must be exactly the game every other number was balanced
-    // against, or every measurement in this repo silently moves.
+    // against, or every measurement in this repo silently moves. It is no
+    // longer the setting a new player GETS — that is DEFAULT_HARDSHIP, and
+    // the two are deliberately different things.
     const even = hardshipById('even');
-    expect(even.id).toBe(DEFAULT_HARDSHIP);
+    expect(even.id).toBe(BALANCED_HARDSHIP);
     expect([even.stir, even.raid, even.winter, even.stores]).toEqual([1, 1, 1, 1]);
+    expect(HARDSHIPS.some((h) => h.id === DEFAULT_HARDSHIP)).toBe(true);
   });
 
   it('an unknown or missing id reads as the balanced middle', () => {

@@ -44,9 +44,23 @@ points is below what it can see, so treat every figure here as directional):
 
 | milestone | reached |
 | --- | --- |
-| the first winter (day 49) | 78% |
+| the first winter (day 49) | 83% |
 | spring (day 73) | 30% |
 | the second winter — the Thing's window (day 169) | 7% |
+
+**The three countries, measured on the same sixty landings each** — and the
+default is deliberately NOT the balanced one:
+
+| setting | saw the first spring | over 500 days (20 sagas) |
+| --- | --- | --- |
+| A Fair Country *(default)* | 67% | 161 days a saga, 13 mead halls, 3 jarls |
+| As It Lies *(what everything is tuned against)* | 30% | 86 days a saga, 1 jarl |
+| A Hard Country | 8% | — |
+
+`DEFAULT_HARDSHIP` and `BALANCED_HARDSHIP` are separate constants on purpose.
+"As It Lies" stays the terms every fixture measures; pointing `newGame`'s
+parameter default at the menu default would have moved the baseline of the
+whole suite the moment the menu changed, with nothing failing to say so.
 
 These are not yesterday's figures, and the game did not change: the
 instrument did. Every earlier curve was read off a run loop that treated a
@@ -55,8 +69,17 @@ moves without costing the ground — so HALF of sixty runs were cut off
 mid-battle, one as early as day 7, and every one counted as alive at every
 milestone after. 83/55/50 was those truncated sagas. The bot now forms a
 line while advancing (the rule `test/wall.test.ts` always said wins) and the
-loop plays every fight to its end; the same game, honestly played, reads
-78/30/7.
+loop plays every fight to its end; the same game, honestly played, read
+78/30/7 when that was fixed, and 83/30/7 today.
+
+**The endgame is reachable, as of 2026-08-08.** It was not before, and the
+suite was green throughout: neighbours were placed with a floor and no
+ceiling, so across forty full-length sagas **not one band ever met anybody**,
+no Thing could be called, and the jarldom was dead content. The coast now has
+a walkable ceiling and comes to look at a new steading of its own accord.
+Five jarldoms across forty sagas where there had been none. The general
+lesson is in the dead-ends table: every requirement an endgame names needs
+its own bar, or the one without a bar is the one that is broken.
 
 **The open problem, inverted.** The late game is not flat — it is a cliff.
 Raids run about three to a saga and even a line-forming defender loses most
@@ -405,6 +428,9 @@ here so the next attempt does not begin by repeating them.
 | A landing chosen near settleable ground | Fixed a real problem (settleable ground a median 5 and up to 11 hexes from the sand) and broke a bigger one: where you land decides where you fight, and on the worlds it produced the shield wall went dead level with charging in — 33 wins/157 standing became 32/158 over sixty seeds. Rejected. |
 | Rolling a raid every day instead of drawing one from the deck | Shipped after tuning. The first rate took `test/thing.test.ts` from 4 of 4 bands reaching the endgame to 1 of 4; measured at 0.006 → 1/4, 0.003 → 3/4, 0.0015 → 4/4. Raids now fire regularly and the curve STILL does not move, because bands hold them and losing one costs only stores. |
 | Guaranteeing a four-wide front on every battlefield | Shipped, but currently inert: no terrain the game ships ever fails it. A regression guard on tunable data, not a fix. The real mechanism is row DENSITY — 98% of meadow rows can hold a line against 40% of ocean ones. |
+| Sweeping the morale levers the death table kept naming | Winter sickness DC 9→7, bereavement 12→7, kin grief 30→15 — all three, and two winters sat at 10% through every one. Despair was a SYMPTOM. A band that misses the winter mark takes 8 morale a day for hunger and 7 for cold plus wounds, so it dies of everything at once and despair merely arrives first. The lever was arithmetic: `SHELTER_SAVES`. |
+| `SHELTER_SAVES` at 1.0 | Fixed survival and broke the game's central promise. `SHELTER_MAX` is 6, so 1.0 means a fully built steading cancels an ordinary winter's burn outright — and over 24 winters, heeding the mark against ignoring it went 19/6 at 0.7, 19/8 at 0.8, **19/17 at 1.0**. Preparing for winter had stopped mattering. Settled at 0.8. |
+| "A band that trades out beats one that never leaves" | Held on a margin of ONE seed in eight, which by this repo's own noise floor is weather. At 24 seeds the survival arms sit level or behind (19 against 21) — correctly, because the roof is a home thing. What going out actually buys is stores: nearly 4× the timber home. Bar rewritten to the effect that is real. |
 
 **The lesson under most of these:** four null results in one day, and the
 worst of them was measuring plumbing rather than design. Raids were capped at
@@ -413,6 +439,19 @@ and difficulty itself was clamped at six. Everything the coast felt about you
 past that was discarded by a `Math.min` before it reached a battlefield.
 **Before trusting any null result, check that the mechanism can physically
 produce a non-null one.**
+
+**A system nobody can reach is a system that does not exist.** The coast —
+four named neighbours, standing that remembers, barter, tribute, the friend a
+jarldom needs — was fully built, fully unit-tested, and unreachable. Placement
+had a floor (6 hexes off the landing) and no ceiling, so on an 1872-tile
+landmass the four of them scattered: measured at 6, 12, 26 and 27 hexes from
+one steading, and 23, 24, 25 and 38 from another. A band sees 2–7% of that map
+in a whole 500-day saga. The result: **0 of 32 clans met across eight
+full-length sagas, and 0 of 40 sagas ever made a friend** — so no Thing could
+be called at either difficulty, and the entire endgame was dead content behind
+a green suite. Every other need on the Thing's checklist had a bar; that one
+did not, so it failed in silence. **Every requirement an endgame names needs
+its own bar, or the one without a bar is the one that is broken.**
 
 **The harness is code, and it has now been wrong seven times.** The worst
 four: it did not fight back on the battlefield (which put "slain" at the top
@@ -528,6 +567,51 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The coast becomes reachable, and winter keeps its teeth** —
+  A re-measure that was meant to confirm the day's work and instead found
+  the largest hole in the game. The long-game harness reported the same
+  line for both difficulties: `0 made a friend, 0 could ever call it`.
+  Forty sagas had raised mead halls, kept the peace and stood two winters,
+  and not one had met anybody.
+  The cause was placement. Neighbours were kept at least six hexes off the
+  landing and no further away than *anywhere* — on an 1872-tile landmass
+  that put them 6, 12, 26 and 27 hexes from one steading and 23, 24, 25 and
+  38 from another, against a band that sees 2–7% of the map in five hundred
+  days. Standing, barter, tribute and the friend a jarldom needs were all
+  real, tested code nobody could get to.
+  Three fixes, one idea: **the coast has to actually be a coast.** A ceiling
+  of thirteen hexes, so "neighbour" means about a week's walk. Neighbours
+  now come and look at YOU — one a fortnight after the posts go in, nearest
+  first, each with a line in the saga and a marker on the chart, because
+  being found is how it actually goes and hunting for somebody's exact hex
+  is a search problem the player has no tools for. And a raid names whoever
+  sent it: the tracks go back the way you thought they would. A walkable
+  coast means camps near the landing, so founding inside a two-hex elbow is
+  refused — measured at 2/203 landings boxed out at an elbow of 0, 1 or 2,
+  and 3/203 at 3.
+  Result: 31 of 32 clans met, standing worked up to 89, and the endgame is
+  reached at last — 5 jarldoms across 40 sagas where there had been none.
+  The same re-measure then condemned yesterday's own fix. `SHELTER_SAVES`
+  had been raised 0.5 → 1.0 on survival numbers alone, and a second reading
+  showed what it cost: `SHELTER_MAX` is 6, so at 1.0 a fully built steading
+  cancels an ordinary winter's burn outright. Over 24 winters, heeding the
+  winter mark against ignoring it read 19/6 at 0.7, 19/8 at 0.8 and **19/17
+  at 1.0**. Preparing for winter had stopped mattering — a worse game than
+  a hard one. Settled at **0.8**: a full roof takes four-fifths off an
+  ordinary night and nothing like all of a deep one.
+  Two fixtures were measuring on eight seeds and one-seed margins; both
+  widened to 24, and the wheel test's survival claim was rewritten to the
+  effect that is actually large (nearly 4× the timber home).
+  Finally, the default difficulty moved to **A Fair Country**. "As It Lies"
+  is exactly what it says and stays the terms everything is tuned against
+  (`BALANCED_HARDSHIP`, kept deliberately separate from the menu default so
+  a UI change can never silently move every fixture in the suite) — but the
+  long game measured what those terms produce: 86 days a saga and one band
+  in twenty ever ruling. On A Fair Country the same forty sagas ran 161
+  days, raised 13 mead halls and put 3 jarls on the coast. The hard truth is
+  one menu tap away rather than the price of admission.
+  Curve: 67% / 30% / 8% see the first spring. All 686 tests green.
 
 - **2026-08-08 — The strandhögg** — Item 8, and the last of the audit's
   additive half. The sea already had a hull that could be holed, cargo that

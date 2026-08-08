@@ -11,7 +11,9 @@ import type { Rng } from '../rng';
 import { stream } from '../rng';
 import {
   BARTER_FOOD,
+  CLAN_CALLS_EVERY,
   CLAN_COUNT,
+  CLAN_MAX_GAP,
   CLAN_MIN_GAP,
   CLAN_NAMES,
   NATIVE_NAMES,
@@ -46,21 +48,27 @@ export const PRESSURE_STIR = 0.3;
  * year before you — the two halves of the milestone.
  */
 export function placeNeighbours(world: World, rng: Rng): Neighbour[] {
-  const candidates: Hex[] = [];
+  const near: Hex[] = [];
+  const far: Hex[] = [];
   for (const [k, tile] of Object.entries(world.tiles)) {
     if (tile.terrain === 'ocean' || tile.terrain === 'mountains') continue;
     const at = fromKey(k);
-    if (distance(at, world.landing) < CLAN_MIN_GAP) continue;
-    candidates.push(at);
+    const d = distance(at, world.landing);
+    if (d < CLAN_MIN_GAP) continue;
+    (d <= CLAN_MAX_GAP ? near : far).push(at);
   }
   // Object key order is not something to lean on; sort, then shuffle.
-  candidates.sort((a, b) => key(a).localeCompare(key(b)));
-  const pool = rng.shuffle(candidates);
+  near.sort((a, b) => key(a).localeCompare(key(b)));
+  far.sort((a, b) => key(a).localeCompare(key(b)));
+  // The band within walking distance comes first and the rest of the landmass
+  // is only a fallback, so a cramped or oddly-shaped coast still gets four
+  // neighbours rather than one.
+  const pool = [...rng.shuffle(near), ...rng.shuffle(far)];
 
   const chosen: Hex[] = [];
   // Spread them out first; if the landmass is too cramped for that, take what
   // it will hold rather than shipping a coast with one neighbour on it.
-  for (const gap of [CLAN_MIN_GAP, 3]) {
+  for (const gap of [CLAN_MIN_GAP, 3, 1]) {
     for (const at of pool) {
       if (chosen.length >= CLAN_COUNT) break;
       if (chosen.some((c) => distance(c, at) < gap)) continue;
@@ -148,19 +156,72 @@ export function driftStandings(state: GameState): void {
   }
 }
 
+/**
+ * Puts a neighbour on the map for good, however you came to know of them.
+ *
+ * Marking their hex seen is the load-bearing half: `found` alone gets them a
+ * marker the fog then hides, and a name you cannot walk to is not knowledge.
+ */
+export function revealNeighbour(state: GameState, n: Neighbour, line: string): void {
+  if (n.found) return;
+  n.found = true;
+  if (state.world.seen[key(n.at)] === undefined) state.world.seen[key(n.at)] = 'seen';
+  chronicle(state, line, 'plain');
+}
+
 /** Marks the places somebody has actually laid eyes on. */
 export function seeNeighbours(state: GameState): void {
   for (const n of state.neighbours) {
     if (n.found) continue;
     if (state.world.seen[key(n.at)] === undefined) continue;
-    n.found = true;
     const def = clanKind(n.kind);
-    chronicle(
-      state,
-      `We came in sight of ${n.name}. A ${def.noun}, lived in, and not ours.`,
-      'plain',
-    );
+    revealNeighbour(state, n, `We came in sight of ${n.name}. A ${def.noun}, lived in, and not ours.`);
   }
+}
+
+/**
+ * Neighbours come and look at the new steading, nearest first, one every
+ * CLAN_CALLS_EVERY days after the posts go in.
+ *
+ * Walking onto somebody's exact hex was the ONLY way to learn they existed,
+ * and the harness measured what that was worth: nought of thirty-two clans
+ * met across eight five-hundred-day sagas. This is the other direction, and
+ * it is the direction the fiction always ran in — a hall going up on an empty
+ * strand is the most interesting news on that coast, and the people who
+ * already live there do not need to be found to hear it.
+ */
+export function neighboursCallOn(state: GameState): void {
+  const home = state.settlement;
+  if (!home || state.end) return;
+  const due = Math.floor((state.day - home.foundedOn) / CLAN_CALLS_EVERY);
+  const met = state.neighbours.filter((n) => n.found).length;
+  if (met >= due) return;
+
+  const next = state.neighbours
+    .filter((n) => !n.found)
+    .reduce<Neighbour | undefined>(
+      (best, n) => (!best || distance(n.at, home.at) < distance(best.at, home.at) ? n : best),
+      undefined,
+    );
+  if (!next) return;
+
+  const def = clanKind(next.kind);
+  const how = stream(state.seed, 'events')
+    .derive(`callson:${next.id}:${state.day}`)
+    .pick([
+      `Two came up the strand to look at ${home.name}, and would not come in. They were of ${next.name} — a ${def.noun}, and we know now where it stands.`,
+      `A man of ${next.name} walked our fence line, counted us, and went away again. A ${def.noun}, off ${bearing(next.at, home.at)}, and no friend of ours yet.`,
+      `Word had gone round that there were posts in the ground here. ${next.name} sent somebody to see it for themselves — a ${def.noun}, and near enough to matter.`,
+    ]);
+  revealNeighbour(state, next, how);
+}
+
+/** Rough compass word for the saga. Nothing reads a bearing off a number. */
+function bearing(at: Hex, from: Hex): string {
+  const dq = at.q - from.q;
+  const dr = at.r - from.r;
+  if (Math.abs(dr) >= Math.abs(dq)) return dr < 0 ? 'north' : 'south';
+  return dq < 0 ? 'west' : 'east';
 }
 
 // --- Bartering ---
@@ -278,10 +339,20 @@ export function stirFactor(state: GameState): number {
   return 1 + raidPressure(state) * PRESSURE_STIR;
 }
 
-/** Counts a raid against whoever sent it, for the saga and the chart. */
+/**
+ * Counts a raid against whoever sent it, for the saga and the chart — and
+ * puts them on the map, because men who came over the ridge came FROM
+ * somewhere and a band that has just been robbed goes and looks.
+ */
 export function noteRaidSent(state: GameState): void {
   const source = raidSource(state);
-  if (source) source.raidsSent += 1;
+  if (!source) return;
+  source.raidsSent += 1;
+  revealNeighbour(
+    state,
+    source,
+    `The tracks went back the way we thought they would. It was ${source.name} who sent them.`,
+  );
 }
 
 /** A short line for the panel when the party is standing in somebody's yard. */

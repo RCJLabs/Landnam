@@ -5,7 +5,7 @@
 // — it is the walk to the river, the walk to the woodpile, and the ways in
 // that you cannot watch at once.
 
-import { key, neighbors, type Hex } from '../hex';
+import { distance, key, neighbors, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import {
   MEASURE_MAX,
@@ -17,6 +17,7 @@ import {
   type Measure,
   type Verdict,
 } from '../data/sites';
+import { CLAN_ELBOW } from '../data/clans';
 import { stream } from '../rng';
 import type { GameState, SiteReport, Terrain, World } from '../state/types';
 import { chronicle } from './saga';
@@ -163,7 +164,7 @@ export function strongestOf(report: SiteReport): Measure {
 
 // --- Taking the land ---
 
-export type FoundBlock = 'settled' | 'unknown' | 'sea' | 'rock' | 'dry' | 'ended';
+export type FoundBlock = 'settled' | 'unknown' | 'sea' | 'rock' | 'dry' | 'ended' | 'taken';
 
 /**
  * Why you cannot found here, or null if you can. Returns the reason rather
@@ -179,6 +180,12 @@ export function foundBlocker(state: GameState, at: Hex): FoundBlock | null {
   if (tile.terrain === 'mountains') return 'rock';
   const report = siteReport(state.world, at);
   if (!report || report.water < WATER_FLOOR) return 'dry';
+  // Neighbours are placed on a coast a band can WALK now rather than
+  // anywhere at all, which put some of them within sight of the landing —
+  // so the ground they live on has to say so. Otherwise the posts go in a
+  // native camp's home field, and "four neighbours share this coast"
+  // becomes "one of them is in the yard".
+  if (state.neighbours.some((n) => distance(n.at, at) < CLAN_ELBOW)) return 'taken';
   return null;
 }
 
@@ -193,6 +200,7 @@ export const BLOCK_REASON: Record<FoundBlock, string> = {
   rock: 'Nothing grows on bare rock and nothing keeps there.',
   dry: 'No fresh water. A steading here would die of thirst before winter.',
   ended: 'The saga is finished.',
+  taken: 'That ground is already somebody\u2019s. They were here first.',
 };
 
 /** A name built from the ground: the suffix says what the place is good for. */

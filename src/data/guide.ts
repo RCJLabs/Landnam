@@ -47,7 +47,7 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-coast',
     title: 'The Coast',
-    body: 'Four neighbours share this coast, and they remember everything. Barter feeds standing; tribute buys peace; falling on a camp pays in stores and sometimes a thrall — and costs standing the moment steel is out. The angriest neighbour is where raids come from. The watch and the palisade buy raid-chance down.',
+    body: 'Four neighbours share this coast, and they remember everything. You do not have to go looking for them: once the posts are in, they come and look at YOU, one every fortnight or so, and each one goes on the map. Barter feeds standing; tribute buys peace; falling on a camp pays in stores and sometimes a thrall — and costs standing the moment steel is out. The angriest neighbour is where raids come from, and a raid always names whoever sent it. The watch and the palisade buy raid-chance down.',
   },
   {
     id: 'the-places',

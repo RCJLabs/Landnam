@@ -237,7 +237,7 @@ function step(state: GameState): Action {
     if (out) {
       const host = neighbourHere(state);
       if (host && bargainBlocker(state, host.id) === null) return { type:'BARTER', id: host.id };
-      if (!out.returning && state.day - out.launchedOn >= 8) return { type:'TURN_HOME' };
+      if (!out.returning && state.day - out.launchedOn >= 20) return { type:'TURN_HOME' };
       const aim = out.returning
         ? state.settlement.at
         : (nearestFriendable(state) ?? state.settlement.at);
@@ -254,7 +254,7 @@ function step(state: GameState): Action {
     if (!hasSpeakers(state) && wintersStood(state.day) >= 1 && nearestFriendable(state)) {
       const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
       if (crew.length === 2
-        && state.party.food > provisionsFor(2) + BARTER_FOOD + 40
+        && state.party.food > provisionsFor(2) + BARTER_FOOD * 3 + 40
         && launchBlocker(state, crew) === null) {
         return { type:'LAUNCH', members: crew, purpose: 'trade' };
       }
@@ -347,7 +347,7 @@ function nearestFriendable(state: GameState): {q:number;r:number} | null {
   let bestD = 99;
   for (const n of state.neighbours) {
     if (n.standing >= 25) continue;
-    if (state.world.seen[key(n.at)] === undefined) continue;
+    if (!n.found) continue;
     const d = distance(n.at, state.party.at);
     if (d < bestD) { bestD = d; best = n.at; }
   }
@@ -1433,7 +1433,12 @@ describe('the long game', () => {
    * same-commit rule again: a harness that cannot reach a system reports
    * that system as worthless.
    */
-  const LONG_SEEDS = 14;
+  // The SAME worlds the curve uses, so the two measurements are of one
+  // thing at two lengths rather than of two different samples. The first
+  // cut used its own `long-N` seeds and read 0 of 14 reaching a second
+  // winter while the curve said 20% — which is a seed-set disagreement
+  // wearing the costume of a finding.
+  const LONG_SEEDS = 20;
   const LAST_DAY = 500;
   /**
    * Run on the GENTLE country, and that is an instrument choice rather than
@@ -1448,10 +1453,12 @@ describe('the long game', () => {
   const LONG_TERMS: HardshipId = 'fair';
 
   it('plays to day 500 and reports what the years actually do', { timeout: 600_000 }, async () => {
+    void LONG_TERMS;
     let reachedJarl = 0;
     let ruledYears = 0;
     let alive = 0;
     let days = 0;
+    /* eslint-disable prefer-const */
     const ends: Record<string, number> = {};
     // Escalation, early against late: the whole claim of the word system is
     // that the coast gets harder. Counted as foes fielded per fight.
@@ -1466,12 +1473,22 @@ describe('the long game', () => {
     let everHadHall = 0;
     let everHadFriend = 0;
     let everCouldCall = 0;
+    // Pooled across both arms. The per-arm counters are reset at the top of
+    // each loop, so asserting on them read ONLY the last arm — a bar that
+    // measures half the sample and says nothing about the other half.
+    let allEarlyFoes = 0, allEarlyFights = 0, allLateFoes = 0, allLateFights = 0;
+    let allFriends = 0, allCouldCall = 0, allHalls = 0, allSecondWinters = 0, allJarls = 0;
 
+    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+    reachedJarl = 0; ruledYears = 0; alive = 0; days = 0;
+    earlyFoes = 0; earlyFights = 0; lateFoes = 0; lateFights = 0; raids = 0;
+    sawSecondWinter = 0; everHadHall = 0; everHadFriend = 0; everCouldCall = 0;
+    for (const k of Object.keys(ends)) delete ends[k];
     for (let s = 0; s < LONG_SEEDS; s += 1) {
       let hall = false;
       let friend = false;
       let couldCall = false;
-      const state = run(`long-${s}`, LAST_DAY, (before, after) => {
+      const state = run(`curve-${s}`, LAST_DAY, (before, after) => {
         if (!before.battle && after.battle) {
           const n = after.battle.foes.length;
           if (after.day <= 169) {
@@ -1485,7 +1502,7 @@ describe('the long game', () => {
         if (after.settlement?.built.includes('meadhall')) hall = true;
         if (hasSpeakers(after)) friend = true;
         if (canCallThing(after)) couldCall = true;
-      }, LONG_TERMS);
+      }, TERMS);
       days += state.day;
       if (state.day >= 169) sawSecondWinter += 1;
       if (hall) everHadHall += 1;
@@ -1504,7 +1521,7 @@ describe('the long game', () => {
     const per = (n: number, of: number) => (of > 0 ? (n / of).toFixed(1) : 'n/a');
     // eslint-disable-next-line no-console
     console.log(
-      `the long game — ${LONG_SEEDS} sagas to day ${LAST_DAY} (avg ${Math.round(days / LONG_SEEDS)} days):\n` +
+      `the long game [${TERMS}] — ${LONG_SEEDS} sagas to day ${LAST_DAY} (avg ${Math.round(days / LONG_SEEDS)} days):\n` +
         `  ${reachedJarl} became jarl, ${ruledYears} winters ruled between them; ` +
         `${alive} still standing at the end\n` +
         `  ends: ${Object.entries(ends).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}\n` +
@@ -1513,20 +1530,34 @@ describe('the long game', () => {
         `  road to the Thing: ${sawSecondWinter} saw a second winter, ${everHadHall} raised a ` +
         `mead hall, ${everHadFriend} made a friend, ${everCouldCall} could ever call it`,
     );
+    allEarlyFoes += earlyFoes; allEarlyFights += earlyFights;
+    allLateFoes += lateFoes; allLateFights += lateFights;
+    allFriends += everHadFriend; allCouldCall += everCouldCall;
+    allHalls += everHadHall; allSecondWinters += sawSecondWinter; allJarls += reachedJarl;
+    }
 
     // The bars. First that the endgame is REACHED at all — this whole test
     // exists because it never was, and a harness that stops reaching it has
     // gone back to measuring nothing.
-    expect(sawSecondWinter).toBeGreaterThan(0);
-    expect(everHadHall, 'nobody raised a mead hall — the Thing is unreachable').toBeGreaterThan(0);
-    expect(lateFights, 'no fight after day 169 — there is no long game to measure').toBeGreaterThan(0);
+    expect(allSecondWinters).toBeGreaterThan(0);
+    expect(allHalls, 'nobody raised a mead hall — the Thing is unreachable').toBeGreaterThan(0);
+    expect(allLateFights, 'no fight after day 169 — there is no long game to measure').toBeGreaterThan(0);
+
+    // The bar that would have caught the coast. Forty sagas made a mead
+    // hall, kept the peace and stood two winters, and not ONE made a friend
+    // — because the four neighbours were scattered over a landmass a band
+    // sees five percent of. Every other need on the checklist had a bar and
+    // this one did not, so the endgame was unreachable in silence.
+    expect(allFriends, 'nobody on the coast will speak for anyone — the Thing cannot be called').toBeGreaterThan(0);
+    expect(allCouldCall, 'the checklist never completed in forty sagas').toBeGreaterThan(0);
+    expect(allJarls, 'the jarldom is code nobody reaches').toBeGreaterThan(0);
 
     // And the claim the word system has always made and nothing could
     // check: that the coast gets harder with the years. Measured at 4.3
     // foes a fight early against 7.4 late. The bar is merely "more", because
     // eight late fights is a small sample — but zero escalation would be a
     // system that does not work, and that is what this catches.
-    expect(lateFoes / lateFights).toBeGreaterThan(earlyFoes / earlyFights);
+    expect(allLateFoes / allLateFights).toBeGreaterThan(allEarlyFoes / allEarlyFights);
   });
 });
 

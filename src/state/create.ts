@@ -12,13 +12,13 @@ import { placeNeighbours } from '../sim/neighbours';
 import { seedPlaces } from '../sim/places';
 import { emptyTally } from '../sim/tally';
 import type { GameState } from './types';
-import { DEFAULT_HARDSHIP, hardshipById, type HardshipId } from '../data/hardship';
+import { BALANCED_HARDSHIP, hardshipById, type HardshipId } from '../data/hardship';
 import { SAVE_VERSION } from './version';
 
 export const START_FOOD = 24;
 export const START_FIREWOOD = 8;
 
-export function newGame(seed: string, hardship: HardshipId = DEFAULT_HARDSHIP): GameState {
+export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP): GameState {
   const terms = hardshipById(hardship);
   const world = generateWorld(stream(seed, 'worldgen'));
   const people = makeWarband(stream(seed, 'party'));

@@ -112,3 +112,48 @@ export const CLAN_COUNT = 4;
 
 /** No neighbour is placed closer to the landing than this. */
 export const CLAN_MIN_GAP = 6;
+
+/**
+ * Nor further away than this.
+ *
+ * There was no ceiling until the long-game harness went looking for the
+ * reason no saga in forty ever made a friend. The answer was placement: the
+ * only rule was "at least six from the landing", so on a 1872-tile landmass
+ * the four of them scattered anywhere at all — measured at 6, 12, 26 and 27
+ * hexes from one steading, and 23, 24, 25 and 38 from another. A band sees
+ * two to seven percent of that map in a whole five-hundred-day saga. So the
+ * coast the guide describes, the standing they remember, the tribute, the
+ * barter and the friend a jarldom needs were all real code nobody could
+ * reach.
+ *
+ * Thirteen is a walk of about a week each way, which is what "neighbour"
+ * has to mean if the word is to do any work.
+ */
+export const CLAN_MAX_GAP = 13;
+
+/**
+ * Days between one neighbour and the next coming to look at a new steading.
+ *
+ * The other half of the same fix. Finding people by walking onto their exact
+ * hex is a search problem the player has no tools for; being FOUND is how it
+ * actually goes. Posts in the ground are news, and news travels — so within
+ * the first year each of them sends somebody up the strand to see who has
+ * moved in, which puts them on the map and makes the whole coast playable
+ * from the hearth.
+ */
+export const CLAN_CALLS_EVERY = 15;
+
+/**
+ * How much room a neighbour keeps around their own camp. Founding inside it
+ * is refused: the coast is walkable now, which means some of them sit close
+ * to the landing, and a steading raised in a native camp's home field is not
+ * a neighbour at all.
+ *
+ * Two rather than three, and the difference was measured rather than felt.
+ * Over two hundred landings, the number with NO foundable ground inside
+ * fourteen hexes was two at an elbow of nought, two at one, two at two —
+ * and three at three. Three starts taking the last site on somebody's coast
+ * away, and a rule that can leave a band with nowhere to put the posts is
+ * worse than a hall built a little too close to a camp.
+ */
+export const CLAN_ELBOW = 2;

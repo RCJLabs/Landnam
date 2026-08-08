@@ -11,7 +11,7 @@ import { noteFirstWork, shelterSaving, workTheDay } from './colony';
 import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
-import { driftStandings } from './neighbours';
+import { driftStandings, neighboursCallOn } from './neighbours';
 import { handsLeave } from './joining';
 import { raidable, raidDifficulty, raidOdds } from './raid';
 import { startRaid } from './battleTurn';
@@ -224,6 +224,8 @@ export function passDay(state: GameState): boolean {
   feudsComeDue(state);
   // The coast forgets slowly, and only a little each day.
   driftStandings(state);
+  // And it comes to look at anyone new on it.
+  neighboursCallOn(state);
 
   // Season turned?
   if ((state.day - 1) % 24 === 0) {

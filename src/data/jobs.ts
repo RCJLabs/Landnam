@@ -122,8 +122,43 @@ export function jobById(id: string): JobDef | undefined {
 
 /** Shelter caps here: turf and timber only keep out so much. */
 export const SHELTER_MAX = 6;
-/** Each point of shelter saves this much firewood a night. */
-export const SHELTER_SAVES = 0.5;
+/**
+ * Firewood a point of shelter saves each night.
+ *
+ * Raised from 0.5 after the long-game harness showed the balanced country
+ * was unplayable past its first winter: fourteen sagas averaging sixty-six
+ * days, not one reaching a second winter, no fight after day 169 at all.
+ *
+ * The three levers the death table had been naming for three audits —
+ * winter sickness, bereavement, grief — were swept first and moved NOTHING:
+ * two winters sat at 10% through every one of them. Despair was a symptom,
+ * not the disease. A band that misses the winter mark takes eight morale a
+ * day for hunger and seven for cold, plus wounds, so it dies of everything
+ * at once and despair merely gets there first.
+ *
+ * The disease was arithmetic. A winter night burns six firewood and more in
+ * a deep year; four cutters make about seven a day; and at 0.5 a whole
+ * steading's shelter took only three off the night, so the mark was
+ * unreachable for six people and the first winter killed four bands in five
+ * however well they played.
+ *
+ * The first cut of this went to 1.0 on survival numbers alone, and it was
+ * wrong in a way only a second measurement caught. SHELTER_MAX is six, so
+ * 1.0 means a fully built steading cancels an ordinary winter's burn
+ * OUTRIGHT — and the winter mark, the promise the whole colony half of the
+ * game rests on, went with it. Over twenty-four winters, heeding the mark
+ * against ignoring it: 19 against 6 at 0.7, 19 against 8 at 0.8, and 19
+ * against 17 at 1.0. At 1.0 preparing for winter had stopped mattering.
+ * That is a worse game than a hard one.
+ *
+ * 0.8 is where both readings are honest: a full steading takes four-fifths
+ * off an ordinary night and nothing like all of a deep one, so the roof is
+ * most of the answer to winter and never the whole of it. Measured on the
+ * curve at 30% of bands seeing spring on the balanced terms, against 22%
+ * before — and the mark still separates the prepared from the deaf by
+ * eleven winters in twenty-four.
+ */
+export const SHELTER_SAVES = 0.8;
 
 /** Watch caps here, and decays — a watch not kept is no watch at all. */
 export const WATCH_MAX = 6;

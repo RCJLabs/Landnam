@@ -154,7 +154,8 @@ describe('the winter mark', () => {
 // --- The milestone's bar ---
 
 describe('an unprepared colony dies and it is clearly your fault', () => {
-  const SEEDS = ['w-a', 'w-b', 'w-c', 'w-d', 'w-e', 'w-f', 'w-g', 'w-h'];
+  // Eight winters could not tell a three-seed gap from weather. Twenty-four.
+  const SEEDS = Array.from({ length: 24 }, (_, i) => `w-${i}`);
 
   /**
    * Plays a settled run to spring. The heedful band reads the mark each day
