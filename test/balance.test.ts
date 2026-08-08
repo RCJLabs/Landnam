@@ -249,7 +249,14 @@ function step(state: GameState): Action {
           c.side === 'warband' && c.personId !== me.personId
           && !c.down && !c.fled && distance(c.at, at) === 1).length;
         const gap = Math.min(...foes.map(f => distance(at, f.at)));
-        return -gap * 4 + Math.min(mates, 2) * 3;
+        // Never stand ON your own palisade. A man on the stakes has one hand
+        // on the wood and no footing, and is WALL_EXPOSED easier to hit —
+        // that is the whole reason the thing is worth building, and the
+        // scorer knew nothing about it, so a defending band cheerfully
+        // climbed its own wall to close a hex faster and fought the raid
+        // from the worst tile on the field.
+        const stakes = b.grid[key(at)]?.ground === 'wall' ? 12 : 0;
+        return -gap * 4 + Math.min(mates, 2) * 3 - stakes;
       };
       // reachWithZoc only offers legal moves, so a chosen B_MOVE cannot be
       // refused — and a refused action is how this harness ends a run.
@@ -1946,7 +1953,10 @@ describe('the raid gauntlet', () => {
   // that moves only when the raid game moves.
   it('measures holds at scale, difficulty by difficulty', { timeout: CURVE_TIMEOUT }, async () => {
     const DIFFS = [0, 1, 2, 3];
-    const PER = 8;
+    // Twenty-four a cell, not eight. Item 5 needed to read the GRADIENT and
+    // eight samples could not carry one — a run read d1 1/8 against d2 4/8,
+    // which is not a difficulty curve, it is a coin.
+    const PER = 24;
     const byDiff = new Map<number, { held: number; of: number }>();
     for (let s = 0; s < PER; s += 1) {
       for (const diff of DIFFS) {
@@ -1977,6 +1987,33 @@ describe('the raid gauntlet', () => {
     // "raids cannot be held" and "raids cannot be lost", not to pin a rate.
     expect(held / total).toBeGreaterThanOrEqual(0.2);
     expect(held / total).toBeLessThanOrEqual(0.95);
+
+    // AUDIT ITEM 5. The bar that was missing is not the rate, it is the
+    // GRADIENT: this table read 5/8, 1/8, 1/8, 0/8 before, which is not a
+    // difficulty curve but a cliff with noise on it, and a wide rate bar
+    // sailed straight over it. Three faults, two in the game and one here:
+    //
+    //   * a palisade cost 0.4 of difficulty for being another roof and
+    //     returned 2 x 0.18 for being a wall, so BUILDING ONE MADE RAIDS
+    //     HARDER (+0.04 net, and a watchtower +0.22);
+    //   * difficulty added a whole extra raider per point against a
+    //     steading defended by about four, so one point swung the odds by a
+    //     quarter and left nothing for the palisade, watch and site to move;
+    //   * and this harness walked its defenders ONTO their own palisade —
+    //     the move scorer knew about gaps and shoulder-mates and nothing
+    //     about `WALL_EXPOSED`, so the band fought from the worst tile on
+    //     the field, the one the wall exists to put THEM on.
+    //
+    // Measured after: 12/24, 10/24, 7/24, 5/24. Easy raids are usually held,
+    // hard ones usually are not, and every step down costs something.
+    const easy = byDiff.get(0)!;
+    const hard = byDiff.get(3)!;
+    expect(easy.held / easy.of, 'a prepared steading cannot hold even an easy raid')
+      .toBeGreaterThan(0.3);
+    expect(hard.held / hard.of, 'the hardest raid is a coin flip, not a hard raid')
+      .toBeLessThan(easy.held / easy.of);
+    expect(hard.held, 'the hardest raid cannot be held at all — that is a cliff')
+      .toBeGreaterThan(0);
   });
 });
 

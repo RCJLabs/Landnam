@@ -58,11 +58,36 @@ export const SACK_TAKES = 2;
  * you stand the more they bring — but a defensible site and a watch that is
  * actually kept both take the edge off.
  */
+/**
+ * What a building on the ground adds to how worth robbing you look.
+ * Visible wealth: a coast can count roofs from a ridge.
+ */
+export const WORTH_PER_ROOF = 0.4;
+
+/**
+ * What a point of defensibility takes back off it — site, palisade,
+ * watchtower and earthworks together.
+ *
+ * Raised from 0.18, and the reason is arithmetic rather than taste. At 0.18
+ * a palisade cost 0.4 of difficulty for being another roof and returned
+ * 2 x 0.18 = 0.36, so **building a palisade made raids very slightly
+ * HARDER** (+0.04 net) and a watchtower plainly harder (+0.22). Every
+ * defensive building in the game except earthworks was a trap, which is why
+ * sixty sagas held two raids of forty and no amount of preparing moved it.
+ * At 0.5 a palisade is worth -0.6 and a watchtower -0.6, so the things whose
+ * whole purpose is defence finally pay for themselves.
+ */
+export const DEFENCE_PER = 0.5;
+
+/** And a point of watch kept. A watch not kept decays, which is the point. */
+export const WATCH_PER = 0.2;
+
 export function raidDifficulty(state: GameState): number {
   const home = state.settlement;
   if (!home) return 0;
-  const worthTaking = home.built.length * 0.4 + Math.min(3, state.party.food / 40);
-  const warned = effectiveReport(state)!.defence * 0.18 + home.watch * 0.12;
+  const worthTaking =
+    home.built.length * WORTH_PER_ROOF + Math.min(3, state.party.food / 40);
+  const warned = effectiveReport(state)!.defence * DEFENCE_PER + home.watch * WATCH_PER;
   // Whoever you have wronged brings more of their own. This is the whole
   // reason a neighbour is a persistent object and not a card.
   //

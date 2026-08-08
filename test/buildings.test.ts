@@ -545,7 +545,10 @@ describe('the queue never ends', () => {
     watched.settlement!.report = { ...watched.settlement!.report, defence: 1 };
     const bare = effectiveReport(watched)!.defence;
     watched.settlement!.built.push('palisade', 'watchtower');
-    expect(effectiveReport(watched)!.defence).toBe(bare + 3);
+    // Four, not three: the watchtower went from one point of defence to two
+    // in audit item 5. At one it cost more in looking-worth-robbing (+0.4 a
+    // roof) than it returned in being-warned, so the tower was a trap.
+    expect(effectiveReport(watched)!.defence).toBe(bare + 4);
 
     const pious = stocked('late-hof');
     pious.settlement!.built.push('longhouse', 'meadhall');

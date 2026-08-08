@@ -94,7 +94,14 @@ function stocked(seed: string, palisade: boolean): GameState {
 /** Defends the yard: strike what is adjacent, otherwise hold the line. */
 function defend(state: GameState): GameState {
   let cur = state;
-  for (let i = 0; i < 900 && !cur.battle?.outcome; i++) {
+  // Two thousand, not nine hundred. This is a cap on APPLY CALLS, not on
+  // rounds — the engine ends a grinding fight at ROUND_LIMIT (50) and decides
+  // it on who is upright. Item 5 made defenders survive long enough to
+  // actually reach that limit: a walled steading now stands in the yard for
+  // forty rounds instead of dying in fifteen, which at roughly twenty-four
+  // calls a round ran the old cap out mid-fight and left `aftermath`
+  // undefined. Sized off ROUND_LIMIT rather than guessed.
+  for (let i = 0; i < 2000 && !cur.battle?.outcome; i++) {
     const battle = cur.battle!;
     const active = activeCombatant(battle);
     if (!active || active.side !== 'warband') {

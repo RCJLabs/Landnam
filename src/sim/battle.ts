@@ -179,6 +179,23 @@ export function foeCapFor(state: GameState): number {
 
 /** Exported for the prove-it-binds tests: escalation has been swallowed by
  *  a clamp before, and nobody trusts an unmeasured knob here any more. */
+/**
+ * How many more of them a point of raid difficulty is worth.
+ *
+ * One-for-one was the cliff, and the arithmetic of small numbers is why. A
+ * steading is defended by about four people, so every point of difficulty
+ * was a 25% swing in the odds — measured, the gauntlet held 5 of 8 at
+ * difficulty 0 and 1 of 8 at difficulty 1. A single extra body took a fight
+ * a prepared band usually won to one it almost always lost, which leaves no
+ * room at all for the palisade, the watch and the site to mean anything:
+ * every term they move is worth less than the rounding.
+ *
+ * Halved, so the scalar has somewhere to act. Open-field fights are
+ * untouched — they are fought by a full warband on ground nobody built, and
+ * the arena in test/wall.test.ts is tuned against them.
+ */
+export const RAID_PER_POINT = 0.5;
+
 export function rollFoes(
   rng: Rng,
   warbandSize: number,
@@ -187,7 +204,11 @@ export function rollFoes(
   cap = raid ? MAX_RAIDERS : MAX_FOES,
   word = 0,
 ): Person[] {
-  const count = Math.max(1, Math.min(cap, Math.round(warbandSize * (raid ? 0.9 : 0.6)) + difficulty));
+  const base = warbandSize * (raid ? 0.9 : 0.6);
+  const count = Math.max(
+    1,
+    Math.min(cap, Math.round(base + difficulty * (raid ? RAID_PER_POINT : 1))),
+  );
   const foes: Person[] = [];
   for (let i = 0; i < count; i++) {
     const archetype = rng.weighted(FOE_ARCHETYPES, (a) => weightFor(a, word));

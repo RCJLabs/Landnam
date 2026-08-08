@@ -415,7 +415,12 @@ whole systems do not.
    prerequisites are, and the build-rate-per-tier figure that would say which
    does not exist yet.
 
-5. **[ ] The raid cliff — price it or accept it.** Still the oldest open
+5. **[x] The raid cliff — price it or accept it.** Done, and the answer was
+   "price it": the cliff was three arithmetic faults, two in the game and one
+   in the harness, not a design choice anybody had made. Holds went 1-in-9 to
+   1-in-3 and the difficulty table is monotonic for the first time. See the
+   changelog. Original text follows.
+   **[ ] (as written)** Still the oldest open
    question in this document and now the best measured: 1 raid held of 9 in
    real play, and the gauntlet reads 4/8 at difficulty 0, 1/8 at 2 and
    **0/8 at 3**. Each loss burns a building, takes two fifths of the store
@@ -584,6 +589,9 @@ here so the next attempt does not begin by repeating them.
 | Winters deepening with the years, alone | Zero change for a careful player AND a careless one (18/40 either way): the winter mark was a perfect forecast, so the band simply stocked to the bigger number. Shipped later as 6.1, once the mark was made vague. |
 | A landing chosen near settleable ground | Fixed a real problem (settleable ground a median 5 and up to 11 hexes from the sand) and broke a bigger one: where you land decides where you fight, and on the worlds it produced the shield wall went dead level with charging in — 33 wins/157 standing became 32/158 over sixty seeds. Rejected. |
 | Rolling a raid every day instead of drawing one from the deck | Shipped after tuning. The first rate took `test/thing.test.ts` from 4 of 4 bands reaching the endgame to 1 of 4; measured at 0.006 → 1/4, 0.003 → 3/4, 0.0015 → 4/4. Raids now fire regularly and the curve STILL does not move, because bands hold them and losing one costs only stores. |
+| Defensive buildings, as originally priced | A palisade added 0.4 to raid difficulty for being another roof and returned 2 x 0.18 for being a wall: **net +0.04, so building one made raids harder.** A watchtower was +0.22. Every defensive building but earthworks was a trap, and no amount of preparing moved a hold rate of 2-in-40. |
+| One extra raider per point of difficulty | A steading is defended by about four people, so a single point swung the odds by a quarter: the gauntlet held 5/8 at d0 and 1/8 at d1. That leaves no room for the palisade, the watch and the site to mean anything — every term they move is worth less than the rounding. Halved for raids; open-field fights untouched. |
+| A defending bot that climbed its own palisade | The move scorer knew about gaps and shoulder-mates and nothing about `WALL_EXPOSED`, so a band under attack walked onto the stakes — the worst tile on the field, and the one the wall exists to put THEM on. Worth 20% to 33% of raids held on its own. |
 | Teaching the bot to DASH into contact | Priced at a third of the wins and a third of the survivors over sixty arena fights (22/108 against 33/162). Not a bug — spending the turn's action to arrive sooner means arriving alone and already spent, which is the charge the shield wall is measured against. The bot does not dash; the A/B is kept executable in `wall.test.ts`. |
 | Measuring a combat verb on the survival curve | The four verbs looked harmful (11 bands seeing spring falling to 8) on an instrument that ends only one run in six on steel. The arena found the real answer, and it was a different one: three of the four were neutral. **Match the instrument to the effect.** |
 | Guaranteeing a four-wide front on every battlefield | Shipped, but currently inert: no terrain the game ships ever fails it. A regression guard on tunable data, not a fix. The real mechanism is row DENSITY — 98% of meadow rows can hold a line against 40% of ocean ones. |
@@ -726,6 +734,50 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — Pricing the raid cliff (audit item 5)** — The oldest open
+  question in this document, deferred three times for want of a trustworthy
+  instrument. Measured properly it was worse than the audit had said: **40
+  raids came and 2 were held**, and of the 26 sagas that lost one, **20 were
+  dead within thirty days**. Not a brutal late game — a coin that always
+  lands the same way.
+  It was not a design choice anybody had made. It was three faults.
+  **First, the defensive buildings were priced backwards.** Raid difficulty
+  reads `built.length * 0.4` for looking worth robbing against
+  `defence * 0.18` for being warned — so a palisade cost 0.4 for being
+  another roof and returned 2 × 0.18, a **net +0.04**. Building a palisade
+  made raids harder. A watchtower was +0.22, plainly harder. Only earthworks
+  helped, and only because it replaces rather than adds. `DEFENCE_PER` is now
+  0.5 and the watchtower is worth two points instead of one, so the things
+  whose whole purpose is defence pay for themselves.
+  **Second, difficulty added a whole raider per point** against a steading
+  defended by about four people — a 25% swing in the odds per point, which
+  left nothing for the palisade, the watch and the site to move. Halved for
+  raids only; the open field is fought by a full warband on ground nobody
+  built and the arena in `wall.test.ts` is tuned against it, so it is
+  untouched (32/60 wins, unmoved).
+  **Third, and this one was mine: the defending bot climbed its own
+  palisade.** The move scorer knew about gaps and shoulder-mates and nothing
+  about `WALL_EXPOSED`, so a band under attack walked onto the stakes — one
+  hand on the wood, no footing, three easier to hit, the exact tile the wall
+  exists to put the raiders on. That fault alone was worth 20% to 33% of
+  raids held.
+  Measured after: **16 of 49 raids held in play against 2 of 40**, and the
+  gauntlet is monotonic for the first time — 12/24 at d0, 10/24 at d1, 7/24
+  at d2, 5/24 at d3. Easy raids are usually held, hard ones usually are not,
+  and every step down costs something. `test/raid.test.ts` now reads walled
+  5 held / 48 alive / 299 stolen against open 1 / 37 / 648, so eight timber
+  and a week of somebody's hands finally buys something.
+  The gauntlet's bar changed shape to match: it barred the RATE, which a
+  cliff sails straight over, and now bars the GRADIENT. Its cells went from
+  eight samples to twenty-four, because eight read d1 1/8 against d2 4/8 —
+  a coin, not a curve.
+  Two fixtures moved with it. `buildings.test.ts` asserted the watchtower's
+  old one point. And `raid.test.ts` capped its own loop at 900 apply calls,
+  which was fine while defenders died in fifteen rounds and ran out
+  mid-fight now that a walled steading stands for forty — resized off
+  `ROUND_LIMIT` rather than guessed.
+  Curve 58/27/7, unmoved.
 
 - **2026-08-08 — The tier nobody asked for (audit item 4)** — The shortest
   entry here and the one with the sharpest lesson. The audit found

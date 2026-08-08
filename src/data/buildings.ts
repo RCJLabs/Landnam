@@ -189,7 +189,10 @@ export const BUILDINGS: BuildingDef[] = [
     timber: 5,
     works: 5,
     after: ['palisade'],
-    raises: { defence: 1 },
+    // Two, not one. A tower with somebody in it is worth about what a fence
+    // is: at one it cost more in looking-worth-robbing than it returned in
+    // being-warned, which made the whole of the watch a trap.
+    raises: { defence: 2 },
   },
   {
     id: 'greathall',
