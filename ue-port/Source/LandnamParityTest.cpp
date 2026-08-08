@@ -3,8 +3,8 @@
 // src/rng (see ue-port/tools/golden.mjs), so a pass here means a seed builds the same
 // saga in Unreal as it does in the browser.
 //
-// Run it: Window > Test Automation > Landnam.Parity. Regenerate the vectors after any
-// change to the TS hex or RNG code: node ue-port/tools/golden.mjs
+// Run it: Tools > Session Frontend > Automation tab > Landnam.Parity. Regenerate the
+// vectors after any change to the TS hex or RNG code: node ue-port/tools/golden.mjs
 
 #include "LandnamHex.h"
 #include "LandnamRng.h"

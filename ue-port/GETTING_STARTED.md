@@ -294,13 +294,29 @@ the rest are usually knock-on effects. The most common cause is `"Json"` missing
 
 This is the step that makes everything afterwards trustworthy.
 
-**Tools → Test Automation**, expand the tree to find **Landnam → Parity**, tick it, and
-click **Start Tests**.
+The test runner lives inside the Session Frontend, not on a menu of its own:
 
-It should pass, having made about six thousand checks. What it just proved: this C++
-produces exactly the same hexes, the same A* routes, and the same random numbers as the
-TypeScript game. A seed means the same thing in both. Every balance figure in
-`ROADMAP.md` still describes the game you are building.
+1. **Tools → Session Frontend**, then click the **Automation** tab.
+2. Your running editor should already be picked in the session list at the top. If nothing
+   is selected there, select it — the test tree stays empty otherwise.
+3. **Refresh Tests** if the tree is empty, then type `Landnam` in the search box.
+4. Tick **Landnam** (or expand it and tick **Parity**) and click **Start Tests**.
+
+It finishes in a second or two, having made about six thousand checks. Click the test row
+to read its log — it prints a line per section even when everything passes:
+
+```
+[hex.round] 169 checks, 0 failed
+[hex.fromPixel] 441 checks, 0 failed
+[rng.streams] 3294 checks, 0 failed
+```
+
+What that proves: this C++ produces exactly the same hexes, the same A* routes, and the
+same random numbers as the TypeScript game. A seed means the same thing in both. Every
+balance figure in `ROADMAP.md` still describes the game you are building.
+
+A failing section names its first few mismatches with actual and expected values, so the
+section name plus one line of output is usually enough to find the cause.
 
 If it fails with *"Could not read .../Content/Data/golden.json"*, the JSON files from
 Step 2 did not land in the right folder.
@@ -309,16 +325,34 @@ Step 2 did not land in the right folder.
 
 ## Step 5 — Import the content tables
 
-1. In the Content Browser, make a folder called `Data`.
-2. Drag `terrain.json` into it (from the project's `Content/Data`, or use **Import**).
-3. Unreal asks for a row type. Choose **TerrainRow**. Import.
-4. Repeat with `foes.json`, choosing **FoeArchetypeRow**.
+Unreal spots the new files on startup and offers to import all four as DataTables. Only
+two of them are tables, so answer per file — the dialog names the one it is asking about
+on its *Current File* line:
+
+| File | Answer |
+| --- | --- |
+| `terrain` | Import As **DataTable**, Row Type **TerrainRow**, then **Apply** |
+| `foes` | Import As **DataTable**, Row Type **FoeArchetypeRow**, then **Apply** |
+| `foe-names` | **Cancel** — plain word lists, read at runtime |
+| `golden` | **Cancel** — parity vectors, read off disk by the test |
+
+Do not click **Apply to All**; it would force one row type onto all four. For the two that
+are not tables the row-type dropdown is empty and `Apply` stays greyed out, which is the
+dialog telling you the same thing.
+
+If you dismissed the prompt, import them by hand instead: open the **Data** folder in the
+Content Browser first (Import lands in whatever folder you are viewing), click **Import**,
+pick `terrain.json`, and set the same two options.
+
+**Then save.** Imported assets live only in memory until you do — `Ctrl+S` or
+**File → Save All**. Skip it and they are gone when the editor closes.
 
 Open the terrain table and you should see 8 rows — ocean, shore, meadow, forest, hills,
 mountains, bog, valley — with the same costs and yields the web game uses. `Cost` of
 `-1` means impassable, which is how the ocean's `Infinity` survives the trip through JSON.
 
-Skip `golden.json` and `foe-names.json` — those are read as plain files, not imported.
+To stop Unreal asking about the two raw files on every restart, turn off
+**Edit → Editor Preferences → Loading & Saving → Auto Import → Monitor Content Directories**.
 
 ---
 
