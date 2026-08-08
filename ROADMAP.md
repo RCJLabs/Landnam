@@ -348,7 +348,10 @@ deck health: 783 draws, top ten = 33% of all draws
 The deck is healthy and the traits, lore and building list mostly land. Four
 whole systems do not.
 
-1. **[x] A settled band never leaves home.** Done, and the fix was mostly
+1. **[~] A settled band never leaves home.** Mostly done, and one part
+   reopened by item 3: the armed errand halved once bands had more mouths,
+   and the strandhögg's play-level bar had to come off. See the changelog
+   for 2026-08-08. The fix was mostly
    not where the item said it was — see the changelog. The bot learned the
    errand under arms and the ship's way in, but the binding constraint was
    that the fixed places were seeded a MEDIAN of 30 hexes from the sand with
@@ -387,7 +390,12 @@ whole systems do not.
    made about a bot playing two thirds of the game. Measured the way the
    wall was: each verb's use rate, and its effect on wins and standing.
 
-3. **[ ] Growth never happens.** Phase 6.2 — `capacity`, `crowding`,
+3. **[x] Growth never happens.** Done. The measurement was not the one the
+   item expected: capacity was never the problem — 9.8 beds a settled day
+   with 5.2 standing empty. The band simply never grew, because the coast
+   had a daily roll to send men who take (`maybeRaid`) and none to send
+   people who come. See the changelog. Original text follows.
+   **[ ] (as written)** Phase 6.2 — `capacity`, `crowding`,
    `roomLeft`, `SETTLED_IN`, the repeatable búð, hands who work but do not
    fight — is dead in play: **6 people arrived across 60 sagas, and 1 hand
    was alive at the end of all of them.** Joining exists only as event-card
@@ -714,6 +722,56 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The door that was never opened (audit item 3)** — Phase 6.2
+  built `capacity`, `crowding`, hands who work but do not fight, the
+  repeatable búð and a whole leaving system, and then shut the front door.
+  The probe named it exactly: an average of **9.8 beds a settled day with
+  5.2 of them standing empty**, four people arriving across sixty sagas, and
+  the band **never once exceeding the six who stepped off the knarr**. The
+  four joining event cards — total weight 15 in a 102-card deck, three of
+  them gated on goodwill or anger — were drawn twice in sixty sagas.
+  So the diagnosis was not the one the item expected. Room was never the
+  constraint; the **asymmetry** was. `maybeRaid` has rolled every single day
+  since 3.5 to see whether somebody comes over the ridge to take what you
+  have, and nothing has ever rolled the other way. The coast could only
+  subtract.
+  `maybeJoin` is the mirror, rolled beside it: a steading draws people for
+  what can be seen from outside — **plenty** in the store, standing on the
+  coast, winters behind it, and what has been raised — less what a coast
+  that wants you dead takes away. Room and larder are FLOORS rather than
+  terms: a hall with no bed takes nobody however famous, and a mouth you
+  cannot feed is not growth, it is company while you starve. The larder is
+  counted in DAYS so it scales with the band; a flat number was the first
+  cut and shut the door on 45% of settled days while a hall of ten with the
+  same sacks counted as comfortable.
+  One term was dropped after measurement rather than tuned: morale read
+  **0.97 on average** across sixty sagas, which is not a term, it is a
+  constant with a sum wrapped round it. Plenty replaced it, and does the
+  early work — every other term needs winters already stood, so the first
+  cut only granted growth long after it was needed.
+  The rate was swept on the figure that matters, the peak band a saga that
+  saw a SECOND WINTER ever reached: 0.06 gave 6.8 with ten bands getting
+  there, 0.10 gave 7.4 with eight, 0.16 gave 9.0 with only five. Past 0.10
+  growth eats its own — hands are mouths first and hands second. Settled at
+  **0.10**.
+  Measured: 68 arrivals over sixty sagas against 4, thirteen bands passing
+  six against none, and second-winter bands peaking at **7.4**. The new bar
+  asserts the peak band, not the arrivals — four arrivals was already
+  non-zero and told nobody anything. Curve 58/25/7 against 63/28/7, inside
+  the noise floor and in the direction more mouths should push it.
+  **And it broke item 1's sea bar, which is the honest part of this entry.**
+  A band with more mouths trades far more than it raids — 22 trading errands
+  against 4 under arms — so the armed errand halved and the strandhögg count
+  fell to nought. Two of the bot's food gates turned out to be calibrated for
+  a band of exactly six (`+55`, `+40` in sacks) and are now counted in DAYS
+  the steading can feed itself, which fixed the errands; doubling the sample
+  to a hundred and twenty sagas moved the strandhögg from three to four, so
+  the shortfall is the errand RATE and not the sample. The bar came off it.
+  `test/strandhogg.test.ts` still proves the verb end to end and the bot
+  still takes it wherever it is legal, but **whether an ordinary player ever
+  reaches a strandhögg is now an open question**, and it is the unfinished
+  half of item 1 rather than something item 3 fixed.
 
 - **2026-08-08 — A town you can trade with** — Reported from a phone, and
   the screenshot said it better than any audit could: a band standing on *a

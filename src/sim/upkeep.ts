@@ -12,7 +12,7 @@ import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
 import { driftStandings, neighboursCallOn } from './neighbours';
-import { handsLeave } from './joining';
+import { handsLeave, maybeJoin } from './joining';
 import { raidable, raidDifficulty, raidOdds } from './raid';
 import { startRaid } from './battleTurn';
 import { bonus } from './lore';
@@ -220,6 +220,10 @@ export function passDay(state: GameState): boolean {
   // had enough. Only hands ever do — the sworn are sworn.
   handsLeave(state);
   maybeRaid(state);
+  // And the other direction, which the coast never had: somebody comes and
+  // asks. Rolled beside the raid on purpose — the same world that sends men
+  // over the ridge is the one that sends people up the strand.
+  maybeJoin(state);
   stirGrudges(state, pressure);
   feudsComeDue(state);
   // The coast forgets slowly, and only a little each day.

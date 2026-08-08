@@ -37,7 +37,7 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-steading',
     title: 'The Steading',
-    body: 'Once settled, tap the hall to enter the steading. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. People taken in arrive as hands: labour, never fighters, and only if there is a bed.',
+    body: 'Once settled, tap the hall to enter the steading. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. A steading that is fed, built and on speaking terms with the coast DRAWS people, and one that is starving or at feud does not. They arrive as hands: labour, never fighters, only if there is a bed, and only while there is food to spare for a new mouth.',
   },
   {
     id: 'the-fight',
