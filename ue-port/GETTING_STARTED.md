@@ -115,7 +115,29 @@ turn the project into a code project.
 
 ## Step 2 — Copy the kit in
 
-From this repo into your Unreal project:
+### 2a. Get the kit onto this machine
+
+`ue-port/` lives on the `claude/game-choice-unreal-engine-jy3yv5` branch of the Landnám
+repo, so a clone sitting on `main` will not have it.
+
+If you already have Landnám cloned here:
+
+```powershell
+cd "path\to\your\Landnam"
+git fetch origin claude/game-choice-unreal-engine-jy3yv5
+git checkout claude/game-choice-unreal-engine-jy3yv5
+```
+
+If you do not, put a copy anywhere convenient — it never has to live near the Unreal project:
+
+```powershell
+cd "$HOME\Documents"
+git clone -b claude/game-choice-unreal-engine-jy3yv5 https://github.com/RCJLabs/Landnam.git
+```
+
+Either way you should end up with a `ue-port` folder holding `Source`, `Content` and `tools`.
+
+### 2b. What goes where
 
 | From `ue-port/` | To `LandnamUE/` |
 | --- | --- |
@@ -125,17 +147,60 @@ From this repo into your Unreal project:
 | `Source/LandnamParityTest.cpp` | `Source/LandnamUE/` |
 | `Content/Data/*.json` | `Content/Data/` (create the folder) |
 
-Then open `Source/LandnamUE/LandnamUE.Build.cs` in any text editor and add `"Json"`
-to the dependency list, so the parity test can read `golden.json`:
+Mind the doubled folder name: module code belongs in `Source\LandnamUE\`, next to
+`LandnamUE.Build.cs` — **not** in `Source\`. Unreal only compiles what sits inside a
+module folder, so files one level too high are ignored without any error, and the first
+sign of trouble is Blueprint not finding the nodes in Step 8.
 
-```csharp
-PublicDependencyModuleNames.AddRange(new string[] {
-    "Core", "CoreUObject", "Engine", "InputCore", "Json"
-});
+Set the two paths once and let PowerShell do the copying:
+
+```powershell
+$kit  = "$HOME\Documents\Landnam\ue-port"              # adjust to your clone
+$proj = "$HOME\Documents\Unreal Projects\LandnamUE"
+
+Copy-Item "$kit\Source\*" "$proj\Source\LandnamUE\"
+New-Item -ItemType Directory -Force -Path "$proj\Content\Data" | Out-Null
+Copy-Item "$kit\Content\Data\*" "$proj\Content\Data\"
 ```
 
-Leave the rest of the file alone — your list may have more entries than this from the
-template, and they all stay.
+These are copies, not links, and that is deliberate — the Unreal project is its own repo
+and should not be entangled with the game's. The trade is that regenerating the kit means
+re-running these two `Copy-Item` lines.
+
+### 2c. Declare the Json module
+
+Open `Source/LandnamUE/LandnamUE.Build.cs` in any text editor and find the line beginning:
+
+```csharp
+PublicDependencyModuleNames.AddRange(new string[] { ...
+```
+
+**Append `"Json"` to the list that is already there.** Do not replace it — the Top Down
+template brings its own entries (`EnhancedInput`, `NavigationSystem`, `AIModule`, `UMG`
+and others depending on the variant), and every one of them is still needed. The result
+looks something like:
+
+```csharp
+PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Json" });
+```
+
+`LandnamParityTest.cpp` reads `golden.json` with Unreal's JSON parser, and Unreal refuses
+to link a module you have not declared. Miss this and Step 3 fails on that one file.
+
+### 2d. Check it before the long build
+
+```powershell
+dir "$proj\Source\LandnamUE"
+dir "$proj\Content\Data"
+Select-String -Path "$proj\Source\LandnamUE\LandnamUE.Build.cs" -Pattern "Json"
+```
+
+Expect six `Landnam*` files plus `LandnamUE.Build.cs` and the bootstrap class; four
+`.json` files, with `golden.json` much the largest at around 312 KB; and the last command
+echoing the dependency line back. Silence from that last one means the edit did not save.
+
+`golden.json` is a plain file rather than a Unreal asset, so the Content Browser will not
+show it. That is expected — the parity test reads it straight off disk.
 
 ---
 
@@ -352,7 +417,9 @@ extensions, so check the true name with `dir .git*` or `ls -a`, rename it, and r
 
 **Blueprint cannot find "Hex To World" or "Make Hex".** The C++ did not compile, or the
 editor was not restarted after building. Also uncheck *Context Sensitive* in the node
-search box while you look.
+search box while you look. If the build reported success but had suspiciously little to
+do, check that the `.h` and `.cpp` files are in `Source\LandnamUE\` and not `Source\` —
+Unreal skips anything outside a module folder without complaining (Step 2b).
 
 **Tiles overlap or leave gaps.** `HexSize` on the grid and the radius of `SM_HexTile`
 disagree. Both should be `100`.
