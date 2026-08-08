@@ -18,6 +18,7 @@ import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast, markVisible, reachable } from '../sim/winter';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
+import { threatReading } from '../sim/raid';
 import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
 import { placeHere } from '../sim/places';
@@ -116,6 +117,67 @@ export function renderWinterMark(state: GameState): HTMLElement {
     row('Food', state.party.food, f.food, f.foodGap),
     row('Wood', state.party.firewood, f.firewood, f.firewoodGap),
   ]);
+}
+
+/**
+ * The watch mark: how likely somebody is to come, and what is making it so.
+ *
+ * The same trick as the winter mark, which is the most successful panel in
+ * this game — name the number, name what moves it, and let the player play
+ * against it. Until this, the watch and the wall bought raid-chance down
+ * invisibly while winters, buildings and a full store pushed it up
+ * invisibly, so defending was guesswork dressed as strategy.
+ *
+ * Shown at the steading only, and only once the founding grace is over.
+ */
+export function renderWatchMark(state: GameState): HTMLElement {
+  if (state.end || state.event || !state.settlement) return el('div');
+  if (!atHome(state)) return el('div');
+  const read = threatReading(state);
+
+  if (read.respite > 0) {
+    return el('div', { class: 'watch-mark quiet' }, [
+      el('div', { class: 'mark-head' }, [
+        `Nobody has heard of this place yet — ${read.respite} days of that left`,
+      ]),
+    ]);
+  }
+  if (read.chance <= 0) {
+    return el('div', { class: 'watch-mark quiet' }, [
+      el('div', { class: 'mark-head' }, ['The wall and the watch are holding. Nobody is coming.']),
+    ]);
+  }
+
+  // Under a fortnight between raids is a steading in real trouble; the
+  // panel says so in its border rather than in more words.
+  const pressed = read.everyDays !== null && read.everyDays <= 40;
+  const panel = el('div', { class: `watch-mark${pressed ? ' dire' : ''}` }, [
+    el('div', { class: 'mark-head' }, [
+      read.everyDays !== null
+        ? `A raid about every ${read.everyDays} days`
+        : 'A raid may come',
+    ]),
+  ]);
+
+  const row = (term: { label: string; amount: number; why: string }, keeps: boolean): HTMLElement =>
+    el('div', { class: `mark-row${keeps ? ' good' : ' short'}` }, [
+      el('span', { class: 'mark-name wide' }, [term.label]),
+      el('span', { class: 'mark-value' }, [`${keeps ? '−' : '+'}${term.amount.toFixed(1)}`]),
+      el('span', { class: 'mark-gap' }, [term.why]),
+    ]);
+
+  for (const term of read.draws) panel.append(row(term, false));
+  for (const term of read.keeps) panel.append(row(term, true));
+  if (read.keeps.length === 0) {
+    panel.append(
+      el('div', { class: 'mark-row short' }, [
+        el('span', { class: 'mark-name wide' }, ['Nothing holds them']),
+        el('span', { class: 'mark-value' }, ['—']),
+        el('span', { class: 'mark-gap' }, ['no wall, no watch']),
+      ]),
+    );
+  }
+  return panel;
 }
 
 /**

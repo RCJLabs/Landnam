@@ -1601,3 +1601,40 @@ button.hardship-chip {
   min-height: var(--tap);
   cursor: default;
 }
+
+/* --- The watch mark --- */
+
+/* Sibling of the winter mark, and deliberately the same shape: the player
+   already knows how to read one of these. */
+.watch-mark {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.watch-mark.quiet {
+  border-color: var(--moss);
+}
+
+.watch-mark.quiet .mark-head {
+  color: var(--moss);
+}
+
+.watch-mark.dire {
+  border-color: var(--blood);
+}
+
+.watch-mark.dire .mark-head {
+  color: var(--blood);
+}
+
+/* This panel's labels are words, not "Food" — they need the room. */
+.watch-mark .mark-row {
+  grid-template-columns: 8.5em auto 1fr;
+}
+
+.mark-row.good .mark-value {
+  color: var(--moss);
+}

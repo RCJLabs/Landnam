@@ -35,6 +35,7 @@ import {
   renderMuteToggle,
   renderSitePanel,
   renderThingMark,
+  renderWatchMark,
   renderTopBar,
   renderWinterMark,
 } from './render/ui';
@@ -445,6 +446,7 @@ function render(): void {
   hintSlot.replaceChildren(
     renderHint(state),
     renderWinterMark(state),
+    renderWatchMark(state),
     renderThingMark(state),
     renderSitePanel(state),
   );

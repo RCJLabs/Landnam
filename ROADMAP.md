@@ -353,7 +353,9 @@ would be measured, because an item that cannot be measured is a wish.
    somewhere to go that is not a row of huts, and the authored raid fields
    can read the wall tier the way they already read the palisade.
 
-6. **[ ] The threat clock should be visible.** Watch and palisade buy raid
+6. **[x] The threat clock should be visible.** Done: the watch mark names
+   the chance and every term moving it, derived from the same arithmetic the
+   dice roll against rather than a second model of it. Watch and palisade buy raid
    chance down invisibly; word and wealth push it up invisibly. A player
    defending against a number they cannot see is guessing. Show the
    pressure and what is driving it (winters stood, what you have taken,
@@ -519,6 +521,29 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The watch mark** — Item 6. Winters stood, buildings raised
+  and a full store pushed raid-chance up invisibly, while the wall and the
+  watch pushed it down invisibly, so defending the steading was guesswork
+  dressed as strategy. Now a panel names it: "A raid about every 194 days",
+  and under it every term with its weight and its reason — what is in the
+  store +3.0, a full store travels well; the wall −1.1, ground they have to
+  come at.
+  Built to the rule that makes the winter mark trustworthy: the panel is not
+  a second model. `threatReading` computes the terms AND the chance, and
+  `raidOdds` is now that one field, so a panel disagreeing with the dice is
+  impossible rather than merely unlikely — asserted with `toBe` across
+  twenty-seven situations, not `toBeCloseTo`. A further test proves every
+  row the panel shows actually moves the number the panel shows, because a
+  displayed-but-inert row is worse than no panel: it teaches the player to
+  spend on nothing.
+  One branch was written and deleted before shipping. The panel was going to
+  say "as bad as it gets" at the ceiling — and the test fixture could not
+  reach the ceiling: nine winters, ten buildings, a full store and a coast
+  that hates you reads 0.021 against a 0.055 cap, about fifty-five winters
+  short. Dead UI, so it went, and the finding is a test now so the next
+  person to look at RAID_CHANCE_MAX knows it is a guard rail rather than a
+  target. 661 tests.
 
 - **2026-08-08 — Buildings grow upward** — Item 5. The late tier and the
   repeatable búð answered "the queue must not end" horizontally; this is

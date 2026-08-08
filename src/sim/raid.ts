@@ -115,19 +115,97 @@ const CHANCE_PER_WORTH = 0.0015;
  * ceiling it is about one raid a month, and a well-watched steading nobody
  * has a quarrel with sits far below that.
  */
-export function raidOdds(state: GameState): number {
+/** One line of the reading: what it is, and what it is worth. */
+export interface ThreatTerm {
+  label: string;
+  /** In the same units as `worth` — positive draws them, positive keeps. */
+  amount: number;
+  /** The plain reason, for the panel's second line. */
+  why: string;
+}
+
+export interface ThreatReading {
+  /** Chance per day that somebody comes. */
+  chance: number;
+  /** Roughly one raid every this many days, or null when nothing is coming. */
+  everyDays: number | null;
+  /** Days of grace left after founding, or 0. */
+  respite: number;
+  draws: ThreatTerm[];
+  keeps: ThreatTerm[];
+  /** True when the watch and the wall are holding it all off. */
+  quiet: boolean;
+}
+
+/**
+ * The chance, on a given day, that somebody comes for the steading —
+ * BROKEN OUT, because a player defending against a number they cannot see
+ * is guessing.
+ *
+ * This is the winter mark's trick applied to the other clock, and the rule
+ * that makes the winter mark trustworthy applies here too: the panel must
+ * not be a second model. `raidOdds` is this function's `chance` field and
+ * nothing else, so what the player reads is arithmetically the thing the
+ * dice are rolled against.
+ *
+ * Raids used to arrive ONLY as event cards, which made their frequency a
+ * function of the deck rather than of the steading: measured across whole
+ * sagas, roughly one run in four never saw a single raid. A threat that
+ * mostly does not happen cannot decide a run however large it is when it
+ * does — which is why making raids bigger in 6.3 moved the curve by nothing.
+ *
+ * Deliberately capped low. This is a background hazard, not a siege: at the
+ * ceiling it is about one raid a month, and a well-watched steading nobody
+ * has a quarrel with sits far below that.
+ */
+export function threatReading(state: GameState): ThreatReading {
+  const nothing: ThreatReading = {
+    chance: 0, everyDays: null, respite: 0, draws: [], keeps: [], quiet: true,
+  };
   const home = state.settlement;
-  if (!home || state.end) return 0;
+  if (!home || state.end) return nothing;
   // Nothing comes for a place that has only just been marked out.
-  if (state.day - home.foundedOn < RAID_RESPITE) return 0;
+  const respite = Math.max(0, RAID_RESPITE - (state.day - home.foundedOn));
+  if (respite > 0) return { ...nothing, respite };
 
-  const worth =
-    wintersStood(state.day) * 0.6 + home.built.length * 0.35 + Math.min(3, state.party.food / 50);
+  const years = wintersStood(state.day) * 0.6;
+  const raised = home.built.length * 0.35;
+  const stores = Math.min(3, state.party.food / 50);
   const grievance = angerLevel(state) / 45;
-  const warned = effectiveReport(state)!.defence * 0.22 + home.watch * 0.16;
+  const wall = effectiveReport(state)!.defence * 0.22;
+  const watch = home.watch * 0.16;
 
-  const drawn = Math.max(0, worth + grievance - warned);
-  return Math.min(RAID_CHANCE_MAX, drawn * CHANCE_PER_WORTH * hardshipById(state.hardship).raid);
+  const draws: ThreatTerm[] = [
+    { label: 'Winters stood', amount: years, why: 'a hall that has lasted is worth coming for' },
+    { label: 'What is raised', amount: raised, why: `${home.built.length} standing` },
+    { label: 'What is in the store', amount: stores, why: 'a full store travels well' },
+    { label: 'Who is angry', amount: grievance, why: 'somebody on this coast owes us blood' },
+  ].filter((t) => t.amount > 0.01);
+  const keeps: ThreatTerm[] = [
+    { label: 'The wall', amount: wall, why: 'ground they have to come at' },
+    { label: 'The watch', amount: watch, why: 'trouble seen before it arrives' },
+  ].filter((t) => t.amount > 0.01);
+
+  const drawn = Math.max(0, years + raised + stores + grievance - wall - watch);
+  // RAID_CHANCE_MAX is a safety valve, not a state the game reaches: a
+  // steading nine winters old, ten buildings deep, full to the rafters and
+  // hated by the whole coast reads about 0.021 against a 0.055 ceiling —
+  // roughly fifty-five winters short of touching it. There is deliberately
+  // no "as bad as it gets" in the panel, because the panel would never get
+  // to say it. Written down here so nobody builds on it later.
+  const chance = Math.min(RAID_CHANCE_MAX, drawn * CHANCE_PER_WORTH * hardshipById(state.hardship).raid);
+  return {
+    chance,
+    everyDays: chance > 0 ? Math.round(1 / chance) : null,
+    respite: 0,
+    draws,
+    keeps,
+    quiet: drawn <= 0,
+  };
+}
+
+export function raidOdds(state: GameState): number {
+  return threatReading(state).chance;
 }
 
 /**
