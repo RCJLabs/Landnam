@@ -9,6 +9,27 @@ never edit them. Everything you build, you build in Blueprints.
 
 Paths below assume the project lives at `Documents/Unreal Projects/LandnamUE`.
 
+## Before you start
+
+Two things must be installed, not one:
+
+- **Unreal Engine 5.6**, via the Epic Games Launcher.
+- **Visual Studio 2022**, with the **Game development with C++** workload ticked during
+  installation. Unreal does not ship a C++ compiler — it borrows Microsoft's, and that
+  workload is what supplies it. Community edition is free; budget about 15 GB.
+
+Note that **Visual Studio and VS Code are different programs**. VS Code is a text editor
+and cannot build Unreal C++, so having it installed does not cover this.
+
+Check whether you already have Visual Studio:
+
+```powershell
+Test-Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+```
+
+**True** means it is installed. **False** means install it before Step 3 — Steps 0 to 2
+will run fine without it, and then the build will have nothing to compile with.
+
 ---
 
 ## Step 0 — Version control, before you change anything
@@ -231,18 +252,36 @@ show it. That is expected — the parity test reads it straight off disk.
 ## Step 3 — Compile
 
 New files need a full build; Unreal's Live Coding only handles edits to files it already
-knows about.
+knows about. Make sure Visual Studio is installed first (see *Before you start*) — nothing
+below can work without a compiler.
+
+### The easy way: let Unreal do it
 
 1. **Close the Unreal editor** if it is open.
 2. In Explorer, open the `LandnamUE` project folder and right-click **`LandnamUE.uproject`**
    → *Show more options* (Windows 11 hides it there) → **Generate Visual Studio project
-   files**. It takes about half a minute and produces `LandnamUE.sln`.
-3. Open **`LandnamUE.sln`**.
-4. In the toolbar, set the two dropdowns to **Development Editor** and **Win64**.
-5. **Build → Build Solution** (`Ctrl+Shift+B`), and watch the Output pane.
-6. Expect **5 to 15 minutes** the first time — it is compiling the engine headers your
-   module touches, not just six files. It is not hung. You want `Build: 1 succeeded`.
-7. Reopen the project in Unreal.
+   files**. It takes about half a minute.
+3. **Double-click `LandnamUE.uproject`.**
+4. Unreal notices the module has no compiled binaries and asks *"The following modules are
+   missing or built with a different engine version: LandnamUE. Would you like to rebuild
+   them now?"* Click **Yes**.
+5. Expect **5 to 15 minutes** the first time — it is compiling the engine headers your
+   module touches, not just six files. It is not hung.
+6. The editor opens with everything loaded. Go to Step 4.
+
+You never have to open Visual Studio for this. It only needs to exist, so Unreal can find
+the compiler inside it.
+
+### If that fails: build in Visual Studio
+
+Unreal's failure box says little more than "could not be compiled", which is not enough to
+act on. Visual Studio gives you real error messages with file names and line numbers.
+
+1. Open **`LandnamUE.sln`** from the project folder.
+2. In the toolbar, set the two dropdowns to **Development Editor** and **Win64**.
+3. **Build → Build Solution** (`Ctrl+Shift+B`), and watch the Output pane. You want
+   `Build: 1 succeeded`.
+4. Reopen the project in Unreal.
 
 This is the first time this C++ meets a compiler on your machine, so an error here is
 ordinary, not a sign something is deeply wrong. Read the *first* error, not the last —
@@ -441,6 +480,12 @@ already tested, and already agree with the game you can play in a browser.
 read — almost always because it was saved as `.gitignore.txt`. Windows hides known
 extensions, so check the true name with `dir .git*` or `ls -a`, rename it, and run
 `git status` again. Do not commit until that list is short.
+
+**`LandnamUE.sln` opens in Notepad.** Visual Studio is not installed — Windows has no
+handler for `.sln` and falls back to a text editor. Install it per *Before you start*,
+then re-run *Generate Visual Studio project files* so the solution targets it. If
+Visual Studio *is* installed and this still happens, it is only a file association:
+right-click the `.sln` → **Open with** → **Visual Studio 2022** → tick *Always use this app*.
 
 **The build fails on `LandnamParityTest.cpp`.** `"Json"` is missing from `Build.cs`
 (Step 2).
