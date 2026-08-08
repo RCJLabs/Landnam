@@ -371,7 +371,15 @@ whole systems do not.
    (better if you win, much worse if you lose) survives contact with a real
    sample.
 
-2. **[ ] Four battle verbs the harness has never seen.** The bot issues
+2. **[x] Four battle verbs the harness has never seen.** Done, with one
+   correction to the item and one design finding worth more than the item
+   was. THREE were unmeasured (`B_SHOVE`, `B_DEFEND`, `B_DASH` lived only in
+   `battleActions.test.ts`, which proves a verb works and says nothing about
+   whether to use it); `B_THROW` was already played in the arena and in
+   `raid.test.ts`, so it was unmeasured in a whole SAGA rather than in a
+   fight. All four are now played, and the finding is that **dash is a
+   trap** — see the changelog. Original text follows.
+   **[ ] (as written)** The bot issues
    `B_MOVE`, `B_STRIKE`, `B_REACH`, `B_WARCRY`, `B_END_TURN`, `B_LEAVE` —
    and never `B_THROW`, `B_DEFEND`, `B_SHOVE` or `B_DASH`. Throwing is an
    entire ranged layer (spears and hand-axes, one use each); shove is the
@@ -564,6 +572,8 @@ here so the next attempt does not begin by repeating them.
 | Winters deepening with the years, alone | Zero change for a careful player AND a careless one (18/40 either way): the winter mark was a perfect forecast, so the band simply stocked to the bigger number. Shipped later as 6.1, once the mark was made vague. |
 | A landing chosen near settleable ground | Fixed a real problem (settleable ground a median 5 and up to 11 hexes from the sand) and broke a bigger one: where you land decides where you fight, and on the worlds it produced the shield wall went dead level with charging in — 33 wins/157 standing became 32/158 over sixty seeds. Rejected. |
 | Rolling a raid every day instead of drawing one from the deck | Shipped after tuning. The first rate took `test/thing.test.ts` from 4 of 4 bands reaching the endgame to 1 of 4; measured at 0.006 → 1/4, 0.003 → 3/4, 0.0015 → 4/4. Raids now fire regularly and the curve STILL does not move, because bands hold them and losing one costs only stores. |
+| Teaching the bot to DASH into contact | Priced at a third of the wins and a third of the survivors over sixty arena fights (22/108 against 33/162). Not a bug — spending the turn's action to arrive sooner means arriving alone and already spent, which is the charge the shield wall is measured against. The bot does not dash; the A/B is kept executable in `wall.test.ts`. |
+| Measuring a combat verb on the survival curve | The four verbs looked harmful (11 bands seeing spring falling to 8) on an instrument that ends only one run in six on steel. The arena found the real answer, and it was a different one: three of the four were neutral. **Match the instrument to the effect.** |
 | Guaranteeing a four-wide front on every battlefield | Shipped, but currently inert: no terrain the game ships ever fails it. A regression guard on tunable data, not a fix. The real mechanism is row DENSITY — 98% of meadow rows can hold a line against 40% of ocean ones. |
 | Sweeping the morale levers the death table kept naming | Winter sickness DC 9→7, bereavement 12→7, kin grief 30→15 — all three, and two winters sat at 10% through every one. Despair was a SYMPTOM. A band that misses the winter mark takes 8 morale a day for hunger and 7 for cold plus wounds, so it dies of everything at once and despair merely arrives first. The lever was arithmetic: `SHELTER_SAVES`. |
 | `SHELTER_SAVES` at 1.0 | Fixed survival and broke the game's central promise. `SHELTER_MAX` is 6, so 1.0 means a fully built steading cancels an ordinary winter's burn outright — and over 24 winters, heeding the mark against ignoring it went 19/6 at 0.7, 19/8 at 0.8, **19/17 at 1.0**. Preparing for winter had stopped mattering. Settled at 0.8. |
@@ -704,6 +714,58 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — What the four verbs are worth (audit item 2)** — And the
+  first thing to record is that the audit was partly wrong. Three verbs were
+  genuinely unmeasured — `B_SHOVE`, `B_DEFEND` and `B_DASH` appeared only in
+  `battleActions.test.ts`, which proves the mechanics work and says nothing
+  about whether anyone should ever use them — but `B_THROW` was already
+  played by the arena bot and by `raid.test.ts`. The true finding is
+  narrower and still real: it was unmeasured in a whole SAGA, not in a
+  fight. The grep behind the claim only looked at `test/balance.test.ts`.
+  The first instrument was wrong too. Measured on the survival curve, the
+  four verbs together LOOKED harmful — 11 bands seeing spring falling to 8 —
+  but the curve ends only about one run in six on steel, so a verb worth a
+  win a fight drowns in starvation and despair. The arena in
+  `test/wall.test.ts` is the sensitive instrument, and on sixty seeds it is
+  unambiguous:
+  `none 33/60 wins, 162 standing · shove only 32/158 · defend only 33/162 ·
+  dash only 22/108 · as we play 32/158`.
+  Shove and defend are neutral: narrow tools that fire rarely and correctly
+  (27 shoves and 129 shields over thirty sagas). **Dash costs a third of the
+  wins and a third of the survivors** — and that is not a bug, it is the
+  game's central rule enforcing itself. Spending the turn's action to arrive
+  sooner means arriving ALONE and arriving having already acted, which is
+  exactly the charge `wall.test.ts` exists to price. A shield wall does not
+  sprint. So the bot does not dash, and the A/B is kept executable as the
+  standing record of why: the day dash stops being a trap is a day somebody
+  finds out.
+  Two bars added. The arena test asserts the verbs the bot uses cost it
+  nothing and that dash remains plainly worse; the saga harness asserts every
+  verb an average player would issue actually gets issued over thirty sagas,
+  and that `B_DASH` stays at zero. Each of those counts read ZERO before
+  this work.
+  Two of my own bars had to be loosened, and the reason is worth more than
+  the bars were. Item 1's sea test pinned `seaDays > 20` and the long game
+  asserted late foes per fight against early — both fitted to the sample
+  they were written on. Battle actions consume RNG, so ANY change to how the
+  bot fights reshuffles every draw after it: sea days moved 50 to 17 and the
+  late-fight sample fell to five, with nothing about the sea or the
+  escalation changed. Across the same A/B the STABLE figure never moved —
+  second winters read 12/40 in every arm. So the sea bars now say REACHED
+  rather than pinning a rate, and the escalation claim moved out entirely:
+  `test/word.test.ts` proves it knob by knob, including that each one binds,
+  which is where a claim like that belongs. **A bar fitted to the sample it
+  was written on is a bar that fails the next honest change.**
+  One harness bug found and fixed on the way: two of the three new rules were
+  pasted into the BRAWLER rather than the formation bot, because the
+  edit matched its first occurrence. It showed up as the control arm moving
+  when only the treatment had been touched — brawl going 29/140 to 20/97
+  while `brawl()` was untouched — which is the clearest possible signal that
+  a measurement has been contaminated, and worth naming: **when the control
+  moves, suspect the edit before the finding.**
+  Curve: 62/28/7, against 60/25/7 before — inside the noise floor, no
+  regression.
 
 - **2026-08-08 — The country becomes reachable too (audit item 1)** — The
   item said "teach the bot to sail". Doing that changed almost nothing —

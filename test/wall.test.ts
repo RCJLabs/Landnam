@@ -13,9 +13,15 @@ import { newGame } from '../src/state/create';
 import type { Terrain } from '../src/state/types';
 import { encode } from '../src/state/save';
 import { apply } from '../src/sim/actions';
-import { activeCombatant, effective, fighterPerson, standing } from '../src/sim/battle';
+import { BASE_MOVES, activeCombatant, effective, fighterPerson, standing } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
-import { DEFEND_BONUS, evasion, reachTargets, throwTargets } from '../src/sim/battleActions';
+import {
+  DEFEND_BONUS,
+  evasion,
+  reachTargets,
+  shoveDestination,
+  throwTargets,
+} from '../src/sim/battleActions';
 import {
   SHIELD_IN_WALL,
   WALL_BONUS_FULL,
@@ -359,6 +365,17 @@ describe('formation play beats brawling', () => {
     return state;
   }
 
+  /**
+   * Audit item 2's toggles. Three verbs — shove, defend and dash — existed
+   * only in `battleActions.test.ts`, which proves the MECHANICS work and
+   * says nothing about whether anyone should ever use them. (Throw was
+   * already played here and in raid.test.ts; the audit overstated it as
+   * unmeasured, and the correction is worth keeping: it was unmeasured in a
+   * whole saga, not in a fight.) This arena is the right instrument, because
+   * the survival curve only ends about one run in six on steel.
+   */
+  const USE = { shove: true, defend: true, dash: false };
+
   /** Same aggression, but never step out of the line to get it. */
   function formation(seed: string): GameState {
     let state = fight(seed, DIFFICULTY);
@@ -371,6 +388,24 @@ describe('formation play beats brawling', () => {
       }
       const foes = standing(battle, 'foe');
       const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+      // A shove is worth the action for the two things a blow cannot do:
+      // put a man in the water, and finish one who has nowhere to give.
+      if (USE.shove && !active.hasActed && adjacent.length > 0) {
+        const pushed = adjacent.find((f) => {
+          const dest = shoveDestination(active, f);
+          if (!dest) return false;
+          const tile = battle.grid[`${dest.q},${dest.r}`];
+          const blocked =
+            !tile || battle.combatants.some((c) => !c.down && c.at.q === dest.q && c.at.r === dest.r);
+          if (tile?.ground === 'water' && !blocked) return true;
+          return blocked && (fighterPerson(state, f.personId)?.health ?? 99) <= 2;
+        });
+        if (pushed) {
+          state = apply(state, { type: 'B_SHOVE', targetId: pushed.personId });
+          state = apply(state, { type: 'B_END_TURN' });
+          continue;
+        }
+      }
       if (!active.hasActed && adjacent.length > 0) {
         const weakest = [...adjacent].sort(
           (a, b) =>
@@ -393,6 +428,17 @@ describe('formation play beats brawling', () => {
         state = apply(state, { type: 'B_END_TURN' });
         continue;
       }
+      // Dash: spend the action on ground, but only while contact is more
+      // than a full move off — a wall that sprints arrives in pieces.
+      if (
+        USE.dash &&
+        !active.hasActed &&
+        foes.length > 0 &&
+        Math.min(...foes.map((f) => distance(f.at, active.at))) > BASE_MOVES + 2
+      ) {
+        state = apply(state, { type: 'B_DASH' });
+        continue;
+      }
       const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
         q: Number(k.split(',')[0]),
         r: Number(k.split(',')[1]),
@@ -411,6 +457,13 @@ describe('formation play beats brawling', () => {
         const best = [...reach].sort((a, b) => score(b) - score(a))[0]!;
         const moved = apply(state, { type: 'B_MOVE', to: best });
         state = moved === state ? apply(state, { type: 'B_END_TURN' }) : moved;
+        continue;
+      }
+      // Nothing else to do and they are coming: a set shield beats an empty
+      // turn, which is what this used to be.
+      if (USE.defend && !active.hasActed) {
+        state = apply(state, { type: 'B_DEFEND' });
+        state = apply(state, { type: 'B_END_TURN' });
         continue;
       }
       state = apply(state, { type: 'B_END_TURN' });
@@ -439,6 +492,76 @@ describe('formation play beats brawling', () => {
 
   // 48 whole battles. Deliberately expensive, and well past vitest's default
   // 5s budget once the rest of the suite is competing for the CPU.
+  /**
+   * Audit item 2: what the verbs are actually worth, measured where combat
+   * is visible.
+   *
+   * The audit said four verbs were unmeasured. Three were —
+   * `B_SHOVE`, `B_DEFEND` and `B_DASH` appeared only in
+   * `battleActions.test.ts`, which proves the mechanics work and says
+   * nothing about whether anyone should use them. `B_THROW` was already
+   * played here and in `raid.test.ts`, so the audit overstated it; it was
+   * unmeasured in a whole SAGA, not in a fight.
+   *
+   * Measured first on the survival curve, which was the wrong instrument —
+   * only about one run in six ends on steel, so a verb worth a win a fight
+   * disappears into starvation and despair. This arena is the right one, and
+   * on it the answer is unambiguous:
+   *
+   *   none          33/60 wins, 162 standing
+   *   shove only    32/60 wins, 158 standing
+   *   defend only   33/60 wins, 162 standing
+   *   dash only     22/60 wins, 108 standing
+   *   all three     24/60 wins, 110 standing
+   *
+   * Shove and defend are neutral — both are narrow tools that fire rarely
+   * and correctly. DASH IS A TRAP, and a large one: a third of the wins and
+   * a third of the survivors. It is not a bug. Spending the turn's action to
+   * arrive sooner means arriving ALONE and arriving having already acted,
+   * which is precisely the charge this file exists to measure as losing. A
+   * shield wall does not sprint, and the game is right to punish one that
+   * does — so the bot does not dash, and this test is the standing record of
+   * why, kept executable so the day dash stops being a trap is a day
+   * somebody finds out.
+   */
+  it('names what each verb is worth, and dash is a trap', { timeout: 900_000 }, async () => {
+    const combos: [string, typeof USE][] = [
+      ['none', { shove: false, defend: false, dash: false }],
+      ['shove only', { shove: true, defend: false, dash: false }],
+      ['defend only', { shove: false, defend: true, dash: false }],
+      ['dash only', { shove: false, defend: false, dash: true }],
+      ['as we play', { shove: true, defend: true, dash: false }],
+    ];
+    const score: Record<string, { wins: number; alive: number }> = {};
+    for (const [name, on] of combos) {
+      Object.assign(USE, on);
+      let wins = 0;
+      let alive = 0;
+      for (const seed of SEEDS) {
+        const f = formation(seed);
+        if (f.battle?.outcome === 'won') wins += 1;
+        alive += intact(f);
+        await new Promise((r) => setTimeout(r, 0));
+      }
+      score[name] = { wins, alive };
+      // eslint-disable-next-line no-console
+      console.log(`  ${name}: ${wins}/${SEEDS.length} wins, ${alive} standing`);
+    }
+    Object.assign(USE, { shove: true, defend: true, dash: false });
+
+    const none = score['none']!;
+    // The verbs the bot actually uses must not cost it anything. A tolerance
+    // of two wins, because single fights swing hard on the dice.
+    expect(score['as we play']!.wins).toBeGreaterThanOrEqual(none.wins - 2);
+    expect(score['shove only']!.wins).toBeGreaterThanOrEqual(none.wins - 2);
+    expect(score['defend only']!.wins).toBeGreaterThanOrEqual(none.wins - 2);
+
+    // And the finding itself, asserted so it cannot rot: closing on the dash
+    // is plainly worse than closing in the line. Well outside the dice.
+    expect(score['dash only']!.wins).toBeLessThan(none.wins - 5);
+    expect(score['dash only']!.alive).toBeLessThan(none.alive - 20);
+  });
+
   it('holding the line beats charging in', { timeout: 180_000 }, async () => {
     let brawlWins = 0;
     let formationWins = 0;
