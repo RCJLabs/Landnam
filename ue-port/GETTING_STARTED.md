@@ -16,7 +16,10 @@ Paths below assume the project lives at `Documents/Unreal Projects/LandnamUE`.
 Unreal projects grow fast and are full of binary files. Set this up now, while there
 is nothing to lose.
 
-Close the editor. Open a terminal in the project folder and run:
+Close the editor and open a terminal. Either **PowerShell** (the Windows default — hit
+Start and type *PowerShell*) or **Git Bash** works; the commands below are given for
+both where they differ. Old-style CMD does not understand `$HOME`, so if you end up
+there, use `cd /d "%USERPROFILE%\Documents\Unreal Projects\LandnamUE"` for the first line.
 
 ```sh
 cd "$HOME/Documents/Unreal Projects/LandnamUE"
@@ -25,9 +28,14 @@ git lfs install
 git lfs track "*.uasset" "*.umap"
 ```
 
-Create a `.gitignore` in that folder containing:
+Now write the ignore list. Do not try to make this file in File Explorer — right-click →
+New will not accept a name that starts with a dot, and Notepad will quietly save it as
+`.gitignore.txt`, which git ignores completely. Paste the whole block instead.
 
-```gitignore
+**PowerShell:**
+
+```powershell
+@'
 Binaries/
 Build/
 DerivedDataCache/
@@ -39,9 +47,42 @@ Saved/
 *.opensdf
 *.sdf
 *.suo
+'@ | Set-Content -Encoding utf8 .gitignore
 ```
 
-Then:
+**Git Bash:**
+
+```bash
+cat > .gitignore <<'EOF'
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+*.sln
+*.VC.db
+*.opensdf
+*.sdf
+*.suo
+EOF
+```
+
+(If you would rather skip the terminal: open the project folder in VS Code and use
+**New File**. It has no problem with leading dots.)
+
+Check it took effect before committing:
+
+```sh
+git status
+```
+
+You should see a short list — `Config/`, `Content/`, `LandnamUE.uproject` and a handful
+more. If instead you get a wall of paths under `Intermediate/` or `Binaries/`, the ignore
+file did not land. Run `dir .git*` (PowerShell) or `ls -a` (Git Bash) and look for a stray
+`.gitignore.txt`.
+
+Once the list looks short:
 
 ```sh
 git add .gitattributes .gitignore .
@@ -300,6 +341,11 @@ Steps 2 and 3 need no new C++ at all: `Reachable` and `Find Path` are already th
 already tested, and already agree with the game you can play in a browser.
 
 ## If something goes wrong
+
+**`git status` lists thousands of files.** The `.gitignore` from Step 0 is not being
+read — almost always because it was saved as `.gitignore.txt`. Windows hides known
+extensions, so check the true name with `dir .git*` or `ls -a`, rename it, and run
+`git status` again. Do not commit until that list is short.
 
 **The build fails on `LandnamParityTest.cpp`.** `"Json"` is missing from `Build.cs`
 (Step 2).
