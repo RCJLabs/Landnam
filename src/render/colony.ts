@@ -188,7 +188,7 @@ function raised(id: string, cx: number, cy: number): SVGGElement {
       'stroke-width': 2,
     }),
   );
-  if (id === 'palisade') {
+  if (id === 'palisade' || id === 'earthworks') {
     // A line of stakes across the plot.
     for (const dx of [-0.3, -0.1, 0.1, 0.3]) {
       g.append(

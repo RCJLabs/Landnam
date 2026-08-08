@@ -19,7 +19,7 @@ import { bestStat, living } from './people';
 import { chronicle } from './saga';
 import { atHome } from './site';
 import { WATCH_QUIET } from '../data/jobs';
-import { effectiveReport } from './colony';
+import { effectiveReport, standsFor } from './colony';
 import { sickCount } from './winter';
 import { checkRunEnd } from './upkeep';
 
@@ -93,7 +93,9 @@ export function conditionHolds(state: GameState, condition: Condition): boolean 
     case 'known':
       return knows(state, condition.lore);
     case 'built':
-      return state.settlement?.built.includes(condition.building) ?? false;
+      // By ROLE, so a card gated on a palisade still fires behind
+      // earthworks. A tier that switches content off is a tier nobody wants.
+      return standsFor(state, condition.building);
   }
 }
 

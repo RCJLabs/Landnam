@@ -175,7 +175,8 @@ export function sackSteading(state: GameState): Sack {
 
   // Something burns. The longhouse is the last thing they fire, because it is
   // full of people — everything else goes first.
-  const burnable = home.built.filter((id) => id !== 'longhouse');
+  // The roof over everyone survives a sacking, whichever tier it is.
+  const burnable = home.built.filter((id) => id !== 'longhouse' && id !== 'greathall');
   const target = burnable.length > 0 ? rng.pick(burnable) : home.built[0];
   if (target) {
     home.built = home.built.filter((id) => id !== target);

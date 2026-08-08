@@ -344,7 +344,9 @@ would be measured, because an item that cannot be measured is a wish.
    glancing-turn rules that shipped today. Bows for foes as the pressure
    answer. Measured by: the formation-vs-brawl bar must widen, not narrow.
 
-5. **[ ] Buildings should tier, not just multiply.** The late tier and the
+5. **[x] Buildings should tier, not just multiply.** Done: great hall
+   replaces longhouse, earthworks replace palisade, each consuming the last.
+   `standsFor` keeps every by-name read honest across an upgrade. The late tier and the
    repeatable búð answered "the queue must not end" horizontally. Vertical
    is better: longhouse → great hall, palisade → earthworks, each
    consuming the last and raising what it granted. It gives a surplus
@@ -517,6 +519,29 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — Buildings grow upward** — Item 5. The late tier and the
+  repeatable búð answered "the queue must not end" horizontally; this is
+  the vertical answer. A great hall REPLACES the longhouse — pulled down
+  and raised again twice the length, five shelter against three, twelve
+  beds against six — and earthworks replace the palisade, four defence
+  against two. The old building comes down as the new one goes up and
+  takes its grants with it, so a surplus has somewhere to go that is not
+  another hut.
+  The whole risk in tiering is that six places in this codebase ask "is
+  there a palisade here?" BY NAME — the raid battlefield's wall, the
+  Thing's mead hall, what a sacking may burn, the steading renderer, and
+  two event cards. An upgrade that removes the palisade silently answers
+  no to all of them, taking the wall off the battlefield and switching off
+  content, with nothing failing. So `standsFor` asks by ROLE — a great
+  hall IS a longhouse, earthworks ARE a palisade — and every one of those
+  reads goes through it, with a test that fails if a tier stops doing what
+  it replaced.
+  The scarcity bot then found the other half by itself: its build order
+  came out "...watchtower > greathall > longhouse", because an upgrade
+  removes its predecessor and the panel duly offered to raise another one,
+  forever. What has been superseded is never offered again. Curve unmoved
+  at 78/25/12; 652 tests.
 
 - **2026-08-08 — The second rank** — Item 4. The shield wall had an inside
   and an outside in name only: a six-wide line on a seven-wide field always

@@ -32,6 +32,7 @@ import { bonus } from './lore';
 import { bestStat, fullName, living } from './people';
 import { chronicle } from './saga';
 import { atHome } from './site';
+import { standsFor } from './colony';
 
 export interface Need {
   id: NeedId;
@@ -60,7 +61,7 @@ export function thingNeeds(state: GameState): Need[] {
   const home = state.settlement;
   const met: Record<NeedId, boolean> = {
     winters: wintersStood(state.day) >= WINTERS_TO_JARL,
-    hall: !!home?.built.includes('meadhall'),
+    hall: standsFor(state, 'meadhall'),
     peace: houseAtPeace(state),
     friends: hasSpeakers(state),
     feast: state.party.food >= FEAST_FOOD,

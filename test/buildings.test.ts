@@ -30,6 +30,7 @@ import {
   queueBuild,
   shelterSaving,
   standing,
+  standsFor,
   underway,
   unqueueBuild,
 } from '../src/sim/colony';
@@ -551,6 +552,112 @@ describe('the queue never ends', () => {
     const merry = heartFromBuildings(pious);
     pious.settlement!.built.push('hof');
     expect(heartFromBuildings(pious)).toBe(merry + 2);
+  });
+});
+
+// --- Item 5: tiers ---
+
+describe('buildings tier', () => {
+  it('an upgrade waits on the thing it replaces', () => {
+    const state = stocked('tier-after', 400);
+    const hall = buildingById('greathall')!;
+    expect(hall.replaces).toBe('longhouse');
+    expect(buildBlocker(state, hall)).toBe('after');
+    state.settlement!.built.push('longhouse');
+    expect(buildBlocker(state, hall)).toBeNull();
+  });
+
+  it('finishing one pulls the old one down and keeps the books straight', () => {
+    const state = stocked('tier-finish', 400);
+    const home = state.settlement!;
+    queueBuild(state, 'longhouse');
+    let days = 0;
+    while (!hasBuilt(state, 'longhouse') && days < 80 && !state.end) {
+      passDay(state);
+      days++;
+    }
+    const roofed = home.shelter;
+    const roomWithLonghouse = capacity(state);
+
+    queueBuild(state, 'greathall');
+    days = 0;
+    while (!hasBuilt(state, 'greathall') && days < 120 && !state.end) {
+      passDay(state);
+      days++;
+    }
+    expect(hasBuilt(state, 'greathall')).toBe(true);
+    // The longhouse is GONE — not standing beside its own replacement.
+    expect(hasBuilt(state, 'longhouse')).toBe(false);
+    expect(home.built.filter((id) => id === 'longhouse')).toHaveLength(0);
+    // And its grants went with it: shelter is the great hall's, not both.
+    const longhouse = buildingById('longhouse')!;
+    const greathall = buildingById('greathall')!;
+    expect(home.shelter).toBeCloseTo(
+      Math.min(6, roofed - longhouse.shelter! + greathall.shelter!),
+      5,
+    );
+    expect(capacity(state)).toBe(roomWithLonghouse - longhouse.room! + greathall.room!);
+    expect(state.saga.some((e) => e.text.includes('came down and'))).toBe(true);
+  });
+
+  it('the upgrade still DOES what it replaced', () => {
+    // The trap this whole feature walks into: six places in the codebase
+    // ask "is there a palisade here?" by name, and an upgrade that removes
+    // the palisade silently answers no — taking the wall off the raid
+    // battlefield and switching off two event cards, with nothing failing.
+    const state = stocked('tier-role', 400);
+    const home = state.settlement!;
+    home.built.push('palisade');
+    expect(standsFor(state, 'palisade')).toBe(true);
+
+    home.built.splice(home.built.indexOf('palisade'), 1);
+    home.built.push('earthworks');
+    expect(hasBuilt(state, 'palisade')).toBe(false);
+    expect(standsFor(state, 'palisade'), 'earthworks must still BE a wall').toBe(true);
+    // And a great hall is still a roof.
+    home.built.push('greathall');
+    expect(standsFor(state, 'longhouse')).toBe(true);
+  });
+
+  it('a tier is worth more than what it replaces, or it is not a tier', () => {
+    for (const up of BUILDINGS.filter((b) => b.replaces)) {
+      const old = buildingById(up.replaces!)!;
+      const better =
+        (up.shelter ?? 0) > (old.shelter ?? 0) ||
+        (up.room ?? 0) > (old.room ?? 0) ||
+        (up.heart ?? 0) > (old.heart ?? 0) ||
+        (up.raises?.defence ?? 0) > (old.raises?.defence ?? 0);
+      expect(better, `${up.id} is no better than ${old.id}`).toBe(true);
+      // And it costs more, or nobody would ever build the first one.
+      expect(up.timber + up.works).toBeGreaterThan(old.timber + old.works);
+    }
+  });
+
+  it('what has been superseded is never offered again', () => {
+    // The loop this closes was found by the scarcity bot, which built
+    // "...greathall > longhouse" — the upgrade removes the longhouse, so
+    // the panel cheerfully offered to raise another one, forever.
+    const state = stocked('tier-noloop', 400);
+    const home = state.settlement!;
+    home.built.push('greathall');
+    const longhouse = buildingById('longhouse')!;
+    expect(buildBlocker(state, longhouse)).toBe('built');
+    expect(offerable(state).map((b) => b.id)).not.toContain('longhouse');
+    expect(queueBuild(state, 'longhouse')).toBe(false);
+  });
+
+  it('no upgrade chain loops', () => {
+    for (const b of BUILDINGS) {
+      const seen = new Set<string>([b.id]);
+      let def = b;
+      let guard = 12;
+      while (def.replaces && guard-- > 0) {
+        expect(seen.has(def.replaces), `${b.id} chain loops`).toBe(false);
+        seen.add(def.replaces);
+        def = buildingById(def.replaces)!;
+        expect(def, `${b.id} replaces something that does not exist`).toBeTruthy();
+      }
+    }
   });
 });
 

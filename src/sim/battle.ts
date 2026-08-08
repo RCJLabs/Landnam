@@ -21,6 +21,7 @@ import { pushMode } from '../modes';
 import { effectiveStat, sworn } from './people';
 import { wintersStood } from './calendar';
 import { fieldCrew, homeCrew } from './expedition';
+import { standsFor } from './colony';
 import { raidSource } from './neighbours';
 import { note } from './tally';
 import { chronicle } from './saga';
@@ -271,7 +272,7 @@ export function beginBattle(
   const seaField = !raid && terrain === 'ocean' ? pickSeaField(rng.derive('ground')) : undefined;
   const { grid, warbandSpots, foeSpots } =
     raidField && home
-      ? steadingFieldFrom(raidField, home.built.includes('palisade'))
+      ? steadingFieldFrom(raidField, standsFor(state, 'palisade'))
       : seaField
         ? seaFieldFrom(seaField)
         : generateBattlefield(terrain, rng.derive('ground'));
@@ -432,7 +433,7 @@ export function beginBattle(
             : ` ${champion.name} ${champion.byname} led them.`
           : '') +
         (from ? ` ${from.name} had not forgotten us.` : '') +
-        (home.built.includes('palisade') ? ' The palisade was between us.' : ''),
+        (standsFor(state, 'palisade') ? ' The wall was between us.' : ''),
     );
     chronicle(
       state,

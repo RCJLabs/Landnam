@@ -20,7 +20,9 @@ export type BuildingId =
   | 'meadhall'
   | 'storehouse'
   | 'watchtower'
-  | 'hof';
+  | 'hof'
+  | 'greathall'
+  | 'earthworks';
 
 /** The need a building is the answer to. Drives the panel's suggestion. */
 export type Answers = 'warmth' | 'food' | 'rest' | 'heart' | 'safety';
@@ -71,6 +73,20 @@ export interface BuildingDef {
    * and shelter — a stacking foodKeep would compound into a food printer.
    */
   repeat?: 'crowded';
+  /**
+   * This building REPLACES another: the old one comes down as the new one
+   * goes up, and everything it granted is granted by the new one instead.
+   *
+   * Vertical growth, where `repeat` is horizontal. A surplus should be able
+   * to go into something better rather than only into another hut — and a
+   * tier reads in the fiction the way a fourth búð never will.
+   *
+   * Implies the predecessor must be standing, so `after` is not needed as
+   * well. Everything that asks "is there a palisade here?" must ask
+   * `standsFor` instead, or an upgrade silently takes the wall away — see
+   * sim/colony.ts.
+   */
+  replaces?: BuildingId;
 }
 
 export const BUILDINGS: BuildingDef[] = [
@@ -174,6 +190,29 @@ export const BUILDINGS: BuildingDef[] = [
     works: 5,
     after: ['palisade'],
     raises: { defence: 1 },
+  },
+  {
+    id: 'greathall',
+    name: 'Great hall',
+    blurb: 'The longhouse pulled down and raised again twice the length, with a roof-tree out of one whole pine. Room for everyone the steading has taken in, and warmth to spare.',
+    answers: 'warmth',
+    timber: 14,
+    works: 11,
+    replaces: 'longhouse',
+    shelter: 5,
+    heart: 2,
+    room: 12,
+  },
+  {
+    id: 'earthworks',
+    name: 'Earthworks',
+    blurb: 'A ditch and a turf rampart thrown up behind the stakes. What the palisade slowed, this stops — and they have to come at it uphill and winded.',
+    answers: 'safety',
+    timber: 12,
+    works: 10,
+    replaces: 'palisade',
+    needs: { timber: 1 },
+    raises: { defence: 4 },
   },
   {
     id: 'hof',

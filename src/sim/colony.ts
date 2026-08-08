@@ -111,6 +111,33 @@ export function hasBuilt(state: GameState, id: BuildingId): boolean {
 }
 
 /**
+ * Whether this steading has the thing `id` DOES, by whatever now does it.
+ *
+ * A great hall is a longhouse; earthworks are a palisade. Every question of
+ * the form "is there a wall here?" has to go through this, because an
+ * upgrade removes what it replaces — and the first cut of tiering silently
+ * took the palisade off the raid battlefield, ended the Thing's mead-hall
+ * requirement, and switched off two event cards, all without a test
+ * failing. `hasBuilt` is still the right call when the exact building is
+ * what matters; this is the right one when its ROLE is.
+ */
+export function standsFor(state: GameState, id: BuildingId): boolean {
+  const built = state.settlement?.built;
+  if (!built) return false;
+  if (built.includes(id)) return true;
+  return built.some((up) => {
+    // Walk the chain: earthworks -> palisade, and any tier above it.
+    let def = buildingById(up);
+    let guard = 8;
+    while (def?.replaces && guard-- > 0) {
+      if (def.replaces === id) return true;
+      def = buildingById(def.replaces);
+    }
+    return false;
+  });
+}
+
+/**
  * The site's measures AFTER what has been raised on it. Everything that reads
  * the ground reads it through here — farm plots really do make the soil
  * better, which is the whole reason to break them.
@@ -151,7 +178,12 @@ export type BlockReason = 'built' | 'queued' | 'ground' | 'after' | 'timber' | '
 export function buildBlocker(state: GameState, building: BuildingDef): BlockReason | null {
   const home = state.settlement;
   if (!home) return 'ground';
-  if (home.built.includes(building.id)) {
+  // Already standing, OR already superseded. The second half is not
+  // theoretical: an upgrade removes what it replaces, so without this the
+  // longhouse becomes buildable again the moment the great hall goes up —
+  // caught by the scarcity bot, which cheerfully built
+  // "...greathall > longhouse" and would have looped there forever.
+  if (standsFor(state, building.id)) {
     // A repeatable is never simply "already built" — that is the whole of
     // what it is — but another hut with nobody to sleep in it is timber
     // burned. The queue goes on forever only while the steading keeps
@@ -163,6 +195,8 @@ export function buildBlocker(state: GameState, building: BuildingDef): BlockReas
   for (const id of building.after ?? []) {
     if (!home.built.includes(id)) return 'after';
   }
+  // An upgrade needs the thing it replaces actually standing.
+  if (building.replaces && !home.built.includes(building.replaces)) return 'after';
   // Requirements read the RAW ground: a dock cannot conjure a harbour, and
   // reading the effective report here would let a building qualify itself.
   for (const [measure, need] of Object.entries(building.needs ?? {})) {
@@ -181,7 +215,7 @@ export function offerable(state: GameState): BuildingDef[] {
   const home = state.settlement;
   if (!home) return [];
   return BUILDINGS.filter(
-    (b) => (b.repeat || !home.built.includes(b.id)) && !home.queue.includes(b.id),
+    (b) => (b.repeat || !standsFor(state, b.id)) && !home.queue.includes(b.id),
   );
 }
 
@@ -448,10 +482,26 @@ export function finishBuilds(state: GameState): BuildingDef[] {
     if (home.works < building.works) break;
     home.works -= building.works;
     home.queue.shift();
+    // An upgrade comes down on top of what it replaces: the old building
+    // leaves the list and takes its grants with it, so nothing is counted
+    // twice. Shelter is the only grant held as a running total rather than
+    // re-derived from `built`, so it is the only one to unwind by hand.
+    const replaced = building.replaces ? buildingById(building.replaces) : undefined;
+    if (replaced) {
+      const at = home.built.indexOf(replaced.id);
+      if (at >= 0) home.built.splice(at, 1);
+      home.shelter = Math.max(0, home.shelter - (replaced.shelter ?? 0));
+    }
     home.built.push(building.id);
     home.shelter = Math.min(SHELTER_MAX, home.shelter + (building.shelter ?? 0));
     done.push(building);
-    chronicle(state, `${building.name} stood finished at ${home.name}.`, 'good');
+    chronicle(
+      state,
+      replaced
+        ? `${replaced.name} came down and ${building.name} stood in its place at ${home.name}.`
+        : `${building.name} stood finished at ${home.name}.`,
+      'good',
+    );
     // Raising a thing teaches you the thing. Not every building has something
     // to teach, which is why this is a lookup rather than a rule.
     const taught = TAUGHT_BY_BUILDING[building.id];
