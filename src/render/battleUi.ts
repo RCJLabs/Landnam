@@ -3,7 +3,7 @@
 
 import type { GameState } from '../state/types';
 import { activeCombatant, fighterPerson, isWarbandTurn, standing } from '../sim/battle';
-import { throwTargets, canWarCry, isLeader } from '../sim/battleActions';
+import { throwTargets, reachTargets, canWarCry, isLeader } from '../sim/battleActions';
 import { wallBonus, wallLinks } from '../sim/wall';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';
@@ -42,7 +42,7 @@ export function renderBattleBar(state: GameState): HTMLElement {
 }
 
 /** Which tap-target action the player has armed. */
-export type Aim = 'strike' | 'throw' | 'shove';
+export type Aim = 'strike' | 'throw' | 'shove' | 'reach';
 
 export function renderBattleActions(
   state: GameState,
@@ -66,12 +66,17 @@ export function renderBattleActions(
     return node;
   };
 
+  // Spear appears only when there is actually a mate to thrust past, which
+  // is the whole rule — a button that is always there would teach the player
+  // it is a weapon rather than a position.
+  const canSpear = !spent && reachTargets(state).length > 0;
   bar.append(
     aimButton('strike', 'Strike', !spent),
     aimButton('throw', `Throw${active.throwsLeft > 0 ? ` ${active.throwsLeft}` : ''}`,
       !spent && active.throwsLeft > 0 && throwTargets(state).length > 0),
     aimButton('shove', 'Shove', !spent),
   );
+  if (canSpear) bar.append(aimButton('reach', 'Spear', true));
 
   const second = el('div', { class: 'actionbar' });
   const defend = button('Shield', () => dispatch({ type: 'B_DEFEND' }), { class: 'action' });
@@ -101,6 +106,7 @@ const AIM_HINT: Record<Aim, string> = {
   strike: 'tap a ringed foe to strike',
   throw: 'tap a marked foe to throw',
   shove: 'tap a ringed foe to shove them back',
+  reach: 'tap a marked foe to thrust past your shield-brother',
 };
 
 export function renderBattleHint(state: GameState, aim: Aim): HTMLElement {

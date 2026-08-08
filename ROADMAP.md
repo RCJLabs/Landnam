@@ -334,7 +334,9 @@ would be measured, because an item that cannot be measured is a wish.
    This is also the cheapest answer to item 2 if the opening turns out to
    be too hard rather than too quiet.
 
-4. **[ ] Reach weapons, and the wall gets deeper.** Everyone carries one
+4. **[x] Reach weapons, and the wall gets deeper.** Done: a spear thrust at
+   range 2 past a shield-brother, symmetric for foes. The formation bar
+   widened from 5 bodies to 21, which was the bar this item set itself. Everyone carries one
    throw and then swings. Spears that strike at range 2 from the SECOND
    rank would make the shield wall a formation with an inside and an
    outside rather than a line of equals — the single highest-value combat
@@ -515,6 +517,33 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The second rank** — Item 4. The shield wall had an inside
+  and an outside in name only: a six-wide line on a seven-wide field always
+  has somebody stood behind somebody, and those men could do nothing but
+  wait for a gap. Now a fighter with a living shield-brother between him
+  and a foe can put a spear past him at two hexes. The rule is POSITIONAL
+  and not equipment — no man in front, no thrust — so it needs no item
+  system and it means what a formation means.
+  The trade is honest: harder to land (−1 to the roll), lighter when it
+  does (−1 damage), and a miss that does nothing at all where a proper
+  swing would at least have chipped a shield. That is what standing where
+  nothing can hit you costs. Symmetric for foes, and their AI thrusts from
+  its own second rank — a formation trick only the warband can play is not
+  a formation, it is a bonus.
+  Measured against the bar this item set itself, with BOTH bots carrying
+  the spear so the comparison is about where a band stands rather than what
+  it was issued: the formation-vs-brawl gap went from 38/60 wins and 170
+  standing against 35/60 and 165, to 33/60 and 159 against 29/60 and 138.
+  Five bodies of advantage became twenty-one. Both sides fall further in
+  absolute terms because the foes got spears too, and the curve took it
+  without moving — 78/25/12 against 82/27/7, inside the ±10 this harness
+  resolves. The death table names it in the game's own voice: "took a spear
+  and did not get up, 8".
+  The Spear button appears only when there is genuinely a mate to thrust
+  past, because a button that is always there teaches the player it is a
+  weapon rather than a position. Eleven tests in test/reach.test.ts; the
+  harness bot fights from the second rank in the same commit.
 
 - **2026-08-07 — Three countries, and every one of them measured** — Item 3.
   A Fair Country, As It Lies, A Hard Country, turning four knobs the harness

@@ -282,6 +282,7 @@ function onFieldTap(target: Hex): void {
     const id = occupant.personId;
     if (ui.aim === 'throw') dispatch({ type: 'B_THROW', targetId: id });
     else if (ui.aim === 'shove') dispatch({ type: 'B_SHOVE', targetId: id });
+    else if (ui.aim === 'reach') dispatch({ type: 'B_REACH', targetId: id });
     else dispatch({ type: 'B_STRIKE', targetId: id });
     return;
   }

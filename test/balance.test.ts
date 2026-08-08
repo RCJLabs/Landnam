@@ -68,6 +68,7 @@ import { foundSettlement } from '../src/sim/site';
 import { distance, key, fromKey } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
 import { reachWithZoc } from '../src/sim/zoc';
+import { reachTargets } from '../src/sim/battleActions';
 import { placeHere } from '../src/sim/places';
 import { placeKind } from '../src/data/places';
 import { canFallOn, neighbourHere } from '../src/sim/neighbours';
@@ -126,6 +127,17 @@ function step(state: GameState): Action {
       && me.personId === leaderOf(state.party.people)?.id
       && foes.filter(f => distance(f.at, me.at) <= 2).length >= 2) {
       return { type:'B_WARCRY' };
+    }
+    // The game gained the second rank, so the bot fights from it in the same
+    // commit. Nothing at arm's length and a mate in front of a foe: thrust.
+    // A harness that cannot use a formation reports the formation as
+    // worthless, which is the oldest lesson in this file.
+    if (!me.hasActed && distance(near.at, me.at) > 1) {
+      const spear = reachTargets(state);
+      if (spear.length > 0) {
+        const marked = spear.find(f => f.personId === b.champion) ?? spear[0]!;
+        return { type:'B_REACH', targetId: marked.personId };
+      }
     }
     if (!me.hasActed && distance(near.at, me.at) === 1) {
       // The game gained named leaders, so the bot hunts them in the same

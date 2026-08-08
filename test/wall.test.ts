@@ -15,7 +15,7 @@ import { encode } from '../src/state/save';
 import { apply } from '../src/sim/actions';
 import { activeCombatant, effective, fighterPerson, standing } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
-import { DEFEND_BONUS, evasion, throwTargets } from '../src/sim/battleActions';
+import { DEFEND_BONUS, evasion, reachTargets, throwTargets } from '../src/sim/battleActions';
 import {
   SHIELD_IN_WALL,
   WALL_BONUS_FULL,
@@ -325,6 +325,14 @@ describe('formation play beats brawling', () => {
         state = apply(state, { type: 'B_END_TURN' });
         continue;
       }
+      // BOTH bots carry the spear. The comparison is about where a band
+      // stands, not what it is issued — handing the thrust only to the
+      // formation bot would measure the gift rather than the formation.
+      if (!active.hasActed && reachTargets(state).length > 0) {
+        state = apply(state, { type: 'B_REACH', targetId: reachTargets(state)[0]!.personId });
+        state = apply(state, { type: 'B_END_TURN' });
+        continue;
+      }
       const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
         q: Number(k.split(',')[0]),
         r: Number(k.split(',')[1]),
@@ -364,6 +372,13 @@ describe('formation play beats brawling', () => {
             (fighterPerson(state, b.personId)?.health ?? 99),
         )[0]!;
         state = apply(state, { type: 'B_STRIKE', targetId: weakest.personId });
+        state = apply(state, { type: 'B_END_TURN' });
+        continue;
+      }
+      // The second rank, which is what a line is FOR: a man who cannot swing
+      // can still put a spear past the shoulder in front of him.
+      if (!active.hasActed && reachTargets(state).length > 0) {
+        state = apply(state, { type: 'B_REACH', targetId: reachTargets(state)[0]!.personId });
         state = apply(state, { type: 'B_END_TURN' });
         continue;
       }

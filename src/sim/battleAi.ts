@@ -5,7 +5,16 @@ import { distance, fromKey, type Hex } from '../hex';
 import type { Combatant, GameState } from '../state/types';
 import type { Temperament } from '../data/foes';
 import { activeCombatant, archetypeOf, fighterPerson, standing } from './battle';
-import { canThrowAt, doDefend, doShove, doStrike, doThrow, evasion } from './battleActions';
+import {
+  canThrowAt,
+  doDefend,
+  doReach,
+  doShove,
+  doStrike,
+  doThrow,
+  evasion,
+  reachTargets,
+} from './battleActions';
 import { reachWithZoc, threatCount } from './zoc';
 import { canAnchor } from './wall';
 import { effectiveStat } from './people';
@@ -153,6 +162,20 @@ export function takeFoeTurn(state: GameState): void {
 
   const target = bestMeleeTarget(state, active);
   if (!target) {
+    // Nothing at arm's length — but their line has a second rank too, and a
+    // spear over a mate's shoulder is exactly what it is for. Symmetric on
+    // purpose: a formation trick that only the warband can play is not a
+    // formation, it is a bonus.
+    if (!active.hasActed) {
+      const reach = reachTargets(state);
+      if (reach.length > 0) {
+        const weakest = reach.reduce((worst, c) =>
+          healthFraction(state, c) < healthFraction(state, worst) ? c : worst,
+        );
+        doReach(state, weakest.personId);
+        return;
+      }
+    }
     // Nothing in reach. Throw if there is a lane.
     if (!active.hasActed && active.throwsLeft > 0) {
       const shot = standing(battle, 'warband').find((c) => canThrowAt(state, active, c));

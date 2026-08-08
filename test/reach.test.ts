@@ -1,0 +1,185 @@
+// The second rank: a spear thrust past the man in front.
+//
+// The shield wall had an inside and an outside in name only — a six-wide
+// line on a seven-wide field always has somebody stood behind somebody, and
+// until this those men could do nothing but wait for a gap. The rule is
+// positional, not equipment: no shield-brother between you and the target,
+// no thrust.
+
+import { describe, it, expect } from 'vitest';
+import { newGame } from '../src/state/create';
+import { startBattle } from '../src/sim/battleTurn';
+import { apply } from '../src/sim/actions';
+import { distance, offsetToAxial } from '../src/hex';
+import {
+  REACH_DAMAGE_OFF,
+  REACH_PENALTY,
+  REACH_RANGE,
+  canReachAt,
+  doReach,
+  reachTargets,
+  screenFor,
+} from '../src/sim/battleActions';
+import type { Combatant, GameState } from '../src/state/types';
+
+/** A clear field with everyone parked, ready to be arranged by hand. */
+function field(seed: string): GameState {
+  const state = structuredClone(newGame(seed));
+  startBattle(state, 'meadow', 2);
+  const battle = state.battle!;
+  for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+  battle.combatants.forEach((c, i) => {
+    c.at = offsetToAxial(i % 7, c.side === 'warband' ? 8 : 0);
+    c.broken = false;
+    c.down = false;
+    c.fled = false;
+  });
+  return state;
+}
+
+function ours(state: GameState): Combatant[] {
+  return state.battle!.combatants.filter((c) => c.side === 'warband');
+}
+function foes(state: GameState): Combatant[] {
+  return state.battle!.combatants.filter((c) => c.side === 'foe');
+}
+
+/**
+ * back — front — foe, in a line. The classic second rank: `back` is two
+ * hexes from the foe and `front` is between them.
+ */
+function ranked(seed: string): {
+  state: GameState;
+  back: Combatant;
+  front: Combatant;
+  foe: Combatant;
+} {
+  const state = field(seed);
+  const [back, front] = ours(state) as [Combatant, Combatant];
+  const foe = foes(state)[0]!;
+  back.at = offsetToAxial(3, 6);
+  front.at = offsetToAxial(3, 5);
+  foe.at = offsetToAxial(3, 4);
+  const battle = state.battle!;
+  battle.order = [back.personId];
+  battle.turnIndex = 0;
+  back.hasActed = false;
+  return { state, back, front, foe };
+}
+
+describe('who may thrust', () => {
+  it('the fixture is a real second rank', () => {
+    const { back, front, foe } = ranked('reach-shape');
+    expect(distance(back.at, foe.at)).toBe(REACH_RANGE);
+    expect(distance(back.at, front.at)).toBe(1);
+    expect(distance(front.at, foe.at)).toBe(1);
+  });
+
+  it('a man behind a shield-brother can reach past him', () => {
+    const { state, back, front, foe } = ranked('reach-yes');
+    expect(screenFor(state, back, foe)?.personId).toBe(front.personId);
+    expect(canReachAt(state, back, foe)).toBe(true);
+    expect(reachTargets(state).map((c) => c.personId)).toContain(foe.personId);
+  });
+
+  it('with nobody in front there is nothing to thrust past', () => {
+    const { state, back, front, foe } = ranked('reach-nofront');
+    // Move the front rank aside: still two hexes from the foe, no screen.
+    front.at = offsetToAxial(6, 8);
+    expect(screenFor(state, back, foe)).toBeUndefined();
+    expect(canReachAt(state, back, foe)).toBe(false);
+    expect(apply(state, { type: 'B_REACH', targetId: foe.personId })).toBe(state);
+  });
+
+  it('a broken or fallen man is no screen — he is not holding anything', () => {
+    const { state, back, front, foe } = ranked('reach-broken');
+    front.broken = true;
+    expect(canReachAt(state, back, foe)).toBe(false);
+    front.broken = false;
+    front.down = true;
+    expect(canReachAt(state, back, foe)).toBe(false);
+  });
+
+  it('it is exactly two hexes: not one, not three', () => {
+    const { state, back, foe } = ranked('reach-range');
+    expect(canReachAt(state, back, foe)).toBe(true);
+    // Step the thruster up beside the foe: that is a strike, not a thrust.
+    back.at = offsetToAxial(3, 5);
+    expect(canReachAt(state, back, foe)).toBe(false);
+  });
+
+  it('nobody thrusts at their own side, or twice in a turn', () => {
+    const { state, back, front, foe } = ranked('reach-rules');
+    expect(canReachAt(state, back, front)).toBe(false);
+    back.hasActed = true;
+    expect(canReachAt(state, back, foe)).toBe(false);
+  });
+});
+
+describe('what a thrust does', () => {
+  it('lands, hurts, and spends the turn', () => {
+    const { state, back, foe } = ranked('reach-lands');
+    const battle = state.battle!;
+    // A thrust that cannot miss.
+    state.party.people.find((p) => p.id === back.personId)!.stats.might = 6;
+    const person = battle.foes.find((p) => p.id === foe.personId)!;
+    person.stats.wits = 1;
+    const before = person.health;
+
+    expect(doReach(state, foe.personId)).toBe(true);
+    expect(person.health).toBeLessThan(before);
+    expect(back.hasActed).toBe(true);
+    expect(battle.log.at(-1)).toMatch(/spear came over|put .* down over the shoulder/);
+    expect(battle.lastBlow?.attacker).toBe(back.personId);
+  });
+
+  it('a thrust that misses does NOT chip, where a swing would', () => {
+    const { state, back, foe } = ranked('reach-miss');
+    const battle = state.battle!;
+    // Hopeless: max 2d6 is 12, and evasion here is far past it.
+    state.party.people.find((p) => p.id === back.personId)!.stats.might = 0;
+    const person = battle.foes.find((p) => p.id === foe.personId)!;
+    person.stats.wits = 10;
+    const before = person.health;
+
+    expect(doReach(state, foe.personId)).toBe(true);
+    // The trade for standing where nothing can hit you: half of it is air.
+    expect(person.health).toBe(before);
+    expect(battle.lastBlow).toMatchObject({ amount: 0, glancing: true });
+    expect(battle.log.at(-1)).toContain('found nothing');
+  });
+
+  it('reaching is harder and lighter than swinging', () => {
+    // Not a dice comparison — the constants themselves, which is what the
+    // balance rests on and what a later edit would quietly change.
+    expect(REACH_PENALTY).toBeGreaterThan(0);
+    expect(REACH_DAMAGE_OFF).toBeGreaterThan(0);
+  });
+
+  it('through the action layer, on our turn only', () => {
+    const { state, back, foe } = ranked('reach-action');
+    state.party.people.find((p) => p.id === back.personId)!.stats.might = 6;
+    state.battle!.foes.find((p) => p.id === foe.personId)!.stats.wits = 1;
+    const next = apply(state, { type: 'B_REACH', targetId: foe.personId });
+    expect(next).not.toBe(state);
+    expect(next.battle!.combatants.find((c) => c.personId === back.personId)!.hasActed).toBe(true);
+  });
+});
+
+describe('their line has a second rank too', () => {
+  it('the rule is symmetric — a foe behind a foe can thrust at us', () => {
+    const state = field('reach-theirs');
+    const [backFoe, frontFoe] = foes(state) as [Combatant, Combatant];
+    const us = ours(state)[0]!;
+    backFoe.at = offsetToAxial(3, 2);
+    frontFoe.at = offsetToAxial(3, 3);
+    us.at = offsetToAxial(3, 4);
+    const battle = state.battle!;
+    battle.order = [backFoe.personId];
+    battle.turnIndex = 0;
+    backFoe.hasActed = false;
+
+    expect(screenFor(state, backFoe, us)?.personId).toBe(frontFoe.personId);
+    expect(canReachAt(state, backFoe, us)).toBe(true);
+  });
+});

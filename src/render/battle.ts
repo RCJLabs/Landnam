@@ -4,7 +4,7 @@
 import { cornerPoints, fromKey, fromPixel, key, toPixel, type Hex } from '../hex';
 import type { Battle, GameState, Ground } from '../state/types';
 import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '../sim/battle';
-import { isLeader, shoveDestination, throwTargets } from '../sim/battleActions';
+import { isLeader, reachTargets, shoveDestination, throwTargets } from '../sim/battleActions';
 import { isThreatened } from '../sim/zoc';
 import { wallPairs } from '../sim/wall';
 import type { Aim } from './battleUi';
@@ -212,16 +212,21 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       }
 
       // Whoever the armed action can actually reach.
-      const marked = aim === 'throw' ? throwTargets(state) : strikeTargets(state);
+      const marked =
+        aim === 'throw'
+          ? throwTargets(state)
+          : aim === 'reach'
+            ? reachTargets(state)
+            : strikeTargets(state);
       for (const target of marked) {
         const p = toPixel(target.at, HEX);
         layers.overlay.append(
           svgEl('polygon', {
             points: cornerPoints(p.x, p.y, HEX - 2),
             fill: 'none',
-            stroke: aim === 'throw' ? '#d3a441' : '#b23b2e',
+            stroke: aim === 'throw' ? '#d3a441' : aim === 'reach' ? '#cfd8dc' : '#b23b2e',
             'stroke-width': 3,
-            'stroke-dasharray': aim === 'throw' ? '6 4' : '',
+            'stroke-dasharray': aim === 'throw' ? '6 4' : aim === 'reach' ? '3 3' : '',
           }),
         );
         // Show where a shove would send them.

@@ -7,7 +7,7 @@ import type { Combatant, GameState, Person } from '../state/types';
 import { activeCombatant, fighterPerson, BASE_MOVES } from './battle';
 import { groundCost } from './battlefield';
 import { hasShot, reachWithZoc, threatCount } from './zoc';
-import { defenceBonus, wallLinks } from './wall';
+import { canAnchor, defenceBonus, wallLinks } from './wall';
 import { bonus } from './lore';
 import { NERVE_HIT, leaderFell, shakeNerve, startingNerve, witnessFall } from './morale';
 import { effectiveStat, leaderOf } from './people';
@@ -260,6 +260,119 @@ export function doWarCry(state: GameState): boolean {
   battle.log.push(
     `${person.name} raised the war-cry, and the whole field heard whose ground this was.`,
   );
+  return true;
+}
+
+// --- The spear thrust: the second rank ---
+
+/**
+ * What reaching past a shield-brother costs you, and what it saves.
+ *
+ * The shield wall had an inside and an outside in name only: a line six
+ * wide on a seven-wide field always has somebody stood behind somebody,
+ * and until this those men could do nothing at all but wait for a gap. A
+ * spear is the answer the period actually used — you thrust past the man
+ * in front, over his shoulder, and you are never the one being hit.
+ *
+ * The cost is honesty about what a reach is: harder to land, lighter when
+ * it lands, and a miss that does nothing at all where a proper swing would
+ * at least have chipped a shield.
+ */
+export const REACH_RANGE = 2;
+export const REACH_PENALTY = 1;
+export const REACH_DAMAGE_OFF = 1;
+
+/**
+ * The shield-brother a thrust would go past: one of ours, standing, next to
+ * BOTH the thruster and the target. No man in front, no thrust — that is the
+ * whole rule, and it is what makes the back rank a position rather than a
+ * queue.
+ */
+export function screenFor(
+  state: GameState,
+  active: Combatant,
+  target: Combatant,
+): Combatant | undefined {
+  const battle = state.battle;
+  if (!battle) return undefined;
+  return battle.combatants.find(
+    (c) =>
+      c.side === active.side &&
+      c.personId !== active.personId &&
+      canAnchor(c) &&
+      distance(c.at, active.at) === 1 &&
+      distance(c.at, target.at) === 1,
+  );
+}
+
+export function canReachAt(state: GameState, active: Combatant, target: Combatant): boolean {
+  if (active.hasActed || active.broken) return false;
+  if (target.down || target.fled || target.side === active.side) return false;
+  if (distance(active.at, target.at) !== REACH_RANGE) return false;
+  return screenFor(state, active, target) !== undefined;
+}
+
+/** Foes the active fighter could put a spear into over a mate's shoulder. */
+export function reachTargets(state: GameState): Combatant[] {
+  const battle = state.battle;
+  const active = battle ? activeCombatant(battle) : undefined;
+  if (!battle || !active || battle.outcome) return [];
+  return battle.combatants.filter((c) => canReachAt(state, active, c));
+}
+
+export function doReach(state: GameState, targetPersonId: string): boolean {
+  const battle = state.battle;
+  const active = battle ? activeCombatant(battle) : undefined;
+  if (!battle || !active || battle.outcome) return false;
+
+  const target = battle.combatants.find((c) => c.personId === targetPersonId && !c.down);
+  if (!target || !canReachAt(state, active, target)) return false;
+
+  const attacker = fighterPerson(state, active.personId);
+  const defender = fighterPerson(state, target.personId);
+  const screen = screenFor(state, active, target);
+  if (!attacker || !defender || !screen) return false;
+  const front = fighterPerson(state, screen.personId);
+
+  active.hasActed = true;
+  const rng = actionRng(state, `reach:${active.personId}`);
+  const roll =
+    rng.roll(2, 6) + effectiveStat(attacker, 'might') + wallPush(state, active) - REACH_PENALTY;
+
+  if (roll < evasion(state, target)) {
+    // Overreached. A thrust that misses does NOT chip the way a swing does:
+    // the trade for standing where nothing can hit you is that half of it
+    // comes to nothing.
+    noteBlow(state, active, target, 0, true);
+    battle.log.push(`${attacker.name} thrust past ${front?.name ?? 'the line'} and found nothing.`);
+    return true;
+  }
+
+  const damage = Math.max(
+    1,
+    rng.roll(1, 6) +
+      Math.floor(effectiveStat(attacker, 'might') / 2) +
+      ourBite(state, active) -
+      REACH_DAMAGE_OFF,
+  );
+  defender.health = Math.max(0, defender.health - damage);
+  noteBlow(state, active, target, damage);
+  if (defender.health > 0) {
+    battle.log.push(
+      `${attacker.name}'s spear came over ${front?.name ?? 'the line'} and into ${defender.name} (${damage}).`,
+    );
+    shakeNerve(state, target, NERVE_HIT);
+  } else {
+    drop(
+      state,
+      target,
+      defender,
+      target.side === 'foe'
+        ? `${attacker.name} put ${defender.name} down over the shoulder of the line.`
+        : `${defender.name} went down to a spear out of the second rank.`,
+      active,
+    );
+  }
   return true;
 }
 
