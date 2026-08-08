@@ -371,10 +371,18 @@ later, this number and `HexSize` disagree.
 
 Also make a material to colour them:
 
-1. Content Browser → **Add → Material**, name it `M_HexTile`.
-2. Open it. Add a **VectorParameter** (hold `V` and click), name it `Colour`, and connect
-   it to **Base Color**.
-3. Save.
+1. Content Browser → **Add → Material**, name it `M_HexTile`. Double-click to open it.
+2. **Right-click in the empty graph space**, left of the `M_HexTile` node. A node search
+   box appears — type `Vector Parameter` and pick **VectorParameter**.
+3. With the new node selected, set **Parameter Name** to `Colour` in the Details panel on
+   the left, and click its colour swatch to give it a mid-grey default.
+4. Drag from the node's **top output pin** — the topmost of the five on its right edge —
+   onto **Base Color** on the `M_HexTile` node.
+5. **Apply**, then **Save**.
+
+It has to be a *parameter*, not a plain colour. The `V`-and-click shortcut you may see
+elsewhere makes a **Constant3Vector**, which is a fixed colour with no name — nothing can
+change it at runtime, so every tile would be stuck grey.
 
 ---
 
