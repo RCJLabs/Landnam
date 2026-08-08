@@ -312,6 +312,127 @@ measuring bot has never once used the offensive half.
 accessibility is minimal (keyboard play is not possible); and
 `render/travel.ts` still breaches the ~300-line guidance.
 
+## The next queue — audit of 2026-08-08
+
+Written after the coast fix, and it is a different KIND of audit from the two
+before it. Those read the code and asked what was missing. This one ran sixty
+full-length sagas and asked a single question — **what does the game actually
+reach?** — because the coast taught the lesson the hard way: a system can be
+built, unit-tested and green, and still be something no player ever touches.
+
+The instrument was a throwaway probe over 60 sagas to day 400 (30 seeds ×
+both playable difficulties, avg 124 days). It was wrong twice on the first
+pass — it read `p.traits` where the field is `trait`, and counted
+`tally.joined`/`tally.left`, which do not exist — and both bugs produced
+clean, believable zeros. **Check the mechanism before trusting the null**
+held again, on the very tool built to check it.
+
+What it found, corrected:
+
+```
+cards seen 90/102        buildings raised 10/12      lore 6/6     traits 10/10
+fights 190 (raids 57, sea 1, strandhogg 0)           sackings 38
+expeditions 16           people arrived 6            hands alive at end 1
+sea days 3               Things called 7             feuds settled 10
+ends: despair 23, starved 22, slain 10, frozen 2
+deck health: 783 draws, top ten = 33% of all draws
+```
+
+The deck is healthy and the traits, lore and building list mostly land. Four
+whole systems do not.
+
+1. **[ ] A settled band never leaves home.** `moveOptions` returns `[]` for a
+   settled band, so an expedition is the ONLY door back onto the map — and it
+   opens 16 times in 60 sagas. Behind that door: 3 sea days, 1 sea fight and
+   **0 strandhöggs** across the whole sample. Hull damage, cargo over the
+   side, the authored sea decks in `seaFields.ts` and yesterday's strandhögg
+   are all unmeasured content. The strandhögg shipped in violation of this
+   repo's own first rule — the bot has `STRANDHOGG` in its vocabulary and no
+   logic that ever gets it afloat. Two halves: teach the bot to sail (and
+   therefore measure the sea at last), and give a settled band a REASON to,
+   because a door nobody opens is a door that is not there. Measured by sea
+   days and sea fights per saga, and by whether the strandhögg's bargain
+   (better if you win, much worse if you lose) survives contact with a real
+   sample.
+
+2. **[ ] Four battle verbs the harness has never seen.** The bot issues
+   `B_MOVE`, `B_STRIKE`, `B_REACH`, `B_WARCRY`, `B_END_TURN`, `B_LEAVE` —
+   and never `B_THROW`, `B_DEFEND`, `B_SHOVE` or `B_DASH`. Throwing is an
+   entire ranged layer (spears and hand-axes, one use each); shove is the
+   wall's own tool. Every claim this document makes about combat balance is
+   made about a bot playing two thirds of the game. Measured the way the
+   wall was: each verb's use rate, and its effect on wins and standing.
+
+3. **[ ] Growth never happens.** Phase 6.2 — `capacity`, `crowding`,
+   `roomLeft`, `SETTLED_IN`, the repeatable búð, hands who work but do not
+   fight — is dead in play: **6 people arrived across 60 sagas, and 1 hand
+   was alive at the end of all of them.** Joining exists only as event-card
+   outcomes, on cards that need goodwill or a soft landing most bands never
+   see. A band that cannot grow cannot man walls, cannot fill a mead hall,
+   and hits the raid cliff with the same six people it landed with. Measured
+   by band size over time, which nothing currently reports.
+
+4. **[ ] The top building tier is unreachable.** `greathall` and
+   `earthworks` were never built once in 60 sagas. They are the upgrade tier
+   `standsFor()` was written for, and no measurement has ever included them.
+   Either the timber cost is out of reach of a band that survives, or the
+   prerequisites are, and the build-rate-per-tier figure that would say which
+   does not exist yet.
+
+5. **[ ] The raid cliff — price it or accept it.** Still the oldest open
+   question in this document and now the best measured: 1 raid held of 9 in
+   real play, and the gauntlet reads 4/8 at difficulty 0, 1/8 at 2 and
+   **0/8 at 3**. Each loss burns a building, takes two fifths of the store
+   and carries hands off, which compounds into the next one. This is a design
+   decision that has been deferred three times because the instrument was
+   untrustworthy. The instrument is trustworthy now.
+
+6. **[ ] Make the content-reach probe a permanent fixture.** Everything
+   above came from a throwaway that was deleted afterwards, which is exactly
+   how the coast stayed broken for weeks behind a green suite. A standing
+   test that plays a sample and reports what was never reached — cards,
+   buildings, verbs, lore, systems — with bars on the ones that must not go
+   to zero. It also names the twelve cards that never draw and why: two need
+   the sea (`driftwood`, `a-lean-sail`), the rest need states bands do not
+   live long enough to enter (`wood-runs-low`, `the-runaway`, `the-yarrow`).
+   The generalised form of the coast lesson: **every system needs a bar, or
+   the one without a bar is the one that is broken.**
+
+7. **[ ] A second bot, playing differently.** Every number in this document
+   describes ONE strategy: settle early, work jobs, hold the line, trade for
+   a friend. Whether the game supports a second viable line — the raider who
+   takes what he needs, the turtle who never leaves the palisade — is
+   completely unknown, and "there is more than one way to play" is a claim
+   the project has never tested. Two policies over the same sixty seeds, and
+   the interesting result is either one.
+
+8. **[ ] Despair and hunger are three quarters of all endings.** despair 23,
+   starved 22, slain 10, frozen 2. Steel and cold barely kill; the two
+   survival meters do nearly all the work, and despair is downstream of the
+   others (see the dead-ends table — three morale levers moved nothing
+   because despair is a symptom). A death table this lopsided means most of
+   the game's threats resolve into the same two numbers. Worth deciding
+   whether that is the survival game working or three systems collapsing
+   into one.
+
+9. **[ ] What ruling is actually worth.** Five jarldoms across forty sagas,
+   and `yearsRuled` is the only thing that changes when one is won. 6.4 made
+   the endgame endless on the argument that a trophy is not a game — but
+   after the Thing carries, the coast gets `JARL_WORD` harder and nothing
+   else is different. Either ruling changes what a day looks like, or the
+   proclamation is the ending it was rewritten not to be.
+
+10. **[ ] Screen-reader and touch semantics.** Six `aria-`/`role` attributes
+    in the whole render layer, on a game whose primary target is a mobile
+    browser. Touch targets and portrait layout have had attention; assistive
+    technology has had none. Low glamour, genuinely small, and the kind of
+    thing that never gets done once there is a v1.0 tag.
+
+**Carried over:** seed challenges and a shareable saga (item 10 of the
+2026-08-07 queue) remain unstarted, and the v1.0 release's two at-home steps
+(GitHub Release targeting `main`; DNS `CNAME landnam -> rcjlabs.github.io`
+BEFORE the Pages custom domain and Enforce HTTPS) are still Evan's.
+
 ## The next queue — audit of 2026-08-07 (evening)
 
 Written after the first ten were cleared, with the phone photograph of the
