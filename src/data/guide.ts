@@ -52,7 +52,7 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-places',
     title: 'Places',
-    body: 'The map holds fixed places: a monastery rich and soft, a town rich and hard, a wreck and an iron seam free for the working. They are on this coast, not across the world — but you have to LEARN of them, by walking past or by hearing of them from somebody you trade with. Stand on one and Act offers the taking. Each is taken once, some teach the band something, and robbing the coast is remembered.',
+    body: 'The map holds fixed places: a monastery, a trading town, a wreck and an iron seam. They are on this coast, not across the world — but you must LEARN of them, by walking past or by hearing of one from somebody you trade with. Stand on one and Act offers what it will do for you. The town keeps a market and deals both ways; the house will sell you bread for firewood. Steel is the OTHER option, and it is final: a place is taken once, and a place you have taken has nobody left to deal with.',
   },
   {
     id: 'the-sea',

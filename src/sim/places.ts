@@ -9,7 +9,12 @@
 import { distance, fromKey, key, type Hex } from '../hex';
 import { stream, type Rng } from '../rng';
 import type { GameState, Place, World } from '../state/types';
-import { PLACE_KINDS, PLACE_MAX_FROM_LANDING, placeKind } from '../data/places';
+import {
+  PLACE_KINDS,
+  PLACE_MAX_FROM_LANDING,
+  placeKind,
+  type PlaceOffer,
+} from '../data/places';
 import { chronicle } from './saga';
 import { STRAND_HAUL, STRAND_INFAMY } from './sea';
 import { learn, knows } from './lore';
@@ -92,6 +97,71 @@ export function tellOfPlace(state: GameState, from: Hex, teller: string): Place 
     'plain',
   );
   return told;
+}
+
+// --- Dealing across a counter ---
+
+export type TradeBlock = 'gone' | 'away' | 'taken' | 'nomarket' | 'stores';
+
+export const TRADE_REASON: Record<TradeBlock, string> = {
+  gone: 'There is nothing of the kind here.',
+  away: 'It is not under your feet.',
+  taken: 'There is nobody left here to deal with.',
+  nomarket: 'Nobody here trades in anything.',
+  stores: 'We have not got enough to carry in.',
+};
+
+/** The offers this place makes, or none. */
+export function offersAt(state: GameState, id: string): PlaceOffer[] {
+  const place = placeById(state, id);
+  if (!place || place.sackedOn !== undefined) return [];
+  return placeKind(place.kind).market ?? [];
+}
+
+export function tradeBlocker(state: GameState, id: string, offerId: string): TradeBlock | null {
+  const place = placeById(state, id);
+  if (!place) return 'gone';
+  if (key(place.at) !== key(state.party.at)) return 'away';
+  // Steel ends a market. There is no dealing with a place you have emptied.
+  if (place.sackedOn !== undefined) return 'taken';
+  const offer = (placeKind(place.kind).market ?? []).find((o) => o.id === offerId);
+  if (!offer) return 'nomarket';
+  if (state.party[offer.give] < offer.cost) return 'stores';
+  return null;
+}
+
+export interface PlaceTrade {
+  gave: number;
+  got: number;
+  offer: PlaceOffer;
+}
+
+/**
+ * Deals at a place. Mutates; callers hold a clone.
+ *
+ * No haggling: a market's price is a market's price, where a neighbour's
+ * moves with their opinion of you and with the wits of whoever carried the
+ * sack. That is the difference the player should feel, and it is also what
+ * makes the spread safe to reason about.
+ */
+export function tradeAt(state: GameState, id: string, offerId: string): PlaceTrade | null {
+  if (tradeBlocker(state, id, offerId) !== null) return null;
+  const place = placeById(state, id)!;
+  const def = placeKind(place.kind);
+  const offer = (def.market ?? []).find((o) => o.id === offerId)!;
+
+  const got = Math.max(1, Math.round(offer.cost * offer.rate));
+  state.party[offer.give] -= offer.cost;
+  state.party[offer.take] += got;
+  state.party.morale = Math.min(100, state.party.morale + 2);
+  note(state, 'bargains');
+
+  const gaveWord = offer.give === 'food' ? 'of food' : 'of firewood';
+  const gotWord = offer.take === 'food' ? 'of food' : 'of timber';
+  chronicle(state, `${offer.line} ${offer.cost} ${gaveWord} for ${got} ${gotWord}.`, 'good');
+  // A counter is where the coast's news is. Same trade as a neighbour's.
+  tellOfPlace(state, place.at, def.name);
+  return { gave: offer.cost, got, offer };
 }
 
 export function placeById(state: GameState, id: string): Place | undefined {

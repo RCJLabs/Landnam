@@ -12,7 +12,18 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { stream } from '../src/rng';
 import { apply } from '../src/sim/actions';
-import { seedPlaces, placeHere, placeById, sackBlocker, settlePlace, tellOfPlace } from '../src/sim/places';
+import {
+  offersAt,
+  placeById,
+  placeHere,
+  sackBlocker,
+  seedPlaces,
+  settlePlace,
+  tellOfPlace,
+  tradeAt,
+  tradeBlocker,
+  TRADE_REASON,
+} from '../src/sim/places';
 import { PLACE_KINDS, PLACE_MAX_FROM_LANDING, placeKind } from '../src/data/places';
 import { knows } from '../src/sim/lore';
 import { startBattle } from '../src/sim/battleTurn';
@@ -216,6 +227,154 @@ describe('taking a place', () => {
       if (knows(state, 'smithing')) return; // the lesson can land: enough
     }
     throw new Error('no seed taught smithing in 40 tries — the odds are not wired');
+  });
+});
+
+describe('a place you can deal with', () => {
+  /**
+   * The gap a player found on a phone: a TRADING TOWN — jetties,
+   * warehouses, a watch that is paid to be awake — whose Act panel offered
+   * "Fall on the town" and nothing else. Every fixed place was a thing to
+   * be robbed, including the two that are described as being full of people
+   * who would rather sell you something.
+   */
+  function standingOnKind(kind: string): GameState {
+    for (let s = 0; s < 40; s += 1) {
+      const state = structuredClone(newGame(`market-${s}`));
+      const place = state.world.places.find((p) => p.kind === kind);
+      if (!place) continue;
+      state.party.at = { ...place.at };
+      state.world.seen[key(place.at)] = 'visible';
+      state.party.food = 200;
+      state.party.firewood = 200;
+      return state;
+    }
+    throw new Error(`no ${kind} on any coast`);
+  }
+
+  it('the town keeps a market, and it deals both ways', () => {
+    const state = standingOnKind('town');
+    const offers = offersAt(state, state.world.places.find((p) => p.kind === 'town')!.id);
+    expect(offers.length).toBeGreaterThan(1);
+    expect(new Set(offers.map((o) => o.give))).toEqual(new Set(['food', 'firewood']));
+  });
+
+  it('carries goods in and out', () => {
+    // The exchange itself, read before the day turns: `apply` also runs a
+    // day of upkeep, and a band that has just eaten is not evidence about
+    // what the counter paid.
+    const state = standingOnKind('town');
+    const town = state.world.places.find((p) => p.kind === 'town')!;
+    const offer = offersAt(state, town.id).find((o) => o.give === 'food')!;
+    const before = { food: state.party.food, wood: state.party.firewood };
+
+    const deal = tradeAt(state, town.id, offer.id);
+    expect(deal).not.toBeNull();
+    expect(state.party.food).toBe(before.food - offer.cost);
+    expect(state.party.firewood).toBe(before.wood + deal!.got);
+    expect(deal!.got).toBeGreaterThan(0);
+  });
+
+  it('costs the day, and leaves the place standing', () => {
+    const state = standingOnKind('town');
+    const town = state.world.places.find((p) => p.kind === 'town')!;
+    const offer = offersAt(state, town.id)[0]!;
+    const day = state.day;
+
+    const next = apply(state, { type: 'TRADE_AT', id: town.id, offer: offer.id });
+    expect(next).not.toBe(state);
+    expect(next.day).toBe(day + 1);
+    expect(next.world.places.find((p) => p.id === town.id)!.sackedOn).toBeUndefined();
+    expect(next.saga.some((e) => e.text.includes('jetties'))).toBe(true);
+  });
+
+  it('deals again tomorrow — a market is not a thing you use up', () => {
+    let state = standingOnKind('town');
+    const town = state.world.places.find((p) => p.kind === 'town')!;
+    const offer = offersAt(state, town.id)[0]!;
+    for (let i = 0; i < 3; i += 1) {
+      const next = apply(state, { type: 'TRADE_AT', id: town.id, offer: offer.id });
+      expect(next, `refused on deal ${i + 1}`).not.toBe(state);
+      state = next;
+    }
+  });
+
+  it('but steel ends it — there is nobody left to deal with', () => {
+    const state = standingOnKind('town');
+    const town = state.world.places.find((p) => p.kind === 'town')!;
+    const offer = offersAt(state, town.id)[0]!;
+    settlePlace(state, town.id, false);
+    expect(tradeBlocker(state, town.id, offer.id)).toBe('taken');
+    expect(offersAt(state, town.id)).toEqual([]);
+    expect(apply(state, { type: 'TRADE_AT', id: town.id, offer: offer.id })).toBe(state);
+  });
+
+  it('refuses what the band cannot carry in, and says so', () => {
+    const state = standingOnKind('town');
+    const town = state.world.places.find((p) => p.kind === 'town')!;
+    const offer = offersAt(state, town.id).find((o) => o.give === 'food')!;
+    state.party.food = offer.cost - 1;
+    expect(tradeBlocker(state, town.id, offer.id)).toBe('stores');
+    expect(TRADE_REASON.stores.length).toBeGreaterThan(10);
+  });
+
+  it('never from the next hex over', () => {
+    const state = standingOnKind('town');
+    const town = state.world.places.find((p) => p.kind === 'town')!;
+    const offer = offersAt(state, town.id)[0]!;
+    state.party.at = { q: town.at.q + 3, r: town.at.r };
+    expect(tradeBlocker(state, town.id, offer.id)).toBe('away');
+  });
+
+  it('the house sells bread, which is the point of it', () => {
+    const state = standingOnKind('monastery');
+    const house = state.world.places.find((p) => p.kind === 'monastery')!;
+    const offer = offersAt(state, house.id)[0]!;
+    expect(offer.give).toBe('firewood');
+    expect(offer.take).toBe('food');
+    const before = state.party.food;
+    const next = apply(state, { type: 'TRADE_AT', id: house.id, offer: offer.id });
+    expect(next.party.food).toBeGreaterThan(before);
+  });
+
+  /**
+   * THE LINT THAT MATTERS. A place that buys and sells the same goods across
+   * one counter must lose on the spread, or two deeds standing still make
+   * timber out of nothing and the whole economy is a rounding error.
+   *
+   * Only the SAME-PLACE cycle is barred. Camp-to-town loops can look
+   * nominally profitable and are not worth policing: the legs are hexes
+   * apart, and a band walking between them eats more in provisions than any
+   * spread returns.
+   */
+  it('no counter pays for standing at it', () => {
+    for (const kind of PLACE_KINDS) {
+      const market = kind.market ?? [];
+      for (const out of market) {
+        for (const back of market) {
+          if (out.take !== back.give || back.take !== out.give) continue;
+          expect(
+            out.rate * back.rate,
+            `${kind.id}: ${out.id} then ${back.id} makes something from nothing`,
+          ).toBeLessThan(1);
+        }
+      }
+    }
+  });
+
+  it('every offer is spendable and readable', () => {
+    for (const kind of PLACE_KINDS) {
+      for (const offer of kind.market ?? []) {
+        expect(offer.cost, `${kind.id}/${offer.id}`).toBeGreaterThan(0);
+        expect(offer.rate, `${kind.id}/${offer.id}`).toBeGreaterThan(0);
+        expect(offer.give, `${kind.id}/${offer.id}`).not.toBe(offer.take);
+        expect(offer.deed.length, `${kind.id}/${offer.id}`).toBeGreaterThan(5);
+        expect(offer.blurb.length, `${kind.id}/${offer.id}`).toBeGreaterThan(20);
+        expect(offer.line.length, `${kind.id}/${offer.id}`).toBeGreaterThan(20);
+      }
+    }
+    // And the one the report was about: the town must have a counter.
+    expect((PLACE_KINDS.find((k) => k.id === 'town')?.market ?? []).length).toBeGreaterThan(0);
   });
 });
 

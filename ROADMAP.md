@@ -715,6 +715,34 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-08 — A town you can trade with** — Reported from a phone, and
+  the screenshot said it better than any audit could: a band standing on *a
+  trading town* — "jetties, warehouses, and a watch that is paid to be
+  awake" — with an Act panel offering **Fall on the town** and nothing else.
+  Every fixed place in the game was a thing to be robbed, including the two
+  whose own descriptions are about people who would rather sell you
+  something. Neighbours had barter from 4.3; places never got a counter.
+  Places can now keep a **market**: a list of offers, in `data/places.ts`, so
+  a new one is a new entry and never a change to the engine. The town deals
+  both ways (10 food for 16 timber; 20 firewood for 10 food) and the house
+  of the White Christ sells bread for firewood, which is the door a band with
+  a full woodshed and an empty larder has never had. A market is repeatable —
+  it is not a thing you use up — and it survives exactly as long as your
+  patience does: **steel ends it**, because a place you have emptied has
+  nobody left to deal with.
+  Prices at a place are FIXED, where a neighbour's move with their opinion
+  of you and the wits of whoever carried the sack. That is the difference
+  between a market and a haggle, and it is also what makes the arithmetic
+  checkable — a lint asserts that no counter pays for standing at it: buying
+  and selling the same goods on one hex must lose on the spread (1.6 out
+  against 0.5 back, a fifth gone per round trip). Cross-place loops are
+  deliberately NOT policed: the legs are hexes apart and a band walking
+  between them eats more in provisions than any spread returns.
+  The bot learned it in the same commit — short of one thing and long on the
+  other, standing on a counter, it deals rather than draws. Curve 63/28/7,
+  unmoved. Trading also carries the coast's news, so a day on the jetties
+  names a place the same way a bargain in a yard does.
+
 - **2026-08-08 — What the four verbs are worth (audit item 2)** — And the
   first thing to record is that the audit was partly wrong. Three verbs were
   genuinely unmeasured — `B_SHOVE`, `B_DEFEND` and `B_DASH` appeared only in

@@ -39,6 +39,43 @@ export interface PlaceKindDef {
   infamy: number;
   /** Chronicle line when it falls. Past tense; it goes in the saga. */
   sackLine: string;
+  /**
+   * What they will DEAL in, if anything.
+   *
+   * A trading town whose only verb was "fall on the town" is the gap a
+   * player found on his phone: jetties, warehouses and a paid watch, and the
+   * game offered steel or nothing. Places with a market can be traded with
+   * as often as you like — until somebody draws on them, after which there
+   * is no market and no place.
+   *
+   * Data, so a new market is a new entry here and never a change to the
+   * engine.
+   */
+  market?: PlaceOffer[];
+}
+
+/**
+ * One thing a place will do for you across a counter.
+ *
+ * Prices here are FIXED, where a camp's are haggled on the trader's wits and
+ * on what they think of you. That is the difference between a market and a
+ * neighbour, and it is also what keeps the arithmetic safe: a town that
+ * buys and sells the same goods on one hex must lose on the spread, or two
+ * deeds standing still make timber out of nothing.
+ */
+export interface PlaceOffer {
+  id: string;
+  /** What the button says. */
+  deed: string;
+  blurb: string;
+  /** What you carry in, and how much of it. */
+  give: 'food' | 'firewood';
+  cost: number;
+  /** What you carry out, at this much per unit given. */
+  take: 'food' | 'firewood';
+  rate: number;
+  /** Past tense, for the saga. */
+  line: string;
 }
 
 /**
@@ -74,6 +111,20 @@ export const PLACE_KINDS: PlaceKindDef[] = [
     teaches: { lore: 'runes', odds: 0.5 },
     infamy: -6,
     sackLine: 'We fell on the house of the White Christ and carried off what generations had given it. The bell went into the sea.',
+    // They keep a granary and they do not keep a woodpile. For a band with
+    // a full woodshed and an empty larder this is the only door that opens.
+    market: [
+      {
+        id: 'bread',
+        deed: 'Buy bread from the house',
+        blurb: 'They keep a granary against lean years, and will part with some of it for firewood.',
+        give: 'firewood',
+        cost: 18,
+        take: 'food',
+        rate: 0.55,
+        line: 'We carried firewood up to the house of the White Christ and came away with bread. Nobody drew anything.',
+      },
+    ],
   },
   {
     id: 'town',
@@ -86,6 +137,33 @@ export const PLACE_KINDS: PlaceKindDef[] = [
     loot: { food: 26, firewood: 16, morale: 10 },
     infamy: -16,
     sackLine: 'We took the trading town at a run and left it lighter by a winter of stores. The whole coast will hear of it.',
+    // A market, which is what the word TOWN was always promising. It deals
+    // both ways and takes its cut on the spread — 1.6 out against 0.5 back
+    // is a fifth lost on a round trip, so standing at the counter all day
+    // makes nothing. It is also the one place that will deal with a band the
+    // whole coast has stopped speaking to.
+    market: [
+      {
+        id: 'buy-timber',
+        deed: 'Buy timber in the town',
+        blurb: 'The warehouses are full of it, and they would rather have food than planks.',
+        give: 'food',
+        cost: 10,
+        take: 'firewood',
+        rate: 1.6,
+        line: 'We spent the day on the jetties and came away with timber the town could spare.',
+      },
+      {
+        id: 'sell-timber',
+        deed: 'Sell timber in the town',
+        blurb: 'They will take cut wood off your hands, at a townsman\u2019s price.',
+        give: 'firewood',
+        cost: 20,
+        take: 'food',
+        rate: 0.5,
+        line: 'We sold cut wood on the jetties. The price was a townsman\u2019s price, and we took it.',
+      },
+    ],
   },
   {
     id: 'wreck',

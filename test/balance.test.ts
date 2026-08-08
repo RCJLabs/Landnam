@@ -69,7 +69,7 @@ import { distance, key, fromKey, neighbors } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
 import { reachWithZoc } from '../src/sim/zoc';
 import { reachTargets, shoveDestination, throwTargets } from '../src/sim/battleActions';
-import { placeHere } from '../src/sim/places';
+import { offersAt, placeHere, tradeBlocker } from '../src/sim/places';
 import { strandTarget } from '../src/sim/sea';
 import { placeKind } from '../src/data/places';
 import { bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
@@ -280,6 +280,20 @@ function step(state: GameState): Action {
   // player afloat beside a place takes it from the boat.
   if (strandTarget(state) && sworn(state.party.people).length >= 4) {
     return { type:'STRANDHOGG' };
+  }
+
+  // A counter under our feet and a hole in the stores: deal rather than
+  // draw. The town and the house will trade as often as you like and only
+  // once you have not robbed them, so an average player short of one thing
+  // and long on the other buys what he needs and leaves them standing.
+  const dealHere = placeHere(state);
+  if (dealHere && dealHere.sackedOn === undefined) {
+    for (const offer of offersAt(state, dealHere.id)) {
+      if (tradeBlocker(state, dealHere.id, offer.id) !== null) continue;
+      const short = offer.take === 'food' ? days < 8 : nights < 8;
+      const spare = offer.give === 'food' ? days > 12 : nights > 12;
+      if (short && spare) return { type:'TRADE_AT', id: dealHere.id, offer: offer.id };
+    }
   }
 
   // A place worth taking, under our feet, still standing: take it. The rule

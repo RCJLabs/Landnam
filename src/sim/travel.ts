@@ -12,7 +12,7 @@ import { chronicle } from './saga';
 import { atHome, foundSettlement } from './site';
 import { fieldCrew, permittedStep } from './expedition';
 import { bargain, bargainBlocker, canFallOn, fallOn, neighbourById, seeNeighbours } from './neighbours';
-import { placeById, sackBlocker, settlePlace, tellOfPlace } from './places';
+import { placeById, sackBlocker, settlePlace, tellOfPlace, tradeAt, tradeBlocker } from './places';
 import { placeKind } from '../data/places';
 import { mendHull, strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { bonus } from './lore';
@@ -31,6 +31,7 @@ export type TravelAction =
   | { type: 'FISH' }
   | { type: 'FOUND' }
   | { type: 'BARTER'; id: string }
+  | { type: 'TRADE_AT'; id: string; offer: string }
   | { type: 'FALL_ON'; id: string }
   | { type: 'SACK_PLACE'; id: string }
   | { type: 'STRANDHOGG' }
@@ -404,6 +405,18 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // is the only road into the plunder economy a settled band has, the
       // fixed places being things you must first KNOW OF to walk to.
       if (host) tellOfPlace(state, host.at, host.name);
+      advance(state, 1);
+      if (state.end) return state;
+      reveal(state);
+      return state;
+    }
+
+    case 'TRADE_AT': {
+      // A day at a counter, and the day is spent either way — same as a
+      // bargain in somebody's yard, because standing about being useful is
+      // still standing about.
+      if (tradeBlocker(state, action.id, action.offer) !== null) return prev;
+      if (!tradeAt(state, action.id, action.offer)) return prev;
       advance(state, 1);
       if (state.end) return state;
       reveal(state);

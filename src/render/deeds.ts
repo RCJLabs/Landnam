@@ -12,7 +12,7 @@ import { atHome, BLOCK_REASON, foundBlocker } from '../sim/site';
 import { atSea, canFish, canGather } from '../sim/travel';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
-import { placeHere } from '../sim/places';
+import { placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
 import { placeKind } from '../data/places';
 import { BARTER_FOOD } from '../data/clans';
 import { FEAST_FOOD } from '../data/thing';
@@ -95,6 +95,22 @@ export function deedsFor(
   const here = placeHere(state);
   if (here && here.sackedOn === undefined) {
     const def = placeKind(here.kind);
+    // What they will DEAL in comes before what they can be robbed of. A
+    // trading town that offered steel and nothing else was the report that
+    // started this: jetties and warehouses, and no counter to stand at.
+    for (const offer of def.market ?? []) {
+      const blocked = tradeBlocker(state, here.id, offer.id);
+      const gave = offer.give === 'food' ? 'food' : 'firewood';
+      const took = offer.take === 'food' ? 'food' : 'timber';
+      const got = Math.max(1, Math.round(offer.cost * offer.rate));
+      deeds.push({
+        id: `trade-${offer.id}`,
+        label: offer.deed,
+        blurb: `${offer.blurb} ${offer.cost} ${gave} for ${got} ${took}.`,
+        ...(blocked ? { blocked: TRADE_REASON[blocked] } : {}),
+        run: () => dispatch({ type: 'TRADE_AT', id: here.id, offer: offer.id }),
+      });
+    }
     deeds.push({
       id: 'sack-place',
       label: def.deed,
