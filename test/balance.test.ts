@@ -71,7 +71,11 @@ import { reachWithZoc } from '../src/sim/zoc';
 import { reachTargets } from '../src/sim/battleActions';
 import { placeHere } from '../src/sim/places';
 import { placeKind } from '../src/data/places';
-import { canFallOn, neighbourHere } from '../src/sim/neighbours';
+import { bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
+import { canCallThing, hasSpeakers, yearsRuled } from '../src/sim/thing';
+import { launchBlocker, provisionsFor } from '../src/sim/expedition';
+import { BARTER_FOOD } from '../src/data/clans';
+import { wintersStood } from '../src/sim/calendar';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
@@ -202,7 +206,52 @@ function step(state: GameState): Action {
     return { type:'FALL_ON', id: host.id };
   }
 
-  if (state.settlement) return { type:'CAMP' };
+  // --- The long game, which this harness could not previously reach ---
+  //
+  // Everything below is the endgame the bot had never once played: it never
+  // bartered, never called a Thing, never ruled. Item 9 measures the years
+  // after the second winter, and a harness that cannot GET there measures
+  // nothing — the same lesson as the bot that would not swing.
+
+  // Proclaimed: keep the rule rather than closing the saga. A bot that lays
+  // it down is a bot that ends its own run, which is the opposite of what
+  // the long game is for.
+  if (state.jarl && state.flags['ruleTaken'] === undefined) return { type:'RULE_ON' };
+
+  // The claim, the moment it is takeable. It costs three days and a feast,
+  // and the bot walks into whatever odds it has, as an ordinary player does.
+  if (canCallThing(state)) return { type:'CALL_THING' };
+
+  if (state.settlement) {
+    // Out on a trading errand: barter where we stand, then turn for home.
+    const out = state.expedition;
+    if (out) {
+      const host = neighbourHere(state);
+      if (host && bargainBlocker(state, host.id) === null) return { type:'BARTER', id: host.id };
+      if (!out.returning && state.day - out.launchedOn >= 8) return { type:'TURN_HOME' };
+      const aim = out.returning
+        ? state.settlement.at
+        : (nearestFriendable(state) ?? state.settlement.at);
+      const opts2 = moveOptions(state);
+      if (opts2.length > 0) {
+        return { type:'MOVE', to: opts2.reduce((a,b)=>distance(b,aim)<distance(a,aim)?b:a) };
+      }
+      return { type:'CAMP' };
+    }
+
+    // A jarldom needs somebody on this coast who will speak for us, and
+    // nobody makes a friend from indoors. Sends two out with food to spare,
+    // and only when there is genuinely a surplus to carry.
+    if (!hasSpeakers(state) && wintersStood(state.day) >= 1 && nearestFriendable(state)) {
+      const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
+      if (crew.length === 2
+        && state.party.food > provisionsFor(2) + BARTER_FOOD + 40
+        && launchBlocker(state, crew) === null) {
+        return { type:'LAUNCH', members: crew, purpose: 'trade' };
+      }
+    }
+    return { type:'CAMP' };
+  }
 
   // Settle on anything workable rather than holding out for perfection.
   if (canFound(state, state.party.at) && state.day >= settleNotBefore) {
@@ -283,6 +332,19 @@ function step(state: GameState): Action {
   return { type:'MOVE', to: opts.reduce((a,b)=>score(b)>score(a)?b:a) };
 }
 
+/** The nearest neighbour we have seen who is not already a friend. */
+function nearestFriendable(state: GameState): {q:number;r:number} | null {
+  let best: {q:number;r:number} | null = null;
+  let bestD = 99;
+  for (const n of state.neighbours) {
+    if (n.standing >= 25) continue;
+    if (state.world.seen[key(n.at)] === undefined) continue;
+    const d = distance(n.at, state.party.at);
+    if (d < bestD) { bestD = d; best = n.at; }
+  }
+  return best;
+}
+
 /**
  * Plays one seed until it dies or reaches `maxDay`, and hands back the state.
  *
@@ -318,7 +380,16 @@ function run(
     if (state.settlement && state.settlement.queue.length === 0) {
       const buffer = state.settlement.built.length === 0 ? 0 : 16;
       if (state.party.firewood >= buffer) {
-        for (const b of WANT) {
+        // The game puts a checklist on the steading wall after the first
+        // thaw naming exactly what a jarl still lacks, so an average player
+        // who wants one builds THAT next. Without this the bot worked the
+        // list in order and never reached the mead hall at all: fourteen
+        // long sagas, four of them past the second winter, and not one hall
+        // — which is why nobody ever called a Thing.
+        const want = wintersStood(state.day) >= 1
+          ? ['meadhall', ...WANT.filter(b => b !== 'meadhall')]
+          : WANT;
+        for (const b of want) {
           // One of each off the list — the repeatable búð would otherwise
           // win this loop forever and the late tier would never be reached.
           if (state.settlement.built.includes(b as never)) continue;
@@ -331,13 +402,28 @@ function run(
     }
     // Heed the mark: the game states what the stores must reach, so a
     // competent player moves people onto whatever is short.
+    //
+    // But it KEEPS A BUILDER while anything is on the stocks, and that line
+    // is not a nicety — without it this block reassigned every last person
+    // every day the mark was visible, which is most of the year, so the
+    // builder was wiped before ever finishing anything. The long-game run
+    // found it: sagas reaching day 259 with a hundred and sixty firewood in
+    // the pile and NOTHING built, and therefore no mead hall, and therefore
+    // no Thing, and therefore an endgame no measurement had ever reached.
+    // A real player with wood to spare does not put the whole hall on the
+    // woodpile.
     if (state.settlement && markVisible(state)) {
       const need = forecast(state);
       const shortWood = state.party.firewood < need.firewood;
       const shortFood = state.party.food < need.food;
+      const keepBuilder = state.settlement.queue.length > 0;
       state.party.people
         .filter((p) => p.alive)
         .forEach((p, ix) => {
+          if (keepBuilder && ix === 0) {
+            assign(state, p.id, 'builder');
+            return;
+          }
           if (shortWood && shortFood) assign(state, p.id, ix % 2 ? 'woodcutter' : 'hunter');
           else if (shortWood) assign(state, p.id, ix < 4 ? 'woodcutter' : 'hunter');
           else if (shortFood) assign(state, p.id, ix < 4 ? 'hunter' : 'woodcutter');
@@ -1322,6 +1408,116 @@ describe('the first winter', () => {
     // settling early, or the opening's whole shape is a lie. Anything else
     // here is reported, not asserted, until the design decision is made.
     expect(rows.length).toBe(HELD.length);
+  });
+});
+
+describe('the long game', () => {
+  /**
+   * Item 9, and the blind spot it closes is embarrassing in hindsight: the
+   * curve harness stops at day 169, and a jarldom needs two winters plus a
+   * Thing — so the endgame, the returning champion, the building tiers and
+   * the escalation that answers them all shipped with NO measurement past
+   * the second winter.
+   *
+   * Fewer seeds, far longer runs. The bot had to learn the whole endgame to
+   * make this possible — barter, the Thing, and ruling on — which is the
+   * same-commit rule again: a harness that cannot reach a system reports
+   * that system as worthless.
+   */
+  const LONG_SEEDS = 14;
+  const LAST_DAY = 500;
+  /**
+   * Run on the GENTLE country, and that is an instrument choice rather than
+   * a flattering one. On the balanced terms this same measurement returned
+   * fourteen sagas averaging sixty-two days, none reaching the second
+   * winter, none becoming jarl and NOT ONE fight after day 169 — nothing to
+   * measure at all. The curve already measures whether a band survives; this
+   * measures what the years DO to one that does, so it is run where bands
+   * survive. The finding stands on its own and is worth keeping in view: at
+   * "As It Lies", the endgame is content that almost no run reaches.
+   */
+  const LONG_TERMS: HardshipId = 'fair';
+
+  it('plays to day 500 and reports what the years actually do', { timeout: 600_000 }, async () => {
+    let reachedJarl = 0;
+    let ruledYears = 0;
+    let alive = 0;
+    let days = 0;
+    const ends: Record<string, number> = {};
+    // Escalation, early against late: the whole claim of the word system is
+    // that the coast gets harder. Counted as foes fielded per fight.
+    let earlyFoes = 0;
+    let earlyFights = 0;
+    let lateFoes = 0;
+    let lateFights = 0;
+    let raids = 0;
+    // Why a run never got there. "0 became jarl" is a result; this is a
+    // diagnosis, and the difference is what makes the number actionable.
+    let sawSecondWinter = 0;
+    let everHadHall = 0;
+    let everHadFriend = 0;
+    let everCouldCall = 0;
+
+    for (let s = 0; s < LONG_SEEDS; s += 1) {
+      let hall = false;
+      let friend = false;
+      let couldCall = false;
+      const state = run(`long-${s}`, LAST_DAY, (before, after) => {
+        if (!before.battle && after.battle) {
+          const n = after.battle.foes.length;
+          if (after.day <= 169) {
+            earlyFoes += n;
+            earlyFights += 1;
+          } else {
+            lateFoes += n;
+            lateFights += 1;
+          }
+        }
+        if (after.settlement?.built.includes('meadhall')) hall = true;
+        if (hasSpeakers(after)) friend = true;
+        if (canCallThing(after)) couldCall = true;
+      }, LONG_TERMS);
+      days += state.day;
+      if (state.day >= 169) sawSecondWinter += 1;
+      if (hall) everHadHall += 1;
+      if (friend) everHadFriend += 1;
+      if (couldCall) everCouldCall += 1;
+      if (state.jarl) {
+        reachedJarl += 1;
+        ruledYears += yearsRuled(state);
+      }
+      if (!state.end) alive += 1;
+      if (state.end) ends[state.end.cause] = (ends[state.end.cause] ?? 0) + 1;
+      raids += state.tally.raids;
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    const per = (n: number, of: number) => (of > 0 ? (n / of).toFixed(1) : 'n/a');
+    // eslint-disable-next-line no-console
+    console.log(
+      `the long game — ${LONG_SEEDS} sagas to day ${LAST_DAY} (avg ${Math.round(days / LONG_SEEDS)} days):\n` +
+        `  ${reachedJarl} became jarl, ${ruledYears} winters ruled between them; ` +
+        `${alive} still standing at the end\n` +
+        `  ends: ${Object.entries(ends).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}\n` +
+        `  foes per fight: ${per(earlyFoes, earlyFights)} early (${earlyFights} fights), ` +
+        `${per(lateFoes, lateFights)} late (${lateFights} fights); ${raids} raids\n` +
+        `  road to the Thing: ${sawSecondWinter} saw a second winter, ${everHadHall} raised a ` +
+        `mead hall, ${everHadFriend} made a friend, ${everCouldCall} could ever call it`,
+    );
+
+    // The bars. First that the endgame is REACHED at all — this whole test
+    // exists because it never was, and a harness that stops reaching it has
+    // gone back to measuring nothing.
+    expect(sawSecondWinter).toBeGreaterThan(0);
+    expect(everHadHall, 'nobody raised a mead hall — the Thing is unreachable').toBeGreaterThan(0);
+    expect(lateFights, 'no fight after day 169 — there is no long game to measure').toBeGreaterThan(0);
+
+    // And the claim the word system has always made and nothing could
+    // check: that the coast gets harder with the years. Measured at 4.3
+    // foes a fight early against 7.4 late. The bar is merely "more", because
+    // eight late fights is a small sample — but zero escalation would be a
+    // system that does not work, and that is what this catches.
+    expect(lateFoes / lateFights).toBeGreaterThan(earlyFoes / earlyFights);
   });
 });
 

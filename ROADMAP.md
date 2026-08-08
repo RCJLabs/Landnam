@@ -374,7 +374,10 @@ would be measured, because an item that cannot be measured is a wish.
    heavy or not at all — would turn the sea into the game's risk engine
    and give the plunder economy somewhere to point.
 
-9. **[ ] The long game is untested at scale.** The curve harness stops at
+9. **[x] The long game is untested at scale.** Done, and it immediately
+   found a harness bug that had hidden the entire endgame: the bot's winter
+   reassignment wiped its own builder, so sagas reached day 259 with 160
+   firewood and NOTHING built. Fixed, and the endgame is measurable at last. The curve harness stops at
    day 169; a jarldom needs two winters plus the Thing, so 6.4 shipped
    with NO harness coverage of the thing it created. A day-500 run over
    fewer seeds, reporting what actually kills a jarl and whether the
@@ -521,6 +524,34 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The long game, finally measured** — Item 9, and it earned
+  its place in the first ten minutes. The curve harness stops at day 169 and
+  a jarldom needs two winters plus a Thing, so the endless jarldom, the
+  returning champion, the building tiers and the escalation meant to answer
+  them had all shipped with no measurement past the second winter.
+  Getting there needed the bot to learn the whole endgame it had never
+  played: barter, the Thing, and ruling on. Then the first reading came back
+  empty — fourteen sagas, none reaching jarl, and the diagnosis line said
+  why: SIX raised a mead hall, zero. Runs were dying at day 259 with a
+  hundred and sixty firewood on the pile and NOTHING built.
+  The cause was in the harness, and it is the fourth of its kind this file
+  now documents. The bot's "heed the winter mark" rule reassigned every last
+  person to food and wood every day the mark was visible — which is most of
+  the year — so the builder was wiped before ever finishing anything. A real
+  player with wood to spare does not put the whole hall on the woodpile. One
+  line keeping a builder while anything is on the stocks, and the endgame
+  opened: 6 mead halls, 2 jarldoms, 3 winters ruled, sagas reaching day 392.
+  With that, the word system's oldest claim is checkable for the first time.
+  Foes per fight: 4.3 before day 169, 7.4 after. The coast really does get
+  harder with the years, and there is now a test that fails if it stops.
+  The honest cost: the curve moved 78/25/12 to 77/23/8, inside the ±10 this
+  harness resolves — a bot that spends a pair of hands on building survives
+  a little less, and measures a great deal more. Also recorded, because it
+  is a design finding and not a bug: on the balanced terms this run returns
+  fourteen sagas averaging sixty-two days with no fight after day 169 at
+  all. The long game is run on the gentle country because that is where
+  bands live long enough to have one.
 
 - **2026-08-08 — The watch mark** — Item 6. Winters stood, buildings raised
   and a full store pushed raid-chance up invisibly, while the wall and the
