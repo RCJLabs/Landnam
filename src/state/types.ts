@@ -117,6 +117,12 @@ export interface Person {
   bond: 'sworn' | 'hand';
   /** The day they joined. Absent for the six who came off the knarr. */
   joinedOn?: number;
+  /**
+   * Somebody in this band they are bound to, and what they call them.
+   * Symmetric: both people carry the other's id, each with their own word
+   * for the tie. See sim/kin.ts — grief is what this is for.
+   */
+  kin?: { id: string; tie: string };
   alive: boolean;
   /** Cause of death, for the saga. */
   fate?: string;

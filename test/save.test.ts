@@ -194,8 +194,11 @@ describe('a migrated save is a playable save', () => {
       unknown
     >;
     // `job`, `fate` and `diedOn` are genuinely optional — nobody has a job
-    // before there is a steading, and the living have no fate.
-    const optional = new Set(['job', 'fate', 'diedOn']);
+    // before there is a steading, and the living have no fate. `kin` is
+    // optional in the same way and for a stronger reason: a band from
+    // before kin existed came off the knarr as strangers, and inventing
+    // families for them retroactively would rewrite a run's history.
+    const optional = new Set(['job', 'fate', 'diedOn', 'kin']);
     for (const person of party.people) {
       const missing = Object.keys(reference).filter(
         (field) => !optional.has(field) && !(field in person),

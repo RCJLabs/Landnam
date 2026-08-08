@@ -9,6 +9,7 @@ import { DEATHS, INJURIES, LASTING } from '../data/injuries';
 import type { Aftermath, Battle, GameState, Person, Stats } from '../state/types';
 import { fighterPerson } from './battle';
 import { chronicle } from './saga';
+import { mourn } from './kin';
 import { fullName } from './people';
 
 /** XP needed before a stat goes up. */
@@ -58,6 +59,7 @@ function kill(state: GameState, person: Person, rng: Rng): void {
   person.fate = rng.pick(DEATHS);
   person.diedOn = state.day;
   chronicle(state, `${fullName(person)} ${person.fate}. They were ${person.age}.`, 'grim');
+  mourn(state, person);
 }
 
 function maim(state: GameState, person: Person, rng: Rng): void {

@@ -46,6 +46,12 @@ function fight(seed: string, difficulty = 0): GameState {
 function lineUp(seed: string, positions: [number, number][]): GameState {
   const state = fight(seed, 1);
   const battle = state.battle!;
+  // Strangers, on purpose. Kin take an extra shock when one of them falls
+  // (see sim/kin.ts), which is exactly the confound this file must not
+  // have: these tests measure what the WALL is worth, and a fixture that
+  // sometimes pairs brothers measures the wall plus a coin flip. Caught by
+  // the shoulder-mate test reading 33.75 against 35 the day kin landed.
+  for (const person of state.party.people) delete person.kin;
   for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
 
   const ours = battle.combatants.filter((c) => c.side === 'warband').slice(0, positions.length);

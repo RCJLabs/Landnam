@@ -17,6 +17,7 @@ import { angerLevel, angriest, friendliest, goodwillLevel, shiftStanding, stirFa
 import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
+import { mourn } from './kin';
 import { atHome } from './site';
 import { WATCH_QUIET } from '../data/jobs';
 import { effectiveReport, standsFor } from './colony';
@@ -205,6 +206,7 @@ function applyEffect(state: GameState, effect: Effect): void {
           person.alive = false;
           person.fate = 'a hard road';
           chronicle(state, `${person.name} ${person.byname} did not get up again.`, 'grim');
+          mourn(state, person);
         }
       }
       break;
@@ -228,6 +230,7 @@ function applyEffect(state: GameState, effect: Effect): void {
         victim.health = 0;
         victim.fate = 'the land';
         chronicle(state, `${victim.name} ${victim.byname} was lost.`, 'grim');
+        mourn(state, victim);
       }
       break;
     }

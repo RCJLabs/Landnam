@@ -11,6 +11,8 @@ import { FIELD_HEIGHT } from './battlefield';
 import { effectiveStat } from './people';
 import { fighterPerson } from './battle';
 import { canAnchor, wallLinks } from './wall';
+import { kinOf } from './kin';
+import { NERVE_KIN_FELL } from '../data/kin';
 import { reachWithZoc, threatCount } from './zoc';
 import { leaderOf } from './people';
 
@@ -96,6 +98,18 @@ export function witnessFall(state: GameState, fallen: Combatant): void {
   for (const mate of shoulderMates) {
     const wasInWall = wallLinks(battle, mate).length > 0;
     shakeNerve(state, mate, NERVE_ALLY_DOWN + (wasInWall ? NERVE_WALL_SHATTERED : 0));
+  }
+
+  // Their own go harder, and from anywhere on the field — you do not have to
+  // be standing beside your brother to see him go down.
+  const person = fighterPerson(state, fallen.personId);
+  if (person && fallen.side === 'warband') {
+    const bound = kinOf(state.party.people, person);
+    const mate = bound && battle.combatants.find((c) => c.personId === bound.id);
+    if (mate && canAnchor(mate)) {
+      shakeNerve(state, mate, NERVE_KIN_FELL);
+      battle.log.push(`${bound.name} saw ${person.name} go down.`);
+    }
   }
 
   // The other side takes heart from it.

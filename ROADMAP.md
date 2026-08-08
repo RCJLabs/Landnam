@@ -362,7 +362,9 @@ would be measured, because an item that cannot be measured is a wish.
    who is angry, how rich the hall looks) — the same trick as the winter
    mark, which is the single most successful UI in the game.
 
-7. **[ ] People need kin, not just stats.** Grudges, morale and traits
+7. **[x] People need kin, not just stats.** Done: two pairs among the six,
+   with real ties, a heavy personal grief when one is lost, an extra nerve
+   shock on the field, and a line on the warband page naming who is whose. Grudges, morale and traits
    exist; relationships do not. Who is whose brother, who came off the
    knarr together. Despair ends more runs than anything else, so grief is
    already the game's chief killer — make it legible, and a death reshapes the
@@ -524,6 +526,33 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — Kin** — Item 7. Every deaths-by-fate reading this project
+  has taken says the same thing: despair ends more runs than hunger, cold
+  and steel together. The game has always killed through grief; it had just
+  never said WHOSE. Two pairs among the six who come off the knarr are now
+  bound — brothers, sisters, a husband and wife, a father and son when the
+  ages allow it — and the warband page names them: "Vemund and Thorgeir —
+  Thorgeir is brother to Vemund."
+  Losing one takes a third of the other's heart, on top of what losing
+  anyone takes out of the band, with a saga line that says which loss it
+  was. On the field, kin falling shakes the survivor from ANYWHERE — you
+  do not have to be stood beside your brother to see him go down. Both are
+  hooked at all five places a member of the band can die, explicitly and
+  without a clever central hook: a death that forgets to mourn is a bug
+  found months later.
+  Gender is DERIVED rather than stored. makePerson already decides it to
+  pick a name and throws it away, and the two pools are disjoint — asserted
+  by a lint, because that assertion is the only thing holding the derivation
+  up. No new field, no migration to reconstruct what was in plain sight.
+  Two existing fixtures had to learn about it, and one of them mattered:
+  wall.test's nerve comparison read 33.75 against 35 the day this landed,
+  because its "stranger" sometimes happened to be the observer's brother.
+  That file measures what the WALL is worth, so its fixture now makes
+  strangers on purpose — a test that measures the wall plus a coin flip
+  measures neither. Curve 77/22/10, unmoved. SAVE_VERSION 26; an older band
+  comes forward as strangers, because inventing families retroactively
+  would rewrite a run's history.
 
 - **2026-08-08 — The long game, finally measured** — Item 9, and it earned
   its place in the first ten minutes. The curve harness stops at day 169 and

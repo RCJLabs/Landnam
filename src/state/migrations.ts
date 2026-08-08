@@ -225,6 +225,11 @@ export const MIGRATIONS: Record<number, Migration> = {
   // on the terms the game was balanced against, so they come forward as
   // 'even' — which is also what an absent field reads as.
   24: (save) => ({ hardship: 'even', ...save, version: 25 }),
+  // People can be kin to one another. An older band came off the knarr as
+  // six strangers as far as the save is concerned, and inventing families
+  // for them retroactively would rewrite a run's history — so they stay
+  // strangers, and only new landings have people in them.
+  25: (save) => ({ ...save, version: 26 }),
 };
 
 export interface MigrationResult {

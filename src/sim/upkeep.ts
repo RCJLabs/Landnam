@@ -17,6 +17,7 @@ import { raidable, raidDifficulty, raidOdds } from './raid';
 import { startRaid } from './battleTurn';
 import { bonus } from './lore';
 import { chronicle } from './saga';
+import { mourn } from './kin';
 
 /**
  * The first thaw. Until 4.6 this ended the run in victory; now it is the day
@@ -106,6 +107,7 @@ function wound(state: GameState, person: Person, amount: number, fate: string): 
     person.alive = false;
     person.fate = fate;
     chronicle(state, `${person.name} ${person.byname} died of ${fate}. We had no ground fit to bury them in.`, 'grim');
+    mourn(state, person);
   }
 }
 

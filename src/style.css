@@ -1638,3 +1638,14 @@ button.hardship-chip {
 .mark-row.good .mark-value {
   color: var(--moss);
 }
+
+/* Who is whose, on the warband page. */
+.kin-line {
+  margin: 3px 0;
+  font-size: 13px;
+  color: var(--parchment-dim);
+}
+
+.kin-line.gone {
+  color: var(--blood);
+}

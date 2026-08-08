@@ -2,6 +2,7 @@
 
 import type { Rng } from '../rng';
 import { BYNAMES, MEN, WOMEN } from '../data/names';
+import { bindKin } from './kin';
 import { TRAITS, traitById } from '../data/traits';
 import type { Person, Stats } from '../state/types';
 
@@ -107,6 +108,9 @@ export function makeWarband(rng: Rng, size = WARBAND_SIZE): Person[] {
     usedNames.add(person.name);
     people.push(person);
   }
+  // Who is whose. Done here rather than in create.ts so every fixture that
+  // rolls a warband gets a band with people in it rather than six strangers.
+  bindKin(people, rng.derive('kin'));
   return people;
 }
 

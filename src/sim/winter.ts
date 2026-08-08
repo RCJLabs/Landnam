@@ -24,6 +24,7 @@ import { buildingById } from '../data/buildings';
 import { hardshipById } from '../data/hardship';
 import { living } from './people';
 import { chronicle } from './saga';
+import { mourn } from './kin';
 import { bonus } from './lore';
 import { firewoodPerNight, foodPerDay } from './upkeep';
 import { stream } from '../rng';
@@ -388,6 +389,7 @@ export function coldNight(state: GameState, severity: number): Person[] {
       person.fate = 'the sickness of that winter';
       person.diedOn = state.day;
       chronicle(state, `${person.name} did not wake. It was the cold that did it.`, 'grim');
+      mourn(state, person);
     }
   }
 

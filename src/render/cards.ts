@@ -26,6 +26,7 @@ import { button, el } from './svg';
 import type { Dispatch } from './ui';
 import { HARDSHIPS, hardshipById, type HardshipId } from '../data/hardship';
 import { lastHardship } from '../hardshipPref';
+import { kinPairs } from '../sim/kin';
 
 export function renderTitle(
   hasExistingSave: boolean,
@@ -525,6 +526,24 @@ export function renderWarband(state: GameState, close: () => void): HTMLElement 
     el('h2', {}, ['The Warband']),
     ...state.party.people.map(personRow),
   ]);
+
+  // Who is whose. The reason a death lands harder on one person than the
+  // rest, stated before it happens rather than after — that is the whole
+  // difference between grief the player can play around and grief that
+  // simply arrives.
+  const bound = kinPairs(state.party.people);
+  if (bound.length > 0) {
+    card.append(el('h3', {}, ['Kin']));
+    for (const [a, b] of bound) {
+      const gone = !a.alive || !b.alive;
+      card.append(
+        el('p', { class: `kin-line${gone ? ' gone' : ''}` }, [
+          `${a.name} and ${b.name} — ${b.name} is ${b.kin?.tie ?? 'kin'} to ${a.name}` +
+            (gone ? ', and one of them did not come back.' : '.'),
+        ]),
+      );
+    }
+  }
 
   // Bad blood is a fact about the band, so it belongs on the band's page.
   const open = state.grudges.filter((g) => !g.settled);

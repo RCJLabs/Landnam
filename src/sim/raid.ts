@@ -14,6 +14,7 @@ import { hands } from './people';
 import { wintersStood } from './calendar';
 import { hardshipById } from '../data/hardship';
 import { chronicle } from './saga';
+import { mourn } from './kin';
 import { learn } from './lore';
 import { note } from './tally';
 
@@ -241,6 +242,7 @@ export function sackSteading(state: GameState): Sack {
     person.alive = false;
     person.fate = `was carried off when ${home.name} was sacked`;
     person.diedOn = state.day;
+    mourn(state, person);
     out.taken.push(person.name);
   }
   if (out.taken.length > 0) {
