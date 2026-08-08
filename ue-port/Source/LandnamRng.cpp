@@ -77,24 +77,19 @@ double ULandnamRng::NextDouble()
 	return static_cast<double>(T ^ (T >> 14)) / 4294967296.0;
 }
 
-float ULandnamRng::Next()
-{
-	return static_cast<float>(NextDouble());
-}
-
 int32 ULandnamRng::IntRange(int32 Min, int32 Max)
 {
 	return Min + static_cast<int32>(FMath::FloorToDouble(NextDouble() * (static_cast<double>(Max) - Min + 1.0)));
 }
 
-float ULandnamRng::FloatRange(float Min, float Max)
+double ULandnamRng::FloatRange(double Min, double Max)
 {
-	return static_cast<float>(Min + NextDouble() * (static_cast<double>(Max) - Min));
+	return Min + NextDouble() * (Max - Min);
 }
 
-bool ULandnamRng::Chance(float P)
+bool ULandnamRng::Chance(double P)
 {
-	return NextDouble() < static_cast<double>(P);
+	return NextDouble() < P;
 }
 
 int32 ULandnamRng::Roll(int32 Count, int32 Sides)
@@ -127,12 +122,12 @@ TArray<int32> ULandnamRng::ShuffleIndices(int32 Num)
 	return Indices;
 }
 
-int32 ULandnamRng::WeightedIndex(const TArray<float>& Weights)
+int32 ULandnamRng::WeightedIndex(const TArray<double>& Weights)
 {
 	if (Weights.Num() == 0) return -1;
 
 	double Total = 0.0;
-	for (const float W : Weights) Total += FMath::Max(0.0, static_cast<double>(W));
+	for (const double W : Weights) Total += FMath::Max(0.0, W);
 
 	// All weights zero or negative: fall back to a flat pick, as the TS does.
 	if (Total <= 0.0) return PickIndex(Weights.Num());
@@ -140,7 +135,7 @@ int32 ULandnamRng::WeightedIndex(const TArray<float>& Weights)
 	double Roll = NextDouble() * Total;
 	for (int32 I = 0; I < Weights.Num(); I++)
 	{
-		Roll -= FMath::Max(0.0, static_cast<double>(Weights[I]));
+		Roll -= FMath::Max(0.0, Weights[I]);
 		if (Roll < 0.0) return I;
 	}
 	return Weights.Num() - 1;

@@ -60,21 +60,25 @@ public:
 
 	// ---- Drawing ----
 
-	/** Float in [0, 1). Every other draw is built on this one. */
-	UFUNCTION(BlueprintCallable, Category = "Landnam|RNG")
-	float Next();
+	/**
+	 * Float in [0, 1). Every other draw is built on this one.
+	 * Returns double, not float: JS numbers are doubles, and narrowing here would
+	 * cost half the mantissa and break parity in the seventh digit.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Landnam|RNG", meta = (DisplayName = "Next"))
+	double NextDouble();
 
 	/** Integer in [Min, Max], both inclusive. */
 	UFUNCTION(BlueprintCallable, Category = "Landnam|RNG", meta = (DisplayName = "Next Int In Range"))
 	int32 IntRange(int32 Min, int32 Max);
 
-	/** Float in [Min, Max). */
+	/** Float in [Min, Max). Double throughout, for the reason NextDouble gives. */
 	UFUNCTION(BlueprintCallable, Category = "Landnam|RNG", meta = (DisplayName = "Next Float In Range"))
-	float FloatRange(float Min, float Max);
+	double FloatRange(double Min, double Max);
 
 	/** True with probability P. */
 	UFUNCTION(BlueprintCallable, Category = "Landnam|RNG")
-	bool Chance(float P);
+	bool Chance(double P);
 
 	/** Sum of Count dice with Sides faces, e.g. Roll(2, 6). */
 	UFUNCTION(BlueprintCallable, Category = "Landnam|RNG")
@@ -97,7 +101,7 @@ public:
 
 	/** An index chosen in proportion to Weights — the TS `weighted()`. Negatives count as 0. */
 	UFUNCTION(BlueprintCallable, Category = "Landnam|RNG")
-	int32 WeightedIndex(const TArray<float>& Weights);
+	int32 WeightedIndex(const TArray<double>& Weights);
 
 	/** A derived independent stream, e.g. per-turn or per-hex — the TS `derive()`. */
 	UFUNCTION(BlueprintCallable, Category = "Landnam|RNG")
@@ -106,9 +110,6 @@ public:
 	/** The seed string this generator was built from, for saves and debug display. */
 	UFUNCTION(BlueprintPure, Category = "Landnam|RNG")
 	const FString& GetSeed() const { return Seed; }
-
-	/** Double-precision draw. Next() narrows this to float for Blueprint. */
-	double NextDouble();
 
 private:
 	void Init(const FString& InSeed);

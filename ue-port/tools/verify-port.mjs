@@ -9,6 +9,14 @@
 // problem in Unreal is a compile error, not a behavioural one. It is deliberately
 // NOT an import of src/hex or src/rng: importing the original would only prove the
 // original agrees with itself.
+//
+// KNOWN BLIND SPOT — precision. JavaScript has one number type, a double, so this
+// file cannot see a narrowing that only exists in C++. `FloatRange` originally
+// returned `float`, computing in double and throwing away half the mantissa on the
+// way out; every check here passed while Unreal was wrong in the seventh digit, and
+// only the real automation test caught it. If a `static_cast<float>` or a `float`
+// return is ever reintroduced on the C++ side, model it here with `Math.fround()`
+// at exactly that point — that is the only way this harness can represent one.
 
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

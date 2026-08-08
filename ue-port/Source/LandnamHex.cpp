@@ -259,7 +259,7 @@ FHexPath UHexLib::FindPathNative(const FHex& Start, const FHex& Goal, TFunctionR
 	if (Start == Goal)
 	{
 		Result.Hexes.Add(Start);
-		Result.Cost = 0.0f;
+		Result.Cost = 0.0;
 		Result.bReachable = true;
 		return Result;
 	}
@@ -293,7 +293,7 @@ FHexPath UHexLib::FindPathNative(const FHex& Start, const FHex& Goal, TFunctionR
 			Algo::Reverse(Reversed);
 
 			Result.Hexes = MoveTemp(Reversed);
-			Result.Cost = static_cast<float>(GScore[Goal]);
+			Result.Cost = GScore[Goal];
 			Result.bReachable = true;
 			return Result;
 		}
@@ -374,10 +374,10 @@ FHexPath UHexLib::FindPath(const FHex& Start, const FHex& Goal, const FHexCostDe
 	return FindPathNative(Start, Goal, [&Cost](const FHex& H) { return CostFromDelegate(Cost, H); });
 }
 
-TArray<FHexReach> UHexLib::Reachable(const FHex& Start, float Budget, const FHexCostDelegate& Cost)
+TArray<FHexReach> UHexLib::Reachable(const FHex& Start, double Budget, const FHexCostDelegate& Cost)
 {
 	const TMap<FHex, double> Best = ReachableNative(
-		Start, static_cast<double>(Budget),
+		Start, Budget,
 		[&Cost](const FHex& H) { return CostFromDelegate(Cost, H); });
 
 	TArray<FHexReach> Out;
@@ -386,7 +386,7 @@ TArray<FHexReach> UHexLib::Reachable(const FHex& Start, float Budget, const FHex
 	{
 		FHexReach Entry;
 		Entry.Hex = Pair.Key;
-		Entry.Cost = static_cast<float>(Pair.Value);
+		Entry.Cost = Pair.Value;
 		Out.Add(Entry);
 	}
 	return Out;

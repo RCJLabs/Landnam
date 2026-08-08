@@ -385,7 +385,7 @@ namespace
 				const FJsonArray& Want = Case->GetArrayField(TEXT("chances"));
 				for (int32 D = 0; D < Want.Num(); D++)
 				{
-					const bool Got = Rng->Chance(0.3f);
+					const bool Got = Rng->Chance(0.3);
 					S.Expect(Got == Want[D]->AsBool(),
 						FString::Printf(TEXT("%s chance draw %d: got %s"), *Name, D, Got ? TEXT("true") : TEXT("false")));
 				}
@@ -396,7 +396,7 @@ namespace
 				const FJsonArray& Want = Case->GetArrayField(TEXT("floats"));
 				for (int32 D = 0; D < Want.Num(); D++)
 				{
-					S.ExpectNear(Rng->FloatRange(-2.5f, 7.5f), Want[D]->AsNumber(),
+					S.ExpectNear(Rng->FloatRange(-2.5, 7.5), Want[D]->AsNumber(),
 						FString::Printf(TEXT("%s float draw %d"), *Name, D));
 				}
 			}
@@ -416,10 +416,10 @@ namespace
 			}
 
 			{
-				TArray<float> Weights;
+				TArray<double> Weights;
 				for (const TSharedPtr<FJsonValue>& W : Case->GetArrayField(TEXT("weights")))
 				{
-					Weights.Add(static_cast<float>(W->AsNumber()));
+					Weights.Add(W->AsNumber());
 				}
 				ULandnamRng* Rng = ULandnamRng::MakeStream(Seed, Stream);
 				const FJsonArray& Want = Case->GetArrayField(TEXT("weighted"));

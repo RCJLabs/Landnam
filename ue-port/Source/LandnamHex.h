@@ -87,7 +87,7 @@ struct FHexPath
 
 	/** Total movement cost, or -1 when unreachable (the TS returns Infinity). */
 	UPROPERTY(BlueprintReadOnly, Category = "Landnam|Hex")
-	float Cost = -1.0f;
+	double Cost = -1.0;
 
 	/** Convenience for Blueprint branching, so nobody has to remember the -1. */
 	UPROPERTY(BlueprintReadOnly, Category = "Landnam|Hex")
@@ -104,7 +104,7 @@ struct FHexReach
 	FHex Hex;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Landnam|Hex")
-	float Cost = 0.0f;
+	double Cost = 0.0;
 };
 
 /**
@@ -226,7 +226,7 @@ public:
 
 	/** Every hex reachable within Budget, with its cheapest cost — movement range. */
 	UFUNCTION(BlueprintCallable, Category = "Landnam|Hex")
-	static TArray<FHexReach> Reachable(const FHex& Start, float Budget, const FHexCostDelegate& Cost);
+	static TArray<FHexReach> Reachable(const FHex& Start, double Budget, const FHexCostDelegate& Cost);
 
 	// C++-side entry points: take any callable and skip the delegate boxing. Named
 	// apart from the Blueprint versions rather than overloaded, because UnrealHeaderTool
