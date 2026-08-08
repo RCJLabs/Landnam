@@ -152,16 +152,33 @@ Mind the doubled folder name: module code belongs in `Source\LandnamUE\`, next t
 module folder, so files one level too high are ignored without any error, and the first
 sign of trouble is Blueprint not finding the nodes in Step 8.
 
-Set the two paths once and let PowerShell do the copying:
+Set the two paths once, and confirm them before copying anything:
 
 ```powershell
 $kit  = "$HOME\Documents\Landnam\ue-port"              # adjust to your clone
 $proj = "$HOME\Documents\Unreal Projects\LandnamUE"
 
+Test-Path "$kit\Source\LandnamHex.h"
+Test-Path "$proj\Source\LandnamUE\LandnamUE.Build.cs"
+```
+
+Both must print **True**. A wrong path otherwise copies nothing and only shows up much
+later as a baffling build error. Once both are True:
+
+```powershell
 Copy-Item "$kit\Source\*" "$proj\Source\LandnamUE\"
 New-Item -ItemType Directory -Force -Path "$proj\Content\Data" | Out-Null
 Copy-Item "$kit\Content\Data\*" "$proj\Content\Data\"
 ```
+
+**Or do it in Explorer**, which is just as good: open `ue-port\Source`, press `Ctrl+A`
+then `Ctrl+C`, click into `LandnamUE\Source\LandnamUE`, press `Ctrl+V`. Then make a
+`Content\Data` folder inside `LandnamUE` and copy the four JSON files across the same way.
+
+While you are in there, one thing looks wrong but is not: `LandnamHex` and `LandnamRng`
+each appear **twice** in the kit folder. Windows hides known extensions by default, so
+the `.h` and the `.cpp` show the same name — the Type column tells them apart. Six
+entries, six real files.
 
 These are copies, not links, and that is deliberate — the Unreal project is its own repo
 and should not be entangled with the game's. The trade is that regenerating the kit means
@@ -169,35 +186,42 @@ re-running these two `Copy-Item` lines.
 
 ### 2c. Declare the Json module
 
-Open `Source/LandnamUE/LandnamUE.Build.cs` in any text editor and find the line beginning:
-
-```csharp
-PublicDependencyModuleNames.AddRange(new string[] { ...
+```powershell
+notepad "$proj\Source\LandnamUE\LandnamUE.Build.cs"
 ```
 
-**Append `"Json"` to the list that is already there.** Do not replace it — the Top Down
-template brings its own entries (`EnhancedInput`, `NavigationSystem`, `AIModule`, `UMG`
-and others depending on the variant), and every one of them is still needed. The result
-looks something like:
+Find the line beginning `PublicDependencyModuleNames.AddRange(new string[] {`. It already
+has several entries — the Top Down template brings its own (`EnhancedInput`,
+`NavigationSystem`, `AIModule`, `UMG` and more, depending on the variant).
+
+**Add `, "Json"` immediately before the closing `}`.** Every existing entry stays; you are
+appending one word, not rewriting the line. So if yours reads:
+
+```csharp
+PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+```
+
+it becomes:
 
 ```csharp
 PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Json" });
 ```
 
-`LandnamParityTest.cpp` reads `golden.json` with Unreal's JSON parser, and Unreal refuses
-to link a module you have not declared. Miss this and Step 3 fails on that one file.
+Save and close. `LandnamParityTest.cpp` reads `golden.json` with Unreal's JSON parser, and
+Unreal refuses to link a module you have not declared. Miss this and Step 3 fails on that
+one file.
 
 ### 2d. Check it before the long build
 
 ```powershell
-dir "$proj\Source\LandnamUE"
-dir "$proj\Content\Data"
+(dir "$proj\Source\LandnamUE").Count
+(dir "$proj\Content\Data").Count
 Select-String -Path "$proj\Source\LandnamUE\LandnamUE.Build.cs" -Pattern "Json"
 ```
 
-Expect six `Landnam*` files plus `LandnamUE.Build.cs` and the bootstrap class; four
-`.json` files, with `golden.json` much the largest at around 312 KB; and the last command
-echoing the dependency line back. Silence from that last one means the edit did not save.
+Expected answers: **11**, **4**, and one line echoing your dependency list with `Json` in
+it. Eleven is the five files Step 1 created plus the six you just copied. Silence from the
+third command means Notepad did not save.
 
 `golden.json` is a plain file rather than a Unreal asset, so the Content Browser will not
 show it. That is expected — the parity test reads it straight off disk.
@@ -209,15 +233,21 @@ show it. That is expected — the parity test reads it straight off disk.
 New files need a full build; Unreal's Live Coding only handles edits to files it already
 knows about.
 
-1. In Explorer, right-click `LandnamUE.uproject` → **Generate Visual Studio project files**.
-   (On Windows 11 it may be under *Show more options*.)
-2. Open `LandnamUE.sln`.
-3. Set the configuration to **Development Editor** and the platform to **Win64**.
-4. **Build → Build Solution**, and wait.
-5. Reopen the project in Unreal.
+1. **Close the Unreal editor** if it is open.
+2. In Explorer, open the `LandnamUE` project folder and right-click **`LandnamUE.uproject`**
+   → *Show more options* (Windows 11 hides it there) → **Generate Visual Studio project
+   files**. It takes about half a minute and produces `LandnamUE.sln`.
+3. Open **`LandnamUE.sln`**.
+4. In the toolbar, set the two dropdowns to **Development Editor** and **Win64**.
+5. **Build → Build Solution** (`Ctrl+Shift+B`), and watch the Output pane.
+6. Expect **5 to 15 minutes** the first time — it is compiling the engine headers your
+   module touches, not just six files. It is not hung. You want `Build: 1 succeeded`.
+7. Reopen the project in Unreal.
 
-If the build fails, read the *first* error, not the last — later ones are usually
-knock-on effects. The most common cause here is `"Json"` missing from `Build.cs`.
+This is the first time this C++ meets a compiler on your machine, so an error here is
+ordinary, not a sign something is deeply wrong. Read the *first* error, not the last —
+the rest are usually knock-on effects. The most common cause is `"Json"` missing from
+`Build.cs`.
 
 ---
 
