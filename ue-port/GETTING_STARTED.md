@@ -394,6 +394,9 @@ change it at runtime, so every tile would be stuck grey.
 2. In **My Blueprint**, add a variable named `Hex`, type **Hex** — that is the struct from
    the C++ library. Tick **Instance Editable**.
 3. Add a variable `TileMaterial`, type **Material Instance Dynamic** (Object Reference).
+   Add another named `Grid`, type **BP Hex Grid → Object Reference**, **Instance Editable**
+   — Step 9 has the tile call back to its grid through this, and Step 8 fills it in.
+   (`BP_HexGrid` does not exist yet, so add this one after Step 8 creates it.)
 4. On **Event BeginPlay**:
    - `Static Mesh` → **Create Dynamic Material Instance** (Element Index 0, Source Material
      `M_HexTile`) → promote the result into `TileMaterial`.
@@ -440,17 +443,27 @@ On **Event BeginPlay**:
 1. **Make Hex** (Q `0`, R `0`) → feed into **Hex Range** along with `Radius`.
    This returns every hex within `Radius` steps — the same function the web game's
    world map uses.
-2. **For Each Loop** over that array. For each element:
-   - **Hex To World** (Hex = element, Size = `HexSize`) → gives a world location.
-   - **Spawn Actor from Class**: Class = `TileClass`, Location = that result,
-     Collision Handling = **Always Spawn, Ignore Collisions**.
-   - On the returned actor: **Set Hex** = the loop element.
+2. **For Each Loop** over that array. For each element, chained by their exec pins:
+   - **Hex To World** (Hex = element, Size = `HexSize`) → gives a world location. Set its
+     **Z** pin to `20` so tiles are not buried in whatever the level's floor is.
+   - **Spawn Actor from Class**: Class = `TileClass`, Collision Handling =
+     **Always Spawn, Ignore Collisions**. Right-click its **Spawn Transform** pin →
+     **Split Struct Pin**, then plug the location into the **Location** pin that appears.
+   - Drag off the spawned actor's **Return Value** → **Set Hex** = the loop element.
+   - Drag off **Return Value** again → **Set Grid**. For its value, right-click empty
+     space → *Get a reference to self*. Step 9 needs this to call back.
    - **Add** to `Tiles`: Key = loop element, Value = the spawned actor.
-3. After the loop: **Get Player Controller (0)** → **Set Show Mouse Cursor** `true`,
-   and **Set Enable Click Events** `true`.
+3. After the loop — from **Completed**, not Loop Body: **Get Player Controller (0)** →
+   **Set Show Mouse Cursor** `true`, and **Set Enable Click Events** `true`.
 
-Drag `BP_HexGrid` into the level. Delete the template's floor if it gets in the way, and
-lift the grid actor to `Z = 100` or so if tiles are buried in it.
+Drag `BP_HexGrid` into the level and set its Location to `0, 0, 0`. Tiles spawn at
+absolute world coordinates, so the actor's own position does not move them; parking it at
+the origin keeps the two in agreement.
+
+The Top Down template ships a demo playground that will swallow the grid. Delete the
+**Playground** folder in the Outliner — keep Lighting, `NavMeshBoundsVolume` and
+`PlayerStart` — and save the level. The character will fall into the void afterwards,
+which does not matter while you are looking at a grid.
 
 Press **Play**. You should see 127 hexes in a neat hexagonal field — radius 6 — with no
 gaps and no overlaps.
@@ -461,23 +474,59 @@ That field is `HexRange`, straight out of `src/hex/grid.ts`. You did not reimple
 
 ## Step 9 — Click a tile, light up its neighbours
 
-In **BP_HexTile**:
+Build the grid's function first, so the tile has something to call.
 
-1. Select the **Static Mesh** component. In Details, search for *collision*, and set
-   **Collision Presets** to **BlockAll** so clicks can hit it.
-2. In the **Class Defaults**, or on the component, ensure clicks are received.
-3. Add the event **On Clicked** (right-click in the graph → *Add Event → Actor → On Clicked*).
-4. From it: **Get Owner**… actually simpler — add a variable `Grid` of type
-   `BP_HexGrid` (Object Reference), set it from the grid when spawning in Step 8, then
-   call `Grid → HighlightAround(Hex)`.
+### 9a. Give the mesh collision
 
-In **BP_HexGrid**, add a function **HighlightAround** with a `Centre` input of type **Hex**:
+A mesh built in Modeling Mode usually has none, and a click passes straight through it.
 
-1. **For Each Loop** over `Tiles` (use *Get Keys* / *Values*) → call `SetColour` with a
-   plain grey. This clears the last selection.
-2. **Hex Neighbors** (`Centre`) → **For Each Loop** → **Find** in `Tiles` → if valid,
-   `SetColour` with a warm colour.
-3. Finally, look up `Centre` itself in `Tiles` and `SetColour` it something brighter.
+1. Double-click `SM_HexTile`.
+2. Menu bar → **Collision → Add Box Simplified Collision**. Save and close.
+3. Back in `BP_HexTile`, select the **Static Mesh** component and set
+   **Collision Presets** to **BlockAll**.
+
+### 9b. BP_HexGrid: the HighlightAround function
+
+**My Blueprint → Functions → +**, name it `HighlightAround`. Select its entry node and add
+an input called `Centre`, type **Hex**.
+
+Three sections, chained by their exec pins:
+
+**Clear what was lit last time**
+
+- `Tiles` (Get) → drag off → **Values**. That is every tile, as an array.
+- Drag off that → **For Each Loop**.
+- In the body: drag the **Array Element** → **Set Colour**. Click the Colour pin's swatch
+  and choose a dark grey.
+- Entry node ▶ this loop.
+
+**Light the six neighbours**
+
+- **Hex Neighbors**, with `Centre` plugged in.
+- Drag off its output → **For Each Loop**.
+- In the body: `Tiles` (Get) → drag off → **Find**, with the loop's **Array Element** as
+  the **Key**.
+- Drag off Find's **Found** boolean → **Branch**.
+- Branch **True** → **Set Colour** on Find's **Value**, in a warm amber.
+- Loop 1's **Completed** ▶ this loop.
+
+**Light the clicked hex itself**
+
+- `Tiles` (Get) → **Find**, Key = `Centre` → **Branch** on Found → True → **Set Colour**
+  on the Value, in a bright yellow.
+- Loop 2's **Completed** ▶ this.
+
+Compile and save.
+
+### 9c. BP_HexTile: report the click
+
+1. In the Event Graph, right-click → search `On Clicked` → add
+   **On Clicked (ActorOnClickedSignature)**.
+2. Drag `Grid` in (Get) → drag off it → search `Highlight Around`.
+3. Plug the tile's own `Hex` (Get) into that call's **Centre** pin.
+4. Chain: **On Clicked** ▶ **Highlight Around**.
+
+Compile and save.
 
 Press Play and click around.
 
@@ -489,6 +538,11 @@ works without edge cases.
 
 **You have now built the foundation of the battle grid.** Selection, movement range,
 and pathing are the same three functions with different colours.
+
+If clicking does nothing, work down this list: the mesh has no collision (9a); the tile's
+`Grid` was never filled in when it spawned (Step 8); or `Show Mouse Cursor` and
+`Enable Click Events` were wired to the loop's Loop Body rather than its **Completed** pin,
+so they only ran mid-loop or not at all.
 
 ---
 
