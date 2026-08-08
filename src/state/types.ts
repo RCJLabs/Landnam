@@ -271,6 +271,12 @@ export interface Battle {
   raid?: boolean;
   /** Set when the fight is FOR a place — winning it is what sacks it. */
   placeId?: string;
+  /**
+   * The band came out of the water at them rather than up the road. They
+   * are a man light and badly shaken; the take is bigger and so is the
+   * price of losing. See sim/sea.ts.
+   */
+  strandhogg?: boolean;
   /** Set when the band fell on a neighbour — winning is what empties them. */
   campId?: string;
   /** The leader's war-cry has been spent. Once a fight, and it shows. */

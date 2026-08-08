@@ -370,7 +370,9 @@ would be measured, because an item that cannot be measured is a wish.
    already the game's chief killer — make it legible, and a death reshapes the
    survivors in a way the player can see coming and work against.
 
-8. **[ ] The sea wants its own verbs.** Hull, cargo and sea fights shipped,
+8. **[x] The sea wants its own verbs.** Done: the strandhögg — falling on a
+   coastal place from the ship. Fewer of them and shaken, a bigger hold, a
+   heavier standing hit, and a sea fight's stakes if it goes wrong. Hull, cargo and sea fights shipped,
    but rowing is still just walking on water. A coastal raiding run — load
    the knarr, go out for N days, hit places along the coast, come home
    heavy or not at all — would turn the sea into the game's risk engine
@@ -526,6 +528,27 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The strandhögg** — Item 8, and the last of the audit's
+  additive half. The sea already had a hull that could be holed, cargo that
+  could go over the side and hull-to-hull fights on authored decks — but
+  every VERB that mattered was still a land verb, so rowing was walking on
+  water. This is the one the period actually ran on: afloat beside a
+  guarded place, the band can come out of the water at it instead of
+  walking up the road.
+  It earns its place by being a different bargain rather than a re-skin of
+  the same one. Nobody watches the water the way they watch the road, so
+  the garrison is a man lighter and starts shaken by 25 nerve. The hold
+  takes half again what backs could carry. But the coast remembers a sail
+  longer than it remembers men — the standing hit is 1.5×. And there is no
+  line of retreat off a beach: lose, and it settles as a sea fight does,
+  packs over the side and the hull holed getting clear. Better if you win,
+  much worse if you do not, on the same target.
+  Nine tests, including the two that keep it honest: it is never offered
+  from dry land or against a place with no garrison to surprise, and the
+  reduced garrison has a floor so the deed can never become a free take.
+  The bot takes the ship's way in the same commit whenever it is afloat
+  beside a mark with four sworn still standing. Curve 77/22/10, unmoved.
 
 - **2026-08-08 — Kin** — Item 7. Every deaths-by-fate reading this project
   has taken says the same thing: despair ends more runs than hunger, cold

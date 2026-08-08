@@ -14,10 +14,11 @@ import { fieldCrew, permittedStep } from './expedition';
 import { bargain, bargainBlocker, canFallOn, fallOn, seeNeighbours } from './neighbours';
 import { placeById, sackBlocker, settlePlace } from './places';
 import { placeKind } from '../data/places';
-import { mendHull } from './sea';
+import { mendHull, strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { bonus } from './lore';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
+import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
 import { THING_OPENING } from '../data/thing';
 import { passDay } from './upkeep';
@@ -32,6 +33,7 @@ export type TravelAction =
   | { type: 'BARTER'; id: string }
   | { type: 'FALL_ON'; id: string }
   | { type: 'SACK_PLACE'; id: string }
+  | { type: 'STRANDHOGG' }
   | { type: 'CALL_THING' }
   | { type: 'RULE_ON' }
   | { type: 'LAY_DOWN_RULE' };
@@ -429,6 +431,29 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       advance(state, 1);
       if (state.end) return state;
       reveal(state);
+      return state;
+    }
+
+    // The ship's way in. Same place, taken off the water: they are lighter
+    // and shaken, the hold takes more, and losing costs the cargo and the
+    // hull. See sim/sea.ts.
+    case 'STRANDHOGG': {
+      const mark = strandTarget(state);
+      if (!mark) return prev;
+      const def = placeKind(mark.kind);
+      const ground = state.world.tiles[key(mark.at)]?.terrain ?? 'shore';
+      startBattle(state, ground, Math.max(0, (def.garrison ?? 1) - STRAND_FEWER), {
+        placeId: mark.id,
+      });
+      if (state.battle) {
+        state.battle.strandhogg = true;
+        // Caught between the water and their own gate. Shaken, not fewer
+        // again — the count is already the surprise, this is the nerve.
+        for (const c of state.battle.combatants) {
+          if (c.side === 'foe') shakeNerve(state, c, STRAND_SHAKEN);
+        }
+        state.battle.log.push('They had not thought to watch the water.');
+      }
       return state;
     }
 

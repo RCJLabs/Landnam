@@ -11,6 +11,7 @@ import { stream, type Rng } from '../rng';
 import type { GameState, Place, World } from '../state/types';
 import { PLACE_KINDS, placeKind } from '../data/places';
 import { chronicle } from './saga';
+import { STRAND_HAUL, STRAND_INFAMY } from './sea';
 import { learn, knows } from './lore';
 import { shiftStanding } from './neighbours';
 import { note } from './tally';
@@ -78,13 +79,16 @@ export const PLACE_REASON: Record<PlaceBlock, string> = {
  * Loot into the packs, a lesson if one was there to take, the place marked
  * taken for good, and the coast's opinion moved where anyone owns it.
  */
-export function settlePlace(state: GameState, id: string): void {
+export function settlePlace(state: GameState, id: string, fromSea = false): void {
   const place = placeById(state, id);
   if (!place || place.sackedOn !== undefined) return;
   const def = placeKind(place.kind);
 
-  state.party.food += def.loot.food;
-  state.party.firewood += def.loot.firewood;
+  // A hold takes more than backs can carry, and the coast remembers a sail
+  // far longer than it remembers men on the road. See sim/sea.ts.
+  const haul = fromSea ? STRAND_HAUL : 1;
+  state.party.food += Math.round(def.loot.food * haul);
+  state.party.firewood += Math.round(def.loot.firewood * haul);
   state.party.morale = Math.min(100, Math.max(0, state.party.morale + def.loot.morale));
   place.sackedOn = state.day;
   note(state, 'sackings');
@@ -100,8 +104,13 @@ export function settlePlace(state: GameState, id: string): void {
     const nearest = [...state.neighbours].sort(
       (a, b) => distance(a.at, place.at) - distance(b.at, place.at),
     )[0];
-    if (nearest) shiftStanding(state, nearest.id, def.infamy);
+    if (nearest) {
+      shiftStanding(state, nearest.id, Math.round(def.infamy * (fromSea ? STRAND_INFAMY : 1)));
+    }
   }
 
   chronicle(state, def.sackLine, def.garrison !== null ? 'grim' : 'good');
+  if (fromSea) {
+    chronicle(state, 'We loaded the knarr to the thwarts and were gone on the tide.', 'good');
+  }
 }

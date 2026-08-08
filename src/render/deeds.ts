@@ -18,6 +18,7 @@ import { BARTER_FOOD } from '../data/clans';
 import { FEAST_FOOD } from '../data/thing';
 import { wintersStood } from '../sim/calendar';
 import { thingCooldown, thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
+import { strandTarget } from '../sim/sea';
 import { button, el } from './svg';
 
 export interface Deed {
@@ -173,6 +174,23 @@ export function deedsFor(
           : 'Close the saga here, with the rule newly granted. Nothing comes after it.',
       tone: 'weighty',
       run: () => dispatch({ type: 'LAY_DOWN_RULE' }),
+    });
+  }
+
+  // The ship's way in. Only ever offered afloat beside a place worth taking,
+  // and the blurb names the whole bargain — the take, and what losing costs.
+  const strand = strandTarget(state);
+  if (strand) {
+    const def = placeKind(strand.kind);
+    deeds.push({
+      id: 'strandhogg',
+      label: `Fall on ${def.name.toLowerCase()} from the ship`,
+      blurb:
+        'They do not watch the water. One fewer of them, and shaken — and the hold ' +
+        'takes half again what backs could carry. Lose, and the packs go over the ' +
+        'side and the hull with them.',
+      tone: 'weighty',
+      run: () => dispatch({ type: 'STRANDHOGG' }),
     });
   }
 

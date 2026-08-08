@@ -231,10 +231,12 @@ export function leaveBattle(state: GameState): Aftermath | undefined {
   // A fight FOR something pays out only if the field was won. A place lost
   // is left standing to come back for; a camp that threw you back keeps its
   // stores and its opinion of you.
-  if (battle.placeId && won) settlePlace(state, battle.placeId);
+  if (battle.placeId && won) settlePlace(state, battle.placeId, battle.strandhogg === true);
   if (battle.campId && won) sackCamp(state, battle.campId);
-  // Afloat, the hull and the packs are always at stake, both ways.
-  if (isSeaFight(battle)) settleSeaFight(state, won);
+  // Afloat, the hull and the packs are always at stake, both ways — and a
+  // raid off the water is fought with the ship behind you, so it settles the
+  // same way. There is no walking home from a beach you were thrown off.
+  if (isSeaFight(battle) || battle.strandhogg) settleSeaFight(state, won);
 
   // Their man, settled up. He is either dead for good or he is out there
   // with one more scar and a longer memory — the recurring antagonist is

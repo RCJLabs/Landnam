@@ -70,6 +70,7 @@ import { isWarbandTurn } from '../src/sim/battle';
 import { reachWithZoc } from '../src/sim/zoc';
 import { reachTargets } from '../src/sim/battleActions';
 import { placeHere } from '../src/sim/places';
+import { strandTarget } from '../src/sim/sea';
 import { placeKind } from '../src/data/places';
 import { bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
 import { canCallThing, hasSpeakers, yearsRuled } from '../src/sim/thing';
@@ -181,6 +182,14 @@ function step(state: GameState): Action {
 
   const days = state.party.food / Math.max(1, foodPerDay(state));
   const nights = state.party.firewood / Math.max(1, firewoodPerNight(state));
+
+  // The game gained the ship's way in, so the bot takes it in the same
+  // commit. Off the water it is strictly the better approach when you mean
+  // to win — fewer of them, shaken, and a bigger hold — so an average
+  // player afloat beside a place takes it from the boat.
+  if (strandTarget(state) && sworn(state.party.people).length >= 4) {
+    return { type:'STRANDHOGG' };
+  }
 
   // A place worth taking, under our feet, still standing: take it. The rule
   // that put this here is the same one that taught the bot to swing — the

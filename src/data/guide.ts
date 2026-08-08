@@ -57,7 +57,7 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-sea',
     title: 'The Sea',
-    body: 'The knarr rows coastal water — sea with land in sight — faster than legs walk. Fights afloat are fought hull to hull, and losing one puts cargo over the side and holes the hull; camp ashore a night to mend her. The nets are best at sea, but there is no forage and no firewood out there.',
+    body: 'The knarr rows coastal water — sea with land in sight — faster than legs walk. Fights afloat are fought hull to hull, and losing one puts cargo over the side and holes the hull; camp ashore a night to mend her. Afloat beside a guarded place you may fall on it FROM THE SHIP: they do not watch the water, so they are fewer and shaken, and the hold carries half again what backs could — but losing costs the cargo and the hull. The nets are best at sea, and there is no forage out there.',
   },
   {
     id: 'the-long-game',

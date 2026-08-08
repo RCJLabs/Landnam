@@ -8,7 +8,9 @@
 // ashore and some timber put her right. Short of sunk, on purpose: a run
 // must end by decision, not by one bad fight on the water.
 
-import type { Battle, GameState } from '../state/types';
+import type { Battle, GameState, Place } from '../state/types';
+import { distance, key } from '../hex';
+import { placeKind } from '../data/places';
 import { stream } from '../rng';
 import { chronicle } from './saga';
 
@@ -22,6 +24,51 @@ export const SEA_SALVAGE = { food: 5, firewood: 4 };
 export const HULL_MEND_WOOD = 2;
 
 /** True when this battle is being fought afloat, hulls at stake. */
+/**
+ * The strandhögg: falling on a coastal place FROM THE SHIP.
+ *
+ * The sea had a hull, cargo and hull-to-hull fights, but rowing was still
+ * only walking on water — every verb that mattered was a land verb. This is
+ * the one the period actually ran on. The knarr comes out of the water at a
+ * place standing on the shore, and the difference from walking up to the
+ * same gate is the whole point:
+ *
+ *   - they are not ready. Nobody watches the water the way they watch the
+ *     road, so the garrison is a man lighter and starts shaken.
+ *   - the hold takes more than backs can carry, so the take is larger.
+ *   - and there is no line of retreat. Lose, and it is a sea fight's stakes
+ *     — the packs go over the side and the hull is holed getting clear.
+ *   - the coast remembers a sail longer than it remembers a raid. The
+ *     standing hit is heavier.
+ *
+ * The decision it creates is real: the same place, taken two ways, and the
+ * ship's way is better if you win and much worse if you do not.
+ */
+
+/** What a man not expecting a sail is worth: one fewer of them, and shaken. */
+export const STRAND_FEWER = 1;
+export const STRAND_SHAKEN = 25;
+/** What the hold carries home over what backs could. */
+export const STRAND_HAUL = 1.4;
+/** How much worse the coast takes a raid that came out of the water. */
+export const STRAND_INFAMY = 1.5;
+
+/** A place on the shore, reachable from the water we are floating on. */
+export function strandTarget(state: GameState): Place | undefined {
+  if (state.world.tiles[key(state.party.at)]?.terrain !== 'ocean') return undefined;
+  return state.world.places.find(
+    (p) =>
+      p.sackedOn === undefined &&
+      placeKind(p.kind).garrison !== null &&
+      distance(p.at, state.party.at) === 1,
+  );
+}
+
+export function canStrandhogg(state: GameState): boolean {
+  if (state.end || state.event || state.battle) return false;
+  return strandTarget(state) !== undefined;
+}
+
 export function isSeaFight(battle: Battle): boolean {
   return battle.terrain === 'ocean' && !battle.raid;
 }
