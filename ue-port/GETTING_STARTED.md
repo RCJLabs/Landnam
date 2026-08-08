@@ -420,6 +420,21 @@ Add these variables:
 | `TileClass` | Class Reference → BP_HexTile | `BP_HexTile` | yes |
 | `Tiles` | Map: **Hex** → **BP_HexTile** (Object Reference) | — | no |
 
+Two fiddly ones:
+
+- **`TileClass`** must be a **Class Reference**, not an Object Reference. A class
+  reference says "spawn one of these"; an object reference points at one that already
+  exists, which is not what you have yet.
+- **`Tiles`**: set the type to `Hex`, click the **container icon** beside the type
+  dropdown and choose **Map**, and only then set the *second* dropdown that appears to
+  `BP_HexTile` → Object Reference. **The first dropdown is the key, the second is the
+  value** — get them the wrong way round and the Add node later offers an "Actions for
+  2 pins" conversion menu instead of accepting the wire. Hover its Key pin to check:
+  it should say `Hex`, not `BP Hex Tile Object Reference`.
+
+Compile once before filling in the defaults — Blueprint will not let you set them until
+the variables exist.
+
 On **Event BeginPlay**:
 
 1. **Make Hex** (Q `0`, R `0`) → feed into **Hex Range** along with `Radius`.
