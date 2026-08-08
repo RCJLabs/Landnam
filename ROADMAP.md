@@ -428,7 +428,13 @@ whole systems do not.
    decision that has been deferred three times because the instrument was
    untrustworthy. The instrument is trustworthy now.
 
-6. **[ ] Make the content-reach probe a permanent fixture.** Everything
+6. **[x] Make the content-reach probe a permanent fixture.** Done, in two
+   halves: a play-reach fixture that reports what a sixty-saga sample never
+   touches and bars what must not go to nought, and a static gate lint in
+   `test/events.test.ts` — every `when` naming a building, a lore or a flag
+   must name one that exists, and no card may be locked behind a flag only
+   it sets. Original text follows.
+   **[ ] (as written)** Everything
    above came from a throwaway that was deleted afterwards, which is exactly
    how the coast stayed broken for weeks behind a green suite. A standing
    test that plays a sample and reports what was never reached — cards,
@@ -734,6 +740,41 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The probe, kept (audit item 6)** — The generalisation of
+  the whole audit. The coast, the country, the sea, the growth apparatus and
+  the top building tier were each built, unit-tested and green, and each
+  unreachable. Not one failed a test, because every test asked *does this
+  work* and none asked *does anyone ever get here* — and each was found by a
+  throwaway probe that was then deleted, which is precisely how the next one
+  would have hidden.
+  Two halves. **Play-reach**: one standing test that runs sixty sagas and
+  reports the deck, the lore, the traits and eleven systems, barring the ones
+  that must never read nought. Some of it already lives closer to what it
+  measures — battle verbs, buildings, the sea, growth — and this is the rest
+  plus the summary nobody has to assemble by hand.
+  **Static gates**: the existing card lint checked terrain and seasons and
+  left the gates that name things by ID unchecked, which are exactly the ones
+  that fail silently. This project has already lost a build entry to
+  `farm-plots` where the building is `farmplots`. Now every `when` naming a
+  building, a lore or a flag must name one that exists, and — the cheap check
+  that is impossible to see by reading — no card may require a flag that only
+  that card sets.
+  Latest reading: deck 86/102 drawn over 671 draws with the top ten at 36%,
+  lore 6/6, traits 10/10, and `fights 152, raids 49, raidsHeld 16, sackings
+  29, bargains 52, markets 11, expeditions 12, arrivals 54, feuds 17,
+  thingsCalled 3, kinPairs 60`.
+  The deck is reported rather than barred at 102/102: cards are gated on
+  states an ordinary run may never enter, and demanding every one draw is
+  demanding the sample cover every corner of the game. What is barred is that
+  three quarters of it comes up and that ten cards are not half the draws.
+  One thing the fixture caught immediately, which is the point of it:
+  **markets fired twice in sixty sagas** — a system shipped an hour earlier.
+  The bot's rule wanted the band to be short of what was on offer AND long on
+  what it cost, which is narrower than any player is; standing at a counter
+  with something to spare is enough. Two became eleven, and the bar has room
+  under it now instead of being fitted to a coin.
+  Curve 57/27/7, unmoved.
 
 - **2026-08-08 — Pricing the raid cliff (audit item 5)** — The oldest open
   question in this document, deferred three times for want of a trustworthy

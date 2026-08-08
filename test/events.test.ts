@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { EVENTS, eventById } from '../src/data/events';
 import { TRAITS, traitById } from '../src/data/traits';
 import { LORE } from '../src/data/lore';
+import { BUILDINGS } from '../src/data/buildings';
 import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
 import { checkOdds, chooseOption, isEligible, presentEvent } from '../src/sim/events';
 import { newGame } from '../src/state/create';
@@ -13,6 +14,16 @@ import type { GameState, Terrain } from '../src/state/types';
 const ALL_TERRAIN: Terrain[] = ['ocean', ...LAND_TERRAINS];
 const SEASONS = ['summer', 'autumn', 'winter', 'spring'];
 const STATS = ['might', 'wits', 'spirit', 'craft'];
+
+/**
+ * Flags the sim itself sets, as opposed to the ones event cards raise. A gate
+ * naming one of these is legitimate even though no card sets it.
+ */
+const SIM_FLAGS = [
+  'hungerStreak', 'pendingBattle', 'pendingBattleDifficulty', 'pendingRaid',
+  'ruleTaken', 'thingCalledOn', 'thingsCalled', 'winterLastWarning',
+  'winterTargetGiven', 'workedOnce',
+];
 
 describe('content lint: events', () => {
   it('ids are unique and slug-shaped', () => {
@@ -60,6 +71,85 @@ describe('content lint: events', () => {
           for (const season of condition.any) expect(SEASONS, event.id).toContain(season);
         }
         if (condition.c === 'dayMin') expect(condition.day).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  /**
+   * Audit item 6, the static half.
+   *
+   * The lint above checked terrain and seasons; the gates that name things
+   * by id went unchecked, and those are exactly the ones that fail silently.
+   * This project has already lost a whole build entry to `farm-plots` where
+   * the building is `farmplots` — the queue simply never took it and nothing
+   * said so. A card gated on a building or a lore that does not exist is the
+   * same bug wearing a different hat: it draws nought times out of a hundred
+   * and looks like bad luck.
+   */
+  it('every gate names something that exists', () => {
+    const buildings = new Set(BUILDINGS.map((b) => b.id));
+    const lore = new Set(LORE.map((l) => l.id));
+    // A flag a card waits on has to be a flag something SETS, or the card is
+    // waiting for a day that never comes.
+    const settable = new Set<string>();
+    for (const event of EVENTS) {
+      for (const choice of event.choices) {
+        for (const branch of [choice.success, choice.failure]) {
+          for (const effect of branch?.effects ?? []) {
+            if (effect.t === 'flag') settable.add(effect.flag);
+          }
+        }
+      }
+    }
+    for (const flag of SIM_FLAGS) settable.add(flag);
+
+    for (const event of EVENTS) {
+      for (const condition of event.when ?? []) {
+        if (condition.c === 'built') {
+          expect(buildings, `${event.id}: waits on a building that does not exist`)
+            .toContain(condition.building);
+        }
+        if (condition.c === 'known' || condition.c === 'unknown') {
+          expect(lore, `${event.id}: names a lore that does not exist`).toContain(condition.lore);
+        }
+        if (condition.c === 'flagSet' || condition.c === 'flagUnset') {
+          expect(
+            settable,
+            `${event.id}: waits on '${condition.flag}', which nothing ever sets`,
+          ).toContain(condition.flag);
+        }
+      }
+    }
+  });
+
+  it('no card is gated behind a wall it also has to open', () => {
+    // A card that requires a flag AND is the only thing that sets it can
+    // never fire. Cheap to check and impossible to see by reading.
+    for (const event of EVENTS) {
+      const needs = (event.when ?? [])
+        .filter((c) => c.c === 'flagSet')
+        .map((c) => (c as { flag: string }).flag);
+      if (needs.length === 0) continue;
+      const setsItself = new Set<string>();
+      for (const choice of event.choices) {
+        for (const branch of [choice.success, choice.failure]) {
+          for (const effect of branch?.effects ?? []) {
+            if (effect.t === 'flag') setsItself.add(effect.flag);
+          }
+        }
+      }
+      const others = EVENTS.filter((e) => e.id !== event.id).some((e) =>
+        e.choices.some((c) =>
+          [c.success, c.failure].some((b) =>
+            (b?.effects ?? []).some((f) => f.t === 'flag' && needs.includes(f.flag)),
+          ),
+        ),
+      );
+      for (const flag of needs) {
+        expect(
+          others || SIM_FLAGS.includes(flag) || !setsItself.has(flag),
+          `${event.id}: needs '${flag}' and is the only thing that sets it`,
+        ).toBe(true);
       }
     }
   });

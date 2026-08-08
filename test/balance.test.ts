@@ -82,6 +82,10 @@ import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
 import { HARDSHIPS, type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
+import { EVENTS } from '../src/data/events';
+import { LORE } from '../src/data/lore';
+import { TRAITS } from '../src/data/traits';
+import { kinPairs } from '../src/sim/kin';
 import { drawOdds } from '../src/sim/joining';
 import { DRAW_ANGER, DRAW_LARDER_DAYS, WHY_THEY_COME } from '../src/data/folk';
 import { forecast, markVisible, reachable } from '../src/sim/winter';
@@ -315,9 +319,12 @@ function step(state: GameState): Action {
   if (dealHere && dealHere.sackedOn === undefined) {
     for (const offer of offersAt(state, dealHere.id)) {
       if (tradeBlocker(state, dealHere.id, offer.id) !== null) continue;
-      const short = offer.take === 'food' ? days < 8 : nights < 8;
+      // Standing at a counter with something to spare, an average player
+      // deals — the first cut also demanded they be SHORT of what was on
+      // offer, which is narrower than anyone actually is, and left the whole
+      // market system firing twice in sixty sagas.
       const spare = offer.give === 'food' ? days > 12 : nights > 12;
-      if (short && spare) return { type:'TRADE_AT', id: dealHere.id, offer: offer.id };
+      if (spare) return { type:'TRADE_AT', id: dealHere.id, offer: offer.id };
     }
   }
 
@@ -2345,5 +2352,124 @@ describe('every building gets built', () => {
       .toBeGreaterThan(0);
     expect(late['earthworks'] ?? 0, 'no band that stood two winters ever raised earthworks')
       .toBeGreaterThan(0);
+  });
+});
+
+describe('what play actually reaches', () => {
+  /**
+   * AUDIT ITEM 6, and it is the generalisation of everything above it.
+   *
+   * The coast, the country, the sea, the growth apparatus and the top
+   * building tier were all built, unit-tested, green — and unreachable. Not
+   * one of them failed a test, because every test asked "does this WORK"
+   * and none asked "does anyone ever GET here". Each was found by a
+   * throwaway probe that was then deleted, which is exactly how the next one
+   * will hide.
+   *
+   * So this is the probe, kept. It plays a sample and reports what was never
+   * reached, and bars the things that must never go to nought. Some of that
+   * lives closer to what it measures — battle verbs in "the whole of a fight
+   * is played", buildings in "every building gets built", the sea in "the
+   * sea is reached", growth in "a band that survives, grows" — and this is
+   * the rest of it plus the summary nobody has to assemble by hand.
+   *
+   * The card deck is REPORTED and not barred at 102/102. Cards are gated on
+   * states an ordinary run may never enter (a winter with the woodpile
+   * nearly out, a coast that hates you), and demanding every one draw would
+   * be demanding the sample cover every corner of the game. What is barred
+   * is that the deck is broadly alive, and `test/events.test.ts` carries the
+   * static half: every gate must name a building, a lore and a flag that
+   * actually exist, and no card may be locked behind a flag only it sets.
+   */
+  it('reports everything a long sample never touches', { timeout: 900_000 }, async () => {
+    const cards = new Set<string>();
+    const lore = new Set<string>();
+    const traits = new Set<string>();
+    const draws: Record<string, number> = {};
+    const systems: Record<string, number> & Record<
+      'fights' | 'raids' | 'raidsHeld' | 'sackings' | 'bargains' | 'markets'
+      | 'expeditions' | 'arrivals' | 'feuds' | 'thingsCalled' | 'kinPairs', number
+    > = {
+      fights: 0, raids: 0, raidsHeld: 0, sackings: 0, bargains: 0,
+      markets: 0, expeditions: 0, arrivals: 0, feuds: 0, thingsCalled: 0, kinPairs: 0,
+    };
+    let sagas = 0;
+    const SEEDS = 30;
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      for (let s = 0; s < SEEDS; s += 1) {
+        const state = run(`curve-${s}`, 400, (before, after) => {
+          if (!before.event && after.event) {
+            cards.add(after.event.id);
+            draws[after.event.id] = (draws[after.event.id] ?? 0) + 1;
+          }
+          if (!before.battle && after.battle) {
+            systems.fights += 1;
+            if (after.battle.raid) systems.raids += 1;
+          }
+          if (!before.expedition && after.expedition) systems.expeditions += 1;
+          if (after.party.people.length > before.party.people.length) systems.arrivals += 1;
+          // A market day: stores moved without a fight and without a day on
+          // the road. Counted off the saga line so it cannot be confused
+          // with a bargain in somebody's yard.
+          if (after.saga.length > before.saga.length) {
+            for (const line of after.saga.slice(before.saga.length)) {
+              if (/jetties|house of the White Christ and came away/.test(line.text)) {
+                systems.markets += 1;
+              }
+            }
+          }
+          for (const p of after.party.people) if (p.trait) traits.add(p.trait);
+          for (const l of after.lore ?? []) lore.add(l);
+        }, terms);
+
+        sagas += 1;
+        systems.raidsHeld += state.tally.raidsHeld;
+        systems.sackings += state.tally.sackings;
+        systems.bargains += state.tally.bargains;
+        systems.feuds += state.grudges.filter((g) => g.settled).length;
+        systems.thingsCalled += state.flags['thingsCalled'] ?? 0;
+        systems.kinPairs += kinPairs(state.party.people).length > 0 ? 1 : 0;
+        for (const l of state.lore ?? []) lore.add(l);
+        for (const p of state.party.people) if (p.trait) traits.add(p.trait);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    const totalDraws = Object.values(draws).reduce((a, b) => a + b, 0);
+    const cold = EVENTS.filter((e) => !cards.has(e.id)).map((e) => e.id);
+    // eslint-disable-next-line no-console
+    console.log(
+      `reach over ${sagas} sagas:\n` +
+        `  deck ${cards.size}/${EVENTS.length} drawn (${totalDraws} draws, top ten = ` +
+        `${Math.round(
+          Object.values(draws).sort((a, b) => b - a).slice(0, 10).reduce((a, b) => a + b, 0) /
+            Math.max(1, totalDraws) * 100,
+        )}%)\n` +
+        `  never drawn: ${cold.join(', ') || 'none'}\n` +
+        `  lore ${lore.size}/${LORE.length}, traits ${traits.size}/${TRAITS.length}\n` +
+        `  systems: ${Object.entries(systems).map(([k, v]) => `${k} ${v}`).join(', ')}`,
+    );
+
+    // Content that must be alive. Every one of these is a system this
+    // project shipped and then measured at or near zero at some point.
+    expect(lore.size, 'lore nobody ever learns').toBe(LORE.length);
+    expect(traits.size, 'traits nobody is ever born with').toBe(TRAITS.length);
+    expect(cards.size / EVENTS.length, 'most of the deck never comes up').toBeGreaterThan(0.75);
+
+    for (const [name, floor] of [
+      ['fights', 20], ['raids', 5], ['raidsHeld', 1], ['sackings', 5],
+      ['bargains', 5], ['markets', 3], ['expeditions', 5], ['arrivals', 5],
+      ['kinPairs', 5],
+    ] as const) {
+      expect(systems[name] ?? 0, `${name} never happens in ${sagas} sagas`).toBeGreaterThan(floor - 1);
+    }
+
+    // And the deck must not be ten cards wearing a hundred hats.
+    expect(
+      Object.values(draws).sort((a, b) => b - a).slice(0, 10).reduce((a, b) => a + b, 0) /
+        Math.max(1, totalDraws),
+      'ten cards are half the draws — the deck reads as smaller than it is',
+    ).toBeLessThan(0.5);
   });
 });
