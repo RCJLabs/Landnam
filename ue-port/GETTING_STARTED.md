@@ -556,27 +556,118 @@ so they only ran mid-loop or not at all.
 
 ---
 
-## Step 10 (optional) — Paint it with real terrain
+## Step 10 — Terrain, and a real movement range
 
-A five-minute payoff that ties both libraries together.
+Step 9's highlight was adjacency. This one is the thing a tactics game actually runs on:
+give every hex a terrain with a movement cost, then ask **how far can I get from here**.
 
-In `BP_HexGrid`, add a variable `Seed` (String, default `raven-skerry-317`) and a
-`TerrainTable` (Data Table reference, pointing at your imported `terrain` table).
+The answer comes from `Reachable` in `src/hex/path.ts` — Dijkstra over the grid — and it
+needs no new C++. It also finally uses the two things you imported in Step 5 and have not
+touched since: the seeded RNG and the terrain DataTable.
 
-In the spawn loop, before setting the colour:
+### 10a. Let a tile remember its own colour
 
-1. **Make Stream** (Seed = `Seed`, Stream = **worldgen**) — do this once before the loop
-   and store it.
-2. Per tile: **Pick Index** with the number of terrain rows → **Get Data Table Row Names**
-   → index into it → **Get Data Table Row** → gives you an `FTerrainRow`.
-3. **Colour From Hex** on the row's `Fill` → feed into `SetColour`.
+The range highlight has to be undoable, so each tile needs to know what it looked like
+before. In **BP_HexTile**:
 
-Now the map is painted in Landnám's own palette, from Landnám's own generator, and the
-same seed gives you the same map every launch. Change one character of the seed and it
-is a different island.
+1. Add a variable `BaseColour`, type **Linear Color**, **Instance Editable**.
+2. Add a function `ResetColour` with no inputs. In it: `BaseColour` (Get) → into a call to
+   your own `Set Colour`. Entry node ▶ that call.
 
-This is not worldgen yet — real worldgen lives in `src/sim/worldgen.ts` and weights
-terrain by latitude and neighbours. But it proves the seeded pipeline works end to end.
+Compile and save.
+
+### 10b. Give every hex a terrain
+
+In **BP_HexGrid**, add three variables (compile once so you can set defaults):
+
+| Name | Type | Default |
+| --- | --- | --- |
+| `Seed` | String | `raven-skerry-317` |
+| `TerrainTable` | **Data Table** (Object Reference) | your imported `terrain` table |
+| `Costs` | Map: **Hex** → **Float** | — |
+
+Remember: the first type dropdown is the key, the second is the value.
+
+Now extend the BeginPlay chain from Step 8. **Before** the For Each Loop:
+
+1. **Make Stream** — Seed = `Seed`, Stream = **worldgen**. Right-click its return value →
+   **Promote to Variable**, name it `Rng`.
+2. **Get Data Table Row Names**, Data Table = `TerrainTable`. Promote its output to a
+   variable named `TerrainNames`.
+3. Exec: `Make Stream` ▶ `Get Data Table Row Names` ▶ the loop.
+
+**Inside** the loop, after `SET Grid` and before `ADD`:
+
+| # | Node | Connections |
+| --- | --- | --- |
+| 1 | `Rng` (Get) → **Pick Index** | Num ← `TerrainNames` **Length** |
+| 2 | `TerrainNames` (Get) → **Get (a copy)** | Index ← node 1 |
+| 3 | **Get Data Table Row** | Data Table ← `TerrainTable`, Row Name ← node 2 |
+| 4 | **Break TerrainRow** | drag off node 3's **Out Row** and search `Break` |
+| 5 | **Colour From Hex** | Hex ← node 4's **Fill** |
+| 6 | **Set Base Colour** on the tile | Target ← SpawnActor Return Value, value ← node 5 |
+| 7 | **Set Colour** on the tile | Target ← Return Value, Colour ← node 5 |
+| 8 | **Add** to `Costs` | Key ← loop Array Element, Value ← node 4's **Cost** |
+
+Exec: `SET Grid` ▶ node 3 ▶ node 6 ▶ node 7 ▶ node 8 ▶ `ADD` (nodes 1, 2, 4 and 5 are
+pure — no exec pins, they just feed data).
+
+Press Play. The board is now painted in Landnám's own palette, from Landnám's own
+generator. **Change one character of the seed and it is a different island**, every time,
+identically — that is what the parity test bought you.
+
+The dark blue tiles are `ocean`, whose cost is `-1`: impassable, straight from the
+`Infinity` in `src/data/terrain.ts`. Note that this is not worldgen — real worldgen lives
+in `src/sim/worldgen.ts` and weights terrain by latitude and neighbours. This is a flat
+random draw, which is enough to make movement cost visible.
+
+### 10c. Show how far a unit could walk
+
+In **BP_HexGrid**, add a variable `MoveBudget` (Float, default `6.0`), then a new function
+`ShowRange` with a `Centre` input of type **Hex**.
+
+**Clear the board:**
+
+- `Tiles` (Get) → **Values** → **For Each Loop** → in the body, `Array Element` →
+  **Reset Colour**.
+- Entry ▶ Values ▶ loop; `Loop Body` ▶ Reset Colour.
+
+**Then the range:**
+
+| # | Node | Connections |
+| --- | --- | --- |
+| 1 | **Reachable In Map** | Start ← `Centre`, Budget ← `MoveBudget`, Costs ← `Costs` (Get) |
+| 2 | **For Each Loop** | Array ← node 1 |
+| 3 | **Break HexReach** | drag off node 2's Array Element → search `Break` |
+| 4 | `Tiles` (Get) → **Find** | Key ← node 3's **Hex** |
+| 5 | **Branch** | Condition ← node 4's Found |
+| 6 | **Set Colour** | Target ← node 4's Value, Colour = a pale blue |
+
+Exec: loop 1's **Completed** ▶ node 2; node 2's **Loop Body** ▶ node 5; node 5's **True**
+▶ node 6.
+
+Finally, in **BP_HexTile**, repoint the click: change the `On Clicked` chain to call
+`Show Range` instead of `Highlight Around` (same `Centre` = `Hex` input).
+
+Compile both, save, Play.
+
+### What you should see
+
+Click a hex and a blue region spreads out from it — **not a circle**. It reaches further
+across meadow and shore than across hills and bog, and it stops dead at ocean, flowing
+around it instead. Click next to a stretch of water and watch the range bend.
+
+That shape is Dijkstra, from `src/hex/path.ts`, over costs from `src/data/terrain.ts` —
+both running the same way they do in the browser. Nothing here approximates anything.
+
+**This is the battle grid's movement system.** Give the budget to a unit instead of the
+grid, and it is finished.
+
+### Next after this
+
+`FindPathInMap` is already sitting there, same shape: feed it Start, Goal and the same
+`Costs` map, and it returns the actual route as an array of hexes. Colour that array and
+you have a movement preview; walk a unit along it and you have movement.
 
 ---
 

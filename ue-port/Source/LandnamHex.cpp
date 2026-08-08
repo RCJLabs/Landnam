@@ -367,6 +367,14 @@ namespace
 		if (!FMath::IsFinite(Value) || Value < 0.0f) return Impassable;
 		return static_cast<double>(Value);
 	}
+
+	/** Absent from the map is impassable, and so is a negative entry. */
+	double CostFromMap(const TMap<FHex, double>& Costs, const FHex& Hex)
+	{
+		const double* Found = Costs.Find(Hex);
+		if (Found == nullptr || *Found < 0.0) return Impassable;
+		return *Found;
+	}
 }
 
 FHexPath UHexLib::FindPath(const FHex& Start, const FHex& Goal, const FHexCostDelegate& Cost)
@@ -374,20 +382,39 @@ FHexPath UHexLib::FindPath(const FHex& Start, const FHex& Goal, const FHexCostDe
 	return FindPathNative(Start, Goal, [&Cost](const FHex& H) { return CostFromDelegate(Cost, H); });
 }
 
+namespace
+{
+	/** Shared by both Blueprint-facing Reachable forms. */
+	TArray<FHexReach> ToReachArray(const TMap<FHex, double>& Best)
+	{
+		TArray<FHexReach> Out;
+		Out.Reserve(Best.Num());
+		for (const TPair<FHex, double>& Pair : Best)
+		{
+			FHexReach Entry;
+			Entry.Hex = Pair.Key;
+			Entry.Cost = Pair.Value;
+			Out.Add(Entry);
+		}
+		return Out;
+	}
+}
+
 TArray<FHexReach> UHexLib::Reachable(const FHex& Start, double Budget, const FHexCostDelegate& Cost)
 {
-	const TMap<FHex, double> Best = ReachableNative(
+	return ToReachArray(ReachableNative(
 		Start, Budget,
-		[&Cost](const FHex& H) { return CostFromDelegate(Cost, H); });
+		[&Cost](const FHex& H) { return CostFromDelegate(Cost, H); }));
+}
 
-	TArray<FHexReach> Out;
-	Out.Reserve(Best.Num());
-	for (const TPair<FHex, double>& Pair : Best)
-	{
-		FHexReach Entry;
-		Entry.Hex = Pair.Key;
-		Entry.Cost = Pair.Value;
-		Out.Add(Entry);
-	}
-	return Out;
+TArray<FHexReach> UHexLib::ReachableInMap(const FHex& Start, double Budget, const TMap<FHex, double>& Costs)
+{
+	return ToReachArray(ReachableNative(
+		Start, Budget,
+		[&Costs](const FHex& H) { return CostFromMap(Costs, H); }));
+}
+
+FHexPath UHexLib::FindPathInMap(const FHex& Start, const FHex& Goal, const TMap<FHex, double>& Costs)
+{
+	return FindPathNative(Start, Goal, [&Costs](const FHex& H) { return CostFromMap(Costs, H); });
 }

@@ -228,6 +228,22 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Landnam|Hex")
 	static TArray<FHexReach> Reachable(const FHex& Start, double Budget, const FHexCostDelegate& Cost);
 
+	/**
+	 * Movement range over an explicit cost map, rather than a delegate. This is the
+	 * form Blueprint can use comfortably — a grid already keeps its hexes in a map, so
+	 * a parallel map of costs needs no event binding.
+	 *
+	 * A hex ABSENT from Costs is impassable. That is what keeps the search inside your
+	 * grid instead of wandering out across the infinite plane around it. A cost of -1
+	 * is impassable too, so a terrain table's ocean row carries straight through.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Landnam|Hex")
+	static TArray<FHexReach> ReachableInMap(const FHex& Start, double Budget, const TMap<FHex, double>& Costs);
+
+	/** A* over the same explicit cost map. Absent or negative means impassable. */
+	UFUNCTION(BlueprintCallable, Category = "Landnam|Hex")
+	static FHexPath FindPathInMap(const FHex& Start, const FHex& Goal, const TMap<FHex, double>& Costs);
+
 	// C++-side entry points: take any callable and skip the delegate boxing. Named
 	// apart from the Blueprint versions rather than overloaded, because UnrealHeaderTool
 	// is easier to work with when a UFUNCTION name means exactly one thing.
