@@ -8,8 +8,9 @@
 import { cornerPoints, distance, fromKey, toPixel, key, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import { exploredFraction } from '../sim/fog';
-import type { GameState, Neighbour } from '../state/types';
+import type { GameState, Neighbour, Place } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
+import { placeKind } from '../data/places';
 import { STANDING_INK } from './travel';
 import { button, el, svgEl } from './svg';
 
@@ -130,6 +131,13 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
   const met = state.neighbours.filter((n) => n.found);
   for (const n of met) layers.marks.append(otherPlace(n));
 
+  // The fixed points of the country, once the band knows of them — by
+  // walking past, or by being told over a bargain. A trader who names a
+  // monastery and leaves it off the chart has told you nothing you can act
+  // on, which is the same trap the coast fell into: a name is not a place.
+  const known = world.places.filter((p) => world.seen[key(p.at)] !== undefined);
+  for (const p of known) layers.marks.append(fixedPlace(p));
+
   if (state.settlement) {
     layers.marks.append(hall(state.settlement.at));
   }
@@ -149,6 +157,9 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
     // reads the coast's temper without having to walk it again.
     ...met.map((n) =>
       neighbourKey(n, `${n.name} — a ${clanKind(n.kind).noun} · ${standingFor(n.standing).label}`),
+    ),
+    ...known.map((p) =>
+      placeKey(p, `${placeKind(p.kind).name}${p.sackedOn !== undefined ? ' — picked clean' : ''}`),
     ),
   ]);
 
@@ -224,6 +235,43 @@ function otherPlace(n: Neighbour, at: Hex = n.at): SVGGElement {
         }),
   );
   return g;
+}
+
+/**
+ * A fixed place. A ring rather than a roof, so it never reads as somebody's
+ * hall — and hollowed out once it has been taken, because a place already
+ * picked clean is still worth knowing about and no longer worth walking to.
+ */
+function fixedPlace(place: Place, at: Hex = place.at): SVGGElement {
+  const p = toPixel(at, HEX);
+  const taken = place.sackedOn !== undefined;
+  const g = svgEl('g', { class: 'mark-place' });
+  const r = HEX * 0.5;
+  g.append(
+    svgEl('circle', {
+      cx: p.x, cy: p.y, r,
+      fill: taken ? 'none' : '#2a2318',
+      stroke: taken ? '#7a6a4a' : '#c9a24a',
+      'stroke-width': 1.4,
+      'stroke-dasharray': taken ? '3 3' : 'none',
+    }),
+    svgEl('circle', {
+      cx: p.x, cy: p.y, r: r * 0.34,
+      fill: taken ? '#7a6a4a' : '#c9a24a',
+    }),
+  );
+  return g;
+}
+
+/** A legend row for one fixed place, drawn with the same glyph. */
+function placeKey(place: Place, text: string): HTMLElement {
+  const swatch = svgEl('svg', {
+    class: 'chart-swatch place',
+    viewBox: '-11 -11 22 22',
+    xmlns: 'http://www.w3.org/2000/svg',
+  });
+  swatch.append(fixedPlace(place, { q: 0, r: 0 }));
+  return el('div', { class: 'chart-key' }, [swatch, el('span', {}, [text])]);
 }
 
 /** A legend row for one neighbour, drawn with the same glyph as the chart. */

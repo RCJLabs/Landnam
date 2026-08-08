@@ -44,8 +44,8 @@ points is below what it can see, so treat every figure here as directional):
 
 | milestone | reached |
 | --- | --- |
-| the first winter (day 49) | 83% |
-| spring (day 73) | 30% |
+| the first winter (day 49) | 82% |
+| spring (day 73) | 25% |
 | the second winter — the Thing's window (day 169) | 7% |
 
 **The three countries, measured on the same sixty landings each** — and the
@@ -53,9 +53,16 @@ default is deliberately NOT the balanced one:
 
 | setting | saw the first spring | over 500 days (20 sagas) |
 | --- | --- | --- |
-| A Fair Country *(default)* | 67% | 161 days a saga, 13 mead halls, 3 jarls |
-| As It Lies *(what everything is tuned against)* | 30% | 86 days a saga, 1 jarl |
-| A Hard Country | 8% | — |
+| A Fair Country *(default)* | 60% | 161 days a saga, 13 mead halls, 3 jarls |
+| As It Lies *(what everything is tuned against)* | 25% | 86 days a saga, 1 jarl |
+| A Hard Country | 7% | — |
+
+The spring figures fell 7, 5 and 1 point when the fixed places were brought
+onto the same coast as the band (audit item 1) — a country with a garrisoned
+town actually on it is harder than one with the town thirty hexes away. All
+three movements are inside the ±10 this harness can resolve, and were left
+alone rather than tuned back; the long-game figures are from before that
+change and have not been re-read.
 
 `DEFAULT_HARDSHIP` and `BALANCED_HARDSHIP` are separate constants on purpose.
 "As It Lies" stays the terms every fixture measures; pointing `newGame`'s
@@ -341,7 +348,16 @@ deck health: 783 draws, top ten = 33% of all draws
 The deck is healthy and the traits, lore and building list mostly land. Four
 whole systems do not.
 
-1. **[ ] A settled band never leaves home.** `moveOptions` returns `[]` for a
+1. **[x] A settled band never leaves home.** Done, and the fix was mostly
+   not where the item said it was — see the changelog. The bot learned the
+   errand under arms and the ship's way in, but the binding constraint was
+   that the fixed places were seeded a MEDIAN of 30 hexes from the sand with
+   no ceiling, exactly as the neighbours had been. Bounded, plus a
+   knowledge economy (`tellOfPlace`) so a bargain names what is on the
+   coast. Sea days 3 → 50, strandhöggs 0 → 2, errands under arms 1 → 7 over
+   sixty sagas, and there is now a bar so it cannot go back to zero
+   quietly. Original text follows.
+   **[ ] (as written)** `moveOptions` returns `[]` for a
    settled band, so an expedition is the ONLY door back onto the map — and it
    opens 16 times in 60 sagas. Behind that door: 3 sea days, 1 sea fight and
    **0 strandhöggs** across the whole sample. Hull damage, cargo over the
@@ -688,6 +704,53 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The country becomes reachable too (audit item 1)** — The
+  item said "teach the bot to sail". Doing that changed almost nothing —
+  1 errand under arms in sixty sagas — and the diagnosis was the same
+  disease as the coast, one audit later and in a different costume.
+  `seedPlaces` gave every kind a floor on how near the landing it could be
+  seeded and no ceiling at all, so across forty worlds the monastery, town,
+  wreck and iron seam sat a **median of 30 hexes from the sand and as far as
+  52**. Measured in play: 4.00 places still standing per settled day, and
+  **0.06 of them ever seen**. The whole plunder economy, the reason the
+  knarr exists and the only thing a settled band can go OUT for were placed
+  where nobody would ever look.
+  Bounded at 16 hexes — a little further than the neighbours' 13, which is
+  right: a neighbour is somebody you deal with, a monastery is somewhere you
+  go. But a ceiling alone is not enough, and here the fiction had to differ
+  from the coast's: clans can be made to come and look at a new steading, a
+  monastery cannot walk over. **Word of it travels instead.** Every bargain
+  now pays twice — timber into the packs, and one place on the map, nearest
+  to the teller first, named while the goods were being weighed. That gives
+  the plunder economy a road into it that is not "walk two hundred hexes and
+  hope", and gives standing a second thing to buy.
+  The bot learned the rest in the same commit, as the rule requires: the
+  errand under arms, steering for the water beside a coastal prize, coming
+  out of it, and mending a holed hull ashore. Two constraints on it that are
+  right whatever they do to the numbers — only in the growing half of the
+  year, and only for something close enough to be a raid rather than a
+  voyage — because the first cut sent three of six away for twenty-four days
+  through autumn, which no average player does.
+  Sea days **3 → 50**, strandhöggs **0 → 2**, errands under arms **1 → 7**,
+  places known per settled day **0.06 → 1.17**, all over sixty sagas. A new
+  bar in `test/balance.test.ts` holds every one of those above zero.
+  The Chart gained the fixed places too, which was not on the item and had
+  to be: a trader who names a monastery and leaves it off the map has told
+  the player nothing they can act on — the same "found but not findable"
+  trap the coast fell into, caught this time before shipping. Ringed marks,
+  hollowed once a place has been picked clean, with legend rows beside the
+  neighbours.
+  **What it cost, honestly:** the curve reads 60/25/7 against 67/30/8.
+  Isolated by measurement — with the new world and the OLD bot it reads
+  identically, so none of it is the sea errand; it is that a coast with a
+  garrisoned town actually on it is harder than one with the town thirty
+  hexes away. Pre-settlement fights went 37 → 47 and deaths 53 → 64 across
+  forty sagas. Two attempts to buy it back were tried and rejected: gating
+  the plunder detour on the calendar moved nothing, and pushing the place
+  floors out made the fair country WORSE (55%). Seven points on sixty seeds
+  is inside the ±10 this harness declares it cannot resolve, and the
+  project's own rule is not to tune on it. Recorded rather than chased.
 
 - **2026-08-08 — The coast becomes reachable, and winter keeps its teeth** —
   A re-measure that was meant to confirm the day's work and instead found

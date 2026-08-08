@@ -11,8 +11,8 @@ import { bestAt, effectiveStat, living } from './people';
 import { chronicle } from './saga';
 import { atHome, foundSettlement } from './site';
 import { fieldCrew, permittedStep } from './expedition';
-import { bargain, bargainBlocker, canFallOn, fallOn, seeNeighbours } from './neighbours';
-import { placeById, sackBlocker, settlePlace } from './places';
+import { bargain, bargainBlocker, canFallOn, fallOn, neighbourById, seeNeighbours } from './neighbours';
+import { placeById, sackBlocker, settlePlace, tellOfPlace } from './places';
 import { placeKind } from '../data/places';
 import { mendHull, strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { bonus } from './lore';
@@ -397,7 +397,13 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
 
     case 'BARTER': {
       if (bargainBlocker(state, action.id) !== null) return prev;
+      const host = neighbourById(state, action.id);
       if (!bargain(state, action.id)) return prev;
+      // A bargain pays twice. Timber into the packs, and whatever they were
+      // willing to say about the coast while it was being weighed — which
+      // is the only road into the plunder economy a settled band has, the
+      // fixed places being things you must first KNOW OF to walk to.
+      if (host) tellOfPlace(state, host.at, host.name);
       advance(state, 1);
       if (state.end) return state;
       reveal(state);

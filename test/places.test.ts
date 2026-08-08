@@ -12,8 +12,8 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { stream } from '../src/rng';
 import { apply } from '../src/sim/actions';
-import { seedPlaces, placeHere, placeById, sackBlocker, settlePlace } from '../src/sim/places';
-import { PLACE_KINDS, placeKind } from '../src/data/places';
+import { seedPlaces, placeHere, placeById, sackBlocker, settlePlace, tellOfPlace } from '../src/sim/places';
+import { PLACE_KINDS, PLACE_MAX_FROM_LANDING, placeKind } from '../src/data/places';
 import { knows } from '../src/sim/lore';
 import { startBattle } from '../src/sim/battleTurn';
 import type { GameState, Place } from '../src/state/types';
@@ -78,6 +78,29 @@ describe('seeding the country', () => {
       // At most one of each kind, and no two in each other's laps.
       const kinds = state.world.places.map((p) => p.kind);
       expect(new Set(kinds).size).toBe(kinds.length);
+    }
+  });
+
+  /**
+   * THE BAR THE COUNTRY DID NOT HAVE — the same one the coast was missing,
+   * found the same way and one audit later.
+   *
+   * Every kind had a floor on how near the landing it could be seeded and no
+   * ceiling at all, so across forty worlds the fixed places sat a MEDIAN of
+   * 30 hexes from the sand and as far as 52, on a map a band sees 2-7% of.
+   * Measured in play: 4.00 places still standing per settled day and 0.06 of
+   * them ever SEEN. The monastery, the town, the wreck and the seam are the
+   * whole plunder economy and the only reason a settled band has to leave
+   * home — and they were put where nobody would ever look.
+   */
+  it('they stand on this coast, and a coast is something you can walk', () => {
+    for (let s = 0; s < 24; s += 1) {
+      const state = newGame(`place-reach-${s}`);
+      for (const place of state.world.places) {
+        const d = distance(place.at, state.world.landing);
+        expect(d, `${place.id} is ${d} hexes off — a voyage, not a country`)
+          .toBeLessThanOrEqual(PLACE_MAX_FROM_LANDING);
+      }
     }
   });
 
@@ -193,6 +216,73 @@ describe('taking a place', () => {
       if (knows(state, 'smithing')) return; // the lesson can land: enough
     }
     throw new Error('no seed taught smithing in 40 tries — the odds are not wired');
+  });
+});
+
+describe('word of the country travels', () => {
+  /**
+   * A ceiling puts the places within reach; this is how a band LEARNS of
+   * them. Clans could be made to come and look at a new steading — a
+   * monastery cannot walk over. But people who deal with you talk, so a
+   * bargain pays twice: timber, and knowing what is on this coast.
+   */
+  function coast(seed: string): GameState {
+    const state = structuredClone(newGame(seed));
+    for (const k of Object.keys(state.world.seen)) delete state.world.seen[k];
+    return state;
+  }
+
+  it('a trader names the nearest thing they could plausibly know of', () => {
+    const state = coast('told-near');
+    expect(state.world.places.length).toBeGreaterThan(1);
+    const from = state.world.places[0]!.at;
+
+    const told = tellOfPlace(state, from, 'Sealwatch');
+    expect(told, 'nobody said anything at all').toBeDefined();
+    // Nearest first: nothing unseen is closer to the teller than what they named.
+    for (const p of state.world.places) {
+      if (p.id === told!.id || state.world.seen[key(p.at)] !== undefined) continue;
+      expect(distance(p.at, from)).toBeGreaterThanOrEqual(distance(told!.at, from));
+    }
+    // Named means findable. A marker under fog is not knowledge — that was
+    // exactly how the coast stayed unreachable.
+    expect(state.world.seen[key(told!.at)]).toBeTruthy();
+    expect(state.saga.some((e) => e.text.includes('Sealwatch'))).toBe(true);
+  });
+
+  it('one a bargain, and never the same place twice', () => {
+    const state = coast('told-once');
+    const from = state.world.places[0]!.at;
+    const named: string[] = [];
+    for (let i = 0; i < state.world.places.length + 2; i += 1) {
+      const told = tellOfPlace(state, from, 'Threefires');
+      if (told) named.push(told.id);
+    }
+    expect(new Set(named).size, 'the same place named twice').toBe(named.length);
+    expect(named.length).toBeLessThanOrEqual(state.world.places.length);
+    expect(tellOfPlace(state, from, 'Threefires'), 'still talking with nothing left to say')
+      .toBeUndefined();
+  });
+
+  it('says nothing about ground the band has already stood on', () => {
+    const state = coast('told-known');
+    for (const p of state.world.places) state.world.seen[key(p.at)] = 'seen';
+    expect(tellOfPlace(state, state.world.places[0]!.at, 'Grimsgarth')).toBeUndefined();
+  });
+
+  it('and a real bargain is what triggers it', () => {
+    // The unit above proves the telling; this proves it is WIRED — the
+    // half that the kin line and the watch-mark cap both got wrong.
+    const state = structuredClone(newGame('told-wired'));
+    for (const k of Object.keys(state.world.seen)) delete state.world.seen[k];
+    const host = state.neighbours[0]!;
+    state.party.at = { ...host.at };
+    state.party.food = 200;
+    const before = state.world.places.filter((p) => state.world.seen[key(p.at)] !== undefined).length;
+    const next = apply(state, { type: 'BARTER', id: host.id });
+    expect(next).not.toBe(state);
+    const after = next.world.places.filter((p) => next.world.seen[key(p.at)] !== undefined).length;
+    expect(after, 'a bargain taught the band nothing about the coast').toBeGreaterThan(before);
   });
 });
 

@@ -47,12 +47,12 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-coast',
     title: 'The Coast',
-    body: 'Four neighbours share this coast, and they remember everything. You do not have to go looking for them: once the posts are in, they come and look at YOU, one every fortnight or so, and each one goes on the map. Barter feeds standing; tribute buys peace; falling on a camp pays in stores and sometimes a thrall — and costs standing the moment steel is out. The angriest neighbour is where raids come from, and a raid always names whoever sent it. The watch and the palisade buy raid-chance down.',
+    body: 'Four neighbours share this coast, and they remember everything. You need not go looking: once the posts are in they come and look at YOU, one a fortnight, and each goes on the map. Barter feeds standing — and traders talk, so every bargain also names something on the coast you would never have found. Tribute buys peace; falling on a camp pays in stores and sometimes a thrall, and costs standing the moment steel is out. The angriest neighbour is where raids come from, and a raid always names its sender. Watch and palisade buy raid-chance down.',
   },
   {
     id: 'the-places',
     title: 'Places',
-    body: 'The map holds fixed places: a monastery rich and soft, a town rich and hard, a wreck and an iron seam free for the working. Stand on one and Act offers the taking. Each is taken once, some teach the band something, and robbing the coast is remembered.',
+    body: 'The map holds fixed places: a monastery rich and soft, a town rich and hard, a wreck and an iron seam free for the working. They are on this coast, not across the world — but you have to LEARN of them, by walking past or by hearing of them from somebody you trade with. Stand on one and Act offers the taking. Each is taken once, some teach the band something, and robbing the coast is remembered.',
   },
   {
     id: 'the-sea',

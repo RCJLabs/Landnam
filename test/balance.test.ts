@@ -47,11 +47,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { effectsOn, winterDepth } from '../src/sim/calendar';
+import { effectsOn, seasonOf, winterDepth } from '../src/sim/calendar';
 import { markHaze } from '../src/sim/winter';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
-import { moveOptions, canGather, canFish } from '../src/sim/travel';
+import { moveOptions, canGather, canFish, atSea, isCoastalWater } from '../src/sim/travel';
 import { canFound, siteReport } from '../src/sim/site';
 import { assign, queueBuild } from '../src/sim/colony';
 import { BAND_BASE, foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
@@ -65,7 +65,7 @@ import { fallenOf } from '../src/sim/fallen';
 import { capacity, crowding } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
-import { distance, key, fromKey } from '../src/hex';
+import { distance, key, fromKey, neighbors } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
 import { reachWithZoc } from '../src/sim/zoc';
 import { reachTargets } from '../src/sim/battleActions';
@@ -232,9 +232,34 @@ function step(state: GameState): Action {
   if (canCallThing(state)) return { type:'CALL_THING' };
 
   if (state.settlement) {
-    // Out on a trading errand: barter where we stand, then turn for home.
+    // Out on an errand. Which errand decides everything below, because the
+    // two are opposites: one carries food in to make a friend, the other
+    // takes a place off the coast and is remembered for it.
     const out = state.expedition;
     if (out) {
+      if (out.purpose === 'raid') {
+        // Standing on the prize: take it. (Afloat BESIDE it is handled far
+        // above, by the strandhögg rule, which fires wherever it is legal.)
+        const under = placeHere(state);
+        if (under && under.sackedOn === undefined) return { type:'SACK_PLACE', id: under.id };
+        // A holed hull rows at half pace and is mended by a night ashore.
+        // A bot that will not mend her measures the sea at half speed and
+        // reports the sea as slow.
+        if (state.party.hullHoled && !atSea(state)) return { type:'CAMP' };
+        const prize = raidTarget(state);
+        if (!out.returning && (!prize || state.day - out.launchedOn >= RAID_DAYS)) {
+          return { type:'TURN_HOME' };
+        }
+        const aim = out.returning
+          ? state.settlement.at
+          : (seaApproach(state, prize!) ?? prize!.at);
+        const opts3 = moveOptions(state);
+        if (opts3.length > 0) {
+          return { type:'MOVE', to: opts3.reduce((a,b)=>distance(b,aim)<distance(a,aim)?b:a) };
+        }
+        return { type:'CAMP' };
+      }
+
       const host = neighbourHere(state);
       if (host && bargainBlocker(state, host.id) === null) return { type:'BARTER', id: host.id };
       if (!out.returning && state.day - out.launchedOn >= 20) return { type:'TURN_HOME' };
@@ -250,13 +275,51 @@ function step(state: GameState): Action {
 
     // A jarldom needs somebody on this coast who will speak for us, and
     // nobody makes a friend from indoors. Sends two out with food to spare,
-    // and only when there is genuinely a surplus to carry.
+    // and only when there is genuinely a surplus to carry. First, because
+    // the Thing is what a run is FOR and raiding is what costs you it.
     if (!hasSpeakers(state) && wintersStood(state.day) >= 1 && nearestFriendable(state)) {
       const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
       if (crew.length === 2
         && state.party.food > provisionsFor(2) + BARTER_FOOD * 3 + 40
         && launchBlocker(state, crew) === null) {
         return { type:'LAUNCH', members: crew, purpose: 'trade' };
+      }
+    }
+
+    // Going out under arms — the errand this harness had NEVER once run.
+    //
+    // The audit's first finding: `moveOptions` returns nothing for a settled
+    // band, so an expedition is the only door back onto the map, and behind
+    // it lay three sea days, one sea fight and zero strandhöggs in sixty
+    // sagas. Hull damage, cargo over the side, the authored sea decks and
+    // the strandhögg itself were all shipped unmeasured — the same-commit
+    // rule broken by the very feature that named it.
+    //
+    // An average player with a full band, a full store and a fat monastery
+    // still standing down the coast goes and takes it. Gated behind the
+    // trade errand above, because a friend is what the Thing needs and
+    // steel is what costs you one.
+    //
+    // Two constraints that are right whatever they do to the numbers, and
+    // the first cut of this had neither. It sent three of six away for up
+    // to twenty-four days whenever a target was known — including through
+    // autumn, with the winter mark unmet — and the curve fell 67/30/8 to
+    // 60/27/7 while the fair country's long game went 161 days to 115. That
+    // is not the sea being a bad bargain; that is a bot doing something no
+    // average player does. The expedition harness has said since 4.2 that
+    // emptying the steading kills.
+    //
+    // So: only in the growing half of the year, when there is time to be
+    // back before the mark matters, and only for something close enough to
+    // be a raid rather than a voyage.
+    const season = seasonOf(state.day);
+    const inSeason = season === 'spring' || season === 'summer';
+    if (wintersStood(state.day) >= 1 && inSeason && raidTarget(state, RAID_REACH)) {
+      const crew = sworn(state.party.people).slice(0, 3).map(p => p.id);
+      if (crew.length === 3
+        && state.party.food > provisionsFor(3) + 55
+        && launchBlocker(state, crew) === null) {
+        return { type:'LAUNCH', members: crew, purpose: 'raid' };
       }
     }
     return { type:'CAMP' };
@@ -299,7 +362,17 @@ function step(state: GameState): Action {
   // Gated on the same strength as the town fight, and on a short walk — the
   // fun loop the game is built around is travel, plunder, THEN settle, and
   // a bot that beelines past every monastery measures none of it.
-  if (!state.settlement && mighty) {
+  //
+  // And gated on the CALENDAR, which it was not until the fixed places were
+  // brought within reach. This rule was written for a world where the four
+  // of them sat a median thirty hexes from the sand, so it fired once in
+  // forty sagas and its lack of a clock never showed. With them on the same
+  // coast it fires thirteen times, and pushed the founding day from 18.5 to
+  // 21.3 — which cost seven points of the curve, all of it here and none of
+  // it in the sea errand this work was about. Winter lands on day 49 and a
+  // band still walking cannot stockpile: an average player plunders ON THE
+  // WAY to a steading, not INSTEAD of one.
+  if (!state.settlement && mighty && state.day < PLUNDER_WINDOW) {
     let mark: {q:number;r:number}|null = null; let markD = 6;
     for (const p of state.world.places) {
       if (p.sackedOn !== undefined) continue;
@@ -342,6 +415,65 @@ function step(state: GameState): Action {
 }
 
 /** The nearest neighbour we have seen who is not already a friend. */
+/**
+ * The last day a band still looking for a home will turn aside for plunder.
+ * Winter is day 49; the rest of the run-up belongs to the posts and the
+ * store.
+ */
+const PLUNDER_WINDOW = 24;
+
+/** How far out an average player goes looking for something to take. */
+const RAID_REACH = 14;
+/** And how long they give the errand before turning for home regardless. */
+const RAID_DAYS = 20;
+
+/**
+ * The nearest place still worth taking, or null.
+ *
+ * Deliberately the same standard the pre-settlement bot uses — soft targets
+ * always, a garrison only with a band that can carry it — so the errand is
+ * "what an average player would go and do", not "what the harness needs to
+ * touch the sea".
+ */
+function raidTarget(
+  state: GameState,
+  within = RAID_REACH + 4,
+): { id: string; at: {q:number;r:number} } | null {
+  const home = state.settlement;
+  if (!home) return null;
+  const strong = sworn(state.party.people).length >= 5;
+  let best: { id: string; at: {q:number;r:number} } | null = null;
+  let bestD = within;
+  for (const p of state.world.places) {
+    if (p.sackedOn !== undefined) continue;
+    if (state.world.seen[key(p.at)] === undefined) continue;
+    const def = placeKind(p.kind);
+    if (def.loot.food <= 0 && def.loot.firewood <= 0) continue;
+    if (def.garrison !== null && def.garrison > 1 && !strong) continue;
+    const d = distance(p.at, home.at);
+    if (d < bestD) { bestD = d; best = { id: p.id, at: p.at }; }
+  }
+  return best;
+}
+
+/**
+ * Coastal water beside a place, if there is any — the hex a strandhögg is
+ * launched from. Returning it makes the ship's way the DEFAULT approach to
+ * anywhere on the shore, which is the point: walking up to a coastal gate
+ * is already measured, and coming out of the water never has been.
+ */
+function seaApproach(
+  state: GameState,
+  prize: { at: {q:number;r:number} },
+): {q:number;r:number} | null {
+  for (const n of neighbors(prize.at)) {
+    if (state.world.tiles[key(n)]?.terrain !== 'ocean') continue;
+    if (!isCoastalWater(state, n)) continue;
+    return n;
+  }
+  return null;
+}
+
 function nearestFriendable(state: GameState): {q:number;r:number} | null {
   let best: {q:number;r:number} | null = null;
   let bestD = 99;
@@ -547,7 +679,14 @@ async function measured(): Promise<Curve> {
 
 // Playing thirty seeds three times over is not a five-second job, and the
 // default timeout is the only thing here that has any opinion about that.
-const CURVE_TIMEOUT = 120_000;
+/**
+ * Two minutes was enough while this file held one sixty-seed sweep. It now
+ * holds several, and they share a worker pool with everything else in the
+ * run — so tests that pass comfortably on their own timed out in the full
+ * suite, which is a scheduling fact rather than a slow test. Generous, and
+ * a real hang still ends the run.
+ */
+const CURVE_TIMEOUT = 600_000;
 
 describe('the difficulty curve', () => {
   const pct = (n: number) => Math.round((100 * n) / SEEDS);
@@ -1636,5 +1775,77 @@ describe('raids are measured, not assumed', () => {
     console.log(`raids over 20 sagas: ${fired} came, ${held} held, ${fired - held} lost; ${sagas} sagas saw one`);
     expect(fired).toBeGreaterThan(0);
     expect(held).toBeLessThanOrEqual(fired);
+  });
+});
+
+describe('the sea is reached', () => {
+  /**
+   * Audit item 1, and the bar that would have caught it.
+   *
+   * `moveOptions` returns nothing for a settled band, so an expedition is
+   * the only door back onto the map — and behind it the whole sea sat
+   * unmeasured: over sixty sagas, THREE sea days, one sea fight and zero
+   * strandhöggs. Hull damage, cargo over the side, the authored sea decks
+   * and the strandhögg itself had all shipped without a single measurement,
+   * the last of them in violation of the same-commit rule it was written
+   * under. The bot had `STRANDHOGG` in its vocabulary and no logic that
+   * ever got it afloat, which is the harness's oldest failure mode wearing
+   * a new coat: a capability the bot cannot use is measured as worthless.
+   *
+   * Two things had to change before this could pass. The bot learned the
+   * errand under arms — steer for the water beside a coastal prize and come
+   * out of it — and the country stopped hiding the prizes (see
+   * `PLACE_MAX_FROM_LANDING` and `tellOfPlace`).
+   *
+   * Deliberately a REACH bar, not a balance one. It says the sea happens; it
+   * says nothing about whether it pays, because the sample is still small
+   * and a bar that pins a rate this thin would be pinning weather.
+   */
+  it('a settled band gets onto the water, and comes out of it at somebody', { timeout: 900_000 }, async () => {
+    let seaDays = 0;
+    let afloatFights = 0;
+    let strandhoggs = 0;
+    let underArms = 0;
+    let placesKnown = 0;
+    let samples = 0;
+    const SEEDS = 30;
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      for (let s = 0; s < SEEDS; s += 1) {
+        const state = run(`curve-${s}`, 400, (before, after) => {
+          if (!before.expedition && after.expedition && after.expedition.purpose === 'raid') {
+            underArms += 1;
+          }
+          if (!before.battle && after.battle) {
+            if (after.battle.strandhogg) strandhoggs += 1;
+            else if (after.battle.terrain === 'ocean' && !after.battle.raid) afloatFights += 1;
+          }
+          if (after.settlement && !after.expedition) {
+            samples += 1;
+            placesKnown += after.world.places.filter(
+              (p) => after.world.seen[key(p.at)] !== undefined,
+            ).length;
+          }
+        }, terms);
+        seaDays += state.tally.seaDays;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `the sea over ${SEEDS * 2} sagas: ${seaDays} days afloat, ${underArms} errands under arms, ` +
+        `${strandhoggs} strandhöggs, ${afloatFights} sea fights; ` +
+        `${(placesKnown / Math.max(1, samples)).toFixed(2)} of 4 places known per settled day`,
+    );
+
+    // Wide bars, and every one of them was ZERO before this work.
+    expect(seaDays, 'no settled band ever got onto the water').toBeGreaterThan(20);
+    expect(underArms, 'the errand under arms never runs').toBeGreaterThan(2);
+    expect(strandhoggs, 'the ship’s way in is never taken — it is unmeasured content')
+      .toBeGreaterThan(0);
+    // And the knowledge economy that makes any of it possible: a settled
+    // band must know of SOMETHING to go and take. This read 0.06 of 4.
+    expect(placesKnown / Math.max(1, samples)).toBeGreaterThan(0.5);
   });
 });

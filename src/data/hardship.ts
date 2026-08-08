@@ -38,7 +38,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, and a fuller hold when the keel touches sand. Where a saga has room to become one.',
-    measured: 'Two bands in three saw the first spring. Three in twenty ruled.',
+    measured: 'Three bands in five saw the first spring. Three in twenty ruled.',
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -49,7 +49,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    measured: 'Three bands in ten saw the first spring. One in twenty ruled.',
+    measured: 'One band in four saw the first spring. One in twenty ruled.',
     stir: 1,
     raid: 1,
     winter: 1,
@@ -60,7 +60,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, and men who have heard of you sooner than you would like. Nothing here is unfair. It is only that less of it goes your way.',
-    measured: 'One band in twelve saw the first spring.',
+    measured: 'One band in fourteen saw the first spring.',
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -99,8 +99,8 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
 /**
  * Where the numbers above came from, so nobody has to guess later: the
  * balance harness runs its sixty seeds through every setting and prints
- * the spread. Latest: 67% / 30% / 8% seeing the first spring — gaps of 37
- * and 22 points, both comfortably past the ±10 this harness can resolve,
+ * the spread. Latest: 60% / 25% / 7% seeing the first spring — gaps of 35
+ * and 18 points, both comfortably past the ±10 this harness can resolve,
  * which is the only reason the three names are allowed to differ. The
  * jarldom figures come from the long game, which runs twenty seeds of the
  * same worlds out to day 500.

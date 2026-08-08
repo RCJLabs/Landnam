@@ -41,6 +41,26 @@ export interface PlaceKindDef {
   sackLine: string;
 }
 
+/**
+ * And no further than this from the landing.
+ *
+ * The same disease the coast had, found the same way. Every kind had a floor
+ * on how near it could be seeded and no ceiling at all, so across forty
+ * worlds the four fixed places sat a MEDIAN of 30 hexes from the sand and as
+ * far as 52 — on a map a band sees 2-7% of in a five-hundred-day saga.
+ * Measured directly: 4.00 places still standing per settled day, and 0.06 of
+ * them ever seen. The monastery, the town, the wreck and the iron seam are
+ * the whole of the plunder economy, the reason the knarr exists and the only
+ * things a band can go OUT for once the posts are in — and they were placed
+ * where nobody would ever look at them.
+ *
+ * Sixteen is a little further out than the neighbours at thirteen, which is
+ * right: a neighbour is somebody you deal with, a monastery is somewhere you
+ * go. The town's own floor is eleven, so the band still has to voyage for
+ * the rich one.
+ */
+export const PLACE_MAX_FROM_LANDING = 16;
+
 export const PLACE_KINDS: PlaceKindDef[] = [
   {
     id: 'monastery',
