@@ -404,7 +404,11 @@ whole systems do not.
    and hits the raid cliff with the same six people it landed with. Measured
    by band size over time, which nothing currently reports.
 
-4. **[ ] The top building tier is unreachable.** `greathall` and
+4. **[x] The top building tier is unreachable.** Done, and the answer was
+   not the one the item assumed: nothing was wrong with the game. The bot's
+   want list simply never named the two buildings. See the changelog.
+   Original text follows.
+   **[ ] (as written)** `greathall` and
    `earthworks` were never built once in 60 sagas. They are the upgrade tier
    `standsFor()` was written for, and no measurement has ever included them.
    Either the timber cost is out of reach of a band that survives, or the
@@ -722,6 +726,33 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — The tier nobody asked for (audit item 4)** — The shortest
+  entry here and the one with the sharpest lesson. The audit found
+  `greathall` and `earthworks` never raised once in sixty sagas, and asked
+  whether the timber cost or the prerequisites were out of reach of a band
+  that survives.
+  **Neither. Nothing was wrong with the game.** `standsFor()` had been
+  written for the tier, `buildBlocker` enforces `replaces` correctly (a
+  great hall needs a longhouse standing to replace, earthworks a palisade),
+  and the Build panel offers both properly. The bot's `WANT` list — ten
+  buildings, hand-written — did not contain them, so across sixty sagas
+  nothing ever asked for one.
+  Two names added to a list. The result: **every building the game ships is
+  now raised in play**, and of the six sagas that stood past day 169, six
+  built a great hall and five raised earthworks. The tier was always
+  reachable; the measurement was simply never pointed at it.
+  A permanent bar now asserts that no building goes unbuilt across sixty
+  sagas, and that a band standing two winters outgrows its first longhouse.
+  It is the buildings' share of the content-reach fixture the audit asked
+  for as item 6, landed early because this is exactly what it is for: **a
+  building nobody builds is content that does not exist, whether the reason
+  is the cost, the gate, or a list in the harness that forgot it.**
+  One thing checked and cleared while in there: eighteen sagas have a
+  watchtower against ten palisades and six earthworks. The two missing are
+  not a broken prerequisite — a lost raid burns a building, and a palisade
+  can go up in smoke long after the tower on it was finished.
+  Curve 58/25/7, unmoved.
 
 - **2026-08-08 — The door that was never opened (audit item 3)** — Phase 6.2
   built `capacity`, `crowding`, hands who work but do not fight, the

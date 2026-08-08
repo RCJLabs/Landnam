@@ -81,6 +81,7 @@ import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
 import { HARDSHIPS, type HardshipId } from '../src/data/hardship';
+import { BUILDINGS } from '../src/data/buildings';
 import { drawOdds } from '../src/sim/joining';
 import { DRAW_ANGER, DRAW_LARDER_DAYS, WHY_THEY_COME } from '../src/data/folk';
 import { forecast, markVisible, reachable } from '../src/sim/winter';
@@ -92,9 +93,24 @@ const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrio
 // claimed four. A búð is on the list because 6.2 gave the band a way to grow
 // and a harness that cannot grow reports growth as worthless — the same
 // mistake as the bot that would not fight back.
+/**
+ * What an average player raises, in the order they want it.
+ *
+ * `greathall` and `earthworks` were missing until audit item 4, and that is
+ * the whole of why sixty sagas never built one: the upgrade tier shipped
+ * with `standsFor()` written for it, `replaces` enforced in `buildBlocker`,
+ * and a bot that was never told the two buildings existed. The game side was
+ * sound throughout — the measurement simply never asked. Same-commit rule,
+ * broken quietly, and only visible once something counted what was reached.
+ *
+ * The upgrades sit after the basics they replace, which is also the order
+ * `buildBlocker` enforces: a great hall needs a longhouse standing to
+ * replace, and earthworks need a palisade.
+ */
 const WANT = [
   'longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade',
-  'storehouse', 'watchtower', 'meadhall', 'hof', 'dock',
+  'storehouse', 'watchtower', 'meadhall', 'greathall', 'earthworks',
+  'hof', 'dock',
 ];
 
 /**
@@ -2227,5 +2243,70 @@ describe('a band that survives, grows', () => {
       peakLong / Math.max(1, longSagas),
       'bands that stood two winters still never outgrew the knarr',
     ).toBeGreaterThan(SWORN_MAX);
+  });
+});
+
+describe('every building gets built', () => {
+  /**
+   * AUDIT ITEM 4, and the answer was not the one the item assumed.
+   *
+   * The audit found `greathall` and `earthworks` never raised once in sixty
+   * sagas and asked whether the timber cost or the prerequisites were out of
+   * reach of a band that survives. Neither. The game side was sound the
+   * whole time — `standsFor()` had been written for the tier, `buildBlocker`
+   * enforces `replaces`, and the panel offers both correctly. The bot's want
+   * list simply did not name them, so nothing ever asked.
+   *
+   * That is the same-commit rule broken quietly, and the only reason it was
+   * ever visible is that something finally counted what play REACHES rather
+   * than what the code supports. This test is that counting, kept.
+   */
+  it('reaches the whole list, including the tier that replaces things', { timeout: 900_000 }, async () => {
+    const raised: Record<string, number> = {};
+    const late: Record<string, number> = {};
+    let sagas = 0;
+    let lateSagas = 0;
+    let lateTotal = 0;
+    const SEEDS = 30;
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      for (let s = 0; s < SEEDS; s += 1) {
+        const state = run(`curve-${s}`, 400, undefined, terms);
+        sagas += 1;
+        const built = state.settlement?.built ?? [];
+        for (const id of built) raised[id] = (raised[id] ?? 0) + 1;
+        if (state.day >= 169) {
+          lateSagas += 1;
+          lateTotal += built.length;
+          for (const id of built) late[id] = (late[id] ?? 0) + 1;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    const never = BUILDINGS.filter((b) => !raised[b.id]).map((b) => b.id);
+    // eslint-disable-next-line no-console
+    console.log(
+      `buildings over ${sagas} sagas — ` +
+        `${Object.entries(raised).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(', ')}\n` +
+        `  never raised: ${never.join(', ') || 'none'}; of the ${lateSagas} past day 169, ` +
+        `avg ${(lateTotal / Math.max(1, lateSagas)).toFixed(1)} standing, ` +
+        `greathall ${late['greathall'] ?? 0}, earthworks ${late['earthworks'] ?? 0}`,
+    );
+
+    // The bar the tier did not have. Every building the game ships must be
+    // something play actually reaches — a building nobody builds is content
+    // that does not exist, whether the reason is the cost, the gate, or a
+    // list in the harness that forgot it.
+    expect(never, `never raised in ${sagas} sagas: ${never.join(', ')}`).toEqual([]);
+
+    // And specifically the upgrade tier, which is the one that was missing.
+    // Barred on the bands it is FOR: a saga that stood two winters should
+    // usually have outgrown its first longhouse.
+    expect(lateSagas, 'nothing survived long enough to reach the tier').toBeGreaterThan(0);
+    expect(late['greathall'] ?? 0, 'no band that stood two winters ever outgrew its longhouse')
+      .toBeGreaterThan(0);
+    expect(late['earthworks'] ?? 0, 'no band that stood two winters ever raised earthworks')
+      .toBeGreaterThan(0);
   });
 });
