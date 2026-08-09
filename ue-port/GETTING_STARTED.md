@@ -609,8 +609,21 @@ Now extend the BeginPlay chain from Step 8. **Before** the For Each Loop:
 | 7 | **Set Colour** on the tile | Target ← Return Value, Colour ← node 5 |
 | 8 | **Add** to `Costs` | Key ← loop Array Element, Value ← node 4's **Cost** |
 
-Exec: `SET Grid` ▶ node 3 ▶ node 6 ▶ node 7 ▶ node 8 ▶ `ADD` (nodes 1, 2, 4 and 5 are
-pure — no exec pins, they just feed data).
+Exec: `SET Grid` ▶ node 1 ▶ node 3 ▶ node 6 ▶ node 7 ▶ node 8 ▶ `ADD`, taking node 3's
+**Row Found** output rather than its plain exec.
+
+**Node 1, `Pick Index`, is on that wire — every RNG draw is.** `Pick Index`, `Next`,
+`Roll`, `Chance`, `Shuffle Indices` and `Weighted Index` all have exec pins, because each
+one advances the generator. A pure node may be evaluated any number of times depending on
+how the graph compiles, which would scramble the sequence and cost you the determinism the
+whole port is built on. Leave one unwired and Blueprint prunes it, its return value reads
+as 0, and every tile silently gets the same terrain.
+
+Nodes 2, 4 and 5 really are pure — they only read.
+
+**Every node with a white left-hand arrow must have something plugged into it.** An
+unwired impure node does not error; it just never runs. That is the single most common way
+this step comes out grey.
 
 Press Play. The board is now painted in Landnám's own palette, from Landnám's own
 generator. **Change one character of the seed and it is a different island**, every time,
