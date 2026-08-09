@@ -234,6 +234,11 @@ button:active {
 .action.secondary {
   flex: 0 0 auto;
   color: var(--parchment-dim);
+  /* Audit item 10 measured every touch target in the built page and found
+     exactly one under the 44px this project has required since 5.2: the
+     Saga button, at 43 wide. One pixel, and it had been there for months
+     because nothing counted. */
+  min-width: 44px;
 }
 
 button.primary {
@@ -1648,4 +1653,20 @@ button.hardship-chip {
 
 .kin-line.gone {
   color: var(--blood);
+}
+
+/* Audit item 10: present to a screen reader, absent to everything else.
+   Not `display: none` and not `visibility: hidden` — both remove the node
+   from the accessibility tree, which is the one place it is meant to be. */
+.offscreen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

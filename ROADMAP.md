@@ -499,7 +499,11 @@ whole systems do not.
    else is different. Either ruling changes what a day looks like, or the
    proclamation is the ending it was rewritten not to be.
 
-10. **[ ] Screen-reader and touch semantics.** Six `aria-`/`role` attributes
+10. **[x] Screen-reader and touch semantics.** Done, and the measured gaps
+    were not the ones the item guessed at: names and touch targets were
+    already right (one button was 43px wide), and what was missing was
+    everything about CHANGE. See the changelog. Original text follows.
+    **[ ] (as written)** Six `aria-`/`role` attributes
     in the whole render layer, on a game whose primary target is a mobile
     browser. Touch targets and portrait layout have had attention; assistive
     technology has had none. Low glamour, genuinely small, and the kind of
@@ -771,6 +775,37 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-09 — Told, not shown (audit item 10)** — Six `aria` attributes
+  in the whole render layer, on a game whose primary target is a phone
+  browser. The item assumed the gap was labels and touch targets. Driving
+  the built page said otherwise: **every interactive element already had an
+  accessible name**, and every touch target was at or over the 44px this
+  project has required since 5.2 — bar exactly one, the Saga button at 43
+  wide, which had been a pixel short for months because nothing counted it.
+  What was missing was everything about CHANGE.
+  **No live region anywhere.** A turn-based game rewrites its whole page on
+  every action, which is the case a live region exists for, and a listener
+  took a turn and was told nothing. There is now an off-screen polite status
+  that says what just happened and then where the band stands — the newest
+  saga lines first, because a listener wants "they fired the smokehouse"
+  before they want the woodpile, bounded at three because a region that
+  reads a paragraph a turn is one people switch off.
+  **No dialog semantics.** Fifteen overlay sites all built a bare `.overlay`,
+  so a card covering the screen read as more page. Each is `role="dialog"`
+  `aria-modal="true"` now, and the name and the reading position are taken
+  from the card's own heading centrally, so no call site has to remember.
+  **An unlabelled map**, which is the largest thing on screen. It has a
+  summary — how much of the coast is known, what stands on it — and points
+  at the panel underneath, which already reads the ground in detail.
+  The TEXT is pure and lives in `src/sim/announce.ts` with unit tests,
+  because this project's rule is that anything testable does not belong in
+  `render/`. The wiring is verified by driving the built page: dialog named
+  "The Day", focus inside it, the map labelled, and the live region opening
+  with the landing line followed by the ledger.
+  Stores are announced in DAYS as well as sacks — "Food 60, 20 days" — since
+  a listener cannot glance at the winter mark to work out what the number is
+  for.
 
 - **2026-08-09 — A jarl is owed (audit item 9)** — 6.4 made the jarldom
   endless on the argument that an endgame reached is not an endgame

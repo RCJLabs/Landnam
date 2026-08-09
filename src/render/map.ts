@@ -181,7 +181,7 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
     );
   }
 
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 /**

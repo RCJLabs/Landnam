@@ -269,7 +269,7 @@ export function renderDeeds(deeds: Deed[], close: () => void): HTMLElement {
     list.append(row);
   }
 
-  return el('div', { class: 'overlay' }, [
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card deeds-card' }, [
       el('h2', {}, ['The Day']),
       list,

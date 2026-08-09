@@ -34,6 +34,11 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     class: 'map',
     xmlns: 'http://www.w3.org/2000/svg',
     preserveAspectRatio: 'xMidYMid slice',
+    // Otherwise this is the largest thing on the page and a screen reader
+    // has nothing at all to say about it. A summary, not a hex-by-hex
+    // reading: the panel underneath already reports the ground the band is
+    // standing on, so what this adds is the shape of the situation.
+    role: 'img',
   });
   root.append(mapDefs());
 

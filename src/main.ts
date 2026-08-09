@@ -68,6 +68,7 @@ import { fallen, remember } from './memorial';
 import { fallenOf } from './sim/fallen';
 import { installDebug } from './debug';
 import { freshUi, resetForRun } from './uistate';
+import { announce, mapLabel } from './sim/announce';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('missing #app');
@@ -234,6 +235,56 @@ const actionSlot = el('div', { class: 'slot action-slot' });
 const sagaSlot = el('div', { class: 'slot saga-slot' });
 const overlaySlot = el('div', { class: 'slot overlay-slot' });
 
+/**
+ * What a screen reader hears. Audit item 10.
+ *
+ * Off-screen and always present: a polite live region is only announced when
+ * its contents CHANGE, so it has to exist from the first render and be
+ * rewritten rather than replaced. The game is turn-based and every action
+ * rewrites the whole page, which is exactly the case a live region is for —
+ * without one a listener took an action and was told nothing at all.
+ *
+ * `announce()` is pure and lives in src/sim, with the tests. This is only
+ * the wire.
+ */
+const criesSlot = el('div', {
+  class: 'offscreen',
+  'aria-live': 'polite',
+  'aria-atomic': 'true',
+  role: 'status',
+});
+let criedFrom = 0;
+
+/**
+ * Gives every card that covers the screen the semantics of one.
+ *
+ * Twelve overlay sites all build `.overlay`, and each is now `role="dialog"`
+ * `aria-modal="true"` — but a dialog also needs a NAME and needs the reading
+ * position to be inside it, or a listener is told "dialog" and left at the
+ * top of the page behind it. Both come off the card's own heading, so no
+ * call site has to remember anything.
+ */
+function nameOverlays(): void {
+  for (const node of overlaySlot.querySelectorAll('[role="dialog"]')) {
+    const heading = node.querySelector('h2');
+    if (heading?.textContent) node.setAttribute('aria-label', heading.textContent);
+    const card = node.querySelector<HTMLElement>('.card');
+    if (!card) continue;
+    if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+    if (!node.contains(document.activeElement)) card.focus({ preventScroll: true });
+  }
+}
+
+/** Says what just happened, then where we stand. */
+function cry(): void {
+  if (!state) return;
+  const text = announce(state, criedFrom);
+  criedFrom = state.saga.length;
+  // Same string twice is not a change and would be swallowed; a hair of
+  // difference is cheaper than tracking every reason it might repeat.
+  criesSlot.textContent = criesSlot.textContent === text ? `${text} ` : text;
+}
+
 /** replaceChildren wants a list; a missing overlay is an empty one. */
 function asNodes(node: HTMLElement | null): HTMLElement[] {
   return node ? [node] : [];
@@ -241,6 +292,7 @@ function asNodes(node: HTMLElement | null): HTMLElement[] {
 
 function shell(): HTMLElement {
   return el('div', { class: 'shell' }, [
+    criesSlot,
     topbarSlot,
     mapSlot,
     hintSlot,
@@ -372,6 +424,7 @@ function renderBattle(): void {
   overlaySlot.replaceChildren(
     ...(state.battle.outcome ? [renderBattleResult(state, dispatch)] : asNodes(lessonOverlay())),
   );
+  nameOverlays();
 }
 
 function renderColony(): void {
@@ -420,10 +473,15 @@ function renderColony(): void {
   );
   sagaSlot.replaceChildren(renderColonyFooter(state));
   overlaySlot.replaceChildren(...asNodes(lessonOverlay()));
+  nameOverlays();
 }
 
 function render(): void {
   if (!state || !travelView) return;
+  // Whatever else this render does, the listener is told. Placed at the top
+  // so the three mode branches below cannot each forget it.
+  cry();
+  travelView.root.setAttribute('aria-label', mapLabel(state));
 
   if (currentMode(state) === 'BATTLE' && state.battle) {
     renderBattle();
@@ -506,6 +564,7 @@ function render(): void {
       }),
     ),
   );
+  nameOverlays();
 
   // Keep the party in view after it moves.
   if (currentMode(state) === 'TRAVEL') travelView.centreOn(state.party.at);

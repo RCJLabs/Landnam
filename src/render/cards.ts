@@ -79,7 +79,7 @@ export function renderTitle(
     ),
   );
 
-  return el('div', { class: 'overlay title' }, [
+  return el('div', { class: 'overlay title', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card' }, [
       el('h1', { class: 'game-title' }, ['LANDNÁM']),
       el('p', { class: 'tagline' }, ['Sail, fight, claim, survive.']),
@@ -126,7 +126,7 @@ export function renderEventCard(state: GameState, dispatch: Dispatch): HTMLEleme
     card.append(choices);
   }
 
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 /**
@@ -161,7 +161,7 @@ export function renderWall(dead: Fallen[], onClose: () => void): HTMLElement {
   }
 
   card.append(button('Back', onClose, { class: 'primary wide' }));
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 /**
@@ -178,7 +178,7 @@ export function renderLesson(lesson: LessonDef, onDismiss: () => void): HTMLElem
     el('p', { class: 'lesson-point' }, [lesson.point]),
     button('Onward', onDismiss, { class: 'primary wide' }),
   ]);
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 /**
@@ -227,7 +227,7 @@ export function renderAftermath(state: GameState, dispatch: Dispatch): HTMLEleme
   }
 
   card.append(button('Onward', () => dispatch({ type: 'DISMISS_AFTERMATH' }), { class: 'primary wide' }));
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 /**
@@ -261,7 +261,7 @@ export function renderFounding(
 
   const strong = MEASURES.find((m) => m.id === strongest)!;
 
-  return el('div', { class: 'overlay' }, [
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card founding' }, [
       el('h2', { class: 'good' }, ['Take This Land?']),
       el('p', { class: 'event-body' }, [
@@ -355,7 +355,7 @@ export function renderLaunch(
   choices.append(go, button('Not today', close, { class: 'choice' }));
   card.append(choices);
 
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 function personRow(person: Person): HTMLElement {
@@ -422,7 +422,7 @@ export function renderSagaBook(
   queueMicrotask(() => {
     list.scrollTop = list.scrollHeight;
   });
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 export interface SettingsOptions {
@@ -500,7 +500,7 @@ export function renderSettings(opts: SettingsOptions): HTMLElement {
     el('p', { class: 'build-stamp' }, [`build ${__BUILD__}`]),
     button('Back', opts.onClose, { class: 'primary wide' }),
   );
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 /**
@@ -518,7 +518,7 @@ export function renderGuide(onClose: () => void): HTMLElement {
     );
   }
   card.append(list, button('Back', onClose, { class: 'primary wide' }));
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 export function renderWarband(state: GameState, close: () => void): HTMLElement {
@@ -575,7 +575,7 @@ export function renderWarband(state: GameState, close: () => void): HTMLElement 
   }
 
   card.append(button('Close', close, { class: 'primary wide' }));
-  return el('div', { class: 'overlay' }, [card]);
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }
 
 /**
@@ -590,7 +590,7 @@ export function renderProclamation(
   onClose: () => void,
 ): HTMLElement {
   const jarl = state.jarl!;
-  return el('div', { class: 'overlay' }, [
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card' }, [
       el('h2', { class: 'good' }, ['The Thing Carried It']),
       el('p', { class: 'event-body' }, [
@@ -646,7 +646,7 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
     note.replaceChildren(ok ? `Copied — seed "${state.seed}"` : `seed "${state.seed}"`);
   }, { class: 'action secondary wide' });
 
-  return el('div', { class: 'overlay' }, [
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card end-card' }, [
       el('h2', { class: survived ? 'good' : 'grim' }, [saga.title]),
       body,

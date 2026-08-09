@@ -160,7 +160,7 @@ export function renderBattleResult(state: GameState, dispatch: Dispatch): HTMLEl
     lines.push(`${ran} of us ran, and nobody spoke of it afterward.`);
   }
 
-  return el('div', { class: 'overlay' }, [
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card' }, [
       el('h2', { class: won ? 'good' : 'grim' }, [won ? 'The Field Is Ours' : 'They Broke Us']),
       ...lines.map((line) => el('p', { class: 'event-body' }, [line])),
