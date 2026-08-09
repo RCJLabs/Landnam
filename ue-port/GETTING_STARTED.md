@@ -1,11 +1,19 @@
 # From a blank project to a hex grid you can click
 
 You have Unreal 5.6 installed and a Blueprint Top Down project called `LandnamUE`.
-This walks you the rest of the way: version control, Landnám's real hex math running
-as C++, and a grid on screen that answers clicks.
+This walks you the rest of the way: version control, Landnám's real hex math running as
+C++, the full 52 × 36 world map painted from the game's own terrain table, and a unit that
+walks it hex by hex.
 
 Budget an evening. Nothing here needs C++ knowledge — you copy four files in and
 never edit them. Everything you build, you build in Blueprints.
+
+**One habit worth forming first.** Almost every failure in this guide is silent: a node
+that never runs, a colour written to a material nobody renders, a volume moved instead of
+resized. Blueprint rarely tells you. When something does nothing at all, select all in the
+graph (`Ctrl+A`), copy (`Ctrl+C`) and paste the text somewhere you can read it — that dump
+contains every node, wire and pin default, and it will show you in seconds what an hour of
+squinting at the graph will not.
 
 Paths below assume the project lives at `Documents/Unreal Projects/LandnamUE`.
 
@@ -374,8 +382,8 @@ Also make a material to colour them:
 1. Content Browser → **Add → Material**, name it `M_HexTile`. Double-click to open it.
 2. **Right-click in the empty graph space**, left of the `M_HexTile` node. A node search
    box appears — type `Vector Parameter` and pick **VectorParameter**.
-3. With the new node selected, set **Parameter Name** to `Colour` in the Details panel on
-   the left, and click its colour swatch to give it a mid-grey default.
+3. With the new node selected, set **Parameter Name** to `BaseColour` in the Details panel
+   on the left, and click its colour swatch to give it a mid-grey default.
 4. Drag from the node's **top output pin** — the topmost of the five on its right edge —
    onto **Base Color** on the `M_HexTile` node.
 5. **Apply**, then **Save**.
@@ -384,6 +392,11 @@ It has to be a *parameter*, not a plain colour. The `V`-and-click shortcut you m
 elsewhere makes a **Constant3Vector**, which is a fixed colour with no name — nothing can
 change it at runtime, so every tile would be stuck grey.
 
+**Write `BaseColour` down.** Step 7 types that same name into a `Set Vector Parameter
+Value` node, and the two must match character for character. A mismatch does not error —
+the write simply goes nowhere and every tile stays the material's default grey. This is
+the first of several failures in this guide that are completely silent.
+
 ---
 
 ## Step 7 — BP_HexTile
@@ -391,22 +404,46 @@ change it at runtime, so every tile would be stuck grey.
 **Add → Blueprint Class → Actor**, name it `BP_HexTile`. Open it.
 
 1. **Add Component → Static Mesh**. Set its **Static Mesh** to `SM_HexTile`.
-2. In **My Blueprint**, add a variable named `Hex`, type **Hex** — that is the struct from
+2. **With that component still selected**, find **Materials → Element 0** in the Details
+   panel and set it to `M_HexTile`. This one line matters more than it looks; see below.
+3. In **My Blueprint**, add a variable named `Hex`, type **Hex** — that is the struct from
    the C++ library. Tick **Instance Editable**.
-3. Add a variable `TileMaterial`, type **Material Instance Dynamic** (Object Reference).
-   Add another named `Grid`, type **BP Hex Grid → Object Reference**, **Instance Editable**
+4. Add another named `Grid`, type **BP Hex Grid → Object Reference**, **Instance Editable**
    — Step 9 has the tile call back to its grid through this, and Step 8 fills it in.
    (`BP_HexGrid` does not exist yet, so add this one after Step 8 creates it.)
-4. On **Event BeginPlay**:
-   - `Static Mesh` → **Create Dynamic Material Instance** (Element Index 0, Source Material
-     `M_HexTile`) → promote the result into `TileMaterial`.
-5. Add a function **SetColour** with a `Colour` input of type **Linear Color**:
-   - `TileMaterial` → **Set Vector Parameter Value**, Parameter Name `Colour`, Value = input.
+5. Add a function **SetColour** with a `Colour` input of type **Linear Color**. Three nodes
+   in one straight line, no branch:
+
+   | Node | Settings |
+   | --- | --- |
+   | `Static Mesh` (drag the component into the graph) | — |
+   | **Create Dynamic Material Instance** | Element Index `0`, **Source Material empty** |
+   | **Set Vector Parameter Value** | Target ← previous Return Value, Parameter Name `BaseColour`, Value ← the `Colour` input |
+
+   Exec: entry ▶ Create Dynamic Material Instance ▶ Set Vector Parameter Value.
 
 Compile and save.
 
-A dynamic material instance is what lets each tile hold its own colour — without it,
-every tile shares one material and they would all change together.
+**`BP_HexTile` has no Event BeginPlay.** It needs none, and giving it one causes a bug that
+is genuinely hard to find.
+
+A dynamic material instance (MID) is what lets each tile hold its own colour — without one,
+every tile shares a single material and they all change together. But `Create Dynamic
+Material Instance` does *two* things: it makes the MID **and** applies it to the mesh. Call
+it in BeginPlay and again from the grid, and you end up with two MIDs per tile where only
+the last one is actually being rendered. Colour writes land on the other one and vanish.
+Which tiles work then depends on BeginPlay ordering, which looks random.
+
+Doing it inside `SetColour` avoids all of that, because the node is idempotent: **if the
+mesh already carries a MID, it returns that same one instead of making another.** That is
+also why **Source Material must be left empty** — empty means "use whatever material is
+already on this mesh as the parent". Naming `M_HexTile` there instead makes it call
+`SetMaterial` first, replacing the MID and minting a fresh one on every single call.
+
+And that is why step 2 assigns `M_HexTile` to the component. With Source Material empty,
+nothing else ever puts a material on the tile — the mesh's own default has no `BaseColour`
+parameter, so every write would silently do nothing and the whole map would stay grey.
+The material belongs to what a tile *is*, not to something BeginPlay has to remember.
 
 ---
 
@@ -438,7 +475,16 @@ Two fiddly ones:
 Compile once before filling in the defaults — Blueprint will not let you set them until
 the variables exist.
 
-On **Event BeginPlay**:
+On **Event BeginPlay**, *first* — before anything else on the wire:
+
+- **Get Player Controller (0)** → **Set Show Mouse Cursor** `true` → **Set Enable Click
+  Events** `true`.
+
+Put these at the **front** of BeginPlay, not after the loop. They are what makes clicking
+possible at all in Step 9, and anything downstream of a loop is one wiring mistake away
+from never running. They also cost nothing, so there is no reason to defer them.
+
+Then, continuing that same exec chain:
 
 1. **Make Hex** (Q `0`, R `0`) → feed into **Hex Range** along with `Radius`.
    This returns every hex within `Radius` steps — the same function the web game's
@@ -453,8 +499,10 @@ On **Event BeginPlay**:
    - Drag off **Return Value** again → **Set Grid**. For its value, right-click empty
      space → *Get a reference to self*. Step 9 needs this to call back.
    - **Add** to `Tiles`: Key = loop element, Value = the spawned actor.
-3. After the loop — from **Completed**, not Loop Body: **Get Player Controller (0)** →
-   **Set Show Mouse Cursor** `true`, and **Set Enable Click Events** `true`.
+
+**Both SET nodes, every spawn.** `Set Grid` is the one that gets dropped, and a tile with a
+null `Grid` cannot report its own click — the call just does nothing, with no error. If
+Step 9 ends up doing nothing at all, this is the first thing to check.
 
 Drag `BP_HexGrid` into the level and set its Location to `0, 0, 0`. Tiles spawn at
 absolute world coordinates, so the actor's own position does not move them; parking it at
@@ -508,7 +556,12 @@ Three sections, chained by their exec pins:
 - Drag off that → **For Each Loop**.
 - In the body: drag the **Array Element** → **Set Colour**. Click the Colour pin's swatch
   and choose a dark grey.
-- Entry node ▶ this loop.
+- Entry node ▶ **Values** ▶ this loop.
+
+**`Values` has an exec pin and needs it wired.** It looks like a pure getter and is not.
+Leave its white input arrow empty and Blueprint prunes the node, hands the loop an empty
+array, and warns only in the compiler log — the function then runs, does nothing, and
+reports no error at runtime.
 
 **Light the six neighbours**
 
@@ -527,6 +580,10 @@ Three sections, chained by their exec pins:
 - Loop 2's **Completed** ▶ this.
 
 Compile and save.
+
+**Set all three colour swatches deliberately.** A `Colour` pin left alone defaults to pure
+black, which on a dark map reads as "nothing happened" rather than as a bug. The centre one
+is the easiest to forget, because it is the last node you place.
 
 ### 9c. BP_HexTile: report the click
 
@@ -684,20 +741,207 @@ you have a movement preview; walk a unit along it and you have movement.
 
 ---
 
+## Step 11 — The real map: 52 × 36
+
+Radius 6 was a first light. The actual world map is rectangular, and its dimensions are
+already decided — `WORLD_WIDTH = 52`, `WORLD_HEIGHT = 36` in `src/sim/worldgen.ts`. That is
+1,872 hexes, about fifteen times the radius-6 field.
+
+Rectangular maps are authored in **odd-r offset space** (plain columns and rows) and stored
+as axial. `OffsetToAxial` does that conversion, and it is already in the library.
+
+In **BP_HexGrid**, add one variable:
+
+| Name | Type | Instance Editable |
+| --- | --- | --- |
+| `MapHexes` | Array of **Hex** | no |
+
+Then replace the `Make Hex` → `Hex Range` pair from Step 8 — delete both nodes, and the
+`Radius` getter feeding them — with this, on the same exec chain:
+
+1. **Clear** on `MapHexes`. (Without this, replaying in the editor appends a second map.)
+2. **For Loop**, First Index `0`, **Last Index `35`** — the rows.
+3. Its **Loop Body** ▶ a second **For Loop**, First Index `0`, **Last Index `51`** — the
+   columns.
+4. The inner loop's **Loop Body** ▶ **Add** on `MapHexes`, New Item ← **Offset To Axial**
+   with **Col** = the inner loop's Index and **Row** = the outer loop's Index.
+5. The **outer** loop's **Completed** ▶ the **For Each Loop** that spawns tiles (the one
+   from Step 8, now iterating `MapHexes` instead of the `Hex Range` output).
+
+Written out:
+
+```
+For Loop (rows, Last Index 35)
+  └ Loop Body ▶ For Loop (cols, Last Index 51)
+                  └ Loop Body ▶ Add to MapHexes
+                  └ Completed ▶ (nothing)
+  └ Completed ▶ For Each Loop (MapHexes) ▶ Spawn Actor …
+```
+
+**Step 5 is the whole trap.** It is natural to drag the spawn loop off the *inner* loop's
+`Completed`, because that is the pin nearest your cursor when you finish building the inner
+loop. Do that and the spawn loop runs once per row, over a `MapHexes` array that grows each
+time: 52 tiles, then 104, then 156… `52 × (1+2+…+36)` = **34,632 actors** for an 1,872-hex
+map.
+
+What makes it vicious is that it still *looks* right. `Tiles` reports exactly 1,872, because
+a map keyed by hex de-duplicates and keeps only the last actor spawned at each hex. All the
+earlier duplicates are still in the world, stacked on top of it. Clicks hit the topmost
+duplicate; `HighlightAround` recolours the registered one underneath. Colours change and you
+cannot see them, on some tiles and not others, in a pattern that follows row number.
+
+Symptoms worth recognising, because none of them point at a loop: a slow load, clicks that
+do nothing, tiles that light up somewhere other than where you clicked, and highlights that
+work near one edge of the map and not the other.
+
+Also set **Last Index**, not Last Index minus one. A For Loop in Blueprint is inclusive of
+both ends, so `0` to `35` is 36 rows. And check neither loop is left at the default `-1`,
+which runs the body zero times and produces an empty map in silence.
+
+### Where the map ends up
+
+`HexToWorld` maps the browser's x-east/y-south into Unreal's X-north/Y-east, so at
+`HexSize = 100` the grid occupies roughly:
+
+- **X** from `0` to about `-5250`
+- **Y** from `0` to about `+8900`
+
+Which puts the centre near **`(-2600, 4500)`**. Two things want to know that:
+
+- **`PlayerStart`** — leave it at the origin and you begin at a far corner of the map.
+  Move it to about `(-2600, 4500, 200)`.
+- The **NavMeshBoundsVolume**, in Step 12.
+
+Press Play. Same generator, same palette, same seed behaviour as radius 6 — just the map
+the game is actually designed around.
+
+---
+
+## Step 12 — Walk a unit, hex by hex
+
+The Top Down template already has click-to-move. What it does not have is any notion that
+the world is made of hexes: it walks the pawn to the exact point under your cursor, so it
+stops between tiles and "which hex am I on" has no answer.
+
+Three changes fix that. The first is a level setting, and the other two are in the player
+controller.
+
+### 12a. Give the map a NavMesh
+
+`Simple Move to Location` only works inside a NavMesh, and the template ships one sized for
+its little starting room — a fraction of a 52 × 36 map. Outside it, clicks do nothing at
+all: no movement, no warning, no log line.
+
+1. Select **`NavMeshBoundsVolume`** in the Outliner.
+2. Set **Transform → Location** to `-2600, 4500, 0`.
+3. **In the Details panel, click the top row — `NavMeshBoundsVolume (Instance)` — not the
+   `BrushComponent` row below it.** With the component selected you get a Transform and
+   nothing else, and the size fields are simply absent.
+4. Scroll to **Brush Settings** and set **X** `8000`, **Y** `12000`, **Z** `2000`.
+
+If Brush Settings still does not appear, scale it instead: unlock the padlock beside
+**Scale** and set `4.0, 6.0, 2.0`. The template's volume is roughly 2000 × 2000 × 1000, so
+that lands in the same place, and navmesh generation cannot tell the difference.
+
+**Location is not size.** Typing `8000, 12000, 2000` into the Transform's Location fields
+teleports the volume 8,000 units away at its original size, leaving the map with no
+navmesh — which presents identically to having no volume at all.
+
+Verify before moving on: hit Play and press **P** over the viewport. Green should cover the
+hexes. No green means nothing below this step can work.
+
+### 12b. Snap the destination to a hex centre
+
+Find the player controller by asking the level rather than hunting folders:
+**Window → World Settings → GameMode Override**, expand **Selected GameMode**, and
+double-click **Player Controller Class**. (It is `BP_TopDownController`, under
+`Content/TopDown/Blueprints/`.)
+
+Open its **`MoveTo`** function. It takes a `Location` and hands it to `Simple Move to
+Location` and to the click-marker effect. Splice two pure nodes into that wire:
+
+```
+MoveTo entry ─ Location ▶ Hex From World ▶ Hex To World ─┬─▶ Simple Move to Location (Goal)
+                          Size = 100        Size = 100    └─▶ Spawn System at Location
+                                            Z    = 0
+```
+
+Both `Size` pins must match `HexSize` on `BP_HexGrid`. If they disagree the pawn walks to
+the centre of the *wrong* hex, and the error grows with distance from the origin — which
+reads as "movement drifts" rather than as a mismatched constant.
+
+**Snap here, not where the cursor is read.** The template writes its destination variable
+in four places — mouse and touch, each on both Started and Triggered — and they overwrite
+each other within a single frame. `MoveTo` is the one point where a destination is
+committed, so one edit covers every path, now and for any input you add later.
+
+### 12c. Turn off free steering
+
+That alone will not change what you see, because most clicks never reach `MoveTo`. The
+template has two movement systems on the same button:
+
+| Event | Runs | Result |
+| --- | --- | --- |
+| **Triggered**, every frame held | `Follow` → `Add Movement Input` at the raw cursor | free roam |
+| **Completed**, if held briefly | `MoveTo` → `Simple Move to Location` | snapped |
+
+Any click held longer than an instant goes down the `Follow` path and steers the pawn
+directly, never touching `MoveTo`. Hold-to-steer has no place in a hex game.
+
+In the controller's Event Graph:
+
+1. Find the **`Follow`** node fed from `IA_SetDestination_Click` and **Alt+click its exec
+   input** to disconnect it. Leave the `SET Cached Destination` before it wired — you still
+   want the destination tracking the cursor while the button is down.
+2. Do the same to the second **`Follow`**, the one fed from `IA_SetDestination_Touch`.
+3. Select the **`PressedThreshold`** variable in My Blueprint and set its **Default Value**
+   to `1000`.
+
+Step 3 is not optional. `Completed` only calls `MoveTo` when the hold was shorter than
+`PressedThreshold`; with `Follow` gone, a longer hold would otherwise do nothing at all.
+
+Compile, save, Play. Click a hex: the pawn paths to it and stops dead-centre, and the click
+marker lands on the centre too. Hold and drag: nothing moves until you release.
+
+### What you have now
+
+One hex library — the same C++, parity-tested against the same TypeScript — driving the
+map's shape, the tiles' terrain, the highlight under the cursor, and where a unit can
+stand. Four systems, one source of truth, and a seed that means the same thing here as it
+does in the browser.
+
+### Next after this
+
+`Find Path In Map` closes the loop: from the pawn's current hex (`Hex From World` on its
+actor location) to the clicked one, over the same `Costs` map. Walk the pawn along the
+returned array one hex at a time instead of letting the navmesh smooth the corner, and
+movement stops being pathfinding-with-a-hex-shaped-destination and becomes actual hex
+movement.
+
+---
+
 ## What to do next
 
-The battle vertical slice, in this order, each step playable before the next:
+Steps 10 and 12 already built, at world scale, what the battle grid needs: a range
+highlight from `Reachable`, and a unit that occupies one hex at a time. The battle slice is
+mostly a matter of moving that from the grid onto a unit.
 
-1. One unit actor standing on a hex; click to select it.
-2. Movement range: `Reachable` with the unit's budget and a cost function that reads the
-   terrain table. Tint every hex it returns.
-3. Movement: `Find Path` to the clicked hex, then walk the unit along the returned hexes.
-4. A second, hostile unit. Strike when adjacent, using the rules in `src/sim/battle.ts`.
-5. Turn order, then shield-wall adjacency, zone of control, and morale — one rule at a
+In this order, each step playable before the next:
+
+1. A unit actor that owns its own `Hex` and `MoveBudget`, instead of the grid owning them.
+   Click to select it; `ShowRange` from where it stands.
+2. Step the pawn along `Find Path In Map`'s array one hex at a time, rather than letting
+   the navmesh smooth the route. This is what makes movement cost mean something.
+3. A second, hostile unit. Strike when adjacent, using the rules in `src/sim/battle.ts`.
+4. Turn order, then shield-wall adjacency, zone of control, and morale — one rule at a
    time, with `test/battle.test.ts` as the answer key.
 
-Steps 2 and 3 need no new C++ at all: `Reachable` and `Find Path` are already there,
+None of steps 1 and 2 need new C++: `ReachableInMap` and `FindPathInMap` are already there,
 already tested, and already agree with the game you can play in a browser.
+
+Real worldgen is a separate thread. Step 10 draws terrain at flat random, which is enough to
+make cost visible; `src/sim/worldgen.ts` weights by latitude and neighbours to produce an
+island rather than noise. Porting it is the difference between a hex map and Landnám's map.
 
 ## If something goes wrong
 
@@ -731,6 +975,39 @@ points north and south. Set the Static Mesh component's **Rotation Z** to `30` i
 **Clicks do nothing.** The mesh needs a blocking collision preset, and the player
 controller needs `Enable Click Events` and `Show Mouse Cursor` (Steps 8 and 9).
 
+**Every hex is grey, or colours never change.** In order of likelihood: the Static Mesh
+component's **Element 0** is not set to `M_HexTile` (Step 7), so `SetColour` is writing into
+an instance of the default material that has no such parameter; the material's parameter is
+not named exactly `BaseColour`; `Create Dynamic Material Instance` inside `SetColour` has
+`M_HexTile` in its **Source Material** pin instead of being left empty; or `BP_HexTile` has
+a BeginPlay that makes a second, competing material instance. All four fail without a word.
+
+**Some tiles respond and others do not, in no obvious pattern.** Two tiles are stacked at
+the same hex. See the loop-order trap in Step 11 — the give-away is that the tiles which
+misbehave correlate with row number, and `Tiles` still reports the correct count.
+
+**The pawn moves freely instead of hex to hex.** `Follow` is still connected (Step 12c). The
+snap in `MoveTo` is correct and simply never runs.
+
+**The pawn does not move at all.** Either `PressedThreshold` was not raised after
+disconnecting `Follow` (Step 12c), or there is no navmesh under it (Step 12a — press **P**
+in Play to check). Both fail silently. A `Print String` on `MoveTo`'s entry separates them
+in one click: no print means the input path, a printed vector means navigation.
+
+**A node has a white left-hand arrow and nothing plugged into it.** It will never run, and
+it will never say so. Blueprint prunes it, reads its return value as the type's default —
+`0`, empty array, black — and carries on. This is the single most common failure mode in
+this guide; it has caused, at various points, identical terrain on every tile, an empty
+highlight loop, and a material that was created but never coloured. When something does
+nothing, look for an unwired exec pin before you look at anything else.
+
 **The parity test fails after you changed the TypeScript.** That is the test doing its
 job. Regenerate the vectors — `node ue-port/tools/golden.mjs` — copy `golden.json` over,
 and run it again.
+
+**An asset fails to save, naming a path under `__ExternalActors__`.** The level uses One
+File Per Actor, so each actor is its own file, and something is blocking the write. Click
+**Retry** once, then **Cancel** — never **Continue**, which skips that asset and quietly
+discards your change. The usual cause is the project sitting inside a OneDrive-synced
+folder; move it somewhere like `C:\Dev\`. Otherwise check for read-only files, free disk
+space, and a project path long enough to bump the 260-character limit.
