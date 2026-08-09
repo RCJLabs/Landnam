@@ -150,9 +150,21 @@ export function shiftStanding(state: GameState, id: string, delta: number): void
  * washed out in a fortnight the milestone would not exist.
  */
 export function driftStandings(state: GameState): void {
+  // A jarl is not forgotten while he is still jarl. Goodwill stops draining
+  // once the Thing has carried — ill-will still cools, because a grudge
+  // against the man who rules the coast is a harder thing to keep up than
+  // a liking for him.
+  //
+  // Without this the endgame's own reward could not exist: tribute is paid
+  // out of standing, and standing bled 0.12 a day into indifference, so the
+  // one band in sixty that ruled for a hundred and eighty days was owed
+  // nothing by anybody by the second season. Measured at zero food and zero
+  // wood across a whole jarldom.
+  const ruling = !!state.jarl;
   for (const n of state.neighbours) {
-    if (n.standing > 0) n.standing = Math.max(0, n.standing - REP_DRIFT);
-    else if (n.standing < 0) n.standing = Math.min(0, n.standing + REP_DRIFT);
+    if (n.standing > 0) {
+      if (!ruling) n.standing = Math.max(0, n.standing - REP_DRIFT);
+    } else if (n.standing < 0) n.standing = Math.min(0, n.standing + REP_DRIFT);
   }
 }
 

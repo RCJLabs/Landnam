@@ -488,7 +488,11 @@ whole systems do not.
    whether that is the survival game working or three systems collapsing
    into one.
 
-9. **[ ] What ruling is actually worth.** Five jarldoms across forty sagas,
+9. **[x] What ruling is actually worth.** Done. It was worth five things
+   and every one of them made the game harder — ruling was a difficulty
+   setting with a name on it. A jarl is owed and a jarl draws men now, both
+   paid out of standing. See the changelog. Original text follows.
+   **[ ] (as written)** Five jarldoms across forty sagas,
    and `yearsRuled` is the only thing that changes when one is won. 6.4 made
    the endgame endless on the argument that a trophy is not a game — but
    after the Thing carries, the coast gets `JARL_WORD` harder and nothing
@@ -767,6 +771,44 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-09 — A jarl is owed (audit item 9)** — 6.4 made the jarldom
+  endless on the argument that an endgame reached is not an endgame
+  finished. The audit then counted what actually CHANGED when the Thing
+  carried, and the answer was five things: three points of word, two of raid
+  fame, the Thing closed behind you, a line on the band page, a different
+  title on the last screen. **Every one of them makes the game harder.**
+  Ruling was a difficulty setting with a name on it.
+  Two halves, both paid out of STANDING — so the coast the player spent the
+  whole run building is the thing that pays for the endgame, and a jarldom
+  won by frightening everybody is worth the title and not much else.
+  **A jarl is owed.** Every season each neighbour glad of him sends a
+  portion, food and timber, scaled by how glad. Below `TRIBUTE_FLOOR` they
+  acknowledge the title and send nothing — and the saga says so: *a title is
+  not the same as a following.*
+  **A jarl draws men.** `JARL_DRAW` multiplies item 3's draw. This is also
+  the game answering its own escalation: being proclaimed brings harder men
+  over the ridge, so it had better bring more hands to meet them. Before
+  this it brought only the harder men.
+  One thing had to change for either to be worth anything: **a jarl is not
+  forgotten while he is still jarl.** Tribute is paid out of standing and
+  standing bled 0.12 a day into indifference, so the one band in sixty that
+  ruled a hundred and eighty days was owed nothing by anybody by its second
+  season. Goodwill now holds while the rule does; ill-will still cools,
+  because a grudge against the man who rules the coast is a harder thing to
+  keep up than a liking for him.
+  Measured on a controlled fixture rather than in play, and deliberately:
+  the endgame is reached about once in sixty sagas, so play offers a sample
+  of ONE and any bar on it would be a coin. The bar is that the same
+  steading, over three seasons, takes in measurably more with the title than
+  without — which before this commit it did not, by a single unit.
+  Two probe bugs on the way, both mine and both the same mistake in
+  different clothes: **measuring the stock instead of the flow.** The play
+  probe read zero tribute across a jarldom that had in fact rendered seven
+  times, and the fixture compared woodpiles after three seasons when a
+  steading burns what it is given. Neither was a finding about the game.
+  The proclamation card now names what ruling brings as well as what it
+  costs. It only ever named the cost, because the cost was all there was.
 
 - **2026-08-09 — A cause is not a diagnosis (audit item 8)** — The item
   asked whether a death table three-quarters made of despair and hunger was

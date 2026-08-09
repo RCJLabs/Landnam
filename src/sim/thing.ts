@@ -26,6 +26,14 @@ import {
   type NeedId,
 } from '../data/thing';
 import { stream } from '../rng';
+import {
+  TRIBUTE_EVERY,
+  TRIBUTE_FLOOR,
+  TRIBUTE_FOOD_PER,
+  TRIBUTE_LINES,
+  TRIBUTE_NONE,
+  TRIBUTE_WOOD_PER,
+} from '../data/jarl';
 import type { GameState } from '../state/types';
 import { angerLevel, friendliest, goodwillLevel } from './neighbours';
 import { bonus } from './lore';
@@ -191,4 +199,49 @@ export function callThing(state: GameState): ThingResult | null {
   chronicle(state, text, 'grim');
   state.party.morale = Math.max(0, state.party.morale - 10);
   return { proclaimed: false, text };
+}
+
+// --- What ruling is worth ---
+
+/**
+ * The coast renders what is owed, once a season.
+ *
+ * The reward half of the jarldom, and until audit item 9 there was no reward
+ * half at all: every single thing being proclaimed changed made the game
+ * harder. A jarl is owed by the people who are glad he is there, and by
+ * nobody else — a neighbour below `TRIBUTE_FLOOR` acknowledges the title and
+ * sends nothing, which is what a coast does to a jarl it does not like.
+ *
+ * Deliberately paid out of STANDING, so the coast the player spent the whole
+ * run building is the thing that pays for the endgame, and a jarldom won by
+ * terrifying everybody is worth the title and not much else.
+ */
+export function renderTribute(state: GameState): boolean {
+  if (!state.jarl || state.end || !state.settlement) return false;
+  if ((state.day - state.jarl.since) % TRIBUTE_EVERY !== 0) return false;
+  if (state.day === state.jarl.since) return false;
+
+  let paid = 0;
+  for (const n of state.neighbours) {
+    if (!n.found || n.standing < TRIBUTE_FLOOR) continue;
+    const over = n.standing - TRIBUTE_FLOOR;
+    const food = Math.round(over * TRIBUTE_FOOD_PER);
+    const wood = Math.round(over * TRIBUTE_WOOD_PER);
+    if (food <= 0 && wood <= 0) continue;
+    state.party.food += food;
+    state.party.firewood += wood;
+    paid += 1;
+    const what = [food > 0 ? `${food} of food` : '', wood > 0 ? `${wood} of wood` : '']
+      .filter(Boolean)
+      .join(' and ');
+    const line = stream(state.seed, 'events')
+      .derive(`tribute:${n.id}:${state.day}`)
+      .pick(TRIBUTE_LINES)
+      .replace('{who}', n.name)
+      .replace('{what}', `${what[0]!.toUpperCase()}${what.slice(1)}.`);
+    chronicle(state, line, 'good');
+  }
+
+  if (paid === 0) chronicle(state, TRIBUTE_NONE, 'grim');
+  return paid > 0;
 }

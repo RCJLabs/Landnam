@@ -12,6 +12,7 @@ import { coldNight, sickCount, telegraphWinter, winterVerdict } from './winter';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
 import { driftStandings, neighboursCallOn } from './neighbours';
+import { renderTribute } from './thing';
 import { handsLeave, maybeJoin } from './joining';
 import { raidable, raidDifficulty, raidOdds } from './raid';
 import { startRaid } from './battleTurn';
@@ -230,6 +231,8 @@ export function passDay(state: GameState): boolean {
   driftStandings(state);
   // And it comes to look at anyone new on it.
   neighboursCallOn(state);
+  // And it renders what is owed, if there is anybody on it to owe.
+  renderTribute(state);
 
   // Season turned?
   if ((state.day - 1) % 24 === 0) {

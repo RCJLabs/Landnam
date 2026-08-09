@@ -12,6 +12,7 @@
 
 import { stream } from '../rng';
 import { DRAW_ANGER, DRAW_LARDER_DAYS, DRAW_MAX, WHY_THEY_COME } from '../data/folk';
+import { JARL_DRAW } from '../data/jarl';
 import { wintersStood } from './calendar';
 import { capacity } from './colony';
 import { angerLevel, goodwillLevel } from './neighbours';
@@ -98,7 +99,12 @@ export function drawOdds(state: GameState): number {
   const raised = Math.min(1, home.built.length / 5);
   const draw = (plenty + known + stood + raised) / 4;
   const feared = Math.min(1, angerLevel(state) / 100) * DRAW_ANGER;
-  return Math.max(0, DRAW_MAX * draw * (1 - feared));
+  // Men come to serve a name. This is also the game answering its own
+  // escalation: being proclaimed adds three to word and two to raid fame, so
+  // ruling brings harder men over the ridge, and it had better bring more
+  // hands to meet them. Before audit item 9 it brought only the harder men.
+  const rule = state.jarl ? JARL_DRAW : 1;
+  return Math.max(0, DRAW_MAX * draw * (1 - feared) * rule);
 }
 
 /**

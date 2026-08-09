@@ -25,7 +25,7 @@ import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
 import { nextThaw, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from '../src/sim/calendar';
 import { checkOdds } from '../src/sim/events';
-import { shiftStanding, seeNeighbours } from '../src/sim/neighbours';
+import { angerLevel, driftStandings, goodwillLevel, shiftStanding, seeNeighbours } from '../src/sim/neighbours';
 import { forecast, markVisible } from '../src/sim/winter';
 import { composeSaga, sagaText } from '../src/sim/sagagen';
 import {
@@ -38,9 +38,12 @@ import {
   thingNeeds,
   thingOdds,
   thingReady,
+  renderTribute,
   thingStanding,
   yearsRuled,
 } from '../src/sim/thing';
+import { JARL_DRAW, TRIBUTE_EVERY, TRIBUTE_FLOOR } from '../src/data/jarl';
+import { drawOdds } from '../src/sim/joining';
 import { JARL_WORD, wordBump, wordOf } from '../src/sim/word';
 import { foeCapFor, raiderCap, rollFoes } from '../src/sim/battle';
 import { stream } from '../src/rng';
@@ -527,5 +530,125 @@ describe('THE BAR — it is reachable by doing the work', () => {
     // eslint-disable-next-line no-console
     console.log(`${reached}/${seeds.length} colonies that did the work could call a Thing`);
     expect(reached, 'nobody who did the work could reach the endgame').toBe(seeds.length);
+  });
+});
+
+describe('what ruling is worth', () => {
+  /**
+   * AUDIT ITEM 9.
+   *
+   * 6.4 made the jarldom endless on the argument that an endgame reached is
+   * not an endgame finished. The audit then counted what actually CHANGED
+   * when the Thing carried, and the answer was five things, every one of
+   * which makes the game harder: three points of word, two of raid fame, the
+   * Thing closed behind you, a line on the band page, a different title on
+   * the last screen. Ruling was a difficulty setting with a name on it.
+   *
+   * A jarl on this coast is owed, and a jarl draws men. Both are paid out of
+   * STANDING — the coast the player spent the whole run building is the
+   * thing that pays for the endgame, and a jarldom won by frightening
+   * everybody is worth the title and not much else.
+   */
+  function ruling(seed: string, standing: number, jarl = true): GameState {
+    const state = settled(seed);
+    state.settlement!.built.push('longhouse', 'farmplots', 'meadhall');
+    state.day = 200;
+    state.party.food = 200;
+    state.party.firewood = 200;
+    for (const n of state.neighbours) {
+      n.found = true;
+      n.standing = standing;
+    }
+    if (jarl) state.jarl = { name: 'Ketil', since: 200 };
+    return state;
+  }
+
+  it('a coast that is glad of you renders what is owed, once a season', () => {
+    const state = ruling('rule-paid', 60);
+    const before = { food: state.party.food, wood: state.party.firewood };
+
+    // Not on the day it carried, and not the day after.
+    expect(renderTribute(state)).toBe(false);
+    state.day += 1;
+    expect(renderTribute(state)).toBe(false);
+
+    state.day = state.jarl!.since + TRIBUTE_EVERY;
+    expect(renderTribute(state)).toBe(true);
+    expect(state.party.food).toBeGreaterThan(before.food);
+    expect(state.party.firewood).toBeGreaterThan(before.wood);
+    expect(state.saga.some((e) => /owed to a jarl|without being asked|their portion|would not come in/.test(e.text)))
+      .toBe(true);
+  });
+
+  it('and a coast that is not, does not — and says so', () => {
+    const state = ruling('rule-cold', TRIBUTE_FLOOR - 1);
+    state.day = state.jarl!.since + TRIBUTE_EVERY;
+    const before = state.party.food;
+    expect(renderTribute(state)).toBe(false);
+    expect(state.party.food).toBe(before);
+    expect(state.saga.some((e) => e.text.includes('A title is not the same as a following'))).toBe(true);
+  });
+
+  it('nobody is owed anything by a coast with no jarl on it', () => {
+    const state = ruling('rule-none', 60, false);
+    state.day = 224;
+    expect(renderTribute(state)).toBe(false);
+  });
+
+  it('a jarl is not forgotten while he is still jarl', () => {
+    // Tribute is paid out of standing, and standing bled 0.12 a day into
+    // indifference — so a rule of any length was owed nothing by anybody
+    // long before it ended. Goodwill holds while the rule does; ill-will
+    // still cools, because a grudge against the man who rules the coast is
+    // harder to keep up than a liking for him.
+    const held = ruling('rule-hold', 50);
+    const lapsed = ruling('rule-lapse', 50, false);
+    for (let d = 0; d < 100; d += 1) {
+      driftStandings(held);
+      driftStandings(lapsed);
+    }
+    expect(goodwillLevel(held)).toBe(50);
+    expect(goodwillLevel(lapsed)).toBeLessThan(50);
+
+    const sour = ruling('rule-sour', -50);
+    for (let d = 0; d < 100; d += 1) driftStandings(sour);
+    expect(angerLevel(sour), 'ill-will should still cool under a rule').toBeLessThan(50);
+  });
+
+  it('men come to serve a name', () => {
+    const crowned = ruling('rule-draw', 40);
+    const plain = ruling('rule-plain', 40, false);
+    expect(drawOdds(crowned)).toBeGreaterThan(drawOdds(plain));
+    expect(JARL_DRAW).toBeGreaterThan(1);
+  });
+
+  /**
+   * THE BAR THE ENDGAME DID NOT HAVE: over a season of ruling, the same
+   * steading must be measurably better off for having the title than for
+   * not. Before item 9 the two were identical in every material respect —
+   * the difference was a string on the band page.
+   */
+  it('a season of ruling leaves the hall better off than a season without', () => {
+    // INCOME, not the stock on the shelf. The first cut compared woodpiles
+    // after three seasons and both read nought, because a steading burns
+    // what it is given — which measures the hearth, not the tribute.
+    const income = (state: GameState): number => {
+      let got = 0;
+      for (let d = 0; d < TRIBUTE_EVERY * 3; d += 1) {
+        state.party.food = Math.max(state.party.food, 60);
+        state.party.firewood = Math.max(state.party.firewood, 60);
+        if (state.event) state.event = undefined;
+        if (state.battle) state.battle = undefined;
+        const before = state.party.firewood + state.party.food;
+        passDay(state);
+        const after = state.party.firewood + state.party.food;
+        if (after > before) got += after - before;
+      }
+      return got;
+    };
+
+    const crowned = income(ruling('rule-season', 55));
+    const plain = income(ruling('rule-season', 55, false));
+    expect(crowned, 'ruling paid nothing over three seasons').toBeGreaterThan(plain);
   });
 });

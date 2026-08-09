@@ -603,6 +603,15 @@ export function renderProclamation(
           'the richest one, and they will come in greater numbers and better ' +
           'armed than they ever came for a nobody.',
       ]),
+      // What ruling BRINGS, said on the card that offers it. Until audit
+      // item 9 this screen named only the cost, because the cost was all
+      // there was: everything being proclaimed changed made the game harder.
+      el('p', { class: 'event-body' }, [
+        'They will also render what is owed. Every season the neighbours who ' +
+          'are glad of you send their portion up the road, and men looking for ' +
+          'a place will come to a hall with a name on it. The ones who hate ' +
+          'you send nothing — a title is not the same as a following.',
+      ]),
       button('Rule on', onRuleOn, { class: 'primary wide' }),
       button('Close the saga here', onClose, { class: 'action secondary wide' }),
     ]),

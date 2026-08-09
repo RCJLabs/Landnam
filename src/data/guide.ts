@@ -62,6 +62,6 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-long-game',
     title: 'The Long Game',
-    body: 'Stand long enough, or take enough, and word travels: harder men come looking, in bigger numbers. Growth answers it — hands to work, walls to hold, friends to call on. The Thing checklist appears at the steading after the first thaw and names exactly what a jarl still lacks.',
+    body: 'Stand long enough, or take enough, and word travels: harder men come looking, in bigger numbers. Growth answers it — hands to work, walls to hold, friends to call on. The Thing checklist appears at the steading after the first thaw and names exactly what a jarl still lacks. Ruling is not the end: a jarl is owed a portion each season by every neighbour glad of him, and men come to serve a name — but harder men come with them.',
   },
 ];
