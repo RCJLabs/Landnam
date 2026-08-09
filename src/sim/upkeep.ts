@@ -339,10 +339,33 @@ export function checkRunEnd(state: GameState, _forage: number): void {
   }
 
   if (state.party.morale <= 0) {
-    endRun(state, 'despair', 'The Band Broke', [
-      `On day ${state.day} what was left of us stopped listening to each other.`,
-      'Some walked inland. Some walked into the water. None of it was a plan.',
-    ]);
+    // WHY the band broke, which the ending used to guess at and get wrong.
+    //
+    // "Despair ends more runs than hunger, cold and steel put together" has
+    // been in ROADMAP.md for three audits, and it sent three separate
+    // sweeps of the morale levers — winter sickness, bereavement, kin grief
+    // — all of which moved nothing at all. Measured properly it is a
+    // labelling artifact: of thirty runs ending in despair, TWENTY-EIGHT
+    // had an empty larder the day before, averaging one food between them.
+    // They did not stop listening to each other. They had not eaten for
+    // weeks, and the last thing to go was the wanting to.
+    //
+    // So a band that breaks with nothing in the store is told it starved,
+    // because that is what happened and it is what they could have done
+    // something about. Despair keeps the case it was always FOR: fed, and
+    // out of heart anyway.
+    const starving = state.party.food < foodPerDay(state);
+    if (starving) {
+      endRun(state, 'starved', 'The Stores Gave Out', [
+        `By day ${state.day} there had been nothing in the store for a long time.`,
+        'Nobody starved outright. They simply stopped getting up, one after another, and there was no reason to argue with them.',
+      ]);
+    } else {
+      endRun(state, 'despair', 'The Band Broke', [
+        `On day ${state.day} what was left of us stopped listening to each other.`,
+        'There was food in the store. It made no difference to anybody.',
+      ]);
+    }
     appendVerdict(state);
   }
 }

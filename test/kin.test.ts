@@ -1,9 +1,18 @@
 // Kin: who is whose, and what it costs to lose them.
 //
-// The deaths-by-fate table has said the same thing since it was written:
-// despair ends more runs than hunger, cold and steel together. The game
-// already kills through grief. This is the layer that gives the grief a
-// name, so a player can see it coming.
+// Built on a premise that audit item 8 later demolished. The deaths-by-fate
+// table said despair ended more runs than hunger, cold and steel together —
+// and it was a labelling artifact: twenty-eight of thirty despair endings
+// had an empty larder, so most of them were hunger under another name.
+// Endings tell the truth about that now (see `src/sim/upkeep.ts`), and
+// despair is a rare death rather than the commonest one.
+//
+// The system survives its own premise, which is worth saying plainly rather
+// than quietly leaving the old claim at the top of the file. A death that
+// reshapes the survivors is better than a death that moves a number,
+// whether or not grief is what finally ends the run — and it is still the
+// only thing in the game that makes one person's loss land harder on
+// another. What it is NOT is the answer to the death table.
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';

@@ -12,7 +12,7 @@ import { seasonOf } from '../src/sim/calendar';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, buildable, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
-import { passDay, SURVIVAL_DAY } from '../src/sim/upkeep';
+import { checkRunEnd, foodPerDay, passDay, SURVIVAL_DAY } from '../src/sim/upkeep';
 import { YEAR_LENGTH } from '../src/sim/calendar';
 import {
   coldNight,
@@ -316,6 +316,70 @@ describe('an unprepared colony dies and it is clearly your fault', () => {
 });
 
 // --- Sickness ---
+
+describe('the ending names what actually killed them', () => {
+  /**
+   * AUDIT ITEM 8.
+   *
+   * "Despair ends more runs than hunger, cold and steel put together" sat in
+   * ROADMAP.md for three audits. It drove three separate sweeps of the
+   * morale levers — winter sickness, bereavement, kin grief — every one of
+   * which moved nothing, and it is a large part of why the kin system was
+   * built. Measured properly it was a LABELLING ARTIFACT: of thirty runs
+   * ending in despair, twenty-eight had an empty larder the day before,
+   * averaging one food between them.
+   *
+   * They had not stopped listening to each other. They had not eaten for
+   * weeks. The death table is the player's only feedback about what to do
+   * differently, and it was telling most of them to manage morale when the
+   * answer was food.
+   *
+   * Now: break with nothing in the store and you are told you starved.
+   * Despair keeps the case it was always for — fed, and out of heart anyway
+   * — which in sixty sagas happens twice, late, to a band of five with food
+   * on the shelf.
+   */
+  function broken(seed: string, food: number): GameState {
+    const state = structuredClone(newGame(seed));
+    state.party.morale = 0;
+    state.party.food = food;
+    state.day = 90;
+    checkRunEnd(state, 0);
+    return state;
+  }
+
+  it('a band that breaks with an empty store is told it starved', () => {
+    const state = broken('end-hungry', 0);
+    expect(state.end?.cause).toBe('starved');
+    expect(state.end?.title).toBe('The Stores Gave Out');
+    expect(state.end?.lines.join(' ')).toContain('nothing in the store');
+  });
+
+  it('and one that breaks with food on the shelf is told the truth too', () => {
+    const state = broken('end-fed', 200);
+    expect(state.end?.cause).toBe('despair');
+    expect(state.end?.title).toBe('The Band Broke');
+    expect(state.end?.lines.join(' ')).toContain('food in the store');
+  });
+
+  it('the line between them is whether there was a day\u2019s food', () => {
+    // Not an arbitrary number: enough for today, which is the same test the
+    // upkeep uses to decide whether anybody eats.
+    const lean = structuredClone(newGame('end-edge'));
+    lean.party.morale = 0;
+    lean.day = 90;
+    lean.party.food = foodPerDay(lean);
+    checkRunEnd(lean, 0);
+    expect(lean.end?.cause).toBe('despair');
+
+    const leaner = structuredClone(newGame('end-edge'));
+    leaner.party.morale = 0;
+    leaner.day = 90;
+    leaner.party.food = foodPerDay(leaner) - 1;
+    checkRunEnd(leaner, 0);
+    expect(leaner.end?.cause).toBe('starved');
+  });
+});
 
 describe('sickness in the dark', () => {
   it('a cold night puts people down, and shelter is what stops it', () => {

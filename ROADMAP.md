@@ -357,7 +357,7 @@ cards seen 90/102        buildings raised 10/12      lore 6/6     traits 10/10
 fights 190 (raids 57, sea 1, strandhogg 0)           sackings 38
 expeditions 16           people arrived 6            hands alive at end 1
 sea days 3               Things called 7             feuds settled 10
-ends: despair 23, starved 22, slain 10, frozen 2
+ends: despair 23, starved 22, slain 10, frozen 2   (mislabelled — see item 8)
 deck health: 783 draws, top ten = 33% of all draws
 ```
 
@@ -474,7 +474,12 @@ whole systems do not.
    the project has never tested. Two policies over the same sixty seeds, and
    the interesting result is either one.
 
-8. **[ ] Despair and hunger are three quarters of all endings.** despair 23,
+8. **[x] Despair and hunger are three quarters of all endings.** Done, and
+   the answer was neither of the two the item offered. It was not the
+   survival game working and it was not three systems collapsing into one:
+   **it was one system wearing three names.** Twenty-eight of thirty despair
+   deaths had an empty larder. See the changelog. Original text follows.
+   **[ ] (as written)** despair 23,
    starved 22, slain 10, frozen 2. Steel and cold barely kill; the two
    survival meters do nearly all the work, and despair is downstream of the
    others (see the dead-ends table — three morale levers moved nothing
@@ -622,7 +627,8 @@ here so the next attempt does not begin by repeating them.
 | Teaching the bot to DASH into contact | Priced at a third of the wins and a third of the survivors over sixty arena fights (22/108 against 33/162). Not a bug — spending the turn's action to arrive sooner means arriving alone and already spent, which is the charge the shield wall is measured against. The bot does not dash; the A/B is kept executable in `wall.test.ts`. |
 | Measuring a combat verb on the survival curve | The four verbs looked harmful (11 bands seeing spring falling to 8) on an instrument that ends only one run in six on steel. The arena found the real answer, and it was a different one: three of the four were neutral. **Match the instrument to the effect.** |
 | Guaranteeing a four-wide front on every battlefield | Shipped, but currently inert: no terrain the game ships ever fails it. A regression guard on tunable data, not a fix. The real mechanism is row DENSITY — 98% of meadow rows can hold a line against 40% of ocean ones. |
-| Sweeping the morale levers the death table kept naming | Winter sickness DC 9→7, bereavement 12→7, kin grief 30→15 — all three, and two winters sat at 10% through every one. Despair was a SYMPTOM. A band that misses the winter mark takes 8 morale a day for hunger and 7 for cold plus wounds, so it dies of everything at once and despair merely arrives first. The lever was arithmetic: `SHELTER_SAVES`. |
+| Sweeping the morale levers the death table kept naming | Winter sickness DC 9→7, bereavement 12→7, kin grief 30→15 — all three, and two winters sat at 10% through every one. Despair was a SYMPTOM. A band that misses the winter mark takes 8 morale a day for hunger and 7 for cold plus wounds, so it dies of everything at once and despair merely arrives first. The lever was arithmetic: `SHELTER_SAVES`. **And it was worse than a symptom — see item 8: the label itself was wrong.** |
+| Reading the death table without reading the larder | "Despair ends more runs than hunger, cold and steel put together" stood for three audits, sent three sweeps of the morale levers to nothing, and is a large part of why the kin system exists. Measured with the STATE at the moment of death: 28 of 30 despair endings had an empty store, averaging one food. It was hunger under another name, and the ending told the player to manage morale. **A cause is not a diagnosis. Record the state, not just the label.** |
 | `SHELTER_SAVES` at 1.0 | Fixed survival and broke the game's central promise. `SHELTER_MAX` is 6, so 1.0 means a fully built steading cancels an ordinary winter's burn outright — and over 24 winters, heeding the mark against ignoring it went 19/6 at 0.7, 19/8 at 0.8, **19/17 at 1.0**. Preparing for winter had stopped mattering. Settled at 0.8. |
 | "A band that trades out beats one that never leaves" | Held on a margin of ONE seed in eight, which by this repo's own noise floor is weather. At 24 seeds the survival arms sit level or behind (19 against 21) — correctly, because the roof is a home thing. What going out actually buys is stores: nearly 4× the timber home. Bar rewritten to the effect that is real. |
 
@@ -761,6 +767,33 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-09 — A cause is not a diagnosis (audit item 8)** — The item
+  asked whether a death table three-quarters made of despair and hunger was
+  the survival game working or three systems collapsing into one. It was
+  neither. It was **one system wearing three names.**
+  Nobody had ever recorded the STATE at the moment a run ended, only the
+  label. Doing that: of thirty runs ending in despair, **twenty-eight had an
+  empty larder the day before, averaging one food between them.** They had
+  not stopped listening to each other. They had not eaten for weeks, and the
+  last thing to go was the wanting to.
+  This is not a small correction. "Despair ends more runs than hunger, cold
+  and steel put together" has been in this document for three audits. It
+  sent three separate sweeps of the morale levers — winter sickness,
+  bereavement, kin grief — every one of which moved nothing, and it is a
+  large part of why the kin system was built. The lever kept not moving
+  because the thing it was aimed at was not there.
+  A band that breaks with nothing in the store is now told it starved,
+  because that is what happened and it is the thing they could have done
+  something about — the death table is the player's only feedback on what to
+  do differently, and it was telling most of them to manage morale when the
+  answer was food. Despair keeps the case it was always FOR, and it turns
+  out to be a real and rather good one: fed, and out of heart anyway. In
+  sixty sagas it happens twice, late — day 144, twenty food on the shelf,
+  five people still alive and five points of heart between them.
+  The table, honestly: **starved 48, slain 7, frozen 2, despair 2**. A
+  survival game about a winter mark, which is what this one says it is, and
+  now says on the last screen.
 
 - **2026-08-08 — Three ways to play, and the one we measure is the worst
   (audit item 7)** — The project has claimed since phase 4 that there is
