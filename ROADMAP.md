@@ -88,13 +88,39 @@ feared band with something to show draws fighting men who fill a gap in the
 wall, where a peaceable one draws hands. That last is what stopped the death
 spiral: `DRAW_ANGER` shuts the settler door as the coast turns, and a raider
 who loses four sworn a saga could not replace one of them.
-It is not finished. The raider lives 104 days against the turtle's 163, and
-**26 of his 29 deaths are still hunger** — plunder covers about a third of
-what the band eats. The remaining lever is the one the period actually used
-and this game has not: **the cost of going out.** A settled band reaches a
-camp by a twenty-day errand on foot; a knarr should make a coastal raid a
-short trip with a big haul. That is the next piece of work and it is where
-the sea, the plunder economy and the item-7 finding all meet.
+Then the ship, which turned out to be the sharpest finding of the lot: **the
+knarr was never faster than walking.** A day is `ceil(effort / 2)`, land is 1
+or 2 and `SEA_EFFORT` is 2, so every hex of everything rounded to one day —
+the hull was exactly as quick as a meadow and no quicker than a forest, while
+the guide told the player it "rows coastal water faster than legs walk". It
+does now: `ROW_REACH` hexes of coast in the day legs take to cross one.
+
+**It is still not the best line, and the reason is now a design question
+rather than a missing mechanic.** Raiding gets a band to spring exactly as
+reliably as turtling (25/30 both) and no further: second winters read 20/30
+for the turtle against 4/30 for the raider. Sorties went from 23.9 days to
+15.7 and doubled in number, and **sackings did not move at all** — 1.9 a
+saga either way, because most sorties come home empty. Trip length was not
+the binding constraint.
+
+What the measurements point at is structural: a raid costs a settled band
+**28% of its labour-days with half the household away**, whatever the trip
+length, and the steading needs those people. Historically nobody raided like
+that — a warband went in ships, in season, and the farm ran on the people who
+stayed. Making raiding win probably means a warband that is not simply
+half the household on loan. That is the next question, and it is a design
+decision rather than a tuning pass.
+
+**Two things this work cost, recorded rather than buried.** The settler
+briefly gained armed sorties and the long game answered at once: jarldoms
+fell from five in forty sagas to none, because a steading-first band that
+spends its summers away from the steading is not one. `raidReach: 0` is the
+settler's IDENTITY now, not a limitation. And even with that put back, the
+long game reads thinner than it did this morning — **1 jarldom against 5,
+and 4 second winters against 6–10** — which I could not attribute to any one
+of the day's changes and am not going to pretend to have explained. Twenty
+seeds is a thin instrument for an event that happens once or twice in it;
+the next person to touch this should widen it before drawing a conclusion.
 
 **Every number here describes ONE way of playing, and it is not the best
 one.** Audit item 7 gave the harness three policies over the same thirty
@@ -792,6 +818,57 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-09 — The knarr was never faster than walking (raiding, part
+  two)** — Chasing the cost of going out, and the first thing measured was
+  the sharpest finding in the whole sequence. A day's travel is
+  `ceil(effort / 2)`; land costs 1 or 2 and `SEA_EFFORT` is 2. **Every hex
+  of everything rounds to one day.** The knarr was exactly as fast as
+  crossing a meadow and no faster than a forest — while the guide had been
+  telling the player since 5.x that it "rows coastal water faster than legs
+  walk". The claim was simply false, and had been for as long as the ship
+  existed.
+  The day-cost model cannot express "faster" at that granularity, so the
+  hull covers GROUND instead: `ROW_REACH` (three) hexes of coastal water in
+  the day it takes legs to cross one, over a clear water line, land movement
+  untouched. The bot steers for the water and stays on it — greedy stepping
+  toward a target only ever touched water on the last hex, which measured as
+  1.7 sea days a saga in a band built entirely around going out. It is 7.6
+  now.
+  Sorties were also a season long: twenty days out plus the walk home is
+  **23.9 days door to door** with half the band away. `RAID_DAYS` is ten, so
+  a raid is a sortie rather than an expedition — trips fell to 15.7 days and
+  doubled in number.
+  **And none of it made raiding win, which is the honest result.** Raiding
+  reaches spring exactly as reliably as turtling (25/30 both) and no
+  further: second winters read 20/30 turtle against 4/30 raider. Sackings
+  stayed at **1.9 a saga through every one of those changes**, because most
+  sorties come home empty — trip length was never the binding constraint,
+  and the thing that is has not been found.
+  Two costs, recorded rather than buried. The settler briefly gained armed
+  sorties, and the long game answered immediately: **jarldoms fell from five
+  in forty sagas to none.** A steading-first band that spends its summers
+  away from the steading is not one, so `raidReach: 0` is the settler's
+  identity now rather than a limitation — going out under arms belongs to
+  the policy built for it. And even with that put back, the long game reads
+  thinner than it did this morning (1 jarldom against 5), which I could not
+  attribute to any single change and am not going to pretend to have
+  explained.
+  One good thing fell out of the same correction. The strandhögg's play-level
+  bar had been dropped a few commits ago as "too rare to bar" — measured on
+  the SETTLER, a band that does not go out under arms at all. Asked of the
+  raider, the same sample reads **351 days afloat, 50 armed errands and 6
+  strandhöggs** against 47, 2 and 0. The verb was never as rare as the
+  measurement said; the measurement was pointed at the wrong band. The bar
+  is back, and so is the lesson: **a reach bar has to be asked of a policy
+  that would ever reach.**
+  What the numbers point at is structural rather than tunable: a raid costs
+  a settled band **28% of its labour-days with half the household away**,
+  whatever the trip length, and the steading needs those people. Nobody
+  raided like that — a warband went in ships, in season, and the farm ran on
+  whoever stayed. Making raiding win probably means a warband that is not
+  half the household on loan, and that is a design decision, not a sweep.
+  Curve 57/27/7, unmoved.
 
 - **2026-08-09 — A camp is a crop (raiding, part one)** — Following the
   item-7 finding that staying home wins and even the raider policy sacked

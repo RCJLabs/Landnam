@@ -139,11 +139,23 @@ interface Policy {
   errandBuffer: number;
 }
 
+/**
+ * What the harness has always been, and every figure in ROADMAP.md still
+ * describes: settle early, work the jobs, hold the line, trade until
+ * somebody on the coast will speak for you.
+ *
+ * `raidReach: 0` — it does not go out under arms, and that is its IDENTITY
+ * rather than a limitation. The raiding work of 2026-08-09 briefly gave it
+ * armed sorties, and the long game answered immediately: jarldoms fell from
+ * five in forty sagas to none, because a steading-first band that spends its
+ * late summers away from the steading is not a steading-first band. Going
+ * out under arms belongs to the policy built for it.
+ */
 const SETTLER: Policy = {
   id: 'settler',
   siteFloor: 9,
   plunderWindow: 24,
-  raidReach: 14,
+  raidReach: 0,
   trades: true,
   robsCamps: false,
   want: [
@@ -169,7 +181,7 @@ const RAIDER: Policy = {
   // him with a settler's site standards measured the delay, not the raiding.
   siteFloor: 7,
   plunderWindow: 40,
-  raidReach: 16,
+  raidReach: 10,
   trades: false,
   robsCamps: true,
   want: [
@@ -546,7 +558,17 @@ function step(state: GameState): Action {
           : (seaApproach(state, prize!) ?? prize!.at);
         const opts3 = moveOptions(state);
         if (opts3.length > 0) {
-          return { type:'MOVE', to: opts3.reduce((a,b)=>distance(b,aim)<distance(a,aim)?b:a) };
+          // Get to the water and STAY on it. A day's rowing is three hexes
+          // of coast against one of anything on legs (ROW_REACH), so a hull
+          // under way is worth a couple of hexes of detour to reach — and
+          // greedy stepping toward the aim would only ever touch water on
+          // the last hex, which measured as 1.7 sea days a saga in a band
+          // built entirely around going out.
+          const afloat = (at: {q:number;r:number}) =>
+            isCoastalWater(state, at) ? SEA_PULL : 0;
+          const to = opts3.reduce((a, b) =>
+            (distance(b, aim) - afloat(b)) < (distance(a, aim) - afloat(a)) ? b : a);
+          return { type:'MOVE', to };
         }
         return { type:'CAMP' };
       }
@@ -735,11 +757,25 @@ function step(state: GameState): Action {
  */
 const CAMP_WORTH = 0.6;
 
+/** How many hexes of detour a hull under way is worth. */
+const SEA_PULL = 2;
+
 /** How many hexes of extra walk the ship's way in is worth. */
 const SHIP_PULL = 4;
 
-/** And how long they give the errand before turning for home regardless. */
-const RAID_DAYS = 20;
+/**
+ * And how long they give the errand before turning for home regardless.
+ *
+ * Ten, not twenty. At twenty a sortie ran TWENTY-FOUR days door to door with
+ * half the band away — a season, not a raid — and the expedition harness has
+ * said since 4.2 that emptying the steading kills. Shortening it took trips
+ * from 23.9 days to 15.7 and doubled how many a band manages.
+ *
+ * Worth recording that it did NOT fix raiding: sackings stayed at 1.9 a
+ * saga either way, because most sorties come home empty. Trip length was
+ * not the binding constraint, and the thing that is has not been found yet.
+ */
+const RAID_DAYS = 10;
 
 /**
  * The nearest place still worth taking, or null.
@@ -2343,6 +2379,12 @@ describe('the sea is reached', () => {
      */
     const SEEDS = 60;
 
+    // Measured under the RAIDER, which is the policy that would ever go. The
+    // settler does not leave under arms at all — that is its identity, not a
+    // gap — so asking it whether anybody reaches the sea was asking the
+    // wrong band.
+    policy = RAIDER;
+    try {
     for (const terms of ['even', 'fair'] as HardshipId[]) {
       for (let s = 0; s < SEEDS; s += 1) {
         const state = run(`curve-${s}`, 400, (before, after) => {
@@ -2365,6 +2407,9 @@ describe('the sea is reached', () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
     }
+    } finally {
+      policy = SETTLER;
+    }
 
     // eslint-disable-next-line no-console
     console.log(
@@ -2384,10 +2429,19 @@ describe('the sea is reached', () => {
     // stable figure across that same A/B was second winters, which did not
     // move at all. These bars say REACHED, which is the claim; they do not
     // pin a rate, which this sample cannot carry.
-    expect(seaDays, 'no settled band ever got onto the water').toBeGreaterThan(5);
-    expect(underArms, 'the errand under arms never runs').toBeGreaterThan(0);
-    // The strandhögg is REPORTED and not barred, and that is a known
-    // thinness rather than a solved thing.
+    expect(seaDays, 'no settled band ever got onto the water').toBeGreaterThan(40);
+    expect(underArms, 'the errand under arms never runs').toBeGreaterThan(5);
+    // The strandhögg is barred again, and the reason it once was not is
+    // worth keeping: it was measured on the SETTLER, a band that does not go
+    // out under arms at all, and read 0-2 armed errands in a hundred and
+    // twenty sagas. Asked of the raider — the only policy that would ever
+    // sail — the same sample reads 351 days afloat, 50 armed errands and 6
+    // strandhöggs. The verb was never as rare as the measurement said; the
+    // measurement was pointed at the wrong band.
+    expect(strandhoggs, 'the ship’s way in is never taken — it is unmeasured content')
+      .toBeGreaterThan(0);
+
+    // The old note, kept because the lesson in it is general:
     //
     // It was asserted above zero when item 1 shipped, on seven armed errands
     // in sixty sagas. Item 3's growth halved that — a band with more mouths
@@ -2404,7 +2458,7 @@ describe('the sea is reached', () => {
     // wherever it is legal. What is NOT covered, and should be said plainly,
     // is whether an ordinary player ever reaches it. That is the open half
     // of audit item 1.
-    void strandhoggs;
+
     // And the knowledge economy that makes any of it possible: a settled
     // band must know of SOMETHING to go and take. This read 0.06 of 4.
     expect(placesKnown / Math.max(1, samples)).toBeGreaterThan(0.4);

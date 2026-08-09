@@ -1,7 +1,7 @@
 // TRAVEL mode logic. Pure: (state, action) -> state. Every action costs at
 // least a day, and the day is what kills you.
 
-import { distance, key, neighbors, type Hex } from '../hex';
+import { distance, key, line, neighbors, range, type Hex } from '../hex';
 import { stream, type Rng } from '../rng';
 import { terrainDef } from '../data/terrain';
 import type { GameState, Person, Terrain } from '../state/types';
@@ -94,18 +94,61 @@ export function daysForMove(state: GameState, to: Hex): number | null {
  * Once the posts are in, the band lives at the steading and only a launched
  * expedition walks the map. Before that, everyone walks together.
  */
+/**
+ * How far a day's rowing carries the knarr along a coast.
+ *
+ * The whole reason the ship exists, and until this it did not exist at all.
+ * A day's travel is `ceil(effort / 2)`, and with land at 1 or 2 and
+ * `SEA_EFFORT` at 2, EVERY one of them rounded to a single day per hex —
+ * the knarr was exactly as fast as walking over a meadow and no faster than
+ * a forest, while the guide told the player it "rows coastal water faster
+ * than legs walk". That was simply false, and it is why going out cost
+ * twenty days and why raiding could not be a way of living.
+ *
+ * The day-cost model cannot express "faster" at this granularity, so the
+ * hull covers GROUND instead: three hexes of coastal water in the day it
+ * takes legs to cross one. Land movement is untouched.
+ */
+export const ROW_REACH = 3;
+
+/** True if every hex between here and there is water we can row. */
+function rowable(state: GameState, from: Hex, to: Hex): boolean {
+  if (!isCoastalWater(state, from) || !isCoastalWater(state, to)) return false;
+  for (const step of line(from, to)) {
+    if (!isCoastalWater(state, step)) return false;
+  }
+  return true;
+}
+
 export function canMove(state: GameState, to: Hex): boolean {
   if (state.settlement && !state.expedition) return false;
   if (!permittedStep(state, to)) return false;
-  return distance(state.party.at, to) === 1 && moveEffort(state, to) !== null;
+  if (moveEffort(state, to) === null) return false;
+  const span = distance(state.party.at, to);
+  if (span === 1) return true;
+  // Afloat, a day is worth three hexes of open coast rather than one.
+  return span <= ROW_REACH && rowable(state, state.party.at, to);
 }
 
 /** Hexes the party could step into right now. */
 export function moveOptions(state: GameState): Hex[] {
   if (state.settlement && !state.expedition) return [];
-  return neighbors(state.party.at).filter(
+  const steps = neighbors(state.party.at).filter(
     (h) => moveEffort(state, h) !== null && permittedStep(state, h),
   );
+  if (!isCoastalWater(state, state.party.at)) return steps;
+  // A hull under way. Every stretch of coast within a day's rowing, so the
+  // player is offered the thing the ship is FOR rather than one hex at a
+  // time.
+  const reach = new Map<string, Hex>();
+  for (const h of steps) reach.set(key(h), h);
+  for (const h of range(state.party.at, ROW_REACH)) {
+    if (reach.has(key(h))) continue;
+    if (moveEffort(state, h) === null || !permittedStep(state, h)) continue;
+    if (!rowable(state, state.party.at, h)) continue;
+    reach.set(key(h), h);
+  }
+  return [...reach.values()];
 }
 
 /** Water worth putting a net in, from where we are standing (or floating). */
