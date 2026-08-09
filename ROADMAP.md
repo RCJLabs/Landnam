@@ -37,6 +37,13 @@ ends" table and pick the work up without re-deriving a day of measurement.*
 **Shipped:** Phases 0–4 complete. 5.1 Sound, 5.2 Onboarding and 5.3 Balance &
 juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 
+**Phase 7 is the Unreal build**, running in parallel in another repo — a hex
+grid and top-down movement are working there. What this repo owes it, and
+what it must be careful of, is written up below. The short version: the
+simulation is the asset (10,500 lines of pure logic and 5,000 of typed
+content under 744 tests), the renderers are disposable, and the port lives
+or dies on whether the balance harness follows the sim across.
+
 **The measured curve** (a scripted player of roughly average competence over
 SIXTY seeds — see `test/balance.test.ts`, which is the source of every number
 in this document. It resolves to about ±5 points; anything smaller than ten
@@ -377,6 +384,109 @@ measuring bot has never once used the offensive half.
 **Known and not urgent:** there is no meta-progression and no daily seed;
 accessibility is minimal (keyboard play is not possible); and
 `render/travel.ts` still breaches the ~300-line guidance.
+
+## Phase 7 — The Unreal build
+
+*Landnám is being rebuilt as an Unreal Engine game. A hex grid and top-down
+movement are working there already. This section is what that port needs from
+THIS repo, and what it should be careful of — written for whoever is holding
+both codebases at once.*
+
+**The thing being ported is the simulation, and it is the whole asset.**
+`src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
+with 5,000 more of typed content in `src/data/`, standing under **744 tests
+in 37 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
+day one — *if it can be unit-tested, it does not belong in `render/`* — is
+what makes this a port rather than a rewrite. Every item below exists to
+protect it.
+
+Ordered, as the audits are: the expensive-to-change decisions first, then
+what 3D actually buys, then what gets harder.
+
+### The decisions that are expensive to change later
+
+1. **[ ] Choose the sim boundary, and make the port CROSS-CHECKED rather
+   than a rewrite.** The fork everything else hangs off. Either embed a JS
+   runtime and keep one sim and one test suite, or port to C++ and accept
+   two — but if it is C++, the determinism is what saves you: run both on the
+   same seed and the same action list and **diff the resulting state**. A
+   port that is not differentially tested against this one silently discards
+   every balance finding in this document. *Measured by: N seeds played
+   through both, asserting identical `GameState`, in CI.*
+
+2. **[ ] Nail cross-language determinism before anything depends on it.**
+   `src/rng.ts` is FNV-1a over the seed string feeding mulberry32, and it
+   leans on `Math.imul` and `>>> 0` — exactly specifiable in C++ with
+   `uint32_t` wrapping, and exactly the sort of thing that goes wrong
+   quietly. Stream names and derive labels are part of the contract: rename
+   one and every existing seed produces a different world. *Measured by: a
+   fixture of a few thousand `(seed, label) → sequence` triples generated
+   from the TypeScript and asserted in the port.*
+
+3. **[ ] Design the sim→presentation event stream now.** Today the
+   renderers diff two states and tween the difference (`render/motion.ts`).
+   Unreal needs ORDERED events — "Ketil struck Bjorn for four", "the
+   smokehouse burned", "they broke and ran" — so an animation can play,
+   block, and hand control back. Retrofitting this after the battle looks
+   good is miserable. The saga log is already most of the way there: it is an
+   ordered, human-readable event stream that the game writes for itself.
+
+4. **[ ] Port `src/hex/` first and hardest.** Pure, fully tested, and both
+   the world map and the battle grid stand on it — axial coords, neighbours,
+   distance, `line`, `range`, `ring`, `findPath`, and the pixel conversions.
+   Its tests port almost verbatim and give a real green baseline on day one.
+   Nothing else should be started before this is green.
+
+5. **[ ] Keep the balance harness running against the PORTED sim.** The one
+   to fight for. Everything found in the 2026-08 audits — a coast no band
+   ever reached, a palisade that made raids HARDER, a knarr that was never
+   faster than walking — came out of `test/balance.test.ts` playing sixty
+   sagas and counting. If the Unreal sim forks and the harness stays behind,
+   the entire balance record in this document becomes fiction inside a month.
+
+### What 3D actually buys
+
+6. **[ ] The shield wall is what gains most.** `wallLinks`, `wallBonus`,
+   `wallPush`, zone of control and the spear from the second rank are all
+   currently inferred from a flat SVG. In three dimensions a line LOOKS like
+   a line and a man who steps out of it looks wrong. The arena measures
+   formation at 32 wins of 60 against brawling's 29, with 158 left standing
+   against 140 — in 3D that should be legible before it is arithmetic.
+
+7. **[ ] Terrain and sight become physical.** The sim already models
+   `blocksSight`, high ground raising sight radius, and per-terrain movement
+   cost. That is a heightmap and real occlusion rather than a fog overlay —
+   and it is already balanced, so the work is visualising a system rather
+   than inventing one.
+
+8. **[ ] The saga wants a voice.** Every line is written in past-tense
+   chronicle prose specifically so it can be read aloud, and there are 102
+   event cards plus a generated end-of-run saga already written. A skald
+   narrating the run is nearly free content.
+
+### What gets harder
+
+9. **[ ] Save discipline has to survive the port.** `SAVE_VERSION` is 27,
+   every bump ships a migration, and the rule is that old saves must always
+   load — see `src/state/migrations.ts`, which is a written record of every
+   shape this game has ever had. Unreal `SaveGame` has no such culture by
+   default. Decide deliberately whether saves are shared with the web build
+   or a clean break, and write the answer down.
+
+10. **[ ] The mobile rules stop applying — decide what replaces them.**
+    44px touch targets and portrait-first were load-bearing constraints and
+    are now irrelevant; gamepad navigation and readable-at-distance text are
+    the equivalent questions. The accessibility work of 2026-08-09 has direct
+    analogues worth carrying rather than rediscovering: a live region becomes
+    a screen-reader-facing status, dialog semantics become focus discipline,
+    and `src/sim/announce.ts` is already pure text that ports as-is.
+
+**Two cautions.** Item 1 genuinely is a fork and the right answer depends on
+target platform and team — embedding JS keeps one sim and one suite at the
+cost of native performance and Blueprint ergonomics; C++ is the exact
+opposite. And **do not port the colony UI early**: it is the least visual
+mode and the most work per unit of payoff. Travel and battle first.
 
 ## The next queue — audit of 2026-08-08
 
