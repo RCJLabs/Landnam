@@ -172,6 +172,8 @@ Either way you should end up with a `ue-port` folder holding `Source`, `Content`
 | --- | --- |
 | `Source/LandnamHex.h`, `LandnamHex.cpp` | `Source/LandnamUE/` |
 | `Source/LandnamRng.h`, `LandnamRng.cpp` | `Source/LandnamUE/` |
+| `Source/LandnamNoise.h`, `LandnamNoise.cpp` | `Source/LandnamUE/` |
+| `Source/LandnamWorldgen.h`, `LandnamWorldgen.cpp` | `Source/LandnamUE/` |
 | `Source/LandnamDataRows.h` | `Source/LandnamUE/` |
 | `Source/LandnamParityTest.cpp` | `Source/LandnamUE/` |
 | `Content/Data/*.json` | `Content/Data/` (create the folder) |
@@ -248,8 +250,8 @@ one file.
 Select-String -Path "$proj\Source\LandnamUE\LandnamUE.Build.cs" -Pattern "Json"
 ```
 
-Expected answers: **11**, **4**, and one line echoing your dependency list with `Json` in
-it. Eleven is the five files Step 1 created plus the six you just copied. Silence from the
+Expected answers: **15**, **4**, and one line echoing your dependency list with `Json` in
+it. Fifteen is the five files Step 1 created plus the ten you just copied. Silence from the
 third command means Notepad did not save.
 
 `golden.json` is a plain file rather than a Unreal asset, so the Content Browser will not
@@ -317,11 +319,16 @@ to read its log — it prints a line per section even when everything passes:
 [hex.round] 169 checks, 0 failed
 [hex.fromPixel] 441 checks, 0 failed
 [rng.streams] 3294 checks, 0 failed
+[worldgen.noise] 64 checks, 0 failed
+[worldgen.worlds] 40 checks, 0 failed
 ```
 
-What that proves: this C++ produces exactly the same hexes, the same A* routes, and the
-same random numbers as the TypeScript game. A seed means the same thing in both. Every
-balance figure in `ROADMAP.md` still describes the game you are building.
+What that proves: this C++ produces exactly the same hexes, the same A* routes, the same
+random numbers and the same islands as the TypeScript game. A seed means the same thing
+in both. Every balance figure in `ROADMAP.md` still describes the game you are building.
+
+`worldgen.worlds` is only 40 checks because each one compares a whole 52×36 map — eight
+complete worlds, 1,872 hexes of terrain and river apiece, plus each landing site.
 
 A failing section names its first few mismatches with actual and expected values, so the
 section name plus one line of output is usually enough to find the cause.
@@ -920,6 +927,108 @@ movement.
 
 ---
 
+## Step 13 — The real island
+
+Step 10 drew terrain at flat random, which was enough to make movement cost visible
+but produced noise, not a country. `src/sim/worldgen.ts` is the real thing: fractal
+noise for elevation and moisture, a west-to-east land bias so the sea is always at
+your back, softened north and south edges so the map reads as a coast rather than a
+rectangle, a shore ring where a knarr can beach, rivers running downhill to the sea,
+and a reroll if the landmass comes out too small to be worth playing.
+
+It is ported, and — like everything else here — checked hex for hex against the
+browser's own output. `LandnamWorldgen.cpp` and `LandnamNoise.cpp` came in with the
+kit in Step 2.
+
+This step makes `BP_HexGrid` **shorter**. One call replaces both the rectangle loops
+from Step 11 and the terrain draw from Step 10b.
+
+### 13a. Rip out the old generation
+
+In `BP_HexGrid`'s Event Graph, delete:
+
+- the `Clear` and both `For Loop`s that filled `MapHexes`, and `Offset To Axial`
+- the terrain draw inside the spawn loop: `Pick Index`, `Get (a copy)`,
+  `Get Data Table Row Names`, and `Make Stream`
+
+Then delete the now-unused variables: `MapHexes`, `TerrainNames`, `Rng`.
+
+Keep `Seed`, `HexSize`, `TileClass`, `Tiles`, `Costs`, `TerrainTable` and `MoveBudget`.
+
+### 13b. Generate
+
+Add one variable:
+
+| Name | Type | Instance Editable |
+| --- | --- | --- |
+| `World` | **Landnam World** (struct) | no |
+
+On **Event BeginPlay**, after the mouse-cursor setup and before the spawn loop:
+
+1. **Generate World** — `Seed` = your `Seed` variable. Leave Width and Height at
+   `52` and `36`; they are the game's real dimensions and the defaults match.
+2. Promote its return value into `World` (or drag `World` in and use `SET`).
+3. Drag off `World` → **Break Landnam World** → **Branch** on `Valid`.
+4. **True** ▶ the spawn loop. Leave **False** unwired for now.
+
+`Generate World` builds the `worldgen` stream from the seed internally, exactly as the
+browser does at the start of a run — so you do not create the RNG yourself any more.
+
+### 13c. Spawn from the generated tiles
+
+Point the existing **For Each Loop** at **Break Landnam World → Tiles** instead of
+`MapHexes`. Its Array Element is now a `WorldTile`, not a `Hex`, so:
+
+1. Drag the **Array Element** → **Break World Tile**. That gives you **Hex**,
+   **Terrain** and **River**.
+2. Rewire everything that used the old loop element to the **Hex** pin: `Hex To World`,
+   `SET Hex` on the spawned tile, and both `Map Add` keys.
+3. Feed **Terrain** straight into **Get Data Table Row**'s **Row Name** pin.
+
+That last one is the point of `Terrain` being a Name rather than an enum: it *is* the
+DataTable row name, so it goes directly into the lookup with nothing in between. The
+rest of the chain — `Break TerrainRow` → `Colour From Hex` → `Set Base Colour` →
+`Set Colour` → `Add` to `Costs` — is unchanged from Step 10.
+
+Compile, save, Play.
+
+### 13d. Land where the saga lands
+
+`World` also carries **Landing**: the westernmost shore hex near mid-map, chosen the
+same way the browser chooses it. Put the player there instead of at a map corner.
+
+After the spawn loop's **Completed**:
+
+- **Break Landnam World** → **Landing** → **Hex To World** (Size = `HexSize`, Z = `200`)
+- → **Get Player Pawn (0)** → **Set Actor Location**
+
+Now a run begins with your keel on the sand, sea behind you and unknown country east.
+
+### What you should see
+
+An island. Open water down the western edge, a shore line, forest and meadow inland,
+hills rising to mountains, and the coast falling away north and south instead of being
+sliced off square. Blue rivers of `River`-flagged hexes run from the high ground to the
+sea — Step 10's colouring ignores that flag, so they are not visible yet; tinting them
+is a five-node change whenever you want it.
+
+Then change one character of `Seed` and it is a different island, every time,
+identically.
+
+**And it is the same island the browser builds.** Open the web game, enter the same
+seed, and the coastline matches hex for hex. That is not a resemblance — the parity
+test checks eight complete 52×36 maps, all 1,872 hexes of each, plus every river and
+every landing site. It is the whole reason the RNG had to be bit-exact.
+
+### Why the flat-random version was kept
+
+Step 10 is still worth doing first, and still in this guide, because it gets terrain and
+movement cost on screen with nothing but a DataTable and a `Pick Index`. If a map comes
+out wrong after this step, being able to fall back to a version you already understand
+is what makes it debuggable.
+
+---
+
 ## What to do next
 
 Steps 10 and 12 already built, at world scale, what the battle grid needs: a range
@@ -939,9 +1048,16 @@ In this order, each step playable before the next:
 None of steps 1 and 2 need new C++: `ReachableInMap` and `FindPathInMap` are already there,
 already tested, and already agree with the game you can play in a browser.
 
-Real worldgen is a separate thread. Step 10 draws terrain at flat random, which is enough to
-make cost visible; `src/sim/worldgen.ts` weights by latitude and neighbours to produce an
-island rather than noise. Porting it is the difference between a hex map and Landnám's map.
+Beyond the battle grid, the nearest useful things are all small now that Step 13 has
+landed:
+
+- **Draw the rivers.** `Break World Tile` already gives you `River`; Step 10's colouring
+  ignores it. Tint those hexes and the map gains its drainage.
+- **Fog of war.** The browser draws only `seen` tiles. Hiding unvisited hexes and
+  revealing them as the party walks is the single biggest step toward it feeling like
+  travel rather than a map.
+- **Place names.** `src/data/names.ts` and the `places` array on `World` are what turn
+  a coastline into somewhere with a saga attached.
 
 ## If something goes wrong
 
@@ -1004,6 +1120,23 @@ nothing, look for an unwired exec pin before you look at anything else.
 **The parity test fails after you changed the TypeScript.** That is the test doing its
 job. Regenerate the vectors — `node ue-port/tools/golden.mjs` — copy `golden.json` over,
 and run it again.
+
+**`Generate World` returns Valid = false.** All 24 attempts failed to produce a landmass
+of at least 400 connected hexes reachable from a shore landing. With the shipping
+constants this does not happen for any ordinary seed, so suspect the inputs first: a
+Width or Height far below 52 × 36 leaves no room for an island. Wire the Branch's False
+pin to a `Print String` so this announces itself instead of yielding an empty map.
+
+**The island is grey, or the map is one flat colour.** `Terrain` from `Break World Tile`
+must go into `Get Data Table Row`'s **Row Name**. If that pin is left at its default the
+lookup fails for every tile, `Row Found` never fires, and nothing downstream runs —
+including the two `Map Add` nodes, so `Tiles` and `Costs` come out empty as well.
+
+**The parity test passes but the Unreal map differs from the browser's.** The generator
+agrees; something else does not. Check that `Seed` in `BP_HexGrid` matches the browser's
+exactly (it is case-sensitive and hyphenated), and that you are reading the seed rather
+than a `Make Stream` left over from Step 10 — `Generate World` builds its own stream, and
+feeding it one that has already been drawn from gives a different island.
 
 **An asset fails to save, naming a path under `__ExternalActors__`.** The level uses One
 File Per Actor, so each actor is its own file, and something is blocking the write. Click

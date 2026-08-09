@@ -7,7 +7,9 @@
 // vectors after any change to the TS hex or RNG code: node ue-port/tools/golden.mjs
 
 #include "LandnamHex.h"
+#include "LandnamNoise.h"
 #include "LandnamRng.h"
+#include "LandnamWorldgen.h"
 
 #include "Misc/AutomationTest.h"
 #include "Misc/FileHelper.h"
@@ -470,6 +472,104 @@ namespace
 		}
 		S.Finish();
 	}
+
+	/**
+	 * Noise on its own, before any world is built. A coastline mismatch is otherwise
+	 * hard to attribute: this section fails if the value tables or the fbm accumulation
+	 * drifted, and passes if the fault is further up in classification or rerolling.
+	 */
+	void CheckNoise(FAutomationTestBase& Test, const TSharedPtr<FJsonObject>& Noise)
+	{
+		FSection S(Test, TEXT("worldgen.noise"));
+
+		FLandnamFbm Fbm;
+		Fbm.Init(
+			ULandnamRng::MakeRng(Noise->GetStringField(TEXT("seed")))->Derive(Noise->GetStringField(TEXT("label"))),
+			static_cast<int32>(Noise->GetNumberField(TEXT("octaves"))));
+
+		for (const TSharedPtr<FJsonValue>& Entry : Noise->GetArrayField(TEXT("samples")))
+		{
+			const TSharedPtr<FJsonObject> Case = Entry->AsObject();
+			const double X = Case->GetNumberField(TEXT("x"));
+			const double Y = Case->GetNumberField(TEXT("y"));
+			S.ExpectNear(Fbm.Sample(X, Y), Case->GetNumberField(TEXT("v")),
+				FString::Printf(TEXT("fbm(%.17g, %.17g)"), X, Y));
+		}
+		S.Finish();
+	}
+
+	/**
+	 * Whole maps, hex for hex. The vectors encode each 52x36 world as one character per
+	 * terrain in row-major offset order, so a single differing hex names its own column
+	 * and row — which is far more useful than "the maps differ".
+	 */
+	void CheckWorlds(FAutomationTestBase& Test, const TSharedPtr<FJsonObject>& Worldgen)
+	{
+		FSection S(Test, TEXT("worldgen.worlds"));
+
+		// terrain id -> the single character the vectors use.
+		TMap<FName, TCHAR> Codes;
+		for (const auto& Pair : Worldgen->GetObjectField(TEXT("terrainCodes"))->Values)
+		{
+			const FString Code = Pair.Value->AsString();
+			Codes.Add(FName(*Pair.Key), Code.Len() == 1 ? Code[0] : TEXT('?'));
+		}
+
+		for (const TSharedPtr<FJsonValue>& Entry : Worldgen->GetArrayField(TEXT("worlds")))
+		{
+			const TSharedPtr<FJsonObject> Case = Entry->AsObject();
+			const FString Seed = Case->GetStringField(TEXT("seed"));
+			const int32 Width = static_cast<int32>(Case->GetNumberField(TEXT("width")));
+			const int32 Height = static_cast<int32>(Case->GetNumberField(TEXT("height")));
+			const FString WantTerrain = Case->GetStringField(TEXT("terrain"));
+			const FString WantRivers = Case->GetStringField(TEXT("rivers"));
+
+			const FLandnamWorld World = ULandnamWorldgen::GenerateWorld(Seed, Width, Height);
+
+			S.Expect(World.bValid, FString::Printf(TEXT("%s: generation failed after %d attempts"),
+				*Seed, World.Attempts));
+			if (!World.bValid) continue;
+
+			S.ExpectInt(World.Tiles.Num(), WantTerrain.Len(),
+				FString::Printf(TEXT("%s: tile count"), *Seed));
+			if (World.Tiles.Num() != WantTerrain.Len()) continue;
+
+			const TSharedPtr<FJsonObject> Landing = Case->GetObjectField(TEXT("landing"));
+			const FHex WantLanding(
+				static_cast<int32>(Landing->GetNumberField(TEXT("q"))),
+				static_cast<int32>(Landing->GetNumberField(TEXT("r"))));
+			S.Expect(World.Landing == WantLanding,
+				FString::Printf(TEXT("%s: landing got %s, expected %s"),
+					*Seed, *World.Landing.ToKey(), *WantLanding.ToKey()));
+
+			// Report at most a couple of differing hexes per world — one wrong constant
+			// moves hundreds, and the first few are enough to find it.
+			int32 TerrainDiffs = 0;
+			int32 RiverDiffs = 0;
+			for (int32 Index = 0; Index < World.Tiles.Num(); ++Index)
+			{
+				const FWorldTile& Tile = World.Tiles[Index];
+				const TCHAR* Code = Codes.Find(Tile.Terrain);
+				const TCHAR Got = Code != nullptr ? *Code : TEXT('?');
+				if (Got != WantTerrain[Index] && TerrainDiffs++ < 3)
+				{
+					S.Expect(false, FString::Printf(
+						TEXT("%s: terrain at col %d row %d (%s): got '%c', expected '%c'"),
+						*Seed, Index % Width, Index / Width, *Tile.Hex.ToKey(), Got, WantTerrain[Index]));
+				}
+				const TCHAR GotRiver = Tile.bRiver ? TEXT('1') : TEXT('0');
+				if (GotRiver != WantRivers[Index] && RiverDiffs++ < 3)
+				{
+					S.Expect(false, FString::Printf(
+						TEXT("%s: river at col %d row %d (%s): got %c, expected %c"),
+						*Seed, Index % Width, Index / Width, *Tile.Hex.ToKey(), GotRiver, WantRivers[Index]));
+				}
+			}
+			S.Expect(TerrainDiffs == 0, FString::Printf(TEXT("%s: %d hexes differ in terrain"), *Seed, TerrainDiffs));
+			S.Expect(RiverDiffs == 0, FString::Printf(TEXT("%s: %d hexes differ in river"), *Seed, RiverDiffs));
+		}
+		S.Finish();
+	}
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -515,6 +615,19 @@ bool FLandnamParityTest::RunTest(const FString& Parameters)
 	CheckHashString(*this, Rng->GetArrayField(TEXT("hashString")));
 	CheckStreams(*this, Rng->GetArrayField(TEXT("streams")), TEXT("raven-skerry-317"));
 	CheckSeedPhrases(*this, Rng->GetArrayField(TEXT("seedPhrases")));
+
+	// Guarded rather than assumed: a golden.json copied in before worldgen existed is
+	// still a perfectly good file for every section above, and should not fail the run.
+	if (Root->HasTypedField<EJson::Object>(TEXT("worldgen")))
+	{
+		const TSharedPtr<FJsonObject> Worldgen = Root->GetObjectField(TEXT("worldgen"));
+		CheckNoise(*this, Worldgen->GetObjectField(TEXT("noise")));
+		CheckWorlds(*this, Worldgen);
+	}
+	else
+	{
+		AddWarning(TEXT("golden.json has no worldgen section — regenerate it with: node ue-port/tools/golden.mjs"));
+	}
 
 	return true;
 }

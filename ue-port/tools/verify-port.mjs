@@ -17,6 +17,15 @@
 // only the real automation test caught it. If a `static_cast<float>` or a `float`
 // return is ever reintroduced on the C++ side, model it here with `Math.fround()`
 // at exactly that point — that is the only way this harness can represent one.
+//
+// KNOWN BLIND SPOT — quantisation, in the worldgen sections only. A world is checked
+// as one character per hex, so a wrong constant is invisible unless it moves some hex
+// across a threshold. Measured by mutation: with eight maps, every field constant and
+// every realistic mis-typing of a classification threshold is caught, but nudging one
+// by 1e-6 is not, and neither is letting mountains become shore (no mountain hex
+// touches ocean in any of the eight). The noise section covers numeric drift properly
+// — it compares doubles — so a mismatch that shows up there is precision and one that
+// shows up only in the world sections is structure.
 
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -327,6 +336,231 @@ function makeSeedPhrase(entropy) {
   return `${first}-${second}-${rng.intRange(100, 999)}`;
 }
 
+// -------------------------------------------------------------- LandnamNoise.cpp
+
+const NOISE_TABLE = 256;
+const NOISE_MASK = NOISE_TABLE - 1;
+
+const smoothstep = (t) => t * t * (3 - 2 * t);
+
+function makeValueNoise(rng) {
+  const values = new Float64Array(NOISE_TABLE * NOISE_TABLE);
+  for (let i = 0; i < values.length; i++) values[i] = rng.nextDouble();
+
+  // `& MASK` is int32 in both languages, so a negative index wraps the same way.
+  const at = (x, y) => values[(y & NOISE_MASK) * NOISE_TABLE + (x & NOISE_MASK)];
+
+  return (x, y) => {
+    // static_cast<int32>(FMath::FloorToDouble(v)) — floor, not truncate.
+    const x0 = Math.floor(x) | 0;
+    const y0 = Math.floor(y) | 0;
+    const fx = smoothstep(x - x0);
+    const fy = smoothstep(y - y0);
+    const top = at(x0, y0) * (1 - fx) + at(x0 + 1, y0) * fx;
+    const bottom = at(x0, y0 + 1) * (1 - fx) + at(x0 + 1, y0 + 1) * fx;
+    return top * (1 - fy) + bottom * fy;
+  };
+}
+
+function makeFbm(rng, octaves, lacunarity = 2, gain = 0.5) {
+  const layers = [];
+  for (let i = 0; i < octaves; i++) layers.push(makeValueNoise(rng.derive(`octave:${i}`)));
+
+  let maxAmplitude = 0;
+  let amplitude = 1;
+  for (let i = 0; i < octaves; i++) {
+    maxAmplitude += amplitude;
+    amplitude *= gain;
+  }
+
+  return (x, y) => {
+    let total = 0;
+    let amp = 1;
+    let freq = 1;
+    for (const layer of layers) {
+      total += layer(x * freq, y * freq) * amp;
+      freq *= lacunarity;
+      amp *= gain;
+    }
+    return total / maxAmplitude;
+  };
+}
+
+// ----------------------------------------------------------- LandnamWorldgen.cpp
+
+const SEA_LEVEL = 0.5;
+const MIN_LANDMASS = 400;
+const MAX_ATTEMPTS = 24;
+
+/** Row-major index for a hex, or -1 outside the rectangle. */
+function tileIndex(h, width, height) {
+  const { col, row } = axialToOffset(h);
+  if (col < 0 || col >= width || row < 0 || row >= height) return -1;
+  return row * width + col;
+}
+
+function buildFields(rng, width, height) {
+  const elevationNoise = makeFbm(rng.derive('elevation'), 5);
+  const moistureNoise = makeFbm(rng.derive('moisture'), 3);
+  const ox = rng.intRange(0, 900);
+  const oy = rng.intRange(0, 900);
+
+  const fields = new Array(width * height);
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const nx = ox + col * 0.16;
+      const ny = oy + row * 0.16;
+
+      const eastward = col / (width - 1);
+      const westBias = Math.min(1, Math.max(0, (eastward - 0.12) / 0.35));
+
+      const edgeY = Math.min(row, height - 1 - row) / (height * 0.28);
+      const northSouthFalloff = Math.min(1, Math.max(0, edgeY));
+
+      const raw = elevationNoise(nx, ny);
+      fields[row * width + col] = {
+        elevation: raw * 0.62 + westBias * 0.52 - (1 - northSouthFalloff) * 0.38,
+        moisture: moistureNoise(nx + 40, ny + 40),
+      };
+    }
+  }
+  return fields;
+}
+
+function classify(elevation, moisture) {
+  if (elevation < SEA_LEVEL) return 'ocean';
+  if (elevation > 0.86) return 'mountains';
+  if (elevation > 0.74) return 'hills';
+  if (moisture > 0.68) return elevation < 0.58 ? 'bog' : 'forest';
+  if (moisture > 0.44) return 'forest';
+  if (moisture > 0.3) return elevation < 0.62 ? 'valley' : 'meadow';
+  return 'meadow';
+}
+
+function markShore(tiles, width, height) {
+  for (const tile of tiles) {
+    if (tile.terrain === 'ocean' || tile.terrain === 'mountains') continue;
+    for (const n of hexNeighbors(tile.hex)) {
+      const ni = tileIndex(n, width, height);
+      if (ni !== -1 && tiles[ni].terrain === 'ocean') {
+        tile.terrain = 'shore';
+        break;
+      }
+    }
+  }
+}
+
+function carveRivers(rng, tiles, fields, count, width, height) {
+  const sources = [];
+  for (let i = 0; i < tiles.length; i++) {
+    const t = tiles[i].terrain;
+    if (t === 'mountains' || (t === 'hills' && fields[i].elevation > 0.78)) sources.push(i);
+  }
+  if (sources.length === 0) return;
+
+  for (let river = 0; river < count; river++) {
+    let current = sources[rng.pickIndex(sources.length)];
+    const walked = new Set();
+
+    for (let step = 0; step < 60; step++) {
+      if (walked.has(current)) break;
+      walked.add(current);
+
+      const tile = tiles[current];
+      if (tile.terrain === 'ocean') break;
+      tile.river = true;
+
+      let bestIndex = -1;
+      let bestElevation = fields[current].elevation;
+      for (const n of hexNeighbors(tile.hex)) {
+        const ni = tileIndex(n, width, height);
+        if (ni === -1 || walked.has(ni)) continue;
+        if (fields[ni].elevation < bestElevation) {
+          bestElevation = fields[ni].elevation;
+          bestIndex = ni;
+        }
+      }
+      if (bestIndex === -1) break;
+      current = bestIndex;
+    }
+  }
+}
+
+function landmassFrom(start, tiles, width, height) {
+  const startIndex = tileIndex(start, width, height);
+  if (startIndex === -1) return 0;
+
+  const seen = new Set([startIndex]);
+  const stack = [start];
+  while (stack.length > 0) {
+    const here = stack.pop();
+    for (const n of hexNeighbors(here)) {
+      const ni = tileIndex(n, width, height);
+      if (ni === -1 || seen.has(ni) || tiles[ni].terrain === 'ocean') continue;
+      seen.add(ni);
+      stack.push(n);
+    }
+  }
+  return seen.size;
+}
+
+function chooseLanding(tiles, height) {
+  const midRow = (height - 1) / 2;
+  const candidates = tiles
+    .filter((t) => t.terrain === 'shore' && Math.abs(t.hex.r - midRow) < height * 0.3)
+    .map((t) => t.hex);
+  if (candidates.length === 0) return null;
+
+  // TArray::StableSort; Array.prototype.sort is stable too, so ties keep row-major order.
+  candidates.sort((a, b) => {
+    const ca = hexColumn(a);
+    const cb = hexColumn(b);
+    if (ca !== cb) return ca - cb;
+    return Math.abs(a.r - midRow) - Math.abs(b.r - midRow);
+  });
+  return candidates[0];
+}
+
+function generateOnce(rng, width, height) {
+  const fields = buildFields(rng, width, height);
+
+  const tiles = new Array(width * height);
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const i = row * width + col;
+      tiles[i] = {
+        hex: offsetToAxial(col, row),
+        terrain: classify(fields[i].elevation, fields[i].moisture),
+        river: false,
+      };
+    }
+  }
+
+  markShore(tiles, width, height);
+
+  const riverRng = rng.derive('rivers');
+  const riverCount = rng.intRange(3, 6);
+  carveRivers(riverRng, tiles, fields, riverCount, width, height);
+
+  const landing = chooseLanding(tiles, height);
+  if (!landing) return null;
+  if (landmassFrom(landing, tiles, width, height) < MIN_LANDMASS) return null;
+
+  return { width, height, tiles, landing, valid: true, attempts: 0 };
+}
+
+function generateWorld(seed, width, height) {
+  const rng = makeStream(seed, 'worldgen');
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const world = generateOnce(rng.derive(`attempt:${attempt}`), width, height);
+    if (world) {
+      world.attempts = attempt + 1;
+      return world;
+    }
+  }
+  return { width, height, tiles: [], landing: { q: 0, r: 0 }, valid: false, attempts: MAX_ATTEMPTS };
+}
+
 // ---------------------------------------------------------------- checks
 
 const TOLERANCE = 1e-9;
@@ -530,6 +764,57 @@ section('rng.seedPhrase', () => {
   for (const c of golden.rng.seedPhrases) {
     expect(makeSeedPhrase(c.entropy) === c.phrase,
       `makeSeedPhrase(${c.entropy}): got ${makeSeedPhrase(c.entropy)}, expected ${c.phrase}`);
+  }
+});
+
+section('worldgen.noise', () => {
+  const g = golden.worldgen.noise;
+  const fbm = makeFbm(new Rng(g.seed).derive(g.label), g.octaves);
+  for (const s of g.samples) expectNear(fbm(s.x, s.y), s.v, `fbm(${s.x}, ${s.y})`);
+});
+
+section('worldgen.worlds', () => {
+  const codes = golden.worldgen.terrainCodes;
+
+  for (const c of golden.worldgen.worlds) {
+    const world = generateWorld(c.seed, c.width, c.height);
+
+    expect(world.valid, `${c.seed}: generation failed after ${world.attempts} attempts`);
+    if (!world.valid) continue;
+
+    expectInt(world.tiles.length, c.terrain.length, `${c.seed}: tile count`);
+    if (world.tiles.length !== c.terrain.length) continue;
+
+    expect(world.landing.q === c.landing.q && world.landing.r === c.landing.r,
+      `${c.seed}: landing got ${keyOf(world.landing)}, expected ${c.landing.q},${c.landing.r}`);
+
+    // One check per world rather than per hex, but the message names the first
+    // differing hex — which is what you actually need to find the bad constant.
+    let terrainDiffs = 0;
+    let riverDiffs = 0;
+    let firstTerrain = '';
+    let firstRiver = '';
+    for (let i = 0; i < world.tiles.length; i++) {
+      const tile = world.tiles[i];
+      if (codes[tile.terrain] !== c.terrain[i]) {
+        if (terrainDiffs === 0) {
+          firstTerrain = `col ${i % c.width} row ${Math.floor(i / c.width)} (${keyOf(tile.hex)}): `
+            + `got '${codes[tile.terrain]}', expected '${c.terrain[i]}'`;
+        }
+        terrainDiffs++;
+      }
+      if ((tile.river ? '1' : '0') !== c.rivers[i]) {
+        if (riverDiffs === 0) {
+          firstRiver = `col ${i % c.width} row ${Math.floor(i / c.width)} (${keyOf(tile.hex)})`;
+        }
+        riverDiffs++;
+      }
+    }
+
+    expect(terrainDiffs === 0,
+      `${c.seed}: ${terrainDiffs} of ${world.tiles.length} hexes differ in terrain; first at ${firstTerrain}`);
+    expect(riverDiffs === 0,
+      `${c.seed}: ${riverDiffs} of ${world.tiles.length} hexes differ in river; first at ${firstRiver}`);
   }
 });
 
