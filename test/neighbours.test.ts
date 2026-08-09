@@ -22,6 +22,7 @@ import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
 import { canFound, foundBlocker, foundSettlement, siteReport } from '../src/sim/site';
 import { WATER_FLOOR } from '../src/data/sites';
+import { campStores, sackCamp } from '../src/sim/plunder';
 import { assign } from '../src/sim/colony';
 import { eventChance, isEligible } from '../src/sim/events';
 import { raidDifficulty } from '../src/sim/raid';
@@ -29,6 +30,8 @@ import { startRaid } from '../src/sim/battleTurn';
 import { EVENTS } from '../src/data/events';
 import {
   BARTER_FOOD,
+  CAMP_PICKED_CLEAN,
+  CAMP_REGROW,
   CLAN_CALLS_EVERY,
   CLAN_COUNT,
   CLAN_ELBOW,
@@ -599,6 +602,73 @@ describe('falling on a neighbour, in play', () => {
     expect(next.day).toBe(day + 1);
     expect(next.party.food).toBeLessThan(state.party.food);
     expect(next.party.firewood).toBeGreaterThan(state.party.firewood);
+  });
+});
+
+describe('a camp is a crop, not a windfall', () => {
+  /**
+   * Making raiding a way to LIVE rather than four one-off events.
+   *
+   * The audit measured what falling on a camp was worth: a native camp at
+   * might two paid 24 food — eight days of eating for six people — against
+   * forty-five standing, a permanent enemy, and a fight that kills people
+   * for good. Nobody sane takes that trade, and the harness agreed: even the
+   * policy built around plunder sacked 0.3 camps a saga.
+   *
+   * The haul is worth the reprisal now. What stops it being free money is
+   * that a robbed camp has nothing left in it: their stores grow back over
+   * `CAMP_REGROW`, so a band that means to live this way works a circuit of
+   * the coast instead of standing on one camp forever.
+   */
+  it('pays a real haul the first time', () => {
+    const state = settled('crop-first');
+    const n = state.neighbours[0]!;
+    const before = state.party.food + state.party.firewood;
+    sackCamp(state, n.id);
+    const took = state.party.food + state.party.firewood - before;
+    // A third of a winter or thereabouts, which is what makes it worth the
+    // forty-five standing it costs.
+    expect(took).toBeGreaterThan(30);
+    expect(n.sackedOn).toBe(state.day);
+  });
+
+  it('and next to nothing the morning after', () => {
+    const state = settled('crop-again');
+    const n = state.neighbours[0]!;
+    sackCamp(state, n.id);
+    const before = state.party.food + state.party.firewood;
+    sackCamp(state, n.id);
+    const second = state.party.food + state.party.firewood - before;
+    expect(campStores(state, n.sackedOn)).toBeCloseTo(CAMP_PICKED_CLEAN, 5);
+    expect(second).toBeLessThan(15);
+    expect(state.saga.some((e) => e.text.includes('little left to take'))).toBe(true);
+  });
+
+  it('and a season later it is worth the walk again', () => {
+    const state = settled('crop-grown');
+    const n = state.neighbours[0]!;
+    sackCamp(state, n.id);
+    expect(campStores(state, n.sackedOn)).toBeLessThan(0.3);
+    state.day += CAMP_REGROW;
+    expect(campStores(state, n.sackedOn)).toBe(1);
+  });
+
+  it('a camp nobody has touched is full', () => {
+    const state = settled('crop-virgin');
+    expect(campStores(state, undefined)).toBe(1);
+  });
+
+  it('an old save reads as a coast nobody has robbed', () => {
+    // `sackedOn` is absent in every save written before this, and the
+    // kindest true thing to say about a history the file does not contain
+    // is that it never happened — which is also what the old code did.
+    const state = settled('crop-old');
+    for (const n of state.neighbours) delete n.sackedOn;
+    const rolled = migrate(JSON.parse(encode(state)) as Record<string, unknown>);
+    expect(rolled.save.version).toBe(SAVE_VERSION);
+    for (const n of (rolled.save as unknown as GameState).neighbours) {
+      expect(campStores(state, n.sackedOn)).toBe(1);
+    }
   });
 });
 

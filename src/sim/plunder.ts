@@ -10,13 +10,33 @@
 
 import { stream } from '../rng';
 import type { GameState } from '../state/types';
-import { clanKind } from '../data/clans';
+import { CAMP_PICKED_CLEAN, CAMP_REGROW, clanKind } from '../data/clans';
 import { neighbourById } from './neighbours';
 import { takeIn } from './joining';
 import { chronicle } from './saga';
 
 /** How much a point of their might multiplies the haul. */
 const PLUNDER_PER_MIGHT = 0.35;
+
+/**
+ * How full a camp's stores are, 0..1 — everything if nobody has touched
+ * them, next to nothing the morning after.
+ *
+ * The measurement behind this: at the old haul a native camp at might 2 paid
+ * 24 food, which is eight days of eating for six people, in exchange for
+ * forty-five standing, a permanent enemy and a fight that kills people for
+ * good. Nobody sane takes that trade, and the harness agreed — even the
+ * policy built around plunder sacked 0.3 camps a saga.
+ *
+ * So the haul is now worth the reprisal, and THIS is what stops it being
+ * free money: a robbed camp has to put a season back before it is worth the
+ * walk again.
+ */
+export function campStores(state: GameState, sackedOn: number | undefined): number {
+  if (sackedOn === undefined) return 1;
+  const since = state.day - sackedOn;
+  return Math.min(1, CAMP_PICKED_CLEAN + (since / CAMP_REGROW) * (1 - CAMP_PICKED_CLEAN));
+}
 
 /** Odds that somebody is carried home from a won camp, if there is room. */
 const THRALL_ODDS = 0.5;
@@ -35,7 +55,8 @@ export function sackCamp(state: GameState, id: string): void {
   const kind = clanKind(n.kind);
   const rng = stream(state.seed, 'events').derive(`plunder:${id}:${state.day}`);
 
-  const scale = (1 + n.might * PLUNDER_PER_MIGHT) * rng.float(0.8, 1.25);
+  const full = campStores(state, n.sackedOn);
+  const scale = (1 + n.might * PLUNDER_PER_MIGHT) * rng.float(0.8, 1.25) * full;
   const food = Math.round(kind.plunder.food * scale);
   const firewood = Math.round(kind.plunder.firewood * scale);
   state.party.food += food;
@@ -43,7 +64,9 @@ export function sackCamp(state: GameState, id: string): void {
 
   chronicle(
     state,
-    `We went through ${n.name} and took what a season had put there: ${food} of food and ${firewood} of wood.`,
+    full < 0.5
+      ? `We went through ${n.name} again. There was little left to take: ${food} of food and ${firewood} of wood.`
+      : `We went through ${n.name} and took what a season had put there: ${food} of food and ${firewood} of wood.`,
     'grim',
   );
 
@@ -57,6 +80,9 @@ export function sackCamp(state: GameState, id: string): void {
   }
 
   // They rebuild, and they arm. The might that made them worth robbing is
-  // the might that meets the next visit.
+  // the might that meets the next visit — and their stores start again from
+  // nothing, so a band that means to live this way has to work a circuit
+  // rather than a single camp.
   n.might = Math.min(4, n.might + 1);
+  n.sackedOn = state.day;
 }

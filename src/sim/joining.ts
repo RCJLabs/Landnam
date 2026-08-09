@@ -11,13 +11,21 @@
 // (see SWORN_MAX): growth buys labour, never a wider shield wall.
 
 import { stream } from '../rng';
-import { DRAW_ANGER, DRAW_LARDER_DAYS, DRAW_MAX, WHY_THEY_COME } from '../data/folk';
+import {
+  DRAW_ANGER,
+  DRAW_LARDER_DAYS,
+  DRAW_MAX,
+  SWORD_DEEDS,
+  SWORD_MAX,
+  WHY_SWORDS_COME,
+  WHY_THEY_COME,
+} from '../data/folk';
 import { JARL_DRAW } from '../data/jarl';
 import { wintersStood } from './calendar';
 import { capacity } from './colony';
 import { angerLevel, goodwillLevel } from './neighbours';
 import { foodPerDay } from './upkeep';
-import { hands, living, makePerson } from './people';
+import { SWORN_MAX, hands, living, makePerson, sworn } from './people';
 import { chronicle } from './saga';
 import type { GameState, Person } from '../state/types';
 
@@ -108,6 +116,35 @@ export function drawOdds(state: GameState): number {
 }
 
 /**
+ * How likely a fighting man is to come looking for a share today, 0..1.
+ *
+ * The mirror of `drawOdds`, and deliberately fed by the things that shut
+ * that one down. A hall draws settlers for being safe; a band draws swords
+ * for being dangerous and for having taken something worth a share of. So
+ * this rises with the coast's fear of you and with what you have actually
+ * carried off — a band nobody has heard of, however rich, gets nobody.
+ *
+ * Gated on a GAP in the warband, because the shield wall is six and stays
+ * six: this replaces men who have fallen, it never widens the line. That is
+ * 6.2's rule kept, and the death spiral it caused removed — a raider who
+ * loses four sworn a saga could not replace one of them, and ground to
+ * nothing in ninety days while a turtle stood for a hundred and sixty.
+ */
+export function swordOdds(state: GameState): number {
+  const home = state.settlement;
+  if (!home || state.end) return 0;
+  if (roomLeft(state) <= 0) return 0;
+  if (sworn(state.party.people).length >= SWORN_MAX) return 0;
+  if (state.party.food < foodPerDay(state) * DRAW_LARDER_DAYS) return 0;
+
+  const feared = Math.min(1, angerLevel(state) / 60);
+  const deeds = Math.min(1, state.tally.sackings / SWORD_DEEDS);
+  // Both, not either: a frightening band with nothing to show for it is just
+  // unpleasant, and a rich one nobody fears is a farm.
+  return SWORD_MAX * feared * deeds;
+}
+
+/**
  * Somebody comes and asks, or does not. Rolled once a day, beside the raid.
  *
  * The symmetry is the point. `maybeRaid` has run every day since 3.5 and
@@ -122,6 +159,23 @@ export function maybeJoin(state: GameState): void {
   const rng = stream(state.seed, 'events').derive(`folk:${state.day}`);
   if (!rng.chance(odds)) return;
   takeIn(state, 1, rng.derive('why').pick(WHY_THEY_COME));
+}
+
+/**
+ * A sword comes looking for a share, or does not. Rolled beside the other
+ * door, because a coast that has stopped sending settlers has not stopped
+ * sending people.
+ */
+export function maybeSword(state: GameState): void {
+  if (state.end || state.battle || state.event) return;
+  const odds = swordOdds(state);
+  if (odds <= 0) return;
+  const rng = stream(state.seed, 'events').derive(`sword:${state.day}`);
+  if (!rng.chance(odds)) return;
+  const joined = takeIn(state, 1, rng.derive('why').pick(WHY_SWORDS_COME));
+  // He came to fight, and the wall has a gap in it. `takeIn` makes hands;
+  // this is the one door that makes anything else.
+  for (const person of joined) person.bond = 'sworn';
 }
 
 /**

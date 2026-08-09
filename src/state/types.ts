@@ -417,6 +417,11 @@ export interface Neighbour {
   lastDealt?: number;
   /** Raids traced back to them. */
   raidsSent: number;
+  /**
+   * The last day their camp was emptied, if it ever was. Their stores grow
+   * back over CAMP_REGROW days — see sim/plunder.ts.
+   */
+  sackedOn?: number;
   /** Their man, if he is still alive and still coming. */
   champion?: Champion;
 }

@@ -28,7 +28,7 @@ export const CLAN_KINDS: ClanKindDef[] = [
     opening: -10,
     strength: 1.15,
     // A hall keeps timber: they build the way we build.
-    plunder: { food: 8, firewood: 22 },
+    plunder: { food: 22, firewood: 54 },
   },
   {
     id: 'native',
@@ -37,7 +37,7 @@ export const CLAN_KINDS: ClanKindDef[] = [
     opening: 10,
     strength: 0.9,
     // A camp keeps food: smoked fish, dried meat, a winter's gathering.
-    plunder: { food: 14, firewood: 8 },
+    plunder: { food: 40, firewood: 20 },
   },
 ];
 
@@ -97,6 +97,25 @@ export const REP_TRIBUTE = 22;
 export const REP_REFUSED = -18;
 /** Standing drifts back toward nothing at this much a day. */
 export const REP_DRIFT = 0.12;
+
+/**
+ * Days before a robbed camp is worth robbing again.
+ *
+ * The thing that turns plunder from four one-off events into a way of
+ * living. A camp picked clean last month has nothing in it; one left alone
+ * for a season has put a season back. Without this, raising the haul enough
+ * to be worth the reprisal would have let a band stand on one camp and farm
+ * it forever.
+ *
+ * Sixty days is a season and a half, so a coast of four neighbours will
+ * carry a band that robs about one a month — which is a life, and a
+ * precarious one, because every visit costs REP_RAIDED and the coast
+ * remembers all of it.
+ */
+export const CAMP_REGROW = 60;
+
+/** What is left in a camp emptied today: enough to be worth the walk, barely. */
+export const CAMP_PICKED_CLEAN = 0.15;
 
 /** Nobody will barter with you below this. */
 export const TRADE_FLOOR = -35;

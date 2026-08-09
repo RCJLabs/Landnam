@@ -23,7 +23,10 @@
 //                plunder (data, not save — the bump is for the Battle field).
 // v20 (sea): Party gained the optional hullHoled.
 // v21 (combat): Battle gained warCried and lastBlow.
-export const SAVE_VERSION = 26;
+// v27 (raiding): Neighbour gained the optional `sackedOn` — their stores
+//                 grow back over CAMP_REGROW days, so plunder is a circuit
+//                 rather than a one-off.
+export const SAVE_VERSION = 27;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

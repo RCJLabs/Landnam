@@ -230,6 +230,11 @@ export const MIGRATIONS: Record<number, Migration> = {
   // for them retroactively would rewrite a run's history — so they stay
   // strangers, and only new landings have people in them.
   25: (save) => ({ ...save, version: 26 }),
+  // A camp's stores grow back after it is robbed. An older save has no
+  // record of who was robbed when, and an absent `sackedOn` reads as "never
+  // touched" — which is the kindest true thing to say about a coast whose
+  // history the file does not contain, and matches what the old code did.
+  26: (save) => ({ ...save, version: 27 }),
 };
 
 export interface MigrationResult {

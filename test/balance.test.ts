@@ -70,6 +70,7 @@ import { isWarbandTurn } from '../src/sim/battle';
 import { reachWithZoc } from '../src/sim/zoc';
 import { reachTargets, shoveDestination, throwTargets } from '../src/sim/battleActions';
 import { offersAt, placeHere, tradeBlocker } from '../src/sim/places';
+import { campStores } from '../src/sim/plunder';
 import { strandTarget } from '../src/sim/sea';
 import { placeKind } from '../src/data/places';
 import { bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
@@ -86,8 +87,8 @@ import { EVENTS } from '../src/data/events';
 import { LORE } from '../src/data/lore';
 import { TRAITS } from '../src/data/traits';
 import { kinPairs } from '../src/sim/kin';
-import { drawOdds } from '../src/sim/joining';
-import { DRAW_ANGER, DRAW_LARDER_DAYS, WHY_THEY_COME } from '../src/data/folk';
+import { drawOdds, swordOdds } from '../src/sim/joining';
+import { DRAW_ANGER, DRAW_LARDER_DAYS, SWORD_DEEDS, WHY_SWORDS_COME, WHY_THEY_COME } from '../src/data/folk';
 import { forecast, markVisible, reachable } from '../src/sim/winter';
 
 const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
@@ -116,6 +117,8 @@ interface Policy {
   raidReach: number;
   /** Whether it will carry food out to make a friend on the coast. */
   trades: boolean;
+  /** Whether it falls on neighbours' camps as a matter of course. */
+  robsCamps: boolean;
   /** What it raises, in the order it wants it. */
   want: readonly string[];
   /** What everyone does with their days. */
@@ -142,6 +145,7 @@ const SETTLER: Policy = {
   plunderWindow: 24,
   raidReach: 14,
   trades: true,
+  robsCamps: false,
   want: [
     'longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade',
     'storehouse', 'watchtower', 'meadhall', 'greathall', 'earthworks',
@@ -167,11 +171,17 @@ const RAIDER: Policy = {
   plunderWindow: 40,
   raidReach: 16,
   trades: false,
+  robsCamps: true,
   want: [
     'longhouse', 'palisade', 'smokehouse', 'storehouse', 'watchtower',
     'farmplots', 'bud', 'earthworks', 'meadhall', 'greathall', 'hof', 'dock',
   ],
-  crew: ['warrior','warrior','hunter','woodcutter','builder','farmer'],
+  // Two warriors, one hunter and a farmer could not feed six people, and it
+  // showed: TWENTY-EIGHT of twenty-eight raider deaths were hunger. A man
+  // who lives by taking still has to eat between takings, and the first cut
+  // of this policy was the site-floor strawman all over again — a strategy
+  // measured with a spec that could not carry it.
+  crew: ['warrior','hunter','hunter','farmer','woodcutter','builder'],
   errandBuffer: 2,
 };
 
@@ -185,6 +195,7 @@ const TURTLE: Policy = {
   plunderWindow: 0,
   raidReach: 0,
   trades: false,
+  robsCamps: false,
   want: [
     'longhouse', 'farmplots', 'palisade', 'smokehouse', 'watchtower',
     'storehouse', 'earthworks', 'bud', 'meadhall', 'greathall', 'hof', 'dock',
@@ -451,10 +462,21 @@ function step(state: GameState): Action {
     }
   }
 
+  // Standing on a camp with something in it, under arms, strong enough to
+  // take it: take it. This is what "living by raiding" MEANS, and until now
+  // the bot only ever fell on anybody when it was three days from starving
+  // — a desperation rule wearing a strategy's name, which is why even the
+  // raider policy sacked 0.3 camps a saga.
+  const host = neighbourHere(state);
+  if (host && policy.robsCamps && canFallOn(state, host.id)
+      && sworn(state.party.people).length >= 4
+      && campStores(state, host.sackedOn) >= CAMP_WORTH) {
+    return { type:'FALL_ON', id: host.id };
+  }
+
   // Starving on a cold doorstep: the average player robs it before they die.
   // Friends stay friends — this only fires on a camp that already dislikes
   // the band, when there are under three days of food left.
-  const host = neighbourHere(state);
   if (host && days < 3 && host.standing < 10 && canFallOn(state, host.id)) {
     return { type:'FALL_ON', id: host.id };
   }
@@ -706,6 +728,13 @@ function step(state: GameState): Action {
   return { type:'MOVE', to: opts.reduce((a,b)=>score(b)>score(a)?b:a) };
 }
 
+/**
+ * How full a camp's stores must be before it is worth the walk and the
+ * reprisal. Below this they were robbed too recently to have put anything
+ * back — see CAMP_REGROW.
+ */
+const CAMP_WORTH = 0.6;
+
 /** How many hexes of extra walk the ship's way in is worth. */
 const SHIP_PULL = 4;
 
@@ -729,6 +758,18 @@ function raidTarget(
   const strong = sworn(state.party.people).length >= 5;
   let best: { id: string; at: {q:number;r:number} } | null = null;
   let bestScore = within;
+  // Camps first, and this is the change that makes raiding a LIFE rather
+  // than four one-off events. The fixed places are taken once each and then
+  // they are gone; a neighbour's camp puts its stores back over a season, so
+  // a band that means to live this way works a circuit of them.
+  if (strong) {
+    for (const n of state.neighbours) {
+      if (!n.found) continue;
+      if (campStores(state, n.sackedOn) < CAMP_WORTH) continue;
+      const d = distance(n.at, home.at);
+      if (d < bestScore) { bestScore = d; best = { id: n.id, at: n.at }; }
+    }
+  }
   for (const p of state.world.places) {
     if (p.sackedOn !== undefined) continue;
     if (state.world.seen[key(p.at)] === undefined) continue;
@@ -1445,6 +1486,84 @@ describe('a band that can grow, and can bleed', () => {
     }
     expect(came, 'four hundred days at a full hall and nobody came').toBeGreaterThan(0);
     expect(state.saga.some((e) => WHY_THEY_COME.some((w) => e.text.includes(w)))).toBe(true);
+  });
+
+  /**
+   * The other door, and the one that makes raiding survivable.
+   *
+   * `drawOdds` is shut down by `DRAW_ANGER` as the coast turns against you,
+   * which is right — nobody moves in next to a feud — and measured as a
+   * death spiral: a raider ended a saga with 0.8 hands where a turtle had
+   * 2.8, could not replace one of the four sworn he lost a saga, and ground
+   * his warband to nothing.
+   *
+   * A feared band does not attract nobody. It attracts a DIFFERENT somebody.
+   * Men who want a share come because the coast is frightened of you and
+   * because you have taken something worth sharing — so this draw is fed by
+   * the same anger that closes the other one.
+   */
+  it('a feared band with something to show draws swords, not settlers', () => {
+    const quiet = roofed('sword-quiet', ['longhouse', 'bud', 'meadhall']);
+    quiet.day = 180;
+    quiet.party.food = 300;
+    for (const n of quiet.neighbours) n.standing = 40;
+    expect(swordOdds(quiet), 'a friendly farm should draw no swords').toBe(0);
+
+    const feared = structuredClone(quiet);
+    for (const n of feared.neighbours) n.standing = -80;
+    feared.tally.sackings = SWORD_DEEDS;
+    // A gap in the wall to fill: the line is six and stays six.
+    feared.party.people.filter((p) => p.bond === 'sworn').slice(0, 2)
+      .forEach((p) => { p.alive = false; });
+    expect(swordOdds(feared)).toBeGreaterThan(0);
+    expect(drawOdds(feared), 'settlers should be staying well away')
+      .toBeLessThan(drawOdds(quiet));
+  });
+
+  it('frightening on its own buys nobody, and rich on its own buys nobody', () => {
+    const base = roofed('sword-halves', ['longhouse', 'bud', 'meadhall']);
+    base.day = 180;
+    base.party.food = 300;
+    base.party.people.filter((p) => p.bond === 'sworn').slice(0, 2)
+      .forEach((p) => { p.alive = false; });
+
+    const feared = structuredClone(base);
+    for (const n of feared.neighbours) n.standing = -80;
+    feared.tally.sackings = 0;
+    expect(swordOdds(feared), 'unpleasant with nothing to show is just unpleasant').toBe(0);
+
+    const rich = structuredClone(base);
+    for (const n of rich.neighbours) n.standing = 0;
+    rich.tally.sackings = SWORD_DEEDS;
+    expect(swordOdds(rich), 'a hoard nobody fears is a farm').toBe(0);
+  });
+
+  it('fills the gap in the wall and never widens it', () => {
+    const state = roofed('sword-gap', ['longhouse', 'bud', 'meadhall', 'farmplots']);
+    state.day = 180;
+    state.party.food = 300;
+    for (const n of state.neighbours) n.standing = -90;
+    state.tally.sackings = SWORD_DEEDS * 2;
+    expect(swordOdds(state), 'a full warband needs nobody').toBe(0);
+
+    state.party.people.filter((p) => p.bond === 'sworn').slice(0, 2)
+      .forEach((p) => { p.alive = false; });
+    expect(swordOdds(state)).toBeGreaterThan(0);
+
+    let came = 0;
+    for (let d = 0; d < 600 && came === 0; d += 1) {
+      state.party.food = 300;
+      state.party.firewood = 300;
+      if (state.event) state.event = undefined;
+      if (state.battle) state.battle = undefined;
+      passDay(state);
+      came = sworn(state.party.people).length - 4;
+    }
+    expect(came, 'six hundred days of infamy and nobody came for a share')
+      .toBeGreaterThan(0);
+    expect(sworn(state.party.people).length, 'the wall is six and stays six')
+      .toBeLessThanOrEqual(SWORN_MAX);
+    expect(state.saga.some((e) => WHY_SWORDS_COME.some((w) => e.text.includes(w)))).toBe(true);
   });
 
   it('takes people in as hands, never as fighters', () => {

@@ -79,6 +79,23 @@ line while advancing (the rule `test/wall.test.ts` always said wins) and the
 loop plays every fight to its end; the same game, honestly played, read
 78/30/7 when that was fixed, and 83/30/7 today.
 
+**Raiding is now a way to live, and it is still not the best one.** Work
+started on the item-7 finding (2026-08-09). What shipped: hauls worth the
+reprisal, camps that put their stores back over a season so plunder is a
+CIRCUIT rather than four one-off events, a bot that actually raids as a
+strategy (0.3 sackings a saga to 2.5), and a second door on the hall — a
+feared band with something to show draws fighting men who fill a gap in the
+wall, where a peaceable one draws hands. That last is what stopped the death
+spiral: `DRAW_ANGER` shuts the settler door as the coast turns, and a raider
+who loses four sworn a saga could not replace one of them.
+It is not finished. The raider lives 104 days against the turtle's 163, and
+**26 of his 29 deaths are still hunger** — plunder covers about a third of
+what the band eats. The remaining lever is the one the period actually used
+and this game has not: **the cost of going out.** A settled band reaches a
+camp by a twenty-day errand on foot; a knarr should make a coastal raid a
+short trip with a big haul. That is the next piece of work and it is where
+the sea, the plunder economy and the item-7 finding all meet.
+
 **Every number here describes ONE way of playing, and it is not the best
 one.** Audit item 7 gave the harness three policies over the same thirty
 landings on A Fair Country:
@@ -775,6 +792,51 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-09 — A camp is a crop (raiding, part one)** — Following the
+  item-7 finding that staying home wins and even the raider policy sacked
+  0.3 camps a saga. The economics said why: a native camp at might two paid
+  **24 food — eight days of eating for six people** — against forty-five
+  standing, a permanent enemy, and a fight that kills people for good.
+  Nobody sane takes that trade.
+  **The haul is worth the reprisal now**, roughly tripled, so a camp is a
+  third of a winter rather than a week of it. What stops that being free
+  money is the other half: **a robbed camp has nothing left in it.** Stores
+  grow back over `CAMP_REGROW` (sixty days), so a band that lives this way
+  works a circuit of the coast instead of standing on one camp forever.
+  `Neighbour.sackedOn` is a new save field — SAVE_VERSION 27, with a
+  migration that reads an absent value as "never touched", which is the
+  kindest true thing to say about a history the file does not contain.
+  The bot learned to live by it in the same commit: it falls on any camp
+  worth robbing while it is out under arms and strong enough, where before
+  it only ever robbed anybody when it was three days from starving — a
+  desperation rule wearing a strategy's name. Sackings went **0.3 to 2.5 a
+  saga**, and the armed errand now steers at camps as well as at the fixed
+  places, which matters because the places are taken once each and gone
+  while a camp comes back.
+  Then the measurement said raiding was killing them, and named the reason:
+  a raider ended a saga with **0.8 hands where a turtle had 2.8**. Raiding
+  maxes `DRAW_ANGER`, which shuts the settler door — correctly, nobody moves
+  in next to a feud — so a raider who lost four sworn a saga could not
+  replace one of them and ground his warband to nothing.
+  **So there is a second door.** A feared band with something to show draws
+  men who want a share, and they come armed: `swordOdds` is fed by the same
+  anger that closes the other door, times what you have actually taken.
+  Both halves are required — unpleasant with nothing to show is just
+  unpleasant, and a hoard nobody fears is a farm. It fills a GAP in the
+  warband and never widens it, so 6.2's rule stands: the wall is six.
+  One fault of mine on the way, and the same one as last time: **a strategy
+  tested with a spec that cannot carry it is not tested.** The raider's crew
+  was two warriors, one hunter and a farmer trying to feed six, and
+  twenty-eight of twenty-eight of his deaths were hunger. A man who lives by
+  taking still has to eat between takings.
+  Where it stands: the raider lives 104 days against the turtle's 163, and
+  26 of 29 deaths are still hunger — plunder covers about a third of what
+  the band eats. **The remaining lever is the cost of going out**, and it is
+  the one the period actually used: a twenty-day errand on foot to reach one
+  camp is not how anybody raided. The knarr is the answer and it is the next
+  piece of work.
+  Curve 57/27/7, unmoved.
 
 - **2026-08-09 — Told, not shown (audit item 10)** — Six `aria` attributes
   in the whole render layer, on a game whose primary target is a phone

@@ -13,7 +13,7 @@ import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
 import { driftStandings, neighboursCallOn } from './neighbours';
 import { renderTribute } from './thing';
-import { handsLeave, maybeJoin } from './joining';
+import { handsLeave, maybeJoin, maybeSword } from './joining';
 import { raidable, raidDifficulty, raidOdds } from './raid';
 import { startRaid } from './battleTurn';
 import { bonus } from './lore';
@@ -225,6 +225,8 @@ export function passDay(state: GameState): boolean {
   // asks. Rolled beside the raid on purpose — the same world that sends men
   // over the ridge is the one that sends people up the strand.
   maybeJoin(state);
+  // And the other door: a band with a name draws men who want a share of it.
+  maybeSword(state);
   stirGrudges(state, pressure);
   feudsComeDue(state);
   // The coast forgets slowly, and only a little each day.

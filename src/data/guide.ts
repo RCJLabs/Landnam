@@ -37,7 +37,7 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-steading',
     title: 'The Steading',
-    body: 'Once settled, tap the hall to enter the steading. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. A steading that is fed, built and on speaking terms with the coast DRAWS people, and one that is starving or at feud does not. They arrive as hands: labour, never fighters, only if there is a bed, and only while there is food to spare for a new mouth.',
+    body: 'Once settled, tap the hall to enter the steading. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. A steading that is fed, built and on good terms with the coast DRAWS settlers, who arrive as hands: labour, never fighters. A band that is FEARED and has taken something worth sharing draws men of the other kind, who come armed and fill a gap in the wall. Both need a bed and food to spare.',
   },
   {
     id: 'the-fight',
@@ -47,7 +47,7 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-coast',
     title: 'The Coast',
-    body: 'Four neighbours share this coast, and they remember everything. You need not go looking: once the posts are in they come and look at YOU, one a fortnight, and each goes on the map. Barter feeds standing — and traders talk, so every bargain also names something on the coast you would never have found. Tribute buys peace; falling on a camp pays in stores and sometimes a thrall, and costs standing the moment steel is out. The angriest neighbour is where raids come from, and a raid always names its sender. Watch and palisade buy raid-chance down.',
+    body: 'Four neighbours share this coast, and they remember everything. Once the posts are in they come and look at YOU, one a fortnight, and each goes on the map. Barter feeds standing, and traders talk — every bargain names something on the coast you would never have found. Falling on a camp is the other trade: a season of their stores for forty-five standing and a fight. Robbed camps put their stores back over a season, so a band that lives this way works a circuit. The angriest neighbour is where raids come from, and a raid always names its sender.',
   },
   {
     id: 'the-places',

@@ -41,6 +41,41 @@ export const DRAW_LARDER_DAYS = 8;
 export const DRAW_ANGER = 0.8;
 
 /**
+ * Chance a day that a fighting man comes looking for a share, at the height
+ * of a band's infamy.
+ *
+ * The other door, and the one that makes raiding a way to LIVE rather than a
+ * way to die slowly. A hall draws settlers for being safe and fed, and
+ * `DRAW_ANGER` shuts that door as the coast turns against you — which is
+ * right, and which measured as a death spiral: a raider ended a saga with
+ * 0.8 hands where a turtle had 2.8, could not replace a single man he lost,
+ * and ground his warband down to nothing in ninety days.
+ *
+ * But a feared band does not attract nobody. It attracts a different
+ * somebody. Men who want a share of what you are taking come BECAUSE the
+ * coast is frightened of you, and they come armed — so this draw is fed by
+ * the same anger that closes the other one, and by what you have actually
+ * taken.
+ */
+export const SWORD_MAX = 0.055;
+
+/** Sackings before a band's name is worth crossing water for. */
+export const SWORD_DEEDS = 4;
+
+/**
+ * Why a fighting man came. He is not looking for a place to live, and the
+ * lines say so — every one of them is somebody who wants a share.
+ */
+export const WHY_SWORDS_COME = [
+  'came over the hill with a spear and asked what the split was',
+  'had heard what we took off the coast and wanted to be there for the next one',
+  'was thrown out of somewhere for what he did there, and did not pretend otherwise',
+  'said he had no use for a quiet hall and had come a long way to find this one',
+  'wanted a share, said so plainly, and was worth having',
+  'had followed the story of us up the coast and arrived asking for the man in charge',
+];
+
+/**
  * Why they came. Past tense, and each one a reason a real person would give:
  * the game already says who arrived, and this is what makes it a person
  * rather than a number going up.
