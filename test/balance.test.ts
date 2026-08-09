@@ -91,6 +91,117 @@ import { DRAW_ANGER, DRAW_LARDER_DAYS, WHY_THEY_COME } from '../src/data/folk';
 import { forecast, markVisible, reachable } from '../src/sim/winter';
 
 const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
+
+/**
+ * AUDIT ITEM 7: how this band decides to live.
+ *
+ * Every number this repo carries describes ONE strategy — settle early, work
+ * the jobs, hold the line, trade until somebody will speak for you. Whether
+ * the game supports a SECOND way of playing has never been tested, and
+ * "there is more than one way to play" is a claim it has been making since
+ * phase 4 without evidence either way.
+ *
+ * So the bot's opinions are a parameter now instead of constants scattered
+ * through it. The settler is exactly what the harness has always been and
+ * every figure in ROADMAP.md still means what it meant; the other two are
+ * the honest alternatives a player would actually try.
+ */
+interface Policy {
+  id: string;
+  /** How good a site has to be before the posts go in. */
+  siteFloor: number;
+  /** Last day a band still looking for a home turns aside for plunder. */
+  plunderWindow: number;
+  /** How far out it goes under arms once settled. Zero: it never does. */
+  raidReach: number;
+  /** Whether it will carry food out to make a friend on the coast. */
+  trades: boolean;
+  /** What it raises, in the order it wants it. */
+  want: readonly string[];
+  /** What everyone does with their days. */
+  crew: readonly JobId[];
+  /**
+   * Days of food the steading keeps back before an armed errand goes out.
+   *
+   * Mine, not the game's — the game charges `provisionsFor(3)`, which is
+   * nine. The first cut of the raid errand added ten days of the steading's
+   * own eating on top as a safety buffer, and measured across three policies
+   * that buffer was met on ZERO target-days out of a thousand: a settled
+   * band in this game never has that much spare, so going out under arms
+   * could not happen for anybody. A settler keeps a cushion because he has a
+   * steading to feed. A raider does not: eating what you take is the whole
+   * of the strategy, and testing him with a farmer's caution measures the
+   * caution.
+   */
+  errandBuffer: number;
+}
+
+const SETTLER: Policy = {
+  id: 'settler',
+  siteFloor: 9,
+  plunderWindow: 24,
+  raidReach: 14,
+  trades: true,
+  want: [
+    'longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade',
+    'storehouse', 'watchtower', 'meadhall', 'greathall', 'earthworks',
+    'hof', 'dock',
+  ],
+  crew: CREW,
+  errandBuffer: 6,
+};
+
+/**
+ * Takes what he needs. Holds out for better ground because he is in no
+ * hurry, robs everything within reach on the way, and goes out under arms
+ * all his life instead of carrying food to anybody.
+ */
+const RAIDER: Policy = {
+  id: 'raider',
+  // Seven, not eleven. The first cut had him holding out for good ground,
+  // which is a strawman of his own strategy — a man who means to live off
+  // what he takes does not care what the soil is like, and `the first
+  // winter` has said since 6.1 that settling late is close to fatal. Testing
+  // him with a settler's site standards measured the delay, not the raiding.
+  siteFloor: 7,
+  plunderWindow: 40,
+  raidReach: 16,
+  trades: false,
+  want: [
+    'longhouse', 'palisade', 'smokehouse', 'storehouse', 'watchtower',
+    'farmplots', 'bud', 'earthworks', 'meadhall', 'greathall', 'hof', 'dock',
+  ],
+  crew: ['warrior','warrior','hunter','woodcutter','builder','farmer'],
+  errandBuffer: 2,
+};
+
+/**
+ * Never leaves the palisade. Settles on the first thing that will take the
+ * posts, builds walls before comforts, and answers everything with work.
+ */
+const TURTLE: Policy = {
+  id: 'turtle',
+  siteFloor: 7,
+  plunderWindow: 0,
+  raidReach: 0,
+  trades: false,
+  want: [
+    'longhouse', 'farmplots', 'palisade', 'smokehouse', 'watchtower',
+    'storehouse', 'earthworks', 'bud', 'meadhall', 'greathall', 'hof', 'dock',
+  ],
+  crew: ['farmer','farmer','farmer','woodcutter','builder','warrior'],
+  errandBuffer: 0,
+};
+
+const POLICIES = [SETTLER, RAIDER, TURTLE];
+
+/**
+ * Which one is playing. Module-level for the same reason `settleNotBefore`
+ * is — step() is called from a dozen places and only the policy sweep cares
+ * — and reset in a finally, because a leaked value would silently rewrite
+ * every figure in this file.
+ */
+let policy: Policy = SETTLER;
 // NOTE: 'farmplots' has no hyphen. The first version of this list wrote
 // 'farm-plots', which matches no building, so that entry silently never
 // queued and the measured bot had been building three things while this file
@@ -111,11 +222,7 @@ const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrio
  * `buildBlocker` enforces: a great hall needs a longhouse standing to
  * replace, and earthworks need a palisade.
  */
-const WANT = [
-  'longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade',
-  'storehouse', 'watchtower', 'meadhall', 'greathall', 'earthworks',
-  'hof', 'dock',
-];
+
 
 /**
  * A competent-but-not-clairvoyant player: walks toward timber when the
@@ -374,6 +481,31 @@ function step(state: GameState): Action {
     // takes a place off the coast and is remembered for it.
     const out = state.expedition;
     if (out) {
+      if (out.purpose === 'explore') {
+        // Walking the country to find out what is in it. Aims at the
+        // nearest ground nobody has stood on, which is what turns fog into
+        // a place worth coming back for.
+        if (!out.returning && (raidTarget(state, policy.raidReach)
+            || state.day - out.launchedOn >= RAID_DAYS)) {
+          return { type:'TURN_HOME' };
+        }
+        const opts4 = moveOptions(state);
+        if (opts4.length > 0) {
+          const unseen = (at: {q:number;r:number}) =>
+            state.world.seen[key(at)] === undefined ? 1 : 0;
+          const home = state.settlement.at;
+          const pick = out.returning
+            ? opts4.reduce((a,b)=>distance(b,home)<distance(a,home)?b:a)
+            : opts4.reduce((a,b)=>{
+                const sa = unseen(a) * 6 + distance(a, home);
+                const sb = unseen(b) * 6 + distance(b, home);
+                return sb > sa ? b : a;
+              });
+          return { type:'MOVE', to: pick };
+        }
+        return { type:'CAMP' };
+      }
+
       if (out.purpose === 'raid') {
         // Standing on the prize: take it. (Afloat BESIDE it is handled far
         // above, by the strandhögg rule, which fires wherever it is legal.)
@@ -414,7 +546,7 @@ function step(state: GameState): Action {
     // nobody makes a friend from indoors. Sends two out with food to spare,
     // and only when there is genuinely a surplus to carry. First, because
     // the Thing is what a run is FOR and raiding is what costs you it.
-    if (!hasSpeakers(state) && wintersStood(state.day) >= 1 && nearestFriendable(state)) {
+    if (policy.trades && !hasSpeakers(state) && wintersStood(state.day) >= 1 && nearestFriendable(state)) {
       const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
       if (crew.length === 2
         && state.party.food > provisionsFor(2) + BARTER_FOOD * 3 + foodPerDay(state) * 7
@@ -451,7 +583,24 @@ function step(state: GameState): Action {
     // be a raid rather than a voyage.
     const season = seasonOf(state.day);
     const inSeason = season === 'spring' || season === 'summer';
-    if (wintersStood(state.day) >= 1 && inSeason && raidTarget(state, RAID_REACH)) {
+    // Nothing known worth taking, and a band that lives by taking. The
+    // knowledge economy from item 1 hands the country out over a TRADING
+    // counter, so a policy that will not trade is blind — measured, the
+    // raider knew 0.11 of four places against the settler's 0.47 and could
+    // not launch a single armed errand in a thousand target-days. The game
+    // has had an `explore` purpose since 4.2 and no bot ever used it.
+    if (policy.raidReach > 0 && wintersStood(state.day) >= 1 && inSeason
+        && !raidTarget(state, policy.raidReach)) {
+      const scouts = sworn(state.party.people).slice(0, 2).map(p => p.id);
+      if (scouts.length === 2
+        && state.party.food > provisionsFor(2) + foodPerDay(state) * policy.errandBuffer
+        && launchBlocker(state, scouts) === null) {
+        return { type:'LAUNCH', members: scouts, purpose: 'explore' };
+      }
+    }
+
+    if (policy.raidReach > 0 && wintersStood(state.day) >= 1 && inSeason
+        && raidTarget(state, policy.raidReach)) {
       const crew = sworn(state.party.people).slice(0, 3).map(p => p.id);
       // The surplus that funds the errand, counted in DAYS the steading can
       // feed itself rather than in sacks. A flat "+55" was calibrated for a
@@ -460,7 +609,7 @@ function step(state: GameState): Action {
       // launching, and the sea went back to nought — the exact content item
       // 1 had just made reachable, undone by a constant in the bot.
       if (crew.length === 3
-        && state.party.food > provisionsFor(3) + foodPerDay(state) * 10
+        && state.party.food > provisionsFor(3) + foodPerDay(state) * policy.errandBuffer
         && launchBlocker(state, crew) === null) {
         return { type:'LAUNCH', members: crew, purpose: 'raid' };
       }
@@ -471,7 +620,7 @@ function step(state: GameState): Action {
   // Settle on anything workable rather than holding out for perfection.
   if (canFound(state, state.party.at) && state.day >= settleNotBefore) {
     const r = siteReport(state.world, state.party.at);
-    if (r && r.total >= 9) return { type:'FOUND' };
+    if (r && r.total >= policy.siteFloor) return { type:'FOUND' };
   }
 
   const here = state.world.tiles[key(state.party.at)]!.terrain;
@@ -515,7 +664,7 @@ function step(state: GameState): Action {
   // it in the sea errand this work was about. Winter lands on day 49 and a
   // band still walking cannot stockpile: an average player plunders ON THE
   // WAY to a steading, not INSTEAD of one.
-  if (!state.settlement && mighty && state.day < PLUNDER_WINDOW) {
+  if (!state.settlement && mighty && state.day < policy.plunderWindow) {
     let mark: {q:number;r:number}|null = null; let markD = 6;
     for (const p of state.world.places) {
       if (p.sackedOn !== undefined) continue;
@@ -557,16 +706,6 @@ function step(state: GameState): Action {
   return { type:'MOVE', to: opts.reduce((a,b)=>score(b)>score(a)?b:a) };
 }
 
-/** The nearest neighbour we have seen who is not already a friend. */
-/**
- * The last day a band still looking for a home will turn aside for plunder.
- * Winter is day 49; the rest of the run-up belongs to the posts and the
- * store.
- */
-const PLUNDER_WINDOW = 24;
-
-/** How far out an average player goes looking for something to take. */
-const RAID_REACH = 14;
 /** How many hexes of extra walk the ship's way in is worth. */
 const SHIP_PULL = 4;
 
@@ -583,7 +722,7 @@ const RAID_DAYS = 20;
  */
 function raidTarget(
   state: GameState,
-  within = RAID_REACH + 4,
+  within = policy.raidReach + 4,
 ): { id: string; at: {q:number;r:number} } | null {
   const home = state.settlement;
   if (!home) return null;
@@ -661,7 +800,7 @@ function run(
     if (state.settlement && !jobsSet) {
       state.party.people
         .filter((p) => p.alive)
-        .forEach((p, ix) => assign(state, p.id, CREW[ix % CREW.length]!));
+        .forEach((p, ix) => assign(state, p.id, policy.crew[ix % policy.crew.length]!));
       jobsSet = true;
     }
     // Keep the queue fed. The old one-shot queued the whole list on settle
@@ -681,8 +820,8 @@ function run(
         // long sagas, four of them past the second winter, and not one hall
         // — which is why nobody ever called a Thing.
         const want = wintersStood(state.day) >= 1
-          ? ['meadhall', ...WANT.filter(b => b !== 'meadhall')]
-          : WANT;
+          ? ['meadhall', ...policy.want.filter(b => b !== 'meadhall')]
+          : policy.want;
         for (const b of want) {
           // One of each off the list — the repeatable búð would otherwise
           // win this loop forever and the late tier would never be reached.
@@ -2182,7 +2321,7 @@ describe('the whole of a fight is played', () => {
         if (state.settlement && !jobsSet) {
           state.party.people
             .filter((p) => p.alive)
-            .forEach((p, ix) => assign(state, p.id, CREW[ix % CREW.length]!));
+            .forEach((p, ix) => assign(state, p.id, policy.crew[ix % policy.crew.length]!));
           jobsSet = true;
         }
         if (state.settlement && state.settlement.queue.length === 0 && state.party.firewood >= 16) {
@@ -2471,5 +2610,83 @@ describe('what play actually reaches', () => {
         Math.max(1, totalDraws),
       'ten cards are half the draws — the deck reads as smaller than it is',
     ).toBeLessThan(0.5);
+  });
+});
+
+describe('more than one way to play', () => {
+  /**
+   * AUDIT ITEM 7.
+   *
+   * Every figure this repo carries describes ONE strategy: settle early,
+   * work the jobs, hold the line, trade until somebody will speak for you.
+   * The project has been claiming since phase 4 that there is more than one
+   * way to play, and has never once tested it — so the claim was worth
+   * exactly what "0 made a friend" was worth before anybody counted.
+   *
+   * Three policies over the same sixty landings. The settler is the harness
+   * as it has always been, so every number elsewhere still means what it
+   * meant. The raider takes what he needs and never carries food to
+   * anybody; the turtle settles on the first workable ground and never
+   * leaves the palisade.
+   *
+   * The interesting result is either one. If they land close together the
+   * game has genuine depth; if one of them cannot survive at all, that is a
+   * design finding worth more than a passing test.
+   */
+  it('measures each strategy on the same landings', { timeout: 900_000 }, async () => {
+    const rows: string[] = [];
+    const spring: Record<string, number> = {};
+    const SEEDS = 30;
+
+    try {
+      for (const p of POLICIES) {
+        policy = p;
+        let sawWinter = 0;
+        let sawSpring = 0;
+        let secondWinter = 0;
+        let days = 0;
+        let built = 0;
+        let sacked = 0;
+        let peak = 0;
+
+        for (let s = 0; s < SEEDS; s += 1) {
+          const state = run(`curve-${s}`, 200, undefined, 'fair');
+          days += state.day;
+          if (state.day >= 49) sawWinter += 1;
+          if (state.day >= 73) sawSpring += 1;
+          if (state.day >= 169) secondWinter += 1;
+          built += state.settlement?.built.length ?? 0;
+          sacked += state.tally.sackings;
+          peak += state.party.people.filter((x) => x.alive).length;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+
+        spring[p.id] = sawSpring / SEEDS;
+        rows.push(
+          `  ${p.id.padEnd(8)} winter ${sawWinter}/${SEEDS}, spring ${sawSpring}/${SEEDS}, ` +
+            `second winter ${secondWinter}/${SEEDS}; avg ${Math.round(days / SEEDS)} days, ` +
+            `${(built / SEEDS).toFixed(1)} built, ${(sacked / SEEDS).toFixed(1)} sacked, ` +
+            `${(peak / SEEDS).toFixed(1)} alive at the end`,
+        );
+      }
+    } finally {
+      policy = SETTLER;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`three ways to play, ${SEEDS} landings each (A Fair Country):\n${rows.join('\n')}`);
+
+    // The bar is NOT that they are equal — a game where every strategy pays
+    // the same is a game where the choice is decoration. It is that none of
+    // them is a dead end: a player who commits to any of these three should
+    // get a run, not a punishment for not playing the one true way.
+    for (const p of POLICIES) {
+      expect(spring[p.id], `${p.id} cannot see a spring — that line is not playable`)
+        .toBeGreaterThan(0.15);
+    }
+    // And that the settler has not quietly become the only answer.
+    const best = Math.max(...POLICIES.map((p) => spring[p.id]!));
+    const worst = Math.min(...POLICIES.map((p) => spring[p.id]!));
+    expect(best - worst, 'one strategy dominates the others outright').toBeLessThan(0.5);
   });
 });

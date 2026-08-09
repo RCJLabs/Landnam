@@ -79,6 +79,22 @@ line while advancing (the rule `test/wall.test.ts` always said wins) and the
 loop plays every fight to its end; the same game, honestly played, read
 78/30/7 when that was fixed, and 83/30/7 today.
 
+**Every number here describes ONE way of playing, and it is not the best
+one.** Audit item 7 gave the harness three policies over the same thirty
+landings on A Fair Country:
+
+| policy | saw spring | second winter | avg days | built | sacked |
+| --- | --- | --- | --- | --- | --- |
+| turtle *(never leaves the palisade)* | 25/30 | 20/30 | 163 | 6.9 | 0.0 |
+| raider *(lives by taking)* | 20/30 | 11/30 | 128 | 6.2 | 0.3 |
+| settler *(what this document measures)* | 16/30 | 5/30 | 102 | 4.6 | 0.4 |
+
+All three are playable, which is the good news and the bar the test holds.
+The rest is not: **staying home wins**, the outward half of the game is a
+net cost, and even the policy built around plunder sacks less than one camp
+in three sagas. A Viking game in which raiding is the losing line is a
+design question, not a bug, and it is the biggest one still open.
+
 **The endgame is reachable, as of 2026-08-08.** It was not before, and the
 suite was green throughout: neighbours were placed with a floor and no
 ceiling, so across forty full-length sagas **not one band ever met anybody**,
@@ -445,7 +461,12 @@ whole systems do not.
    The generalised form of the coast lesson: **every system needs a bar, or
    the one without a bar is the one that is broken.**
 
-7. **[ ] A second bot, playing differently.** Every number in this document
+7. **[x] A second bot, playing differently.** Done, and it produced the
+   most uncomfortable result of the audit: **the settler — the one strategy
+   every figure in this document describes — is the WORST of the three**,
+   and turtling behind a palisade is the best by a wide margin. See the
+   changelog. Original text follows.
+   **[ ] (as written)** Every number in this document
    describes ONE strategy: settle early, work jobs, hold the line, trade for
    a friend. Whether the game supports a second viable line — the raider who
    takes what he needs, the turtle who never leaves the palisade — is
@@ -740,6 +761,46 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-08 — Three ways to play, and the one we measure is the worst
+  (audit item 7)** — The project has claimed since phase 4 that there is
+  more than one way to play and had never tested it, so the claim was worth
+  what "0 made a friend" was worth before anybody counted. The bot's
+  opinions — site standards, build order, job mix, whether it trades,
+  whether it goes out under arms, what it keeps back before it does — are a
+  `Policy` now instead of constants scattered through it. The settler is
+  exactly what the harness has always been, so every other figure still
+  means what it meant.
+  Over thirty landings each: **turtle 25/30 springs, raider 20/30, settler
+  16/30**, and on second winters 20, 11 and 5. All three are playable and
+  the test bars that; what it will not bar is that they are equal, because a
+  game where every line pays the same is a game where the choice is
+  decoration.
+  The uncomfortable part is the ordering. **Staying home wins**, by a wide
+  margin, and the settler — the only policy that goes out, and the one every
+  number in this document describes — comes last. That is now the biggest
+  open design question in the project, and it is recorded in the head of
+  this file rather than quietly fixed.
+  Two faults found on the way, both of them mine and both of the same
+  family: **a strategy tested with another strategy's assumptions is not
+  tested.** The raider was first given a settler's site standards, holding
+  out for good ground when the whole point of him is that he does not care
+  what the soil is like — that measured the delay, not the raiding, and read
+  3/30. And the armed errand demanded ten days of the steading's own eating
+  on top of its nine food of provisions; measured across a thousand
+  target-days that buffer was met **zero times for any policy**, so going
+  out under arms could not happen for anybody at all. It is a per-policy
+  number now: a settler keeps a cushion because he has a steading to feed, a
+  raider does not.
+  And one real design coupling, which took the raider from unplayable to
+  playable: **the knowledge economy gates the plunder economy.** Item 1
+  hands the country out over a trading counter, so a band that will not
+  trade is blind — the raider knew 0.11 of four places against the settler's
+  0.47 and could not launch one armed errand. The game has had an `explore`
+  purpose since 4.2 that no bot ever used; teaching it took him to 0.40 and
+  seventeen errands. That trade should be the only road to knowing your own
+  coast is worth a second look.
+  Curve 57/27/7 under the settler default, unmoved.
 
 - **2026-08-08 — The probe, kept (audit item 6)** — The generalisation of
   the whole audit. The coast, the country, the sea, the growth apparatus and
