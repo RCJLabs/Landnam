@@ -10,6 +10,7 @@ import type { Battle, Combatant, GameState } from '../state/types';
 import { FIELD_HEIGHT } from './battlefield';
 import { effectiveStat } from './people';
 import { fighterPerson } from './battle';
+import { beat } from './beats';
 import { canAnchor, wallLinks } from './wall';
 import { kinOf } from './kin';
 import { NERVE_KIN_FELL } from '../data/kin';
@@ -45,6 +46,7 @@ function breakFighter(battle: Battle, c: Combatant, name: string): void {
   if (c.broken) return;
   c.broken = true;
   c.defending = false;
+  beat(battle, { kind: 'broke', who: c.personId });
   battle.log.push(`${name}'s nerve went, and ${name} broke.`);
 }
 
@@ -146,6 +148,7 @@ export function leaderFell(state: GameState, fallen: Combatant): void {
     }
   }
   const person = fighterPerson(state, fallen.personId);
+  beat(battle, { kind: 'leaderFell', who: fallen.personId, side: fallen.side });
   battle.log.push(
     `${person?.name ?? 'Their leader'} fell, and the heart went out of those ${
       fallen.side === 'foe' ? 'he had led' : 'left holding the line'
@@ -182,6 +185,7 @@ export function takeBrokenTurn(state: GameState, active: Combatant): boolean {
   if (roll >= RALLY_DC) {
     active.broken = false;
     active.nerve = RALLY_NERVE;
+    beat(battle, { kind: 'rallied', who: active.personId, steadied: steadyMates });
     battle.log.push(
       steadyMates > 0
         ? `${name} was steadied by those beside them and turned back to the fight.`
@@ -210,12 +214,18 @@ export function takeBrokenTurn(state: GameState, active: Combatant): boolean {
     }
   }
   if (best) {
+    const from = active.at;
     active.at = best;
     active.movesLeft = 0;
+    // Flagged as flight rather than left to look like a manoeuvre: a man
+    // running for the edge and a man taking ground are the same two hexes
+    // and nothing like the same thing to watch.
+    beat(battle, { kind: 'moved', who: active.personId, from, to: best, cost: 0, flight: true });
   }
 
   if (active.at.r === target || column(active.at) < 0) {
     active.fled = true;
+    beat(battle, { kind: 'fled', who: active.personId });
     battle.log.push(`${name} ran from the field.`);
   }
   active.hasActed = true;

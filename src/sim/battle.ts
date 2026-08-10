@@ -18,6 +18,7 @@ import {
 } from '../data/foes';
 import type { Battle, Champion, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
+import { beat } from './beats';
 import { effectiveStat, sworn } from './people';
 import { wintersStood } from './calendar';
 import { fieldCrew, homeCrew } from './expedition';
@@ -356,6 +357,7 @@ export function beginBattle(
     turnIndex: 0,
     round: 1,
     log: [],
+    beats: [],
   };
 
   const taken = new Set<string>();
@@ -474,6 +476,13 @@ export function beginBattle(
     );
     chronicle(state, `We were brought to a fight on ${groundName(terrain)}.`, 'grim');
   }
+  beat(battle, {
+    kind: 'opened',
+    raid: raid === true,
+    ours: standing(battle, 'warband').length,
+    theirs: foes.length,
+    ...(champion ? { champion: champion.id } : {}),
+  });
   refreshTurn(battle);
 }
 

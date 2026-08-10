@@ -18,7 +18,13 @@ import {
   isLeader,
   wallPush,
 } from '../src/sim/battleActions';
+import type { Beat } from '../src/sim/beats';
 import type { Combatant, GameState } from '../src/state/types';
+
+/** The newest thing the fight recorded about itself. */
+function lastBeat(state: GameState): Beat | undefined {
+  return state.battle?.beats?.at(-1);
+}
 
 function fight(seed: string): GameState {
   const state = structuredClone(newGame(seed));
@@ -131,7 +137,7 @@ describe('the glancing blow', () => {
 
     expect(doStrike(state, target.personId)).toBe(true);
     expect(person.health).toBe(before - 1);
-    expect(state.battle!.lastBlow).toMatchObject({ amount: 1, glancing: true });
+    expect(lastBeat(state)).toMatchObject({ kind: 'struck', result: 'glance', damage: 1 });
     const line = state.battle!.log.at(-1)!;
     expect(/glanced|shield/.test(line)).toBe(true);
   });
@@ -167,17 +173,21 @@ describe('the glancing blow', () => {
 
     expect(doStrike(state, target.personId)).toBe(true);
     expect(person.health).toBe(before);
-    expect(state.battle!.lastBlow).toMatchObject({ amount: 0, glancing: true });
+    // The beat says WHICH kind of nothing this was: a full wall turning it
+    // aside, not a swing that went past.
+    expect(lastBeat(state)).toMatchObject({ kind: 'struck', result: 'turned', damage: 0 });
     expect(state.battle!.log.at(-1)).toContain('turned');
   });
 
-  it('every blow bumps the effects counter, glancing or not', () => {
+  it('every blow lands its own beat, glancing or not', () => {
+    // The old one-slot hook could only ever say "something happened since
+    // you last looked". A stream keeps both swings.
     const { state, attacker, target } = hopeless('glance-count');
     expect(doStrike(state, target.personId)).toBe(true);
-    const first = state.battle!.lastBlow!.n;
+    const first = lastBeat(state)!.n;
     attacker.hasActed = false;
     expect(doStrike(state, target.personId)).toBe(true);
-    expect(state.battle!.lastBlow!.n).toBe(first + 1);
+    expect(lastBeat(state)!.n).toBe(first + 1);
   });
 });
 

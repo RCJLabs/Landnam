@@ -13,6 +13,7 @@ import {
 } from './battle';
 import { SCAR_MAX } from './battle';
 import { takeFoeTurn } from './battleAi';
+import { beat } from './beats';
 import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
@@ -50,16 +51,21 @@ export function checkOutcome(battle: Battle): void {
 
   if (theirs === 0) {
     battle.outcome = 'won';
+    beat(battle, { kind: 'ended', outcome: 'won', why: 'wiped' });
   } else if (ours === 0) {
     battle.outcome = 'lost';
+    beat(battle, { kind: 'ended', outcome: 'lost', why: 'wiped' });
   } else if (theirsWilling === 0 && oursWilling > 0) {
     battle.outcome = 'won';
+    beat(battle, { kind: 'ended', outcome: 'won', why: 'broke' });
     battle.log.push('Their line broke, and what was left of it ran.');
   } else if (oursWilling === 0 && theirsWilling > 0) {
     battle.outcome = 'lost';
+    beat(battle, { kind: 'ended', outcome: 'lost', why: 'broke' });
     battle.log.push('Our line broke. There was nothing to do but run.');
   } else if (battle.round > ROUND_LIMIT) {
     battle.outcome = ours >= theirs ? 'won' : 'lost';
+    beat(battle, { kind: 'ended', outcome: battle.outcome, why: 'dark' });
     battle.log.push('Neither side could finish it. We drew apart in the dark.');
   }
 }

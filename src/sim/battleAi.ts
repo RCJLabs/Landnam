@@ -15,6 +15,7 @@ import {
   evasion,
   reachTargets,
 } from './battleActions';
+import { beat } from './beats';
 import { reachWithZoc, threatCount } from './zoc';
 import { canAnchor } from './wall';
 import { effectiveStat } from './people';
@@ -134,8 +135,16 @@ function reposition(state: GameState, active: Combatant, temperament: Temperamen
   }
 
   if (bestAt) {
+    const from = active.at;
     active.at = bestAt;
     active.movesLeft -= bestCost;
+    beat(state.battle!, {
+      kind: 'moved',
+      who: active.personId,
+      from,
+      to: bestAt,
+      cost: bestCost,
+    });
   }
 }
 

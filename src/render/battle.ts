@@ -5,6 +5,7 @@ import { cornerPoints, fromKey, fromPixel, key, toPixel, type Hex } from '../hex
 import type { Battle, GameState, Ground } from '../state/types';
 import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '../sim/battle';
 import { isLeader, reachTargets, shoveDestination, throwTargets } from '../sim/battleActions';
+import { beatsSince, type Beat } from '../sim/beats';
 import { isThreatened } from '../sim/zoc';
 import { wallPairs } from '../sim/wall';
 import type { Aim } from './battleUi';
@@ -48,10 +49,27 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
   root.append(layers.ground, layers.overlay, layers.fighters, layers.effects);
 
   let latest: GameState | null = null;
-  // What the effects layer has already reacted to.
-  let blowSeen = 0;
-  let criedSeen = false;
-  const downSeen = new Set<string>();
+  /**
+   * How far into the fight's beat stream the effects layer has read.
+   *
+   * The whole of what this layer used to be: a `lastBlow.n` it diffed, a
+   * `warCried` boolean it latched, and a Set of everyone it had seen fall.
+   * Three private reconstructions of change, each with its own way of being
+   * wrong — the blow slot only ever held the NEWEST one, so every swing but
+   * the last of a foe's turn was invisible, and the fallen Set was never
+   * cleared between fights, so a warrior who went down twice only ever
+   * animated once. One mark into an ordered stream replaces all of it.
+   *
+   * `null` until this view has looked at any fight at all, which is how a
+   * saga taken up mid-battle is told apart from a fight that has just begun:
+   * the first is a backlog to adopt silently, the second is an opening to
+   * play. Without the difference, loading a mid-fight save replayed forty
+   * beats of a fight the player was not watching.
+   */
+  let beatMark: number | null = null;
+
+  /** Beats land this far apart when a whole foe turn arrives at once. */
+  const BEAT_GAP = 140;
 
   /** Effects are decoration; a player who asked for stillness gets none. */
   function still(): boolean {
@@ -67,69 +85,93 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     window.setTimeout(() => node.remove(), life);
   }
 
+  /** Where a fighter is standing, for a beat that names them. */
+  function spotOf(battle: Battle, personId: string): { x: number; y: number } | undefined {
+    const c = battle.combatants.find((f) => f.personId === personId);
+    return c ? toPixel(c.at, HEX) : undefined;
+  }
+
+  /** One beat, drawn. Everything this layer knows how to show is in here. */
+  function show(battle: Battle, b: Beat): void {
+    if (b.kind === 'struck' || b.kind === 'reached' || b.kind === 'threw') {
+      const a = spotOf(battle, b.who);
+      const t = spotOf(battle, b.target);
+      if (!a || !t) return;
+      // A blow that did not land in earnest reads as a graze: a turned blow,
+      // a graze and a clean miss are all the same streak with less weight.
+      const soft = b.result !== 'hit';
+      spawn(
+        svgEl('line', {
+          x1: a.x, y1: a.y, x2: t.x, y2: t.y,
+          class: `blow${soft ? ' glance' : ''}`,
+        }),
+        450,
+      );
+      // The landing and the cost — unless nothing got through, where the
+      // streak alone tells the story and "−0" would be noise.
+      if (b.damage > 0) {
+        spawn(svgEl('circle', { cx: t.x, cy: t.y, r: HEX * 0.5, class: 'hit-flash' }), 450);
+        const text = svgEl('text', {
+          x: t.x, y: t.y - HEX * 0.55,
+          class: `float-dmg${soft ? ' glance' : ''}`,
+          'text-anchor': 'middle',
+        });
+        text.textContent = `−${b.damage}`;
+        spawn(text, 900);
+      }
+      return;
+    }
+
+    if (b.kind === 'warcry') {
+      const p = spotOf(battle, b.who);
+      if (!p) return;
+      spawn(svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.6, class: 'cry-ring' }), 900);
+      spawn(svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.6, class: 'cry-ring late' }), 1100);
+      return;
+    }
+
+    if (b.kind === 'fell') {
+      // The fall: the shield stays where it fell for a breath.
+      const p = spotOf(battle, b.who);
+      if (!p) return;
+      spawn(
+        svgEl('circle', {
+          cx: p.x, cy: p.y, r: HEX * 0.42,
+          class: 'fall-fade',
+          fill: b.side === 'warband' ? '#b23b2e' : '#3f4a5a',
+        }),
+        900,
+      );
+    }
+  }
+
   function playEffects(state: GameState): void {
     const battle = state.battle;
     if (!battle) return;
 
-    const blow = battle.lastBlow;
-    if (blow && blow.n !== blowSeen) {
-      blowSeen = blow.n;
-      const from = battle.combatants.find((c) => c.personId === blow.attacker);
-      const to = battle.combatants.find((c) => c.personId === blow.target);
-      if (from && to && !still()) {
-        const a = toPixel(from.at, HEX);
-        const b = toPixel(to.at, HEX);
-        // The blow itself: a streak from attacker to target.
-        spawn(
-          svgEl('line', {
-            x1: a.x, y1: a.y, x2: b.x, y2: b.y,
-            class: `blow${blow.glancing ? ' glance' : ''}`,
-          }),
-          450,
-        );
-        // The landing and the cost — unless the wall turned it (amount 0),
-        // where the streak alone tells the story and "−0" would be noise.
-        if (blow.amount > 0) {
-          spawn(svgEl('circle', { cx: b.x, cy: b.y, r: HEX * 0.5, class: 'hit-flash' }), 450);
-          const text = svgEl('text', {
-            x: b.x, y: b.y - HEX * 0.55,
-            class: `float-dmg${blow.glancing ? ' glance' : ''}`,
-            'text-anchor': 'middle',
-          });
-          text.textContent = `−${blow.amount}`;
-          spawn(text, 900);
-        }
-      }
-    }
+    const newest = battle.beats?.[battle.beats.length - 1]?.n ?? 0;
+    // Nothing seen yet: this fight was already under way when the page
+    // opened, and its history is not news.
+    if (beatMark === null) beatMark = newest;
+    // A fresh fight starts its numbering over, so a mark from the last one
+    // would swallow the whole opening round.
+    else if (newest < beatMark) beatMark = 0;
 
-    if (battle.warCried && !criedSeen) {
-      criedSeen = true;
-      const leader = battle.combatants.find((c) => isLeaderHere(state, c));
-      if (leader && !still()) {
-        const p = toPixel(leader.at, HEX);
-        spawn(svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.6, class: 'cry-ring' }), 900);
-        spawn(svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.6, class: 'cry-ring late' }), 1100);
-      }
-    }
-    if (!battle.warCried) criedSeen = false;
+    const { beats, mark } = beatsSince(battle, beatMark);
+    // The mark advances whether or not anything is drawn: a player who asked
+    // for stillness should not be handed the backlog the moment they turn
+    // motion back on.
+    beatMark = mark;
+    if (still()) return;
 
-    for (const c of battle.combatants) {
-      if ((c.down || c.fled) && !downSeen.has(c.personId)) {
-        downSeen.add(c.personId);
-        if (!still() && c.down) {
-          // The fall: the shield stays where it fell for a breath.
-          const p = toPixel(c.at, HEX);
-          spawn(
-            svgEl('circle', {
-              cx: p.x, cy: p.y, r: HEX * 0.42,
-              class: 'fall-fade',
-              fill: c.side === 'warband' ? '#b23b2e' : '#3f4a5a',
-            }),
-            900,
-          );
-        }
-      }
-    }
+    // A player's action lands one beat; a foe's whole turn can land a dozen
+    // at once, and firing them on the same frame is a single flicker rather
+    // than a fight. They are dealt out in order instead — which is the point
+    // of a stream over a slot.
+    beats.forEach((b, i) => {
+      if (i === 0) show(battle, b);
+      else window.setTimeout(() => show(battle, b), Math.min(i, 8) * BEAT_GAP);
+    });
   }
 
   function fitViewBox(battle: Battle): void {

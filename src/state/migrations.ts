@@ -235,6 +235,17 @@ export const MIGRATIONS: Record<number, Migration> = {
   // touched" — which is the kindest true thing to say about a coast whose
   // history the file does not contain, and matches what the old code did.
   26: (save) => ({ ...save, version: 27 }),
+  // A fight now records itself as beats as well as prose. A save caught
+  // mid-battle by an older build has none, and none is the truth: the beats
+  // that would have described the rounds already fought were never emitted,
+  // and inventing them would be making up a fight that happened off-camera.
+  // An absent list reads as empty everywhere it is consumed, and the rest of
+  // the fight beats normally from wherever it is resumed. The `lastBlow`
+  // slot the stream replaces is left where it is rather than deleted: it is
+  // one small object on one battle, nothing reads it, and a migration that
+  // reaches into a nested field to remove something harmless is a migration
+  // with more ways to throw than to help.
+  27: (save) => ({ ...save, version: 28 }),
 };
 
 export interface MigrationResult {

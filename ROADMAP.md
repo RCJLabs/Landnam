@@ -41,7 +41,7 @@ juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 744 tests), the renderers are disposable, and the port lives
+content under 755 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -394,8 +394,8 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **744 tests
-in 37 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+with 5,000 more of typed content in `src/data/`, standing under **755 tests
+in 38 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
 what makes this a port rather than a rewrite. Every item below exists to
@@ -424,13 +424,31 @@ what 3D actually buys, then what gets harder.
    fixture of a few thousand `(seed, label) → sequence` triples generated
    from the TypeScript and asserted in the port.*
 
-3. **[ ] Design the sim→presentation event stream now.** Today the
-   renderers diff two states and tween the difference (`render/motion.ts`).
-   Unreal needs ORDERED events — "Ketil struck Bjorn for four", "the
-   smokehouse burned", "they broke and ran" — so an animation can play,
-   block, and hand control back. Retrofitting this after the battle looks
-   good is miserable. The saga log is already most of the way there: it is an
-   ordered, human-readable event stream that the game writes for itself.
+3. **[x] Design the sim→presentation event stream now.** *Battle half
+   shipped 2026-08-10.* `src/sim/beats.ts` — fifteen kinds covering
+   everything a fight can do, actors named by `personId`, ground given as
+   hexes, each beat numbered so a view drains "everything since n" holding
+   nothing but a mark. `Battle.beats` (SAVE_VERSION 28). Emitted, never
+   read by the sim, so it cannot change how a fight goes: the arena reads
+   formation 32/60 and brawl 29/60 either side of the change.
+
+   Proved rather than asserted, twice. **Reach:** thirteen kinds turn up in
+   bulk over thirty played fights (moved 929, struck 728, reached 338, threw
+   207, fell 187, dashed 108, shoved 78, defended 33, opened / warcry /
+   ended 30 each, broke 29, leaderFell 28) and the bar is checked against a
+   kind that does not exist, so it can fail. `rallied` and `fled` came in at
+   four and ONE — a broken fighter usually loses the race to `checkOutcome`
+   ending the battle around them — so they get a fixture instead of a
+   sample. **Use:** the web build's effects layer was rewired onto the
+   stream, which found the thing an argument would have missed. Same save,
+   same script, same fight: the old one-slot `lastBlow` showed **6** blows;
+   the stream shows **31**. A slot holds the newest blow and a foe's whole
+   turn arrives between repaints, so every swing but the last was invisible.
+   `lastBlow` is gone.
+
+   Still owed: the travel and colony halves. `chronicle()` is the seam —
+   300-odd call sites that already write ordered prose and want the same
+   structured payload beside it.
 
 4. **[ ] Port `src/hex/` first and hardest.** Pure, fully tested, and both
    the world map and the battle grid stand on it — axial coords, neighbours,
@@ -467,7 +485,7 @@ what 3D actually buys, then what gets harder.
 
 ### What gets harder
 
-9. **[ ] Save discipline has to survive the port.** `SAVE_VERSION` is 27,
+9. **[ ] Save discipline has to survive the port.** `SAVE_VERSION` is 28,
    every bump ships a migration, and the rule is that old saves must always
    load — see `src/state/migrations.ts`, which is a written record of every
    shape this game has ever had. Unreal `SaveGame` has no such culture by
@@ -928,6 +946,27 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-10 — The fight as data (Phase 7 item 3, battle half)** — Unreal
+  needs ordered events an animation can play; a fight offered prose and a
+  one-slot hook. `src/sim/beats.ts` adds fifteen beat kinds — opened, moved,
+  struck, reached, threw, shoved, defended, dashed, warcry, fell, leaderFell,
+  broke, rallied, fled, ended — numbered so a view drains by mark, actors as
+  `personId`, ground as hexes. `Battle.beats`, SAVE_VERSION 28. Nothing in
+  the sim reads a beat, so emitting one cannot change a fight: the arena
+  reads formation 32/60 and brawl 29/60 either side.
+  Two things were measured rather than argued. The reach bar plays thirty
+  real fights and names what it saw (moved 929, struck 728, reached 338,
+  threw 207, fell 187 … leaderFell 28) and is checked against a kind that
+  does not exist, so it can fail — the lesson audit item 6 paid for. And the
+  web effects layer was rewired onto the stream instead of being left to
+  rot, which found what the argument would have missed: same save, same
+  script, same fight, the old `lastBlow` slot showed **6** blows where the
+  stream shows **31**. A slot holds the newest blow and a foe's whole turn
+  lands between repaints, so every swing but the last was never drawn.
+  `lastBlow` is deleted, along with the fallen-fighter Set beside it that
+  was never cleared between fights. Travel and colony still owe their half;
+  `chronicle()` is the seam.
 
 - **2026-08-09 — The knarr was never faster than walking (raiding, part
   two)** — Chasing the cost of going out, and the first thing measured was

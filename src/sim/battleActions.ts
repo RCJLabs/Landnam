@@ -5,6 +5,7 @@ import { distance, key, neighbor, directionTo, type Hex } from '../hex';
 import { stream, type Rng } from '../rng';
 import type { Combatant, GameState, Person } from '../state/types';
 import { activeCombatant, fighterPerson, BASE_MOVES } from './battle';
+import { beat, type BlowBeat, type BlowResult } from './beats';
 import { groundCost } from './battlefield';
 import { hasShot, reachWithZoc, threatCount } from './zoc';
 import { canAnchor, defenceBonus, wallLinks } from './wall';
@@ -71,22 +72,30 @@ export function wallPush(state: GameState, attacker: Combatant): number {
   return Math.min(WALL_PUSH_MAX, wallLinks(battle, attacker).length);
 }
 
-/** Records the blow where the renderer's effects layer can find it. */
-function noteBlow(
-  state: GameState,
+/**
+ * The blow as data, for the beat stream.
+ *
+ * This replaced a `lastBlow` slot on the Battle that held exactly one blow
+ * for the renderer to flash. One slot could not survive a foe's turn — four
+ * swings landed and the view saw the fourth — and it had no vocabulary for
+ * HOW a swing finished. A beat says which of the four ways it went, and the
+ * stream keeps all of them.
+ */
+function blow(
+  kind: BlowBeat['kind'],
   attacker: Combatant,
   target: Combatant,
-  amount: number,
-  glancing = false,
-): void {
-  const battle = state.battle!;
-  const n = (battle.lastBlow?.n ?? 0) + 1;
-  battle.lastBlow = {
-    n,
-    attacker: attacker.personId,
+  result: BlowResult,
+  damage: number,
+  screen?: Combatant,
+): Omit<BlowBeat, 'n' | 'round'> {
+  return {
+    kind,
+    who: attacker.personId,
     target: target.personId,
-    amount,
-    ...(glancing ? { glancing: true } : {}),
+    result,
+    damage,
+    ...(screen ? { screen: screen.personId } : {}),
   };
 }
 
@@ -125,6 +134,12 @@ function drop(
   person.health = 0;
   if (target.side === 'foe') person.alive = false;
   battle.log.push(cause);
+  beat(battle, {
+    kind: 'fell',
+    who: target.personId,
+    side: target.side,
+    ...(killer ? { by: killer.personId } : {}),
+  });
   // After the cause, so the saga reads fall first, then what it did to them.
   leaderFell(state, target);
 }
@@ -140,8 +155,10 @@ export function doMove(state: GameState, to: Hex): boolean {
   const cost = reach.get(key(to));
   if (cost === undefined) return false;
 
+  const from = active.at;
   active.at = to;
   active.movesLeft -= cost;
+  beat(battle, { kind: 'moved', who: active.personId, from, to, cost });
   return true;
 }
 
@@ -175,12 +192,12 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
     // bodies to a dead heat. The full wall turns glances; a lone fighter
     // or a single link still takes the wear.
     if (wallLinks(battle, target).length >= 2) {
-      noteBlow(state, active, target, 0, true);
+      beat(battle, blow('struck', active, target, 'turned', 0));
       battle.log.push(`${defender.name}'s shield-brothers turned ${attacker.name}'s blow aside.`);
       return true;
     }
     defender.health = Math.max(1, defender.health - 1);
-    noteBlow(state, active, target, 1, true);
+    beat(battle, blow('struck', active, target, 'glance', 1));
     battle.log.push(
       target.defending
         ? `${attacker.name} hammered ${defender.name}'s shield until the rim split (1).`
@@ -192,7 +209,7 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
   const damage =
     rng.roll(1, 6) + Math.floor(effectiveStat(attacker, 'might') / 2) + ourBite(state, active);
   defender.health = Math.max(0, defender.health - damage);
-  noteBlow(state, active, target, damage);
+  beat(battle, blow('struck', active, target, 'hit', damage));
   if (defender.health > 0) {
     battle.log.push(`${attacker.name} struck ${defender.name} (${damage}).`);
     shakeNerve(state, target, NERVE_HIT);
@@ -257,6 +274,7 @@ export function doWarCry(state: GameState): boolean {
       shakeNerve(state, c, WARCRY_DREAD);
     }
   }
+  beat(battle, { kind: 'warcry', who: active.personId });
   battle.log.push(
     `${person.name} raised the war-cry, and the whole field heard whose ground this was.`,
   );
@@ -343,7 +361,7 @@ export function doReach(state: GameState, targetPersonId: string): boolean {
     // Overreached. A thrust that misses does NOT chip the way a swing does:
     // the trade for standing where nothing can hit you is that half of it
     // comes to nothing.
-    noteBlow(state, active, target, 0, true);
+    beat(battle, blow('reached', active, target, 'miss', 0, screen));
     battle.log.push(`${attacker.name} thrust past ${front?.name ?? 'the line'} and found nothing.`);
     return true;
   }
@@ -356,7 +374,7 @@ export function doReach(state: GameState, targetPersonId: string): boolean {
       REACH_DAMAGE_OFF,
   );
   defender.health = Math.max(0, defender.health - damage);
-  noteBlow(state, active, target, damage);
+  beat(battle, blow('reached', active, target, 'hit', damage, screen));
   if (defender.health > 0) {
     battle.log.push(
       `${attacker.name}'s spear came over ${front?.name ?? 'the line'} and into ${defender.name} (${damage}).`,
@@ -414,12 +432,14 @@ export function doThrow(state: GameState, targetPersonId: string): boolean {
   const roll = rng.roll(2, 6) + effectiveStat(thrower, 'wits');
 
   if (roll < evasion(state, target)) {
+    beat(battle, blow('threw', active, target, 'miss', 0));
     battle.log.push(`${thrower.name}'s spear went wide of ${defender.name}.`);
     return true;
   }
 
   const damage = rng.roll(1, 6) + ourBite(state, active);
   defender.health = Math.max(0, defender.health - damage);
+  beat(battle, blow('threw', active, target, 'hit', damage));
   if (defender.health > 0) {
     battle.log.push(`${thrower.name} put a spear into ${defender.name} (${damage}).`);
     shakeNerve(state, target, NERVE_HIT);
@@ -456,7 +476,15 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
   const resist =
     rng.roll(2, 6) + effectiveStat(shoved, 'might') + (target.defending ? 2 : 0);
 
+  const stood = target.at;
   if (attack <= resist) {
+    beat(battle, {
+      kind: 'shoved',
+      who: active.personId,
+      target: target.personId,
+      result: 'held',
+      from: stood,
+    });
     battle.log.push(`${shoved.name} did not give ground to ${shover.name}.`);
     return true;
   }
@@ -471,6 +499,14 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
   if (blocked) {
     // Nowhere to go: they are driven against whatever is behind them.
     shoved.health = Math.max(0, shoved.health - 2);
+    beat(battle, {
+      kind: 'shoved',
+      who: active.personId,
+      target: target.personId,
+      result: 'crushed',
+      from: stood,
+      damage: 2,
+    });
     if (shoved.health > 0) {
       battle.log.push(`${shover.name} slammed ${shoved.name} into what was behind them (2).`);
     } else {
@@ -481,12 +517,28 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
 
   if (tile.ground === 'water') {
     // The old trick: put them in the water and let it do the work.
+    beat(battle, {
+      kind: 'shoved',
+      who: active.personId,
+      target: target.personId,
+      result: 'drowned',
+      from: stood,
+      to: destination,
+    });
     drop(state, target, shoved, `${shover.name} put ${shoved.name} into the water.`, active);
     return true;
   }
 
   target.at = destination;
   target.defending = false;
+  beat(battle, {
+    kind: 'shoved',
+    who: active.personId,
+    target: target.personId,
+    result: 'pushed',
+    from: stood,
+    to: destination,
+  });
   battle.log.push(`${shover.name} drove ${shoved.name} back a step.`);
   return true;
 }
@@ -501,6 +553,7 @@ export function doDefend(state: GameState): boolean {
   active.hasActed = true;
   active.defending = true;
   active.movesLeft = 0;
+  beat(battle, { kind: 'defended', who: active.personId });
   battle.log.push(`${person?.name ?? 'Someone'} set their shield.`);
   return true;
 }
@@ -512,6 +565,7 @@ export function doDash(state: GameState): boolean {
   active.hasActed = true;
   active.movesLeft += BASE_MOVES;
   const person = fighterPerson(state, active.personId);
+  beat(battle, { kind: 'dashed', who: active.personId });
   battle.log.push(`${person?.name ?? 'Someone'} broke into a run.`);
   return true;
 }

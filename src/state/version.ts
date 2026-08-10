@@ -26,7 +26,12 @@
 // v27 (raiding): Neighbour gained the optional `sackedOn` — their stores
 //                 grow back over CAMP_REGROW days, so plunder is a circuit
 //                 rather than a one-off.
-export const SAVE_VERSION = 27;
+// v28 (beats): Battle gained the optional `beats` — the fight as an ordered
+//                list of structured events, for a presentation layer that has
+//                to animate it rather than print it — and LOST `lastBlow`,
+//                the one-slot version of the same idea, which the beat
+//                stream replaces outright.
+export const SAVE_VERSION = 28;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

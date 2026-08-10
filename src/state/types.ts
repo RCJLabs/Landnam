@@ -4,6 +4,10 @@
 
 import type { Hex, HexKey } from '../hex';
 import type { HardshipId } from '../data/hardship';
+// Types only, and the arrow points back here for Battle — which TypeScript is
+// happy with and which keeps the beat vocabulary next to the code that emits
+// it rather than buried in the model.
+import type { Beat } from '../sim/beats';
 
 export type { HardshipId };
 
@@ -290,12 +294,6 @@ export interface Battle {
   champion?: string;
   /** Which neighbour's man he is, when he belongs to one and can come back. */
   championOf?: string;
-  /**
-   * The most recent blow, for the renderer's effects layer: a lunge, a
-   * flash, a number that floats. `n` only ever rises, so the view can tell
-   * a new blow from a repaint of the old one.
-   */
-  lastBlow?: { n: number; attacker: string; target: string; amount: number; glancing?: boolean };
   width: number;
   height: number;
   grid: Record<HexKey, BattleTile>;
@@ -308,6 +306,13 @@ export interface Battle {
   turnIndex: number;
   round: number;
   log: string[];
+  /**
+   * The same fight as data: an ordered list of what happened, actors named by
+   * personId and ground given as hexes. `log` is prose for the web build to
+   * print; this is for anything that has to ANIMATE the fight. See sim/beats.
+   * Optional because a save written before Phase 7 has none.
+   */
+  beats?: Beat[];
   outcome?: BattleOutcome;
 }
 

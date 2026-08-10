@@ -130,7 +130,7 @@ describe('what a thrust does', () => {
     expect(person.health).toBeLessThan(before);
     expect(back.hasActed).toBe(true);
     expect(battle.log.at(-1)).toMatch(/spear came over|put .* down over the shoulder/);
-    expect(battle.lastBlow?.attacker).toBe(back.personId);
+    expect(battle.beats?.at(-1)).toMatchObject({ kind: 'reached', who: back.personId });
   });
 
   it('a thrust that misses does NOT chip, where a swing would', () => {
@@ -145,7 +145,7 @@ describe('what a thrust does', () => {
     expect(doReach(state, foe.personId)).toBe(true);
     // The trade for standing where nothing can hit you: half of it is air.
     expect(person.health).toBe(before);
-    expect(battle.lastBlow).toMatchObject({ amount: 0, glancing: true });
+    expect(battle.beats?.at(-1)).toMatchObject({ kind: 'reached', result: 'miss', damage: 0 });
     expect(battle.log.at(-1)).toContain('found nothing');
   });
 
