@@ -75,6 +75,7 @@ import { strandTarget } from '../src/sim/sea';
 import { placeKind } from '../src/data/places';
 import { bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
 import { canCallThing, hasSpeakers, yearsRuled } from '../src/sim/thing';
+import { SPEAKER_STANDING } from '../src/data/thing';
 import { launchBlocker, provisionsFor } from '../src/sim/expedition';
 import { BARTER_FOOD } from '../src/data/clans';
 import { wintersStood } from '../src/sim/calendar';
@@ -2104,7 +2105,24 @@ describe('the long game', () => {
   // cut used its own `long-N` seeds and read 0 of 14 reaching a second
   // winter while the curve said 20% — which is a seed-set disagreement
   // wearing the costume of a finding.
-  const LONG_SEEDS = 20;
+  //
+  // Twenty is what the suite can afford and it is NOT enough to read a rare
+  // event off. Proved rather than assumed on 2026-08-10: a jarldom count of
+  // 1 against an earlier 5 was recorded here as an unattributed regression,
+  // and at sixty seeds an arm — three times the sample, same code — the
+  // direction reversed outright. 120 sagas gave 5 jarldoms where the same
+  // measurement on the commit BEFORE the day's raiding work gave 2, with
+  // second winters 15 against 12, mead halls 35 against 26, friends 21
+  // against 7. Nothing had regressed; twenty seeds had.
+  //
+  // So: the knob below is the instrument, and anyone reading a per-saga
+  // COUNT off this test at the default should widen it first —
+  // `LANDNAM_LONG_SEEDS=60 npx vitest run test/balance.test.ts -t 'plays to
+  // day 500'`, about two minutes. The bars are written to be reachability
+  // bars for exactly this reason: "did this ever happen" survives a thin
+  // sample, "did it happen five times" does not.
+  const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env;
+  const LONG_SEEDS = Number(env?.['LANDNAM_LONG_SEEDS'] ?? 20);
   const LAST_DAY = 500;
   /**
    * Run on the GENTLE country, and that is an instrument choice rather than
@@ -2117,6 +2135,7 @@ describe('the long game', () => {
    * "As It Lies", the endgame is content that almost no run reaches.
    */
   const LONG_TERMS: HardshipId = 'fair';
+
 
   it('plays to day 500 and reports what the years actually do', { timeout: 600_000 }, async () => {
     void LONG_TERMS;
@@ -2139,6 +2158,19 @@ describe('the long game', () => {
     let everHadHall = 0;
     let everHadFriend = 0;
     let everCouldCall = 0;
+    /**
+     * How far the band ever got with ANYBODY on that coast, per settled
+     * saga.
+     *
+     * Added 2026-08-10, and it is the diagnosis the counters above could
+     * not give. `everHadFriend` is a yes/no on a rare event; this is a
+     * distribution over every band that put posts in the ground, so it
+     * carries a reading at twenty seeds where the jarl count cannot.
+     * It costs nothing — the watch already runs.
+     */
+    const peakStanding: number[] = [];
+    let settledSagas = 0;
+    let metAnybody = 0;
     // Pooled across both arms. The per-arm counters are reset at the top of
     // each loop, so asserting on them read ONLY the last arm — a bar that
     // measures half the sample and says nothing about the other half.
@@ -2154,6 +2186,9 @@ describe('the long game', () => {
       let hall = false;
       let friend = false;
       let couldCall = false;
+      let settled = false;
+      let met = false;
+      let peak = -100;
       const state = run(`curve-${s}`, LAST_DAY, (before, after) => {
         if (!before.battle && after.battle) {
           const n = after.battle.foes.length;
@@ -2168,7 +2203,18 @@ describe('the long game', () => {
         if (after.settlement?.built.includes('meadhall')) hall = true;
         if (hasSpeakers(after)) friend = true;
         if (canCallThing(after)) couldCall = true;
+        if (after.settlement) settled = true;
+        for (const n of after.neighbours) {
+          if (!n.found) continue;
+          met = true;
+          if (n.standing > peak) peak = n.standing;
+        }
       }, TERMS);
+      if (settled) {
+        settledSagas += 1;
+        peakStanding.push(peak);
+        if (met) metAnybody += 1;
+      }
       days += state.day;
       if (state.day >= 169) sawSecondWinter += 1;
       if (hall) everHadHall += 1;
@@ -2202,6 +2248,19 @@ describe('the long game', () => {
     allHalls += everHadHall; allSecondWinters += sawSecondWinter; allJarls += reachedJarl;
     }
 
+    // Standing, pooled across both arms — the reading here a thin sample CAN
+    // carry, because it is one number per settled saga rather than per
+    // jarldom, and every band that puts posts in the ground contributes one.
+    const peaks = [...peakStanding].sort((a, b) => a - b);
+    const median = peaks[Math.floor(peaks.length / 2)] ?? 0;
+    const spoke = peaks.filter((v) => v >= SPEAKER_STANDING).length;
+    // eslint-disable-next-line no-console
+    console.log(
+      `the coast, both arms pooled — ${settledSagas} settled sagas, ${metAnybody} met somebody:\n` +
+        `  peak standing with anyone: median ${median.toFixed(1)}, best ${(peaks[peaks.length - 1] ?? 0).toFixed(1)}; ` +
+        `${spoke} ever reached the ${SPEAKER_STANDING} a speaker needs`,
+    );
+
     // The bars. First that the endgame is REACHED at all — this whole test
     // exists because it never was, and a harness that stops reaching it has
     // gone back to measuring nothing.
@@ -2215,6 +2274,25 @@ describe('the long game', () => {
     // sees five percent of. Every other need on the checklist had a bar and
     // this one did not, so the endgame was unreachable in silence.
     expect(allFriends, 'nobody on the coast will speak for anyone — the Thing cannot be called').toBeGreaterThan(0);
+
+    // And its stronger form, added once the standing distribution was
+    // actually looked at (2026-08-10). Meeting the coast is now universal —
+    // 88 of 88 settled sagas met somebody — but the median band's peak
+    // standing with ANYONE was 10.9, which is the opening a native camp
+    // gives away for nothing. The median relationship never moves at all,
+    // and only 21 of those 88 ever reached the 25 a speaker needs. That is
+    // the wall in front of the Thing, and it is a design question rather
+    // than a bug, so what is barred here is reachability: the coast must
+    // stay winnable by somebody, and a change that flattens it to nobody
+    // has to fail rather than quietly close the endgame again.
+    expect(spoke, 'no band on any seed reached speaking terms with the coast').toBeGreaterThan(0);
+    // Nearly-all rather than all: a band that settles and starves inside a
+    // fortnight can die before the first neighbour walks over to look at it,
+    // and a bar that fails on one unlucky saga teaches people to ignore it.
+    expect(
+      metAnybody / Math.max(1, settledSagas),
+      'settled bands are not meeting the coast — placement or the calling has broken',
+    ).toBeGreaterThan(0.9);
     expect(allCouldCall, 'the checklist never completed in forty sagas').toBeGreaterThan(0);
     expect(allJarls, 'the jarldom is code nobody reaches').toBeGreaterThan(0);
 

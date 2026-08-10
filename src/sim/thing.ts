@@ -21,6 +21,7 @@ import {
   THING_COOLDOWN,
   THING_DC,
   THING_MERIT_CAP,
+  SPEAKER_STANDING,
   THING_OPENING,
   WINTERS_TO_JARL,
   type NeedId,
@@ -57,7 +58,7 @@ export function houseAtPeace(state: GameState): boolean {
 /** True when at least one place on the coast would send anyone at all. */
 export function hasSpeakers(state: GameState): boolean {
   const best = friendliest(state);
-  return !!best && best.found === true && best.standing >= 25;
+  return !!best && best.found === true && best.standing >= SPEAKER_STANDING;
 }
 
 /**

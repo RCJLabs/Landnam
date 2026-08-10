@@ -13,6 +13,19 @@ export const WINTERS_TO_JARL = 2;
 /** What feeding everyone who comes costs. */
 export const FEAST_FOOD = 30;
 
+/**
+ * Standing a neighbour needs before they will speak for you at the Thing —
+ * the 'friendly' band in `data/clans.ts`.
+ *
+ * Named rather than left as a bare 25 in `hasSpeakers` because it turned out
+ * to be the wall in front of the whole endgame, and a number the harness bars
+ * against should be a number with a name. Measured 2026-08-10 over 88 settled
+ * sagas: every one of them met a neighbour, and the MEDIAN band's best
+ * standing with anyone was 10.9 — the opening a native camp gives away for
+ * nothing. Twenty-one of the 88 ever crossed this line.
+ */
+export const SPEAKER_STANDING = 25;
+
 /** 2d6 plus what the band has made of itself, against this. */
 export const THING_DC = 14;
 

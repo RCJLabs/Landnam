@@ -71,6 +71,13 @@ three movements are inside the ±10 this harness can resolve, and were left
 alone rather than tuned back; the long-game figures are from before that
 change and have not been re-read.
 
+**The jarl counts in that last column are not readings.** A jarldom happens
+once or twice in twenty sagas, and 2026-08-10 established the hard way that
+a count that small will swing by a factor of three on nothing at all — see
+the changelog. At sixty seeds an arm the same measurement gives 5 jarldoms
+in 120 sagas. Treat the column as "does the endgame happen", never as a
+number that moved.
+
 `DEFAULT_HARDSHIP` and `BALANCED_HARDSHIP` are separate constants on purpose.
 "As It Lies" stays the terms every fixture measures; pointing `newGame`'s
 parameter default at the menu default would have moved the baseline of the
@@ -123,11 +130,56 @@ briefly gained armed sorties and the long game answered at once: jarldoms
 fell from five in forty sagas to none, because a steading-first band that
 spends its summers away from the steading is not one. `raidReach: 0` is the
 settler's IDENTITY now, not a limitation. And even with that put back, the
-long game reads thinner than it did this morning — **1 jarldom against 5,
-and 4 second winters against 6–10** — which I could not attribute to any one
-of the day's changes and am not going to pretend to have explained. Twenty
-seeds is a thin instrument for an event that happens once or twice in it;
-the next person to touch this should widen it before drawing a conclusion.
+long game read thinner than it had that morning — **1 jarldom against 5** —
+which I could not attribute to any one of the day's changes and did not
+pretend to have explained, noting only that twenty seeds is a thin
+instrument for an event that happens once or twice in it.
+
+**That regression was not real, and the widening proved it (2026-08-10).**
+Sixty seeds an arm — three times the sample, same code — against the same
+measurement on `e1b9c9c`, the commit before the day's raiding work:
+
+| 120 sagas | before the raiding work | after |
+| --- | --- | --- |
+| became jarl | 2 | **5** |
+| saw a second winter | 12 | **15** |
+| raised a mead hall | 26 | **35** |
+| made a friend | 7 | **21** |
+
+Every count moved the other way. Nothing had regressed; twenty seeds had.
+The lesson is the one this project keeps relearning from the other side: a
+thin instrument does not merely fail to see an effect, it invents one, and
+it is just as convincing either way. The long game now says so in the file,
+and carries a seed knob so the next person can widen it in one command:
+`LANDNAM_LONG_SEEDS=60 npx vitest run test/balance.test.ts -t 'plays to day
+500'`, about two minutes.
+
+**What the widening found instead: the coast is met and never befriended.**
+Chasing the jarldom count meant asking which of the Thing's six needs is
+actually the one that fails, and the answer was `friends` — so the next
+probe measured standing itself over every settled saga rather than the
+handful that reach an endgame. Over 88 settled sagas:
+
+- **88 of 88 met a neighbour.** The 4.3 placement fix works completely; the
+  coast is no longer unreachable in any sense.
+- **The median band's best standing with ANYONE was 10.9** — which is the
+  +10 a native camp opens at, plus drift. The median relationship never
+  moves at all, over a whole saga.
+- **21 of 88 ever crossed the 25 a speaker needs.** When it moves it moves
+  all the way: the best readings sit at 99–100. Friendship is bimodal —
+  either a band gets a bargain circuit going and rockets to sworn, or it
+  stands at the opening its whole life.
+
+So the wall in front of the endgame is not survival and not the mead hall;
+it is that `REP_TRADED` is +9 a bargain against `REP_DRIFT` pulling 0.12 a
+day back toward nothing, and a band that trades occasionally is running
+down an escalator. This is a design question — cheaper bargains, slower
+drift, a standing floor once you have dealt honestly, or something that is
+not barter at all — and it is the obvious candidate for the next real piece
+of work. The measurement is now permanent: the long game prints the
+standing distribution every run and bars that SOMEBODY still reaches
+speaking terms, so a change that quietly flattens the coast fails loudly
+instead of closing the endgame in silence the way placement once did.
 
 **Every number here describes ONE way of playing, and it is not the best
 one.** Audit item 7 gave the harness three policies over the same thirty
@@ -946,6 +998,31 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-10 — Twenty seeds had regressed, not the game** — The one
+  unexplained number in this document, closed. The long game's jarldom count
+  fell from 5 in forty sagas to 1 on 2026-08-09; I could not attribute it and
+  recorded it as unattributed rather than papering over it. Widened to sixty
+  seeds an arm and run against `e1b9c9c` — the commit before that day's
+  raiding work — the direction reverses outright: 5 jarldoms against 2,
+  second winters 15 against 12, mead halls 35 against 26, friends 21 against
+  7. The regression was the instrument. The long game now carries a
+  `LANDNAM_LONG_SEEDS` knob and says in the file that per-saga COUNTS at the
+  default cannot be read as findings — its bars are reachability bars for
+  exactly that reason.
+  Chasing it found something real underneath. Asking which of the Thing's six
+  needs actually fails gave `friends`, so standing itself was measured over
+  every settled saga rather than the few that reach an endgame: **88 of 88
+  met a neighbour, the median band's best standing with anyone was 10.9 —
+  the opening a native camp gives away for nothing — and 21 of 88 ever
+  crossed the 25 a speaker needs**, with the ones that do sitting at 99–100.
+  Friendship is bimodal and the median relationship never moves, because
+  `REP_TRADED` is +9 a bargain against `REP_DRIFT` taking 0.12 a day back.
+  That is the wall in front of the endgame and it is a design decision, so
+  what shipped is the instrument, not a fix: the long game prints the
+  standing distribution every run and bars that somebody still reaches
+  speaking terms. `SPEAKER_STANDING` is a named constant now instead of a
+  bare 25 inside `hasSpeakers`.
 
 - **2026-08-10 — The fight as data (Phase 7 item 3, battle half)** — Unreal
   needs ordered events an animation can play; a fight offered prose and a
