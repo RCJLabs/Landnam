@@ -223,10 +223,16 @@ again — which is precisely the window in which a band has least food to
 spare, and the `stores` block above says so. Making callers RECURRING is
 the actual work.
 
-The `stores` block wants its own measurement before it gets a fix: the
-party's food is the whole band's larder, so "arrived too poor to barter"
-may simply be "poor band", and the way to tell is to read what the food
-actually was on those blocked days.
+**The `stores` block turned out to need no fix at all** (measured
+2026-08-11). On a blocked visit-day the median band had **1.1 food**,
+against **28.4** on the visit-days that were free to deal and 17–20 across
+all settled days — and half the sagas that hit one were dead within twenty
+days. Poor bands are poor. `BARTER_FOOD` is eight, a band of six eats three
+a day, and anybody with a working larder carries three and a half bargains'
+worth to the door. The 29% is a symptom being reported accurately, and
+cheapening the bargain would move a number that is stopping nobody.
+
+So the coast has ONE lever, not two: the walk.
 
 **Every number here describes ONE way of playing, and it is not the best
 one.** Audit item 7 gave the harness three policies over the same thirty
@@ -729,14 +735,20 @@ is a wish.
    **The unlooked-for win: the test suite went from ~15 minutes to under
    4** (923 s → 235 s). The harness is clone-bound, and nobody knew.
 
-3. **[ ] Finish the coast diagnosis: what was in the larder.** The barter
-   measurement found 29% of trade visit-days blocked on `stores` — a band
-   walks a fortnight and arrives unable to spare the eight food it came to
-   spend. But the party's food IS the whole band's larder, so that may
-   simply be "poor bands are poor" wearing a costume, and the two readings
-   want opposite fixes. Ten minutes, and it is the last thing between the
-   coast finding and a design decision that is not a guess. *Measured by:
-   the distribution of `party.food` on blocked visit-days.*
+3. **[x] Finish the coast diagnosis: what was in the larder.** *Measured
+   2026-08-11, and the answer is that there is nothing here to fix.* On the
+   visit-days blocked by `stores`, the median band had **1.1 food**. Not
+   six, not seven — one. Against a median of **28.4** on the visit-days that
+   WERE free to deal, and 17–20 across all settled days.
+
+   So the 29% is a symptom, correctly reported, and `BARTER_FOOD` is not too
+   dear: a band that walks to a neighbour with a working larder carries
+   three and a half bargains' worth. The ones that arrive unable to trade
+   arrive with a day's food, and **half of them are dead within twenty days**
+   (12 of 23 sagas). Poor bands are poor, exactly as suspected, and pricing
+   the bargain down would move a number that is not stopping anybody.
+
+   Which leaves the coast design with one lever instead of two: the walk.
 
 ### Depth
 
@@ -1248,6 +1260,18 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — The larder reading, and a fix that was not needed** — The
+  barter diagnosis left one number unread: 29% of trade visit-days blocked
+  on `stores`, a band walking a fortnight and arriving unable to spare the
+  eight food it came to spend. That reading had two possible causes wanting
+  opposite fixes, so it got measured instead of guessed. On a blocked
+  visit-day the median band had **1.1 food** — against **28.4** on the days
+  that were free to deal, and 17–20 across all settled days — and **half the
+  sagas that hit one were dead within twenty days**. Poor bands are poor.
+  `BARTER_FOOD` is not too dear; a band with a working larder brings three
+  and a half bargains' worth to the door. Nothing shipped, because nothing
+  was broken, and the coast design now has one lever instead of two.
 
 - **2026-08-11 — Ninety-eight percent of a turn was copying ground that
   cannot change** — `apply` is `(state, action) => state` and never mutates
