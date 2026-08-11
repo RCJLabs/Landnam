@@ -41,7 +41,7 @@ juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 758 tests), the renderers are disposable, and the port lives
+content under 770 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -490,8 +490,8 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **758 tests
-in 39 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+with 5,000 more of typed content in `src/data/`, standing under **770 tests
+in 40 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
 what makes this a port rather than a rewrite. Every item below exists to
@@ -502,14 +502,48 @@ what 3D actually buys, then what gets harder.
 
 ### The decisions that are expensive to change later
 
-1. **[ ] Choose the sim boundary, and make the port CROSS-CHECKED rather
-   than a rewrite.** The fork everything else hangs off. Either embed a JS
-   runtime and keep one sim and one test suite, or port to C++ and accept
-   two — but if it is C++, the determinism is what saves you: run both on the
-   same seed and the same action list and **diff the resulting state**. A
-   port that is not differentially tested against this one silently discards
-   every balance finding in this document. *Measured by: N seeds played
-   through both, asserting identical `GameState`, in CI.*
+1. **[ ] Choose the sim boundary — and know that half of it is already
+   chosen.** *Read this before deciding anything; it was written after
+   actually looking at `landnam-ue` on 2026-08-11, and the repo says
+   something different from what the plan assumed.*
+
+   **`src/hex` and `src/rng` are already ported to C++** — 1,637 lines in
+   `Source/LandnamUE/`, Blueprint-exposed, with an automation test
+   (`LandnamParityTest.cpp`) driven by a large golden-vector file. It is not
+   stale: 1,620 values regenerated from today's TypeScript matched exactly,
+   zero disagreements. That is items 2 and 4 of this list, done before they
+   were written down.
+
+   **The fork is still ahead, because none of it is game RULES.** There is no
+   worldgen, no upkeep, no combat resolution in Unreal — `src/sim` (9,337
+   lines) and `src/data` (5,076) are untouched. And porting hex and RNG does
+   not commit you: an engine wants native coordinates and pathfinding for
+   rendering and input whichever way the rules go. So the question is
+   unchanged and still open — **do the RULES get rewritten in C++, or does
+   Unreal ask the TypeScript?**
+
+   What is measured, for whoever decides:
+   - **The sim is host-free.** Grepping `src/sim`, `src/hex`, `src/data`,
+     `src/state` for `document`/`window`/`localStorage`/DOM types matches
+     five files and **four of them are comments**. The only real dependency
+     is four `localStorage` lines in `src/state/save.ts` — the persistence
+     adapter, which any host replaces anyway. There is nothing to untangle.
+   - **Performance is not the axis.** A JSON round-trip of the mutable state
+     — what a bridge costs per action — is **0.031 ms**. `apply()` already
+     spends **2.2 ms** an action deep-cloning. The bridge would be ~1.4% of
+     what the sim spends on itself, and this is turn-based, so it is crossed
+     a few times a second, never per frame.
+   - **The payload is small.** A GameState is 80 KB but 78 KB of that is the
+     world, generated once and never written again. What changes is 2 KB
+     travelling, 7 KB mid-battle.
+
+   The argument for embedding is that the balance record only follows one
+   codebase — every figure in this document came out of `test/balance.test.ts`
+   — and that the game is still moving: two design questions opened this week
+   alone, and under a fork each of them lands twice. The argument for C++ is
+   Blueprint-authorable rules and no bridge. *Measured by: N seeds played
+   through both, asserting identical `GameState`, in CI — which needs a
+   headless runner neither side has yet.*
 
 2. **[x] Nail cross-language determinism before anything depends on it.**
    *Shipped 2026-08-10.* `port/rng-fixture.json` pins 174 absolute values
@@ -533,6 +567,14 @@ what 3D actually buys, then what gets harder.
    code points gives **the same answer all three ways** — so no ASCII seed
    can ever catch this. `Þórr` catches a UTF-8 port. Only `😀` catches a
    code-point port. All four are in the fixture for that reason.
+
+   *Reconciled 2026-08-11.* This was built without knowing `landnam-ue`
+   already had its own golden vectors, so there were briefly two contracts.
+   `port/golden.json` is now the shared one — this repo generates it,
+   `test/goldenport.test.ts` guards it, Unreal consumes a copy — and
+   `port/rng-fixture.json` is kept only for the helper edges the shared file
+   does not carry. The standalone C++ reference was deleted: a real, tested
+   port exists, and a second implementation nobody runs is one that rots.
 
 3. **[x] Design the sim→presentation event stream now.** *Battle half
    shipped 2026-08-10.* `src/sim/beats.ts` — fifteen kinds covering
@@ -560,7 +602,11 @@ what 3D actually buys, then what gets harder.
    300-odd call sites that already write ordered prose and want the same
    structured payload beside it.
 
-4. **[ ] Port `src/hex/` first and hardest.** Pure, fully tested, and both
+4. **[x] Port `src/hex/` first and hardest.** *Already done in
+   `landnam-ue` (`LandnamHex.cpp/.h`, 672 lines) and verified in parity on
+   2026-08-11 — round, toPixel/fromPixel, distance, line, neighbors and
+   directionTo, ring, range, the offset conversions, findPath and reachable,
+   every vector recomputed from live `src/hex` and matching.* Pure, fully tested, and both
    the world map and the battle grid stand on it — axial coords, neighbours,
    distance, `line`, `range`, `ring`, `findPath`, and the pixel conversions.
    Its tests port almost verbatim and give a real green baseline on day one.
@@ -1056,6 +1102,34 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — The parity harness could only see one side of the parity** —
+  Went looking at `landnam-ue` to answer "what have I already decided about
+  item 1" and found the answer was *more than the plan thought*: `src/hex`
+  and `src/rng` have been ported to C++ since 2026-08-10, Blueprint-exposed,
+  with an automation test driven by golden vectors. Verified in parity, not
+  assumed — **1,620 values regenerated from today's TypeScript, zero
+  disagreements**.
+  But the generator that produced those vectors was never committed to THIS
+  repo, which is the exact hole a parity harness exists to close: change
+  `src/rng.ts`, nobody regenerates, and the Unreal test goes on passing
+  against yesterday's expectations while the two builds quietly disagree. A
+  green parity test that can only see one side is worse than none, because it
+  is reassuring. `port/golden.json` now lives here — the repo that owns the
+  code the vectors describe — and `test/goldenport.test.ts` recomputes every
+  one of them from live `src/`. Checked by breaking `offsetToAxial` and
+  watching it fail.
+  Four things came out of writing the verifier. The section recipes were
+  **solved rather than guessed** — `wideInts` is `int(-50, 250)`, `floats` is
+  `float(-2.5, 7.5)`, and `chances` is `chance(0.3)`, pinned by the six
+  streams jointly admitting only p ∈ (0.297557, 0.302485]. Two apparent
+  parity breaks were my verifier's assumptions, not the port's: unreachable
+  path costs are stored as `-1` because JSON cannot write `Infinity`, and
+  `Path` has no `reachable` field. And the golden file **carried no
+  non-ASCII hash case at all**, so it could not catch the one bug the spec
+  is loudest about — six were added. Finally the duplicate contract I created
+  the day before was reconciled: one shared file, and the standalone C++
+  reference deleted now that a real tested port exists.
 
 - **2026-08-10 — The seed is the world, so the seed gets a contract (Phase 7
   item 2)** — `port/` is new: the things a second implementation of this sim

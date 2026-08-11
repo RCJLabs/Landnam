@@ -9,12 +9,18 @@
 // different world for every existing seed and passes its own test suite
 // while doing it.
 //
-// So this file pins the numbers themselves, in `port/rng-fixture.json` — a
-// plain, language-neutral artifact the port asserts against. Two jobs, one
-// file: it is the port's contract, and it is this repo's tripwire against
-// changing `src/rng.ts` by accident, which no other test can currently see.
+// So this file pins the numbers themselves, in `port/rng-fixture.json`.
 //
-// The spec the fixture goes with is `port/rng.md`.
+// It is NOT the shared contract — that is `port/golden.json`, which the
+// Unreal build's parity test consumes and `test/goldenport.test.ts` guards.
+// This one covers what the shared file leaves out: the helper edges
+// (`int(5,5)`, `int(0,999999)`, `pick`, `roll(1,20)`, a two-element shuffle)
+// and the empty and non-ASCII seeds. Between them, nothing in `src/rng.ts`
+// can move without a test saying so — which was true of neither file alone
+// when they were written a day apart, from opposite sides, by people who
+// could not see each other's work.
+//
+// The spec both go with is `port/rng.md`.
 
 import { describe, it, expect } from 'vitest';
 import fixtureText from '../port/rng-fixture.json?raw';
