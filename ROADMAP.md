@@ -206,14 +206,24 @@ What IS the wall is getting to them at all. Pooled over the same sagas:
   spend, which is the cruellest possible way to lose the trip.
 
 So the design question is not "what is a bargain worth" but **"why does
-dealing with the coast require a fortnight's walk"** — and the answer that
-suggests itself is already half-built. Every neighbour walks over to look
-at a new steading (`CLAN_CALLS_EVERY`), and that visit currently does
-nothing but put them on the map. If it could be DEALT with at your own
-hearth, the median band gets its three bargains without ever leaving the
-yard, which is both the fix and what actually happened on that coast. The
-`stores` block wants an answer too: an errand that walks to trade should
-carry what it means to trade with.
+dealing with the coast require a fortnight's walk"**. The shape of the
+answer is already in the file: every neighbour walks over to look at a new
+steading (`neighboursCallOn`), and that visit does nothing but put them on
+the map. A visit that could be DEALT with is the fix, and it is what
+actually happened on that coast — the trader came to you.
+
+But it is a new mechanism rather than a hook on an old one, and the first
+write-up of this said "half-built", which overstates it. `neighboursCallOn`
+reveals each neighbour ONCE and stops the moment all four are found, so it
+fires four times inside the first two months of a steading and then never
+again — which is precisely the window in which a band has least food to
+spare, and the `stores` block above says so. Making callers RECURRING is
+the actual work.
+
+The `stores` block wants its own measurement before it gets a fix: the
+party's food is the whole band's larder, so "arrived too poor to barter"
+may simply be "poor band", and the way to tell is to read what the food
+actually was on those blocked days.
 
 **Every number here describes ONE way of playing, and it is not the best
 one.** Audit item 7 gave the harness three policies over the same thirty
@@ -1048,10 +1058,13 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   deal, so this is not the bot declining), and **29% of visit-days were
   blocked on `stores`**: a fortnight's walk ending with too little food to
   spare the eight it came to spend.
-  The fix is therefore a different shape entirely, and half of it already
-  exists — every neighbour walks over to look at a new steading
-  (`CLAN_CALLS_EVERY`) and that visit currently only puts them on the map.
-  Nothing shipped but the finding; the design call is open. Recorded
+  The fix is therefore a different shape entirely: a visit that can be
+  dealt with, rather than a bargain worth more. `neighboursCallOn` is the
+  pattern but not half the work — it reveals each neighbour ONCE and stops
+  when all four are found, so it fires four times in a steading's first two
+  months and never again, which is exactly when a band cannot spare the
+  food. Recurring callers are the actual job. Nothing shipped but the
+  finding; the design call is open. Recorded
   because the wrong explanation was convincing, cheap to act on, and would
   have produced a tuning pass that moved a number nobody was blocked by.
 
