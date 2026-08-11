@@ -254,6 +254,51 @@ export const MIGRATIONS: Record<number, Migration> = {
   // has none, and none is the truth: the beats that would have described its
   // winters were never emitted, and a stream is for what happens NEXT.
   29: (save) => ({ ...save, version: 30 }),
+  // The id counter started at 1 while the six who came off the knarr already
+  // held p1..p6, so the first six people ever to join a band took their
+  // identities. Everything here is keyed by personId, so a live save can be
+  // carrying two people the game cannot tell apart.
+  //
+  // Two jobs. Push the counter past every id in the file so it cannot happen
+  // again, and give the later twin a name of their own.
+  //
+  // And then STOP, which is the part worth explaining. The obvious next move
+  // is to carry references across with the rename — kin, grudges, a fight in
+  // progress. It is wrong. Every lookup in this game resolves an id with
+  // `find`, which returns the FIRST match, so for as long as the duplicate
+  // existed every reference to `p1` reached the founder and none of them
+  // ever reached the twin. Rewriting them would hand the twin a history it
+  // never had and take the founder's kin away from them. Written the
+  // thorough-looking way first, and the test caught it pointing a brother at
+  // the wrong brother.
+  //
+  // The twin was a ghost: it ate, it could die, and nothing could address
+  // it. This gives it an identity from here on and invents nothing behind.
+  30: (save) => {
+    const party = save['party'] as { people?: Record<string, unknown>[] } | undefined;
+    const people = party?.people ?? [];
+
+    let highest = 0;
+    for (const person of people) {
+      const found = /^p(\d+)$/.exec(String(person['id'] ?? ''));
+      if (found) highest = Math.max(highest, Number(found[1]));
+    }
+
+    const seen = new Set<string>();
+    for (const person of people) {
+      const id = String(person['id'] ?? '');
+      if (!seen.has(id)) {
+        seen.add(id);
+        continue;
+      }
+      highest += 1;
+      person['id'] = `p${highest}`;
+      seen.add(String(person['id']));
+    }
+
+    const counter = typeof save['nextId'] === 'number' ? (save['nextId'] as number) : 1;
+    return { ...save, nextId: Math.max(counter, highest + 1), version: 31 };
+  },
 };
 
 export interface MigrationResult {

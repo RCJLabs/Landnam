@@ -56,7 +56,16 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
     lore: [],
     tally: emptyTally(),
     neighbours: placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours')),
-    nextId: 1,
+    // PAST the founders, not at 1. `makeWarband` hands out `p1`..`p6`, so a
+    // counter starting at 1 gave the first person who ever joined the band
+    // the leader's own id — and the next five the ids of the rest. Latent
+    // until 2026-08-08 made growth actually happen, then live and silent:
+    // everything in this game is keyed by personId, so a duplicate means
+    // `fighterPerson` finds the wrong one, a job cannot be given, kin point
+    // at the wrong person and the memorial buries somebody who is standing
+    // there. Found by a recorder bot that assigned `farmer` to the same
+    // person 19,717 times and could not understand why it did not take.
+    nextId: people.length + 1,
   };
 
   const effects = effectsOn(state.day);

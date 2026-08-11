@@ -44,7 +44,7 @@ without leaving this repo, two of them bugs shipped in the last two days.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 818 tests), the renderers are disposable, and the port lives
+content under 826 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -499,8 +499,8 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **818 tests
-in 43 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+with 5,000 more of typed content in `src/data/`, standing under **826 tests
+in 44 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
 what makes this a port rather than a rewrite. Every item below exists to
@@ -773,13 +773,22 @@ is a wish.
    list of 13, which reported the last kind unreachable without looking for
    it. Checked against a kind that does not exist, so the bar can fail.
 
-5. **[ ] The harness can play well and cannot write it down.** Every repro
-   script and seed challenge is currently produced by `scripts/record.ts`,
-   which plays deliberately badly and dies on day 36. The bot that plays
-   properly is in `test/balance.test.ts` and has no way to emit an action
-   list, so there is no such thing as a recorded run that reaches the
-   endgame — exactly the runs worth having a repro of. *Measured by: a
-   committed script that reaches day 169 and replays with zero refusals.*
+5. **[x] The harness can play well and cannot write it down.** *Shipped
+   2026-08-11 — and the item was half wrong, which is how it earned its
+   keep.* The harness cannot emit a script and never will: it calls
+   `assign`, `queueBuild` and `foundSettlement` straight into the state
+   rather than dispatching actions, so a replay of the actions it issues
+   would found nothing, employ nobody and build nothing. **Its play is not
+   expressible through the player's own interface.** That is fine for a
+   measuring instrument and worth knowing about the numbers it produces.
+   So `scripts/record.ts` got a competent bot of its own that plays through
+   `apply` and nothing else. `runs/long.json` — 1,331 actions, **day 457,
+   survived** — is committed and replayed by the suite with zero refusals.
+   Two bots on purpose now, and neither pretends to be the other.
+
+   **Writing it found a shipped bug worth more than the item.** See the
+   changelog: the first six people ever to join a band took the ids of the
+   six who came off the knarr.
 
 6. **[ ] `render/cards.ts` is 749 lines and I made it worse.** The style
    rule is under ~300, split by domain. This file holds the title, the event
@@ -1272,6 +1281,33 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — The first six people to join a band took the founders'
+  names** — A shipped bug, found sideways. `makeWarband` hands the six who
+  come off the knarr `p1`..`p6`; `newGame` set `nextId: 1`; so the first
+  joiner was created as `p1` and the next five took the rest. Everything in
+  this game is keyed by personId — `fighterPerson` resolves a combatant by
+  it, kin point at each other by it, grudges name two people by it, jobs are
+  given by it, the memorial buries by it — and every one of those lookups is
+  a `find`, which returns the FIRST match. So the twin was a ghost: it ate,
+  it could die, and nothing could address it.
+  Latent until 2026-08-08 made growth actually happen, and silent
+  afterwards. Found by a recorder bot that assigned `farmer` to the same
+  person **19,717 times** and could not work out why it never took — the
+  roster printed seven people and `p1` twice.
+  `nextId` starts past the founders now, and the v31 migration repairs a
+  save that already carries a twin. The migration does one thing and
+  deliberately stops: it renames the later twin and moves NO references. The
+  thorough-looking version came first and was wrong — every reference to
+  `p1` reached the founder for as long as the duplicate existed, so carrying
+  them across would hand the twin a history it never had and take a brother
+  away from the founder. The test caught it pointing a brother at the wrong
+  brother.
+  The balance figures moved in the direction the fix predicts, since a
+  joiner can now be given a job instead of being a mouth that cannot work:
+  the settler's second winters went **4/30 to 7/30**, the turtle's survivors
+  5.2 to 6.3, and everything else sat still. Most of it is inside what this
+  harness can resolve; the settler reading is at the edge of it.
 
 - **2026-08-11 — The rest of the fight, and the rest of the year** — The
   beat stream's travel and colony half, completing Phase 7 item 3. Thirteen

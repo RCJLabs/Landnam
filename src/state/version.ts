@@ -35,7 +35,9 @@
 //                    challenge code set this run to beat.
 // v30 (world beats): the root gained the optional `beats` — the travel and
 //                     colony half of the sim's event stream.
-export const SAVE_VERSION = 30;
+// v31 (ids): `nextId` starts past the founders. Before this the first six
+//             people to join took the ids of the six who came off the knarr.
+export const SAVE_VERSION = 31;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

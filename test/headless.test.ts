@@ -14,6 +14,7 @@
 
 import { describe, it, expect } from 'vitest';
 import exampleText from '../runs/example.json?raw';
+import longText from '../runs/long.json?raw';
 import { canonical, hashOf, play, stateHash, worldHash, type Script } from '../src/run/headless';
 import { newGame } from '../src/state/create';
 import type { Action } from '../src/sim/actions';
@@ -109,6 +110,18 @@ describe('replay', () => {
     expect(result.refused, `first refused action was #${result.refused[0]}`).toEqual([]);
     expect(result.applied).toBe(recorded.actions.length);
     expect(result.day).toBeGreaterThan(1);
+  });
+
+  it('replays a run that reaches the endgame, refusing nothing', () => {
+    // The reason item 5 existed. Every recorded script used to come from a
+    // bot that died on day 36, so there was no such thing as a repro case or
+    // a seed challenge that reached the parts of the game worth reaching.
+    // This one stands 457 days and survives.
+    const recorded = JSON.parse(longText) as Script;
+    const result = play(recorded);
+    expect(result.refused, `first refused action was #${result.refused[0]}`).toEqual([]);
+    expect(result.day).toBeGreaterThan(169);
+    expect(result.state.settlement, 'a long run with no steading is not a long run').toBeTruthy();
   });
 
   it('records WHERE a script first went wrong rather than throwing', () => {
