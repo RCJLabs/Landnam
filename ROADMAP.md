@@ -790,13 +790,21 @@ is a wish.
    changelog: the first six people ever to join a band took the ids of the
    six who came off the knarr.
 
-6. **[ ] `render/cards.ts` is 749 lines and I made it worse.** The style
-   rule is under ~300, split by domain. This file holds the title, the event
-   card, the roster, the founding panel, the launch panel, the saga book,
-   settings, the guide, the proclamation and the ending screen, and the
-   challenge work added to it. `render/travel.ts` (593) and `main.ts` (609)
-   breach it too. *Measured by: line counts, and the suite staying green
-   across the move.*
+6. **[x] `render/cards.ts` is 749 lines and I made it worse.** *Split
+   2026-08-11* into `src/render/cards/` — title 123, interrupt 105, decide
+   236, closing 208, menus 107, and a 17-line barrel so `./render/cards`
+   still means what it meant. Every part is under the rule; the largest is
+   236.
+   Grouped by what each overlay is FOR rather than by what it is: getting
+   in, interrupting play, asking the player to decide, ending the run, and
+   the two menus that are about the game rather than the saga. Splitting by
+   type — one file of cards, one of panels — was the easy cut and the wrong
+   one, and CLAUDE.md says so.
+   A pure move, and checked as one: the whole overlay layer was driven in
+   the built page afterwards — title, guide, challenge note, chase mark,
+   band roster, saga book, settings — because a missing export shows up
+   there as a dead button, not as a type error. 826 tests unchanged.
+   Still over: `main.ts` (609) and `render/travel.ts` (593).
 
 7. **[ ] Nothing permanently checks the offline guarantee.** Hard constraint
    1 says the built page runs from a `file://` open with no external
