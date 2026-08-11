@@ -1,6 +1,7 @@
 // TRAVEL mode logic. Pure: (state, action) -> state. Every action costs at
 // least a day, and the day is what kills you.
 
+import { cloneState } from '../state/clone';
 import { distance, key, line, neighbors, range, type Hex } from '../hex';
 import { stream, type Rng } from '../rng';
 import { terrainDef } from '../data/terrain';
@@ -319,7 +320,7 @@ function advance(state: GameState, days: number): void {
 
 export function applyTravel(prev: GameState, action: TravelAction): GameState {
   if (prev.end || prev.event) return prev;
-  const state = structuredClone(prev);
+  const state = cloneState(prev);
   const party = state.party;
 
   switch (action.type) {

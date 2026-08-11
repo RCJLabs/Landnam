@@ -44,7 +44,7 @@ without leaving this repo, two of them bugs shipped in the last two days.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 807 tests), the renderers are disposable, and the port lives
+content under 814 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -493,8 +493,8 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **807 tests
-in 42 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+with 5,000 more of typed content in `src/data/`, standing under **814 tests
+in 43 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
 what makes this a port rather than a rewrite. Every item below exists to
@@ -704,16 +704,30 @@ is a wish.
    design, and clicked a button selector that did not exist, so the day
    never advanced.
 
-2. **[ ] Every action deep-clones a world that never changes.** Measured
-   2026-08-11 while costing the Unreal bridge: `apply` spends **2.2 ms** an
-   action cloning the whole GameState, and **0.045 ms** of that is
-   everything except `world` — the other 98% is copying 78 KB of tiles
-   generated once at worldgen and never written again. This container is
-   faster than the phones this game is played on. `world.seen` and
-   `world.trod` DO change, so the fix is structural sharing of `tiles` and
-   `places` rather than of the whole world, and the risk is a shared object
-   somebody later mutates. *Measured by: per-action milliseconds before and
-   after, plus a test that fails if anything writes to `world.tiles`.*
+2. **[x] Every action deep-clones a world that never changes.** *Fixed
+   2026-08-11.* `src/state/clone.ts` — a copy that SHARES the generated
+   tiles and copies everything play actually writes. **1.950 ms an action to
+   0.069 ms, twenty-eight times cheaper**, on a game whose primary target is
+   a phone slower than this container.
+
+   Which parts are safe to share was settled by grep rather than by
+   sampling: `world.seen` (fog, events, places), `world.trod` (travel) and
+   `place.sackedOn` (plunder, places) all have write sites, and
+   `world.tiles` has **none anywhere in `src/`**. A play-sample said the
+   same thing and could not be trusted — the bot never moved, founded or
+   sacked, so its clean result covered nothing. (`Tile.explored` turns out
+   to be declared and never written at all: a dead field.)
+
+   The saving is real and so is the risk, since two states sharing an object
+   one of them later mutates would surface as a corrupted save weeks later
+   rather than as a test failure. So the tiles are FROZEN on first copy — a
+   write throws at the line that does it — and `test/clone.test.ts` proves
+   the freeze bites rather than assuming it. The real guard is that the
+   whole suite, balance harness included, plays sixty sagas to day 500 with
+   the ground frozen throughout.
+
+   **The unlooked-for win: the test suite went from ~15 minutes to under
+   4** (923 s → 235 s). The harness is clone-bound, and nobody knew.
 
 3. **[ ] Finish the coast diagnosis: what was in the larder.** The barter
    measurement found 29% of trade visit-days blocked on `stores` — a band
@@ -1234,6 +1248,34 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — Ninety-eight percent of a turn was copying ground that
+  cannot change** — `apply` is `(state, action) => state` and never mutates
+  its input, which is the rule the whole project stands on. It was paying
+  for that rule in the dumbest available place: `structuredClone(state)`
+  duplicated the entire world every action, and the world is 78 KB of
+  terrain generated once at worldgen and never written. **1.950 ms a copy
+  became 0.069 ms — twenty-eight times cheaper** — by sharing the tiles and
+  copying only what play actually writes.
+  Which parts those are was settled by grep, not by sampling. `world.seen`,
+  `world.trod` and `place.sackedOn` all have write sites; `world.tiles` has
+  NONE anywhere in `src/`. A play-sample agreed and was worthless — the bot
+  never moved, founded or sacked, so its clean result covered nothing it was
+  asked about. (`Tile.explored` is declared and never written: a dead field.)
+  Two states sharing an object one later mutates would show up as a corrupt
+  save weeks later rather than a red test, so the tiles are frozen on first
+  copy and a write throws at the line that does it. `test/clone.test.ts`
+  proves the freeze actually bites instead of assuming it, and the real
+  guard is the whole suite — sixty sagas to day 500, founding, building,
+  raiding, sailing and fighting — running with the ground frozen throughout.
+  Two things fell out of it. The first cut moved `world` to the end of the
+  state object and `tiles` to the end of the world, which is deep-equal and
+  textually different — and `encode()` is a `JSON.stringify`, so it would
+  have quietly changed the bytes of every save. Both levels are rebuilt in
+  the original key order now, and the same test caught both. And the
+  unlooked-for prize: **the test suite went from about fifteen minutes to
+  under four** (923 s to 235 s). The balance harness was clone-bound the
+  whole time and nobody knew.
 
 - **2026-08-11 — A saga somebody else can play** — Seed challenges, carried
   since 2026-08-07. A challenge is a line of text — `LN1 grim-fjord-100 fair

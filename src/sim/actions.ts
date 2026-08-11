@@ -1,6 +1,7 @@
 // The single entry point the UI dispatches through. Pure: (state, action) -> state.
 // Routing by mode lives here so each sim module stays focused on its own rules.
 
+import { cloneState } from '../state/clone';
 import { currentMode, popMode, pushMode } from '../modes';
 import type { GameState } from '../state/types';
 import type { Hex } from '../hex';
@@ -78,7 +79,7 @@ export function apply(state: GameState, action: Action): GameState {
   // A fight on the field outranks everything else.
   if (currentMode(state) === 'BATTLE' && state.battle) {
     if (!BATTLE_TYPES.has(action.type)) return state;
-    const next = structuredClone(state);
+    const next = cloneState(state);
 
     switch (action.type) {
       case 'B_MOVE':
@@ -126,7 +127,7 @@ export function apply(state: GameState, action: Action): GameState {
 
   if (action.type === 'ENTER_COLONY') {
     if (!atHome(state) || state.event || currentMode(state) !== 'TRAVEL') return state;
-    const next = structuredClone(state);
+    const next = cloneState(state);
     // A save from before COLONY existed carries a settlement with no ground.
     // Regenerate it here rather than in the migration, which cannot reach the
     // rng or today's plot rules.
@@ -146,20 +147,20 @@ export function apply(state: GameState, action: Action): GameState {
     if (!COLONY_TYPES.has(action.type)) return state;
     if (action.type === 'LEAVE_COLONY') {
       const next = popMode(state);
-      return next === state ? state : { ...structuredClone(state), modes: next.modes };
+      return next === state ? state : { ...cloneState(state), modes: next.modes };
     }
     if (action.type === 'ASSIGN') {
-      const next = structuredClone(state);
+      const next = cloneState(state);
       if (!assign(next, action.personId, action.job)) return state;
       return next;
     }
     if (action.type === 'QUEUE_BUILD') {
-      const next = structuredClone(state);
+      const next = cloneState(state);
       if (!queueBuild(next, action.building)) return state;
       return next;
     }
     if (action.type === 'UNQUEUE_BUILD') {
-      const next = structuredClone(state);
+      const next = cloneState(state);
       if (!unqueueBuild(next, action.building)) return state;
       return next;
     }
@@ -172,13 +173,13 @@ export function apply(state: GameState, action: Action): GameState {
 
   if (action.type === 'LAUNCH') {
     if (currentMode(state) !== 'TRAVEL' || state.event || state.aftermath) return state;
-    const next = structuredClone(state);
+    const next = cloneState(state);
     if (!launch(next, action.members, action.purpose)) return state;
     return next;
   }
   if (action.type === 'TURN_HOME') {
     if (currentMode(state) !== 'TRAVEL' || state.event) return state;
-    const next = structuredClone(state);
+    const next = cloneState(state);
     if (!turnForHome(next)) return state;
     return next;
   }
@@ -187,7 +188,7 @@ export function apply(state: GameState, action: Action): GameState {
   // the only place the player is told who did not get up.
   if (state.aftermath) {
     if (action.type !== 'DISMISS_AFTERMATH') return state;
-    const next = structuredClone(state);
+    const next = cloneState(state);
     delete next.aftermath;
     return next;
   }
@@ -204,12 +205,12 @@ export function apply(state: GameState, action: Action): GameState {
       // "same object means refused" contract: `scripts/record.ts` believed
       // it and recorded 1,973 accepted CHOOSEs across 28 days.
       if (state.event.outcome) return state;
-      const next = structuredClone(state);
+      const next = cloneState(state);
       chooseOption(next, action.index);
       return next;
     }
     if (action.type === 'DISMISS_EVENT') {
-      const next = structuredClone(state);
+      const next = cloneState(state);
       dismissEvent(next);
       return next;
     }

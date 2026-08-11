@@ -10,6 +10,7 @@
 // main.ts was six hundred lines and every milestone added to it. This is the
 // part with no business being in a boot router at all.
 
+import { cloneState } from './state/clone';
 import { key } from './hex';
 import { currentMode } from './modes';
 import type { GameState } from './state/types';
@@ -46,7 +47,7 @@ export function installDebug(hooks: DebugHooks): void {
   const onTravel = (change: (next: GameState) => boolean): void => {
     const state = hooks.get();
     if (!state || currentMode(state) !== 'TRAVEL') return;
-    const next = structuredClone(state);
+    const next = cloneState(state);
     if (change(next) === false) return;
     hooks.commit(next);
   };
@@ -88,7 +89,7 @@ export function installDebug(hooks: DebugHooks): void {
     stock(food = 200, firewood = 200) {
       const state = hooks.get();
       if (!state) return;
-      const next = structuredClone(state);
+      const next = cloneState(state);
       next.party.food = food;
       next.party.firewood = firewood;
       next.party.morale = Math.max(next.party.morale, 70);
