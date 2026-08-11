@@ -501,6 +501,9 @@ button.wide {
 .seed-note {
   margin-top: 10px;
   text-align: center;
+  /* A challenge code is one long unbroken token by design. On a 390px
+     screen it has to be allowed to break, or it pushes the card wide. */
+  overflow-wrap: anywhere;
 }
 
 .fallen {
@@ -1596,6 +1599,43 @@ button.hardship-chip {
   font-size: 12.5px;
   line-height: 1.45;
   min-height: 3.6em;
+}
+
+/* A challenge code was pasted: its terms are the run's terms, so the chips
+   read as a statement rather than a choice. */
+.hardship-chip.fixed {
+  opacity: 0.55;
+  cursor: default;
+}
+.hardship-chip.fixed.primary {
+  opacity: 1;
+}
+
+/* Empty until a code is recognised, so it takes no room on the title screen
+   for the players who will never paste one. */
+.chase-note {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--parchment-dim);
+}
+.chase-note.on {
+  padding: 8px 10px;
+  border: 1px solid var(--edge);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--parchment);
+}
+
+/* The first thing a chaser wants off the ending screen. */
+.chase-verdict {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 /* A settings row that states rather than toggles. */

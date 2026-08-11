@@ -31,7 +31,9 @@
 //                to animate it rather than print it — and LOST `lastBlow`,
 //                the one-slot version of the same idea, which the beat
 //                stream replaces outright.
-export const SAVE_VERSION = 28;
+// v29 (challenges): the root gained the optional `chasing` — the mark a
+//                    challenge code set this run to beat.
+export const SAVE_VERSION = 29;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

@@ -246,6 +246,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // reaches into a nested field to remove something harmless is a migration
   // with more ways to throw than to help.
   27: (save) => ({ ...save, version: 28 }),
+  // A run can now be chasing somebody else's mark. Nothing older was
+  // started from a challenge code — there were none — so an absent
+  // `chasing` is the plain truth about every save before this.
+  28: (save) => ({ ...save, version: 29 }),
 };
 
 export interface MigrationResult {

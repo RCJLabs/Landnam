@@ -41,7 +41,7 @@ juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 783 tests), the renderers are disposable, and the port lives
+content under 802 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -490,8 +490,8 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **783 tests
-in 41 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+with 5,000 more of typed content in `src/data/`, standing under **802 tests
+in 42 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
 what makes this a port rather than a rewrite. Every item below exists to
@@ -844,11 +844,19 @@ whole systems do not.
     technology has had none. Low glamour, genuinely small, and the kind of
     thing that never gets done once there is a v1.0 tag.
 
-**Carried over:** seed challenges and a shareable saga (item 10 of the
-2026-08-07 queue) are no longer blocked — the headless runner landed
-2026-08-11, so a challenge is now a file (`seed`, `hardship`, `actions`) and
-a claimed result is checkable against a hash. What is left is the sharing:
-getting a script in and out of the page, and a screen that says "beat this".
+**Seed challenges shipped 2026-08-11** (item 10 of the 2026-08-07 queue,
+carried for four days). A challenge is a line of text — `LN1
+grim-fjord-100 fair d128 w2 jarl` — pasted into the seed box that was
+already on the title screen, so there is no new screen and no new button.
+It carries the TERMS as well as the seed, which the bare seed never did and
+which is half of what a shared run means. The ending screen says whether you
+beat it and hands you your own code.
+Deliberately not base64: this is played on phones, and a code gets pasted
+into a chat, wrapped by an email client and retyped with a thumb. A readable
+format survives all of that — a truncated code still lands you on the right
+coast — where one wrong character of base64 produces silence. What it does
+NOT do is prove anything; a mark is a claim, as a seed challenge has always
+been, and `scripts/play.ts` is where a claim can actually be checked.
 The v1.0 release's two at-home steps
 (GitHub Release targeting `main`; DNS `CNAME landnam -> rcjlabs.github.io`
 BEFORE the Pages custom domain and Enforce HTTPS) are still Evan's.
@@ -1114,6 +1122,34 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — A saga somebody else can play** — Seed challenges, carried
+  since 2026-08-07. A challenge is a line of text — `LN1 grim-fjord-100 fair
+  d128 w2 jarl` — and it goes in the seed box the title screen already had,
+  so there is no new screen and no new button. It carries the TERMS as well
+  as the seed: a shared seed on a different country is not the same run, and
+  the bare seed the ending screen used to print could not say so. Paste one
+  and the difficulty chips stop being a choice and start being a statement;
+  the ending screen says whether you beat the mark and hands you your own
+  code. `SAVE_VERSION` 29 for the `chasing` mark, which has to survive the
+  tab being closed on day 12 of a chase.
+  **Deliberately not base64**, against every instinct. This is played on
+  phones: a code gets pasted into a chat, wrapped by an email client, read
+  out over a table and retyped with a thumb, and the failure mode of a blob
+  is that one wrong character produces silence. A readable format survives
+  all of it — a truncated code still lands you on the right coast, which is
+  most of what it was for — and a player can SEE their own seed in it. What
+  it does not do is prove anything, and the code says so rather than
+  implying otherwise: a mark is a claim, the way a seed challenge has always
+  been a claim, and `scripts/play.ts` is where a claim can be checked.
+  A test found a real bug on the way: uppercasing a code changes the seed,
+  because `hashString` walks code units — so `Grim` and `grim` are different
+  countries. A decoder that lowercased to be helpful would strand anyone who
+  typed a capital, so the fix belongs on the input, and the seed box now
+  carries `autocapitalize="none"` (plus autocorrect and spellcheck off).
+  Phone keyboards autocapitalise the first word of a pasted line. Two people
+  comparing a shared seed could have been playing different games with no
+  way to tell, and that was true before challenges existed.
 
 - **2026-08-11 — The sim, played with nobody watching** — A headless runner:
   seed and a list of actions in, the finished state and a hash out. `npm run

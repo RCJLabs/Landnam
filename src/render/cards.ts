@@ -25,6 +25,7 @@ import type { GameState, Person, Purpose } from '../state/types';
 import { button, el } from './svg';
 import type { Dispatch } from './ui';
 import { HARDSHIPS, hardshipById, type HardshipId } from '../data/hardship';
+import { beats, challengeOf, decodeChallenge, describeMark, markOf } from '../sim/challenge';
 import { lastHardship } from '../hardshipPref';
 import { kinPairs } from '../sim/kin';
 
@@ -42,8 +43,39 @@ export function renderTitle(
   const seedInput = el('input', {
     class: 'seed-input',
     type: 'text',
-    placeholder: 'seed (optional)',
-    'aria-label': 'World seed',
+    placeholder: 'seed or challenge code',
+    'aria-label': 'World seed, or a challenge code somebody sent you',
+    // A phone keyboard autocapitalises the first word of a pasted line, and
+    // a seed is hashed by code unit — so `Grim` and `grim` are different
+    // countries. Two people comparing a shared seed would have been playing
+    // different games and had no way to tell. Off, all three.
+    autocapitalize: 'none',
+    autocorrect: 'off',
+    spellcheck: 'false',
+  });
+
+  // A challenge code carries its own terms, so pasting one takes the choice
+  // away — and says so, rather than silently ignoring the chips.
+  const chase = el('p', { class: 'chase-note' }, []);
+  const readChallenge = () => decodeChallenge(seedInput.value);
+  const paintChase = (): void => {
+    const c = readChallenge();
+    if (!c) {
+      chase.replaceChildren();
+      chase.classList.remove('on');
+      return;
+    }
+    chase.classList.add('on');
+    const terms = hardshipById(c.hardship);
+    chase.replaceChildren(
+      c.mark
+        ? `A challenge: seed "${c.seed}" on ${terms.name}. To beat — ${describeMark(c.mark)}.`
+        : `A challenge: seed "${c.seed}" on ${terms.name}.`,
+    );
+  };
+  seedInput.addEventListener('input', () => {
+    paintChase();
+    paintHardship();
   });
 
   // How hard the country is, chosen HERE because it is a term of the run
@@ -53,18 +85,23 @@ export function renderTitle(
   const hardshipRow = el('div', { class: 'hardship-pick' });
   const hardshipNote = el('p', { class: 'hardship-note' }, []);
   const paintHardship = (): void => {
+    const forced = decodeChallenge(seedInput.value)?.hardship;
+    const showing = forced ?? picked;
     hardshipRow.replaceChildren(
       ...HARDSHIPS.map((terms) => {
         const chip = button(terms.name, () => {
+          if (forced) return;
           picked = terms.id;
           paintHardship();
-        }, { class: `hardship-chip${picked === terms.id ? ' primary' : ''}` });
+        }, { class: `hardship-chip${showing === terms.id ? ' primary' : ''}${forced ? ' fixed' : ''}` });
+        if (forced) chip.setAttribute('aria-disabled', 'true');
         return chip;
       }),
     );
-    const terms = hardshipById(picked);
+    const terms = hardshipById(showing);
     hardshipNote.replaceChildren(`${terms.blurb} ${terms.measured}`);
   };
+  paintChase();
   paintHardship();
 
   const buttons = el('div', { class: 'title-buttons' });
@@ -90,6 +127,7 @@ export function renderTitle(
       hardshipNote,
       buttons,
       seedInput,
+      chase,
       // The guide is for everyone; the two below are offered only to
       // someone with a reason to want them.
       ...(onGuide ? [button('How to play', onGuide, { class: 'relearn' })] : []),
@@ -638,20 +676,44 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
     el('p', { class: 'end-stat' }, [`${state.day} days ashore · ${explored}% of the land seen`]),
   );
 
+  // If this run was chasing somebody, say so before anything else about
+  // sharing — it is the thing the player opened the screen to find out.
+  const verdict: HTMLElement[] = [];
+  if (state.chasing) {
+    const mine = markOf(state);
+    const won = beats(mine, state.chasing);
+    verdict.push(
+      el('p', { class: `chase-verdict ${won ? 'good' : 'grim'}` }, [
+        won
+          ? `You beat it. Theirs was ${describeMark(state.chasing)}. Yours was ${describeMark(mine)}.`
+          : `Not this time. Theirs was ${describeMark(state.chasing)}. Yours was ${describeMark(mine)}.`,
+      ]),
+    );
+  }
+
   // Shareable: the seed goes with the text, because a saga without the seed
-  // that made it is an anecdote and a saga with it is a challenge.
-  const note = el('p', { class: 'seed-note' }, [`seed "${state.seed}"`]);
+  // that made it is an anecdote and a saga with it is a challenge. The CODE
+  // goes with it too, so the anecdote is one somebody can actually take up —
+  // it carries the terms as well, which the bare seed never did.
+  const code = challengeOf(state);
+  const note = el('p', { class: 'seed-note' }, [code]);
   const copy = button('Copy the saga', () => {
-    const ok = copyText(sagaText(saga));
-    note.replaceChildren(ok ? `Copied — seed "${state.seed}"` : `seed "${state.seed}"`);
+    const ok = copyText(`${sagaText(saga)}\n\nBeat this: ${code}`);
+    note.replaceChildren(ok ? `Copied — ${code}` : code);
+  }, { class: 'action secondary wide' });
+  const copyCode = button('Copy the challenge only', () => {
+    const ok = copyText(code);
+    note.replaceChildren(ok ? `Copied — ${code}` : code);
   }, { class: 'action secondary wide' });
 
   return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card end-card' }, [
       el('h2', { class: survived ? 'good' : 'grim' }, [saga.title]),
+      ...verdict,
       body,
       note,
       copy,
+      copyCode,
       button('Land again', onRestart, { class: 'primary wide' }),
     ]),
   ]);

@@ -8,6 +8,7 @@ import type { HardshipId } from '../data/hardship';
 // happy with and which keeps the beat vocabulary next to the code that emits
 // it rather than buried in the model.
 import type { Beat } from '../sim/beats';
+import type { Mark } from '../sim/challenge';
 
 export type { HardshipId };
 
@@ -516,6 +517,13 @@ export interface GameState {
    * Absent reads as 'even', which is what every save before this was.
    */
   hardship?: HardshipId;
+  /**
+   * The mark this run was started to beat, when it came off somebody else's
+   * challenge code. On the RUN rather than in preferences for the same
+   * reason `hardship` is: it is a term of this saga, and it has to survive
+   * the tab being closed on day 12 of a chase.
+   */
+  chasing?: Mark;
   /** Set once the Thing has carried and the band rules the coast. */
   jarl?: Jarldom;
   /** Monotonic counter making generated ids deterministic. */

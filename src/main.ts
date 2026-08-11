@@ -27,6 +27,7 @@ import {
 import { renderGuide, renderLesson, renderSettings, renderTitle, renderWall } from './render/cards';
 import { applyMotionPref, motionPref, setMotionPref } from './motion';
 import { lastHardship, rememberHardship } from './hardshipPref';
+import { decodeChallenge } from './sim/challenge';
 import type { HardshipId } from './data/hardship';
 import { deedsFor } from './render/deeds';
 import {
@@ -343,11 +344,18 @@ function onFieldTap(target: Hex): void {
 }
 
 function startRun(seed: string, hardship: HardshipId = lastHardship()): void {
-  const finalSeed = seed || makeSeedPhrase(Date.now());
+  // What was typed may be a challenge code rather than a seed, in which case
+  // it brings its own seed AND its own terms — a shared run has to mean the
+  // same thing to both people, and half of what it means is the country.
+  const challenge = decodeChallenge(seed);
+  const finalSeed = challenge ? challenge.seed || makeSeedPhrase(Date.now())
+    : seed || makeSeedPhrase(Date.now());
+  const terms = challenge ? challenge.hardship : hardship;
   // Remembered for the next title screen only; the terms themselves ride on
   // the run, so a saga carries the country it was played in.
-  rememberHardship(hardship);
-  state = newGame(finalSeed, hardship);
+  rememberHardship(terms);
+  state = newGame(finalSeed, terms);
+  if (challenge?.mark) state.chasing = challenge.mark;
   save(state);
   resetForRun(ui);
   mountGame();
