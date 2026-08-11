@@ -44,7 +44,7 @@ without leaving this repo, two of them bugs shipped in the last two days.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 826 tests), the renderers are disposable, and the port lives
+content under 831 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -499,8 +499,8 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **826 tests
-in 44 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+with 5,000 more of typed content in `src/data/`, standing under **831 tests
+in 45 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
 what makes this a port rather than a rewrite. Every item below exists to
@@ -806,14 +806,33 @@ is a wish.
    there as a dead button, not as a type error. 826 tests unchanged.
    Still over: `main.ts` (609) and `render/travel.ts` (593).
 
-7. **[ ] Nothing permanently checks the offline guarantee.** Hard constraint
-   1 says the built page runs from a `file://` open with no external
-   requests. It does — every drive script this week opened it that way — but
-   nothing asserts it, so the day something adds a font or a CDN call, the
-   only thing that notices is a player with no signal. *Measured by: a drive
-   script that opens `dist/index.html` from `file://` with the network
-   blocked, plays a first turn, and fails on any request that leaves the
-   page.*
+7. **[x] Nothing permanently checks the offline guarantee.** *Fixed
+   2026-08-11,* in two halves, because they catch different mistakes.
+   `test/offline.test.ts` runs in `npm test` and reads the PUBLISHED bytes —
+   `index.html`, what a player actually loads — failing on any URL but the
+   SVG namespace, any external script/link/img/iframe/`@import`, and any
+   mention of `XMLHttpRequest`, `WebSocket`, `EventSource` or `sendBeacon`.
+   It also reads the SOURCE, and asserts that **exactly one file in `src/`
+   makes a request at all**: a `fetch` added to a new module fails the suite
+   even if its URL is assembled at runtime.
+   `npm run offline` is the other half — the built page opened from
+   `file://` with the wire cut, played for a couple of days, failing on
+   anything that tries to leave. It needs Playwright, which this project
+   deliberately does not depend on, and it says so and exits rather than
+   pretending to have passed.
+   Both halves were checked by making the mistakes: a CDN stylesheet in the
+   page (static half fails, naming the URL), a `fetch` in a new module
+   (source half fails, naming the file), and a request assembled by string
+   concatenation (invisible to the static half by design, and caught by the
+   runtime one).
+   The audit also settled what the page is ALLOWED, which turned out to be
+   worth stating: two `fetch(` calls survive into the artifact. One is
+   Vite's modulepreload helper iterating a list that is empty in a
+   single-file build; the other is `src/freshness.ts` asking for
+   `build.txt`, same-origin and gated on `location.protocol`, so it cannot
+   fire from `file://`. Both were traced rather than assumed.
+   *Worth adding `npm run offline` to the release ritual in CLAUDE.md —
+   that file is yours, so it is left alone here.*
 
 ### Reach
 
@@ -1289,6 +1308,31 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — The oldest rule in the project, finally asserted** — Hard
+  constraint 1 says the built page runs from a `file://` open with no
+  external requests. It has held since the beginning and was checked
+  nowhere, which made it the most load-bearing untested rule here: the day
+  somebody adds a font or a CDN script, the only thing that notices is a
+  player with no signal, and the failure is total because the whole game is
+  one file.
+  Two halves. `test/offline.test.ts` runs in `npm test` against the
+  PUBLISHED bytes and against the source, and its sharpest assertion is that
+  **exactly one file in `src/` makes a request at all** — so a `fetch` in a
+  new module fails the suite even when its URL is built at runtime and
+  appears nowhere. `npm run offline` is the other half: the page opened from
+  `file://` with the wire cut, played for two days, failing on anything that
+  tries to leave. It needs Playwright, which this project deliberately does
+  not depend on, and it says so and exits rather than pretending to pass.
+  Both were checked by making the mistake — a CDN stylesheet, a `fetch` in a
+  new module, and a URL assembled by string concatenation that the static
+  half cannot see by design and the runtime half caught.
+  The audit also settled what the page is ALLOWED to do, which nobody had
+  written down: two `fetch(` calls survive into the artifact, and both were
+  traced rather than waved through. One is Vite's modulepreload helper
+  walking a list that is empty in a single-file build. The other is
+  `src/freshness.ts` asking for `build.txt` — same-origin, and gated on
+  `location.protocol`, so it cannot fire from `file://` at all.
 
 - **2026-08-11 — The first six people to join a band took the founders'
   names** — A shipped bug, found sideways. `makeWarband` hands the six who

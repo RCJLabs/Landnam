@@ -10,6 +10,7 @@
     "test": "vitest run",
     "play": "vite-node scripts/play.ts --",
     "record": "vite-node scripts/record.ts --",
+    "offline": "npm run build && node scripts/offline.mjs",
     "test:watch": "vitest",
     "release": "npm run build && node scripts/release.mjs",
     "publish": "npm run build && node scripts/publish.mjs"
