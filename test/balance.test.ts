@@ -91,6 +91,9 @@ import { kinPairs } from '../src/sim/kin';
 import { drawOdds, swordOdds } from '../src/sim/joining';
 import { DRAW_ANGER, DRAW_LARDER_DAYS, SWORD_DEEDS, WHY_SWORDS_COME, WHY_THEY_COME } from '../src/data/folk';
 import { forecast, markVisible, reachable } from '../src/sim/winter';
+import { eventChance, isEligible } from '../src/sim/events';
+import { currentMode } from '../src/modes';
+import { stream } from '../src/rng';
 
 const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
 
@@ -955,6 +958,22 @@ function run(
   return state;
 }
 
+
+/**
+ * The seed for arm `arm` of a sweep that plays every seed under two terms.
+ *
+ * `state.seed` carries no hardship, and neither does any RNG label, so
+ * `curve-7` on 'even' and `curve-7` on 'fair' are the same country, the same
+ * landing hex, and the same card drawn on the same day. Running both arms
+ * over one seed list is thirty landings played twice, reported as sixty —
+ * every count doubled and every deviation with it.
+ *
+ * Found by the content-reach probe, where it mattered most: coverage of a
+ * hundred-card deck was being measured against half the sample it claimed.
+ */
+function armSeed(arm: number, s: number, seeds: number): string {
+  return `curve-${s + arm * seeds}`;
+}
 
 /**
  * Founds at the landing if the landing will take posts, else wherever the
@@ -2493,9 +2512,9 @@ describe('the sea is reached', () => {
     // wrong band.
     policy = RAIDER;
     try {
-    for (const terms of ['even', 'fair'] as HardshipId[]) {
+    for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
       for (let s = 0; s < SEEDS; s += 1) {
-        const state = run(`curve-${s}`, 400, (before, after) => {
+        const state = run(armSeed(arm, s, SEEDS), 400, (before, after) => {
           if (!before.expedition && after.expedition) {
             if (after.expedition.purpose === 'raid') underArms += 1;
             else trades += 1;
@@ -2671,10 +2690,10 @@ describe('a band that survives, grows', () => {
     let everGrew = 0;
     const SEEDS = 30;
 
-    for (const terms of ['even', 'fair'] as HardshipId[]) {
+    for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
       for (let s = 0; s < SEEDS; s += 1) {
         let peak = SWORN_MAX;
-        const state = run(`curve-${s}`, 400, (before, after) => {
+        const state = run(armSeed(arm, s, SEEDS), 400, (before, after) => {
           const a = before.party.people.length;
           const b = after.party.people.length;
           if (b > a) arrivals += b - a;
@@ -2733,9 +2752,9 @@ describe('every building gets built', () => {
     let lateTotal = 0;
     const SEEDS = 30;
 
-    for (const terms of ['even', 'fair'] as HardshipId[]) {
+    for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
       for (let s = 0; s < SEEDS; s += 1) {
-        const state = run(`curve-${s}`, 400, undefined, terms);
+        const state = run(armSeed(arm, s, SEEDS), 400, undefined, terms);
         sagas += 1;
         const built = state.settlement?.built ?? [];
         for (const id of built) raised[id] = (raised[id] ?? 0) + 1;
@@ -2800,6 +2819,33 @@ describe('what play actually reaches', () => {
    * is that the deck is broadly alive, and `test/events.test.ts` carries the
    * static half: every gate must name a building, a lore and a flag that
    * actually exist, and no card may be locked behind a flag only it sets.
+   *
+   * AND THE LIST OF COLD CARDS IS MEASURED AGAINST WHAT A HEALTHY DECK WOULD
+   * LEAVE COLD, which is the whole reason this report is worth reading.
+   *
+   * It used to print "never drawn: <fifteen ids>" and stop, which reads like
+   * fifteen pieces of dead content and is nothing of the kind. Taking 837
+   * draws from pools averaging 29 cards, a perfectly fair 102-card deck
+   * leaves about THIRTEEN cards cold. Fifteen is that number. The proof is
+   * below and it is the useful part: every cold card is checked for whether
+   * it was ever ELIGIBLE (none has ever failed that — no card is walled
+   * off), the expected draws are summed from the real pools, and the count
+   * of cold cards is compared against sum(e^-expected) — what a fair deck
+   * predicts. A control replay of the same pools on an unrelated stream is
+   * printed beside it as a sanity check on the arithmetic.
+   *
+   * Two traps this cost a long afternoon to walk out of, recorded so the
+   * next reader does not pay again:
+   *
+   *   - The fifteen cold ids are SELECTED for being zero, so the joint
+   *     probability of "these fifteen are all zero" is meaningless and looks
+   *     damning (it computes to one in a million). The statistic that means
+   *     something is the expected NUMBER of cold cards.
+   *   - Reading a different sample renames the list. Three of the fifteen
+   *     changed places the moment the second arm got its own landings.
+   *
+   * So the signal to act on is `shut` — a card no state ever opens — and a
+   * cold count well ABOVE the prediction. A cold LIST is just arithmetic.
    */
   it('reports everything a long sample never touches', { timeout: 900_000 }, async () => {
     const cards = new Set<string>();
@@ -2815,13 +2861,65 @@ describe('what play actually reaches', () => {
     };
     let sagas = 0;
     const SEEDS = 30;
+    // Days on which each card COULD have been drawn. Without this, a cold
+    // card is ambiguous between two completely different faults: a state the
+    // sample never enters (a reach problem, and the thing this probe is for)
+    // and a state it enters constantly while the card loses every weighted
+    // roll (a weight problem, and not a reach problem at all). Sampled once
+    // per day rather than per step, so it is a day count, not a roll count.
+    const openDays: Record<string, number> = {};
+    const share: Record<string, number> = {};
+    let poolSize = 0;
+    let daysSeen = 0;
+    let daysSettled = 0;
+    let daysCouldFire = 0;
+    let drawsSettled = 0;
+    // Not a game seed — no saga is ever called this, so this stream shares
+    // nothing with the ones the sample is drawing on.
+    const control = stream('control-reach', 'events');
+    const controlWon = new Set<string>();
 
-    for (const terms of ['even', 'fair'] as HardshipId[]) {
+    // A DIFFERENT thirty landings for the second arm — see `armSeed`. This
+    // is where that flaw was found and where it cost the most: coverage of a
+    // hundred-card deck measured against half the sample it claimed.
+    for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
       for (let s = 0; s < SEEDS; s += 1) {
-        const state = run(`curve-${s}`, 400, (before, after) => {
+        const state = run(armSeed(arm, s, SEEDS), 400, (before, after) => {
           if (!before.event && after.event) {
             cards.add(after.event.id);
             draws[after.event.id] = (draws[after.event.id] ?? 0) + 1;
+            if (before.settlement) drawsSettled += 1;
+          }
+          if (after.day !== before.day) {
+            daysSeen += 1;
+            // A day only draws a card if `apply` took the TRAVEL branch and
+            // came out of it clean — a day spent in the colony screen, or one
+            // that ends in a fight, never reaches `maybeFireEvent` at all.
+            // Counting those as chances to draw is what made the model
+            // predict draws for cards that could not physically get one.
+            if (currentMode(before) === 'TRAVEL' && !after.end && !after.battle) {
+              daysCouldFire += 1;
+              const open = EVENTS.filter((def) => isEligible(after, def));
+              const pool = open.reduce((a, e) => a + e.weight, 0);
+              poolSize += open.length;
+              if (after.settlement) daysSettled += 1;
+              // The chance THIS day fires at all, not the sample average: a
+              // walled steading with a full watch is a sixth as interruptible
+              // as the road, and it is exactly where the settled half of the
+              // deck becomes eligible. Averaging the two hides that.
+              const chance = eventChance(after);
+              for (const def of open) {
+                openDays[def.id] = (openDays[def.id] ?? 0) + 1;
+                share[def.id] = (share[def.id] ?? 0) + (def.weight / pool) * chance;
+              }
+              // The control: the same pools and the same odds, drawn with a
+              // stream that has nothing to do with the game's. Whatever it
+              // leaves cold is what the arithmetic alone leaves cold, so the
+              // real cold count has something honest to be compared against.
+              if (open.length > 0 && control.chance(chance)) {
+                controlWon.add(control.weighted(open, (e) => e.weight).id);
+              }
+            }
           }
           if (!before.battle && after.battle) {
             systems.fights += 1;
@@ -2858,15 +2956,58 @@ describe('what play actually reaches', () => {
 
     const totalDraws = Object.values(draws).reduce((a, b) => a + b, 0);
     const cold = EVENTS.filter((e) => !cards.has(e.id)).map((e) => e.id);
+    // A cold card that was never once eligible is unreachable content. A cold
+    // card that was open for hundreds of days just never won a roll, which is
+    // arithmetic, not a wall — the two want different fixes, so they are
+    // reported apart.
+    const shut = cold.filter((id) => (openDays[id] ?? 0) === 0);
+    const unlucky = cold.filter((id) => (openDays[id] ?? 0) > 0);
+    // The deck is what EVENTS holds; `feud` and `thing` are cards the sim
+    // builds by hand and were quietly inflating this ratio above 100%.
+    const drawnFromDeck = EVENTS.filter((e) => cards.has(e.id)).length;
+    // What a perfectly fair deck leaves cold on a sample this size: each
+    // card comes up never with probability e^-expected, so the count of cold
+    // cards is just their sum. THIS is what the cold list has to be read
+    // against — not nought.
+    const predictedCold = EVENTS.reduce((a, e) => a + Math.exp(-(share[e.id] ?? 0)), 0);
+    const controlCold = EVENTS.length - controlWon.size;
     // eslint-disable-next-line no-console
     console.log(
       `reach over ${sagas} sagas:\n` +
-        `  deck ${cards.size}/${EVENTS.length} drawn (${totalDraws} draws, top ten = ` +
+        `  deck ${drawnFromDeck}/${EVENTS.length} drawn (${totalDraws} draws, top ten = ` +
         `${Math.round(
           Object.values(draws).sort((a, b) => b - a).slice(0, 10).reduce((a, b) => a + b, 0) /
             Math.max(1, totalDraws) * 100,
         )}%)\n` +
-        `  never drawn: ${cold.join(', ') || 'none'}\n` +
+        `  never eligible (unreachable): ${shut.join(', ') || 'none'}\n` +
+        `  pool averaged ${(poolSize / Math.max(1, daysSeen)).toFixed(1)} cards a day; ` +
+        `model predicts ${Object.values(share).reduce((a, b) => a + b, 0).toFixed(0)} draws against ${totalDraws} seen\n` +
+        `  on the road: ${totalDraws - drawsSettled} draws over ${daysSeen - daysSettled} days ` +
+        `(${((totalDraws - drawsSettled) / Math.max(1, daysSeen - daysSettled)).toFixed(3)}/day); ` +
+        `settled: ${drawsSettled} draws over ${daysSettled} days ` +
+        `(${(drawsSettled / Math.max(1, daysSettled)).toFixed(3)}/day)\n` +
+        `  eligible but never drawn, of ${daysCouldFire} days that could draw one (${daysSeen} in all): ` +
+        `${unlucky
+          .map((id) => `${id} (${openDays[id]}d, expected ${(share[id] ?? 0).toFixed(2)} draws)`)
+          .join(', ') || 'none'}\n` +
+        `  a FAIR deck on this sample would leave ${predictedCold.toFixed(1)} cards cold; ` +
+        `we saw ${cold.length}; the control, drawing off the same pools with an ` +
+        `unrelated stream, left ${controlCold}\n` +
+        (() => {
+          const rows = EVENTS.map((e) => ({
+            id: e.id,
+            e: share[e.id] ?? 0,
+            a: draws[e.id] ?? 0,
+          })).filter((r) => r.e >= 0.5);
+          const worst = [...rows].sort((a, b) => (a.a - a.e) - (b.a - b.e)).slice(0, 6);
+          const best = [...rows].sort((a, b) => (b.a - b.e) - (a.a - a.e)).slice(0, 6);
+          const fmt = (r: { id: string; e: number; a: number }) => `${r.id}(${r.a}/${r.e.toFixed(1)})`;
+          return (
+            `  cards the sample should have seen at least once (n=${rows.length}), got/expected:\n` +
+            `    furthest under: ${worst.map(fmt).join(', ')}\n` +
+            `    furthest over:  ${best.map(fmt).join(', ')}\n`
+          );
+        })() +
         `  lore ${lore.size}/${LORE.length}, traits ${traits.size}/${TRAITS.length}\n` +
         `  systems: ${Object.entries(systems).map(([k, v]) => `${k} ${v}`).join(', ')}`,
     );
@@ -2875,7 +3016,23 @@ describe('what play actually reaches', () => {
     // project shipped and then measured at or near zero at some point.
     expect(lore.size, 'lore nobody ever learns').toBe(LORE.length);
     expect(traits.size, 'traits nobody is ever born with').toBe(TRAITS.length);
-    expect(cards.size / EVENTS.length, 'most of the deck never comes up').toBeGreaterThan(0.75);
+    expect(drawnFromDeck / EVENTS.length, 'most of the deck never comes up').toBeGreaterThan(0.75);
+
+    // A card no state in the sample ever OPENS is unreachable content, and
+    // that is the finding this probe exists for. Distinct from a card that
+    // was open and never won, which is the sample being finite.
+    expect(shut, `these cards were never once eligible: ${shut.join(', ')}`).toEqual([]);
+
+    // And the cold count against what a fair deck predicts. Barred loosely —
+    // the point is to catch reach COLLAPSING (a gate that stopped opening, a
+    // whole tier walled off), not to re-fail every time the dice land badly.
+    // Measured on 2026-08-11: 15 cold against a prediction of 13.0 and a
+    // control of 12, which is a deck behaving exactly as its weights say.
+    expect(
+      cold.length,
+      `${cold.length} cards came up cold where a fair deck predicts ${predictedCold.toFixed(1)} ` +
+        `(control ${controlCold}) — reach has fallen off, this is not the dice`,
+    ).toBeLessThan(predictedCold + 12);
 
     for (const [name, floor] of [
       ['fights', 20], ['raids', 5], ['raidsHeld', 1], ['sackings', 5],

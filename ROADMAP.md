@@ -865,11 +865,30 @@ is a wish.
    sixty and cannot be barred on at any affordable N, so they are printed
    and not asserted.
 
-9. **[ ] Re-run the content-reach probe and act on the top miss.** It is a
-   permanent fixture now (audit item 6) and it has not been read since the
-   raiding work, three save versions ago. An instrument that reports and is
-   never acted on is decoration. *Measured by: the probe's own output, and a
-   fix for whatever it names.*
+9. **[x] Re-run the content-reach probe and act on the top miss.** Done, and
+   the top miss was the probe. It printed `never drawn: <fifteen ids>` and
+   stopped, which reads like fifteen pieces of dead content; every one of
+   them turns out to be reachable, and a fair deck on a sample this size
+   leaves about thirteen cards cold no matter what. The list was reporting
+   the arithmetic of sampling, not reach — and reading a different sample
+   renames it.
+
+   Two real faults came out of chasing it. The probe ran `curve-0..29` under
+   BOTH hardships, and `state.seed` carries no hardship, and nor does any
+   RNG label — so `curve-7` on 'even' and `curve-7` on 'fair' are the same
+   country, the same landing hex and the same card on the same day. "Sixty
+   sagas" was thirty played twice with every count doubled. Three other
+   probes in the file made the same claim and are fixed with it (`armSeed`).
+   And the deck ratio counted `feud` and `thing`, cards the sim builds by
+   hand, which pushed coverage above 100% of a deck they are not in.
+
+   The probe now measures the cold list against what a healthy deck predicts
+   — `sum(e^-expected)` off the real pools, printed beside a control drawing
+   from the same pools on an unrelated stream. 15 cold against a prediction
+   of 12.5 and a control of 12. What is barred is a card no state ever makes
+   eligible, and a cold count far above prediction; a cold LIST is not a
+   finding. *Measured by: the probe's own output, which now carries its own
+   baseline.*
 
 10. **[ ] A challenge you can only send after you die.** The code is
     produced on the ending screen and nowhere else, so a player who wants to
@@ -1330,6 +1349,32 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — The cold list was arithmetic, and the sample was half what
+  it said** — The content-reach probe has been reporting fifteen cards
+  "never drawn" and it means nothing: no card in the deck is unreachable,
+  every one of the fifteen was eligible — some for hundreds of days — and a
+  perfectly fair 102-card deck, given 857 draws from pools averaging 29,
+  leaves about thirteen cold. Fifteen IS that number. The probe now prints
+  the prediction and a control replay next to the count, and bars a card no
+  state ever opens rather than a card the dice never picked.
+
+  Chasing it turned up the fault worth having. The probe played
+  `curve-0..29` under both hardships, and no hardship reaches the RNG: same
+  seed, same country, same landing hex, the same card drawn on the same day.
+  Sixty sagas were thirty played twice, every count doubled and every
+  deviation with them — which is what made fifteen zeros look impossible
+  when they were ordinary. Three other probes claimed sixty on the same
+  thirty and now get their own landings (`armSeed`). Also: deck coverage was
+  counting `feud` and `thing`, which the sim builds by hand and are not in
+  the deck, so 89 of 102 was printed beside a list of 15.
+
+  Recorded because it cost an afternoon: the fifteen ids are SELECTED for
+  being zero, so the joint probability of "all fifteen zero" is meaningless
+  and computes to one in a million. The statistic that means something is
+  the expected NUMBER of cold cards. Along the way the RNG, the weighted
+  picker and the fire path were each cleared by direct measurement — the
+  picker draws all 102 cards at their stated rates over 200k trials.
 
 - **2026-08-11 — A Hard Country is a difficulty, not a wall** — The hardest
   setting the menu offers was the one nothing knew anything about: the
