@@ -2137,6 +2137,7 @@ describe('the long game', () => {
   const LONG_TERMS: HardshipId = 'fair';
 
 
+
   it('plays to day 500 and reports what the years actually do', { timeout: 600_000 }, async () => {
     void LONG_TERMS;
     let reachedJarl = 0;
@@ -2176,8 +2177,23 @@ describe('the long game', () => {
     // measures half the sample and says nothing about the other half.
     let allEarlyFoes = 0, allEarlyFights = 0, allLateFoes = 0, allLateFights = 0;
     let allFriends = 0, allCouldCall = 0, allHalls = 0, allSecondWinters = 0, allJarls = 0;
+    /**
+     * How many sagas reached the first winter, per country.
+     *
+     * The bar that answers "is A Hard Country a difficulty or a wall?" — a
+     * question nothing could answer until 2026-08-11, because the long game
+     * ran `even` and `fair` only and the hardship sweep stops at day 73, so
+     * the hardest setting the menu offers was the one nothing knew anything
+     * about past the first spring.
+     *
+     * It is barred on the FIRST WINTER rather than on anything later,
+     * because that is the one reading on `hard` a twenty-seed sample can
+     * carry: 44 of 60 at the widened measurement. Jarldoms on hard happen
+     * about once in sixty and cannot be barred on at any affordable N.
+     */
+    const firstWinters: Record<string, number> = {};
 
-    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+    for (const TERMS of ['even', 'fair', 'hard'] as HardshipId[]) {
     reachedJarl = 0; ruledYears = 0; alive = 0; days = 0;
     earlyFoes = 0; earlyFights = 0; lateFoes = 0; lateFights = 0; raids = 0;
     sawSecondWinter = 0; everHadHall = 0; everHadFriend = 0; everCouldCall = 0;
@@ -2216,6 +2232,7 @@ describe('the long game', () => {
         if (met) metAnybody += 1;
       }
       days += state.day;
+      if (state.day >= 49) firstWinters[TERMS] = (firstWinters[TERMS] ?? 0) + 1;
       if (state.day >= 169) sawSecondWinter += 1;
       if (hall) everHadHall += 1;
       if (friend) everHadFriend += 1;
@@ -2240,7 +2257,8 @@ describe('the long game', () => {
         `  foes per fight: ${per(earlyFoes, earlyFights)} early (${earlyFights} fights), ` +
         `${per(lateFoes, lateFights)} late (${lateFights} fights); ${raids} raids\n` +
         `  road to the Thing: ${sawSecondWinter} saw a second winter, ${everHadHall} raised a ` +
-        `mead hall, ${everHadFriend} made a friend, ${everCouldCall} could ever call it`,
+        `mead hall, ${everHadFriend} made a friend, ${everCouldCall} could ever call it\n` +
+        `  reached the first winter: ${firstWinters[TERMS] ?? 0}/${LONG_SEEDS}`,
     );
     allEarlyFoes += earlyFoes; allEarlyFights += earlyFights;
     allLateFoes += lateFoes; allLateFights += lateFights;
@@ -2256,10 +2274,22 @@ describe('the long game', () => {
     const spoke = peaks.filter((v) => v >= SPEAKER_STANDING).length;
     // eslint-disable-next-line no-console
     console.log(
-      `the coast, both arms pooled — ${settledSagas} settled sagas, ${metAnybody} met somebody:\n` +
+      `the coast, all countries pooled — ${settledSagas} settled sagas, ${metAnybody} met somebody:\n` +
         `  peak standing with anyone: median ${median.toFixed(1)}, best ${(peaks[peaks.length - 1] ?? 0).toFixed(1)}; ` +
         `${spoke} ever reached the ${SPEAKER_STANDING} a speaker needs`,
     );
+
+    // A Hard Country is a DIFFICULTY, not a wall, and this is where that
+    // stays true. Measured over sixty seeds on 2026-08-11: it reaches the
+    // first winter 44 times in 60 against `even`'s 48, and everything past
+    // it is reachable but thin — 5 springs, 1 second winter, 1 jarldom, 26
+    // steadings founded, 21 that built something, 45 that met the coast.
+    // Punishing, and not a brick wall, which is what the label promises.
+    const hardWinters = firstWinters['hard'] ?? 0;
+    expect(
+      hardWinters / LONG_SEEDS,
+      `A Hard Country reached the first winter in only ${hardWinters}/${LONG_SEEDS} — that is a wall, not a difficulty`,
+    ).toBeGreaterThan(0.5);
 
     // The bars. First that the endgame is REACHED at all — this whole test
     // exists because it never was, and a harness that stops reaching it has

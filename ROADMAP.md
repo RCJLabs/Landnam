@@ -65,7 +65,7 @@ default is deliberately NOT the balanced one:
 | --- | --- | --- |
 | A Fair Country *(default)* | 60% | 161 days a saga, 13 mead halls, 3 jarls |
 | As It Lies *(what everything is tuned against)* | 25% | 86 days a saga, 1 jarl |
-| A Hard Country | 7% | — |
+| A Hard Country | 7% | 65 days a saga, 1 jarl (60 sagas) |
 
 The spring figures fell 7, 5 and 1 point when the fixed places were brought
 onto the same coast as the band (audit item 1) — a country with a garrisoned
@@ -836,12 +836,34 @@ is a wish.
 
 ### Reach
 
-8. **[ ] Is A Hard Country a difficulty or a wall?** It reads 7% to the
-   first spring and has never been measured past it — the long game runs
-   `even` and `fair` only, and the three-strategy sweep runs `fair`. So the
-   hardest setting the menu offers is the one nothing knows anything about,
-   including whether it is winnable. *Measured by: the curve and the long
-   game on `hard` at sixty seeds, reported beside the other two.*
+8. **[x] Is A Hard Country a difficulty or a wall?** *Measured 2026-08-11:
+   a difficulty.* Sixty sagas to day 500 on `hard`, beside `even`:
+
+   | over 60 sagas | As It Lies | A Hard Country |
+   | --- | --- | --- |
+   | reached the first winter | 48 | **44** |
+   | saw spring | 17 | 5 |
+   | second winter | 7 | 1 |
+   | became jarl | 4 | **1** |
+   | founded a steading | 38 | 26 |
+   | built something | 33 | 21 |
+   | met a neighbour | 58 | 45 |
+   | avg days | 95 | 65 |
+
+   Everything is reachable, including the endgame — one band in sixty takes
+   a jarldom on the hardest terms the menu offers, and one survived to day
+   500. Punishing, and not a brick wall, which is what the label promises.
+
+   **The sharper reading is what hardship actually does.** It barely changes
+   whether a band reaches the first winter — 44 against 48, and at twenty
+   seeds `hard` and `even` both read 17/20. What it changes is whether they
+   survive it: 5 springs against 17. The first forty-nine days are mostly
+   walking, and the terms bite in the dark half.
+   `hard` is now a permanent third arm of the long game, barred on the first
+   winter — the one reading on that country a twenty-seed sample can carry
+   (17/20 measured, barred at half). Jarldoms on `hard` happen about once in
+   sixty and cannot be barred on at any affordable N, so they are printed
+   and not asserted.
 
 9. **[ ] Re-run the content-reach probe and act on the top miss.** It is a
    permanent fixture now (audit item 6) and it has not been read since the
@@ -1308,6 +1330,25 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — A Hard Country is a difficulty, not a wall** — The hardest
+  setting the menu offers was the one nothing knew anything about: the
+  hardship sweep stops at day 73 and the long game ran `even` and `fair`
+  only, so past the first spring `hard` was unmeasured. Sixty sagas to day
+  500 settle it. Everything is reachable — 26 steadings founded, 21 that
+  built something, 45 that met the coast, one second winter, **one jarldom**
+  and one band alive on day 500. Punishing, and not a brick wall, which is
+  what the label promises.
+  The sharper reading is what hardship actually DOES. It barely changes
+  whether a band reaches the first winter — 44 of 60 against `even`'s 48,
+  and at twenty seeds the two read the same 17/20. What it changes is
+  whether they survive it: 5 springs against 17. The first forty-nine days
+  are mostly walking; the terms bite in the dark half of the year.
+  `hard` is a permanent third arm of the long game now, barred on the first
+  winter, which is the one reading on that country a twenty-seed sample can
+  carry. Jarldoms there happen about once in sixty and cannot be barred on
+  at any affordable N, so they are printed and not asserted — the same rule
+  the jarldom scare of the morning taught.
 
 - **2026-08-11 — The oldest rule in the project, finally asserted** — Hard
   constraint 1 says the built page runs from a `file://` open with no
