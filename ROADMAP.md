@@ -37,6 +37,9 @@ ends" table and pick the work up without re-deriving a day of measurement.*
 **Shipped:** Phases 0–4 complete. 5.1 Sound, 5.2 Onboarding and 5.3 Balance &
 juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 
+**The current queue is the audit of 2026-08-11** — ten items, all doable
+without leaving this repo, two of them bugs shipped in the last two days.
+
 **Phase 7 is the Unreal build**, running in parallel in another repo — a hex
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
@@ -669,6 +672,107 @@ target platform and team — embedding JS keeps one sim and one suite at the
 cost of native performance and Blueprint ergonomics; C++ is the exact
 opposite. And **do not port the colony UI early**: it is the least visual
 mode and the most work per unit of payoff. Travel and battle first.
+
+## The next queue — audit of 2026-08-11
+
+Written from the far side of three days of port work, and it is a different
+kind of list again. The 2026-08-08 audit asked what the game REACHES. This
+one is mostly things this week's own work broke, left half-done, or measured
+and walked past — which is the honest place to look after a stretch of
+building. Two of the ten are bugs shipped inside the last two days.
+
+Ordered as the others are: what is wrong now, then depth, then reach. Every
+item names how it would be measured, because an item that cannot be measured
+is a wish.
+
+### Wrong now
+
+1. **[ ] The chase is invisible until you die.** Seed challenges shipped
+   2026-08-11 and the mark shows on the title screen and the ending screen
+   and *nowhere in between*. A player chasing day 128 has no way to know
+   they are on day 96 — the one number the whole run is about is the one
+   number the run does not show. `announce.ts` does not mention it either,
+   so a screen-reader listener has it worse. *Measured by: driving the built
+   page mid-run and finding the mark; `standing()` naming it in the live
+   region; both in a fixture.*
+
+2. **[ ] Every action deep-clones a world that never changes.** Measured
+   2026-08-11 while costing the Unreal bridge: `apply` spends **2.2 ms** an
+   action cloning the whole GameState, and **0.045 ms** of that is
+   everything except `world` — the other 98% is copying 78 KB of tiles
+   generated once at worldgen and never written again. This container is
+   faster than the phones this game is played on. `world.seen` and
+   `world.trod` DO change, so the fix is structural sharing of `tiles` and
+   `places` rather than of the whole world, and the risk is a shared object
+   somebody later mutates. *Measured by: per-action milliseconds before and
+   after, plus a test that fails if anything writes to `world.tiles`.*
+
+3. **[ ] Finish the coast diagnosis: what was in the larder.** The barter
+   measurement found 29% of trade visit-days blocked on `stores` — a band
+   walks a fortnight and arrives unable to spare the eight food it came to
+   spend. But the party's food IS the whole band's larder, so that may
+   simply be "poor bands are poor" wearing a costume, and the two readings
+   want opposite fixes. Ten minutes, and it is the last thing between the
+   coast finding and a design decision that is not a guess. *Measured by:
+   the distribution of `party.food` on blocked visit-days.*
+
+### Depth
+
+4. **[ ] The beat stream's travel and colony half.** Phase 7 item 3 shipped
+   battle only, deliberately, because that is where ORDER matters. The other
+   two modes still hand a presentation layer nothing but prose.
+   `chronicle()` is the seam — 300-odd call sites that already write ordered
+   text and want the same structured payload beside it. Mechanical, no
+   design decisions. *Measured by: the same reach bar battle got — every
+   beat kind emitted in real play, checked against a kind that does not
+   exist so the bar can fail.*
+
+5. **[ ] The harness can play well and cannot write it down.** Every repro
+   script and seed challenge is currently produced by `scripts/record.ts`,
+   which plays deliberately badly and dies on day 36. The bot that plays
+   properly is in `test/balance.test.ts` and has no way to emit an action
+   list, so there is no such thing as a recorded run that reaches the
+   endgame — exactly the runs worth having a repro of. *Measured by: a
+   committed script that reaches day 169 and replays with zero refusals.*
+
+6. **[ ] `render/cards.ts` is 749 lines and I made it worse.** The style
+   rule is under ~300, split by domain. This file holds the title, the event
+   card, the roster, the founding panel, the launch panel, the saga book,
+   settings, the guide, the proclamation and the ending screen, and the
+   challenge work added to it. `render/travel.ts` (593) and `main.ts` (609)
+   breach it too. *Measured by: line counts, and the suite staying green
+   across the move.*
+
+7. **[ ] Nothing permanently checks the offline guarantee.** Hard constraint
+   1 says the built page runs from a `file://` open with no external
+   requests. It does — every drive script this week opened it that way — but
+   nothing asserts it, so the day something adds a font or a CDN call, the
+   only thing that notices is a player with no signal. *Measured by: a drive
+   script that opens `dist/index.html` from `file://` with the network
+   blocked, plays a first turn, and fails on any request that leaves the
+   page.*
+
+### Reach
+
+8. **[ ] Is A Hard Country a difficulty or a wall?** It reads 7% to the
+   first spring and has never been measured past it — the long game runs
+   `even` and `fair` only, and the three-strategy sweep runs `fair`. So the
+   hardest setting the menu offers is the one nothing knows anything about,
+   including whether it is winnable. *Measured by: the curve and the long
+   game on `hard` at sixty seeds, reported beside the other two.*
+
+9. **[ ] Re-run the content-reach probe and act on the top miss.** It is a
+   permanent fixture now (audit item 6) and it has not been read since the
+   raiding work, three save versions ago. An instrument that reports and is
+   never acted on is decoration. *Measured by: the probe's own output, and a
+   fix for whatever it names.*
+
+10. **[ ] A challenge you can only send after you die.** The code is
+    produced on the ending screen and nowhere else, so a player who wants to
+    set a friend the seed they are enjoying has to lose first. The deeds
+    sheet is the natural home. Small, and it is the difference between a
+    feature people use and one they meet once. *Measured by: reaching the
+    code from a live run in the built page, and its terms matching the run.*
 
 ## The next queue — audit of 2026-08-08
 
