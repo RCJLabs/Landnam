@@ -41,7 +41,7 @@ juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 755 tests), the renderers are disposable, and the port lives
+content under 758 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -490,8 +490,8 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **755 tests
-in 38 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+with 5,000 more of typed content in `src/data/`, standing under **758 tests
+in 39 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
 what makes this a port rather than a rewrite. Every item below exists to
@@ -511,14 +511,28 @@ what 3D actually buys, then what gets harder.
    every balance finding in this document. *Measured by: N seeds played
    through both, asserting identical `GameState`, in CI.*
 
-2. **[ ] Nail cross-language determinism before anything depends on it.**
-   `src/rng.ts` is FNV-1a over the seed string feeding mulberry32, and it
-   leans on `Math.imul` and `>>> 0` — exactly specifiable in C++ with
-   `uint32_t` wrapping, and exactly the sort of thing that goes wrong
-   quietly. Stream names and derive labels are part of the contract: rename
-   one and every existing seed produces a different world. *Measured by: a
-   fixture of a few thousand `(seed, label) → sequence` triples generated
-   from the TypeScript and asserted in the port.*
+2. **[x] Nail cross-language determinism before anything depends on it.**
+   *Shipped 2026-08-10.* `port/rng-fixture.json` pins 174 absolute values
+   generated from `src/rng.ts` — hashes, raw uint32 draws, every stream
+   name, derive chains, and the helpers with their draw COUNTS. Stored as
+   integers, never decimals, because a decimal is somewhere two languages
+   can print the same number differently. `port/rng.md` is the spec;
+   `port/rng_reference.cpp` is a C++ implementation that was compiled and
+   run against the fixture rather than merely written beside it — g++ 13.3,
+   174 of 174 matching.
+
+   The fixture earns its keep here too, which was not the plan. `test/rng.
+   test.ts` proves the generator is SELF-consistent and would pass if the
+   algorithm were swapped wholesale; `test/rngport.test.ts` fails on a
+   one-digit change to the FNV prime, checked by making that change. This
+   repo could previously alter every seed in every save with nothing to say
+   so.
+
+   The seed cases were then validated rather than assumed, and the reading
+   sharpened the spec: hashing `landnam` as UTF-8 bytes, UTF-16 units or
+   code points gives **the same answer all three ways** — so no ASCII seed
+   can ever catch this. `Þórr` catches a UTF-8 port. Only `😀` catches a
+   code-point port. All four are in the fixture for that reason.
 
 3. **[x] Design the sim→presentation event stream now.** *Battle half
    shipped 2026-08-10.* `src/sim/beats.ts` — fifteen kinds covering
@@ -1042,6 +1056,29 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-10 — The seed is the world, so the seed gets a contract (Phase 7
+  item 2)** — `port/` is new: the things a second implementation of this sim
+  must agree with this one about. First entry is the generator, because
+  every world, event and blow comes out of it and `Math.random` is banned,
+  so a port that is one bit off reproduces nothing — while passing its own
+  test suite the whole time, since a self-consistent generator is still
+  self-consistent when it is wrong.
+  `port/rng-fixture.json` pins 174 absolute values as INTEGERS (a decimal is
+  somewhere two languages can disagree without either being wrong): hashes,
+  raw uint32 draws, all six stream names, derive chains, and the helpers
+  with their draw counts — a `roll(2,6)` that takes one draw instead of two
+  stays in step for exactly one call and diverges forever after.
+  `port/rng.md` is the spec and `port/rng_reference.cpp` a C++
+  implementation **compiled and run against the fixture**, 174 of 174.
+  Two things it turned out to be worth beyond the port. It is a tripwire
+  this repo did not have: `test/rng.test.ts` never pins an absolute value,
+  so the generator could be changed by accident and every seed in every save
+  with it — `test/rngport.test.ts` now fails on a one-digit change to the
+  FNV prime, verified by making it. And checking the seed cases instead of
+  trusting them sharpened the spec: `landnam` hashes identically as UTF-8,
+  UTF-16 or code points, so **no ASCII seed can ever catch this bug**;
+  `Þórr` catches a UTF-8 port; only `😀` catches a code-point one.
 
 - **2026-08-10 — Bartering was never the problem; the walk was** — The
   standing wall, diagnosed before being tuned, and the tidy explanation
