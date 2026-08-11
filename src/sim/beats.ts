@@ -18,7 +18,7 @@
 // travel and colony can be redrawn from a state snapshot, but a fight is a
 // sequence and a renderer that only sees the end of it has nothing to show.
 
-import type { Battle, BattleOutcome, Side } from '../state/types';
+import type { Battle, BattleOutcome, GameState, Side } from '../state/types';
 import type { Hex } from '../hex';
 
 /** Every kind of thing that can happen on a field. */
@@ -190,4 +190,178 @@ export function beatsSince(battle: Battle, since: number): { beats: Beat[]; mark
   const list = battle.beats ?? [];
   const beats = list.filter((b) => b.n > since);
   return { beats, mark: list[list.length - 1]?.n ?? since };
+}
+
+// --- The world outside a fight ---
+//
+// The battle half of this shipped first because a fight is the mode where
+// ORDER matters most: it is a sequence, and a view that only sees the end of
+// it has nothing to show. Travel and colony are gentler — a day can largely
+// be redrawn from a snapshot — but not entirely, and the parts that cannot
+// are exactly the parts a player feels. Six mouths eating the last of the
+// food, the fire going out, a roof finished, somebody walking over the ridge
+// to join: those happen in an order, inside a single `passDay`, and a
+// renderer handed only the state afterwards knows the woodpile is smaller
+// and nothing about the night.
+//
+// Same shape as the battle stream, one deliberate difference: a battle beat
+// is stamped with its ROUND and a world beat with its DAY, because that is
+// the clock each of them actually runs on.
+
+export type WorldBeatKind =
+  | 'dawn'
+  | 'ate'
+  | 'burned'
+  | 'worked'
+  | 'hurt'
+  | 'died'
+  | 'seasonTurned'
+  | 'marched'
+  | 'gathered'
+  | 'founded'
+  | 'built'
+  | 'joined'
+  | 'left'
+  | 'met'
+  | 'bargained';
+
+interface WorldBase {
+  /** Rises for the life of the run and never resets. */
+  n: number;
+  day: number;
+}
+
+/** A day began. Everything below it belongs to that day. */
+export interface DawnBeat extends WorldBase {
+  kind: 'dawn';
+  season: string;
+}
+
+/** What the mouths and the fire took. `short` is the part there was not. */
+export interface UpkeepBeat extends WorldBase {
+  kind: 'ate' | 'burned';
+  took: number;
+  needed: number;
+  short: number;
+}
+
+/** What the day's labour produced. */
+export interface WorkedBeat extends WorldBase {
+  kind: 'worked';
+  food: number;
+  firewood: number;
+  works: number;
+}
+
+export interface HurtBeat extends WorldBase {
+  kind: 'hurt';
+  who: string;
+  amount: number;
+  cause: string;
+}
+
+export interface DiedBeat extends WorldBase {
+  kind: 'died';
+  who: string;
+  cause: string;
+}
+
+export interface SeasonBeat extends WorldBase {
+  kind: 'seasonTurned';
+  season: string;
+}
+
+/** The band crossed ground. `days` because a march is not always one. */
+export interface MarchedBeat extends WorldBase {
+  kind: 'marched';
+  from: Hex;
+  to: Hex;
+  days: number;
+  terrain: string;
+  bySea?: true;
+}
+
+/** Food taken off the land: foraged, hunted or fished. */
+export interface GatheredBeat extends WorldBase {
+  kind: 'gathered';
+  how: 'forage' | 'hunt' | 'fish';
+  got: number;
+  who?: string;
+}
+
+export interface FoundedBeat extends WorldBase {
+  kind: 'founded';
+  at: Hex;
+  name: string;
+}
+
+export interface BuiltBeat extends WorldBase {
+  kind: 'built';
+  building: string;
+}
+
+/** Somebody came, or somebody went. */
+export interface FolkBeat extends WorldBase {
+  kind: 'joined' | 'left';
+  who: string;
+  name: string;
+}
+
+export interface MetBeat extends WorldBase {
+  kind: 'met';
+  id: string;
+  name: string;
+}
+
+export interface BargainedBeat extends WorldBase {
+  kind: 'bargained';
+  id: string;
+  gave: number;
+  got: number;
+  standing: number;
+}
+
+export type WorldBeat =
+  | DawnBeat
+  | UpkeepBeat
+  | WorkedBeat
+  | HurtBeat
+  | DiedBeat
+  | SeasonBeat
+  | MarchedBeat
+  | GatheredBeat
+  | FoundedBeat
+  | BuiltBeat
+  | FolkBeat
+  | MetBeat
+  | BargainedBeat;
+
+type UnstampedWorld<T> = T extends WorldBeat ? Omit<T, 'n' | 'day'> : never;
+
+/**
+ * World beats kept at once.
+ *
+ * Smaller than the battle's, and for the opposite reason: a fight is over in
+ * an hour and its whole stream is worth keeping, while a run is five hundred
+ * days and nobody is going to replay day 12 from a save. A live view drains
+ * this every action; the cap only decides how far behind a view may fall
+ * before it misses something it was never going to draw.
+ */
+export const WORLD_BEATS_MAX = 200;
+
+/** Records a world beat. Reads nothing, decides nothing. */
+export function worldBeat(state: GameState, body: UnstampedWorld<WorldBeat>): void {
+  const list = state.beats ?? (state.beats = []);
+  const n = (list[list.length - 1]?.n ?? 0) + 1;
+  list.push({ ...body, n, day: state.day } as WorldBeat);
+  if (list.length > WORLD_BEATS_MAX) list.splice(0, list.length - WORLD_BEATS_MAX);
+}
+
+/** Everything since `since`, and the mark to pass in next time. */
+export function worldBeatsSince(
+  state: GameState,
+  since: number,
+): { beats: WorldBeat[]; mark: number } {
+  const list = state.beats ?? [];
+  return { beats: list.filter((b) => b.n > since), mark: list[list.length - 1]?.n ?? since };
 }

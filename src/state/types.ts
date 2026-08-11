@@ -7,7 +7,7 @@ import type { HardshipId } from '../data/hardship';
 // Types only, and the arrow points back here for Battle — which TypeScript is
 // happy with and which keeps the beat vocabulary next to the code that emits
 // it rather than buried in the model.
-import type { Beat } from '../sim/beats';
+import type { Beat, WorldBeat } from '../sim/beats';
 import type { Mark } from '../sim/challenge';
 
 export type { HardshipId };
@@ -524,6 +524,13 @@ export interface GameState {
    * the tab being closed on day 12 of a chase.
    */
   chasing?: Mark;
+  /**
+   * The run as data: the ordered events of a day, for a presentation layer
+   * that has to show them happening rather than print them. The battle
+   * equivalent lives on `Battle.beats` and dies with the fight; this one
+   * runs for the life of the saga and is trimmed to WORLD_BEATS_MAX.
+   */
+  beats?: WorldBeat[];
   /** Set once the Thing has carried and the band rules the coast. */
   jarl?: Jarldom;
   /** Monotonic counter making generated ids deterministic. */

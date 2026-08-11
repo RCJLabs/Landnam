@@ -4,6 +4,7 @@
 import type { GameState, Person, RunEnd } from '../state/types';
 import { effectsOn, nextThaw, seasonOf, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from './calendar';
 import { LONG_LIFE_WINTERS } from '../data/thing';
+import { worldBeat } from './beats';
 import { hardshipById } from '../data/hardship';
 import { living } from './people';
 import { stream } from '../rng';
@@ -103,10 +104,12 @@ function weakest(people: Person[]): Person | undefined {
 
 function wound(state: GameState, person: Person, amount: number, fate: string): void {
   person.health -= amount;
+  worldBeat(state, { kind: 'hurt', who: person.id, amount, cause: fate });
   if (person.health <= 0) {
     person.health = 0;
     person.alive = false;
     person.fate = fate;
+    worldBeat(state, { kind: 'died', who: person.id, cause: fate });
     chronicle(state, `${person.name} ${person.byname} died of ${fate}. We had no ground fit to bury them in.`, 'grim');
     mourn(state, person);
   }
@@ -145,26 +148,44 @@ function mendInjuries(state: GameState): void {
 export function passDay(state: GameState): boolean {
   if (state.end) return false;
 
+  const wasSeason = seasonOf(state.day);
   state.day += 1;
   const party = state.party;
   const season = seasonOf(state.day);
   const effects = effectsOn(state.day);
+  worldBeat(state, { kind: 'dawn', season });
+  // The turn of the year, said once and at the moment it happens. A view
+  // that diffed two states could work this out; a view being handed a
+  // sequence should not have to.
+  if (season !== wasSeason) worldBeat(state, { kind: 'seasonTurned', season });
 
   // Work comes before eating: what the day produced is available to the mouths
   // it has to feed that same evening.
+  const foodBefore = party.food;
+  const woodBefore = party.firewood;
   const labour = workTheDay(state);
+  if (party.food !== foodBefore || party.firewood !== woodBefore) {
+    worldBeat(state, {
+      kind: 'worked',
+      food: party.food - foodBefore,
+      firewood: party.firewood - woodBefore,
+      works: 0,
+    });
+  }
 
   // Mouths.
   const needed = foodPerDay(state);
   const eaten = Math.min(party.food, needed);
   party.food -= eaten;
   const hungry = eaten < needed;
+  worldBeat(state, { kind: 'ate', took: eaten, needed, short: needed - eaten });
 
   // Fire. A roof of your own is worth firewood you do not have to cut.
   const wood = Math.max(0, firewoodPerNight(state) - shelterSaving(state));
   const burned = Math.min(party.firewood, wood);
   party.firewood -= burned;
   const cold = burned < wood;
+  worldBeat(state, { kind: 'burned', took: burned, needed: wood, short: wood - burned });
 
   if (hungry) {
     party.morale = Math.max(0, party.morale - 8);

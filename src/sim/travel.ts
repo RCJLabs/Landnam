@@ -2,6 +2,7 @@
 // least a day, and the day is what kills you.
 
 import { cloneState } from '../state/clone';
+import { worldBeat } from './beats';
 import { distance, key, line, neighbors, range, type Hex } from '../hex';
 import { stream, type Rng } from '../rng';
 import { terrainDef } from '../data/terrain';
@@ -331,6 +332,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const wasOn = state.world.tiles[key(party.at)]?.terrain;
       const changedGround = wasOn !== tile.terrain;
       const fromSea = wasOn === 'ocean' && tile.terrain !== 'ocean';
+      const cameFrom = prev.party.at;
       party.at = action.to;
       party.hasCamped = false;
       // Remember the route, not just the view: the map draws where we walked.
@@ -340,6 +342,14 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       advance(state, days);
       if (state.end) return state;
       reveal(state);
+      worldBeat(state, {
+        kind: 'marched',
+        from: cameFrom,
+        to: action.to,
+        days,
+        terrain: tile.terrain,
+        ...(tile.terrain === 'ocean' ? { bySea: true as const } : {}),
+      });
       chronicle(state, marchLine(state, tile.terrain, days, changedGround, fromSea));
       return state;
     }
@@ -398,6 +408,12 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const def = terrainDef(here.terrain);
       const { amount, scout } = gather(state, def.forage, 'wits', 'forage');
       party.food += amount;
+      worldBeat(state, {
+        kind: 'gathered',
+        how: 'forage',
+        got: amount,
+        ...(scout ? { who: scout.id } : {}),
+      });
       advance(state, 1);
       if (state.end) return state;
       reveal(state);
@@ -417,6 +433,12 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const def = terrainDef(here.terrain);
       const { amount, scout } = gather(state, def.hunt, 'wits', 'hunt');
       party.food += amount;
+      worldBeat(state, {
+        kind: 'gathered',
+        how: 'hunt',
+        got: amount,
+        ...(scout ? { who: scout.id } : {}),
+      });
       advance(state, 1);
       if (state.end) return state;
       reveal(state);
@@ -434,6 +456,11 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // Setting the posts is a day's work like any other, and the last time
       // this choice will be offered.
       if (!foundSettlement(state)) return prev;
+      worldBeat(state, {
+        kind: 'founded',
+        at: state.settlement!.at,
+        name: state.settlement!.name,
+      });
       advance(state, 1);
       if (state.end) return state;
       reveal(state);
@@ -565,6 +592,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const base = Math.max(def.fish, here.river ? 3 : 0, 2);
       const { amount } = gather(state, base, 'wits', 'fish');
       party.food += amount;
+      worldBeat(state, { kind: 'gathered', how: 'fish', got: amount });
       advance(state, 1);
       if (state.end) return state;
       reveal(state);

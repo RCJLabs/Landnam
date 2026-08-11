@@ -44,7 +44,7 @@ without leaving this repo, two of them bugs shipped in the last two days.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 814 tests), the renderers are disposable, and the port lives
+content under 818 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -499,7 +499,7 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **814 tests
+with 5,000 more of typed content in `src/data/`, standing under **818 tests
 in 43 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
@@ -752,14 +752,26 @@ is a wish.
 
 ### Depth
 
-4. **[ ] The beat stream's travel and colony half.** Phase 7 item 3 shipped
-   battle only, deliberately, because that is where ORDER matters. The other
-   two modes still hand a presentation layer nothing but prose.
-   `chronicle()` is the seam — 300-odd call sites that already write ordered
-   text and want the same structured payload beside it. Mechanical, no
-   design decisions. *Measured by: the same reach bar battle got — every
-   beat kind emitted in real play, checked against a kind that does not
-   exist so the bar can fail.*
+4. **[x] The beat stream's travel and colony half.** *Shipped 2026-08-11.*
+   Thirteen `WorldBeat` kinds — dawn, ate, burned, worked, hurt, died,
+   seasonTurned, marched, gathered, founded, built, joined, met — on
+   `GameState.beats` (SAVE_VERSION 30). Stamped with the DAY where a battle
+   beat carries its round, because that is the clock each mode actually runs
+   on.
+   `chronicle()` turned out to be the wrong seam. Emitting a beat per saga
+   line would only have handed a renderer the prose again, structured as
+   `{day, text, tone}` — which `state.saga` already is. What a presentation
+   layer needs is the ordered inside of `passDay`: six mouths eating the
+   last of the food, the fire going out, a roof finished, somebody walking
+   over the ridge. So the beats sit at those sites instead.
+   The reach bar cost four rounds and every one of them was the BOT, never
+   the game — founding on day one so `canGather` was false and nothing was
+   ever foraged; stalling inside COLONY with no way back out, so days
+   stopped on day 9; trying jobs from the top of the list every time, so all
+   six people became farmers, nobody cut wood, and every seed died of
+   despair by day 40; and a stop condition of `seen.size < 12` against a
+   list of 13, which reported the last kind unreachable without looking for
+   it. Checked against a kind that does not exist, so the bar can fail.
 
 5. **[ ] The harness can play well and cannot write it down.** Every repro
    script and seed challenge is currently produced by `scripts/record.ts`,
@@ -1260,6 +1272,28 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — The rest of the fight, and the rest of the year** — The
+  beat stream's travel and colony half, completing Phase 7 item 3. Thirteen
+  `WorldBeat` kinds on `GameState.beats` (SAVE_VERSION 30), stamped with the
+  day where a battle beat carries its round.
+  `chronicle()` was the seam the plan named and it was the wrong one: a beat
+  per saga line hands a renderer the prose back, shaped as `{day, text,
+  tone}`, which is what `state.saga` already is. What a second engine needs
+  is the ordered inside of `passDay` — the mouths eating the last of the
+  food, the fire going out, a roof finished, somebody coming over the ridge
+  — so the beats sit at those sites instead.
+  The reach bar took four rounds to satisfy and **every failure was the bot,
+  not the game**: it founded on day one, and `canGather` is false at a
+  steading, so it never foraged; it stalled inside COLONY with no way back
+  out, so days stopped passing on day 9 and one seed span 900 steps
+  oscillating; it tried jobs from the top of the list each time, so all six
+  people became farmers, nobody cut wood or built, and every seed died of
+  despair by day 40; and it stopped collecting at `seen.size < 12` against a
+  list of thirteen, reporting the last kind unreachable without ever looking
+  for it. A dull probe makes a live system look empty, and this is the third
+  time that has cost a measurement here. Checked against a kind that does
+  not exist, so the bar can fail.
 
 - **2026-08-11 — The larder reading, and a fix that was not needed** — The
   barter diagnosis left one number unread: 29% of trade visit-days blocked

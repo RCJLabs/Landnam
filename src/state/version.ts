@@ -33,7 +33,9 @@
 //                stream replaces outright.
 // v29 (challenges): the root gained the optional `chasing` — the mark a
 //                    challenge code set this run to beat.
-export const SAVE_VERSION = 29;
+// v30 (world beats): the root gained the optional `beats` — the travel and
+//                     colony half of the sim's event stream.
+export const SAVE_VERSION = 30;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

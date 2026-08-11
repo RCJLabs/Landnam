@@ -6,6 +6,7 @@
 // ridge. Standing is therefore stored, drifts only slowly, and is read by both
 // the trade rate and the raid maths.
 
+import { worldBeat } from './beats';
 import { distance, fromKey, key, type Hex } from '../hex';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
@@ -178,6 +179,7 @@ export function revealNeighbour(state: GameState, n: Neighbour, line: string): v
   if (n.found) return;
   n.found = true;
   if (state.world.seen[key(n.at)] === undefined) state.world.seen[key(n.at)] = 'seen';
+  worldBeat(state, { kind: 'met', id: n.id, name: n.name });
   chronicle(state, line, 'plain');
 }
 
@@ -289,6 +291,13 @@ export function bargain(state: GameState, id: string): Bargain | null {
   state.party.firewood += firewood;
   state.party.morale = Math.min(100, state.party.morale + 3);
   shiftStanding(state, n.id, REP_TRADED);
+  worldBeat(state, {
+    kind: 'bargained',
+    id: n.id,
+    gave: BARTER_FOOD,
+    got: firewood,
+    standing: n.standing,
+  });
   note(state, 'bargains');
   n.lastDealt = state.day;
 

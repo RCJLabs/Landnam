@@ -5,6 +5,7 @@
 // nobody works at all; after, the home crew works every day and the hands you
 // send out on an expedition are hands that are not farming.
 
+import { worldBeat } from './beats';
 import { key, range, type Hex } from '../hex';
 import type { Rng } from '../rng';
 import {
@@ -495,6 +496,7 @@ export function finishBuilds(state: GameState): BuildingDef[] {
     home.built.push(building.id);
     home.shelter = Math.min(SHELTER_MAX, home.shelter + (building.shelter ?? 0));
     done.push(building);
+    worldBeat(state, { kind: 'built', building: building.id });
     chronicle(
       state,
       replaced

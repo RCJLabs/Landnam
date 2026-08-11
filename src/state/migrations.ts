@@ -250,6 +250,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // started from a challenge code — there were none — so an absent
   // `chasing` is the plain truth about every save before this.
   28: (save) => ({ ...save, version: 29 }),
+  // The days outside a fight record themselves as beats now. An older save
+  // has none, and none is the truth: the beats that would have described its
+  // winters were never emitted, and a stream is for what happens NEXT.
+  29: (save) => ({ ...save, version: 30 }),
 };
 
 export interface MigrationResult {

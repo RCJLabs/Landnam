@@ -22,7 +22,19 @@ import { startBattle } from '../src/sim/battleTurn';
 import { reachTargets, throwTargets } from '../src/sim/battleActions';
 import { reachWithZoc } from '../src/sim/zoc';
 import { takeBrokenTurn } from '../src/sim/morale';
-import { BEATS_MAX, beat, beatsSince, type Beat, type BeatKind } from '../src/sim/beats';
+import {
+  BEATS_MAX,
+  WORLD_BEATS_MAX,
+  beat,
+  beatsSince,
+  worldBeat,
+  worldBeatsSince,
+  type Beat,
+  type BeatKind,
+  type WorldBeatKind,
+} from '../src/sim/beats';
+import { moveOptions } from '../src/sim/travel';
+import { currentMode } from '../src/modes';
 import type { Battle, GameState } from '../src/state/types';
 
 function empty(): Battle {
@@ -293,3 +305,164 @@ describe('the stream reaches the field', () => {
     expect(back.battle!.beats![0]!.kind).toBe('opened');
   });
 });
+
+// --- The world outside a fight ---
+
+describe('the world stream', () => {
+  it('stamps the day rather than the round', () => {
+    // The one deliberate difference from the battle stream: a fight runs on
+    // rounds and a run runs on days, and a beat should carry the clock it
+    // actually happened on.
+    const state = structuredClone(newGame('world-beats'));
+    state.day = 41;
+    worldBeat(state, { kind: 'dawn', season: 'autumn' });
+    expect(state.beats?.[0]).toMatchObject({ n: 1, day: 41, kind: 'dawn' });
+  });
+
+  it('caps without reusing a number, and drains by mark', () => {
+    const state = structuredClone(newGame('world-cap'));
+    for (let i = 0; i < WORLD_BEATS_MAX + 20; i += 1) {
+      worldBeat(state, { kind: 'dawn', season: 'summer' });
+    }
+    expect(state.beats).toHaveLength(WORLD_BEATS_MAX);
+    expect(state.beats?.[0]?.n).toBe(21);
+    const drained = worldBeatsSince(state, WORLD_BEATS_MAX + 18);
+    expect(drained.beats).toHaveLength(2);
+    expect(worldBeatsSince(state, drained.mark).beats).toHaveLength(0);
+  });
+
+  it('reads an absent list as no news, for a save from before Phase 7', () => {
+    const old = structuredClone(newGame('world-old'));
+    delete old.beats;
+    expect(worldBeatsSince(old, 0)).toEqual({ beats: [], mark: 0 });
+  });
+
+  it('emits every kind a played run reaches', () => {
+    // The bar the battle half taught. A kind that is never emitted looks
+    // exactly like one that works, right up until somebody animates it.
+    //
+    // A dull bot cannot reach these — it never moves, founds, builds or
+    // meets anybody — so this plays deliberately widely: march toward
+    // unwalked ground, found when the ground will take posts, and keep
+    // eating. `met`, `joined` and `built` come out of the steading standing
+    // long enough for the coast to call and the queue to finish something.
+    const KINDS: WorldBeatKind[] = [
+      'dawn', 'ate', 'burned', 'worked', 'hurt', 'died', 'seasonTurned',
+      'marched', 'gathered', 'founded', 'built', 'joined', 'met',
+    ];
+    const seen = new Set<WorldBeatKind>();
+    // `seen.size < KINDS.length`, not a hand-typed number: the first version
+    // said 12 against a list of 13 and stopped one short, reporting the
+    // thirteenth as unreachable when it had simply never been looked for.
+    for (let s = 0; s < 12 && seen.size < KINDS.length; s += 1) {
+      let state = structuredClone(newGame(`world-reach-${s}`, 'fair'));
+      const memo: Memo = { jobsDone: false };
+      for (let i = 0; i < 4000 && !state.end; i += 1) {
+        for (const b of state.beats ?? []) seen.add(b.kind);
+        const next = wideStep(state, memo);
+        if (next === state) break;
+        state = next;
+      }
+      for (const b of state.beats ?? []) seen.add(b.kind);
+    }
+    const missing = KINDS.filter((k) => !seen.has(k));
+    expect(missing, `never emitted: ${missing.join(', ')}`).toEqual([]);
+  });
+});
+
+/**
+ * One step of a bot that gets about.
+ *
+ * Two rounds of this were wrong before it worked, and both were the bot
+ * rather than the game — which is the third time on this project that a dull
+ * probe has made a live system look empty. Round one founded on day one, and
+ * `canGather` is false at a steading, so it never foraged; it also never
+ * entered COLONY, so nobody had a job, nothing was queued, nothing was built
+ * and nobody came to join a place with no roof. Round two fixed that and
+ * stalled INSIDE colony: having assigned everyone and queued something, it
+ * had no path back out, and `CAMP` is refused in COLONY — so days stopped
+ * passing on day 9 and half the kinds stayed unreachable for want of a
+ * winter. One seed span nine hundred steps oscillating in and out.
+ *
+ * Hence the memo: a bot that tries every job for a person it cannot place,
+ * gives up on jobs once that fails, and always finds its way back outside.
+ */
+const CREW = ['farmer', 'hunter', 'woodcutter', 'builder', 'fisher', 'warrior'];
+const WANT = ['longhouse', 'farmplots', 'smokehouse', 'bud', 'storehouse', 'palisade'];
+
+interface Memo {
+  /** Set once a person cannot be given any job at all, so it stops asking. */
+  jobsDone: boolean;
+}
+
+function wideStep(state: GameState, memo: Memo): GameState {
+  if (state.event) {
+    return apply(state, state.event.outcome
+      ? { type: 'DISMISS_EVENT' }
+      : { type: 'CHOOSE', index: 0 });
+  }
+  if (state.aftermath) return apply(state, { type: 'DISMISS_AFTERMATH' });
+  if (state.battle) {
+    const left = apply(state, { type: 'B_LEAVE' });
+    return left === state ? apply(state, { type: 'B_END_TURN' }) : left;
+  }
+
+  if (state.settlement) {
+    const inColony = currentMode(state) === 'COLONY';
+    const idle = memo.jobsDone ? [] : state.party.people.filter((p) => p.alive && !p.job);
+    const wantsWork = idle.length > 0 || state.settlement.queue.length === 0;
+
+    if (inColony) {
+      const person = idle[0];
+      if (person) {
+        // Rotated by the person's place in the band, so the crew comes out
+        // MIXED. Trying the list from the top every time was the third bug
+        // in this bot: `farmer` is always accepted, so every single person
+        // became a farmer, nobody cut wood or built anything, and every seed
+        // died of despair around day 40 with an empty woodpile. A bot that
+        // cannot keep itself alive measures nothing.
+        const from = state.party.people.indexOf(person);
+        for (let i = 0; i < CREW.length; i += 1) {
+          const job = CREW[(from + i) % CREW.length]!;
+          const done = apply(state, { type: 'ASSIGN', personId: person.id, job: job as never });
+          if (done !== state) return done;
+        }
+        memo.jobsDone = true;
+      }
+      for (const building of WANT) {
+        const queued = apply(state, { type: 'QUEUE_BUILD', building: building as never });
+        if (queued !== state) return queued;
+      }
+      // Always a way back outside, or the days stop.
+      const out = apply(state, { type: 'LEAVE_COLONY' });
+      if (out !== state) return out;
+    } else if (wantsWork) {
+      const inside = apply(state, { type: 'ENTER_COLONY' });
+      if (inside !== state) return inside;
+    }
+    return apply(state, { type: 'CAMP' });
+  }
+
+  // Still walking. Eat off the land while that is still allowed — `canGather`
+  // is false at a steading, so anything foraged has to be foraged now.
+  if (state.party.food < 26) {
+    for (const type of ['FORAGE', 'HUNT', 'FISH'] as const) {
+      const got = apply(state, { type });
+      if (got !== state) return got;
+    }
+  }
+  // Not on the first day: a band that plants the posts before it has walked
+  // anywhere has seen nothing and met nobody.
+  if (state.day >= 8) {
+    const founded = apply(state, { type: 'FOUND' });
+    if (founded !== state) return founded;
+  }
+  const options = moveOptions(state);
+  const unwalked = options.find((h) => state.world.trod[`${h.q},${h.r}`] === undefined);
+  const to = unwalked ?? options[0];
+  if (to) {
+    const moved = apply(state, { type: 'MOVE', to });
+    if (moved !== state) return moved;
+  }
+  return apply(state, { type: 'CAMP' });
+}

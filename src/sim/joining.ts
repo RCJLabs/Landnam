@@ -10,6 +10,7 @@
 // Everyone who arrives arrives as a HAND. The warband is six and stays six
 // (see SWORN_MAX): growth buys labour, never a wider shield wall.
 
+import { worldBeat } from './beats';
 import { stream } from '../rng';
 import {
   DRAW_ANGER,
@@ -66,6 +67,9 @@ export function takeIn(state: GameState, count: number, why: string): Person[] {
     joined.push(person);
   }
 
+  for (const person of joined) {
+    worldBeat(state, { kind: 'joined', who: person.id, name: person.name });
+  }
   const names = joined.map((p) => p.name).join(' and ');
   chronicle(state, `${names} ${joined.length > 1 ? 'came' : 'came'} to us: ${why}`, 'good');
   return joined;
@@ -210,6 +214,7 @@ export function handsLeave(state: GameState): Person[] {
   }
 
   for (const person of gone) {
+    worldBeat(state, { kind: 'left', who: person.id, name: person.name });
     chronicle(state, `${person.name} left us. Nobody went after ${person.name}.`, 'grim');
   }
   return gone;
