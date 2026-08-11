@@ -196,6 +196,14 @@ export function apply(state: GameState, action: Action): GameState {
   // A card on the table blocks everything else until it is answered.
   if (state.event) {
     if (action.type === 'CHOOSE') {
+      // A card that has already been answered has nothing left to choose.
+      // Without this the call was ACCEPTED and did nothing — `chooseOption`
+      // is a no-op on a resolved card, so a fresh clone came back identical.
+      // Harmless in the web build, which only offers the choices while they
+      // exist, and not harmless at all to anything that reads `apply`'s
+      // "same object means refused" contract: `scripts/record.ts` believed
+      // it and recorded 1,973 accepted CHOOSEs across 28 days.
+      if (state.event.outcome) return state;
       const next = structuredClone(state);
       chooseOption(next, action.index);
       return next;

@@ -1,0 +1,145 @@
+{
+ "seed": "raven-skerry-317",
+ "actions": [
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
+  },
+  {
+   "type": "FORAGE"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
+  },
+  {
+   "type": "FORAGE"
+  }
+ ]
+}

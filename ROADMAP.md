@@ -41,7 +41,7 @@ juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 770 tests), the renderers are disposable, and the port lives
+content under 783 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -490,8 +490,8 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **770 tests
-in 40 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
+with 5,000 more of typed content in `src/data/`, standing under **783 tests
+in 41 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
 what makes this a port rather than a rewrite. Every item below exists to
@@ -542,8 +542,16 @@ what 3D actually buys, then what gets harder.
    — and that the game is still moving: two design questions opened this week
    alone, and under a fork each of them lands twice. The argument for C++ is
    Blueprint-authorable rules and no bridge. *Measured by: N seeds played
-   through both, asserting identical `GameState`, in CI — which needs a
-   headless runner neither side has yet.*
+   through both, asserting identical `GameState`, in CI.*
+
+   **The runner that makes that measurable now exists** (2026-08-11):
+   `npm run play -- --seed raven-skerry-317` prints a `worldHash`, and that
+   is the cheapest cross-implementation check there is — one command a side,
+   and if the two disagree nothing else is worth comparing. A full run
+   hashes to sixteen hex digits over a canonical form with sorted keys and
+   explicitly written numbers, built on the same `hashString` the RNG
+   contract already pins, so a port that passes item 2 has nothing new to
+   agree about. See `runs/README.md`.
 
 2. **[x] Nail cross-language determinism before anything depends on it.**
    *Shipped 2026-08-10.* `port/rng-fixture.json` pins 174 absolute values
@@ -837,7 +845,11 @@ whole systems do not.
     thing that never gets done once there is a v1.0 tag.
 
 **Carried over:** seed challenges and a shareable saga (item 10 of the
-2026-08-07 queue) remain unstarted, and the v1.0 release's two at-home steps
+2026-08-07 queue) are no longer blocked — the headless runner landed
+2026-08-11, so a challenge is now a file (`seed`, `hardship`, `actions`) and
+a claimed result is checkable against a hash. What is left is the sharing:
+getting a script in and out of the page, and a screen that says "beat this".
+The v1.0 release's two at-home steps
 (GitHub Release targeting `main`; DNS `CNAME landnam -> rcjlabs.github.io`
 BEFORE the Pages custom domain and Enforce HTTPS) are still Evan's.
 
@@ -1102,6 +1114,33 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-11 — The sim, played with nobody watching** — A headless runner:
+  seed and a list of actions in, the finished state and a hash out. `npm run
+  play`, `npm run record`, `src/run/headless.ts` pure and `scripts/*.ts`
+  holding all the impurity there is. Three jobs that are really one — the
+  differential test Phase 7 item 1 asks for, seed challenges (a challenge is
+  a file and a claimed result is checkable against a hash), and repro cases,
+  because a bug on day 340 of a five-hundred-day saga is currently a story
+  and is now a file.
+  The hash is sixteen hex digits over a canonical form with **sorted keys**
+  and **explicitly written numbers** — both there so a second language can
+  produce the same string without guessing, since insertion order and
+  shortest-round-trip double printing are exactly the sort of thing two
+  runtimes disagree about while both being right. It is built on
+  `hashString`, already pinned in `port/golden.json`, so a port that passes
+  item 2 has nothing new to agree about. The saga is excluded: prose gets
+  reworded, and a hash that moved on a reworded sentence would cry wolf until
+  nobody looked at it.
+  **It earned its keep on the first day.** The recorder produced 1,973
+  actions across 28 days, all of them `CHOOSE` — because `apply` ACCEPTED a
+  choice on an already-answered card and returned a fresh clone that was
+  identical in every respect. Harmless in the web build, which only offers
+  the choices while they exist, and not harmless at all to anything reading
+  `apply`'s "same object means refused" contract, which is the runner's only
+  signal. Both fixed: the sim refuses it now, and the recorder drives cards
+  the way the balance harness always did (choose while it is a question,
+  dismiss once it has an outcome).
 
 - **2026-08-11 — The parity harness could only see one side of the parity** —
   Went looking at `landnam-ue` to answer "what have I already decided about
