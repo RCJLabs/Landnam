@@ -33,6 +33,7 @@ import { deedsFor } from './render/deeds';
 import {
   renderActionBar,
   renderHint,
+  renderChaseMark,
   renderMuteToggle,
   renderSitePanel,
   renderThingMark,
@@ -511,6 +512,7 @@ function render(): void {
   travelView.update(state);
   hintSlot.replaceChildren(
     renderHint(state),
+    renderChaseMark(state),
     renderWinterMark(state),
     renderWatchMark(state),
     renderThingMark(state),

@@ -16,7 +16,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { ANNOUNCE_MAX, announce, mapLabel, standing } from '../src/sim/announce';
+import { ANNOUNCE_MAX, announce, chaseLine, mapLabel, standing } from '../src/sim/announce';
 import { chronicle } from '../src/sim/saga';
 import type { GameState } from '../src/state/types';
 
@@ -64,6 +64,56 @@ describe('what the listener is told', () => {
     const fighting = band();
     fighting.battle = { foes: [] } as never;
     expect(standing(fighting)).toContain('in a fight');
+  });
+});
+
+describe('a run that is chasing somebody', () => {
+  // Seed challenges shipped with the mark on the title screen and the
+  // ending screen and nowhere in between — so the one number the whole run
+  // was about was the one number it would not show. A listener had it worst
+  // of all, which is why the text lives here.
+  it('says nothing at all when there is no chase', () => {
+    expect(chaseLine(band())).toBe('');
+    expect(standing(band())).not.toContain('Chasing');
+  });
+
+  it('counts the days left to beat it', () => {
+    const state = band();
+    state.chasing = { day: 128, winters: 2 };
+    state.day = 100;
+    expect(chaseLine(state)).toContain('29 days to beat it');
+    // And it rides on the standing line, so the live region carries it too.
+    expect(standing(state)).toContain('29 days');
+  });
+
+  it('counts one day in the singular', () => {
+    const state = band();
+    state.chasing = { day: 100, winters: 1 };
+    state.day = 100;
+    expect(chaseLine(state)).toContain('1 day to beat it');
+    expect(chaseLine(state)).not.toContain('1 days');
+  });
+
+  it('changes its tune once you are past them', () => {
+    const state = band();
+    state.chasing = { day: 100, winters: 1 };
+    state.day = 101;
+    expect(chaseLine(state)).toContain('Ahead of the mark');
+  });
+
+  it('does not offer a day count against a jarldom', () => {
+    // "Eleven days to beat it" is a lie when what they did was take the
+    // Thing — no number of days gets you there.
+    const state = band();
+    state.chasing = { day: 60, winters: 1, jarl: true };
+    state.day = 200;
+    expect(chaseLine(state)).toContain('took the Thing');
+    expect(chaseLine(state)).not.toContain('days to beat');
+
+    // Unless you have taken one too, at which point days are the measure
+    // again.
+    state.jarl = { name: 'Ketil', since: 190 };
+    expect(chaseLine(state)).toContain('Ahead of the mark');
   });
 });
 

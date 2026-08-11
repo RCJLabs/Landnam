@@ -14,6 +14,7 @@
 // be unit-tested, and this project's rule is that anything testable does not
 // belong in `render/`.
 
+import { beats, describeMark, markOf } from './challenge';
 import { wintersStood, seasonOf } from './calendar';
 import { living } from './people';
 import { foodPerDay, firewoodPerNight } from './upkeep';
@@ -43,8 +44,32 @@ export function standing(state: GameState): string {
     `${band} ${band === 1 ? 'person' : 'people'}. ` +
     `Food ${state.party.food}, ${days} ${days === 1 ? 'day' : 'days'}. ` +
     `Wood ${state.party.firewood}, ${nights} ${nights === 1 ? 'night' : 'nights'}. ` +
-    `Heart ${Math.round(state.party.morale)}.`
+    `Heart ${Math.round(state.party.morale)}.` +
+    (state.chasing ? ` ${chaseLine(state)}` : '')
   );
+}
+
+/**
+ * Where this run stands against the mark it is chasing.
+ *
+ * Seed challenges shipped with the mark on the title screen and the ending
+ * screen and NOWHERE in between — so the one number the whole run was about
+ * was the one number the run would not show you, and a listener had it
+ * worse than a looker for once. This is that number, and it is here rather
+ * than in the renderer because it is a statement about the state.
+ */
+export function chaseLine(state: GameState): string {
+  if (!state.chasing) return '';
+  const mine = markOf(state);
+  if (beats(mine, state.chasing)) return `Ahead of the mark of ${describeMark(state.chasing)}.`;
+  // Days to go is the number a chaser actually wants, and it is only
+  // meaningful while days are what separates them — a jarldom is not
+  // something you are eleven days away from.
+  if (state.chasing.jarl && !mine.jarl) {
+    return `Chasing ${describeMark(state.chasing)} — that one took the Thing.`;
+  }
+  const togo = state.chasing.day - state.day + 1;
+  return `Chasing ${describeMark(state.chasing)} — ${togo} ${togo === 1 ? 'day' : 'days'} to beat it.`;
 }
 
 /**

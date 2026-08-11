@@ -1627,6 +1627,15 @@ button.hardship-chip {
   color: var(--parchment);
 }
 
+/* Sibling of the watch mark, borrowing its box wholesale — a chaser is
+   reading one sentence, not a table. */
+.chase-mark .mark-head {
+  margin: 0;
+}
+.chase-mark.good {
+  border-color: #6f8f5a;
+}
+
 /* The first thing a chaser wants off the ending screen. */
 .chase-verdict {
   margin: 0 0 10px;

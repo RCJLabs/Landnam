@@ -19,6 +19,8 @@ import { forecast, markVisible, reachable } from '../sim/winter';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { threatReading } from '../sim/raid';
+import { beats, markOf } from '../sim/challenge';
+import { chaseLine } from '../sim/announce';
 import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
 import { placeHere } from '../sim/places';
@@ -116,6 +118,26 @@ export function renderWinterMark(state: GameState): HTMLElement {
     ]),
     row('Food', state.party.food, f.food, f.foodGap),
     row('Wood', state.party.firewood, f.firewood, f.firewoodGap),
+  ]);
+}
+
+/**
+ * What this run is chasing, when it was started from somebody's challenge.
+ *
+ * Deliberately the same shape as the winter and watch marks: the player has
+ * already learned to read one of these, and a fourth kind of panel would be
+ * a fourth thing to learn for a number that is only ever one sentence.
+ *
+ * Shown on every travel screen rather than tucked into the deeds sheet,
+ * because a chase is not a detail you go looking for — it is the terms of
+ * the run, and the whole complaint that produced this was that it was
+ * visible at the start and at the death and never in between.
+ */
+export function renderChaseMark(state: GameState): HTMLElement {
+  if (!state.chasing || state.end || state.event) return el('div');
+  const ahead = beats(markOf(state), state.chasing);
+  return el('div', { class: `watch-mark chase-mark${ahead ? ' good' : ''}` }, [
+    el('div', { class: 'mark-head' }, [chaseLine(state)]),
   ]);
 }
 

@@ -44,7 +44,7 @@ without leaving this repo, two of them bugs shipped in the last two days.
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 802 tests), the renderers are disposable, and the port lives
+content under 807 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -493,7 +493,7 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **802 tests
+with 5,000 more of typed content in `src/data/`, standing under **807 tests
 in 42 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
@@ -687,14 +687,22 @@ is a wish.
 
 ### Wrong now
 
-1. **[ ] The chase is invisible until you die.** Seed challenges shipped
-   2026-08-11 and the mark shows on the title screen and the ending screen
-   and *nowhere in between*. A player chasing day 128 has no way to know
-   they are on day 96 — the one number the whole run is about is the one
-   number the run does not show. `announce.ts` does not mention it either,
-   so a screen-reader listener has it worse. *Measured by: driving the built
-   page mid-run and finding the mark; `standing()` naming it in the live
-   region; both in a fixture.*
+1. **[x] The chase is invisible until you die.** *Fixed 2026-08-11.*
+   `chaseLine(state)` in `sim/announce.ts` — pure, so it is unit-tested —
+   and `renderChaseMark` in `render/ui.ts`, deliberately the same box as the
+   winter and watch marks because the player has already learned to read one
+   of those. It rides on `standing()` too, so the live region carries it and
+   a listener is not worse off than a looker.
+   It says the useful number rather than the tidy one: **days left to beat
+   it** while days are what separate you, "ahead of the mark" once you pass
+   them, and — the case worth getting right — no day count at all against a
+   mark that took the Thing, because "eleven days to beat it" is a lie when
+   what they did was become jarl and no number of days gets you there.
+   Driven in the built page: mark on screen from the first turn, and the
+   count moved 128 → 127 as day 1 became day 2. The first drive proved
+   nothing and said so — it used a jarl mark, which hides the countdown by
+   design, and clicked a button selector that did not exist, so the day
+   never advanced.
 
 2. **[ ] Every action deep-clones a world that never changes.** Measured
    2026-08-11 while costing the Unreal bridge: `apply` spends **2.2 ms** an
