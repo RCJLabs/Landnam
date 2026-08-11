@@ -170,16 +170,50 @@ handful that reach an endgame. Over 88 settled sagas:
   either a band gets a bargain circuit going and rockets to sworn, or it
   stands at the opening its whole life.
 
-So the wall in front of the endgame is not survival and not the mead hall;
-it is that `REP_TRADED` is +9 a bargain against `REP_DRIFT` pulling 0.12 a
-day back toward nothing, and a band that trades occasionally is running
-down an escalator. This is a design question — cheaper bargains, slower
-drift, a standing floor once you have dealt honestly, or something that is
-not barter at all — and it is the obvious candidate for the next real piece
-of work. The measurement is now permanent: the long game prints the
-standing distribution every run and bars that SOMEBODY still reaches
-speaking terms, so a change that quietly flattens the coast fails loudly
-instead of closing the endgame in silence the way placement once did.
+So the wall in front of the endgame is not survival and not the mead hall.
+The measurement is now permanent: the long game prints the standing
+distribution every run and bars that SOMEBODY still reaches speaking terms,
+so a change that quietly flattens the coast fails loudly instead of closing
+the endgame in silence the way placement once did.
+
+**And the obvious explanation for it was wrong.** The reading above was
+first written up as arithmetic — `REP_TRADED` is +9 a bargain against
+`REP_DRIFT` taking 0.12 a day back, so a band that trades occasionally is
+running down an escalator — and that is a tidy story that measurement does
+not support. Barter was diagnosed rather than tuned, over 88 settled sagas
+(2026-08-10):
+
+| bargains struck | sagas | median peak standing | reached 25 |
+| --- | --- | --- | --- |
+| none | 65 | 6.9 | **1** |
+| two | 3 | 17.8 | 0 |
+| three or more | 20 | 53–75 | **20 of 20** |
+
+**Bartering works perfectly. Three bargains is the whole game**, and every
+single band that struck three reached speaking terms. Nothing about the
++9 needs changing; the escalator is not the wall.
+
+What IS the wall is getting to them at all. Pooled over the same sagas:
+
+- **The median band spent ZERO days of its life standing on a neighbour's
+  hex**, and 58 of 88 never stood on one at all. Neighbours sit up to
+  `CLAN_MAX_GAP` (13) hexes off, which is a week's walk each way.
+- When a band does get there it deals: 123 bargains struck on the 151
+  visit-days that were free to deal. This is not the bot declining to
+  trade.
+- **29% of visit-days were blocked on `stores`** — 64 of 221. A band walks
+  a fortnight to barter and arrives unable to spare the 8 food it came to
+  spend, which is the cruellest possible way to lose the trip.
+
+So the design question is not "what is a bargain worth" but **"why does
+dealing with the coast require a fortnight's walk"** — and the answer that
+suggests itself is already half-built. Every neighbour walks over to look
+at a new steading (`CLAN_CALLS_EVERY`), and that visit currently does
+nothing but put them on the map. If it could be DEALT with at your own
+hearth, the median band gets its three bargains without ever leaving the
+yard, which is both the fix and what actually happened on that coast. The
+`stores` block wants an answer too: an errand that walks to trade should
+carry what it means to trade with.
 
 **Every number here describes ONE way of playing, and it is not the best
 one.** Audit item 7 gave the harness three policies over the same thirty
@@ -999,6 +1033,28 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-10 — Bartering was never the problem; the walk was** — The
+  standing wall, diagnosed before being tuned, and the tidy explanation
+  recorded the same day turned out to be wrong. The story was arithmetic:
+  +9 a bargain against 0.12 a day of drift, a band running down an
+  escalator. Measured over 88 settled sagas, that story dies — **every one
+  of the 20 bands that struck three or more bargains reached speaking
+  terms** (median peak 53–75), against 1 of the 65 that struck none. Three
+  bargains is the whole game and the +9 needs no changing.
+  What binds is access. **The median band spent zero days of its life
+  standing on a neighbour's hex** and 58 of 88 never stood on one at all —
+  neighbours sit up to thirteen hexes off, a week's walk each way. When a
+  band does get there it deals readily (123 bargains on 151 days free to
+  deal, so this is not the bot declining), and **29% of visit-days were
+  blocked on `stores`**: a fortnight's walk ending with too little food to
+  spare the eight it came to spend.
+  The fix is therefore a different shape entirely, and half of it already
+  exists — every neighbour walks over to look at a new steading
+  (`CLAN_CALLS_EVERY`) and that visit currently only puts them on the map.
+  Nothing shipped but the finding; the design call is open. Recorded
+  because the wrong explanation was convincing, cheap to act on, and would
+  have produced a tuning pass that moved a number nobody was blocked by.
+
 - **2026-08-10 — Twenty seeds had regressed, not the game** — The one
   unexplained number in this document, closed. The long game's jarldom count
   fell from 5 in forty sagas to 1 on 2026-08-09; I could not attribute it and
@@ -1016,8 +1072,9 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   met a neighbour, the median band's best standing with anyone was 10.9 —
   the opening a native camp gives away for nothing — and 21 of 88 ever
   crossed the 25 a speaker needs**, with the ones that do sitting at 99–100.
-  Friendship is bimodal and the median relationship never moves, because
-  `REP_TRADED` is +9 a bargain against `REP_DRIFT` taking 0.12 a day back.
+  Friendship is bimodal and the median relationship never moves. The cause
+  written down here first — `REP_TRADED` at +9 against `REP_DRIFT` taking
+  0.12 a day back — was wrong, and the next entry says how.
   That is the wall in front of the endgame and it is a design decision, so
   what shipped is the instrument, not a fix: the long game prints the
   standing distribution every run and bars that somebody still reaches
