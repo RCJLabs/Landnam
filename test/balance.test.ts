@@ -119,6 +119,29 @@ interface Policy {
   plunderWindow: number;
   /** How far out it goes under arms once settled. Zero: it never does. */
   raidReach: number;
+  /**
+   * How many of the sworn go out on an armed errand.
+   *
+   * Three was hard-coded, and it was never chosen: `raidTarget` only puts a
+   * CAMP on the list when the roster is five or more, so the bot picked
+   * targets sized for a full band and then sent half of one at them. Whether
+   * that is what breaks raiding or merely how this harness raids is the
+   * whole of task 31's first question, so it is a knob now.
+   */
+  raidParty: number;
+  /**
+   * Winters the band must have stood before it will go out under arms, and
+   * whether it only goes in the raiding season.
+   *
+   * Both were hard-coded in the bot and neither is a rule of the GAME —
+   * `launchBlocker` asks for a steading, a crew and provisions, and nothing
+   * else. So a measurement of "how often can the raider go" was more than
+   * half a measurement of the harness's own scruples: 53% of settled days
+   * failed on `wintersStood >= 1` alone. Knobs, so the question can be put
+   * to the game instead of to the bot.
+   */
+  raidAfterWinters: number;
+  raidInSeasonOnly: boolean;
   /** Whether it will carry food out to make a friend on the coast. */
   trades: boolean;
   /** Whether it falls on neighbours' camps as a matter of course. */
@@ -160,6 +183,9 @@ const SETTLER: Policy = {
   siteFloor: 9,
   plunderWindow: 24,
   raidReach: 0,
+  raidParty: 0,
+  raidAfterWinters: 1,
+  raidInSeasonOnly: true,
   trades: true,
   robsCamps: false,
   want: [
@@ -186,6 +212,9 @@ const RAIDER: Policy = {
   siteFloor: 7,
   plunderWindow: 40,
   raidReach: 10,
+  raidParty: 3,
+  raidAfterWinters: 1,
+  raidInSeasonOnly: true,
   trades: false,
   robsCamps: true,
   want: [
@@ -210,6 +239,9 @@ const TURTLE: Policy = {
   siteFloor: 7,
   plunderWindow: 0,
   raidReach: 0,
+  raidParty: 0,
+  raidAfterWinters: 1,
+  raidInSeasonOnly: true,
   trades: false,
   robsCamps: false,
   want: [
@@ -637,7 +669,9 @@ function step(state: GameState): Action {
     // raider knew 0.11 of four places against the settler's 0.47 and could
     // not launch a single armed errand in a thousand target-days. The game
     // has had an `explore` purpose since 4.2 and no bot ever used it.
-    if (policy.raidReach > 0 && wintersStood(state.day) >= 1 && inSeason
+    const oldEnough = wintersStood(state.day) >= policy.raidAfterWinters;
+    const seasonOk = inSeason || !policy.raidInSeasonOnly;
+    if (policy.raidReach > 0 && oldEnough && seasonOk
         && !raidTarget(state, policy.raidReach)) {
       const scouts = sworn(state.party.people).slice(0, 2).map(p => p.id);
       if (scouts.length === 2
@@ -647,17 +681,18 @@ function step(state: GameState): Action {
       }
     }
 
-    if (policy.raidReach > 0 && wintersStood(state.day) >= 1 && inSeason
+    if (policy.raidReach > 0 && oldEnough && seasonOk
         && raidTarget(state, policy.raidReach)) {
-      const crew = sworn(state.party.people).slice(0, 3).map(p => p.id);
+      const want = policy.raidParty;
+      const crew = sworn(state.party.people).slice(0, want).map(p => p.id);
       // The surplus that funds the errand, counted in DAYS the steading can
       // feed itself rather than in sacks. A flat "+55" was calibrated for a
       // band of exactly six, and item 3's growth broke it silently: more
       // mouths meant the threshold was never met, the errand stopped
       // launching, and the sea went back to nought — the exact content item
       // 1 had just made reachable, undone by a constant in the bot.
-      if (crew.length === 3
-        && state.party.food > provisionsFor(3) + foodPerDay(state) * policy.errandBuffer
+      if (crew.length === want
+        && state.party.food > provisionsFor(want) + foodPerDay(state) * policy.errandBuffer
         && launchBlocker(state, crew) === null) {
         return { type:'LAUNCH', members: crew, purpose: 'raid' };
       }
@@ -3126,5 +3161,316 @@ describe('more than one way to play', () => {
     const best = Math.max(...POLICIES.map((p) => spring[p.id]!));
     const worst = Math.min(...POLICIES.map((p) => spring[p.id]!));
     expect(best - worst, 'one strategy dominates the others outright').toBeLessThan(0.5);
+  });
+});
+
+describe('where an armed sortie dies', () => {
+  /**
+   * TASK 31, and the measurement that has to come before the design.
+   *
+   * The raiding write-up concluded that the binding constraint is
+   * STRUCTURAL — a raid costs a settled band 28% of its labour-days with
+   * half the household away, so making raiding win means a warband that is
+   * not simply half the household on loan. That may well be right. But the
+   * numbers it rests on are equally consistent with a much duller reading:
+   * sorties DOUBLED and sackings did not move, which means the marginal
+   * errand came home with nothing. If that is because they never reach
+   * anybody, or reach them and lose, then no warband redesign fixes it and
+   * the answer is targets, not table of organisation.
+   *
+   * Nobody has ever counted it. So: follow every armed errand the raider
+   * launches, and record where it stopped being worth having.
+   *
+   * Reported, not barred. It exists to answer a design question once, and a
+   * bar on it would be a bar on a strategy nobody has settled the shape of.
+   */
+  it.each([3, 5])('follows every armed errand from launch to whatever it carried home (party of %i)', { timeout: 900_000 }, async (PARTY: number) => {
+    interface Sortie {
+      purpose: string;
+      /** Which saga it belongs to, so trips can be counted per landing. */
+      saga: number;
+      crew: number;
+      day: number;
+      /** Stood on a camp or a place worth taking. */
+      arrived: boolean;
+      fights: number;
+      /** Fought something that PAYS — a camp or a place, not a wolf. */
+      forStakes: number;
+      won: number;
+      lost: number;
+      haul: number;
+      days: number;
+      wiped: boolean;
+    }
+    const done: Sortie[] = [];
+    let open: Sortie | null = null;
+    const SEEDS = 60;
+    let sagas = 0;
+    let sackedTally = 0;
+    let stakesOut = 0;
+    let stakesHome = 0;
+    let haulOut = 0;
+    let haulHome = 0;
+    let sagasThatWentOut = 0;
+    let sagasPastSpring = 0;
+    let gateDays = 0;
+    const gate: Record<string, number> = {
+      'too young': 0, 'out of season': 0, 'already out': 0,
+      'nothing worth taking': 0, 'not enough sworn': 0, 'store too thin': 0,
+      'could have gone': 0,
+    };
+
+    try {
+      policy = { ...RAIDER, raidParty: PARTY };
+      for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
+        for (let s = 0; s < SEEDS / 2; s += 1) {
+          const state = run(armSeed(arm, s, SEEDS / 2), 400, (before, after) => {
+            if (!before.expedition && after.expedition) {
+              open = {
+                purpose: after.expedition.purpose,
+                saga: sagas + 1,
+                crew: after.expedition.members.length,
+                day: after.day,
+                arrived: false,
+                fights: 0,
+                forStakes: 0,
+                won: 0,
+                lost: 0,
+                haul: 0,
+                days: 0,
+                wiped: false,
+              };
+            }
+
+            if (open && after.expedition) {
+              // Standing on something worth taking, whether or not they take
+              // it. This is the line between "never found anybody" and
+              // "found somebody and it went badly".
+              const host = neighbourHere(after);
+              const place = placeHere(after);
+              if ((host && campStores(after, host.sackedOn) >= 0.5)
+                  || (place && place.sackedOn === undefined)) {
+                open.arrived = true;
+              }
+            }
+
+            if (open && !before.battle && after.battle) {
+              open.fights += 1;
+              if (after.battle.campId || after.battle.placeId) open.forStakes += 1;
+            }
+
+            // Every fight for stakes in the whole saga, errand or not. The
+            // point of comparison: if the raider takes most of its plunder
+            // while NOT on an armed errand, then the errand is not where
+            // raiding lives and the labour cost is not what binds.
+            if (!before.battle && after.battle && (after.battle.campId || after.battle.placeId)) {
+              if (after.expedition) stakesOut += 1;
+              else stakesHome += 1;
+            }
+            if (before.battle && !after.battle && before.battle.outcome === 'won'
+                && (before.battle.campId || before.battle.placeId)) {
+              const got =
+                (after.party.food - before.party.food) +
+                (after.party.firewood - before.party.firewood);
+              if (before.expedition) haulOut += got;
+              else haulHome += got;
+            }
+
+            // The payout is in `leaveBattle`, NOT where `checkOutcome` writes
+            // the result: `sackCamp` and `settlePlace` run in the same call
+            // that deletes the battle, several transitions later. Measuring
+            // the delta where the outcome first appears reads zero for every
+            // errand ever flown, which is what this probe did on its first
+            // run — a dull probe making a live system look empty.
+            if (open && before.battle && !after.battle) {
+              const stakes = !!(before.battle.campId || before.battle.placeId);
+              if (before.battle.outcome === 'won') open.won += 1;
+              else if (before.battle.outcome === 'lost') open.lost += 1;
+              if (stakes && before.battle.outcome === 'won') {
+                open.haul +=
+                  (after.party.food - before.party.food) +
+                  (after.party.firewood - before.party.firewood);
+              }
+            }
+
+            // WHY the errand so often never happens. Counted on every day
+            // the band is settled and past its first winter — i.e. every day
+            // it is entitled to go — and attributed to the FIRST gate that
+            // is shut, in the order the bot checks them.
+            if (after.day !== before.day && after.settlement && !after.end) {
+              gateDays += 1;
+              if (wintersStood(after.day) < 1) gate['too young'] = (gate['too young'] ?? 0) + 1;
+              else if (!(seasonOf(after.day) === 'spring' || seasonOf(after.day) === 'summer')) {
+                gate['out of season'] = (gate['out of season'] ?? 0) + 1;
+              } else if (after.expedition) gate['already out'] = (gate['already out'] ?? 0) + 1;
+              else if (!raidTarget(after, RAIDER.raidReach)) gate['nothing worth taking'] = (gate['nothing worth taking'] ?? 0) + 1;
+              else if (sworn(after.party.people).length < PARTY) gate['not enough sworn'] = (gate['not enough sworn'] ?? 0) + 1;
+              else {
+                const crew = sworn(after.party.people).slice(0, PARTY).map((p) => p.id);
+                if (after.party.food
+                    <= provisionsFor(PARTY) + foodPerDay(after) * RAIDER.errandBuffer) {
+                  gate['store too thin'] = (gate['store too thin'] ?? 0) + 1;
+                } else if (launchBlocker(after, crew) !== null) {
+                  gate[`blocked: ${launchBlocker(after, crew)}`] =
+                    (gate[`blocked: ${launchBlocker(after, crew)}`] ?? 0) + 1;
+                } else gate['could have gone'] = (gate['could have gone'] ?? 0) + 1;
+              }
+            }
+
+            if (open && before.expedition && !after.expedition) {
+              open.days = after.day - open.day;
+              // `pruneExpedition` drops the errand when the last of them
+              // falls, and it puts the band's token back at the hall — so a
+              // wipe and a homecoming look identical unless the crew is
+              // counted.
+              open.wiped = before.expedition.members.every(
+                (id) => !after.party.people.some((p) => p.id === id && p.alive),
+              );
+              done.push(open);
+              open = null;
+            }
+          }, terms);
+          sagas += 1;
+          sackedTally += state.tally.sackings;
+          if (state.day >= 73) sagasPastSpring += 1;
+          if (done.some((d) => d.purpose === 'raid' && d.saga === sagas)) sagasThatWentOut += 1;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      }
+    } finally {
+      policy = SETTLER;
+      open = null;
+    }
+
+    const armed = done.filter((d) => d.purpose === 'raid');
+    const scouts = done.filter((d) => d.purpose === 'explore');
+    const never = armed.filter((d) => !d.arrived);
+    const arrivedNoFight = armed.filter((d) => d.arrived && d.forStakes === 0);
+    const fought = armed.filter((d) => d.forStakes > 0);
+    const wonSomething = fought.filter((d) => d.won > 0 && d.haul > 0);
+    const foughtAndLost = fought.filter((d) => d.won === 0);
+    const wiped = armed.filter((d) => d.wiped);
+    const sum = (xs: Sortie[], f: (d: Sortie) => number) => xs.reduce((a, d) => a + f(d), 0);
+    const pc = (n: number) => `${Math.round((n / Math.max(1, armed.length)) * 100)}%`;
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `armed errands over ${sagas} raider sagas, ${PARTY} sworn a trip ` +
+        `(${armed.length} of them, ` +
+        `plus ${scouts.length} scouting trips):\n` +
+        `  never stood on anything worth taking: ${never.length} (${pc(never.length)})\n` +
+        `  got there and never drew steel:       ${arrivedNoFight.length} (${pc(arrivedNoFight.length)})\n` +
+        `  fought for stakes:                    ${fought.length} (${pc(fought.length)})\n` +
+        `    and carried something home:         ${wonSomething.length} (${pc(wonSomething.length)})\n` +
+        `    and were thrown back:               ${foughtAndLost.length} (${pc(foughtAndLost.length)})\n` +
+        `  nobody came back:                     ${wiped.length} (${pc(wiped.length)})\n` +
+        `  crew ${(sum(armed, (d) => d.crew) / Math.max(1, armed.length)).toFixed(1)} a trip, ` +
+        `${(sum(armed, (d) => d.days) / Math.max(1, armed.length)).toFixed(1)} days out, ` +
+        `${(sum(armed, (d) => d.fights) / Math.max(1, armed.length)).toFixed(2)} fights a trip\n` +
+        `  total haul ${sum(armed, (d) => d.haul)} of stores over ${armed.length} errands ` +
+        `= ${(sum(armed, (d) => d.haul) / Math.max(1, armed.length)).toFixed(1)} an errand\n` +
+        `  ${sagasThatWentOut}/${sagas} sagas ever launched one ` +
+        `(${sagasPastSpring} lived to see a spring); tally.sackings ` +
+        `${(sackedTally / Math.max(1, sagas)).toFixed(1)} a saga\n` +
+        `  WHERE THE PLUNDER COMES FROM — fights for stakes: ${stakesOut} on an errand, ` +
+        `${stakesHome} not on one; stores taken: ${haulOut} on an errand, ${haulHome} not\n` +
+        `  WHY IT DID NOT GO, over ${gateDays} settled days: ` +
+        Object.entries(gate)
+          .filter(([, v]) => v > 0)
+          .sort((a, b) => b[1] - a[1])
+          .map(([k, v]) => `${k} ${v} (${Math.round((v / Math.max(1, gateDays)) * 100)}%)`)
+          .join(', '),
+    );
+
+    // The one thing worth failing on: an errand the bot only launches when
+    // it already HAS a target must be able to reach one.
+    expect(armed.length, 'the raider never went out under arms at all').toBeGreaterThan(0);
+  });
+});
+
+describe('can a raider actually live by it', () => {
+  /**
+   * TASK 31's real question, put to the GAME rather than to the harness.
+   *
+   * The autopsy above found that the raider almost never raids — 0.4% of
+   * the days it was entitled to go, it went — and that more than half of
+   * what stopped it was the bot's own scruples: it would not go out before
+   * it had stood a winter, and only in spring or summer. Neither is a rule
+   * of the game. It also found that sending three of six sworn gets two
+   * thirds of those errands killed outright, where five gets a quarter.
+   *
+   * So none of the earlier raiding figures measured whether a band CAN live
+   * this way. They measured a bot that raided rarely, late, and shorthanded.
+   * This puts the same seeds to a raider with the scruples removed: five
+   * sworn, from the first day there is a steading, in any season.
+   *
+   * If it still cannot reach a second winter, the design conclusion in the
+   * write-up stands and the answer is a standing warband. If it can, the
+   * answer is much cheaper, and it is that the strategy was never played.
+   */
+  it('measures a raider with the harness scruples taken off', { timeout: 900_000 }, async () => {
+    const arms: [string, Policy][] = [
+      ['as it was', RAIDER],
+      ['5 sworn', { ...RAIDER, raidParty: 5 }],
+      ['unleashed', { ...RAIDER, raidParty: 5, raidAfterWinters: 0, raidInSeasonOnly: false }],
+      ['turtle', TURTLE],
+    ];
+    const rows: string[] = [];
+    const secondWinter: Record<string, number> = {};
+    const SEEDS = 30;
+
+    try {
+      for (const [name, p] of arms) {
+        policy = p;
+        let winter = 0, spring = 0, second = 0, days = 0, sacked = 0, alive = 0, built = 0;
+        const fates: Record<string, number> = {};
+        for (let s = 0; s < SEEDS; s += 1) {
+          const state = run(`curve-${s}`, 200, undefined, 'fair');
+          days += state.day;
+          if (state.day >= 49) winter += 1;
+          if (state.day >= 73) spring += 1;
+          if (state.day >= 169) second += 1;
+          sacked += state.tally.sackings;
+          built += state.settlement?.built.length ?? 0;
+          alive += state.party.people.filter((x) => x.alive).length;
+          for (const p2 of state.party.people) {
+            if (p2.alive) continue;
+            const f = p2.fate ?? 'unrecorded';
+            // Steel or the season: the distinction the design turns on. If
+            // raiding more kills a band by taking its people AWAY from the
+            // work, the fix is a warband that was never doing the work; if
+            // it kills them on the field, that is a different problem.
+            const how = /spear|axe|sword|blade|field|fell|wound|steel|cut down|shield/i.test(f)
+              ? 'steel'
+              : /hunger|starv|cold|froze|winter|sick|fever|wasted|despair|walked out|did not wake/i.test(f)
+                ? 'the season'
+                : 'other';
+            fates[how] = (fates[how] ?? 0) + 1;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+        secondWinter[name] = second;
+        rows.push(
+          `  ${name.padEnd(10)} winter ${String(winter).padStart(2)}/${SEEDS}, ` +
+            `spring ${String(spring).padStart(2)}/${SEEDS}, ` +
+            `second winter ${String(second).padStart(2)}/${SEEDS}; ` +
+            `avg ${String(Math.round(days / SEEDS)).padStart(3)} days, ` +
+            `${(sacked / SEEDS).toFixed(1)} sacked, ${(built / SEEDS).toFixed(1)} built, ` +
+            `${(alive / SEEDS).toFixed(1)} alive at the end\n` +
+            `             dead by: ${Object.entries(fates).sort((a, b) => b[1] - a[1])
+              .map(([k, v]) => `${k} ${v}`).join(', ') || 'nobody'}`,
+        );
+      }
+    } finally {
+      policy = SETTLER;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`the raider, unscrupled, ${SEEDS} landings each (A Fair Country):\n${rows.join('\n')}`);
+
+    // Reported, not barred: this exists to settle a design question, and
+    // the shape of the answer is what task 31 is FOR. The only bar is that
+    // the sweep ran at all.
+    expect(Object.keys(secondWinter).length).toBe(arms.length);
   });
 });

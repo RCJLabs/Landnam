@@ -128,6 +128,55 @@ stayed. Making raiding win probably means a warband that is not simply
 half the household on loan. That is the next question, and it is a design
 decision rather than a tuning pass.
 
+**The autopsy (2026-08-12), which moved the answer.** That paragraph rested
+on a cost — 28% of labour-days — that nothing had checked was the binding
+one. Two probes now follow every armed errand the raider flies and put the
+strategy to the game with the harness's own scruples removed
+(`where an armed sortie dies`, `can a raider actually live by it`).
+
+The labour cost is **not** what binds. Over 5,982 settled days the errand
+was refused for a thin store on 1% of them; it launched on 0.4%. The rest
+was the conjunction: 53% of those days failed on the bot's own
+`wintersStood >= 1`, 17% on its own in-season rule, 15% on nothing being
+worth taking. More than half of "raiding is rare" was the harness's
+scruples, not the game's economy — so none of the earlier raiding figures
+measured whether a band CAN live this way.
+
+Removing the scruples answers it, and the answer is no, sharply:
+
+| 30 landings, A Fair Country | winter | spring | 2nd winter | avg days | dead by steel |
+| --- | --- | --- | --- | --- | --- |
+| raider as it was | 29/30 | 25/30 | **3/30** | 107 | 42 |
+| 5 sworn a trip | 29/30 | 25/30 | **3/30** | 112 | 46 |
+| unleashed (5 sworn, any season, from day one) | 12/30 | 6/30 | **3/30** | 60 | **59** |
+| turtle, for scale | 30/30 | 26/30 | **21/30** | 169 | 41 |
+
+Three readings, and the third is the design finding:
+
+1. **A bigger party fixes the errand and not the strategy.** Sending five
+   instead of three halves the wipe rate (67% → 25% of errands end with
+   nobody coming back) and nearly doubles the haul (25.3 → 43.2 stores).
+   Second winters do not move at all, because at ~1.5 errands a saga the
+   errand is not what the run is made of.
+2. **Raiding more is strictly worse.** The unleashed arm loses first
+   winters 29/30 → 12/30 and half its lifespan. The bot's caution was
+   load-bearing.
+3. **And it dies by STEEL, not by hunger** — 59 dead on the field, the only
+   arm where steel outranks the season. So the cost that binds is not the
+   labour the errand takes away. It is that **a raid is fought by the same
+   six people whose survival is the entire run.** Losing two of them is not
+   a setback, it is the end, and no haul of 43 stores prices that.
+
+That points at the standing warband after all, but for a sharper reason
+than the write-up above gives: not because raiders are your farmers —
+because they are your *only people*. A hird that is separate bodies, drawn
+by fame and replaceable by it, makes a lost raid cost the warband instead
+of the colony. Repeatable risk is what lets raiding compound into a living;
+today every raid is staked against the run.
+
+Still Evan's call, and still a design decision — but it is now a decision
+with the alternatives ruled out rather than assumed.
+
 **Two things this work cost, recorded rather than buried.** The settler
 briefly gained armed sorties and the long game answered at once: jarldoms
 fell from five in forty sagas to none, because a steading-first band that
@@ -1364,6 +1413,41 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-12 — What actually stops a band living by raiding** — Task 31's
+  design question rested on a cost nothing had checked was the binding one:
+  a raid takes 28% of a settled band's labour-days. Two probes now follow
+  every armed errand from launch to whatever it carried home, and put the
+  strategy to the game with the harness's own scruples taken off.
+
+  The labour cost is not it. Over 5,982 settled days the errand was refused
+  for a thin store on 1% of them and actually launched on 0.4%; 53% of those
+  days failed on the BOT's `wintersStood >= 1` rule and 17% on its own
+  in-season rule, neither of which is a rule of the game. So every earlier
+  raiding figure was measuring a bot that raided rarely, late and
+  shorthanded, not whether raiding works.
+
+  Unscrupled, it is answered. A party of five instead of three halves the
+  wipe rate (67% → 25% of errands end with nobody coming back) and nearly
+  doubles the haul (25.3 → 43.2 stores) — and second winters do not move,
+  3/30 either way, because at 1.5 errands a saga the errand is not what the
+  run is made of. Raiding MORE is worse, not better: first winters fall
+  29/30 → 12/30 and lifespan halves. And the unleashed arm is the only one
+  where **steel outranks the season** as a cause of death, 59 to 44.
+
+  Which relocates the problem. What binds is not the labour a raid takes
+  away — it is that a raid is fought by the same six people whose survival
+  is the whole run, so every raid is staked against the saga and a haul of
+  43 stores cannot price that. The standing warband is still the answer, for
+  a better reason: not because raiders are your farmers, but because they
+  are your only people.
+
+  One probe bug worth recording: the first run reported that no errand ever
+  carried anything home, which was false. `checkOutcome` writes the result
+  but `sackCamp` pays out in `leaveBattle`, several transitions later, in
+  the same call that deletes the battle — so a haul measured where the
+  outcome appears reads zero for every errand ever flown. A dull probe
+  making a live system look empty, again.
 
 - **2026-08-12 — The coast, passed on while you are still standing** — The
   challenge code was produced on the ending screen and nowhere else, so a
