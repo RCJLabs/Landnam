@@ -3889,3 +3889,86 @@ describe('the strandhogg, and why it does not happen', () => {
     expect(sagas).toBe(30);
   });
 });
+
+describe('who lands their blows', () => {
+  /**
+   * A playtest report, measured: "my warriors miss more than the enemy on
+   * the easiest difficulty". Half right, and the half that is right is a
+   * real asymmetry rather than a feeling.
+   *
+   * A FRESH band out-hits its foes — 76% of swings land against 68%. The
+   * band is not worse at fighting.
+   *
+   * A WORN band does not. Give everyone half health and one bad arm, which
+   * is an ordinary state a season in, and it inverts: 59% against 70%. The
+   * to-hit roll is `2d6 + effectiveStat(might)`, injuries come straight off
+   * `effectiveStat`, and FOES ARE GENERATED FRESH FOR EVERY FIGHT AND NEVER
+   * CARRY A WOUND. So the band's fighting strength decays across a run and
+   * the enemy's cannot. That is the whole of the report.
+   *
+   * The other half — "on the easiest difficulty" — is that hardship does
+   * not touch combat AT ALL. `HardshipDef` carries `stir`, `raid`, `winter`
+   * and `stores`: A Fair Country makes fights RARER and the winter shorter
+   * and the hold fuller, and leaves every blow exactly as hard to land as
+   * it is on A Hard Country. Whether that is right is a design question and
+   * it is written up in the roadmap, not decided here.
+   *
+   * Barred on the fresh case only, which is the one with a defensible right
+   * answer: a band at full strength must not be worse at landing a blow
+   * than the men it meets. The worn case is REPORTED, because how fast a
+   * band should decay is exactly the open question.
+   */
+  it.each([false, true])('counts who lands what (worn=%s)', { timeout: 900_000 }, async (WORN: boolean) => {
+    const tally: Record<string, Record<string, number>> = {
+      warband: { hit: 0, glance: 0, turned: 0 },
+      foe: { hit: 0, glance: 0, turned: 0 },
+    };
+    for (const diff of [0, 1, 2]) {
+      for (let s = 0; s < 30; s += 1) {
+        let state = structuredClone(newGame(`swing-${s}-${diff}`, 'fair'));
+        if (WORN) {
+          // What a band looks like after a season: carrying wounds. Every
+          // one of these drags `effectiveStat`, which is the number the
+          // to-hit roll is built on.
+          for (const p2 of state.party.people) {
+            p2.health = Math.max(1, Math.floor(p2.maxHealth * 0.5));
+            p2.injuries.push({ id: `inj_${p2.id}`, label: 'a bad arm', effect: { might: -1 }, heals: 30 });
+          }
+        }
+        startBattle(state, 'meadow', diff);
+        for (let i = 0; i < 600 && state.battle && !state.battle.outcome; i += 1) {
+          let next = apply(state, step(state));
+          if (next === state) next = apply(state, { type: 'B_END_TURN' });
+          if (next === state) break;
+          state = next;
+        }
+        for (const b of state.battle?.beats ?? []) {
+          if (b.kind !== 'struck') continue;
+          const side = String(b.who).startsWith('foe_') ? 'foe' : 'warband';
+          tally[side]![b.result as string] = (tally[side]![b.result as string] ?? 0) + 1;
+        }
+        await new Promise((r) => setTimeout(r, 0));
+      }
+    }
+    for (const side of ['warband', 'foe']) {
+      const t = tally[side]!;
+      const n = t['hit']! + t['glance']! + t['turned']!;
+      // eslint-disable-next-line no-console
+      console.log(
+        `${side.padEnd(8)} ${n} swings: landed ${t['hit']} (${Math.round((t['hit']! / Math.max(1, n)) * 100)}%), ` +
+          `glanced ${t['glance']}, turned by a wall ${t['turned']}`,
+      );
+    }
+    const w = tally['warband']!;
+    const f = tally['foe']!;
+    const rate = (t: Record<string, number>) =>
+      t['hit']! / Math.max(1, t['hit']! + t['glance']! + t['turned']!);
+    if (!WORN) {
+      expect(
+        rate(w),
+        `a fresh band lands ${Math.round(rate(w) * 100)}% of its blows against the foes' ` +
+          `${Math.round(rate(f) * 100)}% — the band has become worse at fighting than what it meets`,
+      ).toBeGreaterThan(rate(f));
+    }
+  });
+});

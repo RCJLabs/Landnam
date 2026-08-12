@@ -1543,6 +1543,41 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-12 — "My warriors miss more than the enemy": measured, and half
+  of it is true** — A playtest report, and the half that holds is a real
+  asymmetry rather than a feeling.
+
+  A **fresh** band out-hits its foes: 76% of swings land against 68%. The
+  band is not worse at fighting. A **worn** band inverts it — half health
+  and one bad arm apiece, which is an ordinary state a season in — **59%
+  against 70%**. The to-hit roll is `2d6 + effectiveStat(might)`, injuries
+  come straight off `effectiveStat`, and **foes are generated fresh for
+  every fight and never carry a wound**. So the band's fighting strength
+  decays across a run and the enemy's cannot.
+
+  That is defensible as attrition and it is worth knowing it is happening,
+  because nothing in the game says so and the player feels it as the dice
+  turning against them.
+
+  The other half of the report — "on the easiest difficulty" — turns out to
+  be the sharper finding: **hardship does not touch combat at all.**
+  `HardshipDef` carries `stir`, `raid`, `winter` and `stores`. A Fair
+  Country makes fights rarer, the winter shorter and the hold fuller, and
+  leaves every blow exactly as hard to land as it is on A Hard Country. A
+  player who picks the gentlest setting because fights are going badly gets
+  no help with fights.
+
+  Open question, not decided here: should the easiest setting ease combat —
+  a to-hit or damage term on `HardshipDef` — or should attrition be visible
+  instead, so a wounded band reads as wounded rather than as unlucky? The
+  first changes the curve every figure in this document rests on; the second
+  changes nothing but what the player is told.
+
+  Instrumented either way: `who lands their blows` now measures both sides'
+  hit rates, barred on the fresh case (a band at full strength must not be
+  worse at landing a blow than what it meets) and reporting the worn case,
+  because how fast a band should decay is the open question.
+
 - **2026-08-12 — The strandhogg works, and the band never gets to use it** —
   Task 33, and the answer is that nothing is broken. Worldgen puts a
   strandhogg-able place in **60 of 60 worlds** (1.4 apiece). The routing
