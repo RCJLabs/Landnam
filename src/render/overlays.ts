@@ -16,6 +16,7 @@ import type { UiState } from '../uistate';
 import { canFound } from '../sim/site';
 import { renderMap } from './map';
 import { renderDeeds, type Deed } from './deeds';
+import { coastOf } from '../sim/challenge';
 import {
   renderAftermath,
   renderEventCard,
@@ -89,7 +90,7 @@ export function travelOverlay(
     return renderDeeds(deeds, () => {
       ui.actOpen = false;
       rerender();
-    });
+    }, coastOf(state));
   }
 
   if (ui.mapOpen) {

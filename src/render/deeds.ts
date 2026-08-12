@@ -20,6 +20,7 @@ import { wintersStood } from '../sim/calendar';
 import { thingCooldown, thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { strandTarget } from '../sim/sea';
 import { button, el } from './svg';
+import { copyText } from './clipboard';
 
 export interface Deed {
   id: string;
@@ -243,8 +244,17 @@ export function deedsFor(
   return deeds;
 }
 
-/** The sheet itself. One row per deed, each a full-width tap target. */
-export function renderDeeds(deeds: Deed[], close: () => void): HTMLElement {
+/**
+ * The sheet itself. One row per deed, each a full-width tap target.
+ *
+ * `coast` is the challenge code for the run in progress, and it hangs below
+ * the list rather than sitting in it: the list is what the band can spend a
+ * DAY on, and passing somebody the seed costs no day. It is here because
+ * until now the code existed on the ending screen and nowhere else, so a
+ * player who wanted to send a friend the country they were enjoying had to
+ * lose first.
+ */
+export function renderDeeds(deeds: Deed[], close: () => void, coast?: string): HTMLElement {
   const list = el('div', { class: 'deeds' });
   for (const deed of deeds) {
     const row = el(
@@ -269,11 +279,25 @@ export function renderDeeds(deeds: Deed[], close: () => void): HTMLElement {
     list.append(row);
   }
 
-  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
-    el('div', { class: 'card deeds-card' }, [
-      el('h2', {}, ['The Day']),
-      list,
-      button('Not yet', close, { class: 'primary wide' }),
-    ]),
-  ]);
+  const card = el('div', { class: 'card deeds-card' }, [el('h2', {}, ['The Day']), list]);
+
+  if (coast) {
+    // The code itself is on screen, not hidden behind the button: copying
+    // fails silently in more browsers than it works in, and a player who can
+    // READ the line can always retype it. That is also why the format is
+    // plain text — see the header of sim/challenge.ts.
+    const note = el('p', { class: 'coast-code' }, [coast]);
+    card.append(
+      el('div', { class: 'coast' }, [
+        el('p', { class: 'coast-blurb' }, ['This coast, for somebody else to land on.']),
+        note,
+        button('Copy the coast', () => {
+          note.replaceChildren(copyText(coast) ? `Copied — ${coast}` : coast);
+        }, { class: 'action secondary wide' }),
+      ]),
+    );
+  }
+
+  card.append(button('Not yet', close, { class: 'primary wide' }));
+  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);
 }

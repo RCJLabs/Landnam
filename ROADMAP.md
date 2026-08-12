@@ -890,12 +890,27 @@ is a wish.
    finding. *Measured by: the probe's own output, which now carries its own
    baseline.*
 
-10. **[ ] A challenge you can only send after you die.** The code is
-    produced on the ending screen and nowhere else, so a player who wants to
-    set a friend the seed they are enjoying has to lose first. The deeds
-    sheet is the natural home. Small, and it is the difference between a
-    feature people use and one they meet once. *Measured by: reaching the
-    code from a live run in the built page, and its terms matching the run.*
+10. **[x] A challenge you can only send after you die.** Done. The Act sheet
+    now carries the code for the run in progress, ruled off below the deed
+    list because it is not a deed — the list is what the day can be spent
+    on, and passing somebody the seed costs no day.
+
+    What it sends is the COAST and not a mark: `LN1 <seed> <terms>`, no `d`,
+    no `w`. Mid-run there is nothing yet to beat, and "beat day 40" sent on
+    day 40 is a claim the sender has not earned and may lose on day 41. The
+    ending screen still sends the full result. `decodeChallenge` already
+    read a markless code, and the title screen already worded it as a coast
+    rather than a chase, so both ends of this existed and only the
+    producing half was missing.
+
+    `scripts/drive-coast.mjs` measures it in the built page: start a run on
+    a chosen seed and terms, play to day 4, open the Act sheet, read the
+    code, copy it, then paste it back into a fresh title screen and check it
+    is recognised. Driven on **A Hard Country deliberately** — `fair` is the
+    default, so a run started on it would print the right terms whether or
+    not the pick ever reached the code, and the assertion would pass on a
+    broken path. `copyText` moved to `render/clipboard.ts`, shared with the
+    ending screen instead of duplicated.
 
 ## The next queue — audit of 2026-08-08
 
@@ -1349,6 +1364,26 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-12 — The coast, passed on while you are still standing** — The
+  challenge code was produced on the ending screen and nowhere else, so a
+  player who wanted to send a friend the country they were enjoying had to
+  lose first. The Act sheet now carries it, ruled off below the deeds
+  because it is not one — the list is what a DAY can be spent on, and this
+  costs no day.
+
+  It sends the coast, not a result: `LN1 <seed> <terms>` with no mark on it.
+  Mid-run there is nothing yet to beat, and a "beat day 40" sent on day 40
+  is a claim the sender has not earned and may lose on day 41. The ending
+  screen keeps the full mark. Both the decoder and the title screen already
+  handled a markless code, so only the producing half was ever missing.
+
+  Driven end to end in the built page (`scripts/drive-coast.mjs`): start on
+  a chosen seed, play to day 4, open the sheet, read the code, copy it,
+  paste it back into a fresh title screen and see it recognised. On **A Hard
+  Country on purpose** — `fair` is the default, so driving it on `fair`
+  would have printed the right terms whether or not the pick ever reached
+  the code.
 
 - **2026-08-11 — The cold list was arithmetic, and the sample was half what
   it said** — The content-reach probe has been reporting fifteen cards

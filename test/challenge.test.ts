@@ -10,6 +10,7 @@ import { describe, it, expect } from 'vitest';
 import {
   beats,
   challengeOf,
+  coastOf,
   decodeChallenge,
   describeMark,
   encodeChallenge,
@@ -176,5 +177,55 @@ describe('a mark off a real run', () => {
     // are half of what it means.
     const state = structuredClone(newGame('terms-carry', 'fair'));
     expect(decodeChallenge(challengeOf(state))?.hardship).toBe('fair');
+  });
+});
+
+describe('the coast, sent from a run still going', () => {
+  /**
+   * The code used to exist on the ending screen and nowhere else, so a
+   * player who wanted to send a friend the country they were enjoying had
+   * to lose first. `coastOf` is the mid-run half, and what it deliberately
+   * leaves OUT is the mark.
+   */
+  it('carries the seed and the terms and nothing to beat', () => {
+    const state = structuredClone(newGame('bright-fjord', 'fair'));
+    state.day = 40;
+    const code = coastOf(state);
+    expect(code).toBe('LN1 bright-fjord fair');
+    const read = decodeChallenge(code);
+    expect(read?.seed).toBe('bright-fjord');
+    expect(read?.hardship).toBe('fair');
+    // The point of the whole function: mid-run there is nothing yet to
+    // beat. "Beat day 40" sent on day 40 is a claim the sender has not
+    // earned and may lose on day 41.
+    expect(read?.mark).toBeUndefined();
+  });
+
+  it('does not move as the run goes on', () => {
+    // A coast is a coast. Two players comparing codes a week apart must be
+    // able to see they are talking about the same country.
+    const state = structuredClone(newGame('steady', 'even'));
+    const early = coastOf(state);
+    state.day = 300;
+    state.jarl = { name: 'Ketil', since: 290 };
+    expect(coastOf(state)).toBe(early);
+  });
+
+  it('is the finished code with the result taken off', () => {
+    const state = structuredClone(newGame('both-halves', 'hard'));
+    state.day = 128;
+    // The ending screen's code says what the run got to; this one does not.
+    expect(challengeOf(state)).toContain('d128');
+    expect(coastOf(state)).not.toContain('d128');
+    // Same coast underneath, though — seed and terms agree.
+    const ended = decodeChallenge(challengeOf(state));
+    const live = decodeChallenge(coastOf(state));
+    expect(live?.seed).toBe(ended?.seed);
+    expect(live?.hardship).toBe(ended?.hardship);
+  });
+
+  it('survives a seed with a space in it, like every other code', () => {
+    const state = structuredClone(newGame('two words', 'even'));
+    expect(decodeChallenge(coastOf(state))?.seed).toBe('two words');
   });
 });

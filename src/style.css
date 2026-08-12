@@ -1052,6 +1052,30 @@ h2.grim {
   font-style: italic;
 }
 
+/* Passing the coast on. Ruled off from the deeds above it because it is not
+   one: the list is what the day can be spent on, and this costs no day. */
+.coast {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--edge);
+}
+
+.coast-blurb {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--parchment-dim);
+  margin-bottom: 6px;
+}
+
+.coast-code {
+  color: var(--parchment-dim);
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 8px;
+  /* Same reason as .seed-note: one long token, and a 390px screen. */
+  overflow-wrap: anywhere;
+}
+
 
 /* --- What the band knows (4.4) --- */
 

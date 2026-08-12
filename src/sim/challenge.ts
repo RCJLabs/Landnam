@@ -138,7 +138,22 @@ export function describeMark(mark: Mark): string {
   return `day ${mark.day}, ${winters} stood`;
 }
 
-/** The code for the run as it stands. */
+/**
+ * The COAST, with no mark on it: land where I landed, on the terms I took.
+ *
+ * The one a player can send while they are still playing, and the reason it
+ * carries no mark is that mid-run there is nothing yet to beat. "Beat day
+ * 40" sent on day 40 is a claim the sender has not earned and may lose on
+ * day 41. A finished saga has a result and says so; a run in progress has a
+ * country worth recommending, which is the thing people actually want to
+ * pass on. `decodeChallenge` reads a markless code as an ordinary
+ * challenge — same seed, same terms, nothing to chase.
+ */
+export function coastOf(state: GameState): string {
+  return encodeChallenge({ seed: state.seed, hardship: state.hardship ?? 'even' });
+}
+
+/** The code for the run as it stands, mark and all. */
 export function challengeOf(state: GameState, world?: string): string {
   return encodeChallenge({
     seed: state.seed,

@@ -12,6 +12,7 @@ import type { Fallen } from '../../memorial';
 import type { GameState } from '../../state/types';
 import { button, el } from '../svg';
 import { beats, challengeOf, describeMark, markOf } from '../../sim/challenge';
+import { copyText } from '../clipboard';
 
 export function renderWall(dead: Fallen[], onClose: () => void): HTMLElement {
   const card = el('div', { class: 'card wall-card' }, [
@@ -178,31 +179,3 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
   ]);
 }
 
-/**
- * Puts text on the clipboard. The async Clipboard API needs a secure context
- * and the built page is opened from file://, where it is not available — so
- * the old selection trick is the path that actually runs, and the modern one
- * is the fallback rather than the other way round.
- */
-function copyText(text: string): boolean {
-  try {
-    const holder = document.createElement('textarea');
-    holder.value = text;
-    holder.setAttribute('readonly', 'true');
-    holder.style.position = 'fixed';
-    holder.style.opacity = '0';
-    document.body.append(holder);
-    holder.select();
-    const ok = document.execCommand('copy');
-    holder.remove();
-    if (ok) return true;
-  } catch {
-    // Fall through to the async API.
-  }
-  try {
-    void navigator.clipboard?.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
