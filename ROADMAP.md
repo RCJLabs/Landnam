@@ -1543,6 +1543,35 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-12 — The one deed the game offered blind, and where the losses
+  are not coming from** — Falling on a camp said only *"Draw steel.
+  Whatever you take, they will remember who took it."* No odds, no strength,
+  no count — while calling a Thing states its percentage and its cost,
+  bartering states what it carries in, and a strandhögg says what the ship
+  is worth. The single least reversible choice on the sheet, docking
+  REP_RAIDED the instant it is tapped and measured at a 5% win rate, was the
+  only one a player could not see into. It now reads "4 of us here against
+  about 6 of them", and says plainly when they have the numbers. The count
+  comes from `foeCount`, split out of `rollFoes` so the sheet and the fight
+  cannot drift apart.
+
+  Then the balance half, and it is a partial result honestly reported. Word
+  no longer hardens a fight the band PICKED — neither the number of them
+  (`wordBump`) nor who they are (`weightFor`). `wordOf` counts sackings, so
+  every camp a band fell on made the next camp bigger and staffed it with
+  huscarls: a fishing village quietly fielding veterans because the attacker
+  was well known. Word is what comes LOOKING for a famous band; it cannot be
+  what the place you walk into recruits.
+
+  Right on its own terms, and **not the cause**: camps went 4/85 (5%) to
+  6/76 (8%). The losses are not word, and they are not the foe count — three
+  sworn draw about four defenders. What is left is per-head strength and the
+  shield wall itself: the band's whole combat design is a wall, a wall wants
+  the whole band, and a raiding party is by definition half of one. Five
+  sworn only reach 12% where the same band behind a palisade holds 39% of
+  the raids that come to it. The next measurement is that comparison held
+  properly — same numbers attacking and defending — and it is not done.
+
 - **2026-08-12 — Falling on a camp is a fight the band loses 19 times in
   20** — Glory was the hypothesis: camps paid nothing to the band's heart
   where a sacked place always had, so raiding's morale could only go one

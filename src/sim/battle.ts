@@ -197,6 +197,25 @@ export function foeCapFor(state: GameState): number {
  */
 export const RAID_PER_POINT = 0.5;
 
+/**
+ * How many they field. Split out of `rollFoes` so that a screen can tell the
+ * player what they are walking into using the SAME arithmetic the fight is
+ * built from — the alternative is a second copy of this sum in the UI, which
+ * would be wrong the first time either changed.
+ */
+export function foeCount(
+  warbandSize: number,
+  difficulty: number,
+  raid = false,
+  cap = raid ? MAX_RAIDERS : MAX_FOES,
+): number {
+  const base = warbandSize * (raid ? 0.9 : 0.6);
+  return Math.max(
+    1,
+    Math.min(cap, Math.round(base + difficulty * (raid ? RAID_PER_POINT : 1))),
+  );
+}
+
 export function rollFoes(
   rng: Rng,
   warbandSize: number,
@@ -205,11 +224,7 @@ export function rollFoes(
   cap = raid ? MAX_RAIDERS : MAX_FOES,
   word = 0,
 ): Person[] {
-  const base = warbandSize * (raid ? 0.9 : 0.6);
-  const count = Math.max(
-    1,
-    Math.min(cap, Math.round(base + difficulty * (raid ? RAID_PER_POINT : 1))),
-  );
+  const count = foeCount(warbandSize, difficulty, raid, cap);
   const foes: Person[] = [];
   for (let i = 0; i < count; i++) {
     const archetype = rng.weighted(FOE_ARCHETYPES, (a) => weightFor(a, word));
@@ -280,6 +295,8 @@ export function beginBattle(
   terrain: Terrain,
   difficulty = 0,
   raid = false,
+  /** The band went out and picked this fight, rather than meeting one. */
+  picked = false,
 ): void {
   state.modes = pushMode(state, 'BATTLE').modes;
   const rng = stream(state.seed, 'combat').derive(
@@ -307,11 +324,24 @@ export function beginBattle(
   const ourSide = sworn(raid ? homeCrew(state) : fieldCrew(state));
   // Word reaches the open field only: the home raid has its own escalation,
   // and sackings already arrive there through standing.
-  const word = raid ? 0 : wordOf(state);
+  // Nor does word decide WHO is standing there, for the same reason it does
+  // not decide how many. `weightFor` leans a famous band's fights toward
+  // huscarls, and against a camp the player chose to walk into that meant
+  // the fishing village quietly fielded veterans because the attacker was
+  // well known. Word is what comes LOOKING for you.
+  const word = raid || picked ? 0 : wordOf(state);
   const foes = rollFoes(
     rng.derive('foes'),
     Math.max(1, ourSide.length),
-    raid ? difficulty : difficulty + wordBump(state),
+    // Word does NOT harden a fight the band PICKED, and that is task 31's
+    // answer. `wordOf` counts sackings, so every camp a band fell on made
+    // the next camp it fell on bigger — measured, the raider drew steel on
+    // camps 85 times and won 4, and the more it raided the worse the odds
+    // got. Word means more men come LOOKING for a known band; it cannot
+    // mean the camp you walk into has quietly recruited. The archetype mix
+    // still leans harder everywhere (`weightFor`), so fame is still felt in
+    // WHO stands there, just not in how many.
+    raid || picked ? difficulty : difficulty + wordBump(state),
     raid,
     raid ? raiderCap(state) : foeCapFor(state),
     word,

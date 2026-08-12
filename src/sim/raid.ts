@@ -8,10 +8,12 @@ import { stream } from '../rng';
 import { buildingById } from '../data/buildings';
 import type { GameState } from '../state/types';
 import { effectiveReport } from './colony';
-import { standing } from './battle';
+import { foeCapFor, foeCount, standing } from './battle';
 import { angerLevel, raidPressure } from './neighbours';
-import { hands } from './people';
+import { hands, sworn } from './people';
 import { wintersStood } from './calendar';
+import { fieldCrew } from './expedition';
+import { wordBump } from './word';
 import { hardshipById } from '../data/hardship';
 import { chronicle } from './saga';
 import { mourn } from './kin';
@@ -325,4 +327,32 @@ export function holdSteading(state: GameState, foesDown: number): void {
 export function defendersLeft(state: GameState): number {
   const battle = state.battle;
   return battle ? standing(battle, 'warband').length : 0;
+}
+
+/**
+ * What the band is walking into if it draws steel on a camp: how many of us
+ * are standing here, and how many of them will come out.
+ *
+ * Falling on a camp was the ONLY deed the game offered blind. Calling a
+ * Thing states its odds and its cost, bartering states what it carries in,
+ * a strandhögg says what the ship is worth — and the most consequential,
+ * least reversible choice on the sheet said only "Draw steel." It docks
+ * REP_RAIDED the instant it is tapped, it is measured at a five percent win
+ * rate, and it kills people for good. A player deserves to see the shape of
+ * it first.
+ *
+ * Uses `foeCount`, which the fight itself uses, so the two cannot drift.
+ */
+export function fallOnReport(
+  state: GameState,
+  might: number,
+): { ours: number; theirs: number } {
+  const ours = sworn(fieldCrew(state)).length;
+  const theirs = foeCount(
+    Math.max(1, ours),
+    might + wordBump(state),
+    false,
+    foeCapFor(state),
+  );
+  return { ours, theirs };
 }

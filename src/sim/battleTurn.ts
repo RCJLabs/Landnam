@@ -146,7 +146,7 @@ export function startBattle(
   difficulty = 0,
   stake?: Stake,
 ): void {
-  beginBattle(state, terrain, difficulty);
+  beginBattle(state, terrain, difficulty, false, !!(stake?.campId || stake?.placeId));
   // Stamped before any turn plays out, so a mid-fight save still knows what
   // the fight is for.
   if (state.battle) {

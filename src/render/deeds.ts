@@ -19,6 +19,7 @@ import { FEAST_FOOD } from '../data/thing';
 import { wintersStood } from '../sim/calendar';
 import { thingCooldown, thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { strandTarget } from '../sim/sea';
+import { fallOnReport } from '../sim/raid';
 import { button, el } from './svg';
 import { copyText } from './clipboard';
 
@@ -133,10 +134,20 @@ export function deedsFor(
       ...(blocked ? { blocked: BARGAIN_REASON[blocked] } : {}),
       run: () => dispatch({ type: 'BARTER', id: host.id }),
     });
+    const odds = fallOnReport(state, host.might);
     deeds.push({
       id: 'fallon',
       label: `Fall on ${host.name}`,
-      blurb: 'Draw steel. Whatever you take, they will remember who took it.',
+      // The numbers first, because this is the one deed on the sheet that
+      // used to say nothing. Standing is docked the moment it is tapped and
+      // people die for good, so "how many of us, how many of them" is the
+      // least the sheet owes a player.
+      blurb:
+        `${odds.ours} of us here against about ${odds.theirs} of them. ` +
+        (odds.theirs > odds.ours
+          ? 'They have the numbers. '
+          : '') +
+        'Whatever you take, they will remember who took it.',
       tone: 'grim',
       run: () => dispatch({ type: 'FALL_ON', id: host.id }),
     });
