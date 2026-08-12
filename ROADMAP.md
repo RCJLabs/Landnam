@@ -23,7 +23,9 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: 6.3**
+> **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 (the sim boundary)
+> is Evan's call and blocks 5 through 10; the web game's own loose threads are
+> tracked as tasks, not milestones.**
 
 ---
 
@@ -35,16 +37,25 @@ Anyone — or any future session — should be able to read this and the "dead
 ends" table and pick the work up without re-deriving a day of measurement.*
 
 **Shipped:** Phases 0–4 complete. 5.1 Sound, 5.2 Onboarding and 5.3 Balance &
-juice are done. Phase 6 is under way: 6.1 and 6.2 shipped, 6.3 part-done.
+juice are done. **Phase 6 is complete**: 6.2 Hands, 6.3 Overwhelming force
+and 6.4 No last winter are all in, and 6.1 Winters that vary shipped and was
+measured at no change to the curve — it is a prerequisite for 6.2 rather
+than a fix on its own, and is left at `[~]` to say so honestly.
 
-**The current queue is the audit of 2026-08-11** — ten items, all doable
-without leaving this repo, two of them bugs shipped in the last two days.
+**The audit of 2026-08-11 is finished** — all ten items, two of them bugs
+shipped in the last two days, and item 9 turned out to be a fault in the
+instrument rather than in the game.
+
+**What is open is not a milestone.** Raiding is still not a way to live
+(task 31), and one lever is left before the answer is a standing warband:
+what a haul is worth. The strandhögg is unreached in play, 3 in 120 sagas.
+Both are tracked as tasks; neither blocks the port.
 
 **Phase 7 is the Unreal build**, running in parallel in another repo — a hex
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 831 tests), the renderers are disposable, and the port lives
+content under 838 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
 **The measured curve** (a scripted player of roughly average competence over
@@ -591,7 +602,7 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **831 tests
+with 5,000 more of typed content in `src/data/`, standing under **838 tests
 in 45 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
@@ -750,7 +761,7 @@ what 3D actually buys, then what gets harder.
 
 ### What gets harder
 
-9. **[ ] Save discipline has to survive the port.** `SAVE_VERSION` is 28,
+9. **[ ] Save discipline has to survive the port.** `SAVE_VERSION` is 31,
    every bump ships a migration, and the rule is that old saves must always
    load — see `src/state/migrations.ts`, which is a written record of every
    shape this game has ever had. Unreal `SaveGame` has no such culture by
