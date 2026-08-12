@@ -231,6 +231,45 @@ is right on its own: two thirds of armed errands used to end with nobody
 coming back, and a fight the player chose to pick should not annihilate the
 band that picked it. All 838 tests hold with it in.
 
+**The haul cannot be priced, and the fifth cause is the real one
+(2026-08-12).** The last lever before the hird: multiply what camps and
+places hold and find the price at which raiding pays. There is none.
+
+| 30 landings, A Fair Country | 2nd winter | days | stores at the end | morale | coast anger |
+| --- | --- | --- | --- | --- | --- |
+| turtle | **21/30** | 168 | 280 | **65** | **1** |
+| raider, haul ×1 | 3/30 | 99 | 99 | 19 | 49 |
+| raider, haul ×2 | 3/30 | 99 | 108 | 19 | 49 |
+| raider, haul ×4 | 2/30 | 96 | 117 | 18 | 52 |
+| raider, haul ×8 | 2/30 | 95 | 147 | 16 | 55 |
+
+Eight times the haul is a single camp yielding 894 stores — months of
+eating — and it makes the raider slightly WORSE. The knob was proved live
+first (112 → 224 → 447 → 894 from one camp) so this is a real null and not
+another dull probe.
+
+Which finally names the binding constraint, because the last two columns
+never move with the haul and never stop being the difference: **the raider
+dies at morale 19 on a coast that hates it, and the turtle lives at morale
+65 on a coast that does not.** More plunder buys more anger — 49 to 55 —
+and anger buys reprisal, and reprisal costs heart. The cost of raiding is
+paid in morale and in enmity, and neither is purchasable with stores. That
+is why every supply-side lever failed: bodies, party size, rate, lethality
+and price were all answers to a question the game was not asking.
+
+**And there is a gap that fits the symptom exactly.** `sim/plunder.ts`
+contains no morale line at all. A sacked camp pays food, firewood and
+sometimes a thrall, and NOTHING to the band's heart — while a sacked place
+pays `def.loot.morale`, a lost fight costs 15 plus bereavement, a sacking
+of your own steading costs 14. Camps are the repeatable circuit the whole
+"raiding as a life" design rests on, and coming home from one loaded does
+not lift the band at all. Glory is missing from the one act the game is
+named for.
+
+So the next thing to try is not the hird and not a bigger haul: it is
+paying a raid in RENOWN, and raiding a coast that is not the one you live
+on. Both are cheap, both are historically true, and neither has been tried.
+
 **Two things this work cost, recorded rather than buried.** The settler
 briefly gained armed sorties and the long game answered at once: jarldoms
 fell from five in forty sagas to none, because a steading-first band that
@@ -1467,6 +1506,31 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-12 — The haul cannot be priced, and raiding's real cost is
+  morale** — Task 31's last supply-side lever. Multiply what camps and
+  places hold and find the price at which raiding pays: there is none.
+  Doubling changes nothing at all (identical runs), and eight times — one
+  camp yielding 894 stores, months of eating — makes the raider slightly
+  worse, 2/30 second winters against 3/30. The knob was proved live before
+  the null was believed: 112 → 224 → 447 → 894 from a single camp.
+
+  The columns that never move with the haul are the ones that matter. The
+  raider dies at **morale 19 on a coast at anger 49**; the turtle lives at
+  **morale 65 on a coast at anger 1**. More plunder buys more anger (49 →
+  55), anger buys reprisal, reprisal costs heart. Raiding is not paid for
+  in food or in bodies — it is paid for in morale and in enmity, and
+  neither can be bought with stores. That is why five levers in a row
+  failed: labour cost, party size, raid rate, lethality and price were all
+  answers to a question the game was not asking.
+
+  And the gap that fits: `sim/plunder.ts` has no morale line anywhere. A
+  sacked camp pays food, firewood and sometimes a thrall and nothing to the
+  band's heart, while a sacked place pays `def.loot.morale`, a lost fight
+  costs 15 plus bereavement, and a sacking of your own steading costs 14.
+  Camps are the repeatable circuit the whole design rests on, and coming
+  home from one loaded lifts nobody. Glory is missing from the act the game
+  is named for.
 
 - **2026-08-12 — A fight you picked can be broken off, and it did not save
   raiding** — Task 31's cheap experiment. `rollFate` used to know two

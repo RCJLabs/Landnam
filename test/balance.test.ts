@@ -72,12 +72,12 @@ import { reachTargets, shoveDestination, throwTargets } from '../src/sim/battleA
 import { offersAt, placeHere, tradeBlocker } from '../src/sim/places';
 import { campStores } from '../src/sim/plunder';
 import { strandTarget } from '../src/sim/sea';
-import { placeKind } from '../src/data/places';
-import { bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
+import { placeKind, PLACE_KINDS } from '../src/data/places';
+import { angerLevel, bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
 import { canCallThing, hasSpeakers, yearsRuled } from '../src/sim/thing';
 import { SPEAKER_STANDING } from '../src/data/thing';
 import { launchBlocker, provisionsFor } from '../src/sim/expedition';
-import { BARTER_FOOD } from '../src/data/clans';
+import { BARTER_FOOD, CLAN_KINDS } from '../src/data/clans';
 import { wintersStood } from '../src/sim/calendar';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
@@ -3504,5 +3504,122 @@ describe('can a raider actually live by it', () => {
     // the shape of the answer is what task 31 is FOR. The only bar is that
     // the sweep ran at all.
     expect(Object.keys(secondWinter).length).toBe(arms.length);
+  });
+});
+
+describe('what a haul would have to be worth', () => {
+  /**
+   * TASK 31's LAST LEVER, and the one that decides whether the answer is a
+   * cheap number or a day of new mechanics.
+   *
+   * Four candidate causes are measured and dead: the labour the errand
+   * costs (refused for a thin store on 1% of eligible days), the size of
+   * the party (per-errand much better, strategy unmoved), the rate of
+   * raiding (strictly worse), and how lethal a lost raid is (a third fewer
+   * dead by steel, strategy unmoved). What is left is the exchange rate: a
+   * raid pays about 43 stores and buys a permanent enemy, against a farm
+   * that simply works.
+   *
+   * Pricing was dismissed once, and the reason it was dismissed is gone:
+   * it raised the payout on a bet that could end the run, which is a
+   * lottery ticket rather than a living. With `withdrew` in, a lost raid no
+   * longer annihilates the band, so a price can now be asked to do the job
+   * it could not do before.
+   *
+   * So: multiply what camps and places hold, and find the number — if there
+   * is one — at which a raider reaches a second winter as often as a turtle
+   * does. If no price does it, raiding cannot be bought and the standing
+   * warband is the only answer left. If a modest one does, it is a day
+   * cheaper than the warband.
+   *
+   * The data is mutated in place and restored in a finally. That is ugly
+   * and it is the honest way to sweep a shipped constant without shipping a
+   * knob nobody would ever set at runtime.
+   */
+  it('sweeps the plunder scale against the turtle it has to beat', { timeout: 900_000 }, async () => {
+    const SEEDS = 30;
+    const baseClan = CLAN_KINDS.map((k) => ({ ...k.plunder }));
+    const basePlace = PLACE_KINDS.map((k) => ({ ...k.loot }));
+    const rows: string[] = [];
+    const second: Record<string, number> = {};
+
+    const setScale = (scale: number): void => {
+      CLAN_KINDS.forEach((k, i) => {
+        k.plunder.food = Math.round(baseClan[i]!.food * scale);
+        k.plunder.firewood = Math.round(baseClan[i]!.firewood * scale);
+      });
+      PLACE_KINDS.forEach((k, i) => {
+        k.loot.food = Math.round(basePlace[i]!.food * scale);
+        k.loot.firewood = Math.round(basePlace[i]!.firewood * scale);
+      });
+    };
+
+    try {
+      for (const [name, p, scale] of [
+        ['turtle x1', TURTLE, 1],
+        ['raider x1', RAIDER, 1],
+        ['raider x2', RAIDER, 2],
+        ['raider x4', RAIDER, 4],
+        ['raider x8', RAIDER, 8],
+      ] as [string, Policy, number][]) {
+        policy = p;
+        setScale(scale);
+        let winter = 0, spring = 0, secondW = 0, days = 0, sacked = 0, alive = 0;
+        let morale = 0, anger = 0, stores = 0;
+        const fates: Record<string, number> = {};
+        for (let s = 0; s < SEEDS; s += 1) {
+          const state = run(`curve-${s}`, 200, undefined, 'fair');
+          days += state.day;
+          if (state.day >= 49) winter += 1;
+          if (state.day >= 73) spring += 1;
+          if (state.day >= 169) secondW += 1;
+          sacked += state.tally.sackings;
+          alive += state.party.people.filter((x) => x.alive).length;
+          morale += state.party.morale;
+          anger += angerLevel(state);
+          stores += state.party.food + state.party.firewood;
+          for (const p2 of state.party.people) {
+            if (p2.alive) continue;
+            const f = p2.fate ?? 'unrecorded';
+            const how = /spear|axe|sword|blade|field|fell|wound|steel|cut down|shield|carried off/i.test(f)
+              ? 'steel'
+              : /hunger|starv|cold|froze|winter|sick|fever|wasted/i.test(f)
+                ? 'want'
+                : /despair|walked out|did not wake|gave up|heart/i.test(f)
+                  ? 'despair'
+                  : 'other';
+            fates[how] = (fates[how] ?? 0) + 1;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+        second[name] = secondW;
+        rows.push(
+          `  ${name.padEnd(10)} winter ${String(winter).padStart(2)}/${SEEDS}, ` +
+            `spring ${String(spring).padStart(2)}/${SEEDS}, ` +
+            `second winter ${String(secondW).padStart(2)}/${SEEDS}; ` +
+            `avg ${String(Math.round(days / SEEDS)).padStart(3)} days, ` +
+            `${(sacked / SEEDS).toFixed(1)} sacked, ${(alive / SEEDS).toFixed(1)} alive\n` +
+            `             ended on ${(stores / SEEDS).toFixed(0)} stores, morale ` +
+            `${(morale / SEEDS).toFixed(0)}, coast anger ${(anger / SEEDS).toFixed(0)}; dead by ` +
+            Object.entries(fates).sort((a, b) => b[1] - a[1])
+              .map(([k, v]) => `${k} ${v}`).join(', '),
+        );
+      }
+    } finally {
+      policy = SETTLER;
+      // Put the shipped numbers back, or every test after this one in the
+      // file is measuring a game that does not exist.
+      CLAN_KINDS.forEach((k, i) => { k.plunder = { ...baseClan[i]! }; });
+      PLACE_KINDS.forEach((k, i) => { k.loot = { ...basePlace[i]! }; });
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`what a haul is worth, ${SEEDS} landings each (A Fair Country):\n${rows.join('\n')}`);
+
+    // The restore is the only thing barred here — a leaked scale would
+    // silently rewrite every figure in this file, the same failure mode the
+    // `policy` reset in a finally exists to prevent.
+    expect(CLAN_KINDS[0]!.plunder).toEqual(baseClan[0]);
+    expect(PLACE_KINDS[0]!.loot).toEqual(basePlace[0]);
   });
 });
