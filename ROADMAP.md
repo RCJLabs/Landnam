@@ -1543,6 +1543,43 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-12 — TASK 31 CLOSED: the hands hold their own hall** — #34 said
+  the width of the shield wall decides an open-field fight (9% won with
+  three, 47% with six) and that a band of six can never raid with six,
+  because somebody must hold the steading. The cheap way to satisfy that is
+  not a standing warband: it is letting the people already at home defend
+  it. Hands now stand in the line when a raid comes to the yard — sworn
+  first, hands filling the gaps, never wider than the same six places.
+
+  It does not widen the wall and it does not put hands on the road: away
+  from home the line is still the sworn who walked there, so what 6.2 bought
+  (labour, never army) is intact. And the bot took the capability in the
+  same commit — it sends the whole wall now instead of a detachment of it.
+
+  | A Fair Country, 30 landings | before | after |
+  | --- | --- | --- |
+  | camps won, of the fights picked | 4/85 (5%) | **12/34 (35%)** |
+  | raider second winters | 3/30 | **7/30** |
+  | raider days a saga | 99 | **125** |
+  | settler second winters, for scale | 7/30 | 7/30 |
+  | turtle second winters, for scale | 21/30 | 21/30 |
+
+  **Raiding is a way to play now** — level with settling, where it was a
+  dead end this morning. Not level with turtling, and that is a separate
+  question about the turtle rather than about raiding.
+
+  Defence did not become free: the raid gauntlet holds 34/96 with its
+  gradient intact (12/10/7/5 across difficulty 0–3), which is what the extra
+  bodies were checked against.
+
+  Two things this touched that are easy to miss. The recorded long run
+  stopped replaying at action #1010 — a genuine rules change, which is
+  exactly what that test exists to report, and it was re-recorded rather
+  than relaxed. And the guide and the hand lesson both stated the old rule
+  in so many words ("labour, never fighters"; "they never stand in the
+  line"), so both were rewritten: the game must not teach a rule it no
+  longer has.
+
 - **2026-08-12 — TASK 31 ANSWERED: the band cannot take its wall with it** —
   The comparison every earlier measurement was missing. Same band, same
   difficulty, thirty-two fights a cell, at every width from three to six, in

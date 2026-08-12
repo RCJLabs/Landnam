@@ -62,9 +62,36 @@ export function leaderOf(people: Person[]): Person | undefined {
   return sworn(people)[0];
 }
 
-/** Everyone else the steading has taken in. They work; they never fight. */
+/** Everyone else the steading has taken in. They work. */
 export function hands(people: Person[]): Person[] {
   return living(people).filter((p) => p.bond !== 'sworn');
+}
+
+/**
+ * Who stands when the raid comes to the YARD: the sworn first, and the hands
+ * behind them to fill the line, never more than the wall is wide.
+ *
+ * Hands used to stay indoors whatever was happening outside, and that rule
+ * cost the game its second way to play. Measured (task 31, #34): an
+ * open-field fight is decided by how many stood in it — 9% won with three,
+ * 47% with six — and a band of six that must leave somebody holding the
+ * steading can only ever raid with three or four. It could not take its wall
+ * with it, so raiding was lost before the first blow: 4 camps won out of 85.
+ *
+ * Letting the hands hold their own hall is what frees the sworn to go. It
+ * does NOT widen the wall — SWORN_MAX is still the whole line, and hands
+ * only ever fill a gap a sworn is not standing in — and it does not put them
+ * on the road: away from home the line is the sworn who walked there. What
+ * 6.2 bought is unchanged, because this is not more army, it is the same six
+ * places filled by whoever is actually present to fill them.
+ *
+ * They are worse at it, and that is not a special case: a hand is a Person
+ * with a hand's stats, and the field will say so.
+ */
+export function standAtHome(people: Person[]): Person[] {
+  const line = sworn(people);
+  if (line.length >= SWORN_MAX) return line;
+  return [...line, ...hands(people).slice(0, SWORN_MAX - line.length)];
 }
 
 /** Whether the band could swear another. */

@@ -212,7 +212,7 @@ const RAIDER: Policy = {
   siteFloor: 7,
   plunderWindow: 40,
   raidReach: 10,
-  raidParty: 3,
+  raidParty: 6,
   raidAfterWinters: 1,
   raidInSeasonOnly: true,
   trades: false,
@@ -683,6 +683,11 @@ function step(state: GameState): Action {
 
     if (policy.raidReach > 0 && oldEnough && seasonOk
         && raidTarget(state, policy.raidReach)) {
+      // The band takes its WALL now, not a detachment of it. Hands hold the
+      // yard (see `standAtHome`), so the sworn are free to go — and #34 says
+      // the width of the line is the whole of whether the errand is worth
+      // flying: 9% won with three, 47% with six. Three was never a raiding
+      // party, it was half a shield wall walking into a fight.
       const want = policy.raidParty;
       const crew = sworn(state.party.people).slice(0, want).map(p => p.id);
       // The surplus that funds the errand, counted in DAYS the steading can
@@ -691,8 +696,11 @@ function step(state: GameState): Action {
       // mouths meant the threshold was never met, the errand stopped
       // launching, and the sea went back to nought — the exact content item
       // 1 had just made reachable, undone by a constant in the bot.
-      if (crew.length === want
-        && state.party.food > provisionsFor(want) + foodPerDay(state) * policy.errandBuffer
+      // Take as many as will go rather than an exact count: `launchBlocker`
+      // owns the "somebody has to keep the fire" rule, and a band down to
+      // four sworn should still be able to raid with four.
+      if (crew.length >= Math.min(3, want)
+        && state.party.food > provisionsFor(crew.length) + foodPerDay(state) * policy.errandBuffer
         && launchBlocker(state, crew) === null) {
         return { type:'LAUNCH', members: crew, purpose: 'raid' };
       }

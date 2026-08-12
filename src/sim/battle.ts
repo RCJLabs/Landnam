@@ -19,7 +19,7 @@ import {
 import type { Battle, Champion, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
 import { beat } from './beats';
-import { effectiveStat, sworn } from './people';
+import { effectiveStat, standAtHome, sworn } from './people';
 import { wintersStood } from './calendar';
 import { fieldCrew, homeCrew } from './expedition';
 import { standsFor } from './colony';
@@ -321,7 +321,9 @@ export function beginBattle(
   // Only the sworn stand in a line. The hands are at the steading and stay
   // there whatever is happening outside — that is the whole bargain of 6.2:
   // more people is more work done, never a wider shield wall.
-  const ourSide = sworn(raid ? homeCrew(state) : fieldCrew(state));
+  // At home, everyone who is there stands — see `standAtHome`. On the road,
+  // the line is the sworn who walked there.
+  const ourSide = raid ? standAtHome(homeCrew(state)) : sworn(fieldCrew(state));
   // Word reaches the open field only: the home raid has its own escalation,
   // and sackings already arrive there through standing.
   // Nor does word decide WHO is standing there, for the same reason it does

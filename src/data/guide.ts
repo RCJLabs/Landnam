@@ -37,7 +37,7 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-steading',
     title: 'The Steading',
-    body: 'Once settled, tap the hall to enter the steading. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. A steading that is fed, built and on good terms with the coast DRAWS settlers, who arrive as hands: labour, never fighters. A band that is FEARED and has taken something worth sharing draws men of the other kind, who come armed and fill a gap in the wall. Both need a bed and food to spare.',
+    body: 'Once settled, tap the hall to enter the steading. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. A steading that is fed, built and on good terms with the coast DRAWS settlers, who arrive as hands: labour on the road, and another body in the line when a raid comes to the yard. A band that is FEARED and has taken something worth sharing draws men of the other kind, who come armed and fill a gap in the wall. Both need a bed and food to spare.',
   },
   {
     id: 'the-fight',

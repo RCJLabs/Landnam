@@ -132,7 +132,7 @@ export const LESSONS: LessonDef[] = [
   {
     id: 'the-hands',
     title: 'Hands',
-    body: 'They came with nothing and were put to work by noon. A hand is not sworn: they hold jobs, eat at the fire, and need a bed under a roof — and they never stand in the line, because six came off the knarr and six is the line. A hand who is miserable long enough walks out.',
+    body: 'They came with nothing and were put to work by noon. A hand is not sworn: they hold jobs, eat at the fire, and need a bed under a roof. They do not walk out under arms with the band — but when a raid comes to the yard they take up what is to hand and stand with everyone else, because it is their hall too. The line is still six wide. A hand who is miserable long enough walks out.',
     point: 'Growth buys labour, never a wider wall. Build room before you take people in, and keep their hearts up.',
     when: [{ c: 'hasHands' }],
   },
