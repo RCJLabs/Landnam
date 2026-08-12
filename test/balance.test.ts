@@ -72,6 +72,7 @@ import { reachTargets, shoveDestination, throwTargets } from '../src/sim/battleA
 import { offersAt, placeHere, tradeBlocker } from '../src/sim/places';
 import { campStores } from '../src/sim/plunder';
 import { strandTarget } from '../src/sim/sea';
+import { atSea as _atSea } from '../src/sim/travel';
 import { placeKind, PLACE_KINDS } from '../src/data/places';
 import { angerLevel, bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
 import { canCallThing, hasSpeakers, yearsRuled } from '../src/sim/thing';
@@ -809,6 +810,7 @@ const SEA_PULL = 2;
 
 /** How many hexes of extra walk the ship's way in is worth. */
 const SHIP_PULL = 4;
+
 
 /**
  * And how long they give the errand before turning for home regardless.
@@ -3820,5 +3822,70 @@ describe('attacking and defending, held side by side', () => {
       Math.abs(wonAt['attack:6']! - wonAt['defend (no palisade):6']!),
       'attacking and defending with the same band on open ground have come apart',
     ).toBeLessThan(PER * 0.35);
+  });
+});
+
+describe('the strandhogg, and why it does not happen', () => {
+  /**
+   * TASK 33. The verb works; the band never gets to use it.
+   *
+   * Every part of the chain checks out except one. Worldgen puts a
+   * strandhogg-able place in 60 of 60 worlds (1.4 apiece). The routing
+   * works — of the places the errand aimed at, 172 of 173 were reachable
+   * from the water. The bot takes the shot when it has one, twice in the
+   * four days it ever spent floating beside a place it could hit. What is
+   * missing is the opportunity: over thirty sagas the errand aimed at a
+   * CAMP on 1611 settled days and at a place on 173.
+   *
+   * And it is not distance and not preference. Ranking sea prizes above
+   * camps outright, and then widening how far a prize counts as reachable
+   * by eight hexes because rowing is cheap, both changed the numbers by
+   * exactly NOTHING — the candidate set is empty, not mis-ordered. A place
+   * has to be SEEN, unsacked and lightly enough held for the band that is
+   * there, and the four on a coast are one-shot: taken early, or never
+   * known at all.
+   *
+   * So making the strandhogg reachable is not a raiding change. It is a
+   * question about the PLACE economy — how a band learns where places are,
+   * and whether four one-shot prizes a world is the right shape. Recorded
+   * here rather than tuned, because tuning it is what the last three
+   * attempts did to no effect.
+   */
+  it('counts opportunity against action', { timeout: 900_000 }, async () => {
+    let seaDays = 0, oppDays = 0, done = 0, sagas = 0;
+    let aimedCamp = 0, aimedPlace = 0, aimedPlaceBySea = 0;
+    try {
+      policy = RAIDER;
+      for (let s = 0; s < 30; s += 1) {
+        const state = run(`curve-${s}`, 400, (before, after) => {
+          if (after.day !== before.day) {
+            if (atSea(after)) seaDays += 1;
+            if (strandTarget(after)) oppDays += 1;
+            if (after.settlement && !after.expedition) {
+              const t = raidTarget(after, RAIDER.raidReach);
+              if (t) {
+                const isCamp = after.neighbours.some((n) => n.id === t.id);
+                if (isCamp) aimedCamp += 1;
+                else {
+                  aimedPlace += 1;
+                  if (seaApproach(after, { at: t.at })) aimedPlaceBySea += 1;
+                }
+              }
+            }
+          }
+          if (!before.battle && after.battle?.strandhogg) done += 1;
+        }, 'fair');
+        sagas += 1;
+        void state;
+        await new Promise((r) => setTimeout(r, 0));
+      }
+    } finally { policy = SETTLER; }
+    // eslint-disable-next-line no-console
+    console.log(
+      `${sagas} raider sagas: ${seaDays} days afloat, ${oppDays} days beside a strandable place, ` +
+        `${done} strandhoggs\n  what the errand AIMED at, per settled day: camp ${aimedCamp}, ` +
+        `place ${aimedPlace} (of which reachable by sea ${aimedPlaceBySea})`,
+    );
+    expect(sagas).toBe(30);
   });
 });

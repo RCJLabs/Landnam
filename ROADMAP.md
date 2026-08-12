@@ -1543,6 +1543,34 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-12 — The strandhogg works, and the band never gets to use it** —
+  Task 33, and the answer is that nothing is broken. Worldgen puts a
+  strandhogg-able place in **60 of 60 worlds** (1.4 apiece). The routing
+  works: of the places the errand aimed at, **172 of 173** were reachable
+  from the water. The bot takes the shot when it has one — twice in the four
+  days it ever spent floating beside a place it could hit.
+
+  What is missing is the opportunity. Over thirty raider sagas the errand
+  aimed at a CAMP on 1611 settled days and at a place on 173, and 162 days
+  afloat produced four chances.
+
+  And it is not distance and not preference, which is the part worth
+  keeping. Ranking sea prizes above camps outright changed the numbers by
+  exactly nothing; widening how far a prize counts as reachable by eight
+  hexes, on the grounds that rowing is cheap, also changed them by exactly
+  nothing. Byte-identical, three runs. The candidate set is EMPTY, not
+  mis-ordered: a place has to be seen, unsacked, and lightly enough held for
+  the band that is standing there, and the four on a coast are one-shot —
+  taken early or never learned at all. Camps regrow every sixty days and so
+  the circuit is always camps.
+
+  Which makes this not a raiding problem and not a ship problem. It is a
+  question about the PLACE economy — how a band learns where places are, and
+  whether four one-shot prizes to a world is the right shape — and that is a
+  design decision, not a tuning pass. Both bot experiments were reverted
+  rather than left in as dead complexity, and the probe is kept so the next
+  reader starts from the numbers instead of the guess.
+
 - **2026-08-12 — TASK 31 CLOSED: the hands hold their own hall** — #34 said
   the width of the shield wall decides an open-field fight (9% won with
   three, 47% with six) and that a band of six can never raid with six,
