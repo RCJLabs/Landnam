@@ -3623,3 +3623,62 @@ describe('what a haul would have to be worth', () => {
     expect(PLACE_KINDS[0]!.loot).toEqual(basePlace[0]);
   });
 });
+
+describe('falling on a camp is a fight the band loses', () => {
+  /**
+   * TASK 31, ANSWERED — and it was never the thing five levers in a row
+   * were aimed at.
+   *
+   * The raider picks a hundred fights for stakes in thirty sagas and wins
+   * four. Everything downstream sits behind that gate, which is why nothing
+   * downstream could ever move: the haul cannot be priced because it is
+   * almost never collected, glory cannot be paid because `sackCamp` runs
+   * four times in thirty sagas, and raiding more only means losing more of
+   * the fights you picked. Standing is docked the moment steel is drawn
+   * (`REP_RAIDED`, at the DECISION, not the outcome), so a band pays the
+   * coast's memory a hundred times and is paid back four.
+   *
+   * More men helps and does not fix it: 4/85 with three sworn, 7/59 with
+   * five, 11/56 with five in any season. One in five is the ceiling.
+   *
+   * Reported with a wide bar. What is barred is that attacking is not a
+   * pure tax — a band that draws steel on a camp must win SOMETIMES — and
+   * the exact rate is left alone because it is the open design question.
+   */
+  it('counts what the raider wins of the fights it picks', { timeout: 900_000 }, async () => {
+    const SEEDS = 30;
+    let campFights = 0, campWins = 0, placeFights = 0, placeWins = 0;
+    try {
+      policy = RAIDER;
+      for (let s = 0; s < SEEDS; s += 1) {
+        run(`curve-${s}`, 200, (before, after) => {
+          if (!before.battle && after.battle) {
+            if (after.battle.campId) campFights += 1;
+            if (after.battle.placeId) placeFights += 1;
+          }
+          if (before.battle && !after.battle && before.battle.outcome === 'won') {
+            if (before.battle.campId) campWins += 1;
+            if (before.battle.placeId) placeWins += 1;
+          }
+        }, 'fair');
+        await new Promise((r) => setTimeout(r, 0));
+      }
+    } finally {
+      policy = SETTLER;
+    }
+
+    const pc = (w: number, n: number) => `${w}/${n} (${Math.round((w / Math.max(1, n)) * 100)}%)`;
+    // eslint-disable-next-line no-console
+    console.log(
+      `the fights the raider picks, ${SEEDS} landings (A Fair Country):\n` +
+        `  camps  ${pc(campWins, campFights)}\n  places ${pc(placeWins, placeFights)}`,
+    );
+
+    expect(campFights, 'the raider never fell on a camp at all').toBeGreaterThan(10);
+    expect(
+      campWins,
+      `the raider drew steel on a camp ${campFights} times and won nothing — ` +
+        'attacking is a pure tax on standing',
+    ).toBeGreaterThan(0);
+  });
+});

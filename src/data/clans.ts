@@ -16,8 +16,20 @@ export interface ClanKindDef {
   /**
    * What their stores hold for whoever takes the place at a run. Scaled up
    * by their might — a camp that can defend itself is a camp worth having.
+   *
+   * `morale` is what the DEED is worth, and it was missing entirely until
+   * task 31 went looking. A sacked place has always paid a little heart
+   * (`loot.morale` in data/places.ts); a sacked camp paid none, and camps
+   * are the repeatable circuit the whole idea of living by raiding rests
+   * on. Coming home loaded off a camp lifted nobody, while losing a fight
+   * cost 15 and a bereavement, and a sacking of your own steading 14 — so
+   * the raider's heart could only ever go one way. Measured: it died at
+   * morale 19 where a turtle lived at 65.
+   *
+   * Taking a hall is worth more than robbing a camp, because it is a
+   * bigger thing to have done and the coast knows it.
    */
-  plunder: { food: number; firewood: number };
+  plunder: { food: number; firewood: number; morale: number };
 }
 
 export const CLAN_KINDS: ClanKindDef[] = [
@@ -28,7 +40,7 @@ export const CLAN_KINDS: ClanKindDef[] = [
     opening: -10,
     strength: 1.15,
     // A hall keeps timber: they build the way we build.
-    plunder: { food: 22, firewood: 54 },
+    plunder: { food: 22, firewood: 54, morale: 12 },
   },
   {
     id: 'native',
@@ -37,7 +49,7 @@ export const CLAN_KINDS: ClanKindDef[] = [
     opening: 10,
     strength: 0.9,
     // A camp keeps food: smoked fish, dried meat, a winter's gathering.
-    plunder: { food: 40, firewood: 20 },
+    plunder: { food: 40, firewood: 20, morale: 9 },
   },
 ];
 

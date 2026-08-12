@@ -62,6 +62,14 @@ export function sackCamp(state: GameState, id: string): void {
   state.party.food += food;
   state.party.firewood += firewood;
 
+  // What the DEED is worth, which this file did not pay until task 31 went
+  // looking for why nobody can live by raiding. Scaled by how full the camp
+  // was, because going through a place that has already been picked clean
+  // is not a thing anybody sings about — and that keeps the circuit honest:
+  // a band cannot farm one camp for heart any more than it can for stores.
+  const heart = Math.round(kind.plunder.morale * full);
+  if (heart > 0) state.party.morale = Math.min(100, state.party.morale + heart);
+
   chronicle(
     state,
     full < 0.5

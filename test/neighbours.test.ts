@@ -686,6 +686,41 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     return apply(next, { type: 'B_LEAVE' });
   }
 
+  it('a won camp pays the band in heart as well as in stores', () => {
+    // The gap task 31 turned up. A sacked PLACE has always paid morale
+    // (`loot.morale`); a sacked camp paid none, while a lost fight costs 15
+    // plus bereavement and a sacking of your own steading costs 14 — so a
+    // raider's heart could only ever go one way. Camps are the repeatable
+    // circuit the whole idea of living by raiding rests on, and coming home
+    // from one loaded has to be worth something.
+    const state = settled('plunder-heart');
+    const target = state.neighbours[0]!;
+    target.might = 2;
+    state.party.at = { ...target.at };
+    // Well clear of the cap, or a win against 100 would read as no change.
+    state.party.morale = 40;
+
+    const after = winFallOn(state, target.id);
+    expect(after.party.morale).toBeGreaterThan(40);
+  });
+
+  it('but a camp already picked clean is worth little heart', () => {
+    // Scaled by how full it was, so a band cannot farm one camp for glory
+    // any more than it can for stores.
+    const full = settled('heart-full');
+    const picked = settled('heart-picked');
+    for (const s of [full, picked]) {
+      s.party.at = { ...s.neighbours[0]!.at };
+      s.party.morale = 40;
+      s.neighbours[0]!.might = 2;
+    }
+    picked.neighbours[0]!.sackedOn = picked.day;
+
+    const gotFull = winFallOn(full, full.neighbours[0]!.id).party.morale - 40;
+    const gotPicked = winFallOn(picked, picked.neighbours[0]!.id).party.morale - 40;
+    expect(gotPicked).toBeLessThan(gotFull);
+  });
+
   it('a won camp is emptied: their stores come home and it is chronicled', () => {
     const state = settled('plunder-win');
     const target = state.neighbours[0]!;

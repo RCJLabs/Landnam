@@ -270,6 +270,42 @@ So the next thing to try is not the hird and not a bigger haul: it is
 paying a raid in RENOWN, and raiding a coast that is not the one you live
 on. Both are cheap, both are historically true, and neither has been tried.
 
+**Glory was tried, and it found the actual answer (2026-08-12).** Camps now
+pay `plunder.morale` — 9 off a camp, 12 off a hall, scaled by how full the
+place was, matching what a sacked PLACE has always paid. Swept at 0, 6, 12,
+20 and 30, the raider's numbers came back **identical to the digit**: second
+winters 3/30, morale 19, anger 49, every time.
+
+Because `sackCamp` almost never runs. Counted:
+
+| the fights the raider PICKS, 30 sagas | fought | won |
+| --- | --- | --- |
+| camps, three sworn | 85 | **4 (5%)** |
+| camps, five sworn | 59 | 7 (12%) |
+| camps, five sworn in any season | 56 | 11 (20%) |
+| fixed places, three sworn | 15 | **0** |
+
+**Falling on a camp is a fight the band loses nineteen times in twenty**, and
+that is the whole of task 31. Every lever tried sat behind this gate: the
+haul cannot be priced because it is almost never collected, glory cannot be
+paid because the payment runs four times in thirty sagas, a bigger party
+moves 5% to 12%, and raiding more only loses more of the fights you picked.
+And `REP_RAIDED` is docked at the DECISION, not the outcome — so the band
+pays the coast's memory a hundred times and is paid back four. That is not
+a strategy that needs pricing; it is a tax.
+
+The design question is finally the right one, and it is not the hird:
+**should falling on a camp be a fight the band can win?** Camp might rises
+every time you sack one (`might + 1`, capped at 4) and `raidTarget` only
+offers camps to a roster of five while the bot sends three — so the fight is
+sized for a band that never shows up. Sizing the fight to the party that
+actually arrives is the next thing to measure.
+
+The renown payment is KEPT even though it moved nothing measurable, because
+the asymmetry it fixes is real — a sacked place paid heart and a sacked camp
+paid none — and it goes live the moment camps become winnable. Said plainly
+here so nobody later reads it as a change that was shown to work.
+
 **Two things this work cost, recorded rather than buried.** The settler
 briefly gained armed sorties and the long game answered at once: jarldoms
 fell from five in forty sagas to none, because a steading-first band that
@@ -1506,6 +1542,35 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-12 — Falling on a camp is a fight the band loses 19 times in
+  20** — Glory was the hypothesis: camps paid nothing to the band's heart
+  where a sacked place always had, so raiding's morale could only go one
+  way. Camps now pay `plunder.morale`, scaled by how full the place was.
+  Swept at 0, 6, 12, 20 and 30 the raider came back **identical to the
+  digit** — second winters 3/30, morale 19, anger 49 — because `sackCamp`
+  runs four times in thirty sagas.
+
+  Counting the fights the raider PICKS is the whole answer: **85 camp fights
+  and 4 wins**, 15 fixed places and none. Five sworn instead of three moves
+  it to 7/59; five sworn in any season, 11/56. One in five is the ceiling.
+  Every lever tried this session sat behind that gate — the haul cannot be
+  priced because it is almost never collected, glory cannot be paid because
+  the payment barely runs, and raiding more only loses more of the fights
+  you picked. `REP_RAIDED` is docked at the decision rather than the
+  outcome, so the band pays the coast's memory a hundred times and is paid
+  back four. Raiding is not a strategy that needs pricing; as shipped it is
+  a tax.
+
+  So the design question is not the standing warband after all. It is
+  whether falling on a camp should be a fight a band can win: camp might
+  rises each time you sack one, and `raidTarget` only offers camps to a
+  roster of five while the bot sends three, so the fight is sized for a
+  band that never arrives.
+
+  The renown payment is kept although it moved nothing measurable, because
+  the asymmetry was real and it goes live the moment camps are winnable —
+  recorded plainly rather than dressed up as a fix that worked.
 
 - **2026-08-12 — The haul cannot be priced, and raiding's real cost is
   morale** — Task 31's last supply-side lever. Multiply what camps and
