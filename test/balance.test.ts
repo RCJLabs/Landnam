@@ -3682,3 +3682,135 @@ describe('falling on a camp is a fight the band loses', () => {
     ).toBeGreaterThan(0);
   });
 });
+
+describe('attacking and defending, held side by side', () => {
+  /**
+   * TASK 31, #34. The comparison every earlier measurement was missing.
+   *
+   * A raiding party wins 8% of the fights it picks; the same band behind a
+   * palisade holds about 39% of the raids that come to it. Word is ruled
+   * out (removing it moved 5% to 8%) and so is the foe count — three sworn
+   * draw about four defenders, which does not explain a 92% loss rate.
+   *
+   * What is left is the WALL: the band's whole combat design is a shield
+   * wall, a wall wants the whole band, and a raiding party is by definition
+   * half of one. But "attacking is worse" and "fighting shorthanded is
+   * worse" are two different claims and nothing has ever separated them,
+   * because in play they always arrive together.
+   *
+   * So: the same band, the same difficulty, at every width from three to
+   * six, in three postures — attacking, defending behind a palisade, and
+   * defending without one. Whatever moves the win rate is the answer.
+   *
+   * Reported, not barred. The bars on raids live in `the raid gauntlet`.
+   */
+  function steading(seed: string, walls: boolean): GameState {
+    const state = structuredClone(newGame(seed));
+    for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
+    expect(foundAnywhere(state), `${seed}: nothing foundable`).toBe(true);
+    const home = state.settlement!;
+    home.built.push('longhouse', 'farmplots');
+    if (walls) home.built.push('palisade');
+    home.shelter = 3;
+    state.day = 120;
+    state.party.food = 60;
+    state.party.firewood = 60;
+    return state;
+  }
+
+  /**
+   * Puts exactly `n` of the sworn where the fight will be.
+   *
+   * A raid is fought by `homeCrew`, an open field by `fieldCrew`, so the
+   * width is set by choosing who is OUT — which is the honest way to do it,
+   * because it is the same lever a player pulls.
+   */
+  function widthOf(state: GameState, n: number, posture: 'attack' | 'defend'): number {
+    const ids = sworn(state.party.people).map((p) => p.id);
+    // The expedition holds whoever is OUT. Attacking, that is the party
+    // itself (`fieldCrew`); defending, it is everyone who is NOT holding the
+    // yard, so the ones left at home (`homeCrew`) number n.
+    const members = posture === 'attack' ? ids.slice(0, n) : ids.slice(n);
+    if (members.length > 0) {
+      state.expedition = {
+        members,
+        purpose: 'raid',
+        launchedOn: state.day,
+        carried: 0,
+      };
+    }
+    return n;
+  }
+
+  function fightOut(start: GameState): { won: boolean; foes: number } {
+    let state = start;
+    const foes = state.battle?.foes.length ?? 0;
+    for (let i = 0; i < 600 && state.battle && !state.battle.outcome; i += 1) {
+      let next = apply(state, step(state));
+      if (next === state) next = apply(state, { type: 'B_END_TURN' });
+      if (next === state) break;
+      state = next;
+    }
+    return { won: state.battle?.outcome === 'won', foes };
+  }
+
+  it('separates the width of the wall from the walls around it', { timeout: 900_000 }, async () => {
+    const WIDTHS = [3, 4, 5, 6];
+    const PER = 32;
+    const DIFF = 2;
+    const rows: string[] = [];
+    const wonAt: Record<string, number> = {};
+
+    for (const posture of ['attack', 'defend (no palisade)', 'defend (palisade)'] as const) {
+      const cells: string[] = [];
+      for (const n of WIDTHS) {
+        let won = 0;
+        let foes = 0;
+        for (let s = 0; s < PER; s += 1) {
+          const state = steading(`sbs-${s}-${n}`, posture === 'defend (palisade)');
+          if (posture === 'attack') {
+            widthOf(state, n, 'attack');
+            // Straight to the fight, with the stake set, so this measures
+            // the FIELD rather than the bot's willingness to go out.
+            startBattle(state, 'meadow', DIFF, { campId: state.neighbours[0]!.id });
+          } else {
+            widthOf(state, n, 'defend');
+            startRaid(state, DIFF);
+          }
+          const out = fightOut(state);
+          if (out.won) won += 1;
+          foes += out.foes;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+        wonAt[`${posture}:${n}`] = won;
+        cells.push(
+          `${n}: ${String(won).padStart(2)}/${PER} (${String(Math.round((won / PER) * 100)).padStart(3)}%) vs ${(foes / PER).toFixed(1)} foes`,
+        );
+      }
+      rows.push(`  ${posture.padEnd(21)} ${cells.join('  |  ')}`);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `the same band, ${PER} fights a cell, difficulty ${DIFF}, by how many stood:\n${rows.join('\n')}`,
+    );
+    expect(rows.length).toBe(3);
+
+    // The finding, barred: a full wall must beat a broken one by a wide
+    // margin. Measured at 9% for three attackers against 47% for six, which
+    // is the whole of task 31 — the band cannot raid because it cannot take
+    // its wall with it, not because attacking is punished.
+    expect(
+      wonAt['attack:6']! - wonAt['attack:3']!,
+      'the width of the shield wall no longer decides an open-field fight',
+    ).toBeGreaterThan(PER * 0.15);
+
+    // And posture is NOT the thing: six attacking and six defending open
+    // ground came out level. A future change that makes attacking a penalty
+    // in itself should have to say so out loud.
+    expect(
+      Math.abs(wonAt['attack:6']! - wonAt['defend (no palisade):6']!),
+      'attacking and defending with the same band on open ground have come apart',
+    ).toBeLessThan(PER * 0.35);
+  });
+});

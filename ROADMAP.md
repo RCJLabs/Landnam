@@ -1543,6 +1543,42 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-12 — TASK 31 ANSWERED: the band cannot take its wall with it** —
+  The comparison every earlier measurement was missing. Same band, same
+  difficulty, thirty-two fights a cell, at every width from three to six, in
+  three postures:
+
+  | 32 fights a cell, difficulty 2 | 3 stood | 4 | 5 | 6 |
+  | --- | --- | --- | --- | --- |
+  | attacking | **9%** | 34% | 34% | **47%** |
+  | defending, no palisade | 13% | 6% | 22% | **47%** |
+  | defending, behind a palisade | 0% | 19% | 31% | 22% |
+
+  Two readings, and the first ends the question. **Attacking is not
+  punished**: six attacking and six defending open ground both come out at
+  47%, dead level. What decides an open-field fight is how many stood in the
+  line — 9% at three against 47% at six, a fivefold swing, monotonic and far
+  outside what this harness can mistake for noise.
+
+  So raiding fails for a reason none of the six levers tried today were
+  aimed at. A band of six must leave somebody to hold the steading, so a
+  raiding party is three or four, and three or four is a broken wall. The
+  band cannot take its wall with it. That is why the haul could not be
+  priced, why glory could not be paid, why a survivable retreat changed
+  nothing and why word was worth three points: every one of them was
+  downstream of a fight already lost nine times in ten.
+
+  **Which makes the answer the hird after all** — not for risk isolation and
+  not for economics, but for WIDTH. A standing warband is bodies enough that
+  a raiding party is itself a full wall of six without emptying the hall.
+  That is now a measured requirement rather than a historical intuition.
+
+  One reading deliberately NOT claimed: the palisade shows no benefit in
+  this frame and at width six looks worse. At 32 samples a cell those gaps
+  are inside the noise, the raid difficulty curve is scaled differently from
+  the open field (`RAID_PER_POINT`), and `the raid gauntlet` measures walls
+  properly. Flagged as a question, not a finding.
+
 - **2026-08-12 — The one deed the game offered blind, and where the losses
   are not coming from** — Falling on a camp said only *"Draw steel.
   Whatever you take, they will remember who took it."* No odds, no strength,
