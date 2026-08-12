@@ -112,11 +112,17 @@ describe('the dead stay dead', () => {
     const person = fresh('fate-a').party.people[0]!;
     let killedWinning = 0;
     let killedLosing = 0;
+    let killedWithdrawing = 0;
     for (let i = 0; i < 400; i++) {
-      if (rollFate(rng.derive(`w${i}`), person, true) === 'killed') killedWinning++;
-      if (rollFate(rng.derive(`l${i}`), person, false) === 'killed') killedLosing++;
+      if (rollFate(rng.derive(`w${i}`), person, 'held') === 'killed') killedWinning++;
+      if (rollFate(rng.derive(`l${i}`), person, 'overrun') === 'killed') killedLosing++;
+      if (rollFate(rng.derive(`b${i}`), person, 'withdrew') === 'killed') killedWithdrawing++;
     }
     expect(killedLosing).toBeGreaterThan(killedWinning);
+    // Breaking off a fight you picked sits between the two: better than
+    // being overrun, worse than holding the ground you fought for.
+    expect(killedWithdrawing).toBeLessThan(killedLosing);
+    expect(killedWithdrawing).toBeGreaterThan(killedWinning);
   });
 
   it('a dead warrior is written into the saga by name', () => {

@@ -177,6 +177,49 @@ today every raid is staked against the run.
 Still Evan's call, and still a design decision — but it is now a decision
 with the alternatives ruled out rather than assumed.
 
+**Option D was built and it did not work (2026-08-12).** The chosen next
+step was the cheap test of the risk-isolation thesis: give a raid a line of
+retreat, so a lost one costs the haul and not the crew.
+
+It could not be built as scoped. The ship was meant to be the escape route,
+and raids are never fought off the water — **3 strandhöggs in 120 sagas**,
+and not one stake-fight afloat on an armed errand in either arm of the
+autopsy. A retreat-by-ship would have been a retreat from something that
+does not happen. (That the strandhögg is unreached in play is its own
+finding, and it is a content-reach problem rather than a raiding one.)
+
+So the thesis was tested on the fights that DO occur. `rollFate` grew a
+third case: `held` when you keep the ground, `overrun` when you lose ground
+you had to stand on, and `withdrew` when you lose a fight you went out to
+pick — a band that chose the fight can break it off; a band in its own yard
+cannot.
+
+The mechanism works and the thesis is dead:
+
+| 30 landings, A Fair Country | before | after |
+| --- | --- | --- |
+| raider, dead by steel | 42 | **28** |
+| raider, sackings a saga | 1.9 | **3.0** |
+| raider, alive at the end | 2.8 | **4.1** |
+| raider, second winters | 3/30 | **3/30** |
+| 5 sworn, second winters | 3/30 | **4/30** |
+| turtle, second winters | 21/30 | **21/30** |
+
+A third fewer men die on the field, bands raid half again as often and end
+with more people standing — and whether a raider lives to a second winter
+does not move at all. Four candidate causes are now measured and dead:
+the labour cost (1% of days), the party size, the raid rate (worse), and
+the lethality. What is left is the exchange rate itself: a raid pays about
+43 stores and buys permanent enmity, against a farm that simply works. The
+haul was dismissed earlier as a lottery ticket on a run-ending bet — with
+withdrawal in, that objection is weaker, and pricing is the last lever
+standing before the hird.
+
+The withdrawal rule is KEPT regardless of the raiding question, because it
+is right on its own: two thirds of armed errands used to end with nobody
+coming back, and a fight the player chose to pick should not annihilate the
+band that picked it. All 838 tests hold with it in.
+
 **Two things this work cost, recorded rather than buried.** The settler
 briefly gained armed sorties and the long game answered at once: jarldoms
 fell from five in forty sagas to none, because a steading-first band that
@@ -1413,6 +1456,37 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-12 — A fight you picked can be broken off, and it did not save
+  raiding** — Task 31's cheap experiment. `rollFate` used to know two
+  states, holding the field or losing it, and a lost raid killed better than
+  half the men who went down: two thirds of armed errands ended with nobody
+  coming back. It knows three now — `held`, `withdrew`, `overrun` — and a
+  band that WENT OUT to take something can break the fight off, where a band
+  standing in its own yard cannot.
+
+  It was meant to be the ship that did this, and could not be: raids are
+  never fought off the water (3 strandhöggs in 120 sagas), so a
+  retreat-by-ship would have been a retreat from something that never
+  happens. The strandhögg being unreached in play is a separate finding and
+  still open.
+
+  The rule works and the thesis it was testing is dead. Raider deaths by
+  steel fall 42 → 28, sackings rise 1.9 → 3.0 a saga, survivors 2.8 → 4.1
+  — and second winters do not move: 3/30 before, 3/30 after, against the
+  turtle's 21/30. Four candidate causes are now measured and buried: the
+  labour cost, the party size, the raid rate, the lethality. What is left is
+  the exchange rate — 43 stores and a permanent enemy against a farm that
+  works.
+
+  Kept anyway, because it is right on its own terms: a fight the player
+  chose should not annihilate the band that chose it. And `more than one way
+  to play` now reads the SECOND WINTER, where the lines actually differ
+  (7 settler, 3 raider, 21 turtle) rather than only spring, where all three
+  sit within a few points and the old bar passed while the game was nothing
+  like balanced. Barred on reach — every line must stand a second winter
+  sometimes — and deliberately not on parity, because the 3-against-21 gap
+  IS task 31.
 
 - **2026-08-12 — What actually stops a band living by raiding** — Task 31's
   design question rested on a cost nothing had checked was the binding one:

@@ -40,14 +40,33 @@ function rollFor(state: GameState, label: string): Rng {
 export type Fate = 'killed' | 'maimed' | 'spared';
 
 /**
+ * How the field was left, which decides what happens to the men on it.
+ *
+ * `held` — you hold the ground, so your people get carried off it.
+ * `withdrew` — you lost, but you picked this fight and could break it off,
+ *   so most of them come away hurt rather than staying where they fell.
+ * `overrun` — you lost ground you had to stand on. They are left there.
+ */
+export type Ground = 'held' | 'withdrew' | 'overrun';
+
+const FATE_BONUS: Record<Ground, number> = { held: 2, withdrew: 1, overrun: -1 };
+
+/**
  * What happens to someone dragged off the field.
  *
- * Holding the ground means your people get carried off it; losing means they
- * are left where they fell. That difference is most of why a defeat costs so
- * much more than a victory.
+ * Holding the ground means your people get carried off it; being overrun
+ * means they are left where they fell. That difference is most of why a
+ * defeat costs so much more than a victory.
+ *
+ * `withdrew` is the third case and it is task 31's. A band that WENT OUT to
+ * take something can break the fight off and go home beaten; a band standing
+ * in its own yard cannot. Without that distinction a lost raid killed better
+ * than half the men who went down in it — measured, two thirds of armed
+ * errands ended with nobody coming back at all — which is why raiding could
+ * never be a way to live: every raid was staked against the whole saga.
  */
-export function rollFate(rng: Rng, person: Person, won: boolean): Fate {
-  const roll = rng.roll(2, 6) + Math.floor(person.stats.spirit / 2) + (won ? 2 : -1);
+export function rollFate(rng: Rng, person: Person, ground: Ground): Fate {
+  const roll = rng.roll(2, 6) + Math.floor(person.stats.spirit / 2) + FATE_BONUS[ground];
   if (roll <= 7) return 'killed';
   if (roll <= 11) return 'maimed';
   return 'spared';
@@ -126,6 +145,12 @@ export type { Aftermath };
 export function settleAftermath(state: GameState, battle: Battle): Aftermath {
   const won = battle.outcome === 'won';
   const rng = rollFor(state, `settle:${battle.round}`);
+  // A fight the band WENT OUT to pick is one it can break off. `battle.raid`
+  // is the coast arriving at the steading — there is nowhere to withdraw to
+  // when the ground is the thing at stake — and so is any fight where the
+  // band is standing on its own hearth.
+  const chosen = !battle.raid && (battle.campId !== undefined || battle.placeId !== undefined);
+  const ground: Ground = won ? 'held' : chosen ? 'withdrew' : 'overrun';
   const out: Aftermath = {
     killed: [],
     maimed: [],
@@ -144,7 +169,7 @@ export function settleAftermath(state: GameState, battle: Battle): Aftermath {
     if (!person) continue;
 
     if (combatant.down) {
-      const fate = rollFate(rng.derive(`fate:${person.id}`), person, won);
+      const fate = rollFate(rng.derive(`fate:${person.id}`), person, ground);
       if (fate === 'killed') {
         kill(state, person, rng.derive(`death:${person.id}`));
         out.killed.push(person.name);

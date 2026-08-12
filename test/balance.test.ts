@@ -3109,6 +3109,7 @@ describe('more than one way to play', () => {
   it('measures each strategy on the same landings', { timeout: 900_000 }, async () => {
     const rows: string[] = [];
     const spring: Record<string, number> = {};
+    const second: Record<string, number> = {};
     const SEEDS = 30;
 
     try {
@@ -3135,6 +3136,7 @@ describe('more than one way to play', () => {
         }
 
         spring[p.id] = sawSpring / SEEDS;
+        second[p.id] = secondWinter / SEEDS;
         rows.push(
           `  ${p.id.padEnd(8)} winter ${sawWinter}/${SEEDS}, spring ${sawSpring}/${SEEDS}, ` +
             `second winter ${secondWinter}/${SEEDS}; avg ${Math.round(days / SEEDS)} days, ` +
@@ -3161,6 +3163,26 @@ describe('more than one way to play', () => {
     const best = Math.max(...POLICIES.map((p) => spring[p.id]!));
     const worst = Math.min(...POLICIES.map((p) => spring[p.id]!));
     expect(best - worst, 'one strategy dominates the others outright').toBeLessThan(0.5);
+
+    // THE SECOND WINTER, which is where the strategies actually differ and
+    // where this test was blind until task 31 went looking.
+    //
+    // Spring is the wrong milestone to guarantee depth at: all three
+    // policies clear it within a few points of each other (25/26/17 of 30),
+    // so the bar above passes while the lines are nothing like equal one
+    // milestone later — 21 turtles stand a second winter against 3 raiders.
+    //
+    // What is barred here is REACH, not parity: every line must get a band
+    // to a second winter sometimes. Parity is deliberately NOT barred,
+    // because the 3-against-21 gap is not a regression to catch — it is the
+    // open design question in task 31, and a failing test would not tell
+    // anybody anything they do not already know.
+    for (const p of POLICIES) {
+      expect(
+        second[p.id],
+        `${p.id} never once stood a second winter in ${SEEDS} landings — that line is a dead end`,
+      ).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -3213,6 +3235,8 @@ describe('where an armed sortie dies', () => {
     let haulHome = 0;
     let sagasThatWentOut = 0;
     let sagasPastSpring = 0;
+    let byWater = 0;
+    let byLand = 0;
     let gateDays = 0;
     const gate: Record<string, number> = {
       'too young': 0, 'out of season': 0, 'already out': 0,
@@ -3256,7 +3280,14 @@ describe('where an armed sortie dies', () => {
 
             if (open && !before.battle && after.battle) {
               open.fights += 1;
-              if (after.battle.campId || after.battle.placeId) open.forStakes += 1;
+              if (after.battle.campId || after.battle.placeId) {
+                open.forStakes += 1;
+                // Is the ship behind them? Option D of task 31 gives a raid
+                // launched off the water a line of retreat, and that is only
+                // worth building if raids are ever FOUGHT off the water.
+                if (after.battle.strandhogg || after.battle.terrain === 'ocean') byWater += 1;
+                else byLand += 1;
+              }
             }
 
             // Every fight for stakes in the whole saga, errand or not. The
@@ -3374,6 +3405,7 @@ describe('where an armed sortie dies', () => {
         `${(sackedTally / Math.max(1, sagas)).toFixed(1)} a saga\n` +
         `  WHERE THE PLUNDER COMES FROM — fights for stakes: ${stakesOut} on an errand, ` +
         `${stakesHome} not on one; stores taken: ${haulOut} on an errand, ${haulHome} not\n` +
+        `  fights for stakes fought off the water: ${byWater}, on foot: ${byLand}\n` +
         `  WHY IT DID NOT GO, over ${gateDays} settled days: ` +
         Object.entries(gate)
           .filter(([, v]) => v > 0)
