@@ -221,11 +221,20 @@ ${traits.replace(/^\t/gm, '\t\t')}
 \t * camp night on it yields, and whether it stops a view. \`Cost\` is infinite
 \t * for open sea — impassable on foot, and the knarr's own rules live in the
 \t * travel code rather than here. \`Wood\` is also what the timber measure of
-\t * a site is summed from, over the hex and its ring.
+\t * a site is summed from, over the hex and its ring. \`Forage\`, \`Hunt\` and
+\t * \`Fish\` are the base yields a day's gathering starts from.
 \t */
-\tstruct FTerrainRow { std::string Id; double Cost; int32_t Wood; bool bBlocksSight; };
+\tstruct FTerrainRow
+\t{
+\t\tstd::string Id;
+\t\tdouble Cost;
+\t\tint32_t Wood, Forage, Hunt, Fish;
+\t\tbool bBlocksSight;
+\t};
 \tconst std::vector<FTerrainRow> Terrains = {
-${ALL_TERRAINS.map((t) => `\t\t{ ${quote(t)}, ${num(terrainDef(t).cost)}, ${int(terrainDef(t).wood)}, ${terrainDef(t).blocksSight ? 'true' : 'false'} },`).join('\n')}
+${ALL_TERRAINS.map((t) => `\t\t{ ${quote(t)}, ${num(terrainDef(t).cost)}, ${int(terrainDef(t).wood)}, `
+  + `${int(terrainDef(t).forage)}, ${int(terrainDef(t).hunt)}, ${int(terrainDef(t).fish)}, `
+  + `${terrainDef(t).blocksSight ? 'true' : 'false'} },`).join('\n')}
 \t};
 \tinline const FTerrainRow* TerrainById(const std::string& Id)
 \t{

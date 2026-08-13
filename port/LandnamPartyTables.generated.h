@@ -202,18 +202,25 @@ namespace Tables
 	 * camp night on it yields, and whether it stops a view. `Cost` is infinite
 	 * for open sea — impassable on foot, and the knarr's own rules live in the
 	 * travel code rather than here. `Wood` is also what the timber measure of
-	 * a site is summed from, over the hex and its ring.
+	 * a site is summed from, over the hex and its ring. `Forage`, `Hunt` and
+	 * `Fish` are the base yields a day's gathering starts from.
 	 */
-	struct FTerrainRow { std::string Id; double Cost; int32_t Wood; bool bBlocksSight; };
+	struct FTerrainRow
+	{
+		std::string Id;
+		double Cost;
+		int32_t Wood, Forage, Hunt, Fish;
+		bool bBlocksSight;
+	};
 	const std::vector<FTerrainRow> Terrains = {
-		{ "ocean", std::numeric_limits<double>::infinity(), 0, false },
-		{ "shore", 1, 1, false },
-		{ "meadow", 1, 1, false },
-		{ "forest", 2, 4, true },
-		{ "hills", 2, 2, true },
-		{ "mountains", 4, 0, true },
-		{ "bog", 3, 1, false },
-		{ "valley", 1, 2, false },
+		{ "ocean", std::numeric_limits<double>::infinity(), 0, 0, 0, 5, false },
+		{ "shore", 1, 1, 2, 1, 4, false },
+		{ "meadow", 1, 1, 3, 2, 0, false },
+		{ "forest", 2, 4, 4, 4, 0, true },
+		{ "hills", 2, 2, 2, 3, 0, true },
+		{ "mountains", 4, 0, 1, 1, 0, true },
+		{ "bog", 3, 1, 2, 2, 1, false },
+		{ "valley", 1, 2, 5, 3, 0, false },
 	};
 	inline const FTerrainRow* TerrainById(const std::string& Id)
 	{

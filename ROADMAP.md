@@ -25,8 +25,9 @@
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
 > (C++), item 5 (parity CI) is BUILT on both sides, and the rules port is
-> green at `runs/long.json` @0 through @55 — fifty-five actions and
-> thirty-two days, every facet.**
+> green at `runs/long.json` @0 through @55 AND `runs/example.json` @0 through
+> @13 — 25 checkpoints across two countries, every facet — and the harness
+> runs itself in CI.**
 >
 > **NEXT: @132, and the port names its own two blockers — `neighboursCallOn`
 > (the coast comes to look at anyone new on it) and the winter FORECAST,
@@ -1774,6 +1775,32 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-13 — A second country, and vectors nobody was watching** — The
+  parity harness runs BOTH scripted runs now. `runs/example.json` is the same
+  seed with no terms named, which defaults to As It Lies; until now every
+  checkpoint the port had ever met was A Fair Country, so the hardship table
+  had never been exercised past a landing. 25 checkpoints across the two.
+
+  It cost one verb — `FORAGE` — and found three things the first run could
+  not. The hardship id was never NORMALISED, so a run that names no terms
+  carried the right numbers off the right row and wrote down the wrong name.
+  On As It Lies the stores are thin enough that **the fire actually goes
+  out**, which A Fair Country never reaches in either script. And the harness
+  read `SEED HARDSHIP MOVES` off one line, so a null hardship let `read` hand
+  it the first MOVE — the port ran on terms called "forage", one action
+  short, and two characters in a facet were the only symptom.
+
+  **The committed vectors had drifted and nothing was looking.**
+  `Content/Data/golden.json` was missing six `hashString` vectors — every
+  non-ASCII case and the emoji, the ones that pin the UTF-16 surrogate
+  handling. The editor's `Landnam.Parity` has been passing a contract with
+  its hardest cases removed. The harness diffs all four copies against the
+  originals now and refuses to run on a stale one; watched failing before
+  being trusted.
+
+  And `.github/workflows/parity.yml`: the Unreal repo had no CI at all. A
+  check somebody has to remember is a check that eventually nobody runs.
 
 - **2026-08-13 — Stage 5, fourth rung: a settled band works, and a lesson
   about gates** — `CAMP` and the production model. **Sixteen checkpoints

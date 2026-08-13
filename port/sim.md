@@ -189,8 +189,9 @@ that reading `passDay` suggests.
 for a band with no steading, and matches every facet at `runs/long.json`
 @1, @2, @3 and @5. It came to about two hundred lines, and the estimate above
 held. With the deck, the steading and the work pass below, the port is green
-at **@0 through @55 — sixteen checkpoints, six facets each** — and stops at
-@132, where it names its own two blockers.
+at **@0 through @55 of `runs/long.json` and @0 through @13 of
+`runs/example.json` — 25 checkpoints across two countries, six facets each**
+— and stops where it names its own blockers.
 
 **The draw order, written out before any C++ as stages 2 to 4 taught.** A
 whole unsettled day, in the order the TypeScript walks it:
@@ -390,6 +391,52 @@ It was already wrong before this rung and nobody could have known: the
 `Þórr-vik` seed's `run` facet is 245 units and 247 bytes, so stage 4's own
 size check would have failed by two the first time anyone opened the editor —
 on a state it had computed perfectly.
+
+### Two runs, not one — and what the second one found
+
+`runs/example.json` is the same seed with **no terms named**, which defaults
+to As It Lies. Until now nothing had exercised the hardship table past a
+landing: every scripted checkpoint the port had ever met was A Fair Country.
+Running both is 25 checkpoints, and it cost one verb — `FORAGE` — and found
+three things the first run could not:
+
+- **The hardship id was never normalised.** `newGame(seed, hardship =
+  BALANCED_HARDSHIP)` defaults an unnamed country, and `hardship` is a hashed
+  field. The port carried the right NUMBERS off the right row and wrote down
+  the wrong name — four characters, and only on a run that names no terms.
+- **On As It Lies the fire goes out.** Stores off the knarr are 8 firewood
+  instead of 20, so the cold branch of `passDay` runs — a branch A Fair
+  Country never reaches in either script. Summer's bite is nought, so it is
+  three points of morale and no wounds; autumn and winter have teeth and
+  report themselves.
+- **A field that can be empty must not be positional.** The harness read
+  `SEED HARDSHIP MOVES` off one line, and a null hardship let `read` hand
+  `HARDSHIP` the first MOVE — so the port ran on terms called "forage", one
+  action short. Two characters in the run facet were the only symptom. It
+  reads three lines now.
+
+### The committed vectors had drifted, and nothing was looking
+
+`Content/Data` holds copies of the vectors so a bare clone can be checked and
+so the editor's tests have something to read. Nothing compared them to the
+originals. **The committed `golden.json` was missing six `hashString`
+vectors — every non-ASCII case and the emoji**, which are precisely the ones
+that pin the UTF-16 surrogate handling that `ToUtf16` exists for. The
+editor's `Landnam.Parity` was passing a contract with its hardest cases taken
+out.
+
+`Tools/run-parity.sh` diffs all four copies against the originals whenever
+the real repo is beside it, and refuses to run on a stale one — a green
+against vectors nobody maintains is worse than a red. It is a CHECK rather
+than a copy on purpose: this script must not quietly rewrite the thing it is
+about to assert against.
+
+### The harness runs itself now
+
+`.github/workflows/parity.yml` runs it on every push to a work branch. The
+repo had no CI at all, and a check somebody has to remember is a check that
+eventually nobody runs. It needs `g++` and node and nothing else — which is
+only possible because the sim core is free of Unreal.
 
 ### The standalone harness is committed now
 
