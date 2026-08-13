@@ -25,12 +25,12 @@
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
 > (C++), item 5 (parity CI) is BUILT on both sides, and the rules port is
-> green at `runs/long.json` @0 through @21 — the landing, the road, the first
-> card, and the posts in the ground.**
+> green at `runs/long.json` @0 through @55 — fifty-five actions and
+> thirty-two days, every facet.**
 >
-> **NEXT: `CAMP` at @22 — the first day a settled band actually WORKS. That
-> needs the production model: what a job yields off the site's measures, the
-> season and the worker's stat, and what the builders' days go into.**
+> **NEXT: @132, and the port names its own two blockers — `neighboursCallOn`
+> (the coast comes to look at anyone new on it) and the winter FORECAST,
+> which simulates every remaining day to the thaw.**
 
 ---
 
@@ -1775,6 +1775,108 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-13 — Stage 5, fourth rung: a settled band works, and a lesson
+  about gates** — `CAMP` and the production model. **Sixteen checkpoints
+  green — @0 through @55**: fifty-five actions, thirty-two days, a longhouse
+  and farm plots standing and a smokehouse on the stocks.
+
+  The production model matched first try. What did not is worth more.
+
+  **A hardcoded gate answer is a time bomb the skip mechanism cannot see.**
+  The earlier rungs dismissed subsystems two ways: with a check that
+  evaluates the gate and reports if it opens, and — more often — with a
+  COMMENT saying the gate was shut. Every comment was true when written.
+  Three stopped being true the moment the posts went in, and nothing said so,
+  because `Unported` only reports what a check reports. `settled`, `atHome`
+  and `built` answered a flat `false`, so the port dealt a walking band's
+  deck to a settled one (a different card on day 24). `telegraphWinter` was
+  dismissed in a comment and writes hashed flags from day 25. And
+  `eventChance` has a settled-at-home branch — defence and a stood watch buy
+  quiet, which is what the defence score is FOR — that the port never took.
+
+  All three now read the state, and every remaining dismissal in `passDay` is
+  an evaluated check. The raid roll and both joining rolls are TAKEN, off
+  ported odds. What that buys shows at @132: it fails by naming its own two
+  blockers instead of quietly mismatching.
+
+  One more of the same shape, and nothing would have caught it either:
+  `Flags["workedOnce"]` to ASK whether the band had worked would have
+  INSERTED a nought. `operator[]` on a std::map is not a query, and the flags
+  are hashed, so merely asking would have written down the answer.
+
+- **2026-08-13 — Stage 5, third rung: the posts go in the ground** —
+  `Sim/LandnamSteading.{h,cpp}` ports the site reading and the structural half
+  of the colony, and matches @11 `FOUND`, @12 `ENTER_COLONY`, @13 `ASSIGN`,
+  @19 `QUEUE_BUILD` and @21 `LEAVE_COLONY`.
+
+  Founding turns half the day cycle back on: every subsystem the first rung
+  walked past because its gate read `state.settlement` now runs.
+
+  Two things did not match first try and both are worth keeping. **`range()`
+  in the port was a `Dq`/`Dr` double loop**, which is the same SET as
+  `src/hex/grid.ts` and a different ORDER; invisible since stage 1 because
+  the only caller was the fog, which puts its answers in a map. `makePlots`
+  iterates it and stores an array, so the order became the value the day the
+  posts went in. And **`moodTarget` grows a job term** the moment there is a
+  hearth to stand on: on the founding day all six are unassigned and every
+  one takes −12. Every facet size was right and one hash was wrong, which is
+  the shape of a value error and exactly what `size` sits beside the hash to
+  tell you.
+
+  The measured surprise: **six idle hands cost 3.6 morale, more than the +8
+  for founding at all.** The day reads 78 → 86 → 82.4 → 83.4. `IDLE_BITE` is
+  a named export now rather than an inline `0.6`, because the port generates
+  its constants from this repo and a literal typed into C++ is a second place
+  to author content. `SOIL` in `src/sim/site.ts` is exported for the same
+  reason, and the terrain table now carries `wood`.
+
+  `food` and `firewood` became doubles on both sides of the port. A roof
+  saves 0.8 of a night's firewood per point of shelter and a farmer's day
+  produces a fraction of a meal — they are numbers in the TypeScript, and
+  being whole so far is not the same as being integers.
+
+  (This entry was written for the previous commit and silently dropped by a
+  bad anchor in the script that inserted it. Recorded here in its place.)
+
+- **2026-08-13 — Stage 5, second rung: the deck deals, and a size that was
+  measuring bytes** — `Sim/LandnamEvents.{h,cpp}` interprets the event deck
+  and matches @8 (a MOVE deals a card), @9 (CHOOSE) and @10 (DISMISS_EVENT).
+  **The port is green at @0 through @10 now — eight checkpoints, six facets
+  each** — and stops where the posts go in at @11.
+
+  The rung's whole difficulty is one thing: `maybeFireEvent` takes TWO draws
+  off ONE derived generator, the chance first and the weighted pick second.
+  The licence that made rung 1 cheap — no draw site holds a position — does
+  not reach inside a single call, and skipping the first draw returns a
+  different card that reads as a disagreement about the deck. The pool's
+  ORDER is load-bearing for the same reason, so `scripts/event-tables.ts`
+  writes all 102 cards in declaration order and `test/tables.test.ts` pins it.
+
+  **The `size` beside every hash was measuring the wrong thing, and had been
+  since stage 2.** It exists to separate "different values" from "different
+  SHAPE", and both harnesses compared UTF-8 BYTES against a number the
+  TypeScript produced in UTF-16 CODE UNITS. Identical on ASCII, and nowhere
+  else. It surfaced as a contradiction — the hash matched and the size was
+  three too long, on text the hash was computed from — the first time a card
+  body with an em dash reached a facet. It was already wrong: the `Þórr-vik`
+  seed's `run` facet is 245 units and 247 bytes, so stage 4's size check
+  would have failed by two the first time anyone opened the editor, on a
+  state it had computed perfectly. `Landnam::CanonicalLength` counts units.
+
+  `test/tables.test.ts` is new and closes a gap nobody would have noticed:
+  add a card, forget `npm run event-tables`, and the port goes on dealing
+  yesterday's deck. It compiles, it passes its own vectors — because those
+  were regenerated from the same live source — and the only symptom is that
+  Unreal plays a slightly different game. The test regenerates both headers
+  in memory and diffs, and it has been watched failing.
+
+  `Tools/run-parity.sh` caches objects per file now. The deck header is
+  ninety kilobytes of nested initialisers and 27 seconds of compiler at -O0
+  (86 at -O2, and the harness runs in a tenth of a second either way), so it
+  builds at -O0 and rebuilds only what changed. Editing the day cycle is a
+  second; only editing a card pays the eight. It is also kept out of
+  `LandnamEvents.h` so nothing else has to include it.
+
 - **2026-08-13 — Stage 5, first rung: the C++ can spend a day now** —
   `Sim/LandnamDay.{h,cpp}` ports `apply`, `applyTravel`'s `MOVE` and `passDay`
   for a band with no steading, and matches **every facet at `runs/long.json`
@@ -1830,45 +1932,6 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   Next rung: the event deck, at @8. Five facets already match there and `run`
   does not, with `maybeFireEvent: the road dealt a card` printed beside it —
   which is what a bar naming the thing to go and look at is supposed to do.
-
-- **2026-08-13 — Stage 5, second rung: the deck deals, and a size that was
-  measuring bytes** — `Sim/LandnamEvents.{h,cpp}` interprets the event deck
-  and matches @8 (a MOVE deals a card), @9 (CHOOSE) and @10 (DISMISS_EVENT).
-  **The port is green at @0 through @10 now — eight checkpoints, six facets
-  each** — and stops where the posts go in at @11.
-
-  The rung's whole difficulty is one thing: `maybeFireEvent` takes TWO draws
-  off ONE derived generator, the chance first and the weighted pick second.
-  The licence that made rung 1 cheap — no draw site holds a position — does
-  not reach inside a single call, and skipping the first draw returns a
-  different card that reads as a disagreement about the deck. The pool's
-  ORDER is load-bearing for the same reason, so `scripts/event-tables.ts`
-  writes all 102 cards in declaration order and `test/tables.test.ts` pins it.
-
-  **The `size` beside every hash was measuring the wrong thing, and had been
-  since stage 2.** It exists to separate "different values" from "different
-  SHAPE", and both harnesses compared UTF-8 BYTES against a number the
-  TypeScript produced in UTF-16 CODE UNITS. Identical on ASCII, and nowhere
-  else. It surfaced as a contradiction — the hash matched and the size was
-  three too long, on text the hash was computed from — the first time a card
-  body with an em dash reached a facet. It was already wrong: the `Þórr-vik`
-  seed's `run` facet is 245 units and 247 bytes, so stage 4's size check
-  would have failed by two the first time anyone opened the editor, on a
-  state it had computed perfectly. `Landnam::CanonicalLength` counts units.
-
-  `test/tables.test.ts` is new and closes a gap nobody would have noticed:
-  add a card, forget `npm run event-tables`, and the port goes on dealing
-  yesterday's deck. It compiles, it passes its own vectors — because those
-  were regenerated from the same live source — and the only symptom is that
-  Unreal plays a slightly different game. The test regenerates both headers
-  in memory and diffs, and it has been watched failing.
-
-  `Tools/run-parity.sh` caches objects per file now. The deck header is
-  ninety kilobytes of nested initialisers and 27 seconds of compiler at -O0
-  (86 at -O2, and the harness runs in a tenth of a second either way), so it
-  builds at -O0 and rebuilds only what changed. Editing the day cycle is a
-  second; only editing a card pays the eight. It is also kept out of
-  `LandnamEvents.h` so nothing else has to include it.
 
 - **2026-08-13 — Both ends of the parity contract now exist** — The C++ half
   of item 5. `LandnamCanonical` in `landnam-ue` is the shared canonical form

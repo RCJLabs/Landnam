@@ -121,7 +121,7 @@ export const RAID_CHANCE_MAX = 0.055;
  * A raid every other year for a rich hall is a hazard; one every season is a
  * siege that eats the mead hall before the Thing can be called in it.
  */
-const CHANCE_PER_WORTH = 0.0015;
+export const CHANCE_PER_WORTH = 0.0015;
 
 /**
  * The chance, on a given day, that somebody comes for the steading.

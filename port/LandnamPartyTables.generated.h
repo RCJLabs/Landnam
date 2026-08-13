@@ -190,6 +190,9 @@ namespace Tables
 	constexpr int32_t ClanMinGap = 6;
 	constexpr int32_t ClanMaxGap = 13;
 	constexpr int32_t ClanOpening = -10;
+	/** How hard each kind hits when it comes. */
+	constexpr double ClanStrength = 1.15;
+	constexpr double NativeStrength = 0.9;
 	constexpr int32_t NativeOpening = 10;
 	const std::string ClanNoun = "steading";
 	const std::string NativeNoun = "camp";
@@ -357,8 +360,26 @@ namespace Tables
 	constexpr int32_t WatchMax = 6;
 	constexpr double WatchDecay = 0.5;
 	constexpr int32_t PatchShelterCap = 1;
+	constexpr int32_t ShelterMax = 6;
 	constexpr int32_t RaidEarliestDay = 12;
+	/** Nothing comes for a place only just marked out. */
+	constexpr int32_t RaidRespite = 14;
+	constexpr double RaidChanceMax = 0.055;
+	constexpr double ChancePerWorth = 0.0015;
+	/** A coast with a grievance is a busier coast. */
+	constexpr double PressureMax = 3;
+	constexpr double PressurePerAnger = 0.035;
+	constexpr double PressureStir = 0.3;
+	/** What a stood watch buys in quiet, per point. */
+	constexpr double WatchQuiet = 0.07;
+	/** The day the dark closes in, and the day the telegraph stops warning. */
+	constexpr int32_t WinterDay = 49;
 	constexpr int32_t DrawLarderDays = 8;
+	/** Somebody comes and asks; a sword comes looking for a share. */
+	constexpr double DrawMax = 0.1;
+	constexpr double DrawAnger = 0.8;
+	constexpr double SwordMax = 0.055;
+	constexpr int32_t SwordDeeds = 4;
 	constexpr int32_t SwornMax = 6;
 	/** What idleness costs the band's nerve, a head a day. */
 	constexpr double IdleBite = 0.6;
@@ -393,21 +414,23 @@ namespace Tables
 		int32_t Heart, Room;
 		std::vector<std::string> After;
 		std::vector<FMeasureRow> Needs, Raises;
+		/** Multiplier on food work. 1 where the data left it out. */
+		double FoodKeep;
 		std::string Replaces, Repeat, Unlocks;
 	};
 	const std::vector<FBuildingRow> Buildings = {
-		{ "longhouse", 6, 6, 3, 1, 6, {  }, {  }, {  }, "", "", "" },
-		{ "farmplots", 4, 5, 0, 0, 0, {  }, { { "soil", 1 } }, { { "soil", 1 } }, "", "", "" },
-		{ "smokehouse", 5, 4, 0, 0, 0, { "longhouse" }, {  }, {  }, "", "", "" },
-		{ "dock", 6, 5, 0, 0, 0, {  }, { { "harbour", 1 } }, { { "harbour", 1 } }, "", "", "fisher" },
-		{ "palisade", 8, 7, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 2 } }, "", "", "" },
-		{ "bud", 5, 4, 1, 0, 4, { "longhouse" }, {  }, {  }, "", "crowded", "" },
-		{ "meadhall", 7, 8, 1, 3, 3, { "longhouse" }, {  }, {  }, "", "", "" },
-		{ "storehouse", 5, 5, 0, 0, 0, { "smokehouse" }, {  }, {  }, "", "", "" },
-		{ "watchtower", 5, 5, 0, 0, 0, { "palisade" }, {  }, { { "defence", 2 } }, "", "", "" },
-		{ "greathall", 14, 11, 5, 2, 12, {  }, {  }, {  }, "longhouse", "", "" },
-		{ "earthworks", 12, 10, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 4 } }, "palisade", "", "" },
-		{ "hof", 7, 7, 0, 2, 0, { "meadhall" }, {  }, {  }, "", "", "" },
+		{ "longhouse", 6, 6, 3, 1, 6, {  }, {  }, {  }, 1, "", "", "" },
+		{ "farmplots", 4, 5, 0, 0, 0, {  }, { { "soil", 1 } }, { { "soil", 1 } }, 1, "", "", "" },
+		{ "smokehouse", 5, 4, 0, 0, 0, { "longhouse" }, {  }, {  }, 1.25, "", "", "" },
+		{ "dock", 6, 5, 0, 0, 0, {  }, { { "harbour", 1 } }, { { "harbour", 1 } }, 1, "", "", "fisher" },
+		{ "palisade", 8, 7, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 2 } }, 1, "", "", "" },
+		{ "bud", 5, 4, 1, 0, 4, { "longhouse" }, {  }, {  }, 1, "", "crowded", "" },
+		{ "meadhall", 7, 8, 1, 3, 3, { "longhouse" }, {  }, {  }, 1, "", "", "" },
+		{ "storehouse", 5, 5, 0, 0, 0, { "smokehouse" }, {  }, {  }, 1.15, "", "", "" },
+		{ "watchtower", 5, 5, 0, 0, 0, { "palisade" }, {  }, { { "defence", 2 } }, 1, "", "", "" },
+		{ "greathall", 14, 11, 5, 2, 12, {  }, {  }, {  }, 1, "longhouse", "", "" },
+		{ "earthworks", 12, 10, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 4 } }, 1, "palisade", "", "" },
+		{ "hof", 7, 7, 0, 2, 0, { "meadhall" }, {  }, {  }, 1, "", "", "" },
 	};
 	inline const FBuildingRow* BuildingById(const std::string& Id)
 	{

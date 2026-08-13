@@ -188,9 +188,9 @@ that reading `passDay` suggests.
 `Sim/LandnamDay.{h,cpp}` ports `apply`, `applyTravel`'s `MOVE` and `passDay`
 for a band with no steading, and matches every facet at `runs/long.json`
 @1, @2, @3 and @5. It came to about two hundred lines, and the estimate above
-held. With the deck and the steading below, the port is green at **@0 through
-@21 — thirteen checkpoints, six facets each** — and stops at @22, the first
-day a settled band actually works.
+held. With the deck, the steading and the work pass below, the port is green
+at **@0 through @55 — sixteen checkpoints, six facets each** — and stops at
+@132, where it names its own two blockers.
 
 **The draw order, written out before any C++ as stages 2 to 4 taught.** A
 whole unsettled day, in the order the TypeScript walks it:
@@ -330,6 +330,50 @@ and `firewood` are numbers rather than counts in the TypeScript; they were
 whole on both sides until something fractional touched them, which is not
 the same as being integers.
 
+### The fourth rung: a settled band works, and a lesson about gates
+
+`CAMP` and the production model. **Sixteen checkpoints green — @0 through
+@55**, which is fifty-five actions and thirty-two days: the landing, the
+road, two cards, the posts, a longhouse and farm plots standing, a smokehouse
+on the stocks.
+
+The production model matched first try — `output` is `ground * skill *
+seasonFactor * kept`, entirely deterministic, and writing the draw order out
+first meant there was nothing to find. What did not match is more useful.
+
+**A hardcoded gate answer is a time bomb the skip mechanism cannot see.**
+
+Rungs 1 to 3 dismissed subsystems two ways: with a `Skipped` call that
+evaluates the gate and reports if it opens, and — much more often — with a
+COMMENT saying the gate was shut. Every comment was true when written. Three
+of them stopped being true the moment the posts went in, and nothing said so,
+because `Unported` only reports what a check reports and a comment is not a
+check:
+
+- `conditionHolds` answered `settled`, `atHome` and `built` with a flat
+  `false`. The port went on dealing a walking band's deck to a settled one.
+  First symptom: a different card on day 24, fourteen characters into the
+  `run` facet.
+- `telegraphWinter` was dismissed as "gated on a settlement, and this rung
+  has none". It writes FLAGS, which are hashed, from day 25. Symptom: a
+  twenty-two character gap on day 25.
+- `eventChance` has a settled-at-home branch — defence and a stood watch buy
+  QUIET, which is what the defence score is for — and the port used the
+  road's flat chance everywhere. Symptom: a card dealt on day 28 that the
+  reference implementation never deals.
+
+All three are fixed by reading the state instead of asserting about it, and
+every remaining dismissal in `passDay` is now an evaluated check. The raid
+roll and both joining rolls are TAKEN, off ported odds, and report rather
+than fight or recruit. What that buys is visible at @132, which fails by
+naming its own two blockers: `neighboursCallOn` and the winter forecast.
+
+One more of the same shape, and nothing would have caught this one either:
+`State.Flags["workedOnce"]` to ASK whether the band had worked yet would have
+INSERTED a nought — `operator[]` on a `std::map` is not a query, and the flags
+are hashed, so merely asking would have written down the answer. It is a
+`find` now.
+
 ### The size check was measuring the wrong thing
 
 `size` beside every hash is meant to separate *"different values"* from
@@ -384,7 +428,7 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/Sim/LandnamLanding.{h,cpp}` | **stage 4**: the rest of the landing, and `FSimState` |
 | `Source/LandnamUE/Sim/LandnamDay.{h,cpp}` | **stage 5**: the day cycle and `MOVE` |
 | `Source/LandnamUE/Sim/LandnamEvents.{h,cpp}` | **stage 5**: the event deck |
-| `Source/LandnamUE/Sim/LandnamSteading.{h,cpp}` | **stage 5**: the steading |
+| `Source/LandnamUE/Sim/LandnamSteading.{h,cpp}` | **stage 5**: the steading and the work pass |
 | `Source/LandnamUE/Sim/LandnamEventTables.generated.h` | the deck, from `npm run event-tables` |
 | `Source/LandnamUE/Sim/LandnamCanon.{h,cpp}` | the canonical form, in the sim core's own types |
 | `Tools/parity-harness.cpp`, `Tools/run-parity.sh` | the standalone `g++` check |

@@ -32,11 +32,20 @@ import {
 } from '../src/data/sites';
 import { CLAN_ELBOW, CLAN_CALLS_EVERY } from '../src/data/clans';
 import {
-  JOBS, PLOTS, SHELTER_SAVES, WATCH_DECAY, WATCH_MAX,
+  JOBS, PLOTS, SHELTER_MAX, SHELTER_SAVES, WATCH_DECAY, WATCH_MAX,
 } from '../src/data/jobs';
 import { BUILDINGS } from '../src/data/buildings';
-import { DRAW_LARDER_DAYS } from '../src/data/folk';
-import { RAID_EARLIEST_DAY } from '../src/sim/raid';
+import {
+  DRAW_ANGER, DRAW_LARDER_DAYS, DRAW_MAX, SWORD_DEEDS, SWORD_MAX,
+} from '../src/data/folk';
+import {
+  CHANCE_PER_WORTH, RAID_CHANCE_MAX, RAID_EARLIEST_DAY, RAID_RESPITE,
+} from '../src/sim/raid';
+import { WINTER_DAY } from '../src/sim/winter';
+import {
+  PRESSURE_MAX, PRESSURE_PER_ANGER, PRESSURE_STIR,
+} from '../src/sim/neighbours';
+import { WATCH_QUIET } from '../src/data/jobs';
 import { SWORN_MAX } from '../src/sim/people';
 import { IDLE_BITE, PATCH_SHELTER_CAP, PLOT_RADIUS } from '../src/sim/colony';
 import {
@@ -110,8 +119,9 @@ const jobs = JOBS.map((j) =>
 const buildings = BUILDINGS.map((b) =>
   `\t\t{ ${quote(b.id)}, ${int(b.timber)}, ${int(b.works)}, ${num(b.shelter ?? 0)}, `
   + `${int(b.heart ?? 0)}, ${int(b.room ?? 0)}, ${strings(b.after ?? [])}, `
-  + `${measures(b.needs)}, ${measures(b.raises)}, ${quote(b.replaces ?? '')}, `
-  + `${quote(b.repeat ?? '')}, ${quote(b.unlocks ?? '')} },`).join('\n');
+  + `${measures(b.needs)}, ${measures(b.raises)}, ${num(b.foodKeep ?? 1)}, `
+  + `${quote(b.replaces ?? '')}, ${quote(b.repeat ?? '')}, ${quote(b.unlocks ?? '')} },`)
+  .join('\n');
 
 const plots = Object.values(PLOTS).map((p) =>
   `\t\t{ ${quote(p.kind)}, ${strings(p.worked)} },`).join('\n');
@@ -199,6 +209,9 @@ ${traits.replace(/^\t/gm, '\t\t')}
 \tconstexpr int32_t ClanMinGap = ${CLAN_MIN_GAP};
 \tconstexpr int32_t ClanMaxGap = ${CLAN_MAX_GAP};
 \tconstexpr int32_t ClanOpening = ${clanKind('clan').opening};
+\t/** How hard each kind hits when it comes. */
+\tconstexpr double ClanStrength = ${num(clanKind('clan').strength)};
+\tconstexpr double NativeStrength = ${num(clanKind('native').strength)};
 \tconstexpr int32_t NativeOpening = ${clanKind('native').opening};
 \tconst std::string ClanNoun = ${quote(clanKind('clan').noun)};
 \tconst std::string NativeNoun = ${quote(clanKind('native').noun)};
@@ -327,8 +340,26 @@ ${ALL_TERRAINS.map((t) => `\t\t{ ${quote(t)}, ${int(SOIL[t])} },`).join('\n')}
 \tconstexpr int32_t WatchMax = ${int(WATCH_MAX)};
 \tconstexpr double WatchDecay = ${num(WATCH_DECAY)};
 \tconstexpr int32_t PatchShelterCap = ${int(PATCH_SHELTER_CAP)};
+\tconstexpr int32_t ShelterMax = ${int(SHELTER_MAX)};
 \tconstexpr int32_t RaidEarliestDay = ${int(RAID_EARLIEST_DAY)};
+\t/** Nothing comes for a place only just marked out. */
+\tconstexpr int32_t RaidRespite = ${int(RAID_RESPITE)};
+\tconstexpr double RaidChanceMax = ${num(RAID_CHANCE_MAX)};
+\tconstexpr double ChancePerWorth = ${num(CHANCE_PER_WORTH)};
+\t/** A coast with a grievance is a busier coast. */
+\tconstexpr double PressureMax = ${num(PRESSURE_MAX)};
+\tconstexpr double PressurePerAnger = ${num(PRESSURE_PER_ANGER)};
+\tconstexpr double PressureStir = ${num(PRESSURE_STIR)};
+\t/** What a stood watch buys in quiet, per point. */
+\tconstexpr double WatchQuiet = ${num(WATCH_QUIET)};
+\t/** The day the dark closes in, and the day the telegraph stops warning. */
+\tconstexpr int32_t WinterDay = ${int(WINTER_DAY)};
 \tconstexpr int32_t DrawLarderDays = ${int(DRAW_LARDER_DAYS)};
+\t/** Somebody comes and asks; a sword comes looking for a share. */
+\tconstexpr double DrawMax = ${num(DRAW_MAX)};
+\tconstexpr double DrawAnger = ${num(DRAW_ANGER)};
+\tconstexpr double SwordMax = ${num(SWORD_MAX)};
+\tconstexpr int32_t SwordDeeds = ${int(SWORD_DEEDS)};
 \tconstexpr int32_t SwornMax = ${int(SWORN_MAX)};
 \t/** What idleness costs the band's nerve, a head a day. */
 \tconstexpr double IdleBite = ${num(IDLE_BITE)};
@@ -358,6 +389,8 @@ ${jobs}
 \t\tint32_t Heart, Room;
 \t\tstd::vector<std::string> After;
 \t\tstd::vector<FMeasureRow> Needs, Raises;
+\t\t/** Multiplier on food work. 1 where the data left it out. */
+\t\tdouble FoodKeep;
 \t\tstd::string Replaces, Repeat, Unlocks;
 \t};
 \tconst std::vector<FBuildingRow> Buildings = {
