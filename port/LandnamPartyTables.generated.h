@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <utility>
@@ -143,5 +144,39 @@ namespace Tables
 		{ "ff", { { "sister", "sister" }, { "cousin", "cousin" } } },
 		{ "mf", { { "brother", "sister" }, { "husband", "wife" }, { "cousin", "cousin" } } },
 	};
+
+	const std::vector<std::string> ClanNames = {
+		"Grimsgarth",
+		"Ketilstead",
+		"Hrafnsvik",
+		"Bergthorsholt",
+		"Ulfsfell",
+		"Skallagrimsstead",
+		"Thorgestholt",
+		"Vigahall",
+		"Eyrarbakki",
+		"Svartafell",
+	};
+
+	const std::vector<std::string> NativeNames = {
+		"The Reed Camp",
+		"Sealwatch",
+		"The Long Weir",
+		"Threefires",
+		"Otter Landing",
+		"The Standing Stones",
+		"Birchwater",
+		"The Winter Camp",
+		"Nine Nets",
+		"Elkford",
+	};
+
+	constexpr int32_t ClanCount = 4;
+	constexpr int32_t ClanMinGap = 6;
+	constexpr int32_t ClanMaxGap = 13;
+	constexpr int32_t ClanOpening = -10;
+	constexpr int32_t NativeOpening = 10;
+	const std::string ClanNoun = "steading";
+	const std::string NativeNoun = "camp";
 }
 }

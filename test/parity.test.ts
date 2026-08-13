@@ -193,6 +193,35 @@ describe('the canonical form, pinned on its own', () => {
     expect(hashOf({}).slice(8)).toBe(withNul.toString(16).padStart(8, '0'));
   });
 
+  /**
+   * `localeCompare` is not code-unit order, and the port relies on them
+   * agreeing.
+   *
+   * `placeNeighbours` sorts hex keys with `key(a).localeCompare(key(b))`.
+   * That is ICU collation, which is a genuinely different function —
+   * `'-,'.localeCompare(',')` is -1 where `'-,' < ','` is false — and it is
+   * ICU-VERSION dependent, so it is not something a C++ port can copy.
+   *
+   * It does not have to. On the alphabet a hex key can use — digits, a comma
+   * and a minus — the two orderings coincide, which was measured rather than
+   * assumed: five worlds, 1872 keys each, identical both ways. The port sorts
+   * by bytes and this is what says it may. If a future ICU disagrees, it
+   * fails HERE, in the repo that owns the rules, rather than silently in
+   * Unreal.
+   */
+  it('orders hex keys the same by ICU and by code unit', () => {
+    for (const seed of ['raven-skerry-317', 'curve-7', 'Þórr-vik']) {
+      const keys = Object.keys(generateWorld(stream(seed, 'worldgen')).tiles);
+      const icu = [...keys].sort((a, b) => a.localeCompare(b));
+      const bytes = [...keys].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+      expect(icu, `${seed}: ICU and code-unit order disagree`).toEqual(bytes);
+    }
+    // And the two are genuinely different functions, so the agreement above
+    // is a fact about the alphabet rather than a tautology.
+    expect('-,'.localeCompare(',')).toBe(-1);
+    expect('-,' < ',').toBe(false);
+  });
+
   it('sorts keys by code unit, which is what the C++ side must copy', () => {
     // Capitals before lowercase, empty string first. A port that sorts
     // case-insensitively, or by locale, produces a different string for an

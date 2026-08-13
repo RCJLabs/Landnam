@@ -135,6 +135,7 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/LandnamSimParityTest.cpp` | the harness — `Landnam.SimParity` |
 | `Source/LandnamUE/Sim/LandnamWorldgen.{h,cpp}` | **stage 1**: the country itself |
 | `Source/LandnamUE/Sim/LandnamParty.{h,cpp}` | **stage 2**: the six off the knarr |
+| `Source/LandnamUE/Sim/LandnamCoast.{h,cpp}` | **stage 3**: who else is on this coast |
 | `Source/LandnamUE/Sim/LandnamPartyTables.generated.h` | names and traits, from `npm run party-tables` |
 | `Content/Data/parity.json`, `Content/Data/runs/*.json` | copies of the files above |
 
@@ -178,7 +179,18 @@ as a C++ header. A generated header rather than JSON because the standalone
 harness has no JSON parser and should not grow one. Content is still authored
 in exactly one place: add a name or a trait in `src/data` and re-run it.
 
-Stage 2 is checked at checkpoint 0 and on the bare runs only, which is exactly
+**Stage 3 is done and green.** `Sim/LandnamCoast` ports
+`src/sim/neighbours.ts` and matches the `coast` facet at checkpoint 0 on all
+five seeds. It turned up one hazard worth knowing about: the TS sorts hex keys
+with `localeCompare`, which is ICU collation and **not** code-unit order —
+`'-,'.localeCompare(',')` is -1 where `'-,' < ','` is false — and is
+ICU-version dependent, so C++ cannot copy it. It does not have to: on the
+alphabet a hex key can use the two orderings coincide, measured across five
+worlds and 1872 keys each. The port sorts by bytes and `test/parity.test.ts`
+pins the equivalence, so a future ICU that disagrees fails in the repo that
+owns the rules rather than silently in Unreal.
+
+Stages 2 and 3 are checked at checkpoint 0 and on the bare runs only, which is exactly
 as far as it reaches — every later checkpoint needs upkeep and travel, and
 claiming those would turn a real bar into a red one nobody could act on.
 
