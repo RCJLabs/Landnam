@@ -14,7 +14,9 @@ import { chronicle } from './saga';
 import { atHome, foundSettlement } from './site';
 import { fieldCrew, permittedStep } from './expedition';
 import { bargain, bargainBlocker, canFallOn, fallOn, neighbourById, seeNeighbours } from './neighbours';
-import { placeById, sackBlocker, settlePlace, tellOfPlace, tradeAt, tradeBlocker } from './places';
+import {
+  placeById, sackBlocker, settlePlace, spotLandmarks, tellOfPlace, tradeAt, tradeBlocker,
+} from './places';
 import { placeKind } from '../data/places';
 import { mendHull, strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { bonus } from './lore';
@@ -174,6 +176,9 @@ function reveal(state: GameState): void {
   );
   // Somebody else's smoke shows up the moment the ground it stands on does.
   seeNeighbours(state);
+  // And from a ridge, the things a country is navigated by — a town, a
+  // monastery, a wreck — are picked out far past the ground itself.
+  spotLandmarks(state);
 }
 
 /** How many entries back the chronicle remembers saying a thing. */

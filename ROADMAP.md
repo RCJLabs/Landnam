@@ -56,8 +56,8 @@ rather than about raiding — see task 33 in the changelog.
 
 **Hardship reaches combat now** (2026-08-13). `steel` on `HardshipDef` — +1
 fair, 0 even, -1 hard, added to our swings and taken off theirs — is in, and
-the curve is properly ordered at both marks for the first time: 87/80/73 to
-the first winter, 65/28/12 to spring. What had blocked it for a day was a
+the curve is properly ordered at both marks for the first time: 87/78/73 to
+the first winter, 62/27/12 to spring. What had blocked it for a day was a
 `markets` floor that turned out not to be measuring reach; the section below
 is the autopsy, and it is worth reading before trusting any other count in
 this document.
@@ -186,13 +186,16 @@ default is deliberately NOT the balanced one:
 
 | setting | first winter | saw the first spring | over 500 days (20 sagas) |
 | --- | --- | --- | --- |
-| A Fair Country *(default)* | 87% | 65% | 153 days a saga, 11 mead halls, 4 jarls |
-| As It Lies *(what everything is tuned against)* | 80% | 28% | 82 days a saga, 4 mead halls, 1 jarl |
+| A Fair Country *(default)* | 87% | 62% | 153 days a saga, 11 mead halls, 4 jarls |
+| As It Lies *(what everything is tuned against)* | 78% | 27% | 82 days a saga, 4 mead halls, 1 jarl |
 | A Hard Country | 73% | 12% | 61 days a saga, 0 mead halls, 0 jarls |
 
-**Re-read 2026-08-13 with `steel` in, and the whole table is a fresh sweep** —
-the long-game column included, which had been stale since the fixed places
-were brought onto the same coast as the band. The spring figures were
+**Re-read 2026-08-13 with `steel` and landmark-sighting in, and the whole
+table is a fresh sweep** — the spring column moved 1-3 points when bands
+started spotting landmarks from ridges, which is inside what this harness
+resolves and was left alone rather than tuned back. The long-game column did
+not move at all.
+The spring figures were
 60/25/7 before hardship reached the dice of a fight, so the gaps went from
 35 and 18 points to 37 and 16 — no wider in truth, but the FIRST WINTER
 column is new and is the real gain. It could not be ordered at all while
@@ -1658,6 +1661,44 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-13 — A landmark seen from a ridge: discovery fixed, and it buys
+  less than it should** — The channel the place-economy probe indicated:
+  `spotLandmarks` marks a place KNOWN when the band stands on high ground
+  within `LANDMARK_SIGHT` (8) of it and the line of sight is clear. High
+  ground only, which is the point rather than a limitation — hills and
+  mountains already raise sight and already break line of sight, so the climb
+  now pays in knowledge instead of two more hexes of grass. Sight only: it
+  tells you a place is there and nothing about what is in it.
+
+  What it bought, thirty landings a policy:
+
+  | | places ever seen | first sighting |
+  | --- | --- | --- |
+  | settler | 53 → **60** of 120 | day 74 → **day 46** |
+  | raider | 31 → **50** of 120 | day 65 → 77 |
+  | turtle | 13 → **13** | day 11 |
+
+  The town — the thing that gates markets — goes from 21 of 90 sagas to
+  **32**. The curve did not move: 87/62, 78/27, 73/12 against 87/65, 80/28,
+  73/12, every movement inside the ±10 this harness resolves, and the long
+  game is identical (fair 153 days, 11 mead halls, 4 jarls).
+
+  **Three honest costs, recorded because the case for this change named two
+  of them as benefits.** It does NOT help the turtle — 13 of 120 either way,
+  because a band that settles on day 11 and never leaves never stands on a
+  ridge, and "the only channel that helps a band which never trades" was
+  wrong. Word of mouth partly SUBSTITUTES rather than adds: places learned
+  across a counter fell 32 → 17, so the settler's net gain is seven. And the
+  downstream verbs did not move at all — sagas reaching a still-trading
+  counter stayed at 6 of 60, market days at 2, strandhöggs 4 → 2 on a sample
+  far too small to read.
+
+  So the constraint moved rather than closed. Knowing where a place is turns
+  out not to be the same as having a reason to go: the settler only detours
+  to one while `mighty && day < plunderWindow`, which is a fortnight of the
+  run. That is the next question, and it is about what a band WANTS from a
+  place, not about how it hears of one.
 
 - **2026-08-13 — The place economy: discovery is the constraint, and word of
   mouth cannot fix it** — Task 33 was closed with "the four on a coast are

@@ -19,11 +19,16 @@ import {
   sackBlocker,
   seedPlaces,
   settlePlace,
+  spotLandmarks,
   tellOfPlace,
   tradeAt,
   tradeBlocker,
   TRADE_REASON,
+  LANDMARK_SIGHT,
 } from '../src/sim/places';
+import { range } from '../src/hex';
+import { sightRadius } from '../src/sim/fog';
+import { effectsOn } from '../src/sim/calendar';
 import { PLACE_KINDS, PLACE_MAX_FROM_LANDING, placeKind } from '../src/data/places';
 import { knows } from '../src/sim/lore';
 import { startBattle } from '../src/sim/battleTurn';
@@ -442,6 +447,107 @@ describe('word of the country travels', () => {
     expect(next).not.toBe(state);
     const after = next.world.places.filter((p) => next.world.seen[key(p.at)] !== undefined).length;
     expect(after, 'a bargain taught the band nothing about the coast').toBeGreaterThan(before);
+  });
+});
+
+describe('a landmark picked out from the high ground', () => {
+  /**
+   * The second road into the place economy. Word of mouth is gated behind a
+   * bargain and bargains happen once or twice a saga, which measured as a
+   * hard ceiling nothing about the TELLING could lift — see TOLD_AT_ONCE.
+   * A ridge is the channel that is not a bargain, and it is the only one a
+   * band that never trades can use.
+   */
+  function ridge(seed: string, ground: 'hills' | 'meadow'): {
+    state: GameState; place: Place; at: { q: number; r: number };
+  } {
+    const state = structuredClone(newGame(seed));
+    for (const k of Object.keys(state.world.seen)) delete state.world.seen[k];
+    const place = state.world.places[0]!;
+    // Stand a few hexes off the place, on ground we choose, with clear
+    // country in between so line of sight is not what is under test.
+    const at = { q: place.at.q + 4, r: place.at.r };
+    state.party.at = at;
+    for (const h of range(at, LANDMARK_SIGHT + 2)) {
+      const tile = state.world.tiles[key(h)];
+      if (tile) tile.terrain = 'meadow';
+    }
+    state.world.tiles[key(at)]!.terrain = ground;
+    return { state, place, at };
+  }
+
+  it('marks a place known from a ridge, and says so', () => {
+    const { state, place } = ridge('spot-yes', 'hills');
+    const before = state.saga.length;
+    const spotted = spotLandmarks(state);
+    expect(spotted.map((p) => p.id)).toContain(place.id);
+    expect(state.world.seen[key(place.at)]).toBeDefined();
+    expect(state.saga.slice(before).some((l) => /high ground/.test(l.text))).toBe(true);
+  });
+
+  it('sees nothing at all from flat ground, however close', () => {
+    const { state, place } = ridge('spot-flat', 'meadow');
+    expect(spotLandmarks(state)).toEqual([]);
+    expect(state.world.seen[key(place.at)]).toBeUndefined();
+  });
+
+  it('reaches further than the eye reaches over open country', () => {
+    // The whole justification for the constant: a landmark is a thing you
+    // pick out past the distance you could make out the ground itself.
+    const { state, at } = ridge('spot-further', 'hills');
+    expect(LANDMARK_SIGHT).toBeGreaterThan(
+      sightRadius(state.world, at, effectsOn(state.day).sight),
+    );
+  });
+
+  it('stops at the edge of what can be picked out', () => {
+    const { state, place } = ridge('spot-far', 'hills');
+    state.party.at = { q: place.at.q + LANDMARK_SIGHT + 1, r: place.at.r };
+    state.world.tiles[key(state.party.at)]!.terrain = 'hills';
+    // This place specifically, not "nothing at all" — stepping back can walk
+    // a DIFFERENT place into range, which is the mechanism working rather
+    // than failing. The first cut of this asserted the empty list and caught
+    // the town four hexes the other way.
+    expect(spotLandmarks(state).map((p) => p.id)).not.toContain(place.id);
+    expect(state.world.seen[key(place.at)]).toBeUndefined();
+  });
+
+  it('a mountain in the way hides what is behind it', () => {
+    const { state, place, at } = ridge('spot-blocked', 'hills');
+    // Only mountains block the view from high ground — that is the existing
+    // rule in fog.ts, and this pins that the landmark obeys it.
+    const between = { q: place.at.q + 2, r: place.at.r };
+    state.world.tiles[key(between)]!.terrain = 'mountains';
+    void at;
+    expect(spotLandmarks(state).map((p) => p.id)).not.toContain(place.id);
+  });
+
+  it('tells you a place is THERE and nothing about what is in it', () => {
+    const { state, place } = ridge('spot-blind', 'hills');
+    spotLandmarks(state);
+    // Sight is not a sacking and not a bargain: the place is untouched.
+    const after = state.world.places.find((p) => p.id === place.id)!;
+    expect(after.sackedOn).toBeUndefined();
+    expect(state.party.food).toBe(structuredClone(newGame('spot-blind')).party.food);
+  });
+
+  it('says it once — a place already known is not re-spotted', () => {
+    const { state } = ridge('spot-once', 'hills');
+    expect(spotLandmarks(state).length).toBeGreaterThan(0);
+    const before = state.saga.length;
+    expect(spotLandmarks(state)).toEqual([]);
+    expect(state.saga.length).toBe(before);
+  });
+
+  it('happens through ordinary travel, not only when called directly', () => {
+    // The same-commit rule: a capability the player cannot reach by playing
+    // is measured as worthless. Walking onto a ridge has to do it.
+    const { state, place, at } = ridge('spot-played', 'hills');
+    state.party.at = { q: at.q + 1, r: at.r };
+    state.world.tiles[key(state.party.at)]!.terrain = 'meadow';
+    const next = apply(state, { type: 'MOVE', to: at });
+    expect(next).not.toBe(state);
+    expect(next.world.seen[key(place.at)]).toBeDefined();
   });
 });
 

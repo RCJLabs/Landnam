@@ -4121,15 +4121,6 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
         `${L.standingKnown} known and still standing at the end\n` +
         `    ${L.oppDays} days afloat beside one, ${L.strandhoggs} strandhöggs, over ${L.days} days\n`;
     };
-    const ts = (globalThis as any).__tellStats ?? { calls: 0, cand: [] };
-    const hist: Record<string, number> = {};
-    for (const v of ts.cand as number[]) {
-      const k2 = `inRange${Math.floor(v / 10)}/unseen${v % 10}`;
-      hist[k2] = (hist[k2] ?? 0) + 1;
-    }
-    // eslint-disable-next-line no-console
-    console.log(`tellOfPlace calls: ${ts.calls}; candidate histogram: ` +
-      Object.entries(hist).sort().map(([k2, v]) => `${k2} x${v}`).join(', '));
     // eslint-disable-next-line no-console
     console.log(
       'the place economy, 30 landings a policy on A Fair Country:\n' +

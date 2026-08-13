@@ -61,7 +61,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, and a fuller hold when the keel touches sand. Where a saga has room to become one.',
-    measured: 'Two bands in three saw the first spring. Four in twenty ruled.',
+    measured: 'Three bands in five saw the first spring. Four in twenty ruled.',
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -126,13 +126,12 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
 /**
  * Where the numbers above came from, so nobody has to guess later: the
  * balance harness runs its sixty seeds through every setting and prints
- * the spread. Latest, with `steel` in: 65% / 28% / 12% seeing the first
- * spring — gaps of 37 and 16 points, both comfortably past the ±10 this
- * harness can resolve, which is the only reason the three names are allowed
- * to differ. Better separated than the 60/25/7 these read before hardship
- * reached the dice of a fight, and properly ordered at the first winter too
- * (87% / 80% / 73%), which it had no way to be while every country's blows
- * landed alike. The jarldom figures come from the long game, which runs
+ * the spread. Latest: 62% / 27% / 12% seeing the first spring — gaps of 35
+ * and 15 points, both comfortably past the ±10 this harness can resolve,
+ * which is the only reason the three names are allowed to differ. Better
+ * separated than the 60/25/7 these read before hardship reached the dice of
+ * a fight, and properly ordered at the first winter too (87% / 78% / 73%),
+ * which it had no way to be while every country's blows landed alike. The jarldom figures come from the long game, which runs
  * twenty seeds of the same worlds out to day 500 — and a count that small
  * is a "does the endgame happen", never a number that moved.
  */

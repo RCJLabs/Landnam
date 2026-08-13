@@ -16,6 +16,7 @@ import {
   type PlaceOffer,
 } from '../data/places';
 import { chronicle } from './saga';
+import { hasLineOfSight, onHighGround } from './fog';
 import { STRAND_HAUL, STRAND_INFAMY } from './sea';
 import { learn, knows } from './lore';
 import { shiftStanding } from './neighbours';
@@ -122,6 +123,60 @@ export function tellOfPlace(state: GameState, from: Hex, teller: string): Place 
     );
   }
   return near[0];
+}
+
+/**
+ * How far a landmark can be picked out from high ground.
+ *
+ * The second road into the place economy, and it exists because the first
+ * one is measurably not enough. Word of mouth is gated behind a bargain,
+ * bargains happen once or twice a saga, and no widening of what a bargain
+ * TELLS you fixes that — see TOLD_AT_ONCE. Measured 2026-08-13: a settler
+ * learned of 53 of 120 places in thirty sagas, a band that never trades
+ * only 13, and a place was first heard of on day 74 on average, long after
+ * the walking is over.
+ *
+ * A house of the White Christ, a trading town, a wreck on the strand, a
+ * seam of bog iron: these are not tents. They are the things a country is
+ * navigated BY, and a man standing on a ridge picks them out far past the
+ * distance he could make out the ground itself. So this is deliberately
+ * much further than `sightRadius` — that is what a landmark IS.
+ *
+ * High ground only, which is the point rather than a limitation: hills and
+ * mountains already raise sight and already break line of sight for
+ * everyone below, so climbing is a thing the map rewards. This makes the
+ * climb pay in knowledge instead of another two hexes of grass.
+ */
+export const LANDMARK_SIGHT = 8;
+
+/**
+ * Everything newly picked out from where the party stands. Mutates
+ * `world.seen`; callers hold a clone, as everywhere else in the sim.
+ *
+ * Sight only — the place is marked KNOWN, exactly as a teller's word marks
+ * it, and nothing else about it changes. Seeing a monastery from a ridge
+ * tells you it is there and not one thing about what is in it.
+ */
+export function spotLandmarks(state: GameState): Place[] {
+  const world = state.world;
+  const from = state.party.at;
+  if (!onHighGround(world, from)) return [];
+
+  const spotted: Place[] = [];
+  for (const place of world.places) {
+    if (world.seen[key(place.at)] !== undefined) continue;
+    if (distance(place.at, from) > LANDMARK_SIGHT) continue;
+    if (!hasLineOfSight(world, from, place.at)) continue;
+    world.seen[key(place.at)] = 'seen';
+    spotted.push(place);
+    chronicle(
+      state,
+      `From the high ground we made out ${placeKind(place.kind).name} away off, ` +
+        'and marked where it stood.',
+      'plain',
+    );
+  }
+  return spotted;
 }
 
 // --- Dealing across a counter ---
