@@ -1662,6 +1662,42 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-13 — Nobody was ever sent: the last link in the markets chain** —
+  The "no door" hypothesis, verified, and the answer is sharper than the
+  guess. Three probes today read markets as unreachable content. The last
+  link is that **the harness never aims at one.**
+
+  | 30 landings a policy | settled days | ...knowing the way to a counter still trading | trade errands |
+  | --- | --- | --- | --- |
+  | settler | 3,709 | **1,996 (54%)** | 9, none able to aim at one |
+  | raider | 4,458 | 976 | 0 |
+  | turtle | 8,563 | 745 | 0 |
+
+  For more than half of every settled day the settler knows where an open
+  market is, and never goes. Two separable reasons, and it matters which is
+  which:
+
+  **The game is not broken.** `moveOptions` returns nothing for a settled
+  band, so an expedition is the only door back onto the map — already an
+  audit finding — but the door exists and is generic: the `trade` purpose
+  reads "Carry food out and bring timber and goods back", which is exactly
+  what a market is for. A human player can launch one and walk to the town.
+
+  **The bot is.** `nearestFriendable()` iterates `state.neighbours` and never
+  `world.places`, so a trade errand can only ever be aimed at a camp. The
+  settler carries `trades: true`, launches nine errands over thirty sagas,
+  and not one of them can end at a counter. That is this repo's oldest rule
+  arriving late — a capability the bot cannot use is measured as worthless —
+  and it means **today's market figures measure the bot's itinerary, not the
+  game's reach**, the re-derived floor included.
+
+  Not fixed in this commit, deliberately. Teaching the settler to walk to a
+  known market rewrites every figure in this document, and the settler's
+  identity is load-bearing for all of them — `raidReach: 0` is already a
+  measured decision that cost five jarldoms when it was loosened. The change
+  is a paragraph of bot; the measurement it invalidates is a day of sweeps.
+  That is Evan's call, not a tuning pass.
+
 - **2026-08-13 — A landmark seen from a ridge: discovery fixed, and it buys
   less than it should** — The channel the place-economy probe indicated:
   `spotLandmarks` marks a place KNOWN when the band stands on high ground

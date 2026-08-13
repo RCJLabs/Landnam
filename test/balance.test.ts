@@ -4055,6 +4055,7 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
       places: number; seen: number; seenDay: number; sacked: number;
       sackedDay: number; window: number; standingKnown: number; told: number;
       oppDays: number; strandhoggs: number; sagas: number; days: number;
+      settledDays: number; knownMarketDays: number; tradeErrands: number;
     }
     const life: Record<string, Life> = {};
     const byKind: Record<string, { seen: number; sacked: number; n: number }> = {};
@@ -4062,7 +4063,7 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
     for (const p of POLICIES) {
       const L: Life = { places: 0, seen: 0, seenDay: 0, sacked: 0, sackedDay: 0,
         window: 0, standingKnown: 0, told: 0, oppDays: 0, strandhoggs: 0,
-        sagas: 0, days: 0 };
+        sagas: 0, days: 0, settledDays: 0, knownMarketDays: 0, tradeErrands: 0 };
       life[p.id] = L;
       try {
         policy = p;
@@ -4074,6 +4075,16 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
             if (after.day !== before.day) {
               L.days += 1;
               if (strandTarget(after)) L.oppDays += 1;
+              // The opportunity a settled band is measured NOT to act on: a
+              // counter it knows the way to, still trading, and no errand in
+              // the bot's vocabulary that means "go there".
+              if (after.settlement) {
+                L.settledDays += 1;
+                if (after.world.places.some((pl) =>
+                  pl.sackedOn === undefined
+                  && (placeKind(pl.kind).market ?? []).length > 0
+                  && after.world.seen[key(pl.at)] !== undefined)) L.knownMarketDays += 1;
+              }
               for (const pl of after.world.places) {
                 if (firstSeen[pl.id] === undefined
                     && after.world.seen[key(pl.at)] !== undefined) {
@@ -4082,6 +4093,7 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
               }
             }
             if (!before.battle && after.battle?.strandhogg) L.strandhoggs += 1;
+            if (!before.expedition && after.expedition?.purpose === 'trade') L.tradeErrands += 1;
             // Learned across a counter rather than by walking into it.
             if (after.saga.length > before.saga.length) {
               for (const line of after.saga.slice(before.saga.length)) {
@@ -4119,7 +4131,9 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
         `    ${L.sacked} emptied (day ${(L.sackedDay / Math.max(1, L.sacked)).toFixed(0)}), ` +
         `standing ${(L.window / Math.max(1, L.sacked)).toFixed(0)} days known first; ` +
         `${L.standingKnown} known and still standing at the end\n` +
-        `    ${L.oppDays} days afloat beside one, ${L.strandhoggs} strandhöggs, over ${L.days} days\n`;
+        `    ${L.oppDays} days afloat beside one, ${L.strandhoggs} strandhöggs, over ${L.days} days\n` +
+        `    settled ${L.settledDays} days, of which ${L.knownMarketDays} knew the way to a counter ` +
+        `still trading; ${L.tradeErrands} trade errands launched, none of which can aim at one\n`;
     };
     // eslint-disable-next-line no-console
     console.log(
