@@ -23,9 +23,10 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: Phase 7 — the Unreal build, whose item 1 (the sim
-> boundary) is Evan's call and blocks 5 through 10.** Hardship-steel landed
-> 2026-08-13 and is off the bench.
+> **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
+> (2026-08-13): the rules get rewritten in C++, and the TypeScript becomes
+> the reference implementation and balance lab. Next is item 5 — parity CI —
+> which is now a prerequisite for the port rather than a nicety.**
 
 ---
 
@@ -806,8 +807,50 @@ what 3D actually buys, then what gets harder.
 
 ### The decisions that are expensive to change later
 
-1. **[ ] Choose the sim boundary — and know that half of it is already
-   chosen.** *Read this before deciding anything; it was written after
+1. **[x] Choose the sim boundary — DECIDED 2026-08-13: the rules get
+   rewritten in C++.**
+
+   **Evan's call, on the grounds of what makes the best Unreal game rather
+   than what is cheapest for this repo.** The reasoning is below, and the
+   four arguments that decided it are ones the analysis under this heading
+   had underweighted, because it framed the question around bridge cost and
+   the balance record:
+
+   - **Consoles and iOS forbid JIT.** Embedding JS means an interpreter-only
+     build, which slows the SIM and not merely the bridge — and `apply()`
+     already spends 2.2 ms an action deep-cloning. The 0.031 ms bridge
+     figure below was measured with a JIT. If a console is ever a target
+     this decides it alone.
+   - **The content rule maps onto DataTables.** "Adding content must never
+     require touching engine code" is this project's oldest architectural
+     rule, and Unreal's DataTable/DataAsset tooling is built for exactly
+     that. Behind an embedded sim, all of `src/data/` sits behind a boundary
+     the editor cannot see. `Source/LandnamUE/LandnamDataRows.h` had already
+     started down this road before the decision was taken.
+   - **Native tooling.** Insights, Live Coding, breakpoints and the profiler
+     work on C++. An embedded JS heap is opaque to all of them.
+   - **Saves and replication** want native USTRUCTs.
+
+   **The objection was real and is answered rather than dismissed.** "The
+   balance record only follows one codebase" is the strongest argument
+   against, and the answer is that the TypeScript does not become a dead
+   branch: it becomes the **reference implementation and the balance lab**,
+   with parity CI as the thing that stops the two drifting. That is item 5,
+   it is now a prerequisite rather than a nicety, and it should be built
+   BEFORE the rules port rather than after. The machinery is already half
+   there — `port/golden.json`, `LandnamParityTest.cpp` and the `worldHash`
+   runner — and content already works this way, exported from `src/data/*.ts`
+   rather than reimplemented.
+
+   **Order of work, so the record survives the crossing:** parity CI first;
+   then port along the dependency graph — `state/types`, `worldgen`,
+   `calendar`/`upkeep`, `travel`, `battle`, `colony` — each stage landing
+   with its TypeScript tests as UE automation tests, and each required to
+   match the TS hash on N seeds before the next begins.
+
+   *What follows is the analysis the decision was taken on, kept as written.*
+
+   **Half of it was already chosen.** *Read this before deciding anything; it was written after
    actually looking at `landnam-ue` on 2026-08-11, and the repo says
    something different from what the plan assumed.*
 
@@ -945,8 +988,12 @@ what 3D actually buys, then what gets harder.
    Its tests port almost verbatim and give a real green baseline on day one.
    Nothing else should be started before this is green.
 
-5. **[ ] Keep the balance harness running against the PORTED sim.** The one
-   to fight for. Everything found in the 2026-08 audits — a coast no band
+5. **[~] Keep the balance harness running against the PORTED sim — now the
+   NEXT thing, and a prerequisite rather than a hope.** Item 1 chose C++ on
+   2026-08-13, which makes this the load-bearing piece: it is the only reason
+   the TypeScript is a reference implementation instead of a branch that
+   rots. Build it BEFORE the rules port, so every ported subsystem has
+   something to be wrong against on the day it lands. The one to fight for. Everything found in the 2026-08 audits — a coast no band
    ever reached, a palisade that made raids HARDER, a knarr that was never
    faster than walking — came out of `test/balance.test.ts` playing sixty
    sagas and counting. If the Unreal sim forks and the harness stays behind,
@@ -1682,6 +1729,38 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-13 — PHASE 7 ITEM 1 DECIDED: the rules get rewritten in C++** —
+  Evan's call, taken on "what makes the best Unreal game" rather than on what
+  is cheapest for this repo, and the answer went against the analysis that had
+  been sitting under the heading.
+
+  Four arguments decided it, and all four are ones that analysis
+  underweighted because it framed the question around bridge cost and the
+  balance record. **Consoles and iOS forbid JIT** — embedding JS means an
+  interpreter-only build, which slows the SIM rather than merely the bridge,
+  and the 0.031 ms bridge figure was measured with a JIT. **The content rule
+  maps onto DataTables** — "adding content must never require touching engine
+  code" is this project's oldest architectural rule and Unreal's tooling is
+  built for exactly it, where an embedded sim leaves all of `src/data/` behind
+  a boundary the editor cannot see. **Native tooling** — Insights, Live
+  Coding, breakpoints and the profiler are C++ or nothing. **Saves and
+  replication** want native USTRUCTs.
+
+  The strongest objection — that the balance record only follows one codebase
+  — is answered rather than waved off: the TypeScript does not become a dead
+  branch, it becomes the **reference implementation and the balance lab**,
+  with parity CI as the thing that stops the two drifting. Content already
+  works this way, exported from `src/data/*.ts` into DataTables rather than
+  reimplemented, and `Source/LandnamUE/LandnamDataRows.h` had started down
+  that road before the decision was taken.
+
+  That promotes item 5 from a nicety to a prerequisite, and it is the next
+  piece of work: parity CI first, then the port along the dependency graph —
+  `state/types`, `worldgen`, `calendar`/`upkeep`, `travel`, `battle`,
+  `colony` — each stage landing with its TypeScript tests as UE automation
+  tests and required to match the TS hash on N seeds before the next begins.
+  Items 5 through 10 are unblocked.
 
 - **2026-08-13 — The beat stream's last gap, and a coverage bar that could be
   satisfied by something it was not testing** — Phase 7 item 3 read "still
