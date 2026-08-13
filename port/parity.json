@@ -143,6 +143,7 @@
    "seed": "raven-skerry-317",
    "hardship": "fair",
    "script": null,
+   "worldgenHash": "301abcd6d835966d",
    "worldHash": "688411ba38a7cea1",
    "checkpoints": [
     {
@@ -226,6 +227,7 @@
    "seed": "grim-fjord-100",
    "hardship": "even",
    "script": null,
+   "worldgenHash": "9dcb19d4fc659525",
    "worldHash": "c2c3889d91cbd0a4",
    "checkpoints": [
     {
@@ -309,6 +311,7 @@
    "seed": "curve-7",
    "hardship": "even",
    "script": null,
+   "worldgenHash": "5ed0d5f4c8efbef1",
    "worldHash": "6295df26791a1b75",
    "checkpoints": [
     {
@@ -392,6 +395,7 @@
    "seed": "curve-7",
    "hardship": "hard",
    "script": null,
+   "worldgenHash": "5ed0d5f4c8efbef1",
    "worldHash": "6295df26791a1b75",
    "checkpoints": [
     {
@@ -475,6 +479,7 @@
    "seed": "Þórr-vik",
    "hardship": "even",
    "script": null,
+   "worldgenHash": "f949d1c5cc4bffd4",
    "worldHash": "d3cb4659d696dd04",
    "checkpoints": [
     {

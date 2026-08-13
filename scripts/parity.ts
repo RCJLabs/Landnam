@@ -12,6 +12,9 @@
 
 import { writeFileSync, readFileSync } from 'node:fs';
 import { newGame } from '../src/state/create';
+import { generateWorld } from '../src/sim/worldgen';
+import { stream } from '../src/rng';
+import { hashOf } from '../src/run/headless';
 import { apply, type Action } from '../src/sim/actions';
 import { canonical, worldHash } from '../src/run/headless';
 import { FACETS, readAll } from '../src/run/parity';
@@ -80,6 +83,13 @@ const runs = [
     seed,
     hardship,
     script: null,
+    // Stage 1's own bar, and deliberately SMALLER than the `world` facet.
+    // `generateWorld` is the terrain and nothing else; the facet also carries
+    // the landing's name, the trodden hexes and the seeded places, which come
+    // from `newGame` afterwards and need the place tables ported first. A
+    // stage that had to land all of that before anything could go green would
+    // be back to the all-or-nothing bar facets exist to avoid.
+    worldgenHash: hashOf(generateWorld(stream(seed, 'worldgen'))),
     worldHash: worldHash(newGame(seed, hardship) as GameState),
     checkpoints: checkpointsOf(seed, hardship, []),
   })),

@@ -81,6 +81,25 @@ A bare hash is a smoke alarm with no address on it. Each reading carries:
   fractions. So a red test says *"your day 40 food is 12 and mine is 31"*
   rather than only that two hex strings differ.
 
+## The salt has a NUL in it
+
+The second hash pass is salted with **`landnam-state` followed by a NUL
+byte**, not by a space. The literal in `headless.ts` is
+`` `landnam-state\0${text}` ``, the NUL is invisible in every editor, and it
+is why `grep` reports that file as binary.
+
+This cost an hour during the worldgen port and it fails in a uniquely
+misleading way: the **first** half of every hash matches and the second does
+not, which reads like a deep disagreement about the game and is nothing of
+the kind. In C++, build the salt explicitly — `std::string("landnam-state\0", 14)`
+or `FString` plus `AppendChar(0)` — never as a string literal, which stops at
+the NUL.
+
+It is **pinned, not fixed**. Nothing depends on which separator it is, only
+that both implementations agree, and changing it would move every stored
+vector for no gain. What was missing was anybody being able to see it;
+`test/parity.test.ts` now asserts it explicitly.
+
 ## The canonical form
 
 Documented in `src/run/headless.ts` and tested in `test/headless.test.ts`.
@@ -114,6 +133,7 @@ choices. It is the earliest possible warning and it says *where*.
 | --- | --- |
 | `Source/LandnamUE/LandnamCanonical.{h,cpp}` | the canonical form and the state hash |
 | `Source/LandnamUE/LandnamSimParityTest.cpp` | the harness — `Landnam.SimParity` |
+| `Source/LandnamUE/Sim/LandnamWorldgen.{h,cpp}` | **stage 1**: the country itself |
 | `Content/Data/parity.json`, `Content/Data/runs/*.json` | copies of the files above |
 
 **`LandnamCanonical` is ported first on purpose.** Every facet of every
@@ -129,8 +149,22 @@ yet. That is deliberate: a test that stays red for the months a port takes is
 a test everybody learns to ignore, and by the time it matters nobody is
 reading it.
 
-`ReadFacet(facet, seed, hardship, afterActions)` in the test is where a stage
-plugs in. Return `{ true, canonicalText }` for the facet you own and it is
+**Stage 1 is done and green.** `Sim/LandnamWorldgen` ports `src/sim/worldgen.ts`
+and `src/sim/noise.ts` and matches `worldgenHash` on all five seeds, the
+non-ASCII one included. It is written free of Unreal — plain C++ and the
+standard library — so the identical translation unit compiles in the editor
+and in a standalone harness that can be run against the vectors on any machine
+with a compiler. That is not tidiness: it is the only reason the port could be
+verified at all before an editor was opened, and it caught two real bugs (a
+precedence error in mulberry32, and the NUL salt above) that reading the code
+would not have.
+
+Stage 1 targets `worldgenHash` rather than the `world` facet on purpose — the
+facet also carries the landing's name, the trodden hexes and the seeded
+places, which need the place tables ported first.
+
+`ReadFacet(facet, seed, hardship, afterActions)` in the test is where a later
+stage plugs in. Return `{ true, canonicalText }` for the facet you own and it is
 checked against vectors that were already there; leave the rest and they go
 on being skipped. Worldgen turns `world` green without a single rule ported.
 

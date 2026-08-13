@@ -24,7 +24,9 @@ import exampleText from '../runs/example.json?raw';
 import longText from '../runs/long.json?raw';
 import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
-import { canonical, worldHash } from '../src/run/headless';
+import { canonical, hashOf, worldHash } from '../src/run/headless';
+import { generateWorld } from '../src/sim/worldgen';
+import { hashString, stream } from '../src/rng';
 import { FACETS, NOT_IN_ANY_FACET, readAll, type FacetReading } from '../src/run/parity';
 import type { Script } from '../src/run/headless';
 import type { GameState, HardshipId } from '../src/state/types';
@@ -40,6 +42,7 @@ interface Run {
   seed: string;
   hardship: HardshipId | null;
   script: string | null;
+  worldgenHash?: string;
   worldHash: string;
   checkpoints: Checkpoint[];
 }
@@ -96,6 +99,11 @@ describe('the parity fixture is not stale', () => {
     (_name, run) => {
       const hardship = run.hardship ?? undefined;
       expect(worldHash(newGame(run.seed, hardship) as GameState)).toBe(run.worldHash);
+      // Stage 1's bar: the terrain alone, before names, tracks or places.
+      if (run.worldgenHash !== undefined) {
+        expect(hashOf(generateWorld(stream(run.seed, 'worldgen'))), `${run.name}: worldgen`)
+          .toBe(run.worldgenHash);
+      }
 
       const actions = actionsFor(run);
       let state = structuredClone(newGame(run.seed, hardship));
@@ -160,6 +168,29 @@ describe('the canonical form, pinned on its own', () => {
     for (const { value, text } of fixture.canonical.strings) {
       expect(canonical(value), `canonical(${JSON.stringify(value)})`).toBe(text);
     }
+  });
+
+  /**
+   * The salt is "landnam-state" followed by a NUL, not by a space.
+   *
+   * Found the hard way while porting worldgen to C++: the literal in
+   * headless.ts is `landnam-state\0${text}`, the NUL is invisible in every
+   * editor, and it is why grep calls that file binary. A port that assumes a
+   * space gets the FIRST half of every hash right and the second half wrong,
+   * which reads like a deep disagreement about the game and is nothing of
+   * the kind.
+   *
+   * Pinned here rather than fixed. Nothing depends on WHICH separator it is,
+   * only that both implementations agree — and changing it now would move
+   * every stored vector for no gain. What was missing was anybody being able
+   * to SEE it, and this is that.
+   */
+  it('salts the second pass with a NUL, not a space', () => {
+    const text = '{}';
+    const withNul = hashString(`landnam-state\0${text}`) >>> 0;
+    const withSpace = hashString(`landnam-state ${text}`) >>> 0;
+    expect(withNul).not.toBe(withSpace);
+    expect(hashOf({}).slice(8)).toBe(withNul.toString(16).padStart(8, '0'));
   });
 
   it('sorts keys by code unit, which is what the C++ side must copy', () => {
