@@ -24,7 +24,7 @@ import exampleText from '../runs/example.json?raw';
 import longText from '../runs/long.json?raw';
 import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
-import { worldHash } from '../src/run/headless';
+import { canonical, worldHash } from '../src/run/headless';
 import { FACETS, NOT_IN_ANY_FACET, readAll, type FacetReading } from '../src/run/parity';
 import type { Script } from '../src/run/headless';
 import type { GameState, HardshipId } from '../src/state/types';
@@ -46,6 +46,15 @@ interface Run {
 interface Fixture {
   note: string;
   facets: { id: string; blurb: string }[];
+  canonical: {
+    note: string;
+    numbers: { value: number; text: string }[];
+    negativeZero: string;
+    emptyObject: string;
+    sortedKeys: string;
+    nested: string;
+    strings: { value: string; text: string }[];
+  };
   runs: Run[];
 }
 
@@ -119,6 +128,46 @@ describe('the parity fixture is not stale', () => {
       expect(next, `${run.name}: checkpoints never reached`).toBe(run.checkpoints.length);
     },
   );
+});
+
+describe('the canonical form, pinned on its own', () => {
+  /**
+   * The piece a port can settle on day one, and the likeliest place two
+   * languages quietly disagree about identical values.
+   *
+   * `toPrecision(15)` goes exponential at both ends of the range, `String()`
+   * on an integer ALSO goes exponential past 1e21, and negative zero has to
+   * come out as plain zero or two implementations hash the same state
+   * differently. None of that needs a sim to check, which is exactly why it
+   * is worth checking before there is one.
+   */
+  it('reproduces every stored number', () => {
+    for (const { value, text } of fixture.canonical.numbers) {
+      expect(canonical(value), `canonical(${value})`).toBe(text);
+    }
+    // The two hazards the list above cannot carry as plain JSON.
+    expect(fixture.canonical.numbers.find((n) => n.value === 1e21)?.text).toBe('1e+21');
+    expect(fixture.canonical.numbers.find((n) => n.value === 1e-7)?.text)
+      .toBe('1.00000000000000e-7');
+  });
+
+  it('reproduces the shapes and the strings', () => {
+    expect(canonical(-0)).toBe(fixture.canonical.negativeZero);
+    expect(canonical(-0)).toBe('0');
+    expect(canonical({})).toBe(fixture.canonical.emptyObject);
+    expect(canonical({ b: 2, a: 1, C: 3, '': 0 })).toBe(fixture.canonical.sortedKeys);
+    expect(canonical({ z: [1, { y: 'x' }], a: null })).toBe(fixture.canonical.nested);
+    for (const { value, text } of fixture.canonical.strings) {
+      expect(canonical(value), `canonical(${JSON.stringify(value)})`).toBe(text);
+    }
+  });
+
+  it('sorts keys by code unit, which is what the C++ side must copy', () => {
+    // Capitals before lowercase, empty string first. A port that sorts
+    // case-insensitively, or by locale, produces a different string for an
+    // identical state — and nothing but this would say so.
+    expect(fixture.canonical.sortedKeys).toBe('{"":0,"C":3,"a":1,"b":2}');
+  });
 });
 
 describe('the facets cover the whole state', () => {

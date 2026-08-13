@@ -13,7 +13,7 @@
 import { writeFileSync, readFileSync } from 'node:fs';
 import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
-import { worldHash } from '../src/run/headless';
+import { canonical, worldHash } from '../src/run/headless';
 import { FACETS, readAll } from '../src/run/parity';
 import type { Script } from '../src/run/headless';
 import type { GameState, HardshipId } from '../src/state/types';
@@ -96,6 +96,25 @@ const runs = [
   }),
 ];
 
+/**
+ * The canonical form of a NUMBER, pinned on its own.
+ *
+ * This is the single most likely place two languages disagree about
+ * identical values, and it is worth catching before it is buried under a
+ * half-ported sim: `toPrecision(15)` switches to exponential at both ends of
+ * the range, an integer prints through `String()` which ALSO goes
+ * exponential past 1e21, and negative zero has to come out as plain zero or
+ * two implementations hash the same state differently.
+ *
+ * Testable with no sim at all, which is the point — the C++ side can pass
+ * this on the day the port starts and stop worrying about it.
+ */
+const CANONICAL_NUMBERS = [
+  0, 1, -1, 42, -42, 100, 2.5, -0.75, 0.1, 0.5,
+  1 / 3, 2 / 3, 0.1 + 0.2, 3.14159265358979, 1234567.891,
+  1e21, 1e-7, 1e300, 9007199254740991, -9007199254740991,
+];
+
 const fixture = {
   note:
     'Parity vectors for the Unreal port of the SIM. GENERATED FROM src/ — do not hand-edit. '
@@ -106,6 +125,21 @@ const fixture = {
     + 'form, which separates a shape mismatch from a value mismatch; `samples` are plain '
     + 'integers so a red test can say what differs rather than only that something does.',
   facets: FACETS.map((f) => ({ id: f.id, blurb: f.blurb })),
+  canonical: {
+    note:
+      'The canonical form of a number, and of the two values JSON cannot carry. '
+      + 'Verifiable with no sim at all, so a port can settle number formatting — the '
+      + 'likeliest place two languages disagree about identical values — before it is '
+      + 'buried under half-ported rules.',
+    numbers: CANONICAL_NUMBERS.map((value) => ({ value, text: canonical(value) })),
+    negativeZero: canonical(-0),
+    emptyObject: canonical({}),
+    sortedKeys: canonical({ b: 2, a: 1, C: 3, '': 0 }),
+    nested: canonical({ z: [1, { y: 'x' }], a: null }),
+    strings: ['', 'a', 'Þórr', 'quote"back\\slash', '😀'].map((value) => ({
+      value, text: canonical(value),
+    })),
+  },
   runs,
 };
 

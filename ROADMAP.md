@@ -993,7 +993,13 @@ what 3D actually buys, then what gets harder.
    `port/parity.json` pins seven runs and thirteen checkpoints across six
    facets, `test/parity.test.ts` recomputes every reading from the live sim
    so it cannot go stale unnoticed, `npm run parity` regenerates it, and
-   `port/sim.md` is the spec. Built BEFORE the port, deliberately. Item 1 chose C++ on
+   `port/sim.md` is the spec. Built BEFORE the port, deliberately — **and
+   both ends of it now exist**: `landnam-ue` has `LandnamCanonical` (the
+   shared canonical form and state hash, ported first because every facet
+   becomes a string it produced) and `Landnam.SimParity`, a harness that is
+   honestly green today, checks the canonical form for real, and skips the
+   six sim facets BY NAME until a stage fills in `ReadFacet()`. Worldgen
+   turns `world` green without one rule ported. Item 1 chose C++ on
    2026-08-13, which makes this the load-bearing piece: it is the only reason
    the TypeScript is a reference implementation instead of a branch that
    rots. Build it BEFORE the rules port, so every ported subsystem has
@@ -1733,6 +1739,33 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-13 — Both ends of the parity contract now exist** — The C++ half
+  of item 5. `LandnamCanonical` in `landnam-ue` is the shared canonical form
+  and state hash, and it is ported FIRST on purpose: every facet of every
+  checkpoint ends up as a string it produced, so a disagreement there would
+  be read as a disagreement about the rules for as long as it took to find.
+
+  Its number formatting was **compiled and run against the vectors rather
+  than merely written beside them** — 20 of 20, including the two thresholds
+  JavaScript switches at (`1e+21` upward, `1.00000000000000e-7` downward),
+  `1e+300`, and negative zero as plain `0`. Number formatting is the likeliest
+  place two languages disagree about identical values, and now it is settled
+  before anything can hide it. The vectors that made that possible are new
+  too: a `canonical` section in `port/parity.json` that needs no sim at all.
+
+  `Landnam.SimParity` is the harness, and the shape of it is the point. **It
+  has to be honestly green today and meaningfully red the day a ported facet
+  disagrees** — a test that stays red for the months a port takes is one
+  everybody learns to ignore, and by the time it matters nobody is reading
+  it. So it checks the canonical form for real and SKIPS the six sim facets
+  by name, saying how many checkpoints are waiting for each. `ReadFacet()` is
+  the hook: fill it in for the facet your stage owns and it is checked at
+  once against vectors that were already sitting there. Worldgen turns
+  `world` green without a single rule ported.
+
+  The port can start. Stage 1 has a bar waiting for it, which is the whole
+  thing this was built early to guarantee.
 
 - **2026-08-13 — The sim parity contract, built before the port rather than
   after** — Item 1 chose C++, so item 5 stopped being a nicety. `port/parity.json`

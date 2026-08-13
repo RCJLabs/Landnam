@@ -108,6 +108,32 @@ handing back the same state, and a replay that starts refusing has already
 diverged — the script was recorded against a game that offered different
 choices. It is the earliest possible warning and it says *where*.
 
+## The C++ side, as it stands
+
+| File | What it is |
+| --- | --- |
+| `Source/LandnamUE/LandnamCanonical.{h,cpp}` | the canonical form and the state hash |
+| `Source/LandnamUE/LandnamSimParityTest.cpp` | the harness — `Landnam.SimParity` |
+| `Content/Data/parity.json`, `Content/Data/runs/*.json` | copies of the files above |
+
+**`LandnamCanonical` is ported first on purpose.** Every facet of every
+checkpoint ends up as a string it produced, so a disagreement there would be
+mistaken for a disagreement about the rules for as long as it took to find.
+Its number formatting was compiled and run against the vectors rather than
+merely written beside them — 20 of 20, including `1e+21`,
+`1.00000000000000e-7`, `1e+300` and `-0`.
+
+**The harness is honestly green today.** It checks the canonical form for
+real, and it SKIPS the six sim facets by name, because none of them is ported
+yet. That is deliberate: a test that stays red for the months a port takes is
+a test everybody learns to ignore, and by the time it matters nobody is
+reading it.
+
+`ReadFacet(facet, seed, hardship, afterActions)` in the test is where a stage
+plugs in. Return `{ true, canonicalText }` for the facet you own and it is
+checked against vectors that were already there; leave the rest and they go
+on being skipped. Worldgen turns `world` green without a single rule ported.
+
 ## Adding a field to GameState
 
 Place it in a facet in `src/run/parity.ts`, or add it to `NOT_IN_ANY_FACET`
