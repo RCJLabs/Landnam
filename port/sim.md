@@ -136,6 +136,7 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/Sim/LandnamWorldgen.{h,cpp}` | **stage 1**: the country itself |
 | `Source/LandnamUE/Sim/LandnamParty.{h,cpp}` | **stage 2**: the six off the knarr |
 | `Source/LandnamUE/Sim/LandnamCoast.{h,cpp}` | **stage 3**: who else is on this coast |
+| `Source/LandnamUE/Sim/LandnamLanding.{h,cpp}` | **stage 4**: the rest of the landing |
 | `Source/LandnamUE/Sim/LandnamPartyTables.generated.h` | names and traits, from `npm run party-tables` |
 | `Content/Data/parity.json`, `Content/Data/runs/*.json` | copies of the files above |
 
@@ -190,7 +191,22 @@ worlds and 1872 keys each. The port sorts by bytes and `test/parity.test.ts`
 pins the equivalence, so a future ICU that disagrees fails in the repo that
 owns the rules rather than silently in Unreal.
 
-Stages 2 and 3 are checked at checkpoint 0 and on the bare runs only, which is exactly
+**Stage 4 closes checkpoint 0 entirely, and it is the milestone worth
+naming: a new game in C++ is bit-identical to a new game in TypeScript across
+every facet** — world, band, coast, steading, field and run, twenty of twenty
+checks over five seeds. It adds what `newGame` does after `generateWorld` and
+the `world` facet carries: the landing's name, the trodden hex, the seeded
+places, and the fog lifted around the beach (which needed hex line, range and
+line-of-sight, plus the terrain table that says what stops a view).
+
+`steading` and `field` are `{}` at a landing, and checking them is not a
+formality — a band off the knarr has no settlement and is in no fight, so
+empty is the right answer and a port that invented either would fail.
+
+**This is the last thing reachable before `apply()`.** Every checkpoint past
+0 needs the action loop, which is the next and much larger stage.
+
+Stages 2, 3 and 4 are checked at checkpoint 0 and on the bare runs only, which is exactly
 as far as it reaches — every later checkpoint needs upkeep and travel, and
 claiming those would turn a real bar into a red one nobody could act on.
 

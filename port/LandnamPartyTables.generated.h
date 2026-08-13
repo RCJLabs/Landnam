@@ -178,5 +178,31 @@ namespace Tables
 	constexpr int32_t NativeOpening = 10;
 	const std::string ClanNoun = "steading";
 	const std::string NativeNoun = "camp";
+
+	/** Which terrains stop a view. Only mountains stop one from high ground. */
+	const std::map<std::string, bool> BlocksSight = {
+		{ "ocean", false },
+		{ "shore", false },
+		{ "meadow", false },
+		{ "forest", true },
+		{ "hills", true },
+		{ "mountains", true },
+		{ "bog", false },
+		{ "valley", false },
+	};
+
+	/** Fixed places, IN SEEDING ORDER — seedPlaces walks this list. */
+	struct FPlaceKindRow { std::string Id; std::vector<std::string> Ground; int32_t MinFromLanding; };
+	const std::vector<FPlaceKindRow> PlaceKinds = {
+		{ "monastery", { "shore" }, 6 },
+		{ "town", { "shore", "valley", "meadow" }, 11 },
+		{ "wreck", { "shore" }, 3 },
+		{ "oreseam", { "bog", "hills", "mountains" }, 4 },
+	};
+	constexpr int32_t PlaceMaxFromLanding = 16;
+
+	/** How far the band sees on day one. The calendar itself is a later stage. */
+	constexpr int32_t SightOnDayOne = 3;
+	constexpr int32_t SaveVersion = 31;
 }
 }

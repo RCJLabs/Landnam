@@ -22,6 +22,10 @@ import { ELDER_TIES, PEER_TIES } from '../src/data/kin';
 import {
   CLAN_COUNT, CLAN_MAX_GAP, CLAN_MIN_GAP, CLAN_NAMES, NATIVE_NAMES, clanKind,
 } from '../src/data/clans';
+import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
+import { PLACE_KINDS, PLACE_MAX_FROM_LANDING } from '../src/data/places';
+import { effectsOn } from '../src/sim/calendar';
+import { SAVE_VERSION } from '../src/state/version';
 
 const quote = (s: string): string => JSON.stringify(s);
 const list = (name: string, values: readonly string[]): string =>
@@ -96,6 +100,22 @@ ${traits.replace(/^\t/gm, '\t\t')}
 \tconstexpr int32_t NativeOpening = ${clanKind('native').opening};
 \tconst std::string ClanNoun = ${quote(clanKind('clan').noun)};
 \tconst std::string NativeNoun = ${quote(clanKind('native').noun)};
+
+\t/** Which terrains stop a view. Only mountains stop one from high ground. */
+\tconst std::map<std::string, bool> BlocksSight = {
+${['ocean', ...LAND_TERRAINS].map((t) => `\t\t{ ${quote(t)}, ${terrainDef(t).blocksSight ? 'true' : 'false'} },`).join('\n')}
+\t};
+
+\t/** Fixed places, IN SEEDING ORDER — seedPlaces walks this list. */
+\tstruct FPlaceKindRow { std::string Id; std::vector<std::string> Ground; int32_t MinFromLanding; };
+\tconst std::vector<FPlaceKindRow> PlaceKinds = {
+${PLACE_KINDS.map((k) => `\t\t{ ${quote(k.id)}, { ${k.ground.map(quote).join(', ')} }, ${k.minFromLanding} },`).join('\n')}
+\t};
+\tconstexpr int32_t PlaceMaxFromLanding = ${PLACE_MAX_FROM_LANDING};
+
+\t/** How far the band sees on day one. The calendar itself is a later stage. */
+\tconstexpr int32_t SightOnDayOne = ${effectsOn(1).sight};
+\tconstexpr int32_t SaveVersion = ${SAVE_VERSION};
 }
 }
 `;
