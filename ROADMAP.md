@@ -23,9 +23,10 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 (the sim boundary)
-> is Evan's call and blocks 5 through 10; the web game's own loose threads are
-> tracked as tasks, not milestones.**
+> **CURRENT MILESTONE: finish the hardship-steel change below (it is written
+> up in full and was reverted rather than landed red), then Phase 7 — the
+> Unreal build, whose item 1 (the sim boundary) is Evan's call and blocks 5
+> through 10.**
 
 ---
 
@@ -46,17 +47,86 @@ than a fix on its own, and is left at `[~]` to say so honestly.
 shipped in the last two days, and item 9 turned out to be a fault in the
 instrument rather than in the game.
 
-**What is open is not a milestone.** Raiding is still not a way to live
-(task 31), and one lever is left before the answer is a standing warband:
-what a haul is worth. The strandhögg is unreached in play, 3 in 120 sagas.
-Both are tracked as tasks; neither blocks the port.
+**Raiding is a way to play now** (task 31, closed 2026-08-12): the hands
+hold their own hall when a raid comes to the yard, which frees the whole
+sworn band to go out, and an open-field fight is decided by how many stood
+in the line — 9% of camps won with three, 47% with six. Raider second
+winters went 3/30 to 7/30, level with the settler. The strandhögg is still
+unreached (3 in 120 sagas) and that is a question about the PLACE economy
+rather than about raiding — see task 33 in the changelog.
+
+**One thing is half-done and it is at the top of this document**: hardship
+does not reach combat. Built, measured, reverted; see "ON THE BENCH".
 
 **Phase 7 is the Unreal build**, running in parallel in another repo — a hex
 grid and top-down movement are working there. What this repo owes it, and
 what it must be careful of, is written up below. The short version: the
 simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 838 tests), the renderers are disposable, and the port lives
+content under 846 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
+
+### ON THE BENCH — hardship must reach combat (start here)
+
+**Asked for, built, measured, and REVERTED rather than committed red.** Every
+line of it is reconstructible from this section; nothing is lost but the
+typing.
+
+**The ask.** Hardship touched `stir`, `raid`, `winter` and `stores` and
+nothing about a fight, so A Fair Country made fights RARER and left every
+blow exactly as hard to land as A Hard Country did. A player who reaches for
+the gentlest setting because the fighting is going badly was handed no help
+with the fighting. Easiest should be easier combat, medium equal, hardest
+harder.
+
+**The change, in four edits.**
+
+1. `src/data/hardship.ts` — `HardshipDef` gains `steel: number`.
+   `fair: 1`, `even: 0`, `hard: -1`.
+2. `src/sim/battleActions.ts`, in `doStrike`, on the to-hit roll:
+   `+ (active.side === 'warband' ? steel : -steel)`, with
+   `const steel = hardshipById(state.hardship).steel;` and the import.
+   One point on 2d6 is about fourteen points of whether a blow lands, and it
+   is worth twice that across the field because it is added to ours and
+   taken off theirs.
+3. The three `measured:` labels rewritten, because a difficulty whose labels
+   are not measured is a lie told three times. What the sweep gave with the
+   change in: **Fair 87% reached winter / 65% saw spring; Even 80% / 28%;
+   Hard 73% / 12%** — properly ordered and much better separated than
+   before. Long game, 20 sagas a country: fair 4 jarls, even 1, hard 0.
+4. `runs/long.json` needs re-recording — combat changed, so the recorded
+   script diverges. `npm run record -- --seed raven-skerry-317 --hardship
+   fair --out runs/long.json`.
+
+**Why it was not landed.** It broke the content-reach probe: **`markets`
+fell from 14 to 2** against a floor of 3. Checked against a clean tree
+rather than assumed — 14 without the change, 2 with it, so it is caused and
+not noise.
+
+The likely explanation, NOT verified: easier fights on Fair mean more bands
+survive to SETTLE, and a settled band stops walking past the trading places.
+If that holds, the floor is measuring "do bands wander past markets" and
+easier combat legitimately reduces it.
+
+The two things that must not be done to make it pass are lowering the bar to
+fit the change, and committing the suite red.
+
+**Three ways to finish it, in order of preference.**
+
+1. Measure settle-rate and days-on-the-road by hardship. If bands are
+   settling earlier, re-derive the `markets` floor with the reasoning
+   written down, and land the change.
+2. Land it and move the floor as a deliberate decision, reasoning recorded.
+3. Land only the legibility half, which is independent and breaks nothing.
+
+**The legibility half**, which is the other thing that was asked for and is
+worth having on its own: a `carrying(attacker)` helper in
+`battleActions.ts`, appended to the glance and shield-turned log lines,
+saying "He is fighting with a bad arm" when an injury is dragging the
+attacker's might. Measured cause: a fresh band lands 76% of its swings and a
+worn one 59%, while foes are generated whole for every fight and never carry
+a wound — so the game was taking a point off the dice and telling nobody.
+`who lands their blows` in the balance suite measures both sides and is
+already committed.
 
 **The measured curve** (a scripted player of roughly average competence over
 SIXTY seeds — see `test/balance.test.ts`, which is the source of every number
@@ -677,7 +747,7 @@ both codebases at once.*
 
 **The thing being ported is the simulation, and it is the whole asset.**
 `src/sim/` and `src/hex/` are 10,500 lines of pure `(state, action) → state`
-with 5,000 more of typed content in `src/data/`, standing under **838 tests
+with 5,000 more of typed content in `src/data/`, standing under **846 tests
 in 45 files**. `src/render/` and `main.ts` are 4,500 lines that draw SVG and
 are worth nothing to Unreal. The split the CLAUDE.md rules have enforced from
 day one — *if it can be unit-tested, it does not belong in `render/`* — is
@@ -1542,6 +1612,17 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-12 — Hardship reaching combat: built, measured, reverted** — The
+  work is written up under "ON THE BENCH" at the head of this document, in
+  enough detail to retype in ten minutes. Short version: `steel` on
+  `HardshipDef` (+1 fair, 0 even, -1 hard) added to our swings and taken off
+  theirs; the curve ordered beautifully (87/65, 80/28, 73/12 for winter and
+  spring); and it dropped `markets` in the content-reach probe from 14 to 2
+  against a floor of 3. Verified as caused rather than assumed — a clean
+  tree reads 14. Reverted rather than landed red or landed with the bar
+  quietly lowered, because the bars are the only reason six real findings
+  turned up today.
 
 - **2026-08-12 — "My warriors miss more than the enemy": measured, and half
   of it is true** — A playtest report, and the half that holds is a real
