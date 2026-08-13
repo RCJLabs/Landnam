@@ -134,6 +134,8 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/LandnamCanonical.{h,cpp}` | the canonical form and the state hash |
 | `Source/LandnamUE/LandnamSimParityTest.cpp` | the harness — `Landnam.SimParity` |
 | `Source/LandnamUE/Sim/LandnamWorldgen.{h,cpp}` | **stage 1**: the country itself |
+| `Source/LandnamUE/Sim/LandnamParty.{h,cpp}` | **stage 2**: the six off the knarr |
+| `Source/LandnamUE/Sim/LandnamPartyTables.generated.h` | names and traits, from `npm run party-tables` |
 | `Content/Data/parity.json`, `Content/Data/runs/*.json` | copies of the files above |
 
 **`LandnamCanonical` is ported first on purpose.** Every facet of every
@@ -158,6 +160,27 @@ with a compiler. That is not tidiness: it is the only reason the port could be
 verified at all before an editor was opened, and it caught two real bugs (a
 precedence error in mulberry32, and the NUL salt above) that reading the code
 would not have.
+
+**Stage 2 is done and green too.** `Sim/LandnamParty` ports
+`src/sim/people.ts`, `src/sim/kin.ts` and the stores in `create.ts`, and
+matches the `band` facet at checkpoint 0 on all five seeds — canonical
+lengths and hardship-varying stores included. It matched first try, which is
+worth attributing: the one thing written out before any code was the DRAW
+ORDER, because every value comes off one stream in one sequence and an extra
+draw, a missing one or two swapped puts every person after it wrong. Two
+places where that bites are commented at the call sites — a duplicate name is
+discarded draws-and-all without rewinding the stream, and `byname` and `age`
+are drawn AFTER the stats because they sit in an object literal, which
+JavaScript evaluates in property order.
+
+Its tables come from `npm run party-tables`, which restates `src/data/*.ts`
+as a C++ header. A generated header rather than JSON because the standalone
+harness has no JSON parser and should not grow one. Content is still authored
+in exactly one place: add a name or a trait in `src/data` and re-run it.
+
+Stage 2 is checked at checkpoint 0 and on the bare runs only, which is exactly
+as far as it reaches — every later checkpoint needs upkeep and travel, and
+claiming those would turn a real bar into a red one nobody could act on.
 
 Stage 1 targets `worldgenHash` rather than the `world` facet on purpose — the
 facet also carries the landing's name, the trodden hexes and the seeded

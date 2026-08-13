@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "release": "npm run build && node scripts/release.mjs",
     "publish": "npm run build && node scripts/publish.mjs",
-    "parity": "vite-node scripts/parity.ts --"
+    "parity": "vite-node scripts/parity.ts --",
+    "party-tables": "vite-node scripts/party-tables.ts -- port/LandnamPartyTables.generated.h"
   },
   "devDependencies": {
     "typescript": "^5.6.0",
