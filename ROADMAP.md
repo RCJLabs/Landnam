@@ -24,9 +24,14 @@
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
-> (2026-08-13): the rules get rewritten in C++, and the TypeScript becomes
-> the reference implementation and balance lab. Next is item 5 — parity CI —
-> which is now a prerequisite for the port rather than a nicety.**
+> (C++), item 5 (parity CI) is BUILT on both sides, and the rules port has
+> landed stages 1–4: a new game in C++ is bit-identical to a new game in
+> TypeScript across every facet.**
+>
+> **NEXT: stage 5 — `apply()`, starting with the unsettled day cycle and
+> `MOVE`, against the ramp checkpoint `runs/long.json @1`. Scoped and
+> measured in `port/sim.md`; it is roughly 150 lines, not the 2,000 that
+> reading `passDay` suggests.**
 
 ---
 
@@ -63,12 +68,37 @@ the first winter, 62/27/12 to spring. What had blocked it for a day was a
 is the autopsy, and it is worth reading before trusting any other count in
 this document.
 
-**Phase 7 is the Unreal build**, running in parallel in another repo — a hex
-grid and top-down movement are working there. What this repo owes it, and
-what it must be careful of, is written up below. The short version: the
-simulation is the asset (10,500 lines of pure logic and 5,000 of typed
-content under 846 tests), the renderers are disposable, and the port lives
-or dies on whether the balance harness follows the sim across.
+**The place economy was measured to the bottom on 2026-08-13, and the finding
+went three layers deep.** Places are not consumed, they are never LEARNED (11
+of 120 emptied; 42 known and still standing). Widening word of mouth is a
+measured null — the tap is the number of bargains, not the width of the pipe.
+Landmark-sighting from high ground fixed discovery (first sighting day 74 →
+46) and moved no downstream verb. And the last link is that **the harness
+never aims at a market**: `nearestFriendable` iterates `state.neighbours` and
+never `world.places`, so today's market figures measure the bot's itinerary
+rather than the game's reach. Teaching the settler otherwise rewrites every
+figure in this document and is Evan's call — see the changelog.
+
+**Phase 7 is the Unreal build, and it is under way.** Item 1 is decided: the
+rules get rewritten in C++, the TypeScript becomes the reference
+implementation and the balance lab, and `port/sim.md` is the contract that
+makes the second half of that true. Item 5 exists on both sides. Stages 1–4
+of the rules port are green — worldgen, the party, the coast and the rest of
+the landing — so **a new game in C++ matches a new game in TypeScript across
+all six facets**.
+
+The port's method is worth keeping: the sim core in `landnam-ue` is written
+FREE OF UNREAL, so the identical translation unit compiles in the editor and
+in a standalone harness run against the vectors with nothing but `g++`. Every
+stage has been compiled and checked rather than read over, and that has caught
+three portability traps reading would not have — a precedence error in
+mulberry32, a NUL byte in the hash salt, and `localeCompare` not being
+code-unit order. All three are written up in `port/sim.md`.
+
+**Not yet verified:** `Landnam.SimParity` has never been run in a real editor.
+The sim core is proven by compilation here; the ~100 lines of UE-typed glue
+around it are not. Expect ordinary first-compile friction there, not logic
+errors.
 
 ### OFF THE BENCH — hardship reaches combat, and a floor that was measuring nothing
 
