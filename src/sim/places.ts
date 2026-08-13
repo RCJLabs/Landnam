@@ -21,6 +21,7 @@ import { STRAND_HAUL, STRAND_INFAMY } from './sea';
 import { learn, knows } from './lore';
 import { shiftStanding } from './neighbours';
 import { note } from './tally';
+import { worldBeat } from './beats';
 
 /** Places keep out of each other's way, and out of the landing's. */
 const PLACE_MIN_GAP = 5;
@@ -169,6 +170,9 @@ export function spotLandmarks(state: GameState): Place[] {
     if (!hasLineOfSight(world, from, place.at)) continue;
     world.seen[key(place.at)] = 'seen';
     spotted.push(place);
+    worldBeat(state, {
+      kind: 'spotted', id: place.id, place: place.kind, at: { ...place.at },
+    });
     chronicle(
       state,
       `From the high ground we made out ${placeKind(place.kind).name} away off, ` +
@@ -238,6 +242,10 @@ export function tradeAt(state: GameState, id: string, offerId: string): PlaceTra
 
   const gaveWord = offer.give === 'food' ? 'of food' : 'of firewood';
   const gotWord = offer.take === 'food' ? 'of food' : 'of timber';
+  worldBeat(state, {
+    kind: 'dealt', id: place.id, place: place.kind, at: { ...place.at },
+    gave: offer.cost, got,
+  });
   chronicle(state, `${offer.line} ${offer.cost} ${gaveWord} for ${got} ${gotWord}.`, 'good');
   // A counter is where the coast's news is. Same trade as a neighbour's.
   tellOfPlace(state, place.at, def.name);
@@ -304,6 +312,10 @@ export function settlePlace(state: GameState, id: string, fromSea = false): void
     }
   }
 
+  worldBeat(state, {
+    kind: 'sacked', id: place.id, place: place.kind, at: { ...place.at },
+    ...(fromSea ? { bySea: true as const } : {}),
+  });
   chronicle(state, def.sackLine, def.garrison !== null ? 'grim' : 'good');
   if (fromSea) {
     chronicle(state, 'We loaded the knarr to the thwarts and were gone on the tide.', 'good');

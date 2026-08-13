@@ -223,7 +223,12 @@ export type WorldBeatKind =
   | 'joined'
   | 'left'
   | 'met'
-  | 'bargained';
+  | 'bargained'
+  | 'wentOut'
+  | 'cameHome'
+  | 'spotted'
+  | 'dealt'
+  | 'sacked';
 
 interface WorldBase {
   /** Rises for the life of the run and never resets. */
@@ -321,6 +326,44 @@ export interface BargainedBeat extends WorldBase {
   standing: number;
 }
 
+/**
+ * A party left the steading, or came back to it.
+ *
+ * The one thing in the settled half of the game that is genuinely a
+ * MOVEMENT of people rather than a change of numbers: a renderer handed
+ * only the state afterwards knows four people are elsewhere and has no
+ * moment to draw. `carried` is what went out of the store with them.
+ */
+export interface ErrandBeat extends WorldBase {
+  kind: 'wentOut' | 'cameHome';
+  purpose: string;
+  crew: string[];
+  carried?: number;
+  /** Days out, on the way home. */
+  days?: number;
+}
+
+/**
+ * A fixed place, and the three things that can happen to one.
+ *
+ * Kept apart from `met` and `bargained`, which belong to the CLANS: a camp
+ * walks over to look at your steading and can be dealt with again next
+ * season, where a monastery cannot move and is one-shot. The place economy
+ * measured on 2026-08-13 as the part of the game a band reaches least, so a
+ * presentation layer wanting to make more of it needs the moments named.
+ */
+export interface PlaceBeat extends WorldBase {
+  kind: 'spotted' | 'dealt' | 'sacked';
+  id: string;
+  place: string;
+  at: Hex;
+  /** What crossed the counter, on a deal. */
+  gave?: number;
+  got?: number;
+  /** Taken from the water rather than from the road. */
+  bySea?: true;
+}
+
 export type WorldBeat =
   | DawnBeat
   | UpkeepBeat
@@ -334,7 +377,9 @@ export type WorldBeat =
   | BuiltBeat
   | FolkBeat
   | MetBeat
-  | BargainedBeat;
+  | BargainedBeat
+  | ErrandBeat
+  | PlaceBeat;
 
 type UnstampedWorld<T> = T extends WorldBeat ? Omit<T, 'n' | 'day'> : never;
 

@@ -13,6 +13,7 @@ import { effectiveStat, living } from './people';
 import { chronicle } from './saga';
 import { note } from './tally';
 import { atHome } from './site';
+import { worldBeat } from './beats';
 
 /** Provisions a party takes per member per day it expects to be out. */
 export const PROVISION_PER_HEAD = 3;
@@ -133,6 +134,9 @@ export function launch(state: GameState, members: string[], purpose: Purpose): b
     launchedOn: state.day,
     carried,
   };
+  worldBeat(state, {
+    kind: 'wentOut', purpose, crew: going.map((p) => p.id), carried,
+  });
   chronicle(
     state,
     `${listNames(going)} went out from ${state.settlement!.name} ${purposeLine(purpose)}.`,
@@ -213,6 +217,9 @@ export function arriveHome(state: GameState): boolean {
     );
   }
 
+  worldBeat(state, {
+    kind: 'cameHome', purpose: out.purpose, crew: out.members.slice(), days,
+  });
   delete state.expedition;
   return true;
 }

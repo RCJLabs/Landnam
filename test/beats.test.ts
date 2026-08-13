@@ -14,7 +14,7 @@
 // real fights with a bot that uses every verb, and names the kinds it saw.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, offsetToAxial, type Hex } from '../src/hex';
+import { distance, fromKey, key, offsetToAxial, range, type Hex } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
 import { activeCombatant, fighterPerson, standing } from '../src/sim/battle';
@@ -34,6 +34,13 @@ import {
   type WorldBeatKind,
 } from '../src/sim/beats';
 import { moveOptions } from '../src/sim/travel';
+import { arriveHome, launch, launchBlocker } from '../src/sim/expedition';
+import {
+  LANDMARK_SIGHT, offersAt, settlePlace, spotLandmarks, tradeAt,
+} from '../src/sim/places';
+import { placeKind } from '../src/data/places';
+import { canFound, foundSettlement } from '../src/sim/site';
+import { living } from '../src/sim/people';
 import { currentMode } from '../src/modes';
 import type { Battle, GameState } from '../src/state/types';
 
@@ -348,13 +355,24 @@ describe('the world stream', () => {
     // long enough for the coast to call and the queue to finish something.
     const KINDS: WorldBeatKind[] = [
       'dawn', 'ate', 'burned', 'worked', 'hurt', 'died', 'seasonTurned',
-      'marched', 'gathered', 'founded', 'built', 'joined', 'met',
+      'marched', 'gathered', 'founded', 'built', 'joined', 'met', 'spotted',
     ];
     const seen = new Set<WorldBeatKind>();
-    // `seen.size < KINDS.length`, not a hand-typed number: the first version
-    // said 12 against a list of 13 and stopped one short, reporting the
-    // thirteenth as unreachable when it had simply never been looked for.
-    for (let s = 0; s < 12 && seen.size < KINDS.length; s += 1) {
+    /**
+     * How many of the kinds UNDER TEST have turned up — not `seen.size`.
+     *
+     * This has now been wrong in both directions. The first version compared
+     * against a hand-typed 12 for a list of 13 and stopped one short. The
+     * second used `seen.size`, which counts every kind the run emits
+     * INCLUDING ones this list does not name — so the day `spotted` was
+     * added to the sim, `seen.size` hit 13 on the second seed, the sweep
+     * exited early and `gathered` was reported as never emitted. The stream
+     * was fine; the counter was measuring the wrong set. Count the
+     * intersection, and adding a kind to the sim can never again shorten the
+     * search for the others.
+     */
+    const found = (): number => KINDS.filter((k) => seen.has(k)).length;
+    for (let s = 0; s < 12 && found() < KINDS.length; s += 1) {
       let state = structuredClone(newGame(`world-reach-${s}`, 'fair'));
       const memo: Memo = { jobsDone: false };
       for (let i = 0; i < 4000 && !state.end; i += 1) {
@@ -466,3 +484,121 @@ function wideStep(state: GameState, memo: Memo): GameState {
   }
   return apply(state, { type: 'CAMP' });
 }
+describe('the errands and the fixed places', () => {
+  /**
+   * The five kinds `src/sim/places.ts` and `src/sim/expedition.ts` owed.
+   *
+   * Phase 7 item 3 said "still owed: the travel and colony halves", which
+   * was stale — the stream, the emitter and thirteen kinds shipped with
+   * SAVE_VERSION 30. What was actually missing was narrower and is the part
+   * a renderer most needs: neither file emitted anything at all, so a party
+   * walking out of the steading and a monastery going up were both invisible
+   * to anything but the prose.
+   *
+   * FIXTURES rather than a played sample, and that is the battle half's own
+   * precedent: `rallied` and `fled` came in at four and one over thirty
+   * fights and were pinned this way instead. The place economy was measured
+   * on 2026-08-13 as the part of the game a band reaches LEAST — six sagas
+   * in sixty ever stand at a counter — so a bot sample would report these as
+   * unreachable when the truth is that they are rare.
+   */
+  function homestead(seed: string): GameState {
+    const state = structuredClone(newGame(seed, 'fair'));
+    for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
+    // Found wherever this world will take posts — the landing often will not.
+    let planted = false;
+    for (const k of Object.keys(state.world.tiles)) {
+      const at = fromKey(k);
+      state.party.at = at;
+      if (canFound(state, at) && foundSettlement(state)) { planted = true; break; }
+    }
+    expect(planted, 'nowhere in this world would take the posts').toBe(true);
+    state.party.food = 400;
+    state.party.firewood = 200;
+    state.beats = [];
+    return state;
+  }
+
+  const kinds = (state: GameState): string[] => (state.beats ?? []).map((b) => b.kind);
+
+  it('a party going out is a beat, with who went and what they carried', () => {
+    const state = homestead('beat-out');
+    const crew = living(state.party.people).slice(0, 2).map((p) => p.id);
+    expect(launchBlocker(state, crew)).toBeNull();
+    expect(launch(state, crew, 'trade')).toBe(true);
+    expect(state.beats?.at(-1)).toMatchObject({ kind: 'wentOut', purpose: 'trade' });
+    const out = state.beats!.at(-1) as { crew: string[]; carried: number };
+    expect(out.crew).toEqual(crew);
+    expect(out.carried).toBeGreaterThan(0);
+  });
+
+  it('and coming back is another, carrying how long they were gone', () => {
+    const state = homestead('beat-home');
+    const crew = living(state.party.people).slice(0, 2).map((p) => p.id);
+    expect(launch(state, crew, 'trade')).toBe(true);
+    state.day += 6;
+    state.party.at = { ...state.settlement!.at };
+    expect(arriveHome(state)).toBe(true);
+    expect(state.beats?.at(-1)).toMatchObject({ kind: 'cameHome', purpose: 'trade', days: 6 });
+  });
+
+  it('a landmark picked out from a ridge says which place, and where', () => {
+    const state = homestead('beat-spot');
+    const place = state.world.places[0]!;
+    delete state.world.seen[key(place.at)];
+    state.party.at = { q: place.at.q + 2, r: place.at.r };
+    for (const h of range(state.party.at, LANDMARK_SIGHT + 2)) {
+      const tile = state.world.tiles[key(h)];
+      if (tile) tile.terrain = 'meadow';
+    }
+    state.world.tiles[key(state.party.at)]!.terrain = 'hills';
+    state.beats = [];
+    spotLandmarks(state);
+    expect(state.beats?.some((b) => b.kind === 'spotted')).toBe(true);
+    expect(state.beats!.find((b) => b.kind === 'spotted')).toMatchObject({
+      id: place.id, place: place.kind, at: place.at,
+    });
+  });
+
+  it('a deal across a counter says what crossed it', () => {
+    const state = homestead('beat-deal');
+    const town = state.world.places.find((p) => (placeKind(p.kind).market ?? []).length > 0)!;
+    state.party.at = { ...town.at };
+    const offer = offersAt(state, town.id)[0]!;
+    state.beats = [];
+    expect(tradeAt(state, town.id, offer.id)).not.toBeNull();
+    const dealt = state.beats!.find((b) => b.kind === 'dealt') as
+      { gave: number; got: number; id: string } | undefined;
+    expect(dealt).toBeDefined();
+    expect(dealt!.id).toBe(town.id);
+    expect(dealt!.gave).toBe(offer.cost);
+    expect(dealt!.got).toBeGreaterThan(0);
+  });
+
+  it('a place taken says so, and says when it came off the water', () => {
+    const state = homestead('beat-sack');
+    const place = state.world.places[0]!;
+    state.beats = [];
+    settlePlace(state, place.id);
+    expect(state.beats!.find((b) => b.kind === 'sacked')).toMatchObject({ id: place.id });
+    expect(kinds(state)).not.toContain('dealt');
+
+    const bySea = homestead('beat-strand');
+    const other = bySea.world.places[0]!;
+    bySea.beats = [];
+    settlePlace(bySea, other.id, true);
+    expect(bySea.beats!.find((b) => b.kind === 'sacked')).toMatchObject({ bySea: true });
+  });
+
+  it('a place already emptied emits nothing the second time', () => {
+    // A beat is a record of something HAPPENING. settlePlace returns early on
+    // a place already taken, and a stream that repeated itself there would
+    // have a renderer burn the same monastery twice.
+    const state = homestead('beat-twice');
+    const place = state.world.places[0]!;
+    settlePlace(state, place.id);
+    state.beats = [];
+    settlePlace(state, place.id);
+    expect(state.beats).toEqual([]);
+  });
+});

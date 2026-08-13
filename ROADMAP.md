@@ -910,9 +910,30 @@ what 3D actually buys, then what gets harder.
    turn arrives between repaints, so every swing but the last was invisible.
    `lastBlow` is gone.
 
-   Still owed: the travel and colony halves. `chronicle()` is the seam —
-   300-odd call sites that already write ordered prose and want the same
-   structured payload beside it.
+   *Travel and colony shipped too (SAVE_VERSION 30), and the "still owed"
+   that stood here until 2026-08-13 was stale.* `worldBeat` carries the same
+   shape stamped with the DAY rather than the round, and fifteen kinds are
+   emitted across `upkeep`, `travel`, `colony`, `joining`, `neighbours`,
+   `places` and `expedition`.
+   The last gap was narrower than the note claimed and is now closed: neither
+   `places.ts` nor `expedition.ts` emitted anything at all, so a party walking
+   out of the steading and a monastery going up were invisible to everything
+   but the prose. `wentOut`, `cameHome`, `spotted`, `dealt` and `sacked` fill
+   it. Those five are pinned by FIXTURES rather than by a played sample, which
+   is the battle half's own precedent for `rallied` and `fled` — the place
+   economy is the part of the game a band reaches least (six sagas in sixty
+   ever stand at a counter), so a bot sample would report them unreachable
+   when the truth is that they are rare.
+
+   Closing it also caught a fault in the reach test that had nothing to do
+   with the stream. It looped while `seen.size < KINDS.length`, where `seen`
+   collects every kind the run emits and `KINDS` is only the ones under test
+   — so adding `spotted` to the sim pushed `seen.size` to thirteen on the
+   second seed, ended the sweep early, and reported `gathered` as never
+   emitted. The stream was fine and the counter was measuring the wrong set;
+   it counts the intersection now. **A coverage bar that can be satisfied by
+   something it is not testing is not a coverage bar** — and this file's
+   header already records the same test being wrong in the other direction.
 
 4. **[x] Port `src/hex/` first and hardest.** *Already done in
    `landnam-ue` (`LandnamHex.cpp/.h`, 672 lines) and verified in parity on
@@ -1661,6 +1682,44 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-13 — The beat stream's last gap, and a coverage bar that could be
+  satisfied by something it was not testing** — Phase 7 item 3 read "still
+  owed: the travel and colony halves". That was **stale**: `worldBeat`, the
+  drain, thirteen kinds and SAVE_VERSION 30 had all shipped. Checking before
+  building saved the day's work and left a much narrower real gap.
+
+  `src/sim/places.ts` and `src/sim/expedition.ts` emitted **nothing at all**,
+  so a party walking out of the steading and a monastery going up were
+  invisible to anything but the prose — and those are exactly the moments a
+  renderer has to animate rather than print. Five kinds close it: `wentOut`,
+  `cameHome`, `spotted`, `dealt`, `sacked`.
+
+  Pinned by FIXTURES rather than a played sample, which is the battle half's
+  own precedent for `rallied` and `fled`. The place economy is the part of the
+  game a band reaches least — six sagas in sixty ever stand at a counter — so
+  a bot sample would report these as unreachable when the truth is that they
+  are rare. `spotted` is the one the wide bot does reach, so it joins the
+  played list.
+
+  **And closing it caught a fault in the reach test that had nothing to do
+  with the stream.** It looped while `seen.size < KINDS.length`, where `seen`
+  collects every kind a run emits and `KINDS` names only the ones under test.
+  Adding `spotted` to the sim pushed `seen.size` to thirteen on the second
+  seed, ended the sweep three seeds early, and reported `gathered` as never
+  emitted. The stream was fine; the counter was measuring the wrong set. It
+  counts the intersection now, so a new kind can never again shorten the
+  search for the others.
+
+  Worth recording twice over: the failure looked exactly like a regression in
+  the code just written, and stashing the change to isolate it is what showed
+  the emits were innocent. **A coverage bar that can be satisfied by something
+  it is not testing is not a coverage bar** — and this same test is already on
+  record in its own comments for being wrong in the opposite direction, having
+  once compared a hand-typed 12 against a list of 13.
+
+  No SAVE_VERSION bump: `beats` is an existing optional field and the new
+  kinds are variants no old save can contain, so there is nothing to migrate.
 
 - **2026-08-13 — Nobody was ever sent: the last link in the markets chain** —
   The "no door" hypothesis, verified, and the answer is sharper than the
