@@ -145,6 +145,44 @@ first battle turn. Implement one verb, watch one mark go green.
 Each run also carries `actionCounts`, so the order to implement verbs in can
 be read off rather than discovered by failing.
 
+## Stage 5, scoped: the RNG has no position
+
+`passDay` fans out to about twenty subsystems — raids, joins, moods, grudges,
+tribute, feuds, standings — and read straight down it looks like an
+all-or-nothing port: implement everything, or the random stream falls out of
+step and nothing matches.
+
+**It is not.** Every draw site in `src/sim` derives a fresh generator from
+CONTENT rather than holding a sequential one — `stream(seed, 'events')
+.derive(\`grudge:${day}\`)`, `.derive(\`plunder:${id}:${day}\`)`,
+`actionRng` keyed by day, round and turn. Twenty-eight of twenty-eight,
+checked. So **the number of draws taken before a call cannot change what that
+call returns**, and a port may skip any subsystem that produces no state
+change without the stream drifting. Implement what moves state; add the rest
+as they start to matter.
+
+That turns stage 5 from a cliff into a ladder. Measured over the first eight
+actions of `runs/long.json` — eight pre-settlement `MOVE`s — a whole day is:
+
+| what | how much |
+| --- | --- |
+| day | +1 |
+| food | −`ceil(alive / 2)` |
+| firewood | −`firewoodPerNight` (season × hardship × band share) |
+| party morale | +1 when neither hungry nor cold |
+| `flags.hungerStreak` | set to 0 |
+| each person's mood | drifts toward its target |
+| each neighbour's standing | drifts 0.12 toward nought |
+| position, `trod`, fog | the `world` facet |
+
+Nothing else moves: no health change, no illness, no arrivals, no raids. The
+subsystems that would do those things are all gated on a settlement, an
+expedition or a grudge, and a band eight days off the knarr has none.
+
+So the first rung of stage 5 is the **unsettled** day cycle plus `MOVE`, and
+it is worth perhaps a hundred and fifty lines rather than the two thousand
+that reading `passDay` suggests.
+
 ## How to use it from the C++ side
 
 1. Load `parity.json`. For each run, take `seed` and `hardship`.
