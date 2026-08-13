@@ -186,9 +186,10 @@ that reading `passDay` suggests.
 ### The first rung is done and green
 
 `Sim/LandnamDay.{h,cpp}` ports `apply`, `applyTravel`'s `MOVE` and `passDay`
-for a band with no steading, and matches **every facet at `runs/long.json`
-@1, @2, @3 and @5** — five checkpoints counting the landing, six facets each.
-It came to about two hundred lines, and the estimate above held.
+for a band with no steading, and matches every facet at `runs/long.json`
+@1, @2, @3 and @5. It came to about two hundred lines, and the estimate above
+held. With the deck below, the port is green at **@0 through @10 — eight
+checkpoints, six facets each**, and stops where the posts go in at @11.
 
 **The draw order, written out before any C++ as stages 2 to 4 taught.** A
 whole unsettled day, in the order the TypeScript walks it:
@@ -245,6 +246,63 @@ And the number formatter moved: `ULandnamCanonical::Number` now delegates to
 and the standalone harness has to be able to print them. The twenty vectors
 that already pinned it now pin the one implementation.
 
+### The second rung: the event deck
+
+`Sim/LandnamEvents.{h,cpp}` interprets the deck and matches @8 (a `MOVE`
+deals a card), @9 (`CHOOSE`) and @10 (`DISMISS_EVENT`). Eight checkpoints
+green now, counting the landing.
+
+**This is the one place in the sim where the stream has a position, and it is
+the whole difficulty of the rung.** `maybeFireEvent` takes TWO draws off ONE
+derived generator, in order:
+
+```ts
+const rng = stream(seed,'events').derive(`fire:${day}:${key(at)}`);
+if (!rng.chance(eventChance(state))) return;    // draw 1
+const def = rng.weighted(pool, e => e.weight);  // draw 2, SAME rng
+```
+
+The licence at the head of this section — that a port may skip a subsystem
+because no draw site holds a position — does not reach INSIDE a single call.
+Skip the first draw and the second returns a different card, and it reads as
+a disagreement about the deck rather than about the order.
+
+Two more things are load-bearing and easy to miss:
+
+- **The pool's order.** `weighted` walks the eligible cards subtracting
+  weights until a roll goes negative, so the port must filter the deck in
+  DECLARATION order. A sort or a map deals a different card from the same
+  seed. `test/tables.test.ts` pins the generated header against that order.
+- **`flags['seen_<id>']` is set BEFORE the check**, so a card that was
+  answered is marked whether it went well or badly. Set it after and a
+  `once` card comes round again after a failure.
+
+All sixteen eligibility conditions are ported, none stubbed. The
+settlement-shaped ones are genuinely false rather than unimplemented, and
+that distinction is the rung: a port that answered `settled` wrong would
+deal a different card and match nothing after it.
+
+Effects split the way the rung does. The seven that only move numbers, flags,
+standing or fog are ported; the six that reach into a fight, a death, an
+injury, a hand joining or a thing learned record themselves in `Unported`.
+
+### The size check was measuring the wrong thing
+
+`size` beside every hash is meant to separate *"different values"* from
+*"different SHAPE"*. Both harnesses compared `std::string::size()` — UTF-8
+BYTES — against a number the TypeScript produced with `.length`, which is
+UTF-16 CODE UNITS. They agree on ASCII and nowhere else.
+
+It surfaced the first time a card body with an em dash and a hint with a
+middle dot reached a facet: **the hash matched and the size was three too
+long**, which is a contradiction, because the hash is computed from the very
+text being measured. `Landnam::CanonicalLength` counts units now.
+
+It was already wrong before this rung and nobody could have known: the
+`Þórr-vik` seed's `run` facet is 245 units and 247 bytes, so stage 4's own
+size check would have failed by two the first time anyone opened the editor —
+on a state it had computed perfectly.
+
 ### The standalone harness is committed now
 
 `Tools/run-parity.sh` compiles the sim core with `g++` and checks it against
@@ -281,6 +339,8 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/Sim/LandnamCoast.{h,cpp}` | **stage 3**: who else is on this coast |
 | `Source/LandnamUE/Sim/LandnamLanding.{h,cpp}` | **stage 4**: the rest of the landing, and `FSimState` |
 | `Source/LandnamUE/Sim/LandnamDay.{h,cpp}` | **stage 5**: the day cycle and `MOVE` |
+| `Source/LandnamUE/Sim/LandnamEvents.{h,cpp}` | **stage 5**: the event deck |
+| `Source/LandnamUE/Sim/LandnamEventTables.generated.h` | the deck, from `npm run event-tables` |
 | `Source/LandnamUE/Sim/LandnamCanon.{h,cpp}` | the canonical form, in the sim core's own types |
 | `Tools/parity-harness.cpp`, `Tools/run-parity.sh` | the standalone `g++` check |
 | `Source/LandnamUE/Sim/LandnamPartyTables.generated.h` | names and traits, from `npm run party-tables` |

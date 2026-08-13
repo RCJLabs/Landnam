@@ -24,14 +24,14 @@
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
-> (C++), item 5 (parity CI) is BUILT on both sides, and the rules port has
-> landed stages 1–4 plus the first rung of stage 5: the C++ can spend a day
-> now, and matches every facet at `runs/long.json` @1, @2, @3 and @5.**
+> (C++), item 5 (parity CI) is BUILT on both sides, and the rules port is
+> green at `runs/long.json` @0 through @10 — the landing, eight days on the
+> road, and the first card the deck ever deals.**
 >
-> **NEXT: stage 5's second rung — the EVENT DECK, at `runs/long.json` @8.
-> Five facets already match there and `run` does not, because the road deals
-> a card on day nine; the port names that rather than guessing at it. Then
-> `FOUND` at @11 and `CAMP` at @22.**
+> **NEXT: `FOUND` at @11 — the posts go in the ground, and with them half the
+> subsystems the day cycle currently walks past: work, shelter, raids,
+> joining, the neighbours calling. Then `ENTER_COLONY` at @12 and `CAMP`
+> at @22.**
 
 ---
 
@@ -1831,6 +1831,45 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   Next rung: the event deck, at @8. Five facets already match there and `run`
   does not, with `maybeFireEvent: the road dealt a card` printed beside it —
   which is what a bar naming the thing to go and look at is supposed to do.
+
+- **2026-08-13 — Stage 5, second rung: the deck deals, and a size that was
+  measuring bytes** — `Sim/LandnamEvents.{h,cpp}` interprets the event deck
+  and matches @8 (a MOVE deals a card), @9 (CHOOSE) and @10 (DISMISS_EVENT).
+  **The port is green at @0 through @10 now — eight checkpoints, six facets
+  each** — and stops where the posts go in at @11.
+
+  The rung's whole difficulty is one thing: `maybeFireEvent` takes TWO draws
+  off ONE derived generator, the chance first and the weighted pick second.
+  The licence that made rung 1 cheap — no draw site holds a position — does
+  not reach inside a single call, and skipping the first draw returns a
+  different card that reads as a disagreement about the deck. The pool's
+  ORDER is load-bearing for the same reason, so `scripts/event-tables.ts`
+  writes all 102 cards in declaration order and `test/tables.test.ts` pins it.
+
+  **The `size` beside every hash was measuring the wrong thing, and had been
+  since stage 2.** It exists to separate "different values" from "different
+  SHAPE", and both harnesses compared UTF-8 BYTES against a number the
+  TypeScript produced in UTF-16 CODE UNITS. Identical on ASCII, and nowhere
+  else. It surfaced as a contradiction — the hash matched and the size was
+  three too long, on text the hash was computed from — the first time a card
+  body with an em dash reached a facet. It was already wrong: the `Þórr-vik`
+  seed's `run` facet is 245 units and 247 bytes, so stage 4's size check
+  would have failed by two the first time anyone opened the editor, on a
+  state it had computed perfectly. `Landnam::CanonicalLength` counts units.
+
+  `test/tables.test.ts` is new and closes a gap nobody would have noticed:
+  add a card, forget `npm run event-tables`, and the port goes on dealing
+  yesterday's deck. It compiles, it passes its own vectors — because those
+  were regenerated from the same live source — and the only symptom is that
+  Unreal plays a slightly different game. The test regenerates both headers
+  in memory and diffs, and it has been watched failing.
+
+  `Tools/run-parity.sh` caches objects per file now. The deck header is
+  ninety kilobytes of nested initialisers and 27 seconds of compiler at -O0
+  (86 at -O2, and the harness runs in a tenth of a second either way), so it
+  builds at -O0 and rebuilds only what changed. Editing the day cycle is a
+  second; only editing a card pays the eight. It is also kept out of
+  `LandnamEvents.h` so nothing else has to include it.
 
 - **2026-08-13 — Both ends of the parity contract now exist** — The C++ half
   of item 5. `LandnamCanonical` in `landnam-ue` is the shared canonical form

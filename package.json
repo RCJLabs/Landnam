@@ -15,9 +15,11 @@
     "release": "npm run build && node scripts/release.mjs",
     "publish": "npm run build && node scripts/publish.mjs",
     "parity": "vite-node scripts/parity.ts --",
-    "party-tables": "vite-node scripts/party-tables.ts -- port/LandnamPartyTables.generated.h"
+    "party-tables": "vite-node scripts/party-tables.ts -- port/LandnamPartyTables.generated.h",
+    "event-tables": "vite-node scripts/event-tables.ts -- port/LandnamEventTables.generated.h"
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "typescript": "^5.6.0",
     "vite": "^6.0.0",
     "vite-plugin-singlefile": "^2.1.0",

@@ -15,7 +15,14 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": false,
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": ["vite/client", "node"]
   },
-  "include": ["src", "test"]
+  // `scripts` is in the include now, and it was not before.
+  //
+  // The generators write the C++ port's tables, and nothing typechecked
+  // them: `BASE_EVENT_CHANCE` stopped being exported for ten minutes and the
+  // literal text `undefined` went straight into a generated header, to be
+  // caught a repo away by a C++ compiler. Content that reaches the port
+  // deserves the same bar as content that reaches the game.
+  "include": ["src", "test", "scripts"]
 }
