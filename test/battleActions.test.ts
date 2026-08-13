@@ -10,6 +10,9 @@ import { startBattle } from '../src/sim/battleTurn';
 import {
   DEFEND_BONUS,
   THROW_RANGE,
+  carrying,
+  doStrike,
+  edge,
   evasion,
   shoveDestination,
   throwTargets,
@@ -17,7 +20,8 @@ import {
 import { DISENGAGE_COST, isThreatened, reachWithZoc } from '../src/sim/zoc';
 import { FOE_ARCHETYPES } from '../src/data/foes';
 import { PATIENCE_ROUNDS } from '../src/sim/battleAi';
-import type { Combatant, GameState } from '../src/state/types';
+import { BALANCED_HARDSHIP, HARDSHIPS } from '../src/data/hardship';
+import type { Combatant, GameState, HardshipId, Injury } from '../src/state/types';
 
 function fight(seed: string, difficulty = 0): GameState {
   const state = structuredClone(newGame(seed));
@@ -143,6 +147,128 @@ describe('strike and defend', () => {
     }
     if (cur.battle?.outcome) return;
     expect(activeCombatant(cur.battle!)!.defending).toBe(false);
+  });
+});
+
+describe('a blow that goes wide says why', () => {
+  /**
+   * The game was taking a point off the dice and telling nobody: a fresh
+   * band lands 76% of its swings and a worn one 59%, entirely because
+   * `effectiveStat` reads the injury table, while the foes are generated
+   * whole for every fight and never carry a wound. The player saw their own
+   * men missing and was given no reason for it.
+   */
+  const wound = (label: string, effect: Injury['effect']): Injury =>
+    ({ id: `inj-${label}`, label, effect, heals: 10 });
+
+  it('says nothing at all for a whole fighter', () => {
+    const { state, us } = duel('carry-whole');
+    const person = fighterPerson(state, us.personId)!;
+    expect(person.injuries).toEqual([]);
+    expect(carrying(person)).toBe('');
+  });
+
+  it('names the wound that is dragging the swing', () => {
+    const { state, us } = duel('carry-arm');
+    const person = fighterPerson(state, us.personId)!;
+    person.injuries = [wound('Shield-arm broken', { might: -2 })];
+    expect(carrying(person)).toContain('Shield-arm broken');
+  });
+
+  it('names the worst of several rather than the first', () => {
+    const { state, us } = duel('carry-worst');
+    const person = fighterPerson(state, us.personId)!;
+    person.injuries = [
+      wound('Ribs stove in', { might: -1 }),
+      wound('Shield-arm broken', { might: -2 }),
+    ];
+    expect(carrying(person)).toContain('Shield-arm broken');
+    expect(carrying(person)).not.toContain('Ribs');
+  });
+
+  /**
+   * The one that keeps this honest. A lost eye is a real wound and it is
+   * NOT what made this blow go wide — the strike rolls off might. Naming it
+   * here would be a worse lie than saying nothing, because the player would
+   * go on believing an explanation that does not hold.
+   */
+  it('stays quiet about a wound that is not in this roll', () => {
+    const { state, us } = duel('carry-eye');
+    const person = fighterPerson(state, us.personId)!;
+    person.injuries = [wound('Lost an eye', { wits: -2 })];
+    expect(carrying(person)).toBe('');
+  });
+
+  it('reaches the log on a glance and on a turned blow', () => {
+    const { state, us, them } = duel('carry-log');
+    const person = fighterPerson(state, us.personId)!;
+    const foe = fighterPerson(state, them.personId)!;
+    person.injuries = [wound('Hamstrung', { might: -1 })];
+    // Hopeless: max 2d6 is 12 and evasion here is far past it, so the swing
+    // cannot land and the line must be the glance.
+    person.stats.might = 0;
+    foe.stats.wits = 10;
+
+    expect(doStrike(state, them.personId)).toBe(true);
+    expect(state.battle!.log.at(-1)).toContain('Hamstrung');
+    expect(state.battle!.log.at(-1)).toMatch(/glanced off|rim split/);
+  });
+
+  it('says nothing when the blow lands — a hit needs no excuse', () => {
+    const { state, us, them } = duel('carry-hit');
+    const person = fighterPerson(state, us.personId)!;
+    const foe = fighterPerson(state, them.personId)!;
+    person.injuries = [wound('Hamstrung', { might: -1 })];
+    // A blow that cannot miss.
+    person.stats.might = 12;
+    foe.stats.wits = 1;
+
+    expect(doStrike(state, them.personId)).toBe(true);
+    expect(state.battle!.log.at(-1)).not.toContain('Hamstrung');
+  });
+});
+
+describe('the country is worth a point on the dice', () => {
+  /**
+   * The one place hardship reaches into a fight, and the reason it is
+   * allowed to: `newGame` defaults to the balanced middle, where `steel` is
+   * zero, so every other fixture in this file — and the whole of
+   * test/wall.test.ts — is played on terms where this knob does not exist.
+   * Asserted here rather than assumed, because the day that stops being
+   * true is the day every battle measurement in the repo quietly moves.
+   */
+  it('is nothing at all on the terms everything else is measured on', () => {
+    const { state, us, them } = duel('steel-even');
+    expect(state.hardship).toBe(BALANCED_HARDSHIP);
+    expect(edge(state, us)).toBe(0);
+    expect(edge(state, them)).toBe(0);
+  });
+
+  it('is added to ours and taken off theirs', () => {
+    for (const terms of HARDSHIPS) {
+      const state = structuredClone(newGame(`steel-${terms.id}`, terms.id));
+      startBattle(state, 'meadow', 0);
+      const battle = state.battle!;
+      const us = battle.combatants.find((c) => c.side === 'warband')!;
+      const them = battle.combatants.find((c) => c.side === 'foe')!;
+      expect(edge(state, us), terms.id).toBe(terms.steel);
+      // Theirs is exactly the negation of ours, which is what makes one
+      // point of `steel` worth two across the field.
+      expect(edge(state, us) + edge(state, them), terms.id).toBe(0);
+      expect(Math.abs(edge(state, them)), terms.id).toBe(Math.abs(terms.steel));
+    }
+  });
+
+  /**
+   * The ordering is the whole point of the knob: a player who reaches for
+   * the gentlest country because the fighting is going badly must actually
+   * be handed easier fighting, and the hardest must cost.
+   */
+  it('is ordered — fair helps, hard hurts', () => {
+    const { state, us } = duel('steel-order');
+    const swing = (id: HardshipId): number => edge({ ...state, hardship: id }, us);
+    expect(swing('fair')).toBeGreaterThan(swing('even'));
+    expect(swing('even')).toBeGreaterThan(swing('hard'));
   });
 });
 

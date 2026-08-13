@@ -2692,6 +2692,9 @@
    "type": "B_END_TURN"
   },
   {
+   "type": "B_END_TURN"
+  },
+  {
    "type": "B_LEAVE"
   },
   {

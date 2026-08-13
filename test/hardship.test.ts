@@ -15,6 +15,8 @@ import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
+import { startBattle } from '../src/sim/battleTurn';
+import { edge } from '../src/sim/battleActions';
 import { fromKey } from '../src/hex';
 import type { GameState, HardshipId } from '../src/state/types';
 
@@ -59,6 +61,12 @@ describe('the three countries', () => {
     const even = hardshipById('even');
     expect(even.id).toBe(BALANCED_HARDSHIP);
     expect([even.stir, even.raid, even.winter, even.stores]).toEqual([1, 1, 1, 1]);
+    // `steel` is additive where the rest are multipliers, so its neutral
+    // value is nought rather than one — and it has to BE neutral here, or
+    // every fight in the battle suite silently moves. See the note at the
+    // head of src/data/hardship.ts: that zero is the entire licence for
+    // letting a difficulty reach into combat at all.
+    expect(even.steel).toBe(0);
     expect(HARDSHIPS.some((h) => h.id === DEFAULT_HARDSHIP)).toBe(true);
   });
 
@@ -106,6 +114,29 @@ describe('every knob reaches the thing it names', () => {
     }
     expect(raidOdds(fair)).toBeGreaterThan(0);
     expect(raidOdds(hard)).toBeGreaterThan(raidOdds(fair));
+  });
+
+  /**
+   * The newest knob, and the one this file's header used to say would never
+   * exist. Hardship touched `stir`, `raid`, `winter` and `stores` and
+   * nothing about a fight, so A Fair Country made fights RARER and left
+   * every blow exactly as hard to land as A Hard Country did — a player who
+   * reached for the gentlest setting because the fighting was going badly
+   * was handed no help at all with the fighting.
+   */
+  it('what the country is worth on the dice of a fight', () => {
+    const ours = (id: HardshipId): number => {
+      const state = structuredClone(newGame('knob-steel', id));
+      startBattle(state, 'meadow', 0);
+      const us = state.battle!.combatants.find((c) => c.side === 'warband')!;
+      const them = state.battle!.combatants.find((c) => c.side === 'foe')!;
+      // The spread across the field, which is what a player actually feels:
+      // the knob is added to our swings and taken off theirs.
+      return edge(state, us) - edge(state, them);
+    };
+    expect(ours('fair')).toBeGreaterThan(ours('even'));
+    expect(ours('even')).toBeGreaterThan(ours('hard'));
+    expect(ours('even')).toBe(0);
   });
 });
 

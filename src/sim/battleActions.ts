@@ -3,7 +3,7 @@
 
 import { distance, key, neighbor, directionTo, type Hex } from '../hex';
 import { stream, type Rng } from '../rng';
-import type { Combatant, GameState, Person } from '../state/types';
+import type { Combatant, GameState, Injury, Person } from '../state/types';
 import { activeCombatant, fighterPerson, BASE_MOVES } from './battle';
 import { beat, type BlowBeat, type BlowResult } from './beats';
 import { groundCost } from './battlefield';
@@ -12,6 +12,7 @@ import { canAnchor, defenceBonus, wallLinks } from './wall';
 import { bonus } from './lore';
 import { NERVE_HIT, leaderFell, shakeNerve, startingNerve, witnessFall } from './morale';
 import { effectiveStat, leaderOf } from './people';
+import { hardshipById } from '../data/hardship';
 
 export const THROW_RANGE = 3;
 /** Raising a shield is worth this much to the roll needed to hit you. */
@@ -65,6 +66,62 @@ function ourBite(state: GameState, attacker: Combatant): number {
  * line too.
  */
 export const WALL_PUSH_MAX = 2;
+
+/**
+ * What the country itself is worth to a swing.
+ *
+ * The one place hardship reaches into a fight. Added to ours and taken off
+ * theirs, so A Fair Country is two points of swing across the field and A
+ * Hard Country two the other way, while the balanced middle is exactly zero
+ * and every fixture in the battle suite is played there — which is the only
+ * reason a difficulty is allowed this deep in at all. See src/data/hardship.
+ *
+ * On `doStrike` alone, and that is a scope decision rather than an
+ * oversight: the swing at arm's length is what fights are made of and what
+ * the measured curve in ROADMAP.md was read off. The thrust already carries
+ * REACH_PENALTY and the thrown spear rolls off wits, and pushing the knob
+ * into those would buy a fraction of a blow a saga at the price of making
+ * every published figure describe something other than what was measured.
+ */
+export function edge(state: GameState, attacker: Combatant): number {
+  const steel = hardshipById(state.hardship).steel;
+  // Early, so the balanced middle returns +0 rather than the -0 that negating
+  // a zero gives. Nothing downstream can tell them apart, but a sim value
+  // that serialises as `-0` is the kind of thing a save test finds later.
+  if (steel === 0) return 0;
+  return attacker.side === 'warband' ? steel : -steel;
+}
+
+/**
+ * The wound that is dragging this swing, named — or nothing at all.
+ *
+ * The game has been taking a point off the dice and telling nobody. A fresh
+ * band lands 76% of its swings and a worn one 59%, and the whole of that gap
+ * is `effectiveStat` quietly reading the injury table; meanwhile the foes are
+ * generated whole for every fight and never carry a wound, so the player sees
+ * their own men missing, sees the enemy hitting, and is given no reason for
+ * either. A number that changes the outcome and is never stated reads as the
+ * dice being unfair.
+ *
+ * MIGHT only, because might is what `doStrike` rolls against. A lost eye is
+ * a real wound and it is not what made this blow go wide, and naming it here
+ * would be a worse lie than saying nothing.
+ *
+ * Appended to the two lines where a blow fails, and deliberately nowhere
+ * else: a hit does not need excusing, and a wound recited on every swing
+ * stops being read by the second fight.
+ */
+export function carrying(attacker: Person): string {
+  let worst: Injury | undefined;
+  for (const injury of attacker.injuries) {
+    const cost = injury.effect.might ?? 0;
+    if (cost < 0 && cost < (worst?.effect.might ?? 0)) worst = injury;
+  }
+  if (!worst) return '';
+  // The labels are written as a healer's note — "Shield-arm broken",
+  // "Hamstrung" — so they drop straight into an appositive without rewording.
+  return ` ${worst.label}, and the swing showed it.`;
+}
 
 export function wallPush(state: GameState, attacker: Combatant): number {
   const battle = state.battle;
@@ -179,7 +236,8 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
 
   active.hasActed = true;
   const rng = actionRng(state, `strike:${active.personId}`);
-  const roll = rng.roll(2, 6) + effectiveStat(attacker, 'might') + wallPush(state, active);
+  const roll =
+    rng.roll(2, 6) + effectiveStat(attacker, 'might') + wallPush(state, active) + edge(state, active);
 
   if (roll < evasion(state, target)) {
     // A swing that fails to land still lands SOMEWHERE: a glancing blow
@@ -193,15 +251,18 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
     // or a single link still takes the wear.
     if (wallLinks(battle, target).length >= 2) {
       beat(battle, blow('struck', active, target, 'turned', 0));
-      battle.log.push(`${defender.name}'s shield-brothers turned ${attacker.name}'s blow aside.`);
+      battle.log.push(
+        `${defender.name}'s shield-brothers turned ${attacker.name}'s blow aside.` +
+          carrying(attacker),
+      );
       return true;
     }
     defender.health = Math.max(1, defender.health - 1);
     beat(battle, blow('struck', active, target, 'glance', 1));
     battle.log.push(
-      target.defending
+      (target.defending
         ? `${attacker.name} hammered ${defender.name}'s shield until the rim split (1).`
-        : `${attacker.name}'s blow glanced off ${defender.name} (1).`,
+        : `${attacker.name}'s blow glanced off ${defender.name} (1).`) + carrying(attacker),
     );
     return true;
   }

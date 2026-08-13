@@ -2906,6 +2906,55 @@ describe('what play actually reaches', () => {
     };
     let sagas = 0;
     const SEEDS = 30;
+    /**
+     * The walking half of reach, per arm — and the reason the `markets`
+     * floor below is a count of SAGAS rather than of trade days.
+     *
+     * A market day is not a system firing on its own. It needs four things
+     * at once: the band standing on a trading place, the place still
+     * unsacked, an offer it can afford, and stores to spare. Only the first
+     * is reach. So a bare count of market days is ambiguous between "the
+     * counters got harder to get to" and "the band got to one and burned it
+     * down", and worse, it MULTIPLIES: a band that settles beside a live
+     * counter deals over and over, so one lucky saga carries the total.
+     *
+     * Measured 2026-08-13, and it is the whole reason this block exists —
+     * fourteen market days across sixty sagas came from TWO of them, twelve
+     * of the fourteen from a single band. The floor of 3 was a floor on a
+     * statistic with an effective sample of one saga, which is the same trap
+     * the jarl counts in ROADMAP.md are a monument to.
+     *
+     * `counterSagas` and `liveSagas` are the same question asked with n=60
+     * instead of n=1: of sixty landings, how many ever put the band on a
+     * counter, and how many while it was still trading.
+     */
+    interface Walk {
+      sagas: number;
+      /** Did the band settle, how soon, how long did it last. */
+      founded: number; foundDay: number; roadDays: number; days: number;
+      alive: number; fights: number; sackings: number;
+      /** Days stood on a place, split by what stopped the deal. */
+      onSacked: number; onNoMarket: number; onThin: number; onOpen: number;
+      /** Sagas that reached a counter at all, and one still trading. */
+      counterSagas: number; liveSagas: number;
+      /** Trade days, the sagas they came from, and the most any one saga had. */
+      markets: number; dealingSagas: number; best: number;
+      /** Counters burned down, and the day it happened. */
+      burnt: number; burntDay: number;
+    }
+    const walk: Record<string, Walk> = {};
+    const arms = (id: string): Walk =>
+      (walk[id] ??= {
+        sagas: 0, founded: 0, foundDay: 0, roadDays: 0, days: 0, alive: 0,
+        fights: 0, sackings: 0, onSacked: 0, onNoMarket: 0, onThin: 0,
+        onOpen: 0, counterSagas: 0, liveSagas: 0, markets: 0, dealingSagas: 0,
+        best: 0, burnt: 0, burntDay: 0,
+      });
+    // This saga's own tallies, so the totals above can be told apart from a
+    // single band that camped on a counter for a season.
+    let sagaMarkets = 0;
+    let sawCounter = false;
+    let sawLiveCounter = false;
     // Days on which each card COULD have been drawn. Without this, a cold
     // card is ambiguous between two completely different faults: a state the
     // sample never enters (a reach problem, and the thing this probe is for)
@@ -2928,6 +2977,7 @@ describe('what play actually reaches', () => {
     // is where that flaw was found and where it cost the most: coverage of a
     // hundred-card deck measured against half the sample it claimed.
     for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
+      const w = arms(terms);
       for (let s = 0; s < SEEDS; s += 1) {
         const state = run(armSeed(arm, s, SEEDS), 400, (before, after) => {
           if (!before.event && after.event) {
@@ -2966,8 +3016,32 @@ describe('what play actually reaches', () => {
               }
             }
           }
+          if (after.day !== before.day) {
+            w.days += 1;
+            if (!before.settlement) w.roadDays += 1;
+            // Standing on a place and not dealing: WHY. A market day needs
+            // four things at once and only one of them is reach, so a bare
+            // count of markets cannot tell a coast the band never walked to
+            // from a counter it burned down on arrival.
+            const p = placeHere(after);
+            if (p) {
+              if ((placeKind(p.kind).market ?? []).length > 0) sawCounter = true;
+              if (p.sackedOn !== undefined) w.onSacked += 1;
+              else if ((placeKind(p.kind).market ?? []).length === 0) w.onNoMarket += 1;
+              else {
+                const d = after.party.food / Math.max(1, foodPerDay(after));
+                const n = after.party.firewood / Math.max(1, firewoodPerNight(after));
+                const open = offersAt(after, p.id).some((o) =>
+                  tradeBlocker(after, p.id, o.id) === null
+                    && (o.give === 'food' ? d > 12 : n > 12));
+                if (open) w.onOpen += 1; else w.onThin += 1;
+                sawLiveCounter = true;
+              }
+            }
+          }
           if (!before.battle && after.battle) {
             systems.fights += 1;
+            w.fights += 1;
             if (after.battle.raid) systems.raids += 1;
           }
           if (!before.expedition && after.expedition) systems.expeditions += 1;
@@ -2979,6 +3053,8 @@ describe('what play actually reaches', () => {
             for (const line of after.saga.slice(before.saga.length)) {
               if (/jetties|house of the White Christ and came away/.test(line.text)) {
                 systems.markets += 1;
+                w.markets += 1;
+                sagaMarkets += 1;
               }
             }
           }
@@ -2987,6 +3063,23 @@ describe('what play actually reaches', () => {
         }, terms);
 
         sagas += 1;
+        w.sagas += 1;
+        if (sagaMarkets > 0) w.dealingSagas += 1;
+        if (sawCounter) w.counterSagas += 1;
+        if (sawLiveCounter) w.liveSagas += 1;
+        sawCounter = false;
+        sawLiveCounter = false;
+        w.best = Math.max(w.best, sagaMarkets);
+        sagaMarkets = 0;
+        if (state.settlement) { w.founded += 1; w.foundDay += state.settlement.foundedOn; }
+        if (!state.end) w.alive += 1;
+        w.sackings += state.tally.sackings;
+        for (const p of state.world.places) {
+          if ((placeKind(p.kind).market ?? []).length === 0) continue;
+          if (p.sackedOn === undefined) continue;
+          w.burnt += 1;
+          w.burntDay += p.sackedOn;
+        }
         systems.raidsHeld += state.tally.raidsHeld;
         systems.sackings += state.tally.sackings;
         systems.bargains += state.tally.bargains;
@@ -3054,6 +3147,18 @@ describe('what play actually reaches', () => {
           );
         })() +
         `  lore ${lore.size}/${LORE.length}, traits ${traits.size}/${TRAITS.length}\n` +
+        Object.entries(walk).map(([id, w]) =>
+          `  ${id}: ${w.founded}/${w.sagas} settled (day ${(w.foundDay / Math.max(1, w.founded)).toFixed(1)} ` +
+          `on average), ${w.alive}/${w.sagas} still standing at 400, ${w.roadDays} road-days of ${w.days} ` +
+          `(${Math.round((w.roadDays / Math.max(1, w.days)) * 100)}%), ${w.fights} fights, ` +
+          `${w.sackings} sackings\n` +
+          `    counters: ${w.counterSagas}/${w.sagas} sagas reached one, ${w.liveSagas} while it ` +
+          `still traded, ${w.burnt} burnt down (day ` +
+          `${(w.burntDay / Math.max(1, w.burnt)).toFixed(0)})\n` +
+          `    days stood on a place: ${w.onSacked} on one already emptied, ${w.onNoMarket} on one ` +
+          `that never traded, ${w.onThin} with nothing to spare, ${w.onOpen} that could have dealt\n` +
+          `    ${w.markets} trade days, from ${w.dealingSagas} of ${w.sagas} sagas, ` +
+          `most in any one ${w.best}\n`).join('') +
         `  systems: ${Object.entries(systems).map(([k, v]) => `${k} ${v}`).join(', ')}`,
     );
 
@@ -3081,11 +3186,51 @@ describe('what play actually reaches', () => {
 
     for (const [name, floor] of [
       ['fights', 20], ['raids', 5], ['raidsHeld', 1], ['sackings', 5],
-      ['bargains', 5], ['markets', 3], ['expeditions', 5], ['arrivals', 5],
+      ['bargains', 5], ['expeditions', 5], ['arrivals', 5],
       ['kinPairs', 5],
     ] as const) {
       expect(systems[name] ?? 0, `${name} never happens in ${sagas} sagas`).toBeGreaterThan(floor - 1);
     }
+
+    // MARKETS, which are barred apart from the list above and on a different
+    // quantity, because the obvious bar was measuring the wrong thing.
+    //
+    // It used to sit in that list as `markets >= 3` — three TRADE DAYS across
+    // sixty sagas. Trade days multiply: a band that settles beside a live
+    // counter deals at it again and again, so the total is carried by
+    // whichever saga happened to camp there. Measured 2026-08-13, that is
+    // exactly what it was doing — fourteen trade days from TWO of sixty
+    // sagas, twelve of them from a single band. A floor of three on a
+    // statistic with an effective sample of one is not a reach measurement,
+    // it is the jarl-count mistake in ROADMAP.md wearing a different hat.
+    //
+    // It failed, and it failed honestly, when hardship-steel landed: fourteen
+    // trade days fell to two. But the thing it is supposed to guard did not
+    // move at all. SIX of sixty sagas reached a counter before the change and
+    // six after, all six still trading in both. What changed was that one
+    // band, arriving at the trading town with five sworn still on their feet
+    // instead of four, sacked it on day 16 rather than dealing there twelve
+    // times — the bot preferring plunder to a counter, which is a fact about
+    // the bot and not about whether the game's markets can be got to.
+    //
+    // So the bar is on SAGAS now. Same numeral, sample of sixty instead of
+    // one, and strictly harder to satisfy by luck: three trade days could
+    // come from a single band in an afternoon, where three sagas cannot.
+    // Set at half the measured six, because this probe is a collapse
+    // detector — a counter that stopped being reachable, a gate that shut —
+    // and not a tripwire for the dice.
+    const counters = Object.values(walk).reduce((a, w) => a + w.liveSagas, 0);
+    expect(
+      counters,
+      `only ${counters} of ${sagas} sagas ever stood at a counter that was still ` +
+        `trading — the markets have gone out of reach`,
+    ).toBeGreaterThan(2);
+
+    // And that reaching one is not the same as the system working: somebody,
+    // somewhere in the sample, has to actually deal. One, deliberately — the
+    // count above is what guards reach, and this only has to catch a market
+    // that no longer trades at all.
+    expect(systems.markets, `nobody dealt at a counter in ${sagas} sagas`).toBeGreaterThan(0);
 
     // And the deck must not be ten cards wearing a hundred hats.
     expect(

@@ -23,10 +23,9 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: finish the hardship-steel change below (it is written
-> up in full and was reverted rather than landed red), then Phase 7 — the
-> Unreal build, whose item 1 (the sim boundary) is Evan's call and blocks 5
-> through 10.**
+> **CURRENT MILESTONE: Phase 7 — the Unreal build, whose item 1 (the sim
+> boundary) is Evan's call and blocks 5 through 10.** Hardship-steel landed
+> 2026-08-13 and is off the bench.
 
 ---
 
@@ -55,8 +54,13 @@ winters went 3/30 to 7/30, level with the settler. The strandhögg is still
 unreached (3 in 120 sagas) and that is a question about the PLACE economy
 rather than about raiding — see task 33 in the changelog.
 
-**One thing is half-done and it is at the top of this document**: hardship
-does not reach combat. Built, measured, reverted; see "ON THE BENCH".
+**Hardship reaches combat now** (2026-08-13). `steel` on `HardshipDef` — +1
+fair, 0 even, -1 hard, added to our swings and taken off theirs — is in, and
+the curve is properly ordered at both marks for the first time: 87/80/73 to
+the first winter, 65/28/12 to spring. What had blocked it for a day was a
+`markets` floor that turned out not to be measuring reach; the section below
+is the autopsy, and it is worth reading before trusting any other count in
+this document.
 
 **Phase 7 is the Unreal build**, running in parallel in another repo — a hex
 grid and top-down movement are working there. What this repo owes it, and
@@ -65,11 +69,11 @@ simulation is the asset (10,500 lines of pure logic and 5,000 of typed
 content under 846 tests), the renderers are disposable, and the port lives
 or dies on whether the balance harness follows the sim across.
 
-### ON THE BENCH — hardship must reach combat (start here)
+### OFF THE BENCH — hardship reaches combat, and a floor that was measuring nothing
 
-**Asked for, built, measured, and REVERTED rather than committed red.** Every
-line of it is reconstructible from this section; nothing is lost but the
-typing.
+**Asked for, built, measured, reverted, and then landed a day later once the
+thing blocking it was understood rather than worked around.** The change is
+four edits; the finding underneath it is worth more than the change.
 
 **The ask.** Hardship touched `stir`, `raid`, `winter` and `stores` and
 nothing about a fight, so A Fair Country made fights RARER and left every
@@ -78,55 +82,93 @@ the gentlest setting because the fighting is going badly was handed no help
 with the fighting. Easiest should be easier combat, medium equal, hardest
 harder.
 
-**The change, in four edits.**
+**What shipped.** `HardshipDef` gains `steel` (`fair: 1`, `even: 0`,
+`hard: -1`); `edge()` in `src/sim/battleActions.ts` adds it to our to-hit
+roll and takes it off theirs, so one point is worth two across the field.
+On the STRIKE only — the thrust already carries `REACH_PENALTY` and the
+thrown spear rolls off wits, and that scope is recorded at the function.
 
-1. `src/data/hardship.ts` — `HardshipDef` gains `steel: number`.
-   `fair: 1`, `even: 0`, `hard: -1`.
-2. `src/sim/battleActions.ts`, in `doStrike`, on the to-hit roll:
-   `+ (active.side === 'warband' ? steel : -steel)`, with
-   `const steel = hardshipById(state.hardship).steel;` and the import.
-   One point on 2d6 is about fourteen points of whether a blow lands, and it
-   is worth twice that across the field because it is added to ours and
-   taken off theirs.
-3. The three `measured:` labels rewritten, because a difficulty whose labels
-   are not measured is a lie told three times. What the sweep gave with the
-   change in: **Fair 87% reached winter / 65% saw spring; Even 80% / 28%;
-   Hard 73% / 12%** — properly ordered and much better separated than
-   before. Long game, 20 sagas a country: fair 4 jarls, even 1, hard 0.
-4. `runs/long.json` needs re-recording — combat changed, so the recorded
-   script diverges. `npm run record -- --seed raven-skerry-317 --hardship
-   fair --out runs/long.json`.
+The licence for letting a difficulty this deep in is one line: **`newGame`
+defaults to `BALANCED_HARDSHIP`, where `steel` is 0**, so `test/wall.test.ts`
+and the whole battle suite are played on terms where the knob does not exist.
+The setting moves the player's fights and touches none of the measurements.
+`test/hardship.test.ts` now asserts that zero, because the day it stops being
+true is the day every battle figure in this repo silently moves.
 
-**Why it was not landed.** It broke the content-reach probe: **`markets`
-fell from 14 to 2** against a floor of 3. Checked against a clean tree
-rather than assumed — 14 without the change, 2 with it, so it is caused and
-not noise.
+Measured on the same sixty landings each, and properly ordered at BOTH marks
+for the first time — it could not be ordered at the winter mark before,
+because every country's blows landed alike:
 
-The likely explanation, NOT verified: easier fights on Fair mean more bands
-survive to SETTLE, and a settled band stops walking past the trading places.
-If that holds, the floor is measuring "do bands wander past markets" and
-easier combat legitimately reduces it.
+| setting | reached the first winter | saw spring | long game (20 sagas) |
+| --- | --- | --- | --- |
+| A Fair Country | 87% | 65% | 153 days a saga, 11 mead halls, 4 jarls |
+| As It Lies | 80% | 28% | 82 days, 4 mead halls, 1 jarl |
+| A Hard Country | 73% | 12% | 61 days, 0 mead halls, 0 jarls |
 
-The two things that must not be done to make it pass are lowering the bar to
-fit the change, and committing the suite red.
+**Why it was reverted the first time, and what that turned out to be.**
 
-**Three ways to finish it, in order of preference.**
+It broke the content-reach probe: `markets` fell from 14 to 2 against a floor
+of 3, verified as caused rather than assumed — a clean tree reads 14. The
+hypothesis on the bench was that easier fights mean more bands survive to
+SETTLE, and a settled band stops walking past the trading places.
 
-1. Measure settle-rate and days-on-the-road by hardship. If bands are
-   settling earlier, re-derive the `markets` floor with the reasoning
-   written down, and land the change.
-2. Land it and move the floor as a deliberate decision, reasoning recorded.
-3. Land only the legibility half, which is independent and breaks nothing.
+**That hypothesis is false, and the measurement says so flatly.** Settle-rate
+and days-on-the-road are now reported per arm by the probe itself:
 
-**The legibility half**, which is the other thing that was asked for and is
-worth having on its own: a `carrying(attacker)` helper in
-`battleActions.ts`, appended to the glance and shield-turned log lines,
-saying "He is fighting with a bad arm" when an injury is dragging the
-attacker's might. Measured cause: a fresh band lands 76% of its swings and a
+| A Fair Country, 30 landings | without steel | with steel |
+| --- | --- | --- |
+| settled | 28/30 | 28/30 |
+| average founding day | 13.1 | 13.1 |
+| days on the road | 460 | 432 |
+| **sagas that reached a counter** | **4/30** | **4/30** |
+| ...while it was still trading | 4/30 | 4/30 |
+| market DAYS | 14 | 2 |
+
+Bands settle at exactly the same rate, on exactly the same day, and walk
+nearly as much. Reach did not move at all.
+
+**What the floor was actually measuring.** Six of sixty sagas ever stand at a
+counter, before and after. Of those six, TWO ever dealt — and twelve of the
+fourteen market days came from a single band that settled beside a live
+counter and traded over and over. A trade day multiplies with however long
+one band loiters, so the floor of 3 sat on a statistic with an effective
+sample of ONE SAGA. It passed on the clean tree by luck and failed on the
+changed tree by luck, and neither reading was ever about whether the game's
+markets can be got to.
+
+The mechanism behind the specific drop is real and is not a reach problem
+either: a band that wins its fights arrives at the trading town with five
+sworn still on their feet instead of four, which trips the harness bot's own
+`mighty` rule, so it sacks the town on day 16 rather than dealing there
+twelve times. *Steel ends a market* — `tradeBlocker` returns `taken` forever
+after. That is the bot preferring plunder to a counter. It is a fact about
+the bot, not about the game.
+
+**So the floor was re-derived rather than moved.** It is a count of SAGAS
+now, with the reasoning written into `test/balance.test.ts`: how many of
+sixty landings ever stand at a counter that is still trading. Same numeral —
+3 — on a sample of sixty instead of one, and strictly HARDER to satisfy by
+luck, because three trade days can come from a single band in an afternoon
+where three sagas cannot. Set at half the measured six, because this probe is
+a collapse detector and not a tripwire for the dice. A second bar keeps the
+system honest: somebody, somewhere in the sample, has to actually deal.
+
+**The lesson, which generalises past this change:** a count of DAYS is not a
+count of reach. Any bar over an event a single long-lived saga can repeat has
+an effective sample of one, however large the total looks. This is the jarl
+count's lesson (below) arriving a second time through a different door, and
+the probe now prints the per-saga distribution beside every total so the next
+one is visible at a glance rather than after a day of measuring.
+
+**The legibility half also landed**, and it was always independent.
+`carrying()` in `battleActions.ts` names the wound dragging a swing — "Ribs
+stove in, and the swing showed it" — appended to the glance and shield-turned
+lines and nowhere else, because a hit needs no excuse and a wound recited on
+every swing stops being read by the second fight. MIGHT only, because might
+is what is in the roll; a lost eye is a real wound and it is not what made
+this blow go wide. Measured cause: a fresh band lands 76% of its swings and a
 worn one 59%, while foes are generated whole for every fight and never carry
 a wound — so the game was taking a point off the dice and telling nobody.
-`who lands their blows` in the balance suite measures both sides and is
-already committed.
 
 **The measured curve** (a scripted player of roughly average competence over
 SIXTY seeds — see `test/balance.test.ts`, which is the source of every number
@@ -142,18 +184,20 @@ points is below what it can see, so treat every figure here as directional):
 **The three countries, measured on the same sixty landings each** — and the
 default is deliberately NOT the balanced one:
 
-| setting | saw the first spring | over 500 days (20 sagas) |
-| --- | --- | --- |
-| A Fair Country *(default)* | 60% | 161 days a saga, 13 mead halls, 3 jarls |
-| As It Lies *(what everything is tuned against)* | 25% | 86 days a saga, 1 jarl |
-| A Hard Country | 7% | 65 days a saga, 1 jarl (60 sagas) |
+| setting | first winter | saw the first spring | over 500 days (20 sagas) |
+| --- | --- | --- | --- |
+| A Fair Country *(default)* | 87% | 65% | 153 days a saga, 11 mead halls, 4 jarls |
+| As It Lies *(what everything is tuned against)* | 80% | 28% | 82 days a saga, 4 mead halls, 1 jarl |
+| A Hard Country | 73% | 12% | 61 days a saga, 0 mead halls, 0 jarls |
 
-The spring figures fell 7, 5 and 1 point when the fixed places were brought
-onto the same coast as the band (audit item 1) — a country with a garrisoned
-town actually on it is harder than one with the town thirty hexes away. All
-three movements are inside the ±10 this harness can resolve, and were left
-alone rather than tuned back; the long-game figures are from before that
-change and have not been re-read.
+**Re-read 2026-08-13 with `steel` in, and the whole table is a fresh sweep** —
+the long-game column included, which had been stale since the fixed places
+were brought onto the same coast as the band. The spring figures were
+60/25/7 before hardship reached the dice of a fight, so the gaps went from
+35 and 18 points to 37 and 16 — no wider in truth, but the FIRST WINTER
+column is new and is the real gain. It could not be ordered at all while
+every country's blows landed alike, and a difficulty a player feels in the
+first fifty days is worth more than one that only separates at spring.
 
 **The jarl counts in that last column are not readings.** A jarldom happens
 once or twice in twenty sagas, and 2026-08-10 established the hard way that
@@ -1475,6 +1519,7 @@ here so the next attempt does not begin by repeating them.
 | Sweeping the morale levers the death table kept naming | Winter sickness DC 9→7, bereavement 12→7, kin grief 30→15 — all three, and two winters sat at 10% through every one. Despair was a SYMPTOM. A band that misses the winter mark takes 8 morale a day for hunger and 7 for cold plus wounds, so it dies of everything at once and despair merely arrives first. The lever was arithmetic: `SHELTER_SAVES`. **And it was worse than a symptom — see item 8: the label itself was wrong.** |
 | Reading the death table without reading the larder | "Despair ends more runs than hunger, cold and steel put together" stood for three audits, sent three sweeps of the morale levers to nothing, and is a large part of why the kin system exists. Measured with the STATE at the moment of death: 28 of 30 despair endings had an empty store, averaging one food. It was hunger under another name, and the ending told the player to manage morale. **A cause is not a diagnosis. Record the state, not just the label.** |
 | `SHELTER_SAVES` at 1.0 | Fixed survival and broke the game's central promise. `SHELTER_MAX` is 6, so 1.0 means a fully built steading cancels an ordinary winter's burn outright — and over 24 winters, heeding the mark against ignoring it went 19/6 at 0.7, 19/8 at 0.8, **19/17 at 1.0**. Preparing for winter had stopped mattering. Settled at 0.8. |
+| "Easier fights settle bands sooner, so they stop walking past the markets" | The hypothesis that held hardship-steel off the tree for a day, and it is false in every term. Settle-rate 28/30 either way, founding day 13.1 either way, road-days 460 → 432, sagas reaching a counter 6/60 → 6/60. The real fault was the bar: `markets` counted trade DAYS, and twelve of fourteen came from one band that settled beside a live counter. **A count of days is not a count of reach.** |
 | "A band that trades out beats one that never leaves" | Held on a margin of ONE seed in eight, which by this repo's own noise floor is weather. At 24 seeds the survival arms sit level or behind (19 against 21) — correctly, because the roof is a home thing. What going out actually buys is stores: nearly 4× the timber home. Bar rewritten to the effect that is real. |
 
 **The lesson under most of these:** four null results in one day, and the
@@ -1613,8 +1658,59 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-13 — Hardship reaches combat, and a floor that was measuring
+  nothing** — `steel` on `HardshipDef` (+1 fair, 0 even, -1 hard) is in,
+  added to our swings and taken off theirs on the strike. The curve is
+  properly ordered at both marks for the first time — 87/80/73 to the first
+  winter, 65/28/12 to spring — and the winter column could not be ordered at
+  all while every country's blows landed alike. The licence for letting a
+  difficulty this deep in is that `newGame` defaults to the balanced middle,
+  where `steel` is 0, so `test/wall.test.ts` and the whole battle suite are
+  played on terms where the knob does not exist; `test/hardship.test.ts`
+  asserts that zero now rather than trusting it.
+
+  **The day this cost was spent on the bar, not the change.** It had been
+  held off by `markets` falling 14 → 2 in the content-reach probe against a
+  floor of 3. The hypothesis on the bench — easier fights, more bands settle,
+  a settled band stops walking past the counters — is FALSE: bands settle
+  28/30 either way, on day 13.1 either way, and road-days barely move
+  (460 → 432).
+
+  What the floor was really measuring is the finding. Six of sixty sagas ever
+  stand at a counter, before and after; **reach did not move at all**. Of
+  those six, two ever dealt, and twelve of the fourteen market days came from
+  a single band that settled beside a live counter and traded over and over.
+  A trade day multiplies with however long one band loiters, so a floor of 3
+  sat on a statistic with an effective sample of ONE SAGA — it passed by luck
+  and failed by luck. (The specific drop is real and is also not about reach:
+  a band that wins its fights reaches the trading town with five sworn
+  instead of four, trips the harness bot's own `mighty` rule and sacks the
+  town on day 16 instead of dealing there twelve times. Steel ends a market.
+  That is the bot preferring plunder to a counter.)
+
+  So the floor was **re-derived rather than moved**: a count of SAGAS that
+  reach a still-trading counter, same numeral, sample of sixty instead of
+  one, and strictly harder to satisfy by luck — three trade days can come
+  from one band in an afternoon where three sagas cannot. The reasoning is
+  written into `test/balance.test.ts`, and the probe now prints settle-rate,
+  days-on-the-road and the per-saga distribution beside every total, so the
+  next bar with a sample of one is visible at a glance. **A count of days is
+  not a count of reach** — the jarl count's lesson arriving a second time
+  through a different door.
+
+  Also in: `carrying()` names the wound dragging a swing on the two lines
+  where a blow fails ("Ribs stove in, and the swing showed it"), might only,
+  because might is what is in the roll. The game had been taking a point off
+  the dice and telling nobody — a fresh band lands 76% of its swings and a
+  worn one 59%, while foes are generated whole for every fight and never
+  carry a wound. Three `measured:` labels rewritten off the fresh sweep, and
+  `runs/long.json` re-recorded: combat changed, so the old script diverged by
+  one turn. Still stands 457 days and survives.
+
 - **2026-08-12 — Hardship reaching combat: built, measured, reverted** — The
-  work is written up under "ON THE BENCH" at the head of this document, in
+  work is written up under "OFF THE BENCH" at the head of this document
+  (that section was called "ON THE BENCH" on the day this entry was written,
+  and was renamed when the change landed on 2026-08-13), in
   enough detail to retype in ten minutes. Short version: `steel` on
   `HardshipDef` (+1 fair, 0 even, -1 hard) added to our swings and taken off
   theirs; the curve ordered beautifully (87/65, 80/28, 73/12 for winter and
