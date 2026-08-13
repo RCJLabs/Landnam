@@ -26,6 +26,19 @@ import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
 import type { Terrain } from '../src/state/types';
 import { PLACE_KINDS, PLACE_MAX_FROM_LANDING } from '../src/data/places';
 import { LANDMARK_SIGHT } from '../src/sim/places';
+import { SOIL } from '../src/sim/site';
+import {
+  MEASURE_MAX, NAME_ROOTS, NAME_SUFFIX, WATER_FLOOR, type Measure,
+} from '../src/data/sites';
+import { CLAN_ELBOW, CLAN_CALLS_EVERY } from '../src/data/clans';
+import {
+  JOBS, PLOTS, SHELTER_SAVES, WATCH_DECAY, WATCH_MAX,
+} from '../src/data/jobs';
+import { BUILDINGS } from '../src/data/buildings';
+import { DRAW_LARDER_DAYS } from '../src/data/folk';
+import { RAID_EARLIEST_DAY } from '../src/sim/raid';
+import { SWORN_MAX } from '../src/sim/people';
+import { IDLE_BITE, PATCH_SHELTER_CAP, PLOT_RADIUS } from '../src/sim/colony';
 import {
   SEASON_ORDER, SEASON_LENGTH, YEAR_LENGTH, seasonEffects,
   WINTER_BITE_MAX, WINTER_DEEPENING, WINTER_DEPTH_MAX, effectsOn,
@@ -82,6 +95,26 @@ const strings = (values: readonly string[]): string => `{ ${values.map(quote).jo
  * the port needs the water too because a knarr goes on it.
  */
 const ALL_TERRAINS: Terrain[] = ['ocean', ...LAND_TERRAINS];
+
+const MEASURES: Measure[] = ['water', 'soil', 'timber', 'harbour', 'defence'];
+
+/** A building's `needs` / `raises`, as a flat list of measure and amount. */
+const measures = (table?: Partial<Record<Measure, number>>): string =>
+  `{ ${MEASURES.filter((m) => table?.[m] !== undefined)
+    .map((m) => `{ ${quote(m)}, ${int(table![m]!)} }`).join(', ')} }`;
+
+const jobs = JOBS.map((j) =>
+  `\t\t{ ${quote(j.id)}, ${quote(j.stat)}, ${quote(j.measure)}, ${quote(j.produces)}, `
+  + `${num(j.floor)}, ${num(j.perPoint)}, ${num(j.seasonal)} },`).join('\n');
+
+const buildings = BUILDINGS.map((b) =>
+  `\t\t{ ${quote(b.id)}, ${int(b.timber)}, ${int(b.works)}, ${num(b.shelter ?? 0)}, `
+  + `${int(b.heart ?? 0)}, ${int(b.room ?? 0)}, ${strings(b.after ?? [])}, `
+  + `${measures(b.needs)}, ${measures(b.raises)}, ${quote(b.replaces ?? '')}, `
+  + `${quote(b.repeat ?? '')}, ${quote(b.unlocks ?? '')} },`).join('\n');
+
+const plots = Object.values(PLOTS).map((p) =>
+  `\t\t{ ${quote(p.kind)}, ${strings(p.worked)} },`).join('\n');
 
 const traits = TRAITS.map((t) =>
   `\t{ ${quote(t.id)}, ${t.stats.might ?? 0}, ${t.stats.wits ?? 0}, `
@@ -171,13 +204,15 @@ ${traits.replace(/^\t/gm, '\t\t')}
 \tconst std::string NativeNoun = ${quote(clanKind('native').noun)};
 
 \t/**
-\t * Terrain, as the sim reads it: what it costs to enter and whether it
-\t * stops a view. \`Cost\` is infinite for open sea — impassable on foot, and
-\t * the knarr's own rules are in the travel code rather than here.
+\t * Terrain, as the sim reads it: what it costs to enter, the firewood a
+\t * camp night on it yields, and whether it stops a view. \`Cost\` is infinite
+\t * for open sea — impassable on foot, and the knarr's own rules live in the
+\t * travel code rather than here. \`Wood\` is also what the timber measure of
+\t * a site is summed from, over the hex and its ring.
 \t */
-\tstruct FTerrainRow { std::string Id; double Cost; bool bBlocksSight; };
+\tstruct FTerrainRow { std::string Id; double Cost; int32_t Wood; bool bBlocksSight; };
 \tconst std::vector<FTerrainRow> Terrains = {
-${ALL_TERRAINS.map((t) => `\t\t{ ${quote(t)}, ${num(terrainDef(t).cost)}, ${terrainDef(t).blocksSight ? 'true' : 'false'} },`).join('\n')}
+${ALL_TERRAINS.map((t) => `\t\t{ ${quote(t)}, ${num(terrainDef(t).cost)}, ${int(terrainDef(t).wood)}, ${terrainDef(t).blocksSight ? 'true' : 'false'} },`).join('\n')}
 \t};
 \tinline const FTerrainRow* TerrainById(const std::string& Id)
 \t{
@@ -267,6 +302,78 @@ ${PLACE_KINDS.map((k) => `\t\t{ ${quote(k.id)}, { ${k.ground.map(quote).join(', 
 \t/** Effort to row a hex of coast, and how far a day's rowing carries. */
 \tconstexpr int32_t SeaEffort = ${int(SEA_EFFORT)};
 \tconstexpr int32_t RowReach = ${int(ROW_REACH)};
+
+\t// --- The steading (stage 5, rung 3) ---
+
+\t/** Name parts. The SUFFIX is drawn first — see nameFor's draw order. */
+\t${list('NameRoots', NAME_ROOTS).replace(/\n/g, '\n\t')}
+\t/** Keyed by the measure a site is best at, in MEASURES order. */
+\tconst std::map<std::string, std::vector<std::string>> NameSuffix = {
+${MEASURES.map((m) => `\t\t{ ${quote(m)}, ${strings(NAME_SUFFIX[m])} },`).join('\n')}
+\t};
+
+\t/** Ground that will take barley, by terrain. From src/sim/site.ts. */
+\tconst std::map<std::string, int32_t> SoilByTerrain = {
+${ALL_TERRAINS.map((t) => `\t\t{ ${quote(t)}, ${int(SOIL[t])} },`).join('\n')}
+\t};
+
+\tconstexpr int32_t MeasureMax = ${int(MEASURE_MAX)};
+\tconstexpr int32_t WaterFloor = ${int(WATER_FLOOR)};
+\t/** How close a neighbour may be before the ground is already somebody's. */
+\tconstexpr int32_t ClanElbow = ${int(CLAN_ELBOW)};
+\tconstexpr int32_t ClanCallsEvery = ${int(CLAN_CALLS_EVERY)};
+\tconstexpr int32_t PlotRadius = ${int(PLOT_RADIUS)};
+\tconstexpr double ShelterSaves = ${num(SHELTER_SAVES)};
+\tconstexpr int32_t WatchMax = ${int(WATCH_MAX)};
+\tconstexpr double WatchDecay = ${num(WATCH_DECAY)};
+\tconstexpr int32_t PatchShelterCap = ${int(PATCH_SHELTER_CAP)};
+\tconstexpr int32_t RaidEarliestDay = ${int(RAID_EARLIEST_DAY)};
+\tconstexpr int32_t DrawLarderDays = ${int(DRAW_LARDER_DAYS)};
+\tconstexpr int32_t SwornMax = ${int(SWORN_MAX)};
+\t/** What idleness costs the band's nerve, a head a day. */
+\tconstexpr double IdleBite = ${num(IDLE_BITE)};
+
+\t/** A job: what it reads, what it makes, and how much of it. */
+\tstruct FJobRow
+\t{
+\t\tstd::string Id, Stat, Measure, Produces;
+\t\tdouble Floor, PerPoint, Seasonal;
+\t};
+\tconst std::vector<FJobRow> Jobs = {
+${jobs}
+\t};
+
+\t/** A measure and an amount — a building's needs or raises. */
+\tstruct FMeasureRow { std::string Measure; int32_t Value; };
+
+\t/**
+\t * A building. \`Replaces\`, \`Repeat\` and \`Unlocks\` are empty where the
+\t * data left them out, which is how an absent field is spelled here.
+\t */
+\tstruct FBuildingRow
+\t{
+\t\tstd::string Id;
+\t\tint32_t Timber, Works;
+\t\tdouble Shelter;
+\t\tint32_t Heart, Room;
+\t\tstd::vector<std::string> After;
+\t\tstd::vector<FMeasureRow> Needs, Raises;
+\t\tstd::string Replaces, Repeat, Unlocks;
+\t};
+\tconst std::vector<FBuildingRow> Buildings = {
+${buildings}
+\t};
+\tinline const FBuildingRow* BuildingById(const std::string& Id)
+\t{
+\t\tfor (const FBuildingRow& Row : Buildings) if (Row.Id == Id) return &Row;
+\t\treturn nullptr;
+\t}
+
+\t/** Which jobs each kind of ground is worked by. */
+\tstruct FPlotRow { std::string Kind; std::vector<std::string> Worked; };
+\tconst std::vector<FPlotRow> Plots = {
+${plots}
+\t};
 
 \tconstexpr int32_t SaveVersion = ${SAVE_VERSION};
 }

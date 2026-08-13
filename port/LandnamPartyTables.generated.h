@@ -195,20 +195,22 @@ namespace Tables
 	const std::string NativeNoun = "camp";
 
 	/**
-	 * Terrain, as the sim reads it: what it costs to enter and whether it
-	 * stops a view. `Cost` is infinite for open sea — impassable on foot, and
-	 * the knarr's own rules are in the travel code rather than here.
+	 * Terrain, as the sim reads it: what it costs to enter, the firewood a
+	 * camp night on it yields, and whether it stops a view. `Cost` is infinite
+	 * for open sea — impassable on foot, and the knarr's own rules live in the
+	 * travel code rather than here. `Wood` is also what the timber measure of
+	 * a site is summed from, over the hex and its ring.
 	 */
-	struct FTerrainRow { std::string Id; double Cost; bool bBlocksSight; };
+	struct FTerrainRow { std::string Id; double Cost; int32_t Wood; bool bBlocksSight; };
 	const std::vector<FTerrainRow> Terrains = {
-		{ "ocean", std::numeric_limits<double>::infinity(), false },
-		{ "shore", 1, false },
-		{ "meadow", 1, false },
-		{ "forest", 2, true },
-		{ "hills", 2, true },
-		{ "mountains", 4, true },
-		{ "bog", 3, false },
-		{ "valley", 1, false },
+		{ "ocean", std::numeric_limits<double>::infinity(), 0, false },
+		{ "shore", 1, 1, false },
+		{ "meadow", 1, 1, false },
+		{ "forest", 2, 4, true },
+		{ "hills", 2, 2, true },
+		{ "mountains", 4, 0, true },
+		{ "bog", 3, 1, false },
+		{ "valley", 1, 2, false },
 	};
 	inline const FTerrainRow* TerrainById(const std::string& Id)
 	{
@@ -303,6 +305,126 @@ namespace Tables
 	/** Effort to row a hex of coast, and how far a day's rowing carries. */
 	constexpr int32_t SeaEffort = 2;
 	constexpr int32_t RowReach = 3;
+
+	// --- The steading (stage 5, rung 3) ---
+
+	/** Name parts. The SUFFIX is drawn first — see nameFor's draw order. */
+	const std::vector<std::string> NameRoots = {
+		"Rav",
+		"Bjarn",
+		"Ulf",
+		"Stein",
+		"Ask",
+		"Eik",
+		"Hval",
+		"Orm",
+		"Val",
+		"Hrafn",
+		"Grim",
+		"Sval",
+		"Thorn",
+		"Fisk",
+		"Elg",
+	};
+	/** Keyed by the measure a site is best at, in MEASURES order. */
+	const std::map<std::string, std::vector<std::string>> NameSuffix = {
+		{ "water", { "á", "brekka", "lind" } },
+		{ "soil", { "stead", "garth", "akr" } },
+		{ "timber", { "holt", "skog", "lund" } },
+		{ "harbour", { "vík", "fjord", "nes" } },
+		{ "defence", { "borg", "fell", "klif" } },
+	};
+
+	/** Ground that will take barley, by terrain. From src/sim/site.ts. */
+	const std::map<std::string, int32_t> SoilByTerrain = {
+		{ "ocean", 0 },
+		{ "shore", 1 },
+		{ "meadow", 3 },
+		{ "forest", 1 },
+		{ "hills", 1 },
+		{ "mountains", 0 },
+		{ "bog", 0 },
+		{ "valley", 4 },
+	};
+
+	constexpr int32_t MeasureMax = 5;
+	constexpr int32_t WaterFloor = 1;
+	/** How close a neighbour may be before the ground is already somebody's. */
+	constexpr int32_t ClanElbow = 2;
+	constexpr int32_t ClanCallsEvery = 15;
+	constexpr int32_t PlotRadius = 2;
+	constexpr double ShelterSaves = 0.8;
+	constexpr int32_t WatchMax = 6;
+	constexpr double WatchDecay = 0.5;
+	constexpr int32_t PatchShelterCap = 1;
+	constexpr int32_t RaidEarliestDay = 12;
+	constexpr int32_t DrawLarderDays = 8;
+	constexpr int32_t SwornMax = 6;
+	/** What idleness costs the band's nerve, a head a day. */
+	constexpr double IdleBite = 0.6;
+
+	/** A job: what it reads, what it makes, and how much of it. */
+	struct FJobRow
+	{
+		std::string Id, Stat, Measure, Produces;
+		double Floor, PerPoint, Seasonal;
+	};
+	const std::vector<FJobRow> Jobs = {
+		{ "farmer", "craft", "soil", "food", 0, 0.42, 1 },
+		{ "hunter", "wits", "timber", "food", 0.5, 0.22, 0.7 },
+		{ "fisher", "wits", "harbour", "food", 0.15, 0.38, 0.5 },
+		{ "woodcutter", "might", "timber", "firewood", 0.2, 0.4, 0.45 },
+		{ "builder", "craft", "timber", "shelter", 0.35, 0.18, 0.3 },
+		{ "warrior", "might", "defence", "watch", 0.25, 0.14, 0 },
+	};
+
+	/** A measure and an amount — a building's needs or raises. */
+	struct FMeasureRow { std::string Measure; int32_t Value; };
+
+	/**
+	 * A building. `Replaces`, `Repeat` and `Unlocks` are empty where the
+	 * data left them out, which is how an absent field is spelled here.
+	 */
+	struct FBuildingRow
+	{
+		std::string Id;
+		int32_t Timber, Works;
+		double Shelter;
+		int32_t Heart, Room;
+		std::vector<std::string> After;
+		std::vector<FMeasureRow> Needs, Raises;
+		std::string Replaces, Repeat, Unlocks;
+	};
+	const std::vector<FBuildingRow> Buildings = {
+		{ "longhouse", 6, 6, 3, 1, 6, {  }, {  }, {  }, "", "", "" },
+		{ "farmplots", 4, 5, 0, 0, 0, {  }, { { "soil", 1 } }, { { "soil", 1 } }, "", "", "" },
+		{ "smokehouse", 5, 4, 0, 0, 0, { "longhouse" }, {  }, {  }, "", "", "" },
+		{ "dock", 6, 5, 0, 0, 0, {  }, { { "harbour", 1 } }, { { "harbour", 1 } }, "", "", "fisher" },
+		{ "palisade", 8, 7, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 2 } }, "", "", "" },
+		{ "bud", 5, 4, 1, 0, 4, { "longhouse" }, {  }, {  }, "", "crowded", "" },
+		{ "meadhall", 7, 8, 1, 3, 3, { "longhouse" }, {  }, {  }, "", "", "" },
+		{ "storehouse", 5, 5, 0, 0, 0, { "smokehouse" }, {  }, {  }, "", "", "" },
+		{ "watchtower", 5, 5, 0, 0, 0, { "palisade" }, {  }, { { "defence", 2 } }, "", "", "" },
+		{ "greathall", 14, 11, 5, 2, 12, {  }, {  }, {  }, "longhouse", "", "" },
+		{ "earthworks", 12, 10, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 4 } }, "palisade", "", "" },
+		{ "hof", 7, 7, 0, 2, 0, { "meadhall" }, {  }, {  }, "", "", "" },
+	};
+	inline const FBuildingRow* BuildingById(const std::string& Id)
+	{
+		for (const FBuildingRow& Row : Buildings) if (Row.Id == Id) return &Row;
+		return nullptr;
+	}
+
+	/** Which jobs each kind of ground is worked by. */
+	struct FPlotRow { std::string Kind; std::vector<std::string> Worked; };
+	const std::vector<FPlotRow> Plots = {
+		{ "hall", { "builder" } },
+		{ "field", { "farmer" } },
+		{ "wood", { "woodcutter", "hunter" } },
+		{ "water", { "fisher" } },
+		{ "rough", {  } },
+		{ "watchpost", { "warrior" } },
+	};
 
 	constexpr int32_t SaveVersion = 31;
 }

@@ -25,13 +25,12 @@
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
 > (C++), item 5 (parity CI) is BUILT on both sides, and the rules port is
-> green at `runs/long.json` @0 through @10 — the landing, eight days on the
-> road, and the first card the deck ever deals.**
+> green at `runs/long.json` @0 through @21 — the landing, the road, the first
+> card, and the posts in the ground.**
 >
-> **NEXT: `FOUND` at @11 — the posts go in the ground, and with them half the
-> subsystems the day cycle currently walks past: work, shelter, raids,
-> joining, the neighbours calling. Then `ENTER_COLONY` at @12 and `CAMP`
-> at @22.**
+> **NEXT: `CAMP` at @22 — the first day a settled band actually WORKS. That
+> needs the production model: what a job yields off the site's measures, the
+> season and the worker's stat, and what the builders' days go into.**
 
 ---
 

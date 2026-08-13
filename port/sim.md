@@ -188,8 +188,9 @@ that reading `passDay` suggests.
 `Sim/LandnamDay.{h,cpp}` ports `apply`, `applyTravel`'s `MOVE` and `passDay`
 for a band with no steading, and matches every facet at `runs/long.json`
 @1, @2, @3 and @5. It came to about two hundred lines, and the estimate above
-held. With the deck below, the port is green at **@0 through @10 — eight
-checkpoints, six facets each**, and stops where the posts go in at @11.
+held. With the deck and the steading below, the port is green at **@0 through
+@21 — thirteen checkpoints, six facets each** — and stops at @22, the first
+day a settled band actually works.
 
 **The draw order, written out before any C++ as stages 2 to 4 taught.** A
 whole unsettled day, in the order the TypeScript walks it:
@@ -286,6 +287,49 @@ Effects split the way the rung does. The seven that only move numbers, flags,
 standing or fog are ported; the six that reach into a fight, a death, an
 injury, a hand joining or a thing learned record themselves in `Unported`.
 
+### The third rung: the posts go in the ground
+
+`Sim/LandnamSteading.{h,cpp}` ports `src/sim/site.ts` and the structural half
+of `src/sim/colony.ts`, and matches @11 (`FOUND`), @12 (`ENTER_COLONY`),
+@13 (`ASSIGN`), @19 (`QUEUE_BUILD`) and @21 (`LEAVE_COLONY`). **Thirteen
+checkpoints green now — @0 through @21.** It stops at @22, the first day a
+settled band actually works.
+
+**Founding turns half the day cycle back on.** Every subsystem rung 1 walked
+past because its gate read `state.settlement` now runs for real. Most are
+still shut on day ten — a raid cannot come before day twelve, nobody calls
+before fifteen — but they are shut for reasons the port evaluates.
+
+Two draw orders in here are easy to get backwards:
+
+- **The steading's name draws its SUFFIX first**, off the same generator as
+  the root, and the two are concatenated the other way round. Draw the root
+  first and every steading in the country is misnamed from a stream that
+  still looks perfectly healthy.
+- **`makePlots` walks `range()` in RING order**, and `plots` is an array in
+  the hashed state. The C++ `Range` had been a `Dq`/`Dr` double loop since
+  stage 1 — the same SET, a different ORDER, and invisible while the only
+  caller was the fog, which puts its answers in a map. A set that is only
+  ever a set is a fine place to take a shortcut, right up until somebody
+  iterates it. It is `ring()` now, exactly as `src/hex/grid.ts` writes it.
+
+The one thing that did not match first try was `moodTarget`, and it is worth
+recording because the failure was so quiet: it grows a JOB TERM the moment
+`state.settlement && atHome(state)`, and on the founding day all six are
+unassigned, so every one of them takes the full −12. Every facet size was
+right and one hash was wrong — which is the shape of a value error, and
+exactly what `size` is beside the hash to tell you.
+
+`workTheDay`'s idle penalty is the other measured surprise: six hands with
+nothing to do is −3.6 morale, **larger than the +8 for founding at all**.
+The founding day reads 78 → 86 → 82.4 → 83.4.
+
+The stores became doubles here. A roof saves 0.8 of a night's firewood per
+point of shelter and a farmer's day produces a fraction of a meal, so `food`
+and `firewood` are numbers rather than counts in the TypeScript; they were
+whole on both sides until something fractional touched them, which is not
+the same as being integers.
+
 ### The size check was measuring the wrong thing
 
 `size` beside every hash is meant to separate *"different values"* from
@@ -340,6 +384,7 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/Sim/LandnamLanding.{h,cpp}` | **stage 4**: the rest of the landing, and `FSimState` |
 | `Source/LandnamUE/Sim/LandnamDay.{h,cpp}` | **stage 5**: the day cycle and `MOVE` |
 | `Source/LandnamUE/Sim/LandnamEvents.{h,cpp}` | **stage 5**: the event deck |
+| `Source/LandnamUE/Sim/LandnamSteading.{h,cpp}` | **stage 5**: the steading |
 | `Source/LandnamUE/Sim/LandnamEventTables.generated.h` | the deck, from `npm run event-tables` |
 | `Source/LandnamUE/Sim/LandnamCanon.{h,cpp}` | the canonical form, in the sim core's own types |
 | `Tools/parity-harness.cpp`, `Tools/run-parity.sh` | the standalone `g++` check |

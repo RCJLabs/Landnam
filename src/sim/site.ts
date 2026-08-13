@@ -58,7 +58,13 @@ function water(s: Surrounds): number {
   return clamp(score);
 }
 
-const SOIL: Record<Terrain, number> = {
+/**
+ * Exported because the C++ port generates its tables from this file rather
+ * than retyping them — see scripts/party-tables.ts. Content lives in exactly
+ * one place, and a soil value that drifted between the two would move where
+ * every steading in the Unreal build wants to stand.
+ */
+export const SOIL: Record<Terrain, number> = {
   valley: 4,
   meadow: 3,
   shore: 1,

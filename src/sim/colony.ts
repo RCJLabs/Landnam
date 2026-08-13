@@ -44,6 +44,16 @@ export const PLOT_RADIUS = 2;
  */
 export const PATCH_SHELTER_CAP = 1;
 
+/**
+ * What one idle hand a day takes off the band's nerve.
+ *
+ * Named rather than inline because the port generates its constants from
+ * this file, and because it is the largest single thing that happens to
+ * morale on the day the posts go in: six people with nothing to do yet is
+ * -3.6, which swamps the +8 for founding at all.
+ */
+export const IDLE_BITE = 0.6;
+
 // --- The local map ---
 
 /**
@@ -447,7 +457,7 @@ export function workTheDay(state: GameState): DayLabour {
   // Hands with nothing to do turn on each other. It is a small drag, but it
   // is why leaving people unassigned is never the safe option.
   if (labour.idle > 0) {
-    state.party.morale = Math.max(0, state.party.morale - labour.idle * 0.6);
+    state.party.morale = Math.max(0, state.party.morale - labour.idle * IDLE_BITE);
   } else if (labour.byPerson.length > 0) {
     state.party.morale = Math.min(100, state.party.morale + 1);
   }
