@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <string>
 #include <utility>
@@ -117,19 +118,33 @@ namespace Tables
 		"Stonewash",
 	};
 
-	/** A trait's stat nudge, applied once at generation. */
-	struct FTraitRow { std::string Id; int Might, Wits, Spirit, Craft; };
+	/**
+	 * A trait: a stat nudge applied once at generation, how hard the mood
+	 * swings, and the tags two people grate over.
+	 *
+	 * `Temper` scales the daily mood drift, so a steadfast man moves half as
+	 * far toward the day's target as an ordinary one. `Tags` and `Frictions`
+	 * are what `friction()` counts across a pair — a Quarrelsome beside a
+	 * Berserk is bad blood waiting for a bad day.
+	 */
+	struct FTraitRow
+	{
+		std::string Id;
+		int Might, Wits, Spirit, Craft;
+		double Temper;
+		std::vector<std::string> Tags, Frictions;
+	};
 	const std::vector<FTraitRow> Traits = {
-		{ "hunter", 0, 1, 0, 0 },
-		{ "shipwright", 0, 0, 0, 1 },
-		{ "berserk", 1, 0, -1, 0 },
-		{ "hardy", 0, 0, 1, 0 },
-		{ "healer", 0, 0, 0, 1 },
-		{ "seafarer", 0, 1, 0, 0 },
-		{ "quarrelsome", 1, -1, 0, 0 },
-		{ "steadfast", 0, 0, 1, 0 },
-		{ "sharpeyed", 0, 1, 0, 0 },
-		{ "ox", 1, 0, 0, 0 },
+		{ "hunter", 0, 1, 0, 0, 1, { "forager", "hunter" }, {  } },
+		{ "shipwright", 0, 0, 0, 1, 1, { "builder" }, {  } },
+		{ "berserk", 1, 0, -1, 0, 1.6, { "fighter", "volatile" }, { "volatile", "anchor" } },
+		{ "hardy", 0, 0, 1, 0, 0.6, { "hardy" }, {  } },
+		{ "healer", 0, 0, 0, 1, 1, { "healer" }, {  } },
+		{ "seafarer", 0, 1, 0, 0, 1, { "sailor", "fisher" }, {  } },
+		{ "quarrelsome", 1, -1, 0, 0, 1.8, { "volatile" }, { "volatile", "hardy", "anchor", "healer" } },
+		{ "steadfast", 0, 0, 1, 0, 0.5, { "hardy", "anchor" }, {  } },
+		{ "sharpeyed", 0, 1, 0, 0, 1, { "scout" }, {  } },
+		{ "ox", 1, 0, 0, 0, 1, { "fighter", "labourer" }, {  } },
 	};
 
 	const std::map<std::string, std::pair<std::string, std::string>> ElderTies = {
@@ -179,17 +194,76 @@ namespace Tables
 	const std::string ClanNoun = "steading";
 	const std::string NativeNoun = "camp";
 
-	/** Which terrains stop a view. Only mountains stop one from high ground. */
-	const std::map<std::string, bool> BlocksSight = {
-		{ "ocean", false },
-		{ "shore", false },
-		{ "meadow", false },
-		{ "forest", true },
-		{ "hills", true },
-		{ "mountains", true },
-		{ "bog", false },
-		{ "valley", false },
+	/**
+	 * Terrain, as the sim reads it: what it costs to enter and whether it
+	 * stops a view. `Cost` is infinite for open sea — impassable on foot, and
+	 * the knarr's own rules are in the travel code rather than here.
+	 */
+	struct FTerrainRow { std::string Id; double Cost; bool bBlocksSight; };
+	const std::vector<FTerrainRow> Terrains = {
+		{ "ocean", std::numeric_limits<double>::infinity(), false },
+		{ "shore", 1, false },
+		{ "meadow", 1, false },
+		{ "forest", 2, true },
+		{ "hills", 2, true },
+		{ "mountains", 4, true },
+		{ "bog", 3, false },
+		{ "valley", 1, false },
 	};
+	inline const FTerrainRow* TerrainById(const std::string& Id)
+	{
+		for (const FTerrainRow& Row : Terrains) if (Row.Id == Id) return &Row;
+		return nullptr;
+	}
+	inline bool BlocksSight(const std::string& Id)
+	{
+		const FTerrainRow* Row = TerrainById(Id);
+		return Row && Row->bBlocksSight;
+	}
+
+	/**
+	 * The year, IN ORDER OF PLAY — day 1 is high summer. The index into this
+	 * list is `floor((day-1) / SeasonLength) % 4`, so reordering it moves
+	 * every season of every run.
+	 */
+	struct FSeasonRow
+	{
+		std::string Id;
+		double Forage;
+		int32_t TravelPenalty, Sight, Firewood;
+	};
+	const std::vector<FSeasonRow> Seasons = {
+		{ "summer", 1.35, 0, 3, 1 },
+		{ "autumn", 1, 0, 2, 2 },
+		{ "winter", 0.15, 1, 1, 6 },
+		{ "spring", 0.7, 0, 2, 2 },
+	};
+	constexpr int32_t SeasonLength = 24;
+	constexpr int32_t YearLength = 96;
+	constexpr int32_t WinterDeepening = 2;
+	constexpr int32_t WinterDepthMax = 6;
+	constexpr int32_t WinterBiteMax = 4;
+
+	/** How hard the country is. Every knob the balance harness reads. */
+	struct FHardshipRow
+	{
+		std::string Id;
+		double Stir, Raid, Winter, Stores;
+		int32_t Steel;
+	};
+	const std::vector<FHardshipRow> Hardships = {
+		{ "fair", 0.6, 0.55, 0.7, 2.5, 1 },
+		{ "even", 1, 1, 1, 1, 0 },
+		{ "hard", 1.3, 1.35, 1.15, 0.7, -1 },
+	};
+	/** What `newGame` uses when the caller names no terms. */
+	const std::string DefaultHardship = "even";
+	inline const FHardshipRow& HardshipById(const std::string& Id)
+	{
+		for (const FHardshipRow& Row : Hardships) if (Row.Id == Id) return Row;
+		for (const FHardshipRow& Row : Hardships) if (Row.Id == DefaultHardship) return Row;
+		return Hardships[0];
+	}
 
 	/** Fixed places, IN SEEDING ORDER — seedPlaces walks this list. */
 	struct FPlaceKindRow { std::string Id; std::vector<std::string> Ground; int32_t MinFromLanding; };
@@ -201,8 +275,35 @@ namespace Tables
 	};
 	constexpr int32_t PlaceMaxFromLanding = 16;
 
-	/** How far the band sees on day one. The calendar itself is a later stage. */
+	/** How far the band sees on day one — Seasons[0].Sight, named for stage 1. */
 	constexpr int32_t SightOnDayOne = 3;
+	constexpr int32_t LandmarkSight = 8;
+
+	/** Stores off the knarr, before the country's terms multiply them. */
+	constexpr int32_t StartFood = 24;
+	constexpr int32_t StartFirewood = 8;
+
+	// --- The day cycle (stage 5) ---
+
+	/** How much of a night's fire is the hearth rather than the heads round it. */
+	constexpr double HearthShare = 0.55;
+	/** The band the firewood figures were tuned against. Six off the knarr. */
+	constexpr int32_t BandBase = 6;
+	/** How fast a mood moves toward where the day is pushing it. */
+	constexpr double MoodDrift = 0.28;
+	/** What each body past the roof's room takes off everyone's mood. */
+	constexpr int32_t CrowdingBite = 5;
+	/** How far a neighbour's standing creeps back toward indifference a day. */
+	constexpr double RepDrift = 0.12;
+	/** The road's base chance of interrupting you, and the quiet opening days. */
+	constexpr double BaseEventChance = 0.19;
+	constexpr int32_t SettlingInDays = 6;
+	/** Winters stood before the run closes itself out. */
+	constexpr int32_t LongLifeWinters = 5;
+	/** Effort to row a hex of coast, and how far a day's rowing carries. */
+	constexpr int32_t SeaEffort = 2;
+	constexpr int32_t RowReach = 3;
+
 	constexpr int32_t SaveVersion = 31;
 }
 }

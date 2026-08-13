@@ -41,10 +41,10 @@ import { checkRunEnd } from './upkeep';
  * raised by half, the game interrupts a hundred days about seventeen times
  * instead of twenty-one, and more of those interruptions are a fight.
  */
-const BASE_EVENT_CHANCE = 0.19;
+export const BASE_EVENT_CHANCE = 0.19;
 
 /** The country takes this many days to notice a new sail on its coast. */
-const SETTLING_IN_DAYS = 6;
+export const SETTLING_IN_DAYS = 6;
 
 function nearWater(state: GameState): boolean {
   const here = state.world.tiles[key(state.party.at)];

@@ -183,6 +183,78 @@ So the first rung of stage 5 is the **unsettled** day cycle plus `MOVE`, and
 it is worth perhaps a hundred and fifty lines rather than the two thousand
 that reading `passDay` suggests.
 
+### The first rung is done and green
+
+`Sim/LandnamDay.{h,cpp}` ports `apply`, `applyTravel`'s `MOVE` and `passDay`
+for a band with no steading, and matches **every facet at `runs/long.json`
+@1, @2, @3 and @5** — five checkpoints counting the landing, six facets each.
+It came to about two hundred lines, and the estimate above held.
+
+**The draw order, written out before any C++ as stages 2 to 4 taught.** A
+whole unsettled day, in the order the TypeScript walks it:
+
+1. `day += 1`, then `workTheDay` — which returns on its first line with no
+   settlement, so the stores are untouched.
+2. Mouths: `eaten = min(food, max(1, ceil(alive / 2)))`.
+3. Fire: `max(1, ceil(effectsOn(day, seed).firewood * hardship.winter *
+   (0.55 + 0.45 * heads / 6)))`, less `shelterSaving`, which is a roof plus
+   learned lore and so nought here.
+4. Fed → `flags.hungerStreak = 0`. **Set, not deleted** — which is why the
+   `run` facet grows by seventeen characters the moment a day passes.
+5. Fed and warm → `party.morale += 1`.
+6. `driftMoods`, **reading `party.morale` after that +1**. Per person:
+   `target` off the band's morale, their health, the pressures and their
+   injuries; `step = (target - morale) * 0.28 * temperOf(trait)`.
+7. `driftStandings`: every neighbour 0.12 nearer nought. This is where the
+   `coast` facet stops being whole numbers.
+8. The thaw's +10 morale, and `checkRunEnd`.
+
+Then `MOVE` writes `trod[key(to)] = day` **before** `advance` — after it, the
+stamp is off by one per step, in a hashed field, with nothing else pointing
+at it — reveals, and rolls `derive(\`fire:${day}:${key(at)}\`)` for a card.
+
+**The gates are evaluated, not assumed.** The licence above says a port may
+skip a subsystem that produces no state change; that is only worth having if
+something checks the subsystem really was inert. So each skipped one is
+ported as far as its gate and records a reason in `FSimState::Unported` if
+the gate opens — an unsworn hand, a pair with heat between them, a cold
+night, a card dealt. Both harnesses fail on a non-empty `Unported` however
+well the hashes match, because a green reached by quietly not running
+something is not a green. Run past the rung and it says so by name: at @8
+five facets still match and `run` does not, with `maybeFireEvent: the road
+dealt a card` printed beside it.
+
+**And it caught a fourth portability trap, which is the reason for all this.**
+`line()` in `src/hex/grid.ts` adds **1e-6 to both axials before rounding** —
+"epsilon nudge breaks exact-tie rounding deterministically", one comment, easy
+to read past — and `round()` in `src/hex/coords.ts` has only TWO branches, so
+on a `dr`/`ds` tie it leaves both coordinates alone and lets `s` absorb the
+error. The C++ was a cube-space rewrite with a third branch and no nudge. It
+passed stage 4, because no sight line from a landing happens to hit a tie.
+The band's first step hits one: from 4,15 the line to 6,14 passes through
+5,15 in the TypeScript and 5,14 in the port, and 5,14 blocks sight. One hex
+of fog, seventeen characters, a whole facet red. Reading the two versions
+side by side would not have found it; compiling both and diffing the
+canonical text found it in a minute.
+
+Two smaller things landed with it. `seeNeighbours` is **not** skippable on
+this rung — a hall three hexes off the fourth day's march comes into view and
+`found` is thirteen characters of the `coast` facet — so it is ported.
+And the number formatter moved: `ULandnamCanonical::Number` now delegates to
+`Landnam::CanonicalNumber` in the sim core, because a clock produces fractions
+and the standalone harness has to be able to print them. The twenty vectors
+that already pinned it now pin the one implementation.
+
+### The standalone harness is committed now
+
+`Tools/run-parity.sh` compiles the sim core with `g++` and checks it against
+`port/parity.json`. It needs a compiler and node and **nothing else** — no
+Unreal, no editor. Every stage of this port has been compiled and run rather
+than read over, and it was throwaway each time; four traps in, it is worth
+keeping. It parses no JSON: the harness prints a reading per checkpoint and
+the script pulls the expectations, the seed and the moves out of the repo
+that owns the rules, so nothing about the run is retyped on the C++ side.
+
 ## How to use it from the C++ side
 
 1. Load `parity.json`. For each run, take `seed` and `hardship`.
@@ -207,7 +279,10 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/Sim/LandnamWorldgen.{h,cpp}` | **stage 1**: the country itself |
 | `Source/LandnamUE/Sim/LandnamParty.{h,cpp}` | **stage 2**: the six off the knarr |
 | `Source/LandnamUE/Sim/LandnamCoast.{h,cpp}` | **stage 3**: who else is on this coast |
-| `Source/LandnamUE/Sim/LandnamLanding.{h,cpp}` | **stage 4**: the rest of the landing |
+| `Source/LandnamUE/Sim/LandnamLanding.{h,cpp}` | **stage 4**: the rest of the landing, and `FSimState` |
+| `Source/LandnamUE/Sim/LandnamDay.{h,cpp}` | **stage 5**: the day cycle and `MOVE` |
+| `Source/LandnamUE/Sim/LandnamCanon.{h,cpp}` | the canonical form, in the sim core's own types |
+| `Tools/parity-harness.cpp`, `Tools/run-parity.sh` | the standalone `g++` check |
 | `Source/LandnamUE/Sim/LandnamPartyTables.generated.h` | names and traits, from `npm run party-tables` |
 | `Content/Data/parity.json`, `Content/Data/runs/*.json` | copies of the files above |
 
@@ -274,8 +349,8 @@ line-of-sight, plus the terrain table that says what stops a view).
 formality — a band off the knarr has no settlement and is in no fight, so
 empty is the right answer and a port that invented either would fail.
 
-**This is the last thing reachable before `apply()`.** Every checkpoint past
-0 needs the action loop, which is the next and much larger stage.
+**Stage 4 was the last thing reachable before `apply()`.** Every checkpoint
+past 0 needs the action loop, which stage 5 opens.
 
 Stages 2, 3 and 4 are checked at checkpoint 0 and on the bare runs only, which is exactly
 as far as it reaches — every later checkpoint needs upkeep and travel, and

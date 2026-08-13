@@ -65,6 +65,34 @@ describe('hex grid', () => {
     for (const n of ns) expect(distance(centre, n)).toBe(1);
   });
 
+  /**
+   * The tie-break, pinned — because a port got it wrong and nothing said so.
+   *
+   * `line()` nudges both axials by 1e-6 before rounding and `round()` has only
+   * TWO branches, so where `dr` and `ds` tie it leaves q and r alone and lets
+   * s absorb the error. Both of those are one line each and easy to read past.
+   * The C++ port was written as a cube-space rounding with a third branch and
+   * no nudge; it matched every sight line from a landing and diverged on the
+   * band's first step, hiding one hex of map behind a blocker that is not on
+   * the line this walks. See port/sim.md.
+   *
+   * 4,15 to 6,14 is that exact case: an even tie at the midpoint, which the
+   * nudge sends to 5,15 rather than 5,14.
+   */
+  it('breaks an exact tie the same way every time', () => {
+    expect(line({ q: 4, r: 15 }, { q: 6, r: 14 }).map(key)).toEqual([
+      '4,15', '5,15', '6,14',
+    ]);
+    // Walked the other way it is the same three hexes, because the nudge is
+    // added to the interpolated point rather than to either end. Worth
+    // asserting rather than assuming: a line that picked a different middle
+    // depending on which end you started from would make what a band can see
+    // depend on which way it happened to be facing.
+    expect(line({ q: 6, r: 14 }, { q: 4, r: 15 }).map(key)).toEqual([
+      '6,14', '5,15', '4,15',
+    ]);
+  });
+
   it('opposite directions cancel', () => {
     const centre: Hex = { q: 0, r: 0 };
     for (let d = 0; d < 6; d++) {

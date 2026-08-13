@@ -25,13 +25,13 @@
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
 > (C++), item 5 (parity CI) is BUILT on both sides, and the rules port has
-> landed stages 1–4: a new game in C++ is bit-identical to a new game in
-> TypeScript across every facet.**
+> landed stages 1–4 plus the first rung of stage 5: the C++ can spend a day
+> now, and matches every facet at `runs/long.json` @1, @2, @3 and @5.**
 >
-> **NEXT: stage 5 — `apply()`, starting with the unsettled day cycle and
-> `MOVE`, against the ramp checkpoint `runs/long.json @1`. Scoped and
-> measured in `port/sim.md`; it is roughly 150 lines, not the 2,000 that
-> reading `passDay` suggests.**
+> **NEXT: stage 5's second rung — the EVENT DECK, at `runs/long.json` @8.
+> Five facets already match there and `run` does not, because the road deals
+> a card on day nine; the port names that rather than guessing at it. Then
+> `FOUND` at @11 and `CAMP` at @22.**
 
 ---
 
@@ -83,21 +83,27 @@ figure in this document and is Evan's call — see the changelog.
 rules get rewritten in C++, the TypeScript becomes the reference
 implementation and the balance lab, and `port/sim.md` is the contract that
 makes the second half of that true. Item 5 exists on both sides. Stages 1–4
-of the rules port are green — worldgen, the party, the coast and the rest of
-the landing — so **a new game in C++ matches a new game in TypeScript across
-all six facets**.
+are green — worldgen, the party, the coast and the rest of the landing — so a
+new game in C++ matches a new game in TypeScript across all six facets. **The
+first rung of stage 5 is green too: the C++ can spend a day.** `apply`,
+`MOVE` and the unsettled `passDay` match every facet at `runs/long.json` @1,
+@2, @3 and @5, which is the first time the two builds have agreed about
+something that happened rather than about a state that was generated.
 
 The port's method is worth keeping: the sim core in `landnam-ue` is written
 FREE OF UNREAL, so the identical translation unit compiles in the editor and
 in a standalone harness run against the vectors with nothing but `g++`. Every
 stage has been compiled and checked rather than read over, and that has caught
-three portability traps reading would not have — a precedence error in
-mulberry32, a NUL byte in the hash salt, and `localeCompare` not being
-code-unit order. All three are written up in `port/sim.md`.
+FOUR portability traps reading would not have — a precedence error in
+mulberry32, a NUL byte in the hash salt, `localeCompare` not being code-unit
+order, and the epsilon nudge in `line()` that decides what a forest hides.
+All four are written up in `port/sim.md`, and the harness that found them is
+committed now as `Tools/run-parity.sh` rather than rewritten each stage.
 
 **Not yet verified:** `Landnam.SimParity` has never been run in a real editor.
-The sim core is proven by compilation here; the ~100 lines of UE-typed glue
-around it are not. Expect ordinary first-compile friction there, not logic
+The sim core is proven by compilation here — every line of it, against the
+vectors — but the UE-typed glue around it is not, and stage 5 added about a
+hundred lines of that. Expect ordinary first-compile friction there, not logic
 errors.
 
 ### OFF THE BENCH — hardship reaches combat, and a floor that was measuring nothing
@@ -1769,6 +1775,62 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-13 — Stage 5, first rung: the C++ can spend a day now** —
+  `Sim/LandnamDay.{h,cpp}` ports `apply`, `applyTravel`'s `MOVE` and `passDay`
+  for a band with no steading, and matches **every facet at `runs/long.json`
+  @1, @2, @3 and @5**. Five checkpoints counting the landing, six facets each,
+  and it is the first time the two implementations have agreed about
+  something that HAPPENED rather than about a state that was generated.
+
+  The scoping in `port/sim.md` held exactly. `passDay` fans out to twenty
+  subsystems and a whole unsettled day moves seven things, so the rung came
+  to about two hundred lines rather than the two thousand reading it
+  suggests. What was added to make that honest is `FSimState::Unported`:
+  **every skipped subsystem is ported as far as its gate and records a reason
+  if the gate ever opens** — an unsworn hand, a pair with heat between them,
+  a cold night, a card dealt. Both harnesses fail on a non-empty `Unported`
+  however well the hashes match, because a green reached by quietly not
+  running something is not a green. That turns "the RNG has no position, so
+  you may skip what does not move" from a licence into a checked claim.
+
+  **A fourth portability trap, and the reason the method is compile-and-run.**
+  `line()` in `src/hex/grid.ts` adds 1e-6 to both axials before rounding —
+  one comment, easy to read past — and `round()` in `src/hex/coords.ts` has
+  only two branches, so on a tie it leaves both coordinates alone. The C++ was
+  a cube-space rewrite with a third branch and no nudge. It passed stage 4,
+  because no sight line from a landing hits a tie. The band's first step hits
+  one: from 4,15 the line to 6,14 goes through 5,15 in the TypeScript and
+  5,14 in the port, and 5,14 blocks sight. One hex of fog, seventeen
+  characters, a whole facet red. Reading the two side by side would not have
+  found it; diffing the canonical text found it in a minute.
+
+  **`Tools/run-parity.sh` is committed this time.** It compiles the sim core
+  with `g++` and checks it against `port/parity.json` with nothing but a
+  compiler and node — no Unreal, no editor. It has been throwaway for four
+  stages and four traps; it is worth keeping. It parses no JSON: the harness
+  prints a reading per checkpoint and the script pulls the expectations, the
+  seed and the moves out of this repo, so nothing about the run is retyped on
+  the C++ side.
+
+  Content stayed authored in `src/data`. `scripts/party-tables.ts` now also
+  restates hardship, the seasons, terrain costs, trait tempers and frictions
+  and a dozen constants — and stage 2's three hard-coded `stores` multipliers
+  were collapsed onto the generated table, which is where they should always
+  have come from. The generator now throws on a value that is not a number,
+  because `BASE_EVENT_CHANCE` stopped being exported for ten minutes and the
+  literal text `undefined` reached the header: `scripts` is outside the
+  tsconfig `include`, so nothing else would have said so.
+
+  One more consolidation: `ULandnamCanonical::Number` now delegates to
+  `Landnam::CanonicalNumber` in the sim core. A clock produces fractions and
+  the standalone harness has to print them, so the formatter had to leave
+  `FString`. The twenty vectors that already pinned it now pin the single
+  implementation, so the move is covered rather than trusted.
+
+  Next rung: the event deck, at @8. Five facets already match there and `run`
+  does not, with `maybeFireEvent: the road dealt a card` printed beside it —
+  which is what a bar naming the thing to go and look at is supposed to do.
 
 - **2026-08-13 — Both ends of the parity contract now exist** — The C++ half
   of item 5. `LandnamCanonical` in `landnam-ue` is the shared canonical form
