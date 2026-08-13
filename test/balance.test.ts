@@ -4035,6 +4035,113 @@ describe('the strandhogg, and why it does not happen', () => {
   });
 });
 
+describe('the place economy — what a coast’s four prizes actually do', () => {
+  /**
+   * TASK 33's remainder. The strandhögg probe above ruled out worldgen,
+   * routing, distance and the bot's preferences, and stopped at "the
+   * candidate set is EMPTY, not mis-ordered" — a place has to be seen,
+   * unsacked and lightly enough held, and the four on a coast are one-shot.
+   * That was recorded as a question about the PLACE economy rather than
+   * tuned, which was right, and it left the question unmeasured.
+   *
+   * This measures it: the LIFECYCLE of every place in every world. When it
+   * is learned of, how it is learned of, when it is emptied, and how long
+   * it stands known-and-standing — because that window is the only time any
+   * verb aimed at a place can fire. A strandhögg, a market day and a sack
+   * are all the same opportunity counted three ways.
+   */
+  it('follows every place from unknown to emptied', { timeout: 900_000 }, async () => {
+    interface Life {
+      places: number; seen: number; seenDay: number; sacked: number;
+      sackedDay: number; window: number; standingKnown: number; told: number;
+      oppDays: number; strandhoggs: number; sagas: number; days: number;
+    }
+    const life: Record<string, Life> = {};
+    const byKind: Record<string, { seen: number; sacked: number; n: number }> = {};
+
+    for (const p of POLICIES) {
+      const L: Life = { places: 0, seen: 0, seenDay: 0, sacked: 0, sackedDay: 0,
+        window: 0, standingKnown: 0, told: 0, oppDays: 0, strandhoggs: 0,
+        sagas: 0, days: 0 };
+      life[p.id] = L;
+      try {
+        policy = p;
+        for (let s = 0; s < 30; s += 1) {
+          // First day each place was SEEN, so the window can be measured
+          // against the day it was emptied.
+          const firstSeen: Record<string, number> = {};
+          const state = run(`curve-${s}`, 400, (before, after) => {
+            if (after.day !== before.day) {
+              L.days += 1;
+              if (strandTarget(after)) L.oppDays += 1;
+              for (const pl of after.world.places) {
+                if (firstSeen[pl.id] === undefined
+                    && after.world.seen[key(pl.at)] !== undefined) {
+                  firstSeen[pl.id] = after.day;
+                }
+              }
+            }
+            if (!before.battle && after.battle?.strandhogg) L.strandhoggs += 1;
+            // Learned across a counter rather than by walking into it.
+            if (after.saga.length > before.saga.length) {
+              for (const line of after.saga.slice(before.saga.length)) {
+                if (/were content that we should know it/.test(line.text)) L.told += 1;
+              }
+            }
+          }, 'fair');
+
+          L.sagas += 1;
+          for (const pl of state.world.places) {
+            L.places += 1;
+            const kind = (byKind[pl.kind] ??= { seen: 0, sacked: 0, n: 0 });
+            kind.n += 1;
+            const seenOn = firstSeen[pl.id];
+            if (seenOn !== undefined) { L.seen += 1; L.seenDay += seenOn; kind.seen += 1; }
+            if (pl.sackedOn !== undefined) {
+              L.sacked += 1; L.sackedDay += pl.sackedOn; kind.sacked += 1;
+              if (seenOn !== undefined) L.window += pl.sackedOn - seenOn;
+            } else if (seenOn !== undefined) {
+              // Known and still standing at the end of the saga: the state
+              // every place-verb needs, and the one that has to LAST.
+              L.standingKnown += 1;
+            }
+          }
+          await new Promise((r) => setTimeout(r, 0));
+        }
+      } finally { policy = SETTLER; }
+    }
+
+    const say = (id: string): string => {
+      const L = life[id]!;
+      return `  ${id}: ${L.places} places over ${L.sagas} sagas (${(L.places / L.sagas).toFixed(1)} a world), ` +
+        `${L.seen} ever seen (day ${(L.seenDay / Math.max(1, L.seen)).toFixed(0)}), ` +
+        `${L.told} learned across a counter\n` +
+        `    ${L.sacked} emptied (day ${(L.sackedDay / Math.max(1, L.sacked)).toFixed(0)}), ` +
+        `standing ${(L.window / Math.max(1, L.sacked)).toFixed(0)} days known first; ` +
+        `${L.standingKnown} known and still standing at the end\n` +
+        `    ${L.oppDays} days afloat beside one, ${L.strandhoggs} strandhöggs, over ${L.days} days\n`;
+    };
+    const ts = (globalThis as any).__tellStats ?? { calls: 0, cand: [] };
+    const hist: Record<string, number> = {};
+    for (const v of ts.cand as number[]) {
+      const k2 = `inRange${Math.floor(v / 10)}/unseen${v % 10}`;
+      hist[k2] = (hist[k2] ?? 0) + 1;
+    }
+    // eslint-disable-next-line no-console
+    console.log(`tellOfPlace calls: ${ts.calls}; candidate histogram: ` +
+      Object.entries(hist).sort().map(([k2, v]) => `${k2} x${v}`).join(', '));
+    // eslint-disable-next-line no-console
+    console.log(
+      'the place economy, 30 landings a policy on A Fair Country:\n' +
+        POLICIES.map((p) => say(p.id)).join('') +
+        '  by kind: ' + Object.entries(byKind)
+          .map(([k, v]) => `${k} ${v.seen}/${v.n} seen, ${v.sacked} emptied`).join('; '),
+    );
+
+    expect(life['settler']!.sagas).toBe(30);
+  });
+});
+
 describe('who lands their blows', () => {
   /**
    * A playtest report, measured: "my warriors miss more than the enemy on

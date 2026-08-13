@@ -1520,6 +1520,7 @@ here so the next attempt does not begin by repeating them.
 | Reading the death table without reading the larder | "Despair ends more runs than hunger, cold and steel put together" stood for three audits, sent three sweeps of the morale levers to nothing, and is a large part of why the kin system exists. Measured with the STATE at the moment of death: 28 of 30 despair endings had an empty store, averaging one food. It was hunger under another name, and the ending told the player to manage morale. **A cause is not a diagnosis. Record the state, not just the label.** |
 | `SHELTER_SAVES` at 1.0 | Fixed survival and broke the game's central promise. `SHELTER_MAX` is 6, so 1.0 means a fully built steading cancels an ordinary winter's burn outright — and over 24 winters, heeding the mark against ignoring it went 19/6 at 0.7, 19/8 at 0.8, **19/17 at 1.0**. Preparing for winter had stopped mattering. Settled at 0.8. |
 | "Easier fights settle bands sooner, so they stop walking past the markets" | The hypothesis that held hardship-steel off the tree for a day, and it is false in every term. Settle-rate 28/30 either way, founding day 13.1 either way, road-days 460 → 432, sagas reaching a counter 6/60 → 6/60. The real fault was the bar: `markets` counted trade DAYS, and twelve of fourteen came from one band that settled beside a live counter. **A count of days is not a count of reach.** |
+| "Word of mouth is what starves the place economy — widen it" | Aimed at a real constraint and measured as a weak, saturating lever. Telling more than one place per bargain does **nothing at all** (2 and 3 byte-identical to 1, at every range — and the mechanism was checked to fire before the null was believed): at bargain time there is never more than one unseen place in a teller's reach. Widening the RANGE moves places-ever-seen 53/120 → 59 at sixteen → 61 at twenty, where twenty already covers the whole coast. The tap is the number of bargains (~1–2 a saga), not the width of the pipe. |
 | "A band that trades out beats one that never leaves" | Held on a margin of ONE seed in eight, which by this repo's own noise floor is weather. At 24 seeds the survival arms sit level or behind (19 against 21) — correctly, because the roof is a home thing. What going out actually buys is stores: nearly 4× the timber home. Bar rewritten to the effect that is real. |
 
 **The lesson under most of these:** four null results in one day, and the
@@ -1657,6 +1658,50 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-13 — The place economy: discovery is the constraint, and word of
+  mouth cannot fix it** — Task 33 was closed with "the four on a coast are
+  one-shot: taken early, or never known at all." A probe that follows every
+  place from unknown to emptied says the first half is **false**, and the
+  correction matters because it points somewhere else entirely.
+
+  Thirty landings a policy, A Fair Country, 4 places a world:
+
+  | | places | ever seen | emptied | known and still standing at the end |
+  | --- | --- | --- | --- | --- |
+  | settler | 120 | **53 (44%)** | **11** | **42** |
+  | raider | 120 | 31 (26%) | 8 | 23 |
+  | turtle | 120 | 13 (11%) | 0 | 13 |
+
+  The coast is barely touched — eleven of a hundred and twenty emptied over
+  thirty settler sagas, against forty-two left known and standing at the end.
+  Places are not consumed. They are never LEARNED, and a place is first seen
+  on day 74 on average, well after the band has settled and stopped walking.
+
+  Three things follow. The strandhögg's bottleneck is one number: **4 days
+  afloat beside a place out of 4,949**, and the raider converts those 4 of 4
+  — the verb was never the problem, being there is. **The town is seen in 21
+  of 90 sagas**, which independently explains this morning's markets finding:
+  "6 of 60 sagas reach a counter" was never about counters being burned, it
+  is that three quarters of bands never learn the town exists. Two probes,
+  one root cause. And discovery already runs mostly on word of mouth — 32 of
+  the settler's 53 come across a counter via `tellOfPlace`, while the turtle,
+  who never trades, sees 13 of 120.
+
+  **So word of mouth was widened, and it does not work.** Telling more than
+  one place per bargain is byte-identical to telling one, at every range
+  tried — and the mechanism was checked to fire first, so the null is real:
+  the candidate set at bargain time is size 0 or 1. Widening the range moves
+  places-ever-seen 53 → 59 at sixteen → 61 at twenty, saturating, where
+  twenty is wider than the radius places are seeded in. Both knobs are left
+  where they were with the measurement written at each, because the finding
+  is that **the tap is the number of bargains, not the width of the pipe**,
+  and no amount of widening fixes an event that happens once or twice a saga.
+
+  What that indicates, unbuilt: a discovery channel that is not a bargain.
+  The sim already models `onHighGround`, `sightRadius` and `hasLineOfSight`,
+  so a landmark sighted from a ridge is nearly free, and it is the only
+  candidate that helps a band which never trades.
 
 - **2026-08-13 — Hardship reaches combat, and a floor that was measuring
   nothing** — `steel` on `HardshipDef` (+1 fair, 0 even, -1 hard) is in,

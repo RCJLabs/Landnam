@@ -62,8 +62,33 @@ export function seedPlaces(world: World, rng: Rng): Place[] {
 /**
  * How far a neighbour's own knowledge of the coast reaches. They know their
  * stretch of it, not the whole island.
+ *
+ * Twelve, and widening it was measured on 2026-08-13 as a weak, saturating
+ * lever: over thirty settler landings the places a band ever learns of go
+ * 53 of 120 at this range, 59 at sixteen and 61 at twenty, where twenty is
+ * wider than the sixteen-hex radius places are seeded in — a teller who
+ * knows the entire coast. Left at twelve, because the gain is inside what
+ * this harness resolves and the cost is the sentence above becoming false.
+ * The constraint is not what one bargain tells you; see TOLD_AT_ONCE.
  */
 export const TOLD_RANGE = 12;
+
+/**
+ * How many places one bargain is worth.
+ *
+ * ONE, and raising it is measured as doing NOTHING — 2 and 3 are
+ * byte-identical to 1 at every range tried (2026-08-13). Not because the
+ * knob is inert: with two unseen places inside a teller's reach the
+ * function names two, checked directly before the null was believed. It is
+ * that at bargain time there is essentially never more than one unseen
+ * place within reach, so the candidate set is size 0 or 1 and a bigger
+ * slice takes the same one place.
+ *
+ * Kept as a named constant rather than folded back into the code because
+ * the number is now a MEASUREMENT — the next reader who reaches for "tell
+ * them about more of the coast" can see it was tried.
+ */
+export const TOLD_AT_ONCE = 1;
 
 /**
  * What a trader tells you while the goods are being weighed.
@@ -80,23 +105,23 @@ export const TOLD_RANGE = 12;
  * could plausibly know. Returns what was named, or nothing.
  */
 export function tellOfPlace(state: GameState, from: Hex, teller: string): Place | undefined {
-  let told: Place | undefined;
-  let bestD = TOLD_RANGE + 1;
-  for (const p of state.world.places) {
-    if (state.world.seen[key(p.at)] !== undefined) continue;
-    const d = distance(p.at, from);
-    if (d < bestD) { bestD = d; told = p; }
+  const near = state.world.places
+    .filter((p) => state.world.seen[key(p.at)] === undefined
+      && distance(p.at, from) <= TOLD_RANGE)
+    .sort((a, b) => distance(a.at, from) - distance(b.at, from))
+    .slice(0, TOLD_AT_ONCE);
+  if (near.length === 0) return undefined;
+  for (const told of near) {
+    state.world.seen[key(told.at)] = 'seen';
+    const def = placeKind(told.kind);
+    chronicle(
+      state,
+      `They talked while the goods were weighed. There is ${def.name} off that way, ` +
+        `and ${teller} were content that we should know it.`,
+      'plain',
+    );
   }
-  if (!told) return undefined;
-  state.world.seen[key(told.at)] = 'seen';
-  const def = placeKind(told.kind);
-  chronicle(
-    state,
-    `They talked while the goods were weighed. There is ${def.name} off that way, ` +
-      `and ${teller} were content that we should know it.`,
-    'plain',
-  );
-  return told;
+  return near[0];
 }
 
 // --- Dealing across a counter ---
