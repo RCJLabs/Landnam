@@ -112,6 +112,39 @@ without guessing:
   significant digits. Left to a runtime's shortest-round-trip printing, two
   languages disagree quietly about identical values. `-0` hashes as `0`.
 
+## The ramp: one bar per verb
+
+Porting `apply()` needs a finer instrument than the facets. The scripted runs
+checkpoint at 10, 50 and 100 percent, and **ten percent of a 1320-action
+script is action 132** — a hundred days and a dozen verbs in. A port with
+`CAMP` wrong and `MOVE` right fails there with no way to tell which. That is
+the all-or-nothing bar again, one level below where facets solved it.
+
+So every scripted run also carries a checkpoint **immediately after the first
+appearance of each action type**, plus a doubling scale through the opening.
+Each one records the `action` that got there and is flagged `firstOf` when it
+is a verb's first outing, so a red mark names the thing to go and look at.
+
+`runs/long.json` is the ladder worth porting against:
+
+| after | action | what it first exercises |
+| --- | --- | --- |
+| 1 | `MOVE` | travel, a day passing |
+| 9 | `CHOOSE` | the event deck |
+| 10 | `DISMISS_EVENT` | event teardown |
+| 11 | `FOUND` | a settlement exists |
+| 12 | `ENTER_COLONY` | the mode stack |
+| 13 | `ASSIGN` | jobs |
+| 19 | `QUEUE_BUILD` | the build queue |
+| 21 | `LEAVE_COLONY` | popping the stack |
+| 22 | `CAMP` | the day cycle and upkeep |
+
+`runs/example.json` adds `FORAGE` at 1 and `B_END_TURN` at 17, which is the
+first battle turn. Implement one verb, watch one mark go green.
+
+Each run also carries `actionCounts`, so the order to implement verbs in can
+be read off rather than discovered by failing.
+
 ## How to use it from the C++ side
 
 1. Load `parity.json`. For each run, take `seed` and `hardship`.

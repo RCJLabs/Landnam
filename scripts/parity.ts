@@ -45,28 +45,74 @@ const SCRIPTED = ['runs/example.json', 'runs/long.json'];
 /**
  * Where along a run to take a reading.
  *
- * Fractions of the script rather than fixed indices, so the checkpoints stay
- * meaningful when a script is re-recorded — and one at 0, because the state
- * before anybody acts is the one a port can match on day one.
+ * Fractions of the script, so the checkpoints stay meaningful when a script
+ * is re-recorded — and one at 0, because the state before anybody acts is
+ * the one a port can match on day one.
  */
 const AT = [0, 0.1, 0.5, 1];
 
+/**
+ * The RAMP: a checkpoint immediately after the first time each action type
+ * appears, plus a doubling scale through the opening.
+ *
+ * The fractions above are the wrong instrument for porting `apply()`. Ten
+ * percent of a 1320-action script is action 132, by which point a hundred
+ * days have passed and a dozen verbs have fired — so a port that gets CAMP
+ * wrong and MOVE right fails at 132 with no way to tell which. That is the
+ * all-or-nothing bar again, one level down from the facets it was solved at.
+ *
+ * So: one bar per verb, at the exact action that first exercises it. Land
+ * `MOVE` and the first mark goes green; land `CAMP` and the next one does.
+ * The doubling marks catch what only shows up with accumulation — a day
+ * counter that drifts, stores that round the wrong way — which a
+ * first-occurrence mark never would.
+ */
+const DOUBLING = [1, 2, 3, 5, 8, 13, 21, 34, 55];
+
+function rampMarks(actions: Action[]): number[] {
+  const marks = new Set<number>([0]);
+  const seen = new Set<string>();
+  actions.forEach((action, i) => {
+    if (seen.has(action.type)) return;
+    seen.add(action.type);
+    // AFTER the action, so the checkpoint shows what it did.
+    marks.add(i + 1);
+  });
+  for (const n of DOUBLING) if (n <= actions.length) marks.add(n);
+  for (const f of AT) marks.add(Math.floor(actions.length * f));
+  return [...marks].sort((a, b) => a - b);
+}
+
 interface Checkpoint {
   afterActions: number;
+  /** The action type that got here, so a red mark names the verb to look at. */
+  action: string | null;
+  /** True when this is the FIRST time that verb appears — the ramp's rungs. */
+  firstOf?: true;
   day: number;
   refusedSoFar: number;
   facets: Record<string, unknown>;
 }
 
 function checkpointsOf(seed: string, hardship: HardshipId | undefined, actions: Action[]) {
-  const marks = [...new Set(AT.map((f) => Math.floor(actions.length * f)))].sort((a, b) => a - b);
+  const marks = rampMarks(actions);
+  const firstSeen = new Map<string, number>();
+  actions.forEach((a, i) => { if (!firstSeen.has(a.type)) firstSeen.set(a.type, i); });
   let state = structuredClone(newGame(seed, hardship));
   const out: Checkpoint[] = [];
   let refused = 0;
 
   for (let i = 0; i <= actions.length; i += 1) {
     if (marks.includes(i)) {
-      out.push({ afterActions: i, day: state.day, refusedSoFar: refused, facets: readAll(state) });
+      const last = i > 0 ? actions[i - 1] : undefined;
+      out.push({
+        afterActions: i,
+        action: last?.type ?? null,
+        ...(last && firstSeen.get(last.type) === i - 1 ? { firstOf: true as const } : {}),
+        day: state.day,
+        refusedSoFar: refused,
+        facets: readAll(state),
+      });
     }
     const action = actions[i];
     if (!action) break;
@@ -101,6 +147,16 @@ const runs = [
       hardship: script.hardship ?? null,
       script: path,
       worldHash: worldHash(newGame(script.seed, script.hardship) as GameState),
+      // What this run exercises and how often, so a porter can pick the
+      // order to implement verbs in rather than discovering it by failing.
+      actionCounts: Object.fromEntries(
+        Object.entries(
+          script.actions.reduce<Record<string, number>>((a, x) => {
+            a[x.type] = (a[x.type] ?? 0) + 1;
+            return a;
+          }, {}),
+        ).sort((a, b) => b[1] - a[1]),
+      ),
       checkpoints: checkpointsOf(script.seed, script.hardship, script.actions),
     };
   }),

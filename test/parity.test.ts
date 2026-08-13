@@ -33,6 +33,8 @@ import type { GameState, HardshipId } from '../src/state/types';
 
 interface Checkpoint {
   afterActions: number;
+  action: string | null;
+  firstOf?: true;
   day: number;
   refusedSoFar: number;
   facets: Record<string, FacetReading>;
@@ -42,6 +44,7 @@ interface Run {
   seed: string;
   hardship: HardshipId | null;
   script: string | null;
+  actionCounts?: Record<string, number>;
   worldgenHash?: string;
   worldHash: string;
   checkpoints: Checkpoint[];
@@ -83,6 +86,35 @@ describe('the parity fixture is not stale', () => {
     // that reaches battle and colony at all.
     expect(fixture.runs.some((r) => r.script === null)).toBe(true);
     expect(fixture.runs.some((r) => r.script !== null)).toBe(true);
+  });
+
+  /**
+   * The ramp: one bar per verb, at the action that first exercises it.
+   *
+   * Without this the scripted runs only checkpoint at 10, 50 and 100 percent,
+   * and ten percent of a 1320-action script is action 132 — a hundred days
+   * and a dozen verbs in. A port that had CAMP wrong and MOVE right would
+   * fail there with no way to tell which, which is the all-or-nothing bar the
+   * facets exist to avoid, one level down.
+   */
+  it('puts a checkpoint after the first appearance of every action type', () => {
+    for (const run of fixture.runs) {
+      if (!run.script) continue;
+      const actions = actionsFor(run);
+      const firstOf = new Map<string, number>();
+      actions.forEach((a, i) => { if (!firstOf.has(a.type)) firstOf.set(a.type, i); });
+      const marks = new Set(run.checkpoints.map((c) => c.afterActions));
+      for (const [type, at] of firstOf) {
+        expect(marks.has(at + 1), `${run.script}: nothing checks the first ${type} (action ${at})`)
+          .toBe(true);
+      }
+      // And every checkpoint says which verb got it there, so a red mark
+      // names the thing to go and look at.
+      for (const c of run.checkpoints) {
+        if (c.afterActions === 0) expect(c.action).toBeNull();
+        else expect(c.action, `${run.script} @${c.afterActions}`).toBe(actions[c.afterActions - 1]!.type);
+      }
+    }
   });
 
   /**
