@@ -80,6 +80,15 @@ export const BAND_BASE = 6;
 export const HEARTH_SHARE = 0.55;
 
 /**
+ * How long a burial hangs over the band's moods.
+ *
+ * Was a bare `3` in `passDay`. It is exported because the C++ port generates
+ * its constants from this file rather than retyping them, and a number the
+ * two builds have to agree on cannot live inside an expression.
+ */
+export const GRIEF_DAYS = 3;
+
+/**
  * What tonight actually costs. Seeded, because how hard THIS winter is was
  * decided when the run was — see winterDepth in calendar.ts — and scaled by
  * how many are round the fire.
@@ -234,7 +243,7 @@ export function passDay(state: GameState): boolean {
   // What the band makes of all this. Moods move first, then bad blood, then
   // whatever bad blood has been left to go bad.
   const grieving = state.party.people.some(
-    (p) => !p.alive && p.diedOn !== undefined && state.day - p.diedOn <= 3,
+    (p) => !p.alive && p.diedOn !== undefined && state.day - p.diedOn <= GRIEF_DAYS,
   );
   const pressure = { hungry, cold, grieving };
   driftMoods(state, pressure);

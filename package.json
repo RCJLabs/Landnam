@@ -16,7 +16,8 @@
     "publish": "npm run build && node scripts/publish.mjs",
     "parity": "vite-node scripts/parity.ts --",
     "party-tables": "vite-node scripts/party-tables.ts -- port/LandnamPartyTables.generated.h",
-    "event-tables": "vite-node scripts/event-tables.ts -- port/LandnamEventTables.generated.h"
+    "event-tables": "vite-node scripts/event-tables.ts -- port/LandnamEventTables.generated.h",
+    "battle-tables": "vite-node scripts/battle-tables.ts -- port/LandnamBattleTables.generated.h"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

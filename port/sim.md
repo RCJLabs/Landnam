@@ -419,6 +419,161 @@ Three things worth keeping from it:
 - **`nextId` had to become a real field.** It was a headcount plus one, which
   is true right up until somebody joins and somebody else dies.
 
+### The sixth rung: the field
+
+`field` is the one facet that has only ever been `{}`, and both scripts stop
+at the same verb. The smaller of the two openings is the one to take:
+**`runs/example.json` @16**, where a card's outcome is dismissed and a fight
+appears. Every action before it — `FORAGE`, `MOVE`, `CHOOSE`,
+`DISMISS_EVENT` — is already in the harness's vocabulary, so the rung needs
+no new verb to be REACHED, only one (`B_END_TURN`) to be carried past.
+
+Measured first, as every rung before it. At @16 the `field` facet is 5289
+characters where it was 2, and `run` has shrunk from 819 to 303 — the card
+gone, `BATTLE` on the mode stack, `battles` counted. Five foes, six of ours,
+eleven combatants, a 7×9 grid, an initiative order, one log line and **two
+beats**. `battle.beats` is hashed: the `beats` that `port/sim.md` excludes
+from the facets is the top-level presentation stream, not the fight's own,
+which lives inside the `battle` object and is 173 of those 5289 characters.
+
+**The draw order, written out before any C++.** One derived generator per
+concern, and inside `generateBattlefield` one draw per hex in a fixed sweep:
+
+1. `pushMode('BATTLE')`.
+2. `rng = stream(seed,'combat').derive("battle:" + day + ":" + key(at))` —
+   `"raid:"` when it is a raid, which is a different stream entirely.
+3. `pickSeaField` only on ocean, `pickRaidField` only on a raid: **neither
+   draws here**, and getting that wrong would shift everything after it.
+4. `generateBattlefield(terrain, rng.derive('ground'))` — `rng.next()` once
+   per NON-deployment hex, **row-major, rows 2 to 6, columns 0 to 6**: 35
+   draws. Deployment rows (0, 1, 7, 8) are open ground and take no draw.
+   Then `ensureCrossable` draws `int(1,5)` only if no column runs walkable
+   end to end, and `ensureFront` draws `pick(MIDDLE_ROWS)` and `int(0,3)`
+   only if no middle row can hold four abreast. Both are conditional, and
+   both are counted before they are needed.
+5. `rollFoes(rng.derive('foes'), ...)`, and the two draw sites **alternate**:
+   `weighted(FOE_ARCHETYPES)` for each foe, then that foe's own draws, then
+   the next foe's archetype. Per foe: the stat loop, then `name`, `byname`,
+   `age` — in the object literal's source order, which is where they happen.
+   The stat loop **draws on every iteration, including the ones that hit the
+   cap of 6 and change nothing**, so the number of draws a foe costs depends
+   on what it rolled.
+6. `anointChampion(foes, rng.derive('champion'))` — only when two or more
+   stand and either it is a raid or word has spread. On day 15 with nothing
+   sacked, `wordBump` is nought and no champion is raised.
+7. Deployment takes **no draws at all**: `place()` scores every free spot by
+   elbow room and centring and takes the first best, ours then theirs.
+8. `startingNerve` per combatant — no draws — then
+   `rollInitiative(rng.derive('initiative'))`, **one `roll(1,6)` per
+   combatant in the order they were placed**, sorted afterwards by
+   initiative and then by personId.
+9. `refreshTurn`, and then `playUntilOurTurn` runs foe turns until the
+   warband has the field. Each blow derives its own generator from
+   `label:day:round:turnIndex`, which is the positionless pattern again — a
+   foe's swing cannot be moved by what any other foe did.
+
+The AI is deterministic apart from those blows, and its scoring is where a
+port goes quietly wrong: `positionScore` is compared with a strict `>` and
+the reach map is walked in insertion order, so two hexes that score alike
+are decided by which one Dijkstra found first.
+
+**It matched on the first run, and that is what the draw order buys.**
+`Sim/LandnamBattle.{h,cpp}` is about twelve hundred lines and it went green
+at `runs/example.json` @16, @17, @21, @31 and @34 without a single failed
+attempt — the ground, the five foes, the deployment, the initiative order,
+the log line, the beats, and then thirty-five turns of fighting with strikes,
+glances, shoves, thrown spears, broken nerve and men going down. **33
+checkpoints across two runs.** Run it past the last vector and it keeps
+matching to @51, which is the whole fight.
+
+Three things are worth writing down, because none of them would have been
+found by reading:
+
+- **`battle.beats` is hashed and the top-level `beats` is not.** They are
+  different streams with the same name. The facet table above excludes the
+  presentation window because it is capped and two implementations may
+  legitimately hold different parts of it; the fight's own stream lives
+  INSIDE the battle object, is 173 characters of the first checkpoint, and
+  has to match exactly. The port stores each beat as its finished canonical
+  text at the moment it is emitted — a beat is a record and nothing ever
+  reads one back, so the only property it needs is the string it hashes to,
+  and nine shapes with different optional fields are far safer sorted once
+  than modelled twice.
+- **A JavaScript `Map` iterates in insertion order, and the AI leans on it.**
+  `reachWithZoc` returns one, `reposition` walks it comparing with a strict
+  `>`, and two hexes that score alike are settled by which one the search
+  reached first. A `std::map` would have sorted them and played a different,
+  perfectly plausible fight. Same lesson as `Range` in the third rung, one
+  level up: a container that is only ever a set is a fine place to take a
+  shortcut right until somebody iterates it.
+- **The deployment rows take no draw at all.** `generateBattlefield` rolls
+  once per hex only where the ground is not a deployment row — 35 of 63 — so
+  a port that rolled for the whole grid would be 28 draws ahead by the time
+  it rolled the foes, and every foe on the field would be a different man.
+
+And one thing the rung fixed on the way past: the run facet's `tally` was
+nine literal noughts with `seaDays` carried beside it. True for exactly as
+long as nothing could count a fight.
+
+### The seventh rung: what the field leaves behind, and the last page
+
+`B_LEAVE` at @51, the reckoning at @52, and then the run simply ends. **All
+nineteen checkpoints of `runs/example.json` are green — the whole script, 62
+actions, from the landing to the last page.** With `runs/long.json` @0
+through @660 that is **37 checkpoints across two countries**.
+
+It is three things that only look like one:
+
+- **`settleAftermath`.** Who was dragged off the field lives, is maimed or is
+  not: `roll(2,6) + floor(spirit/2)` against a bonus that says whether the
+  ground was held, broken off, or lost. Then the loot, then what the living
+  learned. `rollFate` reads the RAW spirit — `person.stats.spirit`, not
+  `effectiveStat` — so the wounds a man is already carrying do not decide
+  whether the next one kills him.
+- **Injuries stopped being a count.** `FSimPerson::Injuries` had been an
+  `int32_t` for five rungs and that was RIGHT: the only thing that looked at
+  them was the mood target, which takes 9 off per injury. The aftermath is
+  where a wound starts subtracting from a swing, so labels, stat penalties
+  and healing times all had to become real — and `mendInjuries` with them,
+  which had been an evaluated gate reporting itself since the first rung.
+  The `effect` is a *partial*: the stats a wound does not touch are ABSENT
+  from the canonical form, never written as nought, which is why the
+  generated table carries a present-flag beside every number.
+- **`end` was the last field of the run facet nothing could write.** Every
+  path that would set one reported itself in `Unported` instead — honest,
+  and not the same as playing a run to its end. As It Lies closes on day 22
+  with five of six alive, no firewood, thirty food and no heart left: the
+  ending is `despair`, and it is the branch's own distinction that decides
+  it — a band that breaks with an EMPTY store is told it starved, because
+  that is what happened and it is what they could have done something about.
+  Thirty in the larder is the case despair was always for.
+
+Two draw orders inside it, both written down before the code and both
+right first time: `maim` draws the 0.18 chance BEFORE it picks the template
+off whichever table that chose, and the loot draws food's multiplier before
+firewood's off one generator. Named locals for both, because `+` still does
+not sequence its operands in C++.
+
+**And `Apply` had to be put back in `apply`'s order.** The port had answered
+the CARD first and then routed by mode, which is the other way round from
+`apply` — the aftermath sits between the colony verbs and the card, and it
+has a visible consequence: a band standing on its own hearth can step into
+the colony with its dead still unnamed. Nothing had ever collided, because
+`dismissEvent` clears the card before it draws steel. Moving it surfaced one
+real thing the old order had been hiding for free: `ENTER_COLONY` refuses
+while a card is on the table, and it refuses because IT checks, not because
+something upstream got there first.
+
+### `runs/long.json` @852 is a RAID, and the harness says so
+
+The obvious next step was the fight in the long run, and it is a different
+one: the port reaches @852 and stops with `maybeRaid: somebody came over the
+ridge`. A raid is fought on an authored approach filtered by what the
+steading holds, defended by whoever stayed behind rather than by the sworn,
+and settled by holding or losing the ground. Three facets still match there,
+which is the ramp doing its job — the disagreement is named and bounded
+rather than being "the states differ".
+
 ### Two runs, not one — and what the second one found
 
 `runs/example.json` is the same seed with **no terms named**, which defaults
@@ -503,7 +658,9 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/Sim/LandnamDay.{h,cpp}` | **stage 5**: the day cycle and `MOVE` |
 | `Source/LandnamUE/Sim/LandnamEvents.{h,cpp}` | **stage 5**: the event deck |
 | `Source/LandnamUE/Sim/LandnamSteading.{h,cpp}` | **stage 5**: the steading and the work pass |
+| `Source/LandnamUE/Sim/LandnamBattle.{h,cpp}` | **stage 5**: the field, the turn cycle and the foe AI |
 | `Source/LandnamUE/Sim/LandnamEventTables.generated.h` | the deck, from `npm run event-tables` |
+| `Source/LandnamUE/Sim/LandnamBattleTables.generated.h` | foes, ground and lore, from `npm run battle-tables` |
 | `Source/LandnamUE/Sim/LandnamCanon.{h,cpp}` | the canonical form, in the sim core's own types |
 | `Tools/parity-harness.cpp`, `Tools/run-parity.sh` | the standalone `g++` check |
 | `Source/LandnamUE/Sim/LandnamPartyTables.generated.h` | names and traits, from `npm run party-tables` |

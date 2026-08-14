@@ -20,6 +20,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { renderPartyTables } from '../scripts/party-tables';
 import { renderEventTables } from '../scripts/event-tables';
+import { renderBattleTables } from '../scripts/battle-tables';
 
 const HEADERS = [
   {
@@ -31,6 +32,11 @@ const HEADERS = [
     path: 'port/LandnamEventTables.generated.h',
     render: renderEventTables,
     command: 'npm run event-tables',
+  },
+  {
+    path: 'port/LandnamBattleTables.generated.h',
+    render: renderBattleTables,
+    command: 'npm run battle-tables',
   },
 ];
 
@@ -67,5 +73,19 @@ describe('the generated port tables', () => {
     const header = readFileSync('port/LandnamEventTables.generated.h', 'utf8');
     const found = [...header.matchAll(/^\t\{ "([a-z0-9-]+)", /gm)].map((m) => m[1]);
     expect(found).toEqual(EVENTS.map((e) => e.id));
+  });
+
+  /**
+   * And the foe table's order is part of every fight, for the same reason:
+   * `rollFoes` hands FOE_ARCHETYPES to the same `rng.weighted`. Reorder it
+   * and every seed fields a different band, on ground that still hashes
+   * correctly — which is exactly the kind of divergence that reads as a
+   * disagreement about the rules rather than about a list.
+   */
+  it('writes the foe archetypes in declaration order', async () => {
+    const { FOE_ARCHETYPES } = await import('../src/data/foes');
+    const header = readFileSync('port/LandnamBattleTables.generated.h', 'utf8');
+    const found = [...header.matchAll(/^\t\t\{ "([a-z]+)", "[A-Z]/gm)].map((m) => m[1]);
+    expect(found).toEqual(FOE_ARCHETYPES.map((a) => a.id));
   });
 });

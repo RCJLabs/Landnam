@@ -25,13 +25,18 @@
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
 > (C++), item 5 (parity CI) is BUILT on both sides, and the rules port is
-> green at `runs/long.json` @0 through @660 AND `runs/example.json` @0
-> through @13 — 27 checkpoints, 660 actions, 248 days, every facet — and the
-> harness runs itself in CI.**
+> green at `runs/long.json` @0 through @660 AND at ALL of
+> `runs/example.json` — 37 checkpoints, every facet — with the harness
+> running itself in CI. THE FIELD IS PORTED: `field` was the one facet that
+> had only ever been `{}`, and a whole fight now matches to the character —
+> ground, foes, initiative, thirty-five turns, the beats, the battle log,
+> the dead and the maimed, and the last page of the saga.**
 >
-> **NEXT: the BATTLE, at `runs/long.json` @852. It is the one facet that has
-> only ever been `{}`, and the harness stops exactly there: "action
-> B_END_TURN is past this rung."**
+> **NEXT: the RAID, which is what `runs/long.json` @852 turns out to be. The
+> harness names it — "maybeRaid: somebody came over the ridge" — and it is a
+> different fight: authored ground filtered by what the steading holds,
+> defended by whoever stayed behind, and settled by holding or losing the
+> place.**
 
 ---
 
@@ -1775,6 +1780,41 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-14 — The field, and the last page** — `field` was the one facet
+  that had only ever been `{}`. It is not now. `Sim/LandnamBattle.{h,cpp}`
+  ports the whole of a fight — the ground rolled from the country, the foes,
+  the deployment, initiative, the turn cycle, the foe AI's three
+  temperaments, all five things a fighter can do, nerve and the shield wall
+  — and it matched at `runs/example.json` @16 on the FIRST RUN, and kept
+  matching through thirty-five turns of it. Then the aftermath: who lives,
+  who is maimed, what was stripped off the field, and what the living
+  learned. Then the run simply ends, on day 22: As It Lies leaves five of six
+  alive with no firewood and no heart left, and `end` was the last field of
+  the run facet that nothing in the port could write.
+
+  **37 checkpoints green: ALL of `runs/example.json` — the whole 62-action
+  script, landing to last page — and `runs/long.json` @0 through @660.**
+
+  Three things are worth keeping from it. **`battle.beats` is hashed and the
+  top-level `beats` is not**; they are different streams with the same name,
+  and the fight's own is 173 characters of the first checkpoint. **A
+  JavaScript `Map` iterates in insertion order and the battle AI leans on
+  it** — `reposition` compares scores with a strict `>`, so two hexes that
+  score alike are settled by which one the search reached first, and a
+  `std::map` would have sorted them and played a different, perfectly
+  plausible fight. **The deployment rows take no draw**: 35 hexes of 63 are
+  rolled for, and a port that rolled the whole grid would have fielded five
+  different men.
+
+  Two things stopped being placeholders on the way past. The run facet's
+  `tally` was nine literal noughts — true right up until something could
+  count a fight. And `FSimPerson::Injuries` was a COUNT, which was right
+  while only the mood target looked at it and wrong the moment a wound
+  started subtracting from a swing.
+
+  `runs/long.json` @852 turns out to be a RAID, and the harness names it in
+  those words rather than reporting a disagreement about the rules.
 
 - **2026-08-13 — Half the script** — The two blockers the port named at @132
   were the last big ones this side of a fight. `neighboursCallOn` and the
