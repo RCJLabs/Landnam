@@ -737,6 +737,14 @@ on every run**, which costs about a second and is the closest this repo can
 get to proving the editor build without an editor. CI runs it on every push.
 It is a bar that was failing the entire time nobody had written it.
 
+**And the generated headers are `*.gen.h` now, not `*.generated.h`.** That
+suffix is UnrealHeaderTool's, and this module really does have `UCLASS` and
+`USTRUCT` types in it, so UHT runs and writes files by exactly that name
+into `Intermediate/`. Three hand-written tables sitting in `Source/` under
+the tool's reserved convention is a collision waiting for a build nobody has
+done yet — and it misleads a human reader too, who would reasonably assume
+UHT produced them.
+
 ### Two runs, not one — and what the second one found
 
 `runs/example.json` is the same seed with **no terms named**, which defaults
@@ -822,11 +830,11 @@ choices. It is the earliest possible warning and it says *where*.
 | `Source/LandnamUE/Sim/LandnamEvents.{h,cpp}` | **stage 5**: the event deck |
 | `Source/LandnamUE/Sim/LandnamSteading.{h,cpp}` | **stage 5**: the steading and the work pass |
 | `Source/LandnamUE/Sim/LandnamBattle.{h,cpp}` | **stage 5**: the field, the turn cycle and the foe AI |
-| `Source/LandnamUE/Sim/LandnamEventTables.generated.h` | the deck, from `npm run event-tables` |
-| `Source/LandnamUE/Sim/LandnamBattleTables.generated.h` | foes, ground and lore, from `npm run battle-tables` |
+| `Source/LandnamUE/Sim/LandnamEventTables.gen.h` | the deck, from `npm run event-tables` |
+| `Source/LandnamUE/Sim/LandnamBattleTables.gen.h` | foes, ground and lore, from `npm run battle-tables` |
 | `Source/LandnamUE/Sim/LandnamCanon.{h,cpp}` | the canonical form, in the sim core's own types |
 | `Tools/parity-harness.cpp`, `Tools/run-parity.sh` | the standalone `g++` check |
-| `Source/LandnamUE/Sim/LandnamPartyTables.generated.h` | names and traits, from `npm run party-tables` |
+| `Source/LandnamUE/Sim/LandnamPartyTables.gen.h` | names and traits, from `npm run party-tables` |
 | `Content/Data/parity.json`, `Content/Data/runs/*.json` | copies of the files above |
 
 **`LandnamCanonical` is ported first on purpose.** Every facet of every

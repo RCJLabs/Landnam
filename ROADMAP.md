@@ -1825,7 +1825,9 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   LandnamCanon.h says was already consolidated. All fixed by having one of
   each, and `Tools/run-parity.sh` compiles the whole core as one translation
   unit now, on every run and in CI. A bar that was failing the entire time
-  nobody had written it.
+  nobody had written it. The generated tables are `*.gen.h` rather than
+  `*.generated.h` with them: that suffix belongs to UnrealHeaderTool, which
+  really does run on this module.
 
   What that leaves is the thing this port has never had. `Landnam.SimParity`
   has still never been run in a real Unreal editor. The sim core is proven

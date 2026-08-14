@@ -24,17 +24,17 @@ import { renderBattleTables } from '../scripts/battle-tables';
 
 const HEADERS = [
   {
-    path: 'port/LandnamPartyTables.generated.h',
+    path: 'port/LandnamPartyTables.gen.h',
     render: renderPartyTables,
     command: 'npm run party-tables',
   },
   {
-    path: 'port/LandnamEventTables.generated.h',
+    path: 'port/LandnamEventTables.gen.h',
     render: renderEventTables,
     command: 'npm run event-tables',
   },
   {
-    path: 'port/LandnamBattleTables.generated.h',
+    path: 'port/LandnamBattleTables.gen.h',
     render: renderBattleTables,
     command: 'npm run battle-tables',
   },
@@ -70,7 +70,7 @@ describe('the generated port tables', () => {
    */
   it('writes the event deck in declaration order', async () => {
     const { EVENTS } = await import('../src/data/eventCards');
-    const header = readFileSync('port/LandnamEventTables.generated.h', 'utf8');
+    const header = readFileSync('port/LandnamEventTables.gen.h', 'utf8');
     const found = [...header.matchAll(/^\t\{ "([a-z0-9-]+)", /gm)].map((m) => m[1]);
     expect(found).toEqual(EVENTS.map((e) => e.id));
   });
@@ -84,7 +84,7 @@ describe('the generated port tables', () => {
    */
   it('writes the foe archetypes in declaration order', async () => {
     const { FOE_ARCHETYPES } = await import('../src/data/foes');
-    const header = readFileSync('port/LandnamBattleTables.generated.h', 'utf8');
+    const header = readFileSync('port/LandnamBattleTables.gen.h', 'utf8');
     const found = [...header.matchAll(/^\t\t\{ "([a-z]+)", "[A-Z]/gm)].map((m) => m[1]);
     expect(found).toEqual(FOE_ARCHETYPES.map((a) => a.id));
   });
