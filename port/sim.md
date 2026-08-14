@@ -392,6 +392,33 @@ It was already wrong before this rung and nobody could have known: the
 size check would have failed by two the first time anyone opened the editor —
 on a state it had computed perfectly.
 
+### The fifth rung: half the script
+
+The two blockers the port named at @132 turned out to be the last big ones on
+this side of a fight. `neighboursCallOn` and the winter FORECAST both landed
+first try, and then @660 named `maybeJoin` — people actually arriving — and
+`takeIn` opened two more gates behind it, `handsLeave` and `stirGrudges`,
+because a joiner arrives at 45 morale and that is what makes both of those
+possible at all.
+
+**27 checkpoints green: `runs/long.json` @0 through @660 and
+`runs/example.json` @0 through @13.** Six hundred and sixty actions, two
+hundred and forty-eight days, six facets each. The stop is `B_END_TURN` at
+@852 — the battle, and `field` is the one facet that has only ever been `{}`.
+
+Three things worth keeping from it:
+
+- **The forecast is the only place a `hardship` term is applied
+  asymmetrically.** `plannedFirewood` does NOT multiply the non-winter branch
+  by the country's terms and does multiply the other two. Tidying that into
+  consistency would forecast a different summer.
+- **`takeIn` reuses `makePerson` exactly**, bond and all — somebody who walks
+  up the strand is drawn from the same sequence as somebody who stepped off
+  the knarr, because `bond` is a plain parameter and takes no draw. That is
+  what made the rung small.
+- **`nextId` had to become a real field.** It was a headcount plus one, which
+  is true right up until somebody joins and somebody else dies.
+
 ### Two runs, not one — and what the second one found
 
 `runs/example.json` is the same seed with **no terms named**, which defaults

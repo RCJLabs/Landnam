@@ -381,6 +381,11 @@ namespace Tables
 	constexpr double WatchQuiet = 0.07;
 	/** The day the dark closes in, and the day the telegraph stops warning. */
 	constexpr int32_t WinterDay = 49;
+	/** The winter mark: what it asks for over what it needs, and how vague it is. */
+	constexpr double Prudence = 1.15;
+	constexpr int32_t HazeClears = 20;
+	constexpr int32_t HazeRange = 40;
+	constexpr double HazeMax = 0.3;
 	constexpr int32_t DrawLarderDays = 8;
 	/** Somebody comes and asks; a sword comes looking for a share. */
 	constexpr double DrawMax = 0.1;
@@ -388,6 +393,10 @@ namespace Tables
 	constexpr double SwordMax = 0.055;
 	constexpr int32_t SwordDeeds = 4;
 	constexpr int32_t SwornMax = 6;
+	/** Hands who have had enough, and go. The sworn never do. */
+	constexpr int32_t LeavingMood = 25;
+	constexpr double LeavingChance = 0.12;
+	constexpr int32_t SettledIn = 30;
 	/** What idleness costs the band's nerve, a head a day. */
 	constexpr double IdleBite = 0.6;
 

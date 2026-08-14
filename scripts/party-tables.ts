@@ -41,12 +41,15 @@ import {
 import {
   CHANCE_PER_WORTH, RAID_CHANCE_MAX, RAID_EARLIEST_DAY, RAID_RESPITE,
 } from '../src/sim/raid';
-import { WINTER_DAY } from '../src/sim/winter';
+import {
+  HAZE_CLEARS, HAZE_MAX, HAZE_RANGE, PRUDENCE, WINTER_DAY,
+} from '../src/sim/winter';
 import {
   PRESSURE_MAX, PRESSURE_PER_ANGER, PRESSURE_STIR,
 } from '../src/sim/neighbours';
 import { WATCH_QUIET } from '../src/data/jobs';
 import { SWORN_MAX } from '../src/sim/people';
+import { LEAVING_CHANCE, LEAVING_MOOD, SETTLED_IN } from '../src/sim/joining';
 import { IDLE_BITE, PATCH_SHELTER_CAP, PLOT_RADIUS } from '../src/sim/colony';
 import {
   SEASON_ORDER, SEASON_LENGTH, YEAR_LENGTH, seasonEffects,
@@ -363,6 +366,11 @@ ${ALL_TERRAINS.map((t) => `\t\t{ ${quote(t)}, ${int(SOIL[t])} },`).join('\n')}
 \tconstexpr double WatchQuiet = ${num(WATCH_QUIET)};
 \t/** The day the dark closes in, and the day the telegraph stops warning. */
 \tconstexpr int32_t WinterDay = ${int(WINTER_DAY)};
+\t/** The winter mark: what it asks for over what it needs, and how vague it is. */
+\tconstexpr double Prudence = ${num(PRUDENCE)};
+\tconstexpr int32_t HazeClears = ${int(HAZE_CLEARS)};
+\tconstexpr int32_t HazeRange = ${int(HAZE_RANGE)};
+\tconstexpr double HazeMax = ${num(HAZE_MAX)};
 \tconstexpr int32_t DrawLarderDays = ${int(DRAW_LARDER_DAYS)};
 \t/** Somebody comes and asks; a sword comes looking for a share. */
 \tconstexpr double DrawMax = ${num(DRAW_MAX)};
@@ -370,6 +378,10 @@ ${ALL_TERRAINS.map((t) => `\t\t{ ${quote(t)}, ${int(SOIL[t])} },`).join('\n')}
 \tconstexpr double SwordMax = ${num(SWORD_MAX)};
 \tconstexpr int32_t SwordDeeds = ${int(SWORD_DEEDS)};
 \tconstexpr int32_t SwornMax = ${int(SWORN_MAX)};
+\t/** Hands who have had enough, and go. The sworn never do. */
+\tconstexpr int32_t LeavingMood = ${int(LEAVING_MOOD)};
+\tconstexpr double LeavingChance = ${num(LEAVING_CHANCE)};
+\tconstexpr int32_t SettledIn = ${int(SETTLED_IN)};
 \t/** What idleness costs the band's nerve, a head a day. */
 \tconstexpr double IdleBite = ${num(IDLE_BITE)};
 

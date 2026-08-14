@@ -25,13 +25,13 @@
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
 > (C++), item 5 (parity CI) is BUILT on both sides, and the rules port is
-> green at `runs/long.json` @0 through @55 AND `runs/example.json` @0 through
-> @13 — 25 checkpoints across two countries, every facet — and the harness
-> runs itself in CI.**
+> green at `runs/long.json` @0 through @660 AND `runs/example.json` @0
+> through @13 — 27 checkpoints, 660 actions, 248 days, every facet — and the
+> harness runs itself in CI.**
 >
-> **NEXT: @132, and the port names its own two blockers — `neighboursCallOn`
-> (the coast comes to look at anyone new on it) and the winter FORECAST,
-> which simulates every remaining day to the thaw.**
+> **NEXT: the BATTLE, at `runs/long.json` @852. It is the one facet that has
+> only ever been `{}`, and the harness stops exactly there: "action
+> B_END_TURN is past this rung."**
 
 ---
 
@@ -1775,6 +1775,26 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-13 — Half the script** — The two blockers the port named at @132
+  were the last big ones this side of a fight. `neighboursCallOn` and the
+  winter FORECAST both landed first try; then @660 named `maybeJoin` — people
+  actually arriving — and `takeIn` opened two more gates behind it,
+  `handsLeave` and `stirGrudges`, because a joiner arrives at 45 morale and
+  that is what makes either of those possible at all.
+
+  **27 checkpoints green: `runs/long.json` @0 through @660 and
+  `runs/example.json` @0 through @13.** 660 actions, 248 days, six facets
+  each. It stops at `B_END_TURN`, and the harness says so in those words.
+
+  Three things worth keeping. The winter forecast is the only place a
+  hardship term is applied ASYMMETRICALLY — `plannedFirewood` does not
+  multiply its non-winter branch by the country's terms and does multiply the
+  other two, and tidying that into consistency would forecast a different
+  summer. `takeIn` reuses `makePerson` exactly, bond and all, because `bond`
+  is a plain parameter that takes no draw — which is the whole reason the
+  rung was small. And `nextId` had to become a real field: a headcount plus
+  one is true right up until somebody joins and somebody else dies.
 
 - **2026-08-13 — A second country, and vectors nobody was watching** — The
   parity harness runs BOTH scripted runs now. `runs/example.json` is the same
