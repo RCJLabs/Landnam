@@ -24,19 +24,17 @@
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
-> (C++), item 5 (parity CI) is BUILT on both sides, and the rules port is
-> green at `runs/long.json` @0 through @660 AND at ALL of
-> `runs/example.json` — 37 checkpoints, every facet — with the harness
-> running itself in CI. THE FIELD IS PORTED: `field` was the one facet that
-> had only ever been `{}`, and a whole fight now matches to the character —
-> ground, foes, initiative, thirty-five turns, the beats, the battle log,
-> the dead and the maimed, and the last page of the saga.**
+> (C++), item 5 (parity CI) is BUILT on both sides, and STAGE 5 IS DONE:
+> both scripted runs are green END TO END — 41 checkpoints, every facet,
+> 1320 actions and 457 days on one and a run that breaks on day 22 on the
+> other — and the standalone harness replays the whole long script with
+> `unported=0`, meaning nothing anywhere in it was skipped.**
 >
-> **NEXT: the RAID, which is what `runs/long.json` @852 turns out to be. The
-> harness names it — "maybeRaid: somebody came over the ridge" — and it is a
-> different fight: authored ground filtered by what the steading holds,
-> defended by whoever stayed behind, and settled by holding or losing the
-> place.**
+> **NEXT: `Landnam.SimParity` HAS STILL NEVER BEEN RUN IN A REAL EDITOR.**
+> The sim core is proven by compilation against the vectors and by CI; the
+> UE-typed glue around it is not, and every rung has added more of it. That
+> is now the largest unverified thing in the port, and it is the next thing
+> to fix.
 
 ---
 
@@ -1780,6 +1778,49 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-14 — Both runs, end to end** — The raid was the last thing
+  between the port and the end of the scripts, and `runs/long.json` @852,
+  @874 and @875 all matched first try: the authored approach picked by what
+  the steading holds, the hands standing in the line beside the sworn, a
+  band capped by how famous the hall has become, a leader raised because
+  every raid is led — and then the place lost. Two hands carried off, a
+  building fired, the watch back to nought.
+
+  Two things behind it did not match first try, and both are the same shape:
+  something the port had been REPORTING rather than running, which is the
+  bargain the whole of stage 5 was scoped on. A card can raid too, and it
+  brings `difficulty + raidDifficulty(state)` — the fight a card draws onto
+  a rich hall is not the one it draws onto a shieling. And an empty larder
+  wounds the weakest, which was the last line in `passDay` still gated,
+  because it can kill and killing needed the mourning and the kin.
+
+  **41 checkpoints green: BOTH SCRIPTED RUNS, END TO END.** 1320 actions,
+  457 days, seven fights and a run that ends `survived` on one; 62 actions
+  and a band that breaks on day 22 on the other. Replaying the long script
+  in full reports `unported=0`, which is the stronger claim: not that the
+  checkpoints agree, but that nothing anywhere in 457 days was skipped.
+
+  One duplicate went with it: the verb-name mapping existed twice, once in
+  the editor's test and once in the standalone harness, and every rung had
+  been adding to both by hand. `ActionKindOf` is in the sim core now. Lore
+  became real at the same time — a card, a raid held, and a finished dock
+  all teach — which retired another reported gate.
+
+  One half of the champion is ported and NOT verified, and it is worth
+  saying so: he is anointed and everything downstream of that draw matches,
+  but on this coast nobody is angry enough to have SENT him, so the clan
+  never remembers him and `settleChampion` never runs. The recurring-enemy
+  code is written against the reference and pinned by nothing.
+
+  What that leaves is the thing this port has never had. `Landnam.SimParity`
+  has still never been run in a real Unreal editor. The sim core is proven
+  by g++ and by CI; the UE-typed glue around it is proven by nothing, and
+  there is a great deal more of it than there was a week ago. Nothing in
+  either repo can close that — what has been done instead is to shrink it,
+  so that the canonical form, the facets and the action mapping each have
+  exactly one implementation and the editor asserts on the same translation
+  units the harness compiles.
 
 - **2026-08-14 — The field, and the last page** — `field` was the one facet
   that had only ever been `{}`. It is not now. `Sim/LandnamBattle.{h,cpp}`

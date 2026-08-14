@@ -37,6 +37,13 @@ import {
   LOOT_FOOD_PER_FOE,
   LOOT_WOOD_PER_FOE,
 } from '../src/sim/consequences';
+import {
+  SACK_SHARE,
+  SACK_TAKES,
+  WORTH_PER_ROOF,
+  DEFENCE_PER,
+  WATCH_PER,
+} from '../src/sim/raid';
 import { KIN_GRIEF } from '../src/data/kin';
 import { GRIEF_DAYS } from '../src/sim/upkeep';
 import {
@@ -383,6 +390,19 @@ ${lasting}
 	constexpr int32_t FateHeld = 2;
 	constexpr int32_t FateWithdrew = 1;
 	constexpr int32_t FateOverrun = -1;
+
+	// ---- What somebody coming for the steading is worth (src/sim/raid.ts) ----
+
+	/** What share of the store a successful sack carries off. */
+	constexpr double SackShare = ${num(SACK_SHARE)};
+	/** The most hands a single sacking carries off. Hands, never sworn. */
+	constexpr int32_t SackTakes = ${num(SACK_TAKES)};
+	/** Visible wealth: a coast can count roofs from a ridge. */
+	constexpr double WorthPerRoof = ${num(WORTH_PER_ROOF)};
+	/** What a point of defensibility takes back off it. */
+	constexpr double DefencePer = ${num(DEFENCE_PER)};
+	/** And a point of watch kept. A watch not kept decays. */
+	constexpr double WatchPer = ${num(WATCH_PER)};
 }
 }
 `;

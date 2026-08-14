@@ -574,6 +574,134 @@ and settled by holding or losing the ground. Three facets still match there,
 which is the ramp doing its job — the disagreement is named and bounded
 rather than being "the states differ".
 
+### The eighth rung: somebody comes for the steading
+
+Every action type in `runs/long.json` is now in the harness's vocabulary, so
+the raid is the ONLY thing between the port and @1320 — the whole
+1320-action script, 457 days, seven fights, and a run that ends `survived`.
+
+**The draw order, written out before any C++, as every rung before it.**
+
+1. `maybeRaid`, in the day cycle: gated on no ending, no fight, no card, a
+   settlement, and day 12. Then **one** draw off
+   `stream(seed,'events').derive("raid:" + day)` against `raidOdds`, which
+   the port has taken and thrown away since the fourth rung.
+2. `startRaid`: terrain off the tile under the STEADING. `noteRaidSent`
+   takes no draw — it marks the angriest neighbour found and lifts the fog
+   on their hex, which is `coast` and `world`.
+3. `rng = stream(seed,'combat').derive("raid:" + day + ":" + key(party.at))`
+   — **the party's hex, not the steading's**, and `"raid"` where the open
+   field says `"battle"`. Two chances to derive a different stream entirely.
+4. `pickRaidField(home.plots.map(kind), rng.derive('ground'))` — ONE draw,
+   off the SAME label the open field spends 35 on. The authored map is
+   parsed with no draws at all, so a raid is 34 draws cheaper than a meeting
+   on the road; the shared label is what keeps everything after it in step.
+5. `standAtHome(homeCrew(state))`: the sworn first, then hands to fill the
+   line, never wider than `SWORN_MAX`. This is 6.2's whole bargain — the
+   hands hold their own hall, which is what frees the sworn to go out.
+6. `rollFoes(rng.derive('foes'), …, raid = true, raiderCap(state), word = 0)`
+   — same alternation as the open field, different arithmetic:
+   `round(size * 0.9 + difficulty * 0.5)` against
+   `min(14, 9 + floor(winters + roofs/2 + jarl*2))`. Word does not reach a
+   raid; a raid has its own escalation.
+7. **Every raid is led.** `anointChampion(foes, rng.derive('champion'),
+   sender?.champion)` fires whenever two or more stand, where the open field
+   needs word to have spread. The byname is `known?.byname ??
+   rng.pick(CHAMPION_BYNAMES)` and `??` SHORT-CIRCUITS — a man who has
+   walked off our field before arrives under his own name and takes no draw
+   at all.
+8. Deployment into the two rows behind the palisade and the raiders' two at
+   the top; then nerve, then initiative, exactly as the open field.
+
+And the settling-up, which is the half a raid has that nothing else does:
+
+- Held → `holdSteading`: +12 morale, `raidsHeld`, and `learn('shieldcraft')`
+  if anything fell. A line that held is a line you can explain to somebody,
+  and it is the only thing in the game that teaches it — which puts it in
+  the `coast` facet.
+- Lost → `sackSteading`, off `stream(seed,'events').derive("sack:" + day)`:
+  **shuffle the hands and take two FIRST**, then pick what burns. One
+  generator, that order.
+
+**@852, @874 and @875 all matched first try**, and the raid on day 312 is
+lost: two hands carried off, a building fired, the watch back to nought.
+
+**One half of the champion is ported and NOT verified, and it is worth
+saying so.** He is anointed — that draw happens, and everything downstream
+of it matches — but on this coast nobody is angry enough to have sent him:
+`raidSource` wants a neighbour at negative standing and finds none, so
+`championOf` is never set, the `champion` field on a neighbour is never
+written, and `settleChampion` never runs. The `coast` facet is byte-identical
+at @660 and @1320. So the code for a RECURRING enemy — the scars, the
+short-circuited byname, the clan that loses the man who led them — is
+written against the reference implementation and pinned by nothing. It is
+the only part of this rung with that status, and it stays flagged until a
+run reaches it.
+Two things behind it did not:
+
+- **A card can raid too**, and it brings its own arithmetic:
+  `startRaid(state, difficulty + raidDifficulty(state))`, so a card that
+  draws raiders onto a rich hall is not the fight it draws onto a shieling.
+  The port had that branch reported rather than run, and it fires on day
+  390 of the long script.
+- **An empty larder wounds the weakest**, and that is the last thing in
+  `passDay` that had been reported since the first rung. The order inside
+  the branch is morale, then the wound, then the streak; `weakest` reduces
+  with a strict `<` so it keeps the first of equals; and `wound` does NOT
+  set `diedOn`, which is what keeps a starved band from also counting as
+  grieving.
+
+**Both scripted runs are now green end to end — 41 checkpoints.**
+`runs/long.json` is 1320 actions, 457 days, seven fights and a run that ends
+`survived`; `runs/example.json` is 62 actions on the same seed with no terms
+named, and ends `despair` on day 22. That is the whole of stage 5 as the
+vectors measure it.
+
+What is still reported rather than run, and what it would take:
+
+| Reported | What it needs |
+| --- | --- |
+| a cold night with teeth in it | `coldNight` and the illness table |
+| a fight afloat | `seaFields`, and what a hull is worth losing |
+| an expedition launched | `src/sim/expedition.ts` |
+| a Thing called | `src/sim/thing.ts` and the jarldom |
+| bad blood between two of them | `src/sim/feuds.ts` |
+| the `wound`, `injure` and `kill` card effects | nothing new — `Wound`, the injury table and `Mourn` all landed with the aftermath, so each is a few lines. They stay REPORTED because neither script deals one, and a port written against a bar that cannot fail is how the fourth rung's gates got in. |
+
+None of them is reached by either script, which is exactly why they are
+still `Unported` entries rather than code: the bar cannot see them, and a
+port written against a bar nobody can fail is how the fourth rung's three
+hardcoded gates got in.
+
+**Lore is real now, and it retires a report.** `learn` had been gated since
+the second rung because nothing could hold what was learned. Three things
+teach: a card's `learn` effect, a raid HELD (`shieldcraft` — a line that
+held is a line you can explain to somebody, and it is the only thing in the
+game that teaches it), and finishing a DOCK, which is a season of looking at
+hulls out of the water. That last one had been an `Unported` entry;
+`LearnLore` is three lines and it is gone.
+
+**One duplicate went with it.** The verb name → `ESimAction` mapping existed
+TWICE — once in the editor's automation test, once in `parity-harness.cpp` —
+and every rung that added a verb had to add it to both by hand. They had
+already drifted. `ActionKindOf` is in the sim core now; the two harnesses
+still read their own arguments, because one is handed a JSON object and the
+other a command line, but which verb a name means is one fact in one place.
+
+### What is left is the thing this port has never had
+
+`Landnam.SimParity` has never been run in a real Unreal editor. It has been
+true since the first rung and it is now the largest unverified claim in the
+port: the sim core is proven by `g++` and by CI on every push, and the
+hundred-odd lines of UE-typed glue around it — the JSON reader, the
+`FString`↔`std::string` conversions, the automation assertions — are proven
+by nothing at all. Every rung since has added more of them.
+
+Nothing in this repo can close that. What has been done instead is to shrink
+it: the canonical form has one implementation, the facets have one, the
+action mapping now has one, and everything the editor test asserts is
+computed by the same translation units the standalone harness compiles.
+
 ### Two runs, not one — and what the second one found
 
 `runs/example.json` is the same seed with **no terms named**, which defaults

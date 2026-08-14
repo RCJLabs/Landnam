@@ -256,5 +256,18 @@ namespace Tables
 	constexpr int32_t FateHeld = 2;
 	constexpr int32_t FateWithdrew = 1;
 	constexpr int32_t FateOverrun = -1;
+
+	// ---- What somebody coming for the steading is worth (src/sim/raid.ts) ----
+
+	/** What share of the store a successful sack carries off. */
+	constexpr double SackShare = 0.4;
+	/** The most hands a single sacking carries off. Hands, never sworn. */
+	constexpr int32_t SackTakes = 2;
+	/** Visible wealth: a coast can count roofs from a ridge. */
+	constexpr double WorthPerRoof = 0.4;
+	/** What a point of defensibility takes back off it. */
+	constexpr double DefencePer = 0.5;
+	/** And a point of watch kept. A watch not kept decays. */
+	constexpr double WatchPer = 0.2;
 }
 }
