@@ -1813,6 +1813,20 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   never remembers him and `settleChampion` never runs. The recurring-enemy
   code is written against the reference and pinned by nothing.
 
+  **And the sim core did not compile as a UNITY BUILD.** Unreal concatenates
+  several .cpp files into one translation unit; anonymous namespaces then
+  merge, and every rung of this port was verified by compiling a file at a
+  time, which is blind to that. Asked what an editor build would need, the
+  honest answer was "it would not have started": `Skipped` defined
+  identically in three files, `FromKey` in two, a private `Distance`
+  shadowing the real one so every call site in four files went ambiguous,
+  `FField` meaning two different things, and a FOURTH private copy of
+  `CanonicalString` escaping only two characters — the one the note in
+  LandnamCanon.h says was already consolidated. All fixed by having one of
+  each, and `Tools/run-parity.sh` compiles the whole core as one translation
+  unit now, on every run and in CI. A bar that was failing the entire time
+  nobody had written it.
+
   What that leaves is the thing this port has never had. `Landnam.SimParity`
   has still never been run in a real Unreal editor. The sim core is proven
   by g++ and by CI; the UE-typed glue around it is proven by nothing, and

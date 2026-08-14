@@ -702,6 +702,41 @@ it: the canonical form has one implementation, the facets have one, the
 action mapping now has one, and everything the editor test asserts is
 computed by the same translation units the standalone harness compiles.
 
+### The sim core did not compile as a unity build, and nothing could see it
+
+Unreal builds a module by concatenating several `.cpp` files into ONE
+translation unit. Anonymous namespaces from different files then merge, and
+a helper each file kept privately to itself stops being private. Every rung
+of this port was verified by compiling a FILE AT A TIME, which is blind to
+all of it.
+
+Asked what an editor build would need, the honest answer turned out to be
+"it would not have started". Six collisions, in a core that has been green
+against the vectors for a week:
+
+- **`Skipped` defined identically in three files** — a hard redefinition.
+- **`FromKey` in two** — the same.
+- **A private `Distance` in `LandnamCoast.cpp` shadowing the exported one**,
+  which is not an error where it is defined but makes EVERY call site in
+  four files ambiguous.
+- **`FField` meaning two different things** — a noise sample in worldgen, a
+  beat's key/value pair on the field — and then a cascade of unrelated
+  `std::pair` errors downstream of the clash.
+- **A fourth private copy of `CanonicalString`**, escaping only `"` and
+  `\`. `LandnamCanon.h` says in its own header comment that three copies
+  were consolidated; this was the one that got missed, and it is the exact
+  drift that note exists to prevent.
+
+All six are fixed by having one of each thing: `Skipped` is a real function
+in the sim core, `Distance` and `HexFromKey` moved in beside `HexKey` and
+`Neighbors` where the other hex primitives live, and the two name clashes
+got names of their own.
+
+**`Tools/run-parity.sh` now compiles the whole core as one translation unit
+on every run**, which costs about a second and is the closest this repo can
+get to proving the editor build without an editor. CI runs it on every push.
+It is a bar that was failing the entire time nobody had written it.
+
 ### Two runs, not one — and what the second one found
 
 `runs/example.json` is the same seed with **no terms named**, which defaults
