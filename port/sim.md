@@ -765,7 +765,7 @@ got names of their own.
 `Sim/` wraps its contents in `namespace Landnam`, so its private helpers
 live in `Landnam::{anonymous}` — nested. A UE-typed file's helpers live in
 the GLOBAL `{anonymous}`. Those are different entities and can share a name
-freely. `Sim/LandnamWorldgen.cpp` and `Source/LandnamUE/LandnamWorldgen.cpp`
+freely. `Sim/LandnamSimWorldgen.cpp` and `Source/LandnamUE/LandnamWorldgen.cpp`
 both have a private `Classify(double, double)` returning different types,
 and that is legal precisely because of the nesting.
 
@@ -776,7 +776,7 @@ real and were proved by compiling the actual files; this seventh was not,
 and was proved not to be the same way. **The rule is the same either way:
 find out by compiling, not by reasoning about the standard.**
 
-### Three Unreal rules the Linux harness had to learn
+### Four Unreal rules the Linux harness had to learn
 
 Each was found by a build, none by reading, and each is now a bar that fails
 here first:
@@ -786,6 +786,7 @@ here first:
 | Unity builds MERGE anonymous namespaces | six redefinitions and an ambiguous `Distance` at every call site | the whole core compiled as one translation unit |
 | Warnings are ERRORS (C4456, C4459, C4883) | five shadowed names and a table too big for the optimizer | `-Wshadow`, and a pragma in the generator |
 | **Two files cannot share a basename in one module** | UBT refuses the module before invoking a compiler | a duplicate-basename check over `Source/` |
+| The harness compiles `Sim/` only, so it cannot see a broken include above it | a fatal `C1083` in the editor on a tree that was green here | every Landnam include in `Source/` resolved against disk |
 
 The third arrived with the merge, which put two `LandnamWorldgen.cpp` in one
 module. UBT names object files by BASENAME, so the collision happens before
@@ -802,6 +803,24 @@ which of the two it is — exactly the confusion that caused the collision.
 on every run**, which costs about a second and is the closest this repo can
 get to proving the editor build without an editor. CI runs it on every push.
 It is a bar that was failing the entire time nobody had written it.
+
+The fourth came straight out of the third, and it was mine. Renaming the
+header left one reference behind — `LandnamSimParityTest.cpp` includes it as
+`"Sim/LandnamWorldgen.h"`, and the grep that found the references searched
+`Source/LandnamUE/Sim` for the bare `"LandnamWorldgen.h"`, so it could match
+neither the directory nor the string. The verification grep afterwards was
+scoped the same wrong way and agreed with itself. The harness compiled and
+ran green, because it compiles `Sim/` and `Tools/` and nothing above them:
+the file with the broken include is not one it builds. The editor stopped on
+it in seconds.
+
+So the check is not "did the rename work" but the general form — **every
+`#include "...Landnam..."` anywhere in `Source/` resolves to a file that is
+actually on disk**, relative to the including file or to the module root.
+`.generated.h` is skipped, since UHT writes those during the build and their
+absence is correct; `.gen.h`, the port's own generated tables, is on disk and
+is checked. The two suffixes look alike and mean opposite things, which is
+worth knowing before reading that line of the script.
 
 **And the generated headers are `*.gen.h` now, not `*.generated.h`.** That
 suffix is UnrealHeaderTool's, and this module really does have `UCLASS` and
@@ -896,7 +915,7 @@ They are owned now, and `goldenport.test.ts` recomputes every one.
 
 `Source/LandnamUE/LandnamWorldgen.cpp` is UE-typed and Blueprint-facing —
 `FWorldTile`, `FLandnamWorld`, four `UFUNCTION`s, called from `BP_HexGrid`.
-`Sim/LandnamWorldgen.cpp` is plain C++ and is what the rules port runs.
+`Sim/LandnamSimWorldgen.cpp` is plain C++ and is what the rules port runs.
 **The same algorithm, transcribed twice**: same 0.62/0.52/0.38 elevation
 blend, same sea level, same landmass floor, same 24-attempt retry.
 
@@ -943,7 +962,7 @@ choices. It is the earliest possible warning and it says *where*.
 | --- | --- |
 | `Source/LandnamUE/LandnamCanonical.{h,cpp}` | the canonical form and the state hash |
 | `Source/LandnamUE/LandnamSimParityTest.cpp` | the harness — `Landnam.SimParity` |
-| `Source/LandnamUE/Sim/LandnamWorldgen.{h,cpp}` | **stage 1**: the country itself |
+| `Source/LandnamUE/Sim/LandnamSimWorldgen.{h,cpp}` | **stage 1**: the country itself |
 | `Source/LandnamUE/Sim/LandnamParty.{h,cpp}` | **stage 2**: the six off the knarr |
 | `Source/LandnamUE/Sim/LandnamCoast.{h,cpp}` | **stage 3**: who else is on this coast |
 | `Source/LandnamUE/Sim/LandnamLanding.{h,cpp}` | **stage 4**: the rest of the landing, and `FSimState` |
@@ -971,7 +990,7 @@ yet. That is deliberate: a test that stays red for the months a port takes is
 a test everybody learns to ignore, and by the time it matters nobody is
 reading it.
 
-**Stage 1 is done and green.** `Sim/LandnamWorldgen` ports `src/sim/worldgen.ts`
+**Stage 1 is done and green.** `Sim/LandnamSimWorldgen` ports `src/sim/worldgen.ts`
 and `src/sim/noise.ts` and matches `worldgenHash` on all five seeds, the
 non-ASCII one included. It is written free of Unreal — plain C++ and the
 standard library — so the identical translation unit compiles in the editor

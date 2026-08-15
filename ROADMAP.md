@@ -44,7 +44,7 @@
 >
 > **NEXT: one algorithm still exists twice.** `Source/LandnamUE/
 > LandnamWorldgen.cpp` (UE-typed, Blueprint-facing) and
-> `Sim/LandnamWorldgen.cpp` (plain, used by the port) are the same generator
+> `Sim/LandnamSimWorldgen.cpp` (plain, used by the port) are the same generator
 > transcribed twice. Both are now pinned to the same eight golden worlds, so
 > neither can drift in silence — but the fix is for the UE one to become a
 > thin ADAPTER over the sim one, keeping `FWorldTile`, `FLandnamWorld` and
