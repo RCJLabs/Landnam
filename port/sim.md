@@ -688,19 +688,48 @@ already drifted. `ActionKindOf` is in the sim core now; the two harnesses
 still read their own arguments, because one is handed a JSON object and the
 other a command line, but which verb a name means is one fact in one place.
 
-### What is left is the thing this port has never had
+### It has run in a real editor now, and that claim is closed
 
-`Landnam.SimParity` has never been run in a real Unreal editor. It has been
-true since the first rung and it is now the largest unverified claim in the
-port: the sim core is proven by `g++` and by CI on every push, and the
-hundred-odd lines of UE-typed glue around it — the JSON reader, the
-`FString`↔`std::string` conversions, the automation assertions — are proven
-by nothing at all. Every rung since has added more of them.
+`Landnam.SimParity` had never been run in a real Unreal editor. It was true
+from the first rung to the last, and it was the largest unverified claim in
+the port: the sim core proven by `g++` and by CI on every push, the
+hundred-odd lines of UE-typed glue around it proven by nothing at all.
 
-Nothing in this repo can close that. What has been done instead is to shrink
-it: the canonical form has one implementation, the facets have one, the
-action mapping now has one, and everything the editor test asserts is
-computed by the same translation units the standalone harness compiles.
+**Both automation tests now pass in the editor.** `Landnam.SimParity` —
+sim.day 308 checks, sim.landing 40, sim.coast 10, sim.band 10, sim.worldgen
+5, canonical 33. `Landnam.Parity` — rng.streams 3300, hex 2830,
+rng.hashString 17. Zero failures.
+
+Getting there took four fixes and every one of them was invisible to a
+Linux compile of one file at a time:
+
+| What | Why only the editor sees it |
+| --- | --- |
+| five shadowed names | Unreal builds with warnings as errors; MSVC C4456/C4459 |
+| C4883 on the event deck | a diagnostic about the OPTIMIZER, fatal under `-Werror` |
+| `FJsonObject::Values` keyed by `UE::FSharedString` | UE 5.8 changed it; stage 0's `LandnamCanonical.cpp` had never been compiled by anything |
+| `.uasset` files as LFS pointers | not the port at all — a missing `git lfs pull` on the dev machine, reading as asset corruption |
+
+`-Wshadow` is on in `Tools/run-parity.sh` now, on both the per-file compile
+and the unity build, so most of the first row fails on Linux first.
+
+### The scaffold that outlived its usefulness
+
+The passing run also printed, underneath 308 green facet checks:
+
+> `[sim.facets] NOT YET PORTED, so not checked: band, coast, field, run,
+> steading, world.`
+
+`CheckRuns` and `ReadFacet` were stage 0's placeholder — a function that
+answered "not implemented" for every facet and a reporter naming the ones
+still waiting. Useful for exactly as long as nothing could replay a run.
+`CheckDayCycle` had superseded it completely and did not know.
+
+So on the first editor build the port ever passed, the test suite also
+stated the opposite of the truth about itself. Both are deleted. It is the
+same lesson as the fourth rung's hardcoded gates, one level up: **a check
+that cannot fail is not a check, and one that reports backwards is worse
+than none.**
 
 ### The sim core did not compile as a unity build, and nothing could see it
 

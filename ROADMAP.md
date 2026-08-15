@@ -30,11 +30,18 @@
 > other — and the standalone harness replays the whole long script with
 > `unported=0`, meaning nothing anywhere in it was skipped.**
 >
-> **NEXT: `Landnam.SimParity` HAS STILL NEVER BEEN RUN IN A REAL EDITOR.**
-> The sim core is proven by compilation against the vectors and by CI; the
-> UE-typed glue around it is not, and every rung has added more of it. That
-> is now the largest unverified thing in the port, and it is the next thing
-> to fix.
+> **AND IT HAS NOW RUN IN A REAL UNREAL EDITOR — both automation tests pass.**
+> `Landnam.SimParity`: sim.day 308 checks, sim.landing 40, sim.coast 10,
+> sim.band 10, sim.worldgen 5, canonical 33. `Landnam.Parity`: rng.streams
+> 3300, hex 2830, rng.hashString 17. Nothing in the port is unverified any
+> more.
+>
+> **NEXT: the two lines of Unreal work have never met.** The rules port is
+> on `claude/steel-hardship-measurement-zoy47y`; the island worldgen and
+> `LandnamNoise` are on `claude/game-choice-unreal-engine-jy3yv5`. Both
+> branch off `master`, neither contains the other, and they overlap in one
+> file — `Content/Data/golden.json`, which is GENERATED and must be
+> regenerated on merge rather than hand-resolved.
 
 ---
 
@@ -1778,6 +1785,37 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-14 — The editor build, and four things only it could find** —
+  The port was built and run in an actual Unreal editor for the first time
+  in the project's history. **Both automation tests pass.**
+
+  It did not build at first, and none of the four failures were about the
+  rules. SHADOWING: Unreal compiles with warnings as errors and MSVC
+  C4456/C4459 are among them — two parameters named `WarbandSize`, which is
+  a global constant; two locals named `Line` in a scope where `Line` was
+  already the shield wall and `Approach->Line` was the log's opening prose;
+  two `Heads` in one day. C4883 on the event deck — "function size
+  suppresses optimizations" against the initializer for 102 cards, a
+  diagnostic about the OPTIMIZER that stopped the editor building at all.
+  And **UE 5.8 changed the JSON container**: `FJsonObject::Values` is keyed
+  by `UE::FSharedString` now, so `LandnamCanonical.cpp` — stage 0 code that
+  nothing had ever compiled — no longer built.
+
+  `-Wshadow` is on in the harness now, alongside the unity-build check, so
+  most of that class fails on Linux first.
+
+  Then the tests passed and printed, underneath 308 passing facet checks,
+  `[sim.facets] NOT YET PORTED, so not checked: band, coast, field, run,
+  steading, world`. That was stage 0's scaffold, still reporting. On the
+  first editor build the port ever passed, it also stated the opposite of
+  the truth about itself. Deleted — a bar that does that is worse than none.
+
+  Also fixed on the way: the project's `.uasset` files were Git LFS pointers
+  on the dev machine, so 33 assets failed to parse. Unrelated to the port,
+  and worth writing down because the symptom — `Array length (996524687)
+  would overflow` — reads like corruption rather than a missing `git lfs
+  pull`.
 
 - **2026-08-14 — Both runs, end to end** — The raid was the last thing
   between the port and the end of the scripts, and `runs/long.json` @852,
