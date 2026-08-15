@@ -81,7 +81,10 @@ interface Golden {
   worldgen: {
     terrainCodes: Record<string, string>;
     noise: { seed: string; label: string; octaves: number; samples: { x: number; y: number; v: number }[] };
-    worlds: { seed: string; width: number; height: number; landing: Hex; terrain: string }[];
+    worlds: {
+      seed: string; width: number; height: number; landing: Hex;
+      terrain: string; rivers: string;
+    }[];
   };
 }
 
@@ -386,13 +389,22 @@ describe('the rng port contract', () => {
         // Row-major in OFFSET space, one letter a hex — the same walk the
         // Unreal test does, so a disagreement names a seed rather than a
         // difference of opinion about iteration order.
+        //
+        // RIVERS TOO. They are a separate string of the same length in the
+        // vectors and the Unreal test checks them; this recomputed only the
+        // terrain at first, which would have stored a vector nobody verified
+        // — the exact thing this file exists to stop.
         let text = '';
+        let rivers = '';
         for (let row = 0; row < w.height; row++) {
           for (let col = 0; col < w.width; col++) {
-            text += codes[world.tiles[key(offsetToAxial(col, row))]!.terrain] ?? '?';
+            const tile = world.tiles[key(offsetToAxial(col, row))]!;
+            text += codes[tile.terrain] ?? '?';
+            rivers += tile.river ? '1' : '0';
           }
         }
         if (text !== w.terrain) fail(`${w.seed} terrain`);
+        if (rivers !== w.rivers) fail(`${w.seed} rivers`);
       }
       return golden.worldgen.worlds.length;
     });
