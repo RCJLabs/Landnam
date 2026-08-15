@@ -173,9 +173,27 @@ namespace Tables
 		std::vector<FEventChoice> Choices;
 	};
 
+	// MSVC C4883: "function size suppresses optimizations", raised against the
+	// dynamic initializer for a hundred and two cards of nested string and
+	// vector literals — and Unreal builds with warnings as errors, so a
+	// diagnostic about the OPTIMIZER stops the editor building at all.
+	//
+	// Disabled rather than worked around. The warning is telling the truth and
+	// it does not matter: this is one static table, built once at startup, and
+	// nothing about it is hot. Splitting it into chunked initialiser functions
+	// to appease the optimizer would trade a real property of the file — that
+	// the deck is written out in DECLARATION ORDER, which \`rng.weighted\`
+	// depends on and test/tables.test.ts pins — for nothing worth having.
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable: 4883)
+#endif
 	const std::vector<FEventCard> Events = {
 ${cards}
 	};
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 }
 }
 `;
