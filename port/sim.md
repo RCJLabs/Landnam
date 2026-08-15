@@ -776,6 +776,28 @@ real and were proved by compiling the actual files; this seventh was not,
 and was proved not to be the same way. **The rule is the same either way:
 find out by compiling, not by reasoning about the standard.**
 
+### Three Unreal rules the Linux harness had to learn
+
+Each was found by a build, none by reading, and each is now a bar that fails
+here first:
+
+| Rule | What it costs | How it is caught now |
+| --- | --- | --- |
+| Unity builds MERGE anonymous namespaces | six redefinitions and an ambiguous `Distance` at every call site | the whole core compiled as one translation unit |
+| Warnings are ERRORS (C4456, C4459, C4883) | five shadowed names and a table too big for the optimizer | `-Wshadow`, and a pragma in the generator |
+| **Two files cannot share a basename in one module** | UBT refuses the module before invoking a compiler | a duplicate-basename check over `Source/` |
+
+The third arrived with the merge, which put two `LandnamWorldgen.cpp` in one
+module. UBT names object files by BASENAME, so the collision happens before
+anything is parsed — *"multiple input files found with duplicate filenames,
+this is not allowed as intermediate output files for non-unity builds will
+conflict"*. `g++` has no reason to care and never would have said so.
+
+The SIM one was renamed, not the UE-typed one: it has no `.generated.h`, no
+UHT involvement and no Blueprint exposure, so moving it cannot reach
+`BP_HexGrid`. It is `Sim/LandnamSimWorldgen.{h,cpp}` now, and the name says
+which of the two it is — exactly the confusion that caused the collision.
+
 **`Tools/run-parity.sh` now compiles the whole core as one translation unit
 on every run**, which costs about a second and is the closest this repo can
 get to proving the editor build without an editor. CI runs it on every push.
