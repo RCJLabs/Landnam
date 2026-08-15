@@ -36,12 +36,22 @@
 > 3300, hex 2830, rng.hashString 17. Nothing in the port is unverified any
 > more.
 >
-> **NEXT: the two lines of Unreal work have never met.** The rules port is
-> on `claude/steel-hardship-measurement-zoy47y`; the island worldgen and
-> `LandnamNoise` are on `claude/game-choice-unreal-engine-jy3yv5`. Both
-> branch off `master`, neither contains the other, and they overlap in one
-> file — `Content/Data/golden.json`, which is GENERATED and must be
-> regenerated on merge rather than hand-resolved.
+> **THE TWO LINES ARE MERGED.** The island worldgen, `LandnamNoise` and
+> `BP_HexGrid` now sit on the same branch as the rules port. The one
+> conflict was `golden.json`, and it was worth having: the `worldgen`
+> vectors existed only on the Unreal side, owned by nobody. They are owned
+> and recomputed here now.
+>
+> **NEXT: one algorithm still exists twice.** `Source/LandnamUE/
+> LandnamWorldgen.cpp` (UE-typed, Blueprint-facing) and
+> `Sim/LandnamWorldgen.cpp` (plain, used by the port) are the same generator
+> transcribed twice. Both are now pinned to the same eight golden worlds, so
+> neither can drift in silence — but the fix is for the UE one to become a
+> thin ADAPTER over the sim one, keeping `FWorldTile`, `FLandnamWorld` and
+> the four `UFUNCTION`s exactly as Blueprints see them and replacing only
+> the bodies. It needs two small things first: a seed/state accessor on
+> `ULandnamRng`, and `Sim::GenerateWorld` reporting `attempts` so the
+> adapter does not have to invent it.
 
 ---
 
@@ -1785,6 +1795,35 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-14 — The island meets the rules** — The two lines of Unreal work
+  had never met: the island worldgen and `LandnamNoise` on one branch, the
+  rules port on the other, both forked from `master`, neither containing the
+  other. Merged.
+
+  **One conflict, and it was the one worth having.** `golden.json` had grown
+  a `worldgen` section — terrain codes, 64 noise samples, 8 whole islands —
+  on the UNREAL side only. The repo that owns golden.json had never seen
+  them. That is exactly the hole `test/goldenport.test.ts` opens by
+  describing: *"a green parity test that cannot see one side of the parity
+  is worse than none, because it is reassuring."* Reopened one directory
+  over.
+
+  The vectors are TRUE — all 8 worlds and all 64 samples reproduce exactly
+  from live TypeScript, once you know the noise probe is built from a bare
+  `makeRng(seed).derive(label)` rather than from the worldgen stream. So
+  nothing had diverged; they simply were not owned. Now they are, and
+  `goldenport.test.ts` recomputes every one. Both new bars were watched
+  failing on a nudged hex and a nudged sample before being believed.
+
+  **And there are now two C++ worldgens in one module** — UE-typed and
+  Blueprint-facing, plain and used by the port — the same algorithm
+  transcribed twice, agreeing today only because both were checked against
+  the same eight worlds. `Tools/run-parity.sh` now checks the sim one
+  against those worlds hex for hex, in CI, and the editor already checks the
+  other. Neither can drift from the vectors without going red, so neither
+  can drift from the other in silence. A guard, not a fix — see the
+  milestone marker for the adapter that would end it.
 
 - **2026-08-14 — The editor build, and four things only it could find** —
   The port was built and run in an actual Unreal editor for the first time

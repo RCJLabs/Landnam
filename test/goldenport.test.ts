@@ -43,6 +43,9 @@ import {
   type Hex,
 } from '../src/hex';
 import { hashString, makeRng, makeSeedPhrase, stream, type Rng, type StreamName } from '../src/rng';
+import { generateWorld } from '../src/sim/worldgen';
+import { makeFbm } from '../src/sim/noise';
+import { key } from '../src/hex';
 
 interface Golden {
   drawsPerStream: number;
@@ -65,6 +68,20 @@ interface Golden {
       derived: { label: string; seed: string; raw: number[] }[];
     }[];
     seedPhrases: { entropy: number; phrase: string }[];
+  };
+  /**
+   * The island itself.
+   *
+   * These vectors lived ONLY on the Unreal side until the two branches were
+   * merged — added there, generated there, and never seen by the repo that
+   * owns the code they describe. That is precisely the hole the header of
+   * this file describes and claims to have closed, reopened one directory
+   * over. They are recomputed here now like every other vector.
+   */
+  worldgen: {
+    terrainCodes: Record<string, string>;
+    noise: { seed: string; label: string; octaves: number; samples: { x: number; y: number; v: number }[] };
+    worlds: { seed: string; width: number; height: number; landing: Hex; terrain: string }[];
   };
 }
 
@@ -340,6 +357,44 @@ describe('the rng port contract', () => {
         if (makeSeedPhrase(c.entropy) !== c.phrase) fail(`makeSeedPhrase(${c.entropy})`);
       }
       return golden.rng.seedPhrases.length;
+    });
+  });
+
+  it('the noise field, before any world is built', () => {
+    section('worldgen.noise', (fail) => {
+      const n = golden.worldgen.noise;
+      // A BARE generator off the seed phrase, then derived by label — NOT
+      // `stream(seed, 'worldgen')`. The Unreal test builds it the same way
+      // (`MakeRng(seed)->Derive(label)`), and the two have to agree about
+      // the probe before they can agree about a coastline.
+      const fbm = makeFbm(makeRng(n.seed).derive(n.label), n.octaves);
+      for (const s of n.samples) {
+        if (Math.abs(fbm(s.x, s.y) - s.v) > TOL) fail(`fbm(${s.x}, ${s.y})`);
+      }
+      return n.samples.length;
+    });
+  });
+
+  it('whole islands, hex for hex', () => {
+    section('worldgen.worlds', (fail) => {
+      const codes = golden.worldgen.terrainCodes;
+      for (const w of golden.worldgen.worlds) {
+        const world = generateWorld(stream(w.seed, 'worldgen'), w.width, w.height);
+        if (world.landing.q !== w.landing.q || world.landing.r !== w.landing.r) {
+          fail(`${w.seed} landing`);
+        }
+        // Row-major in OFFSET space, one letter a hex — the same walk the
+        // Unreal test does, so a disagreement names a seed rather than a
+        // difference of opinion about iteration order.
+        let text = '';
+        for (let row = 0; row < w.height; row++) {
+          for (let col = 0; col < w.width; col++) {
+            text += codes[world.tiles[key(offsetToAxial(col, row))]!.terrain] ?? '?';
+          }
+        }
+        if (text !== w.terrain) fail(`${w.seed} terrain`);
+      }
+      return golden.worldgen.worlds.length;
     });
   });
 
