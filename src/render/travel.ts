@@ -7,6 +7,7 @@ import type { GameState, Neighbour, Place, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
 import { atSea, moveEffort } from '../sim/travel';
 import { mapDefs, svgEl } from './svg';
+import { terrainFill, terrainPatterns } from './terrainArt';
 
 export const HEX_SIZE = 26;
 
@@ -25,8 +26,7 @@ interface Camera {
 }
 
 function tileFill(tile: Tile, visible: boolean): string {
-  const def = terrainDef(tile.terrain);
-  return visible ? def.fill : def.edge;
+  return terrainFill(tile.terrain, visible);
 }
 
 export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
@@ -40,7 +40,11 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     // standing on, so what this adds is the shape of the situation.
     role: 'img',
   });
-  root.append(mapDefs());
+  // Built once, and the whole point of them: the terrain patterns are what
+  // every hex's fill points at, so the map's texture costs no per-hex nodes.
+  const defs = mapDefs();
+  defs.append(...terrainPatterns());
+  root.append(defs);
 
   const sea = svgEl('rect', { class: 'sea', x: -4000, y: -4000, width: 12000, height: 12000 });
   const layerTerrain = svgEl('g');
@@ -100,13 +104,9 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
         }),
       );
 
-      if (tile.terrain === 'mountains') {
-        layerTerrain.append(peaks(p.x, p.y, visible));
-      } else if (tile.terrain === 'forest') {
-        layerTerrain.append(trees(p.x, p.y, visible));
-      } else if (tile.terrain === 'hills') {
-        layerTerrain.append(mounds(p.x, p.y, visible));
-      }
+      // Mountains, forest and hills used to get a group of paths each here.
+      // They are in the terrain pattern now — see render/terrainArt.ts — so
+      // all eight terrains have texture and none of them costs a node.
 
       if (tile.river) {
         layerRivers.append(
@@ -282,54 +282,6 @@ function pointerSpread(pointers: Map<number, { x: number; y: number }>): number 
   const [a, b] = [...pointers.values()];
   if (!a || !b) return 0;
   return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-// --- Procedural decorations, all plain SVG paths ---
-
-function trees(cx: number, cy: number, visible: boolean): SVGGElement {
-  const g = svgEl('g', { opacity: visible ? 0.9 : 0.4 });
-  const offsets: { dx: number; dy: number }[] = [
-    { dx: -0.34, dy: 0.12 },
-    { dx: 0.0, dy: -0.16 },
-    { dx: 0.34, dy: 0.16 },
-  ];
-  for (const { dx, dy } of offsets) {
-    const x = cx + dx * HEX_SIZE;
-    const y = cy + dy * HEX_SIZE;
-    g.append(
-      svgEl('path', {
-        d: `M ${x} ${y - HEX_SIZE * 0.3} L ${x + HEX_SIZE * 0.16} ${y + HEX_SIZE * 0.16} L ${x - HEX_SIZE * 0.16} ${y + HEX_SIZE * 0.16} Z`,
-        fill: '#26361f',
-      }),
-    );
-  }
-  return g;
-}
-
-function peaks(cx: number, cy: number, visible: boolean): SVGGElement {
-  const g = svgEl('g', { opacity: visible ? 0.95 : 0.45 });
-  g.append(
-    svgEl('path', {
-      d: `M ${cx - HEX_SIZE * 0.42} ${cy + HEX_SIZE * 0.26} L ${cx - HEX_SIZE * 0.1} ${cy - HEX_SIZE * 0.34} L ${cx + HEX_SIZE * 0.2} ${cy + HEX_SIZE * 0.26} Z`,
-      fill: '#8d8a85',
-    }),
-    svgEl('path', {
-      d: `M ${cx - HEX_SIZE * 0.16} ${cy - HEX_SIZE * 0.34} L ${cx - HEX_SIZE * 0.1} ${cy - HEX_SIZE * 0.34} L ${cx + HEX_SIZE * 0.02} ${cy - HEX_SIZE * 0.06} L ${cx - HEX_SIZE * 0.24} ${cy - HEX_SIZE * 0.06} Z`,
-      fill: '#e6e9ec',
-    }),
-  );
-  return g;
-}
-
-function mounds(cx: number, cy: number, visible: boolean): SVGGElement {
-  const g = svgEl('g', { opacity: visible ? 0.85 : 0.4 });
-  g.append(
-    svgEl('path', {
-      d: `M ${cx - HEX_SIZE * 0.4} ${cy + HEX_SIZE * 0.16} q ${HEX_SIZE * 0.4} ${-HEX_SIZE * 0.42} ${HEX_SIZE * 0.8} 0 Z`,
-      fill: '#8d8459',
-    }),
-  );
-  return g;
 }
 
 /**

@@ -130,6 +130,15 @@ export function isLand(terrain: Terrain): boolean {
   return terrain !== 'ocean';
 }
 
+/**
+ * Every terrain, in declaration order.
+ *
+ * Derived from the table rather than typed out again, so a terrain added
+ * above cannot be missed by anything that walks all of them — which the
+ * renderer's texture patterns do.
+ */
+export const ALL_TERRAINS = Object.keys(DEFS) as Terrain[];
+
 /** Every terrain except ocean, for worldgen weighting. */
 export const LAND_TERRAINS: Terrain[] = [
   'shore',

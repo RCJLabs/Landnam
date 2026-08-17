@@ -42,7 +42,23 @@
 > vectors existed only on the Unreal side, owned by nobody. They are owned
 > and recomputed here now.
 >
-> **NEXT: one algorithm still exists twice.** `Source/LandnamUE/
+> **THE PORT IS PAUSED, ON PURPOSE (2026-08-17).** Evan's call: polish the
+> TypeScript build — mobile first — and see how good it can get before more
+> of it is carried into C++. The port is at a clean stopping point (both
+> automation tests green in a real editor, both lines merged), so nothing is
+> half-done while it waits. The item below is what it resumes ON.
+>
+> Ten candidates were surveyed against the live tree on 2026-08-17 and
+> written up in chat; the first of them — terrain you can tell apart without
+> reading the colour — is DONE and in the changelog. The rest, roughly in
+> the order they are worth doing: the travel repaint rebuilds every seen hex
+> on every action and so gets slower the longer a run lasts; `vh` should be
+> `dvh` in all seven places, because on a phone `vh` resolves against the
+> viewport with the URL bar HIDDEN and the panels overflow by exactly that
+> much; pinch zoom scales about the screen centre rather than the fingers;
+> there are no haptics anywhere; and landscape has no rules at all.
+>
+> **NEXT IN THE PORT, when it resumes: one algorithm still exists twice.** `Source/LandnamUE/
 > LandnamWorldgen.cpp` (UE-typed, Blueprint-facing) and
 > `Sim/LandnamSimWorldgen.cpp` (plain, used by the port) are the same generator
 > transcribed twice. Both are now pinned to the same eight golden worlds, so
@@ -1795,6 +1811,42 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-17 — Ground you can tell apart without reading the colour** —
+  Every hex was one flat polygon: a `fill`, a darker `edge`, and nothing
+  else. Three terrains — mountains, forest, hills — got a little group of
+  paths appended on top, and the other five got nothing at all. So **colour
+  was the only channel separating meadow from bog from valley**, and colour
+  is the first channel a phone screen in daylight gives up.
+
+  Eight `<pattern>` tiles now, in `src/render/terrainArt.ts`: chop on the
+  sea, stipple and shingle on the shore, tufts on meadow, conifers in
+  forest, lit mounds on hills, two-faced peaks with snow on the mountains,
+  black pools in the bog, furrows down the valley. Bright and dim variants
+  of each, stamped from the SAME marks — country the band has walked away
+  from is recognisably the ground it was, the light goes out of it and the
+  trees do not move.
+
+  **It cost fewer nodes than it replaced.** A pattern lives in `<defs>`, is
+  rasterised once, and is referenced by a fill string; the per-hex glyph
+  groups it replaced were rebuilt on every repaint, for every seen hex, and
+  `paint()` rebuilds all of them on every action. Three textured terrains
+  became eight and the per-hex cost went to zero. The built page grew 2.7 kB.
+
+  Two things were got right by looking rather than by reasoning. The tile is
+  120 x 104 against a hex 45 across on rows 39 apart — deliberately NOT a
+  whole number of hexes, so the pattern lands somewhere different on every
+  one instead of stamping the same three trees on every forest. And the
+  first pass was too timid: hills, meadow, valley and bog still read as flat
+  fields, and mountains as grey speckle. Rendered, looked at, pushed, looked
+  at again — three rounds before the eight were distinguishable by SHAPE.
+
+  `test/terrainArt.test.ts` pins the half that could fail silently: the
+  colour maths, the scatter, and the wrap across a tile edge. A mark that
+  hangs off the right edge has to be drawn again on the left or a seam is
+  ruled straight across the country every 120 units — invisible to the type
+  checker and to every other test here. Watched failing on a dropped wrap
+  and a dropped hex pad before being trusted.
 
 - **2026-08-14 — The island meets the rules** — The two lines of Unreal work
   had never met: the island worldgen and `LandnamNoise` on one branch, the
