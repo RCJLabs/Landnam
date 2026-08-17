@@ -49,14 +49,24 @@
 > half-done while it waits. The item below is what it resumes ON.
 >
 > Ten candidates were surveyed against the live tree on 2026-08-17 and
-> written up in chat; the first of them — terrain you can tell apart without
-> reading the colour — is DONE and in the changelog. The rest, roughly in
-> the order they are worth doing: the travel repaint rebuilds every seen hex
-> on every action and so gets slower the longer a run lasts; `vh` should be
-> `dvh` in all seven places, because on a phone `vh` resolves against the
-> viewport with the URL bar HIDDEN and the panels overflow by exactly that
-> much; pinch zoom scales about the screen centre rather than the fingers;
-> there are no haptics anywhere; and landscape has no rules at all.
+> written up in chat. TWO are DONE and in the changelog: terrain you can
+> tell apart without reading the colour, and a repaint that costs what
+> changed instead of what is on the map. The rest, roughly in the order they
+> are worth doing: `vh` should be `dvh` in all seven places, because on a
+> phone `vh` resolves against the viewport with the URL bar HIDDEN and the
+> panels overflow by exactly that much; pinch zoom scales about the screen
+> centre rather than the fingers; there are no haptics anywhere; landscape
+> has no rules at all; and the place economy is still the item with the most
+> game in it (see the autopsy below).
+>
+> **A correction worth keeping, because it was stated confidently and was
+> wrong.** The repaint item was pitched as "late game that is most of 1,872
+> hexes rebuilt per action". It is not. Both scripted runs settle on day 11
+> and stop walking, so their charts hold **78** hexes for four hundred days,
+> and a band that keeps travelling was measured charting 130–200 before it
+> starved. The cost was real and the fix was right, but the number was
+> invented rather than measured, and the measurement was there to be taken.
+> `test/repaint.test.ts` now takes it.
 >
 > **NEXT IN THE PORT, when it resumes: one algorithm still exists twice.** `Source/LandnamUE/
 > LandnamWorldgen.cpp` (UE-typed, Blueprint-facing) and
@@ -1812,6 +1822,33 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-17 — A repaint that costs what changed** — Mobile item 2. Every
+  action repaints the map, and `paint()` cleared the terrain layer and built
+  a fresh polygon for every hex the band had ever seen. Terrain never
+  changes: `sim/worldgen.ts` writes it and nothing else touches it, so the
+  only things that can move are which hexes are charted and which are lit,
+  and both come off `world.seen`. `src/render/repaint.ts` works out which
+  hexes need a node, which need two attributes, and which should go;
+  `chartCountry` puts the answer in the document.
+  **Measured over runs/long.json: 102,612 polygons built before, 78 after.**
+  The old cost grew with the run — a chart that gets bigger, redrawn a
+  number of times that also gets bigger — and the new one is the size of the
+  country, once.
+  **The pitch had a made-up number in it and the measurement corrected it**:
+  "most of 1,872 hexes" was wrong, because both scripted runs settle on day
+  11 and their charts stay at 78. The fix was still right; the claim was not
+  measured when it was made.
+  Two bars, because the pure half cannot see a document and the browser half
+  cannot see the logic. `test/repaint.test.ts` pins the decision and was
+  watched failing on a dropped relight and on a size-instead-of-match
+  shortcut that would leave an old island on screen. `scripts/repaint.mjs`
+  (`npm run repaint`, Playwright optional, exits 2 when absent — same trade
+  as `offline.mjs`) loads a real save into the BUILT page, walks the band,
+  and fails if the chart loses country, draws a hex twice, stops dimming, or
+  grows on a repaint that charted nothing; watched failing with the layer
+  clearing restored. Proved equal to the old renderer by moving one save
+  between both builds: same DOM, and **pixel-identical screenshots** across
+  a landing, a twelve-step walk, and a map with 27 rivers charted lit and dim.
 - **2026-08-17 — Ground you can tell apart without reading the colour** —
   Every hex was one flat polygon: a `fill`, a darker `edge`, and nothing
   else. Three terrains — mountains, forest, hills — got a little group of

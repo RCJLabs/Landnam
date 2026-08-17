@@ -7,6 +7,7 @@ import type { GameState, Neighbour, Place, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
 import { atSea, moveEffort } from '../sim/travel';
 import { mapDefs, svgEl } from './svg';
+import { isIdle, repaintWork, type Lit } from './repaint';
 import { terrainFill, terrainPatterns } from './terrainArt';
 
 export const HEX_SIZE = 26;
@@ -70,6 +71,15 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
   let token: SVGGElement | null = null;
   let tokenAfloat = false;
 
+  /**
+   * The country already in the document, and the light it was drawn in.
+   *
+   * Two maps rather than one so `repaintWork` can stay a pure function of
+   * hex keys and light, with no idea that SVG exists.
+   */
+  const drawn = new Map<string, { poly: SVGPolygonElement; river: SVGCircleElement | null }>();
+  const lit = new Map<string, Lit>();
+
   function centreOn(h: Hex): void {
     const p = toPixel(h, HEX_SIZE);
     camera.x = p.x;
@@ -79,47 +89,14 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
 
   function paint(state: GameState): void {
     latest = state;
-    layerTerrain.replaceChildren();
-    layerRivers.replaceChildren();
+    // The terrain and river layers are NOT cleared — see chartCountry. The
+    // overlay is: it is a few dozen nodes that change every single turn, and
+    // diffing something that small would cost more than rebuilding it.
     layerOverlay.replaceChildren();
-    // NOT cleared: the token is kept across repaints so it can glide from one
-    // hex to the next rather than being destroyed and rebuilt somewhere else.
-    // Everything else on this layer is redrawn as usual.
+    // The token is kept across repaints too, so it can glide from one hex to
+    // the next rather than being destroyed and rebuilt somewhere else.
 
-    // Only draw what has been seen — the unknown is simply absent.
-    for (const [k, visibility] of Object.entries(state.world.seen)) {
-      const tile = state.world.tiles[k];
-      if (!tile) continue;
-      const h = fromKey(k);
-      const p = toPixel(h, HEX_SIZE);
-      const visible = visibility === 'visible';
-
-      layerTerrain.append(
-        svgEl('polygon', {
-          points: cornerPoints(p.x, p.y, HEX_SIZE),
-          fill: tileFill(tile, visible),
-          stroke: terrainDef(tile.terrain).edge,
-          'stroke-width': 1,
-          opacity: visible ? 1 : 0.55,
-        }),
-      );
-
-      // Mountains, forest and hills used to get a group of paths each here.
-      // They are in the terrain pattern now — see render/terrainArt.ts — so
-      // all eight terrains have texture and none of them costs a node.
-
-      if (tile.river) {
-        layerRivers.append(
-          svgEl('circle', {
-            cx: p.x,
-            cy: p.y,
-            r: HEX_SIZE * 0.24,
-            fill: '#3f7d94',
-            opacity: visible ? 0.85 : 0.4,
-          }),
-        );
-      }
-    }
+    chartCountry(state);
 
     // Where we could step next.
     for (const option of neighbourOptions(state)) {
@@ -159,6 +136,83 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     }
 
     placeToken(state);
+  }
+
+  /**
+   * The country, built once and then only corrected.
+   *
+   * A repaint follows every action, and the terrain under a hex never changes
+   * — sim/worldgen.ts writes it and nothing else ever touches it. So the only
+   * things that can move are which hexes are on the chart and which of them
+   * are lit, and both come off `world.seen`. `repaintWork` works out which is
+   * which; this puts the answer into the document.
+   *
+   * What it replaces cleared the layer and rebuilt every seen hex every time,
+   * which cost the size of the chart per repaint and therefore grew as the
+   * run went on. Measured over runs/long.json in test/repaint.test.ts:
+   * 102,612 polygons built, against 78 here.
+   */
+  function chartCountry(state: GameState): void {
+    const seen = state.world.seen as Record<string, Lit>;
+    const work = repaintWork(lit, seen);
+    if (isIdle(work)) return;
+
+    for (const k of work.added) {
+      const tile = state.world.tiles[k];
+      const now = seen[k];
+      if (!tile || now === undefined) continue;
+      const p = toPixel(fromKey(k), HEX_SIZE);
+      const visible = now === 'visible';
+
+      const poly = svgEl('polygon', {
+        points: cornerPoints(p.x, p.y, HEX_SIZE),
+        fill: tileFill(tile, visible),
+        stroke: terrainDef(tile.terrain).edge,
+        'stroke-width': 1,
+        opacity: visible ? 1 : 0.55,
+      });
+      layerTerrain.append(poly);
+
+      // Mountains, forest and hills used to get a group of paths each here.
+      // They are in the terrain pattern now — see render/terrainArt.ts — so
+      // all eight terrains have texture and none of them costs a node.
+
+      let river: SVGCircleElement | null = null;
+      if (tile.river) {
+        river = svgEl('circle', {
+          cx: p.x,
+          cy: p.y,
+          r: HEX_SIZE * 0.24,
+          fill: '#3f7d94',
+          opacity: visible ? 0.85 : 0.4,
+        });
+        layerRivers.append(river);
+      }
+
+      drawn.set(k, { poly, river });
+      lit.set(k, now);
+    }
+
+    for (const k of work.relit) {
+      const held = drawn.get(k);
+      const tile = state.world.tiles[k];
+      const now = seen[k];
+      if (!held || !tile || now === undefined) continue;
+      const visible = now === 'visible';
+      held.poly.setAttribute('fill', tileFill(tile, visible));
+      held.poly.setAttribute('opacity', visible ? '1' : '0.55');
+      held.river?.setAttribute('opacity', visible ? '0.85' : '0.4');
+      lit.set(k, now);
+    }
+
+    for (const k of work.dropped) {
+      const held = drawn.get(k);
+      if (!held) continue;
+      held.poly.remove();
+      held.river?.remove();
+      drawn.delete(k);
+      lit.delete(k);
+    }
   }
 
   /**
