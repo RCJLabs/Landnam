@@ -26,6 +26,7 @@ import {
 } from './render/colonyUi';
 import { renderGuide, renderLesson, renderSettings, renderTitle, renderWall } from './render/cards';
 import { applyMotionPref, motionPref, setMotionPref } from './motion';
+import { buzz, hapticPref, hapticsSupported, setHapticPref } from './haptics';
 import { lastHardship, rememberHardship } from './hardshipPref';
 import { decodeChallenge } from './sim/challenge';
 import type { HardshipId } from './data/hardship';
@@ -166,6 +167,15 @@ function paintSettingsCard(): void {
         paintSettingsCard();
       },
       motionStill: motionPref() === 'still',
+      // Offered only where it can do something. Every iPhone lands here
+      // with `false` and simply does not see the row — a switch wired to
+      // nothing is worse than no switch.
+      ...(hapticsSupported() ? { rumbleOn: hapticPref() === 'on' } : {}),
+      onToggleRumble: () => {
+        setHapticPref(hapticPref() === 'on' ? 'off' : 'on');
+        if (hapticPref() === 'on') buzz(['strike']);
+        paintSettingsCard();
+      },
       ...(state?.hardship ? { hardship: state.hardship } : {}),
       onToggleMotion: () => {
         setMotionPref(motionPref() === 'still' ? 'system' : 'still');
@@ -313,7 +323,12 @@ function dispatch(action: Action): void {
   save(state);
   // What changed IS what the game sounds like — see src/audio/cues.ts. Doing
   // it here rather than inside the sim keeps every reducer pure.
-  playAll(cuesFor(before, next, action));
+  //
+  // The hand reads the same list, so a blow that makes a noise and a blow
+  // that makes a buzz can never disagree about whether it landed.
+  const cues = cuesFor(before, next, action);
+  playAll(cues);
+  buzz(cues);
   // The wall outlives the run, so it is written the moment the run is over
   // rather than when the ending card is dismissed — a player who closes the
   // tab on the death screen has still lost those people.

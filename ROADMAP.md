@@ -49,11 +49,11 @@
 > half-done while it waits. The item below is what it resumes ON.
 >
 > Ten candidates were surveyed against the live tree on 2026-08-17 and
-> written up in chat. FOUR are DONE and in the changelog: terrain you can
+> written up in chat. FIVE are DONE and in the changelog: terrain you can
 > tell apart without reading the colour; a repaint that costs what changed
-> instead of what is on the map; `dvh` in all seven ceilings; and a pinch
-> that holds the point between your fingers. The rest, roughly in the order
-> they are worth doing: there are no haptics anywhere; landscape has no
+> instead of what is on the map; `dvh` in all seven ceilings; a pinch that
+> holds the point between your fingers; and a game you can feel in the hand.
+> The rest, roughly in the order they are worth doing: landscape has no
 > rules at all; the battlefield is capped rather than budgeted on a phone;
 > one-thumb reach has never been audited; and the place economy is still the
 > item with the most game in it (see the autopsy below).
@@ -1829,6 +1829,34 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-18 — A game you can feel in the hand** — Mobile item 5. There
+  was no `navigator.vibrate` anywhere in the tree. `src/haptics.ts` reads
+  the SAME `CueId[]` the sound does — `cuesFor` already diffs two states —
+  so a blow that makes a noise and a blow that makes a buzz can never
+  disagree about whether it landed, and no second way of noticing things
+  had to be written.
+  The design is all restraint. **One buzz per dispatch, heaviest wins**, so
+  a turn that kills a man and raises a shield is a death rather than a mush
+  of both — the same rule as the bell tolling once. **The common cues are
+  silent**: `step`, `oar`, `miss`, `gather`, `camp` reach the hand never,
+  because a phone that buzzes on every footstep is a phone being put down.
+  **Still means still** — the game's own motion setting and
+  `prefers-reduced-motion` both stop it, since a buzz is motion whatever it
+  is that moves. `keptStill()` in `motion.ts` now states in TypeScript what
+  the stylesheet already said in CSS.
+  Measured over `runs/long.json`: **115 buzzes across 1320 dispatches, 8.7%
+  of turns.**
+  **IT DOES NOTHING ON AN IPHONE.** `navigator.vibrate` has never shipped in
+  Safari on iOS and no substitute is open to a web page. This is an Android
+  improvement, and the Rumble settings row hides itself where the browser
+  cannot vibrate rather than offering a switch wired to nothing.
+  22 tests, mostly about what does NOT happen. The 200ms ceiling caught its
+  own author on the first run (`jarl` was 238). Watched failing on a
+  buzzing `step` and on a dropped stillness gate — **and the first version
+  of the walking test was too weak to catch either**: it used CAMP, which
+  makes no `step`, and `runs/long.json` walks eight hexes in four hundred
+  days, so the run-wide percentage barely moved. Rewritten to walk the real
+  fog, it fails with "8 of 8 plain steps reached the hand".
 - **2026-08-18 — A pinch that holds what is between your fingers** — Mobile
   items 3 and 4, together because both are the map answering a finger.
   **Item 4:** `pinchStart` scaled `camera.zoom` and left `camera.x/y` alone,

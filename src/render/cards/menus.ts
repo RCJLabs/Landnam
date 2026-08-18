@@ -15,6 +15,13 @@ export interface SettingsOptions {
   onToggleSound: () => void;
   motionStill: boolean;
   onToggleMotion: () => void;
+  /**
+   * Absent where the browser cannot vibrate at all — which is every iPhone,
+   * since `navigator.vibrate` has never shipped in Safari on iOS. The row
+   * hides rather than offering a switch wired to nothing.
+   */
+  rumbleOn?: boolean;
+  onToggleRumble: () => void;
   /** The current run's seed, when a run exists — the shareable thing. */
   seed?: string;
   /** The terms the current run is being played on. Shown, never edited. */
@@ -50,6 +57,10 @@ export function renderSettings(opts: SettingsOptions): HTMLElement {
       opts.onToggleMotion,
     ),
   ]);
+
+  if (opts.rumbleOn !== undefined) {
+    card.append(toggleRow('Rumble', opts.rumbleOn ? 'On' : 'Off', opts.onToggleRumble));
+  }
 
   // The terms this run is being played on. Shown and not editable: hardship
   // is chosen when the keel touches sand and belongs to the saga after that,
