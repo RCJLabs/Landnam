@@ -307,6 +307,34 @@ button.wide {
   max-height: 74px;
 }
 
+/*
+ * ON A SHORT SCREEN THE LOG GIVES WAY, BECAUSE THE FIELD HAS A FLOOR AND THE
+ * LOG HAS NOT.
+ *
+ * 74px is an absolute cap, so it costs a 915px phone 8% of its screen and a
+ * 640px phone 12% — the log takes half again as much where there is least to
+ * give. And what it takes it out of is the field, which is `flex: 1 1 auto`.
+ *
+ * That matters because a battle hex is a TOUCH TARGET: you tap one to move
+ * and another to strike, so it owes the same 44px every button here owes.
+ * The field fits the whole grid on screen, so the hex size falls out of the
+ * space the field is left with. Measured over fourteen turns at 360x640, the
+ * log filling took the hex from 47px to 45 — one line short of breaking a
+ * rule this project has held since 5.2. This gives about thirty of those
+ * pixels back and returns the hex to 48.
+ *
+ * Only below 700px, so the sizes the game is designed at — 390x844 and up —
+ * keep the log exactly as it is. See scripts/field.mjs, which measures all
+ * of this, including the one case it cannot fix: at 320px WIDE the whole
+ * grid cannot show 44px hexes however much height it is given (42px is the
+ * ceiling), and that is a question about panning the field, not about a log.
+ */
+@media (max-height: 700px) {
+  .saga.fight .saga-entries {
+    max-height: 44px;
+  }
+}
+
 .saga.fight .saga-line {
   font-size: 13px;
   line-height: 1.4;

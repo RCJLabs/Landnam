@@ -14,6 +14,7 @@
     "repaint": "npm run build && node scripts/repaint.mjs",
     "pinch": "npm run build && node scripts/pinch.mjs",
     "landscape": "npm run build && node scripts/landscape.mjs",
+    "field": "npm run build && node scripts/field.mjs",
     "test:watch": "vitest",
     "release": "npm run build && node scripts/release.mjs",
     "publish": "npm run build && node scripts/publish.mjs",

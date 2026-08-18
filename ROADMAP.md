@@ -57,9 +57,11 @@
 > now — which leaves the design half of it waiting on a decision rather than
 > on a measurement (see the autopsy below).
 > Landscape has rules now too — a phone on its side lays out in two columns
-> and the map keeps 88% of the height instead of 32%. What is left of the
-> ten: the battlefield is capped rather than budgeted on a phone, and
-> one-thumb reach has never been audited.
+> and the map keeps 88% of the height instead of 32%. The battlefield item
+> turned out to be **the wrong worry**: the field was never squeezed to a
+> strip, but a battle hex fell to 45px on a small phone against a 44px rule,
+> and 320px-wide screens cannot reach 44px at all without the field learning
+> to pan. **One of the ten is left: one-thumb reach has never been audited.**
 >
 > **The `dvh` half is the one thing here that has NOT been observed working.**
 > Headless Chrome has no URL bar, so `dvh` and `vh` resolve identically and
@@ -1845,6 +1847,44 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-18 — The battlefield was not the problem; the thumb was** —
+  Mobile item 8, and **the premise was wrong.** It was pitched as "the
+  battlefield gets squeezed to a strip as the fight goes on, the 46vh cap is
+  a ceiling rather than a budget". Measured over fourteen turns of a real
+  fight at 390×844: the field holds **69% of the screen and falls to 67%**.
+  It is `flex: 1 1 auto` and genuinely budgeted, and the 74px cap on the
+  fight log does exactly the job its comment claims. No strip.
+  **What the measuring did turn up is a 44px rule.** A battle hex is a touch
+  target — tap one to move, another to strike — and the field fits the WHOLE
+  grid on screen, so hex size falls out of screen size rather than being
+  chosen. With height taken out of the question (a 1400px viewport) the
+  ceiling is a pure function of WIDTH: 320px → 42px hex, 360 → 47, 390 → 51,
+  412 → 54. And the log filling up took 360×640 from 47px to **45px** — one
+  line short of breaking a rule held since 5.2, and nothing was watching.
+  The fix is one media query. The log's cap was absolute, so it cost a 915px
+  phone 8% of its screen and a 640px phone 12% — most where there is least
+  to give. Below 700px tall the fight log now caps at 44px instead of 74.
+  | | field, 14 turns | hex |
+  | --- | --- | --- |
+  | 412×915 | 677 → 633 (74→69%) | 54px, untouched |
+  | 390×844 | 606 → 562 (72→67%) | 51px, untouched |
+  | 360×640 | 402 → **388** (was 358) | 47px held (was 47→45) |
+  | 320×568 | 315 → **301** (was 271) | 39px — see below |
+  **320px wide cannot be fixed this way and is recorded as such**: 42px is
+  the hard ceiling there however much height it is given, because the whole
+  grid always fits on screen. Making it pass means letting the field pan and
+  zoom — which it deliberately does not, "the battlefield frames itself, so
+  no panning, just tap" — or a smaller grid. Both are design calls, so
+  `scripts/field.mjs` measures 320 and prints it rather than holding a line
+  it cannot reach, and holds 44px at 360 and up.
+  **The first bar it shipped with was insensitive and that is worth
+  recording.** Asserting only "hex ≥ 44px" passed the pre-fix state, because
+  45 ≥ 44 and because at 390 and up the hex is width-bound so no amount of
+  log growth can move it at all. The bar that works measures what the log
+  actually does: a whole fight may not cost the field more than a tenth of
+  what it opened with. Watched failing on the pre-fix CSS with exactly the
+  right words — "fourteen turns took the field from 402px to 358px, 11% of
+  it, and the log took it".
 - **2026-08-18 — A phone held sideways** — Mobile item 6. Landscape was
   never broken the way a layout is usually broken: measured at 844×390
   BEFORE any change, nothing overflowed, nothing was clipped, every button
