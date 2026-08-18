@@ -53,10 +53,12 @@
 > tell apart without reading the colour; a repaint that costs what changed
 > instead of what is on the map; `dvh` in all seven ceilings; a pinch that
 > holds the point between your fingers; and a game you can feel in the hand.
+> The place economy's INSTRUMENT is fixed too — the bot can reach a market
+> now — which leaves the design half of it waiting on a decision rather than
+> on a measurement (see the autopsy below).
 > The rest, roughly in the order they are worth doing: landscape has no
 > rules at all; the battlefield is capped rather than budgeted on a phone;
-> one-thumb reach has never been audited; and the place economy is still the
-> item with the most game in it (see the autopsy below).
+> and one-thumb reach has never been audited.
 >
 > **The `dvh` half is the one thing here that has NOT been observed working.**
 > Headless Chrome has no URL bar, so `dvh` and `vh` resolve identically and
@@ -126,11 +128,24 @@ went three layers deep.** Places are not consumed, they are never LEARNED (11
 of 120 emptied; 42 known and still standing). Widening word of mouth is a
 measured null — the tap is the number of bargains, not the width of the pipe.
 Landmark-sighting from high ground fixed discovery (first sighting day 74 →
-46) and moved no downstream verb. And the last link is that **the harness
-never aims at a market**: `nearestFriendable` iterates `state.neighbours` and
-never `world.places`, so today's market figures measure the bot's itinerary
-rather than the game's reach. Teaching the settler otherwise rewrites every
-figure in this document and is Evan's call — see the changelog.
+46) and moved no downstream verb. And the last link was that the harness
+never aimed at a market.
+
+**That last link is FIXED as of 2026-08-18, and the answer changed shape.**
+The bot can walk to a known counter and deal there now; counter bargains
+went 10 → 195 over thirty settler sagas and settled days 3,709 → 4,261. The
+2026-08-13 warning that this "rewrites every figure in this document" turned
+out to be false — the errand is gated behind the first winter, so the
+hardship curve (87/78/73, then 62/27/12) did not move by a single point, and
+all 83 balance assertions passed untouched.
+
+**What is left is a design question, not a measurement one.** Ten errands
+produced a hundred and ninety-five deals, so reach never limited the volume,
+and the settler knew of an open counter on 2,310 of 4,261 settled days, so
+discovery does not either. The market is not under-discovered, it is
+**under-visited**: an errand launches ten times in thirty sagas, behind
+`!hasSpeakers`, a winter, and a surplus. Whether that gate should open is
+Evan's call — see the changelog.
 
 **Phase 7 is the Unreal build, and it is under way.** Item 1 is decided: the
 rules get rewritten in C++, the TypeScript becomes the reference
@@ -1829,6 +1844,46 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-18 — The bot can reach a market now, and the coast looks
+  different** — Mobile item 9, first half. NOT a change to the game: a fix
+  to the instrument that was measuring it.
+  `nearestFriendable()` iterated `state.neighbours` and never
+  `world.places`, so a `trade` errand could end at a camp and nowhere else,
+  and the bot had no branch that dealt at a counter it was standing on. The
+  settler carried `trades: true` and launched nine errands over thirty
+  sagas without one being able to reach a market. Every market figure in
+  this document was therefore measuring the bot's itinerary. `nearestMarket`
+  and `nearestCounter` aim the errand at whichever of a friendly camp or a
+  known counter is nearer — a place is KNOWN exactly when its hex is on the
+  chart, since word of mouth and landmark-sighting both write `world.seen`
+  — and the errand now trades when it arrives.
+  **Measured A/B, same thirty landings, only the bot changed:**
+  | settler | before | after |
+  | --- | --- | --- |
+  | bargains struck at a counter | 10 | **195** |
+  | settled days | 3,709 | **4,261** (+15%) |
+  | trade errands launched | 9 | 10 |
+  | places emptied | 12 (day 19) | 13 (day 29) |
+  | places ever seen | 60 of 120 | 60 of 120 |
+  Raider and turtle are byte-identical, which is the control: neither
+  trades, so neither should move, and neither did.
+  **The headline curve did not move at all** — 87/78/73 to the first winter
+  and 62/27/12 to spring, exactly as recorded. The fear written down on
+  2026-08-13, that teaching the settler to walk to a market "rewrites every
+  figure in this document", was wrong: the trade errand is gated behind
+  `wintersStood >= 1`, so it fires past the point those figures measure.
+  All 83 balance assertions pass untouched. No bar was moved.
+  **What it says about the game, for Evan.** Ten errands produced 195
+  deals, so REACH was never what limited the volume — an errand that
+  arrives trades plenty. Discovery is not the constraint either: the
+  settler knew of an open counter on 2,310 of 4,261 settled days. The
+  constraint is how rarely an errand launches at all — ten times in thirty
+  sagas, behind `!hasSpeakers`, a winter, and a food surplus. The market is
+  not under-discovered, it is **under-visited**. Whether that gate should
+  open is a design call and is deliberately not made here.
+  One caveat on the 195: it is the bot dealing repeatedly while parked at a
+  counter, about twenty deals an errand. A person might not grind that, so
+  read it as the ceiling reach buys rather than as a forecast.
 - **2026-08-18 — A game you can feel in the hand** — Mobile item 5. There
   was no `navigator.vibrate` anywhere in the tree. `src/haptics.ts` reads
   the SAME `CueId[]` the sound does — `cuesFor` already diffs two states —

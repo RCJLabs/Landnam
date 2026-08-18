@@ -612,10 +612,21 @@ function step(state: GameState): Action {
 
       const host = neighbourHere(state);
       if (host && bargainBlocker(state, host.id) === null) return { type:'BARTER', id: host.id };
+      // Standing at a counter: deal. This is the other half of the errand
+      // and it did not exist — the bot could reach a market only by walking
+      // over one on its way to a camp, and would then walk past it.
+      const counter = placeHere(state);
+      if (counter) {
+        for (const offer of offersAt(state, counter.id)) {
+          if (tradeBlocker(state, counter.id, offer.id) === null) {
+            return { type:'TRADE_AT', id: counter.id, offer: offer.id };
+          }
+        }
+      }
       if (!out.returning && state.day - out.launchedOn >= 20) return { type:'TURN_HOME' };
       const aim = out.returning
         ? state.settlement.at
-        : (nearestFriendable(state) ?? state.settlement.at);
+        : (nearestCounter(state) ?? state.settlement.at);
       const opts2 = moveOptions(state);
       if (opts2.length > 0) {
         return { type:'MOVE', to: opts2.reduce((a,b)=>distance(b,aim)<distance(a,aim)?b:a) };
@@ -627,7 +638,7 @@ function step(state: GameState): Action {
     // nobody makes a friend from indoors. Sends two out with food to spare,
     // and only when there is genuinely a surplus to carry. First, because
     // the Thing is what a run is FOR and raiding is what costs you it.
-    if (policy.trades && !hasSpeakers(state) && wintersStood(state.day) >= 1 && nearestFriendable(state)) {
+    if (policy.trades && !hasSpeakers(state) && wintersStood(state.day) >= 1 && nearestCounter(state)) {
       const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
       if (crew.length === 2
         && state.party.food > provisionsFor(2) + BARTER_FOOD * 3 + foodPerDay(state) * 7
@@ -902,6 +913,48 @@ function nearestFriendable(state: GameState): {q:number;r:number} | null {
     if (d < bestD) { bestD = d; best = n.at; }
   }
   return best;
+}
+
+/**
+ * A market this band knows of and could still deal at.
+ *
+ * A place is KNOWN exactly when its hex is on the chart — word of mouth and
+ * landmark-sighting both work by writing `world.seen`, so there is no second
+ * register of knowledge to consult. Emptied places are skipped because steel
+ * ends a counter, and kinds with no `market` are skipped because a wreck on
+ * the strand sells nothing.
+ */
+function nearestMarket(state: GameState): {q:number;r:number} | null {
+  let best: {q:number;r:number} | null = null;
+  let bestD = 99;
+  for (const p of state.world.places) {
+    if (p.sackedOn !== undefined) continue;
+    if (state.world.seen[key(p.at)] === undefined) continue;
+    if ((placeKind(p.kind).market ?? []).length === 0) continue;
+    const d = distance(p.at, state.party.at);
+    if (d < bestD) { bestD = d; best = p.at; }
+  }
+  return best;
+}
+
+/**
+ * Where a trade errand should go: whichever of a friendly camp or a known
+ * counter is nearer.
+ *
+ * THIS IS THE FIX FOR A BROKEN INSTRUMENT, NOT A CHANGE TO THE GAME. The
+ * errand only ever consulted `state.neighbours`, so a `trade` purpose could
+ * end at a camp and nowhere else — and the settler launched nine of them
+ * over thirty sagas without one being able to reach a counter. Every market
+ * figure in ROADMAP.md was therefore measuring this bot's itinerary rather
+ * than the game's reach. A capability the bot cannot use gets measured as
+ * worthless, which is this repo's oldest rule about harnesses.
+ */
+function nearestCounter(state: GameState): {q:number;r:number} | null {
+  const camp = nearestFriendable(state);
+  const market = nearestMarket(state);
+  if (!camp) return market;
+  if (!market) return camp;
+  return distance(market, state.party.at) < distance(camp, state.party.at) ? market : camp;
 }
 
 /**
@@ -4055,7 +4108,7 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
       places: number; seen: number; seenDay: number; sacked: number;
       sackedDay: number; window: number; standingKnown: number; told: number;
       oppDays: number; strandhoggs: number; sagas: number; days: number;
-      settledDays: number; knownMarketDays: number; tradeErrands: number;
+      settledDays: number; knownMarketDays: number; tradeErrands: number; deals: number;
     }
     const life: Record<string, Life> = {};
     const byKind: Record<string, { seen: number; sacked: number; n: number }> = {};
@@ -4063,7 +4116,7 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
     for (const p of POLICIES) {
       const L: Life = { places: 0, seen: 0, seenDay: 0, sacked: 0, sackedDay: 0,
         window: 0, standingKnown: 0, told: 0, oppDays: 0, strandhoggs: 0,
-        sagas: 0, days: 0, settledDays: 0, knownMarketDays: 0, tradeErrands: 0 };
+        sagas: 0, days: 0, settledDays: 0, knownMarketDays: 0, tradeErrands: 0, deals: 0 };
       life[p.id] = L;
       try {
         policy = p;
@@ -4094,6 +4147,14 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
             }
             if (!before.battle && after.battle?.strandhogg) L.strandhoggs += 1;
             if (!before.expedition && after.expedition?.purpose === 'trade') L.tradeErrands += 1;
+            // Counted off the tally rather than off the saga wording, so a
+            // reworded line cannot quietly zero this the way it could the
+            // market count in the other sweep.
+            // `bargains` counts a neighbour's yard as well as a counter, so
+            // the deal is only credited here when the band is standing ON a
+            // place — which a barter in somebody's camp never is.
+            const struck = (after.tally.bargains ?? 0) - (before.tally.bargains ?? 0);
+            if (struck > 0 && placeHere(after)) L.deals += struck;
             // Learned across a counter rather than by walking into it.
             if (after.saga.length > before.saga.length) {
               for (const line of after.saga.slice(before.saga.length)) {
@@ -4133,7 +4194,7 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
         `${L.standingKnown} known and still standing at the end\n` +
         `    ${L.oppDays} days afloat beside one, ${L.strandhoggs} strandhöggs, over ${L.days} days\n` +
         `    settled ${L.settledDays} days, of which ${L.knownMarketDays} knew the way to a counter ` +
-        `still trading; ${L.tradeErrands} trade errands launched, none of which can aim at one\n`;
+        `still trading; ${L.tradeErrands} trade errands launched, ${L.deals} bargains struck\n`;
     };
     // eslint-disable-next-line no-console
     console.log(
