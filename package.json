@@ -12,6 +12,7 @@
     "record": "vite-node scripts/record.ts --",
     "offline": "npm run build && node scripts/offline.mjs",
     "repaint": "npm run build && node scripts/repaint.mjs",
+    "pinch": "npm run build && node scripts/pinch.mjs",
     "test:watch": "vitest",
     "release": "npm run build && node scripts/release.mjs",
     "publish": "npm run build && node scripts/publish.mjs",

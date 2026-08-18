@@ -49,15 +49,22 @@
 > half-done while it waits. The item below is what it resumes ON.
 >
 > Ten candidates were surveyed against the live tree on 2026-08-17 and
-> written up in chat. TWO are DONE and in the changelog: terrain you can
-> tell apart without reading the colour, and a repaint that costs what
-> changed instead of what is on the map. The rest, roughly in the order they
-> are worth doing: `vh` should be `dvh` in all seven places, because on a
-> phone `vh` resolves against the viewport with the URL bar HIDDEN and the
-> panels overflow by exactly that much; pinch zoom scales about the screen
-> centre rather than the fingers; there are no haptics anywhere; landscape
-> has no rules at all; and the place economy is still the item with the most
-> game in it (see the autopsy below).
+> written up in chat. FOUR are DONE and in the changelog: terrain you can
+> tell apart without reading the colour; a repaint that costs what changed
+> instead of what is on the map; `dvh` in all seven ceilings; and a pinch
+> that holds the point between your fingers. The rest, roughly in the order
+> they are worth doing: there are no haptics anywhere; landscape has no
+> rules at all; the battlefield is capped rather than budgeted on a phone;
+> one-thumb reach has never been audited; and the place economy is still the
+> item with the most game in it (see the autopsy below).
+>
+> **The `dvh` half is the one thing here that has NOT been observed working.**
+> Headless Chrome has no URL bar, so `dvh` and `vh` resolve identically and
+> the overflow it fixes cannot be reproduced in this harness. What is checked
+> is that all seven rules survive minification with the `vh` fallback intact,
+> that the browser accepts the unit, and that nothing overflows now. Whether
+> the panels stop overshooting on a real phone is a thing only a real phone
+> can say.
 >
 > **A correction worth keeping, because it was stated confidently and was
 > wrong.** The repaint item was pitched as "late game that is most of 1,872
@@ -1822,6 +1829,40 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-18 — A pinch that holds what is between your fingers** — Mobile
+  items 3 and 4, together because both are the map answering a finger.
+  **Item 4:** `pinchStart` scaled `camera.zoom` and left `camera.x/y` alone,
+  which scales about the middle of the SCREEN. Pinch anything not already
+  centred and it walked away from you and you chased it — the sort of thing
+  that reads as cheap without ever being reported as a bug. The camera maths
+  is pure, so it left the renderer: `src/render/camera.ts` holds `worldAt`
+  and `anchored`, and the rule is one line — **zooming keeps a point still**.
+  The same call does the two-finger pan, because holding the world point
+  under a MOVED midpoint is the same operation; the wheel is anchored at the
+  cursor for the same reason; and `release`'s hand-rolled screen-to-world
+  copy is now the shared one.
+  `test/camera.test.ts` takes it across four corners, three interior points,
+  sixty small steps (drift of a pixel per event is invisible in a one-step
+  test and obvious in the hand) and both clamps — clamping is where anchored
+  zoom usually breaks, because the camera gets moved for the zoom that was
+  ASKED for rather than the one used. Watched failing: nine of fifteen, and
+  **the six that still passed included dead centre**, which is the one place
+  the broken version was right and the only place a hand test would land.
+  `scripts/pinch.mjs` (`npm run pinch`) dispatches two real pointers at the
+  built page and reads the answer off the viewBox, because the unit tests
+  cannot see whether the renderer feeds them the midpoint or one finger, or
+  client coordinates instead of element offsets. Measured slip against a
+  26-unit hex: **0.039 units pinching out, 0.149 pinching in.** Watched
+  failing at 4,479 units with the zoom division dropped.
+  **Item 3:** all seven `vh` ceilings are `dvh` now, written twice so an old
+  browser keeps the ceiling rather than losing it. `vh` is defined against
+  the viewport with the URL bar HIDDEN, so every cap was taller than the
+  screen by exactly that bar — the same overflow a photograph once reported,
+  still there and smaller. **Not observed working**: headless Chrome has no
+  URL bar, so this harness cannot reproduce what it fixes. Checked instead
+  that all seven rules survive minification with the fallback, that the
+  browser accepts the unit, and that nothing overflows. A real phone is the
+  only thing that can confirm the rest.
 - **2026-08-17 — A repaint that costs what changed** — Mobile item 2. Every
   action repaints the map, and `paint()` cleared the terrain layer and built
   a fresh polygon for every hex the band had ever seen. Terrain never

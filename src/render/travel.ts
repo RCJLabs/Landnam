@@ -8,6 +8,7 @@ import { clanKind, standingFor } from '../data/clans';
 import { atSea, moveEffort } from '../sim/travel';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
+import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
 import { terrainFill, terrainPatterns } from './terrainArt';
 
 export const HEX_SIZE = 26;
@@ -18,12 +19,6 @@ export interface TravelView {
   update(state: GameState): void;
   /** Centres the camera on a hex. */
   centreOn(h: Hex): void;
-}
-
-interface Camera {
-  x: number;
-  y: number;
-  zoom: number;
 }
 
 function tileFill(tile: Tile, visible: boolean): string {
@@ -252,13 +247,16 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
   let dragged = false;
   let pinchStart = 0;
   let pinchZoom = 1;
+  /** Where the fingers were centred last move, so the pinch can hold a point. */
+  let lastMid: { x: number; y: number } | null = null;
 
   root.addEventListener('pointerdown', (e) => {
     root.setPointerCapture(e.pointerId);
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.size === 2) {
-      pinchStart = pointerSpread(pointers);
+      pinchStart = spread(pointers.values());
       pinchZoom = camera.zoom;
+      lastMid = midpoint(pointers.values());
     }
     dragged = false;
   });
@@ -269,11 +267,26 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
     if (pointers.size >= 2) {
-      const spread = pointerSpread(pointers);
-      if (pinchStart > 0) {
-        camera.zoom = clampZoom(pinchZoom * (spread / pinchStart));
+      const mid = midpoint(pointers.values());
+      if (pinchStart > 0 && mid && lastMid) {
+        const rect = root.getBoundingClientRect();
+        const view = { width: rect.width, height: rect.height };
+        // The world point between the fingers BEFORE this move, put back
+        // between them after it. That is the pinch anchored and the
+        // two-finger pan, in one call — see render/camera.ts.
+        const hold = worldAt(camera, view, offsetIn(rect, lastMid));
+        const next = anchored(
+          hold,
+          view,
+          offsetIn(rect, mid),
+          pinchZoom * (spread(pointers.values()) / pinchStart),
+        );
+        camera.x = next.x;
+        camera.y = next.y;
+        camera.zoom = next.zoom;
         applyCamera();
       }
+      lastMid = mid;
       dragged = true;
       return;
     }
@@ -288,15 +301,16 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
 
   function release(e: PointerEvent): void {
     const had = pointers.delete(e.pointerId);
-    if (pointers.size < 2) pinchStart = 0;
+    if (pointers.size < 2) {
+      pinchStart = 0;
+      lastMid = null;
+    }
     if (!had || dragged || pointers.size > 0) return;
     if (!latest) return;
     const rect = root.getBoundingClientRect();
-    const width = rect.width / camera.zoom;
-    const height = rect.height / camera.zoom;
-    const worldX = camera.x - width / 2 + ((e.clientX - rect.left) / rect.width) * width;
-    const worldY = camera.y - height / 2 + ((e.clientY - rect.top) / rect.height) * height;
-    onHexTap(fromPixel(worldX, worldY, HEX_SIZE));
+    const p = worldAt(camera, { width: rect.width, height: rect.height },
+      offsetIn(rect, { x: e.clientX, y: e.clientY }));
+    onHexTap(fromPixel(p.x, p.y, HEX_SIZE));
   }
 
   root.addEventListener('pointerup', release);
@@ -309,7 +323,19 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     'wheel',
     (e) => {
       e.preventDefault();
-      camera.zoom = clampZoom(camera.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12));
+      // Under the cursor, for the same reason as under the fingers.
+      const rect = root.getBoundingClientRect();
+      const view = { width: rect.width, height: rect.height };
+      const at = offsetIn(rect, { x: e.clientX, y: e.clientY });
+      const next = anchored(
+        worldAt(camera, view, at),
+        view,
+        at,
+        camera.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12),
+      );
+      camera.x = next.x;
+      camera.y = next.y;
+      camera.zoom = next.zoom;
       applyCamera();
     },
     { passive: false },
@@ -328,14 +354,9 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
   };
 }
 
-function clampZoom(value: number): number {
-  return Math.max(0.55, Math.min(2.6, value));
-}
-
-function pointerSpread(pointers: Map<number, { x: number; y: number }>): number {
-  const [a, b] = [...pointers.values()];
-  if (!a || !b) return 0;
-  return Math.hypot(a.x - b.x, a.y - b.y);
+/** A client point as an offset inside the element. */
+function offsetIn(rect: DOMRect, p: { x: number; y: number }): { x: number; y: number } {
+  return { x: p.x - rect.left, y: p.y - rect.top };
 }
 
 /**

@@ -59,11 +59,26 @@ body,
  * from a phone with a photograph, which is the only way this class of bug
  * ever gets found.
  *
- * A ceiling in vh plus its own scroll fixes the whole family at once —
+ * A ceiling in dvh plus its own scroll fixes the whole family at once —
  * a long crew roster does the same thing on the Work tab.
+ *
+ * DVH, NOT VH, AND THAT IS THE WHOLE POINT ON A PHONE. `vh` is defined
+ * against the LARGE viewport — the one you get with the browser's URL bar
+ * hidden — so on iOS Safari and Chrome Android every ceiling here was
+ * quietly taller than the screen by the height of that bar, and the panels
+ * this rule exists to contain overflowed by exactly that much. `#app` has
+ * `overflow: hidden`, so there is no page scroll to rescue it: the same bug
+ * the photograph reported, still there, just smaller.
+ *
+ * `dvh` tracks the viewport as it actually is. Every ceiling is written
+ * twice, `vh` then `dvh`, so a browser too old to know the unit ignores the
+ * second line and keeps the behaviour it has now rather than losing the
+ * ceiling altogether — which would put the buttons back off the bottom of
+ * the screen, and that is the one outcome worth guarding against.
  */
 .hint-slot {
   max-height: 62vh;
+  max-height: 62dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
@@ -280,11 +295,12 @@ button.wide {
 
 .saga.expanded .saga-entries {
   max-height: 46vh;
+  max-height: 46dvh;
 }
 
 /*
  * The blow-by-blow is always "expanded", so it would otherwise creep toward
- * 46vh as the fight went on and squeeze the battlefield down to a strip.
+ * 46dvh as the fight went on and squeeze the battlefield down to a strip.
  * The field is the game; the log is a footnote that scrolls itself.
  */
 .saga.fight .saga-entries {
@@ -304,6 +320,7 @@ button.wide {
 /* The saga opened as a page: tall enough to read, short enough to close. */
 .saga-book {
   max-height: 58vh;
+  max-height: 58dvh;
   overflow-y: auto;
   margin: 4px 0 10px;
 }
@@ -353,6 +370,7 @@ button.wide {
   width: 100%;
   max-width: 460px;
   max-height: 88vh;
+  max-height: 88dvh;
   overflow-y: auto;
   padding: 22px;
   background: var(--panel);
@@ -898,6 +916,7 @@ h2.grim {
   /* Tall enough to read on a phone, capped so the legend and the close
      button never fall off the bottom of the card. */
   height: 42vh;
+  height: 42dvh;
 }
 
 .chart {
@@ -1282,6 +1301,7 @@ button.relearn {
 .wall-list {
   margin-top: 12px;
   max-height: 52vh;
+  max-height: 52dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1407,6 +1427,7 @@ button.relearn {
 /* The guide reads as a book: headed sections, scrolling as one page. */
 .guide-book {
   max-height: 62vh;
+  max-height: 62dvh;
   overflow-y: auto;
   margin: 4px 0 10px;
 }
