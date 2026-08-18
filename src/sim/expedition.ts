@@ -93,7 +93,7 @@ export function distanceFromHome(state: GameState): number {
 
 // --- Launching ---
 
-export type LaunchBlock = 'nosteading' | 'away' | 'already' | 'nobody' | 'unmanned' | 'stores';
+export type LaunchBlock = 'nosteading' | 'away' | 'already' | 'nobody' | 'unmanned';
 
 export function launchBlocker(state: GameState, members: string[]): LaunchBlock | null {
   if (!state.settlement) return 'nosteading';
@@ -103,7 +103,21 @@ export function launchBlocker(state: GameState, members: string[]): LaunchBlock 
   const going = crew.filter((p) => members.includes(p.id));
   if (going.length === 0) return 'nobody';
   if (crew.length - going.length < MIN_HOME_CREW) return 'unmanned';
-  if (state.party.food < provisionsFor(going.length)) return 'stores';
+  // NO STORES GATE. It used to refuse the launch when the steading could not
+  // provision the party in full, and that closed the only door out of a
+  // steading at exactly the moment a player needs it.
+  //
+  // A settled band cannot forage or hunt — `canGather` is false at home — so
+  // once the store is empty the ONLY way to get food is to leave, and leaving
+  // was the thing being refused. Reported from a phone: day 52, winter, three
+  // hands, food 0, the panel saying "we will not reach spring on what this
+  // ground gives" and every legal action unable to change it. That is a trap,
+  // not a hard game.
+  //
+  // The cost did not go away, it became proportional: `launch` carries
+  // whatever the store can spare, so a rich steading pays the full price and
+  // a starving one sends its people out with nothing — which is a decision
+  // with a real consequence rather than a locked door.
   return null;
 }
 
@@ -113,7 +127,6 @@ export const LAUNCH_REASON: Record<LaunchBlock, string> = {
   already: 'A party is already out.',
   nobody: 'Somebody has to go.',
   unmanned: 'Somebody has to stay and keep the fire.',
-  stores: 'There is not enough in the store to provision them.',
 };
 
 /** What it costs to send this many people out. */
@@ -124,7 +137,9 @@ export function provisionsFor(count: number): number {
 export function launch(state: GameState, members: string[], purpose: Purpose): boolean {
   if (launchBlocker(state, members) !== null) return false;
   const going = living(state.party.people).filter((p) => members.includes(p.id));
-  const carried = provisionsFor(going.length);
+  // What the store can spare, not what the trip wants. Never more than there
+  // is — see launchBlocker for why an empty store must not forbid the trip.
+  const carried = Math.min(provisionsFor(going.length), Math.max(0, state.party.food));
   state.party.food -= carried;
 
   note(state, 'expeditions');

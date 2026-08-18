@@ -63,6 +63,15 @@
 > and 320px-wide screens cannot reach 44px at all without the field learning
 > to pan. **One of the ten is left: one-thumb reach has never been audited.**
 >
+> **Two bugs came back from a real phone on 2026-08-18 and both were real.**
+> The terrain patterns were being sliced by hex edges — the tile is the hex
+> lattice now, and no mark may reach past the inradius. And a settled
+> steading with an empty store had NO legal action that could get food: it
+> cannot forage at home, and the expedition that would have fed it was
+> refused for want of the provisions it was leaving to find. Neither was
+> reachable by any harness here, which is worth remembering before trusting
+> a green suite about how the game FEELS.
+>
 > **The `dvh` half is the one thing here that has NOT been observed working.**
 > Headless Chrome has no URL bar, so `dvh` and `vh` resolve identically and
 > the overflow it fixes cannot be reproduced in this harness. What is checked
@@ -1847,6 +1856,41 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-18 — Two things a phone found that no harness had** — Both
+  reported from real play on a real Android, and both were mine.
+  **The terrain marks were being sliced by the hex edges.** The patterns from
+  the texture pass tiled 120×104 in world space, deliberately NOT a whole
+  number of hexes so the same three trees would not be stamped on every
+  forest. That reasoning was about repetition and ignored what a pattern fill
+  IS: the hex polygon clips it. A tree straddling an edge was cut in half; a
+  mountain, reach 20 against an inradius of 22.5, was cut apart on nearly
+  every hex it landed on. "The mountains and trees and hills are in the hexes
+  weird" is exactly right.
+  The tile is the hex lattice now — two columns by four rows, the smallest
+  that closes, giving **eight hex centres** each with its own marks. So the
+  variety the old tile was reaching for survives, without the slicing. Marks
+  are laid around their hex's centre on a sunflower (golden angle, radius by
+  root of index) rather than a grid: a handful on a ring reads as a ring, and
+  a handful at random clumps. Every recipe's `spread + reach` is now held
+  under the inradius **by a test**, so nothing can be cut by construction
+  rather than by luck. Watched failing — "mountains reaches 30 against an
+  inradius of 22.5". Valley was reworked too: three long furrows had to sit
+  dead centre to fit and read as worms, so they are shorter and there are
+  four.
+  **A settled steading with an empty store was a trap.** Day 52, winter,
+  three hands, food 0, the panel reading "we will not reach spring on what
+  this ground gives" — and no legal action could change it. A settled band
+  cannot forage or hunt (`canGather` is false at home), so leaving is the
+  only way to get food, and `launchBlocker` refused the launch for want of
+  the food they were leaving to find. The gate is gone; `launch` now carries
+  whatever the store can spare. The cost did not disappear, it became
+  proportional — a rich steading pays the full price, a starving one sends
+  its people out with nothing, which is a decision with a consequence rather
+  than a locked door. `carried` only ever mattered on the way home (leftovers
+  go back in the store), so an empty-handed party is safe: it can forage the
+  moment it is off its own ground. Three tests, watched failing against the
+  old gate.
+  959 tests. All four browser checks still green.
 - **2026-08-18 — The battlefield was not the problem; the thumb was** —
   Mobile item 8, and **the premise was wrong.** It was pitched as "the
   battlefield gets squeezed to a strip as the fight goes on, the 46vh cap is

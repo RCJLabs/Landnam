@@ -113,16 +113,50 @@ describe('the steading is where the band lives', () => {
     expect(launch(state, all, 'raid')).toBe(false);
     expect(launchBlocker(state, [])).toBe('nobody');
 
-    state.party.food = 0;
-    expect(launchBlocker(state, ids(state, 2))).toBe('stores');
-    state.party.food = 90;
-
     state.party.at = { q: state.settlement!.at.q + 2, r: state.settlement!.at.r };
     expect(launchBlocker(state, ids(state, 2))).toBe('away');
 
     const homeless = structuredClone(newGame('refuse-nohome'));
     expect(launchBlocker(homeless, [homeless.party.people[0]!.id])).toBe('nosteading');
     expect(MIN_HOME_CREW).toBeGreaterThan(0);
+  });
+
+  /**
+   * The trap, reported from a phone: day 52, winter, three hands, food 0, the
+   * panel reading "we will not reach spring on what this ground gives" — and
+   * every legal action unable to change it.
+   *
+   * A settled band cannot forage or hunt (`canGather` is false at home), so an
+   * empty store leaves going out as the ONLY way to get food, and going out
+   * was refused for want of the food they were leaving to find.
+   */
+  it('lets a starving steading send people out with nothing', () => {
+    const state = settled('starving');
+    state.party.food = 0;
+
+    const crew = ids(state, 2);
+    expect(launchBlocker(state, crew)).toBeNull();
+    expect(launch(state, crew, 'explore')).toBe(true);
+    expect(state.expedition?.carried).toBe(0);
+    // The store cannot go below empty on the way out the door.
+    expect(state.party.food).toBe(0);
+  });
+
+  it('takes what the store can spare, never more', () => {
+    const state = settled('spare');
+    // Less than two heads need, so they carry the lot and no more.
+    state.party.food = provisionsFor(2) - 1;
+    expect(launch(state, ids(state, 2), 'explore')).toBe(true);
+    expect(state.expedition?.carried).toBe(provisionsFor(2) - 1);
+    expect(state.party.food).toBe(0);
+  });
+
+  it('still pays the full price when the store can afford it', () => {
+    const state = settled('rich');
+    state.party.food = 90;
+    expect(launch(state, ids(state, 2), 'explore')).toBe(true);
+    expect(state.expedition?.carried).toBe(provisionsFor(2));
+    expect(state.party.food).toBe(90 - provisionsFor(2));
   });
 
   it('provisions come out of the store and what is left comes back', () => {

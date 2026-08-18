@@ -24,8 +24,56 @@ import { ALL_TERRAINS, terrainDef } from '../data/terrain';
 import { svgEl } from './svg';
 import type { Terrain } from '../state/types';
 
-export const TILE_W = 120;
-export const TILE_H = 104;
+/**
+ * The hex the map is drawn at. Must match `HEX_SIZE` in render/travel.ts —
+ * pinned by a test, because the whole of this file's geometry hangs off it.
+ */
+export const HEX = 26;
+
+/** Centre to edge. Nothing a hex owns may reach past this or it gets cut. */
+export const INRADIUS = (Math.sqrt(3) / 2) * HEX;
+
+/**
+ * THE TILE IS THE HEX LATTICE, AND THAT IS THE WHOLE FIX.
+ *
+ * The first version tiled 120x104 in world space, deliberately NOT a whole
+ * number of hexes, so the pattern would land somewhere different on every hex
+ * instead of stamping the same three trees on every forest. That reasoning
+ * was about REPETITION and it ignored what a pattern fill actually is: the
+ * hex polygon CLIPS it. A tree that straddled a hex edge was sliced down the
+ * middle, half of it drawn and half missing, and a mountain — reach 20
+ * against an inradius of 22.5 — was cut apart on nearly every hex it landed
+ * on. Reported from a phone as "the mountains and trees and hills are in the
+ * hexes weird", which is exactly what it was.
+ *
+ * Pointy-top hexes repeat every `sqrt(3) * HEX` across and every `1.5 * HEX`
+ * down, with alternate rows offset by half a step. Two columns by four rows
+ * is the smallest tile that closes: EIGHT hex centres, each getting its own
+ * marks, so a stretch of forest has eight distinct stamps in it rather than
+ * one — the variety the old tile was reaching for, without the slicing.
+ */
+export const TILE_W = 2 * Math.sqrt(3) * HEX;
+export const TILE_H = 4 * 1.5 * HEX;
+
+/**
+ * Where the eight hexes sit inside one tile.
+ *
+ * Derived from the axial-to-pixel maths rather than typed out, so it cannot
+ * drift from the grid the renderer actually draws: x = sqrt(3)*HEX*(q + r/2),
+ * y = 1.5*HEX*r, folded back into the tile.
+ */
+export const CENTRES: { x: number; y: number }[] = (() => {
+  const out: { x: number; y: number }[] = [];
+  const step = Math.sqrt(3) * HEX;
+  for (let r = 0; r < 4; r++) {
+    for (let q = -2; q <= 2; q++) {
+      const x = step * (q + r / 2);
+      if (x < -0.001 || x >= TILE_W - 0.001) continue;
+      out.push({ x, y: 1.5 * HEX * r });
+    }
+  }
+  return out;
+})();
 
 /** The fill for a hex: the terrain's pattern, dimmed if merely remembered. */
 export function terrainFill(terrain: Terrain, visible: boolean): string {
@@ -73,21 +121,29 @@ export interface Mark {
 }
 
 /**
- * Marks on a jittered grid rather than uniformly at random.
+ * Marks laid around each hex's own centre, never across its edges.
  *
- * Uniform scatter clumps — it leaves bald patches and clusters that read as
- * mistakes at map scale. One mark per cell, jittered inside it, keeps the
- * spacing organic without ever leaving a hex-sized hole.
+ * A hex fill is CLIPPED by the hex, so anything reaching past the inradius is
+ * cut in half and reads as a mistake — which is what the first version did to
+ * every mountain on the map. Each mark is placed within `spread` of a centre,
+ * and every recipe's `spread + reach` is held under the inradius by a test,
+ * so nothing can be sliced by construction rather than by luck.
+ *
+ * Placement is a sunflower — golden angle, radius by the square root of the
+ * index — because a handful of points on a ring reads as a ring and a handful
+ * placed uniformly at random clump and leave bald patches. Jitter on both
+ * keeps it from looking set out with a ruler.
  */
-export function scatter(rng: Rng, cols: number, rows: number, jitter: number): Mark[] {
-  const cellW = TILE_W / cols;
-  const cellH = TILE_H / rows;
+export function scatter(rng: Rng, perHex: number, spread: number): Mark[] {
+  const GOLDEN = Math.PI * (3 - Math.sqrt(5));
   const marks: Mark[] = [];
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
+  for (const centre of CENTRES) {
+    for (let i = 0; i < perHex; i++) {
+      const radius = spread * Math.sqrt((i + 0.5 + rng.float(-0.35, 0.35)) / perHex);
+      const angle = i * GOLDEN + rng.float(-0.5, 0.5);
       marks.push({
-        x: (col + 0.5) * cellW + rng.float(-1, 1) * jitter * cellW * 0.5,
-        y: (row + 0.5) * cellH + rng.float(-1, 1) * jitter * cellH * 0.5,
+        x: centre.x + Math.cos(angle) * radius,
+        y: centre.y + Math.sin(angle) * radius,
         size: rng.next(),
         roll: rng.next(),
       });
@@ -127,10 +183,11 @@ export function copies(mark: Mark, reach: number): { x: number; y: number }[] {
 // ---- the recipes ----
 
 interface Recipe {
-  cols: number;
-  rows: number;
-  jitter: number;
-  /** How far a mark reaches from its point, for the wrap. */
+  /** Marks on each hex. One, for the things that ARE the hex. */
+  perHex: number;
+  /** How far from the hex's centre a mark may be placed. */
+  spread: number;
+  /** How far a mark reaches from its point, for the wrap and the clip check. */
   reach: number;
   draw(x: number, y: number, mark: Mark, base: string): SVGElement[];
 }
@@ -148,9 +205,8 @@ const stroke = (d: string, ink: string, width: number, opacity: number): SVGElem
 export const RECIPES: Record<Terrain, Recipe> = {
   // Chop, not waves: short broken crests, lighter than the water.
   ocean: {
-    cols: 6,
-    rows: 7,
-    jitter: 0.9,
+    perHex: 5,
+    spread: 13,
     reach: 9,
     draw(x, y, mark, base) {
       const w = 5 + mark.size * 4;
@@ -167,9 +223,8 @@ export const RECIPES: Record<Terrain, Recipe> = {
 
   // Sand and shingle: stipple, with the odd darker pebble.
   shore: {
-    cols: 7,
-    rows: 6,
-    jitter: 1,
+    perHex: 7,
+    spread: 18,
     reach: 4,
     draw(x, y, mark, base) {
       const r = 0.9 + mark.size * 1.3;
@@ -188,9 +243,8 @@ export const RECIPES: Record<Terrain, Recipe> = {
 
   // Grazing: sparse tufts, each three strokes fanning off one root.
   meadow: {
-    cols: 6,
-    rows: 5,
-    jitter: 1,
+    perHex: 5,
+    spread: 15,
     reach: 7,
     draw(x, y, mark, base) {
       const h = 4.5 + mark.size * 3.5;
@@ -208,9 +262,8 @@ export const RECIPES: Record<Terrain, Recipe> = {
 
   // Conifers: a crown and a trunk, in the ink the old per-hex glyphs used.
   forest: {
-    cols: 6,
-    rows: 5,
-    jitter: 0.95,
+    perHex: 4,
+    spread: 14,
     reach: 8,
     draw(x, y, mark, base) {
       const h = 7 + mark.size * 4;
@@ -229,9 +282,8 @@ export const RECIPES: Record<Terrain, Recipe> = {
 
   // Rolling ground: overlapping mounds, lit from the north-west.
   hills: {
-    cols: 4,
-    rows: 4,
-    jitter: 0.9,
+    perHex: 2,
+    spread: 6,
     reach: 16,
     draw(x, y, mark, base) {
       const w = 9 + mark.size * 5;
@@ -256,9 +308,8 @@ export const RECIPES: Record<Terrain, Recipe> = {
   // shard of something, not as a mountain. The light comes from the west,
   // which is where the sea is and where every landing looks back towards.
   mountains: {
-    cols: 3,
-    rows: 3,
-    jitter: 0.75,
+    perHex: 1,
+    spread: 2,
     reach: 20,
     draw(x, y, mark, base) {
       const h = 14 + mark.size * 7;
@@ -292,9 +343,8 @@ export const RECIPES: Record<Terrain, Recipe> = {
 
   // Standing water and tussock — dark pools, and reeds standing out of them.
   bog: {
-    cols: 6,
-    rows: 5,
-    jitter: 1,
+    perHex: 5,
+    spread: 15,
     reach: 7,
     draw(x, y, mark, base) {
       if (mark.roll > 0.34) {
@@ -330,12 +380,14 @@ export const RECIPES: Record<Terrain, Recipe> = {
 
   // Sheltered and worked: long furrows with the odd tuft between them.
   valley: {
-    cols: 5,
-    rows: 5,
-    jitter: 0.75,
-    reach: 16,
+    perHex: 4,
+    spread: 12,
+    reach: 10,
     draw(x, y, mark, base) {
-      const w = 10 + mark.size * 5;
+      // Shorter than the first pass, and more of them. One long furrow per
+      // hex had to sit dead centre to fit and read as a worm rather than as
+      // worked ground.
+      const w = 6 + mark.size * 3;
       return [
         stroke(
           `M ${x - w} ${y} q ${w * 0.5} ${-3.2} ${w} 0 q ${w * 0.5} ${3.2} ${w} 0`,
@@ -387,7 +439,7 @@ export function terrainPatterns(): SVGPatternElement[] {
   const out: SVGPatternElement[] = [];
   for (const terrain of ALL_TERRAINS) {
     const recipe = RECIPES[terrain];
-    const marks = scatter(art.derive(terrain), recipe.cols, recipe.rows, recipe.jitter);
+    const marks = scatter(art.derive(terrain), recipe.perHex, recipe.spread);
     out.push(buildPattern(terrain, marks, false), buildPattern(terrain, marks, true));
   }
   return out;

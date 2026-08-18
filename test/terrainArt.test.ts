@@ -9,9 +9,13 @@
 
 import { describe, expect, it } from 'vitest';
 import { makeRng } from '../src/rng';
+import { HEX_SIZE } from '../src/render/travel';
 import { ALL_TERRAINS, terrainDef } from '../src/data/terrain';
 import {
+  CENTRES,
   copies,
+  HEX,
+  INRADIUS,
   mix,
   patternId,
   RECIPES,
@@ -47,24 +51,60 @@ describe('the colour a mark is drawn in', () => {
 });
 
 describe('where the marks land', () => {
-  it('puts one in every cell, so no hex-sized hole is ever left', () => {
-    expect(scatter(makeRng('t'), 6, 5, 1)).toHaveLength(30);
+  it('gives every hex in the tile its own marks', () => {
+    expect(CENTRES).toHaveLength(8);
+    expect(scatter(makeRng('t'), 5, 13)).toHaveLength(8 * 5);
   });
 
-  it('keeps every mark inside the tile it belongs to', () => {
-    // Jitter is bounded by half a cell, so a mark can reach a tile edge but
-    // never crosses one — the wrap below is what handles the overhang, and it
-    // assumes the mark's own point is in the tile.
-    for (const m of scatter(makeRng('bounds'), 7, 6, 1)) {
-      expect(m.x).toBeGreaterThanOrEqual(0);
-      expect(m.x).toBeLessThanOrEqual(TILE_W);
-      expect(m.y).toBeGreaterThanOrEqual(0);
-      expect(m.y).toBeLessThanOrEqual(TILE_H);
+  it('sits every mark inside the hex it belongs to', () => {
+    // A mark placed beyond `spread` would be drawn across a hex edge, and a
+    // hex fill is CLIPPED by the hex — so it would appear cut in half.
+    for (const m of scatter(makeRng('bounds'), 6, 15)) {
+      const nearest = Math.min(
+        ...CENTRES.map((c) => Math.hypot(m.x - c.x, m.y - c.y)),
+      );
+      expect(nearest).toBeLessThanOrEqual(15 + 0.001);
     }
   });
 
   it('is the same scatter every time, so the map is not a new place each paint', () => {
-    expect(scatter(makeRng('same'), 4, 4, 0.9)).toEqual(scatter(makeRng('same'), 4, 4, 0.9));
+    expect(scatter(makeRng('same'), 4, 10)).toEqual(scatter(makeRng('same'), 4, 10));
+  });
+
+  /**
+   * THE BAR THAT THE REPORTED BUG WOULD HAVE FAILED.
+   *
+   * "The mountains and trees and hills are in the hexes weird" — marks were
+   * scattered over a tile that had nothing to do with the hex lattice, so a
+   * hex edge cut whatever happened to be crossing it. A mountain reaches 20
+   * against an inradius of 22.5; it was sliced on nearly every hex.
+   *
+   * Whatever a recipe draws has to fit in the hex it is drawn on, and that is
+   * `spread + reach` against the inradius. Checked for all eight rather than
+   * for the ones somebody looked at.
+   */
+  it('keeps every terrain drawable inside one hex', () => {
+    for (const terrain of ALL_TERRAINS) {
+      const recipe = RECIPES[terrain];
+      expect(
+        recipe.spread + recipe.reach,
+        `${terrain} reaches ${recipe.spread + recipe.reach} against an inradius of ${INRADIUS.toFixed(1)}`,
+      ).toBeLessThanOrEqual(INRADIUS);
+    }
+  });
+
+  it('tiles on the hex lattice, so a mark lands the same way on every hex', () => {
+    // If the tile is not a whole number of hex steps the pattern drifts and
+    // the clipping comes straight back, however careful the spreads are.
+    const step = Math.sqrt(3) * HEX;
+    expect(TILE_W / step).toBeCloseTo(2, 9);
+    expect(TILE_H / (1.5 * HEX)).toBeCloseTo(4, 9);
+  });
+
+  it('draws the hex the renderer actually draws', () => {
+    // The whole geometry hangs off this. If travel.ts moves its hex and this
+    // does not, every mark is placed for a grid that is not there any more.
+    expect(HEX).toBe(HEX_SIZE);
   });
 });
 
@@ -105,7 +145,7 @@ describe('the wrap across a tile edge', () => {
       hills: 14, // w = 9 + 5
       mountains: 20, // h * 0.72 across, h * 0.6 up at h = 21
       bog: 6, // pool rx = 4.5 + 4.5
-      valley: 15, // w = 10 + 5
+      valley: 9, // w = 6 + 3, drawn from -w to +w
     };
     for (const terrain of ALL_TERRAINS) {
       expect(RECIPES[terrain].reach).toBeGreaterThanOrEqual(widest[terrain]!);
