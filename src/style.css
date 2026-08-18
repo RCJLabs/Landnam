@@ -1202,7 +1202,7 @@ h2.grim {
   text-align: center;
 }
 
-/* Landscape and larger screens: keep the map dominant, cap the chrome. */
+/* Wider screens: keep the map dominant, cap the chrome. */
 @media (min-width: 700px) {
   .shell {
     max-width: 720px;
@@ -1211,6 +1211,7 @@ h2.grim {
     border-right: 1px solid var(--edge);
   }
 }
+
 
 /* --- The mute ---
    Lives outside .shell so it survives every replaceChildren on #app and is
@@ -1763,4 +1764,99 @@ button.hardship-chip {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+/*
+ * A PHONE HELD SIDEWAYS.
+ *
+ * The shell is one column, top to bottom, because that is what a phone in
+ * portrait is. Turn the same phone on its side and the column does not
+ * break — nothing overflows, nothing is clipped, every button is still
+ * reachable — it just stops being worth looking at. Measured at 844 x 390:
+ * the map goes from 579px tall to 125px. The panels keep the height they
+ * were given for a tall screen and the GAME becomes a letterbox strip
+ * across the top, which is the wrong thing to have shrunk.
+ *
+ * So landscape is two columns: the map takes the width it has just been
+ * given, and everything that reads as text — the ground report, the action
+ * bar, the saga — goes into a narrow aside beside it. That also fixes a
+ * second thing the strip made ugly: the site panel's labels sat at the far
+ * left and its values at the far right, seven hundred pixels apart.
+ *
+ * `max-height` rather than `min-width` is what picks a phone out. A tablet
+ * or a desktop window in landscape is 700px tall or more and has no height
+ * problem to solve, so it keeps the single column it reads well in; a phone
+ * on its side is 500px tall at the most. It catches the small phones too —
+ * 667 x 375 never reaches the 700px rule above.
+ *
+ * All three modes mount into `.map-slot`, so travel, battle and the colony
+ * all get this from one rule.
+ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .shell {
+    display: grid;
+    /* The aside is sized for reading, and the map takes everything else. */
+    grid-template-columns: minmax(0, 1fr) minmax(232px, 32%);
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'topbar topbar'
+      'map    hint'
+      'map    action'
+      'map    saga';
+    column-gap: 8px;
+    /* The 720px cap is for line length, and the aside now does that job.
+       Every pixel past it goes to the map. */
+    max-width: none;
+    border: 0;
+  }
+
+  /* The card inside is `position: fixed`, so the slot itself must not take
+     a grid track — an unplaced child would add an implicit row and push the
+     whole layout down by nothing at all. */
+  .overlay-slot {
+    display: contents;
+  }
+
+  .topbar-slot {
+    grid-area: topbar;
+  }
+
+  .map-slot {
+    grid-area: map;
+    min-width: 0;
+  }
+
+  /*
+   * The ground report, and whatever else the mode wants to say. Its portrait
+   * ceiling is 62dvh, which here is most of the screen — the grid row is the
+   * bound now, and `min-height: 0` is what lets it scroll inside one.
+   */
+  .hint-slot {
+    grid-area: hint;
+    max-height: none;
+    min-height: 0;
+  }
+
+  .action-slot {
+    grid-area: action;
+  }
+
+  .saga-slot {
+    grid-area: saga;
+    max-height: 32dvh;
+    overflow-y: auto;
+  }
+
+  /*
+   * The mute and the gear are `position: fixed` against the RIGHT edge,
+   * which in portrait is the top corner of the map and in landscape is now
+   * the middle of the aside's text — they sat on top of the site report's
+   * values, hiding "none" and "poor" behind a moon and a sun. Over to the
+   * left, where the map is and where nothing is written.
+   */
+  .mute-slot,
+  .menu-slot {
+    left: 8px;
+    right: auto;
+  }
 }

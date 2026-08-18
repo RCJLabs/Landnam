@@ -56,9 +56,10 @@
 > The place economy's INSTRUMENT is fixed too — the bot can reach a market
 > now — which leaves the design half of it waiting on a decision rather than
 > on a measurement (see the autopsy below).
-> The rest, roughly in the order they are worth doing: landscape has no
-> rules at all; the battlefield is capped rather than budgeted on a phone;
-> and one-thumb reach has never been audited.
+> Landscape has rules now too — a phone on its side lays out in two columns
+> and the map keeps 88% of the height instead of 32%. What is left of the
+> ten: the battlefield is capped rather than budgeted on a phone, and
+> one-thumb reach has never been audited.
 >
 > **The `dvh` half is the one thing here that has NOT been observed working.**
 > Headless Chrome has no URL bar, so `dvh` and `vh` resolve identically and
@@ -1844,6 +1845,40 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-18 — A phone held sideways** — Mobile item 6. Landscape was
+  never broken the way a layout is usually broken: measured at 844×390
+  BEFORE any change, nothing overflowed, nothing was clipped, every button
+  was reachable. **The map was 125px tall against 579 in portrait** — the
+  panels kept the height they were given for a tall screen and the game
+  became a letterbox strip. No assertion about overflow would ever have
+  caught that, so the bar is about proportion.
+  Landscape is two columns now: a grid places the map in one and the
+  reading matter — ground report, action bar, saga — in a narrow aside
+  beside it. All three modes mount into `.map-slot`, so travel, the field
+  and the colony all get it from one rule. It also fixed something the
+  strip made ugly on its own: the site panel's labels sat at the far left
+  and its values seven hundred pixels away at the far right.
+  | | before | after |
+  | --- | --- | --- |
+  | 844×390 | 125px (32%) | **342px (88%)** |
+  | 740×360 | 95px (26%) | **312px (87%)** |
+  | 667×375 | 110px (29%) | **327px (87%)** |
+  | portrait 390×844 | 579px | 579px, untouched |
+  `max-height: 560px` rather than `min-width` is what picks a phone out: a
+  tablet or a desktop window in landscape has no height problem and keeps
+  the single column it reads well in, and small phones (667×375) never
+  reach the existing 700px rule at all.
+  **The check caught two things a screenshot could not.** My first attempt
+  moved the mute and gear left with a rule that came BEFORE their own, so
+  `left: 8px` and `right: 8px` both applied and the slot became an
+  invisible full-width strip at `z-index: 40`, sitting on the site report
+  and swallowing taps across it. And disabling the new rule to watch the
+  bar fail turned up a PRE-EXISTING version of the same thing at 740×360,
+  where the right-edge glyphs already covered the hint line.
+  `scripts/landscape.mjs` (`npm run landscape`) checks proportion, overflow,
+  clipping, glyph cover, and that a modal on a 390px screen may scroll
+  inside itself but may not strand its own way out. Watched failing on all
+  three shapes with the rule switched off.
 - **2026-08-18 — The bot can reach a market now, and the coast looks
   different** — Mobile item 9, first half. NOT a change to the game: a fix
   to the instrument that was measuring it.
