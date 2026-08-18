@@ -1795,6 +1795,37 @@ button.hardship-chip {
 }
 
 /*
+ * A CARD SITS WHERE THE THUMB IS.
+ *
+ * `.overlay` centres its card, which is right on a desktop and wrong in the
+ * hand. Measured at 390x844: the Act sheet put **Camp at 25% of the screen**
+ * — the hard band, a shuffle of the phone away — with Forage, Hunt and Fish
+ * behind it at 33, 40 and 48%. Those are the things a player presses most
+ * days of a run, and they were the highest controls in the game after the
+ * mute and the gear.
+ *
+ * `align-items: start` plus `margin-top: auto` on the card is the safe way to
+ * put it at the bottom. When there is room to spare the auto margin takes it
+ * and the card sits low; when the card is TALLER than the screen the margin
+ * resolves to nought and the card starts at the top, so its head stays
+ * reachable. Plain `align-items: end` would push the overflow off the top,
+ * where no amount of scrolling reaches it — the same trap a centred card has.
+ *
+ * Phone widths only. A desktop window has no thumb and a centred dialog is
+ * what it expects.
+ */
+@media (max-width: 700px) {
+  .overlay {
+    align-items: start;
+  }
+
+  .overlay > .card {
+    margin-top: auto;
+    margin-bottom: 0;
+  }
+}
+
+/*
  * A PHONE HELD SIDEWAYS.
  *
  * The shell is one column, top to bottom, because that is what a phone in

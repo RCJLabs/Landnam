@@ -15,6 +15,7 @@
     "pinch": "npm run build && node scripts/pinch.mjs",
     "landscape": "npm run build && node scripts/landscape.mjs",
     "field": "npm run build && node scripts/field.mjs",
+    "reach": "npm run build && node scripts/reach.mjs",
     "test:watch": "vitest",
     "release": "npm run build && node scripts/release.mjs",
     "publish": "npm run build && node scripts/publish.mjs",

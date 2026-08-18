@@ -61,7 +61,17 @@
 > turned out to be **the wrong worry**: the field was never squeezed to a
 > strip, but a battle hex fell to 45px on a small phone against a 44px rule,
 > and 320px-wide screens cannot reach 44px at all without the field learning
-> to pan. **One of the ten is left: one-thumb reach has never been audited.**
+> to pan. **ALL TEN ARE DONE.** One-thumb reach was audited last, over ten
+> surfaces: every target clears 44px and the action bar sits at 92–97%, but
+> the Act sheet was putting Camp — what a player does most nights — at 25%
+> of the screen, in the band where the hand has to shuffle. Overlay cards
+> are bottom-anchored on phone widths now and it sits at 38%.
+>
+> **What is left is not on the list of ten:** the design half of the place
+> economy (the market is under-VISITED, not under-discovered — an errand
+> launches ten times in thirty sagas), and whether a 320px-wide phone should
+> get a battlefield that pans, since it cannot show 44px hexes otherwise.
+> Both are Evan's call. And the port resumes on the worldgen adapter.
 >
 > **Two bugs came back from a real phone on 2026-08-18 and both were real.**
 > The terrain patterns were being sliced by hex edges — the tile is the hex
@@ -1856,6 +1866,40 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-18 — Can a thumb get to it?** — Mobile item 7, the last of the
+  ten, and the audit found something the eye had not.
+  Ten surfaces measured at 390×844 — title, travel, the Act sheet, a fight,
+  settings, the roster, and the settled work and build screens. **Every
+  target clears 44px** and everything in the action bar is at 92–97%, so the
+  shell was already thumb-friendly. What was not: **the Act sheet put Camp
+  at 25% of the screen — the hard band**, with Forage, Hunt and Fish behind
+  it at 33, 40 and 48%. Camping is what a player does most nights of a run,
+  and it was the highest control in the game after the mute and the gear.
+  The cause was `.overlay { place-items: center }`: right on a desktop,
+  wrong in a hand. Cards are bottom-anchored on phone widths now, with
+  `align-items: start` plus `margin-top: auto` rather than `align-items:
+  end` — when the card is taller than the screen the auto margin resolves to
+  nought and its head stays reachable, where `end` would push the overflow
+  off the top where no scrolling reaches. Camp went **25% → 38%**, out of the
+  hard band; the sheet's foot sits at 93%.
+  **The bar is the hard band, not the easy one, and that is a judgement
+  worth stating.** The first version demanded every primary control below
+  55%; a sheet of five options is 300px tall and its first row cannot sit
+  there on an 844px screen however it is anchored, so that bar could only
+  ever be met by having fewer menus. What a design can promise is that
+  nothing pressed every turn sits where the hand must shuffle.
+  Two things the instrument got wrong first, both fixed: it judged "primary"
+  by a list of LABELS, which silently exempts any deed added later, so it
+  asks the DOM instead (`.action-slot button, button.deed, …`); and it read
+  a long build list's scrolled-away rows as though they were on screen, so
+  it now walks up for a scrolling ancestor and reports those as behind a
+  scroll. `scripts/reach.mjs` (`npm run reach`), watched failing on the
+  centred card with the right words — "Camp is a primary control at 25% of
+  the screen — the hard band, where the hand has to shuffle".
+  The mute and the gear stay at 10% and 16%, and that is deliberate rather
+  than missed: pressed once a session, sitting over the map and out of the
+  way of everything pressed constantly. They are printed on every run so the
+  choice stays visible.
 - **2026-08-18 — Two things a phone found that no harness had** — Both
   reported from real play on a real Android, and both were mine.
   **The terrain marks were being sliced by the hex edges.** The patterns from
