@@ -75,7 +75,8 @@ import { strandTarget } from '../src/sim/sea';
 import { atSea as _atSea } from '../src/sim/travel';
 import { placeKind, PLACE_KINDS } from '../src/data/places';
 import { angerLevel, bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
-import { canCallThing, hasSpeakers, yearsRuled } from '../src/sim/thing';
+import { canCallThing, hasSpeakers, thingNeeds, yearsRuled } from '../src/sim/thing';
+import type { NeedId } from '../src/data/thing';
 import { SPEAKER_STANDING } from '../src/data/thing';
 import { launchBlocker, provisionsFor } from '../src/sim/expedition';
 import { BARTER_FOOD, CLAN_KINDS } from '../src/data/clans';
@@ -2340,6 +2341,19 @@ describe('the long game', () => {
      * It costs nothing — the watch already runs.
      */
     const peakStanding: number[] = [];
+    /**
+     * Which of the Thing's SIX needs a settled band ever ticked at all.
+     *
+     * The road-to-the-Thing counters have always watched three of them —
+     * winters, hall, friends — and never peace, feast or gathered. That is
+     * half the checklist unmeasured, so "the endgame is gated on survival"
+     * rested on a readout that could not have seen a fourth gate if there
+     * were one. `everShort` is the actionable half: bands that ticked five
+     * of six and which one they never got.
+     */
+    const everNeed: Record<string, number> = {};
+    const everShort: Record<string, number> = {};
+    let sixEver = 0;
     let settledSagas = 0;
     let metAnybody = 0;
     // Pooled across both arms. The per-arm counters are reset at the top of
@@ -2375,6 +2389,7 @@ describe('the long game', () => {
       let settled = false;
       let met = false;
       let peak = -100;
+      const ticked = new Set<NeedId>();
       const state = run(`curve-${s}`, LAST_DAY, (before, after) => {
         if (!before.battle && after.battle) {
           const n = after.battle.foes.length;
@@ -2390,6 +2405,7 @@ describe('the long game', () => {
         if (hasSpeakers(after)) friend = true;
         if (canCallThing(after)) couldCall = true;
         if (after.settlement) settled = true;
+        for (const n of thingNeeds(after)) if (n.met) ticked.add(n.id);
         for (const n of after.neighbours) {
           if (!n.found) continue;
           met = true;
@@ -2400,6 +2416,11 @@ describe('the long game', () => {
         settledSagas += 1;
         peakStanding.push(peak);
         if (met) metAnybody += 1;
+        for (const id of ticked) everNeed[id] = (everNeed[id] ?? 0) + 1;
+        const missing = (['winters','hall','peace','friends','feast','gathered'] as NeedId[])
+          .filter((id) => !ticked.has(id));
+        if (missing.length === 0) sixEver += 1;
+        if (missing.length === 1) everShort[missing[0]!] = (everShort[missing[0]!] ?? 0) + 1;
       }
       days += state.day;
       if (state.day >= 49) firstWinters[TERMS] = (firstWinters[TERMS] ?? 0) + 1;
@@ -2447,6 +2468,15 @@ describe('the long game', () => {
       `the coast, all countries pooled — ${settledSagas} settled sagas, ${metAnybody} met somebody:\n` +
         `  peak standing with anyone: median ${median.toFixed(1)}, best ${(peaks[peaks.length - 1] ?? 0).toFixed(1)}; ` +
         `${spoke} ever reached the ${SPEAKER_STANDING} a speaker needs`,
+    );
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `the Thing's six needs, all countries pooled — ${settledSagas} settled sagas:\n` +
+        `  ever ticked: ${(['winters','hall','peace','friends','feast','gathered'] as NeedId[])
+          .map((id) => `${id} ${everNeed[id] ?? 0}`).join(', ')}\n` +
+        `  ${sixEver} ticked all six at some point; one short: ${
+          Object.entries(everShort).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`,
     );
 
     // A Hard Country is a DIFFICULTY, not a wall, and this is where that

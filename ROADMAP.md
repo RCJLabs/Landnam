@@ -1866,6 +1866,35 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — The middle of a run is not shapeless, it is unreached** —
+  Item 6, and the premise did not survive contact. It was written as "the only
+  goals are survive five winters and be proclaimed jarl, so the middle has no
+  shape". Both halves are wrong: `WINTERS_TO_JARL` is **2**, not five —
+  `LONG_LIFE_WINTERS` is the five, and it is where the run ends on its own —
+  and the Thing has been a six-item checklist, readable from the first thaw,
+  since Phase 4.
+  **Measured, 40 sagas per country to day 500.** On A Fair Land: 13 saw a
+  second winter, 20 raised a mead hall, 17 made a friend, 8 could ever call
+  the Thing, and **8 became jarl**. On As It Lies: 2 could call it, 2 became
+  jarl. *Every band that could ever call it won it.* The checklist is not the
+  bottleneck; entering the middle at all is. Adding named ambitions now would
+  be content for a phase two runs in five never see.
+  **The instrument had been watching half the checklist.** The road-to-the-
+  Thing counters have tracked winters, hall and friends since 4.3 and never
+  peace, feast or gathered — so "the endgame is gated on survival" rested on
+  a readout that could not have seen a fourth gate if there were one. All six
+  are counted now, pooled over settled sagas, plus which single need a band
+  that ticked five of six never got.
+  **What that turned up**: over 78 settled sagas — winters 20, hall 32, peace
+  **78**, friends 24, feast 59, gathered **78**. Two of the six needs are met
+  by every band that ever puts posts in the ground. The checklist reads as
+  six requirements and functions as two: standing two winters (20) and
+  finding somebody to speak for you (24), which are exactly the two that the
+  eleven bands one short of the whole list were missing.
+  Diagnosis only, no bar — peace and gathered at 78/78 would fail any honest
+  "every need must sometimes bite" bar today, and whether they should bite is
+  a difficulty question, not a bug. Test-only change; nothing published.
+
 - **2026-08-19 — The first winter was measured, and the panel was wrong about
   it** — Item 5. The curve has said for months that more than half of every
   band reaching the first winter dies in it, and nothing had ever looked at
