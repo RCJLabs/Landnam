@@ -41,6 +41,7 @@ import {
   renderWatchMark,
   renderTopBar,
   renderWinterMark,
+  renderLine,
 } from './render/ui';
 import {
   renderBattleActions,
@@ -529,6 +530,7 @@ function render(): void {
     renderHint(state),
     renderChaseMark(state),
     renderWinterMark(state),
+    renderLine(state),
     renderWatchMark(state),
     renderThingMark(state),
     renderSitePanel(state),

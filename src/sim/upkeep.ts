@@ -6,6 +6,8 @@ import { effectsOn, nextThaw, seasonOf, wintersStood, SEASON_LENGTH, YEAR_LENGTH
 import { LONG_LIFE_WINTERS } from '../data/thing';
 import { worldBeat } from './beats';
 import { omenFor, weatherOn } from './weather';
+import { ageTheBand, childrenOf, maybeBirth } from './lineage';
+import { CHILD_APPETITE } from '../data/lineage';
 import { hardshipById } from '../data/hardship';
 import { living } from './people';
 import { stream } from '../rng';
@@ -54,7 +56,18 @@ export function maybeRaid(state: GameState): void {
 }
 
 export function foodPerDay(state: GameState): number {
-  return Math.max(1, Math.ceil(living(state.party.people).length / 2));
+  // Adults at a half share each, and the children born here at a quarter —
+  // `CHILD_APPETITE` is measured against a grown share, and a grown share is
+  // already a half. Two children come to one more food a day on a band of six.
+  //
+  // THE ONLY COPY OF THIS FORMULA. `winter.ts` had its own, twice, computed
+  // off the projected crew — which was harmless while a mouth was always an
+  // adult and would have gone quietly wrong the moment children ate. The mark
+  // and the larder have to move together for the same reason the mark and the
+  // fire do.
+  const mouths = living(state.party.people).length
+    + childrenOf(state).length * CHILD_APPETITE;
+  return Math.max(1, Math.ceil(mouths / 2));
 }
 
 /**
@@ -246,6 +259,13 @@ export function passDay(state: GameState): boolean {
   arriveHome(state);
   noteFirstWork(state, labour);
   telegraphWinter(state);
+  // A year older, on the turn of the year, and then whether anybody was born.
+  // Ageing first: the year that makes somebody old enough to bear is the year
+  // they can.
+  if (ageTheBand(state)) {
+    chronicle(state, 'Another year on this coast, and every one of us a year older for it.', 'plain');
+  }
+  maybeBirth(state);
   // The evening's reading of the sky. This is the whole weather item: a gale
   // announced the night before is a decision about tomorrow, and the same
   // gale arriving unannounced is a dice roll. Said once, at the end of the

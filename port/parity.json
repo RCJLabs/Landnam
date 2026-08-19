@@ -221,7 +221,7 @@
        }
       },
       "run": {
-       "hash": "04adf30397086660",
+       "hash": "08b037e69b062e15",
        "size": 253,
        "samples": {
         "day": 1,
@@ -314,7 +314,7 @@
        }
       },
       "run": {
-       "hash": "f41fd95783ab7660",
+       "hash": "f8221e3a87a93e15",
        "size": 251,
        "samples": {
         "day": 1,
@@ -407,7 +407,7 @@
        }
       },
       "run": {
-       "hash": "805810dff8383d6a",
+       "hash": "845be8c2f435f887",
        "size": 244,
        "samples": {
         "day": 1,
@@ -500,7 +500,7 @@
        }
       },
       "run": {
-       "hash": "5e5cd2523930c99b",
+       "hash": "5a5a8d6f3d330e7e",
        "size": 244,
        "samples": {
         "day": 1,
@@ -593,7 +593,7 @@
        }
       },
       "run": {
-       "hash": "8d4de3020f29ebc1",
+       "hash": "894b9e1f0b2c240c",
        "size": 245,
        "samples": {
         "day": 1,
@@ -693,7 +693,7 @@
        }
       },
       "run": {
-       "hash": "33007411af23459e",
+       "hash": "2f02ac5cab2100bb",
        "size": 253,
        "samples": {
         "day": 1,
@@ -777,7 +777,7 @@
        }
       },
       "run": {
-       "hash": "b8129e4bc73a00e6",
+       "hash": "bc14e32ec337bc03",
        "size": 270,
        "samples": {
         "day": 2,
@@ -860,7 +860,7 @@
        }
       },
       "run": {
-       "hash": "c470e61c79482d9d",
+       "hash": "c86d1ad1754bf8e8",
        "size": 270,
        "samples": {
         "day": 3,
@@ -943,7 +943,7 @@
        }
       },
       "run": {
-       "hash": "af3aba7d6f251c3c",
+       "hash": "ab3cf2c87322e3f1",
        "size": 270,
        "samples": {
         "day": 4,
@@ -1026,7 +1026,7 @@
        }
       },
       "run": {
-       "hash": "34509c8fad077ad2",
+       "hash": "3852e172a90535ef",
        "size": 270,
        "samples": {
         "day": 6,
@@ -1109,7 +1109,7 @@
        }
       },
       "run": {
-       "hash": "bd97c330e0e95299",
+       "hash": "c1958ae5dceb8ae4",
        "size": 270,
        "samples": {
         "day": 7,
@@ -1192,7 +1192,7 @@
        }
       },
       "run": {
-       "hash": "3148a21a22f980b7",
+       "hash": "2d465d3726fbc59a",
        "size": 270,
        "samples": {
         "day": 9,
@@ -1276,7 +1276,7 @@
        }
       },
       "run": {
-       "hash": "0bdb0abc2197dacf",
+       "hash": "0fd8d271259a1fb2",
        "size": 271,
        "samples": {
         "day": 10,
@@ -1359,7 +1359,7 @@
        }
       },
       "run": {
-       "hash": "2a4528508a32f68b",
+       "hash": "2e415d058e353b6e",
        "size": 271,
        "samples": {
         "day": 14,
@@ -1443,7 +1443,7 @@
        }
       },
       "run": {
-       "hash": "10189badd7db8e1a",
+       "hash": "0c1ad3f8d3d94937",
        "size": 819,
        "samples": {
         "day": 15,
@@ -1527,7 +1527,7 @@
        }
       },
       "run": {
-       "hash": "2824b0d300514e4c",
+       "hash": "2c26f5b6044f1601",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1611,7 +1611,7 @@
        }
       },
       "run": {
-       "hash": "2824b0d300514e4c",
+       "hash": "2c26f5b6044f1601",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1694,7 +1694,7 @@
        }
       },
       "run": {
-       "hash": "2824b0d300514e4c",
+       "hash": "2c26f5b6044f1601",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1777,7 +1777,7 @@
        }
       },
       "run": {
-       "hash": "2824b0d300514e4c",
+       "hash": "2c26f5b6044f1601",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1860,7 +1860,7 @@
        }
       },
       "run": {
-       "hash": "2824b0d300514e4c",
+       "hash": "2c26f5b6044f1601",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1943,7 +1943,7 @@
        }
       },
       "run": {
-       "hash": "2824b0d300514e4c",
+       "hash": "2c26f5b6044f1601",
        "size": 303,
        "samples": {
         "day": 15,
@@ -2027,7 +2027,7 @@
        }
       },
       "run": {
-       "hash": "ef3ebc872c06feae",
+       "hash": "f341016a2804b9cb",
        "size": 436,
        "samples": {
         "day": 15,
@@ -2048,17 +2048,17 @@
    "script": "runs/long.json",
    "worldHash": "688411ba38a7cea1",
    "actionCounts": {
-    "CAMP": 380,
-    "ENTER_COLONY": 318,
-    "LEAVE_COLONY": 318,
-    "B_END_TURN": 196,
-    "ASSIGN": 24,
-    "QUEUE_BUILD": 11,
+    "CAMP": 447,
+    "ENTER_COLONY": 368,
+    "LEAVE_COLONY": 368,
+    "B_END_TURN": 217,
+    "ASSIGN": 31,
+    "QUEUE_BUILD": 12,
+    "CHOOSE": 9,
+    "DISMISS_EVENT": 9,
     "MOVE": 8,
-    "CHOOSE": 7,
-    "DISMISS_EVENT": 7,
     "B_LEAVE": 4,
-    "DISMISS_AFTERMATH": 3,
+    "DISMISS_AFTERMATH": 4,
     "FOUND": 1
    },
    "checkpoints": [
@@ -2133,7 +2133,7 @@
        }
       },
       "run": {
-       "hash": "04adf30397086660",
+       "hash": "08b037e69b062e15",
        "size": 253,
        "samples": {
         "day": 1,
@@ -2217,7 +2217,7 @@
        }
       },
       "run": {
-       "hash": "8f6bc1152719cba8",
+       "hash": "8b6df9602b17935d",
        "size": 270,
        "samples": {
         "day": 2,
@@ -2300,7 +2300,7 @@
        }
       },
       "run": {
-       "hash": "bdf68496d03ffe77",
+       "hash": "b9f43fb3d443d65a",
        "size": 270,
        "samples": {
         "day": 3,
@@ -2383,7 +2383,7 @@
        }
       },
       "run": {
-       "hash": "227c1e57760adeb6",
+       "hash": "267e633a720899d3",
        "size": 270,
        "samples": {
         "day": 4,
@@ -2466,7 +2466,7 @@
        }
       },
       "run": {
-       "hash": "5d7c8b410f6d0fdc",
+       "hash": "597ec38c136ad791",
        "size": 270,
        "samples": {
         "day": 6,
@@ -2549,7 +2549,7 @@
        }
       },
       "run": {
-       "hash": "c21d08e8966b5fc1",
+       "hash": "c6193d9d926d980c",
        "size": 594,
        "samples": {
         "day": 9,
@@ -2633,7 +2633,7 @@
        }
       },
       "run": {
-       "hash": "9280551ea672e27d",
+       "hash": "8e7e103ba2751ac8",
        "size": 759,
        "samples": {
         "day": 9,
@@ -2717,7 +2717,7 @@
        }
       },
       "run": {
-       "hash": "01c1aa13429211a6",
+       "hash": "05c581f63e8fccc3",
        "size": 292,
        "samples": {
         "day": 9,
@@ -2780,8 +2780,8 @@
        }
       },
       "steading": {
-       "hash": "6433e28b06bde2ac",
-       "size": 927,
+       "hash": "2b52875804125cfb",
+       "size": 941,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -2801,7 +2801,7 @@
        }
       },
       "run": {
-       "hash": "36b007b144ab96de",
+       "hash": "32b23ffc40a951fb",
        "size": 293,
        "samples": {
         "day": 10,
@@ -2864,8 +2864,8 @@
        }
       },
       "steading": {
-       "hash": "6433e28b06bde2ac",
-       "size": 927,
+       "hash": "2b52875804125cfb",
+       "size": 941,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -2885,7 +2885,7 @@
        }
       },
       "run": {
-       "hash": "8178282dda715cb4",
+       "hash": "7d7a6078de6d9169",
        "size": 302,
        "samples": {
         "day": 10,
@@ -2948,8 +2948,8 @@
        }
       },
       "steading": {
-       "hash": "6433e28b06bde2ac",
-       "size": 927,
+       "hash": "2b52875804125cfb",
+       "size": 941,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -2969,7 +2969,7 @@
        }
       },
       "run": {
-       "hash": "8178282dda715cb4",
+       "hash": "7d7a6078de6d9169",
        "size": 302,
        "samples": {
         "day": 10,
@@ -3032,8 +3032,8 @@
        }
       },
       "steading": {
-       "hash": "05e750f5f01b6a24",
-       "size": 938,
+       "hash": "cf0c5080851b8f45",
+       "size": 952,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3053,7 +3053,7 @@
        }
       },
       "run": {
-       "hash": "8178282dda715cb4",
+       "hash": "7d7a6078de6d9169",
        "size": 302,
        "samples": {
         "day": 10,
@@ -3116,8 +3116,8 @@
        }
       },
       "steading": {
-       "hash": "92b22959fbc71b00",
-       "size": 950,
+       "hash": "99448f1c212c7b69",
+       "size": 964,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3137,7 +3137,7 @@
        }
       },
       "run": {
-       "hash": "36b007b144ab96de",
+       "hash": "32b23ffc40a951fb",
        "size": 293,
        "samples": {
         "day": 10,
@@ -3200,8 +3200,8 @@
        }
       },
       "steading": {
-       "hash": "7318ddbec4fa6375",
-       "size": 981,
+       "hash": "1b2feb09c9502bce",
+       "size": 995,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3221,7 +3221,7 @@
        }
       },
       "run": {
-       "hash": "128526da221190f3",
+       "hash": "0e814ef72613d5d6",
        "size": 308,
        "samples": {
         "day": 11,
@@ -3283,8 +3283,8 @@
        }
       },
       "steading": {
-       "hash": "b4ec16710f8311c6",
-       "size": 977,
+       "hash": "645e24686197b127",
+       "size": 991,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3304,7 +3304,7 @@
        }
       },
       "run": {
-       "hash": "69e8c89f3ff705dc",
+       "hash": "6deb0d8243f4cd91",
        "size": 317,
        "samples": {
         "day": 21,
@@ -3366,8 +3366,8 @@
        }
       },
       "steading": {
-       "hash": "f9c8ca26d92708bf",
-       "size": 1022,
+       "hash": "42d272431bf9a40e",
+       "size": 1036,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3387,7 +3387,7 @@
        }
       },
       "run": {
-       "hash": "1eff7b8bdb78908a",
+       "hash": "2301c06ed7764ba7",
        "size": 376,
        "samples": {
         "day": 32,
@@ -3400,9 +3400,9 @@
      }
     },
     {
-     "afterActions": 127,
-     "action": "LEAVE_COLONY",
-     "day": 74,
+     "afterActions": 147,
+     "action": "ENTER_COLONY",
+     "day": 81,
      "refusedSoFar": 0,
      "facets": {
       "world": {
@@ -3417,13 +3417,13 @@
        }
       },
       "band": {
-       "hash": "ef299a294fad4a78",
+       "hash": "be0c9e2440081c6d",
        "size": 1714,
        "samples": {
         "people": 6,
         "alive": 6,
         "food": 5,
-        "firewood": 14,
+        "firewood": 23,
         "morale": 100,
         "atQ": 11,
         "atR": 15
@@ -3438,7 +3438,7 @@
        }
       },
       "coast": {
-       "hash": "f3301528a380f6df",
+       "hash": "89bec120ce7703b7",
        "size": 547,
        "samples": {
         "neighbours": 4,
@@ -3449,8 +3449,8 @@
        }
       },
       "steading": {
-       "hash": "74f583fe97370b71",
-       "size": 1017,
+       "hash": "275073c18f0a55da",
+       "size": 1031,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3470,12 +3470,12 @@
        }
       },
       "run": {
-       "hash": "5fe29c44ab78aed3",
-       "size": 415,
+       "hash": "75f5bc6fa7c18eda",
+       "size": 424,
        "samples": {
-        "day": 74,
+        "day": 81,
         "ended": "-",
-        "mode": "TRAVEL",
+        "mode": "COLONY",
         "flags": 9,
         "battles": 0
        }
@@ -3483,9 +3483,9 @@
      }
     },
     {
-     "afterActions": 638,
-     "action": "ENTER_COLONY",
-     "day": 241,
+     "afterActions": 739,
+     "action": "LEAVE_COLONY",
+     "day": 273,
      "refusedSoFar": 0,
      "facets": {
       "world": {
@@ -3500,14 +3500,14 @@
        }
       },
       "band": {
-       "hash": "4cef1536e4a2bfab",
-       "size": 3266,
+       "hash": "6e839c6f0a64ee54",
+       "size": 4745,
        "samples": {
-        "people": 12,
-        "alive": 12,
-        "food": 261,
-        "firewood": 158,
-        "morale": 100,
+        "people": 13,
+        "alive": 13,
+        "food": 119,
+        "firewood": 59,
+        "morale": 68,
         "atQ": 11,
         "atR": 15
        }
@@ -3532,8 +3532,8 @@
        }
       },
       "steading": {
-       "hash": "74f583fe97370b71",
-       "size": 1017,
+       "hash": "88fdd20d833918bc",
+       "size": 1074,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3553,13 +3553,13 @@
        }
       },
       "run": {
-       "hash": "a0b05a9516bc4d70",
-       "size": 456,
+       "hash": "63fe4310c2aaf995",
+       "size": 462,
        "samples": {
-        "day": 241,
+        "day": 273,
         "ended": "-",
-        "mode": "COLONY",
-        "flags": 10,
+        "mode": "TRAVEL",
+        "flags": 11,
         "battles": 0
        }
       }
@@ -3584,12 +3584,12 @@
        }
       },
       "band": {
-       "hash": "3a2d3411816f372e",
+       "hash": "f74bd69100ce0f46",
        "size": 3537,
        "samples": {
         "people": 13,
         "alive": 13,
-        "food": 240,
+        "food": 191,
         "firewood": 388,
         "morale": 100,
         "atQ": 11,
@@ -3616,8 +3616,8 @@
        }
       },
       "steading": {
-       "hash": "74f583fe97370b71",
-       "size": 1017,
+       "hash": "846c905b37d75216",
+       "size": 1118,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3637,13 +3637,13 @@
        }
       },
       "run": {
-       "hash": "fcecae436f12338e",
-       "size": 456,
+       "hash": "6673c96f8d1c7a24",
+       "size": 471,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 10,
+        "flags": 11,
         "battles": 1
        }
       }
@@ -3668,12 +3668,12 @@
        }
       },
       "band": {
-       "hash": "d73766c1b943ac42",
+       "hash": "8494277ba54c1ae0",
        "size": 4061,
        "samples": {
         "people": 13,
         "alive": 7,
-        "food": 144,
+        "food": 115,
         "firewood": 233,
         "morale": 23,
         "atQ": 11,
@@ -3700,8 +3700,8 @@
        }
       },
       "steading": {
-       "hash": "ae75b1b48e776b1f",
-       "size": 1005,
+       "hash": "84a1c7a529351a7c",
+       "size": 1106,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3721,13 +3721,13 @@
        }
       },
       "run": {
-       "hash": "743473bfc57d0340",
-       "size": 447,
+       "hash": "bb95cbc9f0cd4b98",
+       "size": 462,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 10,
+        "flags": 11,
         "battles": 1
        }
       }
@@ -3752,12 +3752,12 @@
        }
       },
       "band": {
-       "hash": "d73766c1b943ac42",
+       "hash": "8494277ba54c1ae0",
        "size": 4061,
        "samples": {
         "people": 13,
         "alive": 7,
-        "food": 144,
+        "food": 115,
         "firewood": 233,
         "morale": 23,
         "atQ": 11,
@@ -3784,8 +3784,8 @@
        }
       },
       "steading": {
-       "hash": "ae75b1b48e776b1f",
-       "size": 1005,
+       "hash": "84a1c7a529351a7c",
+       "size": 1106,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3805,27 +3805,27 @@
        }
       },
       "run": {
-       "hash": "743473bfc57d0340",
-       "size": 447,
+       "hash": "bb95cbc9f0cd4b98",
+       "size": 462,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 10,
+        "flags": 11,
         "battles": 1
        }
       }
      }
     },
     {
-     "afterActions": 1277,
-     "action": "B_LEAVE",
-     "day": 390,
+     "afterActions": 1478,
+     "action": "CAMP",
+     "day": 457,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "0c00d024bd9589af",
-       "size": 80599,
+       "hash": "a86276fec5b2eff1",
+       "size": 80575,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3835,14 +3835,14 @@
        }
       },
       "band": {
-       "hash": "15819fcf413be57e",
-       "size": 6814,
+       "hash": "0a82b8a6e4f9a607",
+       "size": 8350,
        "samples": {
-        "people": 20,
-        "alive": 0,
-        "food": 47,
-        "firewood": 29,
-        "morale": 23,
+        "people": 24,
+        "alive": 4,
+        "food": 31,
+        "firewood": 0,
+        "morale": 100,
         "atQ": 11,
         "atR": 15
        }
@@ -3867,19 +3867,19 @@
        }
       },
       "steading": {
-       "hash": "5ee558af23e1d0be",
-       "size": 1004,
+       "hash": "5b04794a1781c89b",
+       "size": 1162,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
         "built": 7,
-        "queued": 0,
+        "queued": 1,
         "out": 0
        }
       },
       "field": {
-       "hash": "d35ee0f4cc67c1d5",
-       "size": 144,
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
        "samples": {
         "fighting": 0,
         "round": -1,
@@ -3888,13 +3888,13 @@
        }
       },
       "run": {
-       "hash": "a94e2467f3a9da52",
-       "size": 728,
+       "hash": "7e15a1a6b0eb3a2b",
+       "size": 846,
        "samples": {
-        "day": 390,
-        "ended": "slain",
+        "day": 457,
+        "ended": "survived",
         "mode": "TRAVEL",
-        "flags": 12,
+        "flags": 15,
         "battles": 4
        }
       }

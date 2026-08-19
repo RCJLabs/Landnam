@@ -319,6 +319,13 @@ export const MIGRATIONS: Record<number, Migration> = {
       version: 32,
     };
   },
+  // Settlement gained `children`. Nothing could be born before this, so an
+  // empty list is the literal truth about every steading ever saved.
+  32: (save) => {
+    const home = save['settlement'] as Record<string, unknown> | undefined;
+    if (!home) return { ...save, version: 33 };
+    return { ...save, settlement: { ...home, children: home['children'] ?? [] }, version: 33 };
+  },
 };
 
 export interface MigrationResult {

@@ -41,7 +41,10 @@
 //              grade — and Party LOST `hullHoled`, the one-bit version of the
 //              same idea. A holed hull comes forward as one sprung strake,
 //              which is exactly what the flag meant.
-export const SAVE_VERSION = 32;
+// v33 (lineage): Settlement gained `children` — everyone born on this coast.
+//                 An old save's steading has borne nobody, which is exactly
+//                 what an empty list says.
+export const SAVE_VERSION = 33;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

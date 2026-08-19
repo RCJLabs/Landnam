@@ -102,6 +102,14 @@ describe('the winter mark', () => {
     const state = toAutumn('mark-shrink');
     state.party.food = 500;
     state.party.firewood = 500;
+    // A confound pinned out rather than an assertion weakened. This band is
+    // rich, which is exactly what makes it eligible to bear, and a child is a
+    // mouth — so a birth mid-walk raises the mark by more than twenty days of
+    // countdown lowers it. That is the larder telling the truth, and it is
+    // not what this test is about: the property here is that the mark counts
+    // DOWN as the winter is walked through, all else equal. The cooldown
+    // holds all else equal.
+    state.flags['lastBorn'] = state.day;
     const early = forecast(state).food;
     for (let d = 0; d < 20 && !state.end; d++) passDay(state);
     expect(forecast(state).food).toBeLessThan(early);

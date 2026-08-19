@@ -1866,6 +1866,56 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — Born on this coast, and everybody a year older** — Item 9,
+  and **the item as written cannot be built**. It asked for "children born in
+  the steading who grow into the band". `GENERATION` is 16 years,
+  `LONG_LIFE_WINTERS` is 5, and until now nobody aged at all — a child born on
+  day 100 is four when the saga closes. The second half of the premise,
+  "give a death consequences beyond subtraction", was already built: `kin.ts`
+  binds brothers and parents, `mourn` fires, and despair is the top cause of
+  death in every reading there has ever been. So the honest half shipped and
+  the impossible half did not, and `test/lineage.test.ts` pins
+  `LONG_LIFE_WINTERS < GENERATION` so a later change cannot quietly start
+  promising a grown second generation.
+  **Everybody ages**, once a year, on the turn of the year. `age` was stored
+  and printed at a death and never once moved.
+  **Children are born** into a settled steading, and they are NOT `Person`s —
+  that is the load-bearing decision. A Person is counted by `living`, handed a
+  job, put in the shield wall and offered the chance to walk out, so a child
+  modelled as one is a baby in the line. They are a record on the ground they
+  were born on: a mouth, a name, and a line for the saga.
+  A birth is **earned**, through a blocker that names what is missing —
+  no steading, nobody bearing, a larder under 40, no room, an open feud, or
+  too soon after the last. **A child eats**, at a quarter ration, and that is
+  the bar item 6 earned: the Thing's checklist was caught carrying two needs
+  met by 78 settled sagas out of 78, and a birth the larder never felt would
+  be the same mistake with a cradle in it. Verified by making children
+  weightless and watching the bar go red.
+  **The mouths formula now has exactly one copy.** `winter.ts` carried its own,
+  twice, computed off the projected crew — harmless while every mouth was an
+  adult and silently wrong the moment children ate. Same drift the weather
+  work had to fix between the mark and the fire; a test fails if `winter.ts`
+  starts computing mouths itself again.
+  **A death that leaves a child** costs the steading heart for who is left
+  behind, in `mourn` — the single funnel all six death paths already run
+  through.
+  **Two bugs of my own, caught and fixed.** The birth line said "named her"
+  for a son and called every child "the first of us". And the determinism test
+  called `maybeBirth` once on two clones and compared: at 2% a day both were
+  `undefined`, so it asserted undefined === undefined and would have passed
+  with births switched off entirely. It walks days until one fires now, which
+  also proves the mechanism is reachable.
+  One existing bar needed a confound pinned out rather than weakened: the
+  winter mark's "shrinks as the winter is walked through" runs a band on 500
+  food, which is exactly what makes it eligible to bear, and a new mouth
+  raises the mark by more than twenty days of countdown lowers it. The
+  cooldown holds all else equal; the assertion is untouched.
+  Save v33 with a migration. No new parity facet — children live on the
+  settlement, which the `steading` facet already covers. `runs/long.json`
+  re-recorded at **1478 actions to day 457, and it SURVIVES**, where the same
+  seed was slain at day 390 before this; the birth lift plausibly matters
+  where despair is the chief killer.
+
 - **2026-08-19 — Weather, and it is announced the night before** — Item 8.
   The premise held and was stronger than stated: weather was not an invisible
   modifier, it **did not exist**. `effectsOn` returned the same four numbers

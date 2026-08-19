@@ -3626,6 +3626,18 @@
    "type": "B_END_TURN"
   },
   {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
    "type": "B_LEAVE"
   },
   {
@@ -3833,6 +3845,533 @@
    "type": "CAMP"
   },
   {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p21",
+   "job": "woodcutter"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p22",
+   "job": "builder"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p22",
+   "job": "woodcutter"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p6",
+   "job": "hunter"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p10",
+   "job": "hunter"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p23",
+   "job": "warrior"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p24",
+   "job": "warrior"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
    "type": "B_END_TURN"
   },
   {
@@ -3930,6 +4469,87 @@
   },
   {
    "type": "B_LEAVE"
+  },
+  {
+   "type": "DISMISS_AFTERMATH"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "QUEUE_BUILD",
+   "building": "watchtower"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
+  },
+  {
+   "type": "CAMP"
   }
  ]
 }

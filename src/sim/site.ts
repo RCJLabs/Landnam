@@ -238,6 +238,7 @@ export function foundSettlement(state: GameState): boolean {
     built: [],
     queue: [],
     works: 0,
+    children: [],
   };
   // The land-taking is the moment the run stops being a walk, so it is
   // written in saga voice rather than as another day's line.

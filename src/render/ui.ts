@@ -18,6 +18,8 @@ import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast, markVisible, reachable } from '../sim/winter';
 import { holed, sprung, unseaworthy } from '../sim/ship';
 import { weatherNext, weatherNow } from '../sim/weather';
+import { childrenOf } from '../sim/lineage';
+import { yearOf } from '../sim/calendar';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { threatReading } from '../sim/raid';
@@ -110,6 +112,35 @@ export function renderTopBar(state: GameState): HTMLElement {
  * This is the milestone's whole apparatus. If a colony dies in the dark, this
  * panel was on screen for two seasons telling it the number.
  */
+/**
+ * Who was born here.
+ *
+ * Same shape as the winter and watch marks, which is the rule this file has
+ * kept since the mark: the player has already learned to read one of these,
+ * and a new kind of panel would be a new thing to learn for no reason.
+ * Shown only once there is somebody to show — a steading that has borne
+ * nobody says nothing rather than saying "none".
+ */
+export function renderLine(state: GameState): HTMLElement {
+  const born = childrenOf(state);
+  if (born.length === 0) return el('div');
+  const named = state.party.people;
+  return el('div', { class: 'winter-mark line' }, [
+    el('div', { class: 'mark-head' }, [
+      born.length === 1 ? 'Born on this coast' : `Born on this coast — ${born.length}`,
+    ]),
+    ...born.map((c) => {
+      const mother = named.find((p) => p.id === c.mother);
+      const years = Math.max(0, yearOf(state.day) - yearOf(c.bornOn));
+      return el('div', { class: 'mark-row' }, [
+        el('span', { class: 'mark-name' }, [c.name]),
+        el('span', { class: 'mark-value' }, [years === 0 ? 'this year' : `${years} winters`]),
+        el('span', { class: 'mark-gap' }, [mother ? `of ${mother.name}` : 'orphaned']),
+      ]);
+    }),
+  ]);
+}
+
 export function renderWinterMark(state: GameState): HTMLElement {
   if (!markVisible(state)) return el('div');
   const f = forecast(state);

@@ -11,6 +11,23 @@ import { ELDER_TIES, GENERATION, KIN_GRIEF, PEER_TIES } from '../data/kin';
 import { MEN, WOMEN } from '../data/names';
 import type { Rng } from '../rng';
 import { chronicle } from './saga';
+import { ORPHAN_GRIEF } from '../data/lineage';
+
+/** What a death does to the children it leaves. */
+function orphaned(state: GameState, dead: Person): void {
+  const left = (state.settlement?.children ?? []).filter(
+    (c) => c.mother === dead.id || c.father === dead.id,
+  );
+  if (left.length === 0) return;
+  state.party.morale = Math.max(0, state.party.morale - ORPHAN_GRIEF * left.length);
+  chronicle(
+    state,
+    left.length === 1
+      ? `${left[0]!.name} was left without ${isWoman(dead) ? 'a mother' : 'a father'}, and the steading felt it.`
+      : `${left.length} children were left short a parent that day.`,
+    'grim',
+  );
+}
 import { fullName } from './people';
 
 /**
@@ -91,6 +108,15 @@ export function bindKin(people: Person[], rng: Rng, pairs = 2): void {
  * is a thing a reader can check.
  */
 export function mourn(state: GameState, dead: Person): void {
+  // A death that leaves a child costs the steading something for who is left
+  // behind rather than only for who is gone — the item's "consequences beyond
+  // subtraction", made concrete.
+  //
+  // Here rather than in `lineage.ts` for one reason: `mourn` is the single
+  // funnel all six death paths already run through, and lineage imports this
+  // file for `isWoman` and `kinOf`, so putting it the other way round would
+  // be a cycle. Only the constant is imported.
+  orphaned(state, dead);
   const other = kinOf(state.party.people, dead);
   if (!other || !other.alive) return;
   other.morale = Math.max(0, other.morale - KIN_GRIEF);

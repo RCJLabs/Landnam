@@ -375,6 +375,25 @@ export interface Settlement {
   queue: string[];
   /** Builder-days banked against the head of the queue. */
   works: number;
+  /**
+   * Everyone born here.
+   *
+   * NOT `Person`s, and that is the load-bearing decision. A Person is
+   * counted by `living`, handed a job, put in the shield wall and offered
+   * the chance to walk out — so a child modelled as one would be a baby in
+   * the line, which is a bug wearing a design. They are a record on the
+   * ground they were born on: a mouth, a name, and a line for the saga.
+   */
+  children: Child[];
+}
+
+/** Somebody born on this coast. See `data/lineage.ts` for why they never grow. */
+export interface Child {
+  name: string;
+  bornOn: number;
+  /** Person id of the mother, and of the father when there was a kin tie. */
+  mother: string;
+  father?: string;
 }
 
 // --- Expeditions ---

@@ -97,7 +97,11 @@ export function forecast(state: GameState): Forecast {
 
   for (let i = 1; i <= days; i++) {
     const day = state.day + i;
-    const mouths = Math.max(1, Math.ceil(crew.length / 2));
+    // The larder's own helper, never a second copy of its arithmetic — see
+    // the note on `foodPerDay`. The projected crew IS the living band here,
+    // so this is the same number it always was, and it stays the same number
+    // when what a mouth means changes.
+    const mouths = foodPerDay(state);
     // Same helper the day tick burns from, so the mark cannot lie.
     // What the band can HONESTLY plan on. Close to, it knows this winter;
     // far out it knows only the floor and the middle of the range, which is
@@ -385,7 +389,11 @@ function walkWinter(state: GameState, steading: GameState): boolean {
 
   for (let i = 1; i <= days; i += 1) {
     const day = state.day + i;
-    const mouths = Math.max(1, Math.ceil(crew.length / 2));
+    // The larder's own helper, never a second copy of its arithmetic — see
+    // the note on `foodPerDay`. The projected crew IS the living band here,
+    // so this is the same number it always was, and it stays the same number
+    // when what a mouth means changes.
+    const mouths = foodPerDay(state);
     const fire = Math.max(0, plannedFirewood(state, day, true) - saved);
     const foodRatio = ratio(state.day, day, foodJob.seasonal);
     const woodRatio = ratio(state.day, day, woodJob.seasonal);
