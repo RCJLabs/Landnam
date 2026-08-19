@@ -17,6 +17,7 @@ import {
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast, markVisible, reachable } from '../sim/winter';
 import { holed, sprung, unseaworthy } from '../sim/ship';
+import { weatherNext, weatherNow } from '../sim/weather';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { threatReading } from '../sim/raid';
@@ -58,9 +59,24 @@ export function renderTopBar(state: GameState): HTMLElement {
   // it would train the eye to ignore the whole bar.
   const moved = watchTopBar({ band, food, wood, heart });
 
+  const sky = weatherNow(state);
+  const next = weatherNext(state);
+
   const bar = el('div', { class: 'topbar' }, [
     stat('Day', `${state.day}`),
     stat('Season', effects.label, season === 'winter'),
+    // The sky is only worth a slot when it is doing something. Fair weather
+    // is three days in four, and a stat that reads "Fair" most of the time
+    // teaches the eye to skip the bar — the same reason Day is left out.
+    ...(sky.id === 'fair' ? [] : [stat('Sky', sky.label, sky.shutsTheSea || sky.firewood > 0)]),
+    // TOMORROW, which is the whole of the weather item: a gale you can see
+    // coming is a decision about today, and one you cannot is a dice roll.
+    // A slot rather than a hint on purpose — the hint line carries the one
+    // thing the player should do next, and a warning that elbowed the
+    // strandhogg prompt aside would cost more than it told.
+    ...(next.id === 'fair'
+      ? []
+      : [stat('Tomorrow', next.label, next.shutsTheSea || next.firewood > 0)]),
     stat('Band', `${band}`, band <= 2, moved.band),
     stat('Food', `${food}`, daysOfFood <= 2, moved.food),
     stat('Wood', `${wood}`, nightsOfWood <= 2, moved.wood),

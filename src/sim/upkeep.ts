@@ -5,6 +5,7 @@ import type { GameState, Person, RunEnd } from '../state/types';
 import { effectsOn, nextThaw, seasonOf, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from './calendar';
 import { LONG_LIFE_WINTERS } from '../data/thing';
 import { worldBeat } from './beats';
+import { omenFor, weatherOn } from './weather';
 import { hardshipById } from '../data/hardship';
 import { living } from './people';
 import { stream } from '../rng';
@@ -98,7 +99,13 @@ export function firewoodPerNight(state: GameState): number {
   // The winter's bite, by how hard this country is. Applied HERE, on the
   // actual burn, and mirrored in winter.ts's plannedFirewood — the mark and
   // the fire have to move together or the mark is lying to the player.
-  const base = effectsOn(state.day, state.seed).firewood * hardshipById(state.hardship).winter;
+  // Weather rides on top of the season, and it is added HERE and in
+  // winter.ts's plannedFirewood together — `test/weather.test.ts` pins the
+  // two, because the comment below has been true since the mark was written
+  // and a frost the fire felt but the mark did not would break it silently.
+  const sky = weatherOn(state.seed, state.day).firewood;
+  const base = Math.max(0, effectsOn(state.day, state.seed).firewood + sky)
+    * hardshipById(state.hardship).winter;
   const share = HEARTH_SHARE + (1 - HEARTH_SHARE) * (heads / BAND_BASE);
   // Never below one: a fire is a fire. Rounded up, because you cannot burn
   // half a log and the alternative is a band that quietly gets free nights.
@@ -239,6 +246,12 @@ export function passDay(state: GameState): boolean {
   arriveHome(state);
   noteFirstWork(state, labour);
   telegraphWinter(state);
+  // The evening's reading of the sky. This is the whole weather item: a gale
+  // announced the night before is a decision about tomorrow, and the same
+  // gale arriving unannounced is a dice roll. Said once, at the end of the
+  // day, in the log the player already reads for everything else.
+  const omen = omenFor(state);
+  if (omen) chronicle(state, omen, 'plain');
 
   // What the band makes of all this. Moods move first, then bad blood, then
   // whatever bad blood has been left to go bad.

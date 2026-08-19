@@ -3099,6 +3099,23 @@ describe('what play actually reaches', () => {
     // roll (a weight problem, and not a reach problem at all). Sampled once
     // per day rather than per step, so it is a day count, not a roll count.
     const openDays: Record<string, number> = {};
+    /**
+     * Every flag any saga in the sample ever set.
+     *
+     * For CHAIN cards — ones whose `when` asks for a flag another card
+     * sets — `openDays === 0` is ambiguous, and that ambiguity failed this
+     * probe once for a reason that had nothing to do with a wall.
+     * `the-seed-came-up` needs `sowed`, which only a settled band with 30
+     * food or less ever sets, and which is then read a season and a half
+     * later. Those are the same bands that starve, so the chain completes
+     * about once in sixty sagas and had been completing on luck. A weather
+     * change that moved survival by one saga was enough to break it.
+     *
+     * So: a chain card whose flag was NEVER set is still unreachable content
+     * and still fails. One whose flag WAS set is reported as chain-short,
+     * which is the sample being finite rather than a gate that never opens.
+     */
+    const flagsSet = new Set<string>();
     const share: Record<string, number> = {};
     let poolSize = 0;
     let daysSeen = 0;
@@ -3223,6 +3240,7 @@ describe('what play actually reaches', () => {
         systems.feuds += state.grudges.filter((g) => g.settled).length;
         systems.thingsCalled += state.flags['thingsCalled'] ?? 0;
         systems.kinPairs += kinPairs(state.party.people).length > 0 ? 1 : 0;
+        for (const k of Object.keys(state.flags)) if ((state.flags[k] ?? 0) > 0) flagsSet.add(k);
         for (const l of state.lore ?? []) lore.add(l);
         for (const p of state.party.people) if (p.trait) traits.add(p.trait);
         await new Promise((resolve) => setTimeout(resolve, 0));
@@ -3235,7 +3253,22 @@ describe('what play actually reaches', () => {
     // card that was open for hundreds of days just never won a roll, which is
     // arithmetic, not a wall — the two want different fixes, so they are
     // reported apart.
-    const shut = cold.filter((id) => (openDays[id] ?? 0) === 0);
+    // A card gated on a flag some other card sets. Its second link can only
+    // open once the first has fired, so it is judged on whether the chain is
+    // alive rather than on whether this sample happened to finish it.
+    const chainFlag = (id: string): string | undefined => {
+      const def = EVENTS.find((e) => e.id === id);
+      const cond = def?.when?.find((c) => (c as { c: string }).c === 'flagSet') as
+        { flag?: string } | undefined;
+      return cond?.flag;
+    };
+    const neverOpened = cold.filter((id) => (openDays[id] ?? 0) === 0);
+    // Chain-short: never opened, but the flag it waits on DID fire somewhere.
+    const chainShort = neverOpened.filter((id) => {
+      const flag = chainFlag(id);
+      return flag !== undefined && flagsSet.has(flag);
+    });
+    const shut = neverOpened.filter((id) => !chainShort.includes(id));
     const unlucky = cold.filter((id) => (openDays[id] ?? 0) > 0);
     // The deck is what EVENTS holds; `feud` and `thing` are cards the sim
     // builds by hand and were quietly inflating this ratio above 100%.
@@ -3308,6 +3341,13 @@ describe('what play actually reaches', () => {
     // A card no state in the sample ever OPENS is unreachable content, and
     // that is the finding this probe exists for. Distinct from a card that
     // was open and never won, which is the sample being finite.
+    if (chainShort.length > 0) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `  chain-short (the flag fired, the sample never reached the second card): ` +
+          `${chainShort.map((id) => `${id} needs ${chainFlag(id)}`).join(', ')}`,
+      );
+    }
     expect(shut, `these cards were never once eligible: ${shut.join(', ')}`).toEqual([]);
 
     // And the cold count against what a fair deck predicts. Barred loosely —

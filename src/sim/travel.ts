@@ -20,6 +20,7 @@ import {
 import { placeKind } from '../data/places';
 import { mendHull, strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { sprung, unseaworthy } from './ship';
+import { weatherOn } from './weather';
 import { bonus } from './lore';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
@@ -72,8 +73,14 @@ export function atSea(state: GameState): boolean {
 export function moveEffort(state: GameState, to: Hex): number | null {
   const tile = state.world.tiles[key(to)];
   if (!tile) return null;
-  const penalty = effectsOn(state.day).travelPenalty;
+  const sky = weatherOn(state.seed, state.day);
+  const penalty = effectsOn(state.day).travelPenalty + sky.travel;
   if (tile.terrain === 'ocean') {
+    // A gale shuts the sea. Note what this does NOT block: the target being
+    // ocean is the test, so a band already afloat can always row the one hex
+    // ASHORE — the same rule that keeps an unseaworthy hull from ending a run
+    // on the water. Weather may cost a voyage; it may not eat a saga.
+    if (sky.shutsTheSea) return null;
     if (!isCoastalWater(state, to)) return null;
     // Nothing sound left in her: she floats and will not be rowed. The band
     // is never stuck by this — `isCoastalWater` only lets them float on water
@@ -175,10 +182,13 @@ function actionRng(state: GameState, label: string) {
 
 function reveal(state: GameState): void {
   const effects = effectsOn(state.day);
+  // Fog and gales close the country in. Never below one: a band can always
+  // see the ground it is standing on.
+  const sight = Math.max(1, effects.sight + weatherOn(state.seed, state.day).sight);
   revealAround(
     state.world,
     state.party.at,
-    sightRadius(state.world, state.party.at, effects.sight),
+    sightRadius(state.world, state.party.at, sight),
   );
   // Somebody else's smoke shows up the moment the ground it stands on does.
   seeNeighbours(state);

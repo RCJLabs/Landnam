@@ -1045,8 +1045,8 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "688411ba38a7cea1",
-       "size": 79963,
+       "hash": "ee4725c850540a5b",
+       "size": 79915,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -1212,14 +1212,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "26b22513a5cc20a2",
-       "size": 80030,
+       "hash": "eb33b745aca9e890",
+       "size": 79932,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 40
+        "seen": 36
        }
       },
       "band": {
@@ -1295,14 +1295,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "61afe9cbb69f86e2",
-       "size": 80240,
+       "hash": "cd7c15a08d1c0a25",
+       "size": 80120,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 54
+        "seen": 48
        }
       },
       "band": {
@@ -1327,11 +1327,11 @@
        }
       },
       "coast": {
-       "hash": "04cd28ae2fa5cbe1",
-       "size": 539,
+       "hash": "4b4d6ff4b2dee691",
+       "size": 526,
        "samples": {
         "neighbours": 4,
-        "found": 1,
+        "found": 0,
         "standing": 3,
         "grudges": 0,
         "lore": 0
@@ -1379,14 +1379,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
+       "hash": "9b01e7b3e40c6f1a",
+       "size": 80206,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 58
+        "seen": 53
        }
       },
       "band": {
@@ -1463,14 +1463,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
+       "hash": "9b01e7b3e40c6f1a",
+       "size": 80206,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 58
+        "seen": 53
        }
       },
       "band": {
@@ -1547,14 +1547,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
+       "hash": "9b01e7b3e40c6f1a",
+       "size": 80206,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 58
+        "seen": 53
        }
       },
       "band": {
@@ -1630,14 +1630,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
+       "hash": "9b01e7b3e40c6f1a",
+       "size": 80206,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 58
+        "seen": 53
        }
       },
       "band": {
@@ -1713,14 +1713,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
+       "hash": "9b01e7b3e40c6f1a",
+       "size": 80206,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 58
+        "seen": 53
        }
       },
       "band": {
@@ -1796,14 +1796,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
+       "hash": "9b01e7b3e40c6f1a",
+       "size": 80206,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 58
+        "seen": 53
        }
       },
       "band": {
@@ -1879,14 +1879,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
+       "hash": "9b01e7b3e40c6f1a",
+       "size": 80206,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 58
+        "seen": 53
        }
       },
       "band": {
@@ -1963,14 +1963,14 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
+       "hash": "9b01e7b3e40c6f1a",
+       "size": 80206,
        "samples": {
         "tiles": 1872,
         "places": 4,
         "landingQ": 3,
         "landingR": 15,
-        "seen": 58
+        "seen": 53
        }
       },
       "band": {
@@ -2048,17 +2048,17 @@
    "script": "runs/long.json",
    "worldHash": "688411ba38a7cea1",
    "actionCounts": {
-    "CAMP": 429,
-    "ENTER_COLONY": 327,
-    "LEAVE_COLONY": 327,
-    "B_END_TURN": 213,
-    "ASSIGN": 33,
-    "CHOOSE": 12,
-    "DISMISS_EVENT": 12,
-    "QUEUE_BUILD": 12,
+    "CAMP": 380,
+    "ENTER_COLONY": 318,
+    "LEAVE_COLONY": 318,
+    "B_END_TURN": 196,
+    "ASSIGN": 24,
+    "QUEUE_BUILD": 11,
     "MOVE": 8,
-    "B_LEAVE": 6,
-    "DISMISS_AFTERMATH": 5,
+    "CHOOSE": 7,
+    "DISMISS_EVENT": 7,
+    "B_LEAVE": 4,
+    "DISMISS_AFTERMATH": 3,
     "FOUND": 1
    },
    "checkpoints": [
@@ -2737,8 +2737,8 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "16ccee391ad488c8",
-       "size": 80556,
+       "hash": "0079e73bfb958d62",
+       "size": 80544,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -2821,8 +2821,8 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "16ccee391ad488c8",
-       "size": 80556,
+       "hash": "0079e73bfb958d62",
+       "size": 80544,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -2905,8 +2905,8 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "16ccee391ad488c8",
-       "size": 80556,
+       "hash": "0079e73bfb958d62",
+       "size": 80544,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -2989,8 +2989,8 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "16ccee391ad488c8",
-       "size": 80556,
+       "hash": "0079e73bfb958d62",
+       "size": 80544,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3073,8 +3073,8 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "16ccee391ad488c8",
-       "size": 80556,
+       "hash": "0079e73bfb958d62",
+       "size": 80544,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3323,8 +3323,8 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "0079e73bfb958d62",
-       "size": 80544,
+       "hash": "b29f1e63353bd47a",
+       "size": 80532,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3334,13 +3334,13 @@
        }
       },
       "band": {
-       "hash": "51390defdd65f4f2",
+       "hash": "5aedbeb48d018645",
        "size": 1714,
        "samples": {
         "people": 6,
         "alive": 6,
         "food": 35,
-        "firewood": 10,
+        "firewood": 9,
         "morale": 100,
         "atQ": 11,
         "atR": 15
@@ -3400,9 +3400,9 @@
      }
     },
     {
-     "afterActions": 138,
-     "action": "ENTER_COLONY",
-     "day": 78,
+     "afterActions": 127,
+     "action": "LEAVE_COLONY",
+     "day": 74,
      "refusedSoFar": 0,
      "facets": {
       "world": {
@@ -3417,13 +3417,13 @@
        }
       },
       "band": {
-       "hash": "0887004f9da2de72",
+       "hash": "ef299a294fad4a78",
        "size": 1714,
        "samples": {
         "people": 6,
         "alive": 6,
         "food": 5,
-        "firewood": 19,
+        "firewood": 14,
         "morale": 100,
         "atQ": 11,
         "atR": 15
@@ -3438,7 +3438,7 @@
        }
       },
       "coast": {
-       "hash": "46138370689d404f",
+       "hash": "f3301528a380f6df",
        "size": 547,
        "samples": {
         "neighbours": 4,
@@ -3470,12 +3470,12 @@
        }
       },
       "run": {
-       "hash": "de3862a2cf5bebc7",
-       "size": 424,
+       "hash": "5fe29c44ab78aed3",
+       "size": 415,
        "samples": {
-        "day": 78,
+        "day": 74,
         "ended": "-",
-        "mode": "COLONY",
+        "mode": "TRAVEL",
         "flags": 9,
         "battles": 0
        }
@@ -3483,9 +3483,9 @@
      }
     },
     {
-     "afterActions": 692,
-     "action": "CAMP",
-     "day": 259,
+     "afterActions": 638,
+     "action": "ENTER_COLONY",
+     "day": 241,
      "refusedSoFar": 0,
      "facets": {
       "world": {
@@ -3500,13 +3500,13 @@
        }
       },
       "band": {
-       "hash": "915d6cf4580c4cff",
-       "size": 3527,
+       "hash": "4cef1536e4a2bfab",
+       "size": 3266,
        "samples": {
-        "people": 13,
-        "alive": 13,
-        "food": 200,
-        "firewood": 40,
+        "people": 12,
+        "alive": 12,
+        "food": 261,
+        "firewood": 158,
         "morale": 100,
         "atQ": 11,
         "atR": 15
@@ -3553,12 +3553,12 @@
        }
       },
       "run": {
-       "hash": "b80394b918f9971e",
-       "size": 447,
+       "hash": "a0b05a9516bc4d70",
+       "size": 456,
        "samples": {
-        "day": 259,
+        "day": 241,
         "ended": "-",
-        "mode": "TRAVEL",
+        "mode": "COLONY",
         "flags": 10,
         "battles": 0
        }
@@ -3566,7 +3566,7 @@
      }
     },
     {
-     "afterActions": 852,
+     "afterActions": 855,
      "action": "B_END_TURN",
      "firstOf": true,
      "day": 312,
@@ -3584,13 +3584,13 @@
        }
       },
       "band": {
-       "hash": "f8ea5824a9c52f53",
-       "size": 3527,
+       "hash": "3a2d3411816f372e",
+       "size": 3537,
        "samples": {
         "people": 13,
         "alive": 13,
-        "food": 343,
-        "firewood": 153,
+        "food": 240,
+        "firewood": 388,
         "morale": 100,
         "atQ": 11,
         "atR": 15
@@ -3627,7 +3627,7 @@
        }
       },
       "field": {
-       "hash": "4d451a2ce9cfda07",
+       "hash": "f5bde5045d5bbde3",
        "size": 6493,
        "samples": {
         "fighting": 1,
@@ -3650,7 +3650,7 @@
      }
     },
     {
-     "afterActions": 880,
+     "afterActions": 883,
      "action": "B_LEAVE",
      "firstOf": true,
      "day": 312,
@@ -3668,13 +3668,13 @@
        }
       },
       "band": {
-       "hash": "033740c38e2c794c",
-       "size": 4051,
+       "hash": "d73766c1b943ac42",
+       "size": 4061,
        "samples": {
         "people": 13,
         "alive": 7,
-        "food": 206,
-        "firewood": 92,
+        "food": 144,
+        "firewood": 233,
         "morale": 23,
         "atQ": 11,
         "atR": 15
@@ -3734,7 +3734,7 @@
      }
     },
     {
-     "afterActions": 881,
+     "afterActions": 884,
      "action": "DISMISS_AFTERMATH",
      "firstOf": true,
      "day": 312,
@@ -3752,13 +3752,13 @@
        }
       },
       "band": {
-       "hash": "033740c38e2c794c",
-       "size": 4051,
+       "hash": "d73766c1b943ac42",
+       "size": 4061,
        "samples": {
         "people": 13,
         "alive": 7,
-        "food": 206,
-        "firewood": 92,
+        "food": 144,
+        "firewood": 233,
         "morale": 23,
         "atQ": 11,
         "atR": 15
@@ -3818,14 +3818,14 @@
      }
     },
     {
-     "afterActions": 1385,
+     "afterActions": 1277,
      "action": "B_LEAVE",
-     "day": 439,
+     "day": 390,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "a86276fec5b2eff1",
-       "size": 80575,
+       "hash": "0c00d024bd9589af",
+       "size": 80599,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3835,14 +3835,14 @@
        }
       },
       "band": {
-       "hash": "61492f9706a00aea",
-       "size": 8934,
+       "hash": "15819fcf413be57e",
+       "size": 6814,
        "samples": {
-        "people": 25,
+        "people": 20,
         "alive": 0,
-        "food": 24,
-        "firewood": 52,
-        "morale": 11,
+        "food": 47,
+        "firewood": 29,
+        "morale": 23,
         "atQ": 11,
         "atR": 15
        }
@@ -3856,19 +3856,19 @@
        }
       },
       "coast": {
-       "hash": "cdef32511cc9a7be",
-       "size": 673,
+       "hash": "4a6837e363ade4ce",
+       "size": 516,
        "samples": {
         "neighbours": 4,
         "found": 4,
         "standing": 0,
-        "grudges": 1,
+        "grudges": 0,
         "lore": 0
        }
       },
       "steading": {
-       "hash": "741351870b18abf6",
-       "size": 1006,
+       "hash": "5ee558af23e1d0be",
+       "size": 1004,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
@@ -3878,8 +3878,8 @@
        }
       },
       "field": {
-       "hash": "5f22df280fa6c317",
-       "size": 143,
+       "hash": "d35ee0f4cc67c1d5",
+       "size": 144,
        "samples": {
         "fighting": 0,
         "round": -1,
@@ -3888,14 +3888,14 @@
        }
       },
       "run": {
-       "hash": "07264aa98089755c",
-       "size": 830,
+       "hash": "a94e2467f3a9da52",
+       "size": 728,
        "samples": {
-        "day": 439,
+        "day": 390,
         "ended": "slain",
         "mode": "TRAVEL",
-        "flags": 17,
-        "battles": 6
+        "flags": 12,
+        "battles": 4
        }
       }
      }

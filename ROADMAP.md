@@ -1866,6 +1866,62 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — Weather, and it is announced the night before** — Item 8.
+  The premise held and was stronger than stated: weather was not an invisible
+  modifier, it **did not exist**. `effectsOn` returned the same four numbers
+  on every day of a season with one per-winter constant on top, so a day in
+  summer was exactly like the day before it.
+  **No save bump, no migration, no new facet**, because weather is a pure
+  function of the seed and the day — the shape `bite()` has used for how hard
+  a given winter is. That is the whole design rather than a shortcut: asking
+  about TOMORROW costs nothing and changes nothing, which is what makes a
+  forecast possible at all.
+  Five kinds in `data/weather.ts`, three days in four fair. A **gale** shuts
+  the sea; **hard frost** burns more; **thaw** is mud overland and a cheaper
+  fire; **sea fog** closes the country in. Every one carries an `omen` — what
+  the evening before looked like — and the day tick chronicles it, so nothing
+  arrives unannounced. Today's sky and tomorrow's sit in the top bar, as slots
+  rather than as a hint, because a warning that elbowed the strandhögg prompt
+  aside would cost more than it told.
+  **A gale never eats a saga.** The target being ocean is the test, so a band
+  already afloat can always row the one hex ashore — the same guarantee the
+  unseaworthy hull got in item 7, and `sea.ts`'s rule since the sea work: a
+  run ends by decision, not by weather.
+  **Three bars had to be rewritten before one of them could fail.** The
+  mark-and-fire coupling is the invariant `upkeep.ts` has asked for since the
+  winter mark: weather is added to the night's burn AND to `plannedFirewood`,
+  two places and one number. The first bar asserted `forecast().firewood > 0`,
+  which was meaningless. The second — "the mark must cover what the nights
+  will burn" — **also passed with the coupling deliberately broken**, because
+  PRUDENCE is 1.15 and a winter's frosts come to less than that margin. Only
+  the third, which recomputes the mark weather-included and demands the exact
+  number, fails when the link is cut (30 against 32). A bar with slack in it
+  cannot pin an invariant.
+  **Two things I got wrong and corrected.** The omen repeated itself on
+  consecutive rough days, which put a literal stutter in the saga log —
+  `travel.test` caught it, and the fix is also better writing: weather is
+  announced when it ARRIVES, not re-forecast into a gale already blowing. And
+  I read the curve moving 82% → 77% to the first winter as a five-point cost
+  and took the gale's overland penalty off to fix it; removing it left the
+  figure at 77%, because three sagas in sixty is about one standard error and
+  the difference was noise. Spring and two-winters moved the other way by the
+  same margin. **Weather does not measurably change the curve.** The land
+  penalty stayed off for the design reason — a gale's identity is that the sea
+  is shut — and the comment says so rather than claiming a measurement.
+  **The reach probe had a real gap, and it was not the game's.**
+  `the-seed-came-up` came up "never eligible (unreachable)". It is a CHAIN
+  card: it needs `sowed`, which only a settled band with 30 food or less ever
+  sets, and which is read a season and a half later — the same bands that
+  starve. Probed, the flag fired in **2 of 60 sagas** and neither lived to the
+  next autumn, so the chain was completing on luck and one saga's worth of
+  drift broke it. `openDays === 0` conflated "walled off" with "the sample
+  never finished a two-card chain", so the probe now separates them: a chain
+  card whose flag NEVER fires is still unreachable content and still fails —
+  verified by pointing the card at a flag nothing sets, which still goes red.
+  Costs: `runs/long.json` re-recorded at **1277 actions to day 390**, from
+  1385 to day 439. `runs/example.json` is unchanged at 66 actions. Parity
+  regenerated.
+
 - **2026-08-19 — The knarr became a thing** — Item 7. She was
   `party.hullHoled`: one bit, two states, mended by a night and two of timber.
   Everything the sea does hung off it — sea fights, cargo over the side,

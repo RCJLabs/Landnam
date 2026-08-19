@@ -36,6 +36,7 @@ import { mourn } from './kin';
 import { bonus } from './lore';
 import { firewoodPerNight, foodPerDay } from './upkeep';
 import { stream } from '../rng';
+import { weatherOn } from './weather';
 
 /** Winter opens on day 49. Spring — and survival — on day 73. */
 export const WINTER_DAY = 49;
@@ -171,7 +172,17 @@ function plannedFirewood(state: GameState, day: number, best = false): number {
   const terms = hardshipById(state.hardship).winter;
   if (seasonOf(day) !== 'winter') return effectsOn(day).firewood;
   const base = effectsOn(day).firewood + floorDepth(day);
-  if (markHaze(state.day) === 0) return effectsOn(day, state.seed).firewood * terms;
+  // Close enough to read, so the weather is part of the reading — the same
+  // term `firewoodPerNight` adds to the actual burn. If the fire felt a frost
+  // the mark did not, the mark would be quietly short by exactly the frosts
+  // between here and the thaw, which is the one thing it must never be.
+  //
+  // NOT added to the hazy branch below, deliberately: a band cannot see a
+  // gale forty days out, and that branch exists to be a guess.
+  if (markHaze(state.day) === 0) {
+    const sky = weatherOn(state.seed, day).firewood;
+    return Math.max(0, effectsOn(day, state.seed).firewood + sky) * terms;
+  }
   // The MARK plans for a middling winter on purpose — an oracle is what made
   // every attempt to threaten the late game bounce off. The VERDICT is a
   // different question: "is there any version of this that works" cannot be
