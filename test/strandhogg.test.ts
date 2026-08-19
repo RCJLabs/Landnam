@@ -7,6 +7,7 @@
 // much worse if you lose.
 
 import { describe, it, expect } from 'vitest';
+import { holed } from '../src/sim/ship';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
 import { distance, neighbors, key } from '../src/hex';
@@ -139,7 +140,7 @@ describe('what coming out of the water is worth', () => {
     fighting.battle!.outcome = 'lost';
 
     leaveBattle(fighting);
-    expect(fighting.party.hullHoled).toBe(true);
+    expect(holed(fighting.ship)).toBe(true);
     expect(fighting.party.food).toBeLessThan(100);
   });
 

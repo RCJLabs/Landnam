@@ -53,6 +53,7 @@ import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
 import { moveOptions, canGather, canFish, atSea, isCoastalWater } from '../src/sim/travel';
 import { canFound, siteReport } from '../src/sim/site';
+import { holed } from '../src/sim/ship';
 import { assign, queueBuild } from '../src/sim/colony';
 import { BAND_BASE, foodPerDay, firewoodPerNight, passDay } from '../src/sim/upkeep';
 import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
@@ -624,7 +625,7 @@ function step(state: GameState): Action {
         // A holed hull rows at half pace and is mended by a night ashore.
         // A bot that will not mend her measures the sea at half speed and
         // reports the sea as slow.
-        if (state.party.hullHoled && !atSea(state)) return { type:'CAMP' };
+        if (holed(state.ship) && !atSea(state)) return { type:'CAMP' };
         const prize = raidTarget(state);
         if (!out.returning && (!prize || state.day - out.launchedOn >= RAID_DAYS)) {
           return { type:'TURN_HOME' };

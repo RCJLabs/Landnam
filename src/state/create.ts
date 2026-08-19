@@ -2,6 +2,7 @@
 // coast, same warband, same weather in the bones of the world.
 
 import { key } from '../hex';
+import { makeShip } from '../sim/ship';
 import { stream } from '../rng';
 import { LANDING_NAMES } from '../data/names';
 import { effectsOn } from '../sim/calendar';
@@ -29,6 +30,8 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
   // hand an old world exactly the places its seed would have been born with.
   world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
 
+  const ship = makeShip(seed);
+
   const state: GameState = {
     version: SAVE_VERSION,
     seed,
@@ -36,6 +39,7 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
     day: 1,
     modes: ['TRAVEL'],
     world,
+    ship,
     party: {
       at: world.landing,
       people,
@@ -47,7 +51,7 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
     saga: [
       {
         day: 1,
-        text: `The knarr grounded at ${landingName} on a grey morning, and six of us stepped down into water to the knee. Behind us, open sea. Ahead, a country with no name we knew.`,
+        text: `${ship.name} grounded at ${landingName} on a grey morning, and six of us stepped down into water to the knee. Behind us, open sea. Ahead, a country with no name we knew.`,
         tone: 'saga',
       },
     ],

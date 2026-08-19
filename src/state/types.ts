@@ -155,8 +155,22 @@ export interface Party {
   morale: number;
   /** Movement/effort spent today; a day ends when it runs out. */
   hasCamped: boolean;
-  /** The knarr took a strake's hurt in a sea fight. Mended by a night ashore. */
-  hullHoled?: boolean;
+}
+
+// --- The knarr ---
+
+/**
+ * The ship the band came in, and the one they leave in.
+ *
+ * She was `party.hullHoled` — one bit — until the ship work. She is not part
+ * of the Party because she is not a person and does not walk: the band can be
+ * inland for a season while she sits on the beach.
+ */
+export interface Ship {
+  /** Hers, and it does not change. */
+  name: string;
+  /** Sound strakes remaining, 0..SHIP_STRAKES. Nothing left is unseaworthy. */
+  strakes: number;
 }
 
 // --- Narrative ---
@@ -489,6 +503,8 @@ export interface GameState {
   modes: Mode[];
   world: World;
   party: Party;
+  /** The knarr. Always present — the band arrived in her. */
+  ship: Ship;
   saga: SagaEntry[];
   /** Arbitrary counters events can read and write. */
   flags: Record<string, number>;

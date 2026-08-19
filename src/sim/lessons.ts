@@ -12,6 +12,7 @@ import { canFound } from './site';
 import { markVisible } from './winter';
 import { wintersStood } from './calendar';
 import { WINTERS_TO_JARL } from '../data/thing';
+import { holed } from './ship';
 import { LESSONS, type LessonDef, type LessonWhen } from '../data/lessons';
 import { placeHere } from './places';
 import { hands } from './people';
@@ -39,7 +40,7 @@ function holds(state: GameState, when: LessonWhen): boolean {
     case 'hasHands':
       return hands(state.party.people).length > 0;
     case 'holed':
-      return Boolean(state.party.hullHoled);
+      return holed(state.ship);
     case 'famous':
       return wordBump(state) > 0;
     default:

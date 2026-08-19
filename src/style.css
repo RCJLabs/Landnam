@@ -1026,6 +1026,12 @@ h2.grim {
   font-style: normal;
 }
 
+/* A hull making water is a fact the player must never have to remember. */
+.hint.holed {
+  color: var(--blood);
+  font-style: normal;
+}
+
 .launch-crew {
   display: grid;
   gap: 3px;

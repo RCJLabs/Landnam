@@ -14,6 +14,7 @@ import { chronicle } from './saga';
 import { note } from './tally';
 import { atHome } from './site';
 import { worldBeat } from './beats';
+import { hold } from './ship';
 
 /** Provisions a party takes per member per day it expects to be out. */
 export const PROVISION_PER_HEAD = 3;
@@ -139,7 +140,15 @@ export function launch(state: GameState, members: string[], purpose: Purpose): b
   const going = living(state.party.people).filter((p) => members.includes(p.id));
   // What the store can spare, not what the trip wants. Never more than there
   // is — see launchBlocker for why an empty store must not forbid the trip.
-  const carried = Math.min(provisionsFor(going.length), Math.max(0, state.party.food));
+  // What the knarr will hold caps what goes out. A whole hull holds more than
+  // the backs aboard her, so this never binds on a sound ship — it binds
+  // exactly when she is sprung, which is the point: a damaged hull is a
+  // shorter errand, not merely a slower one.
+  const carried = Math.min(
+    provisionsFor(going.length),
+    hold(state.ship),
+    Math.max(0, state.party.food),
+  );
   state.party.food -= carried;
 
   note(state, 'expeditions');

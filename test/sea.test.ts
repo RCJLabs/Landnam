@@ -9,6 +9,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { distance, fromKey, key, line, offsetToAxial, range, type Hex } from '../src/hex';
+import { holed, springStrake } from '../src/sim/ship';
+import { SHIP_STRAKES } from '../src/data/ships';
 import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
@@ -154,7 +156,7 @@ describe('the hull and the packs are the stake', () => {
     state.party.food = 40;
     state.party.firewood = 20;
     settleSeaFight(state, false);
-    expect(state.party.hullHoled).toBe(true);
+    expect(holed(state.ship)).toBe(true);
     expect(state.party.food).toBeLessThan(40);
     expect(state.party.firewood).toBeLessThan(20);
     // A share, not a wipe: short of sunk is the design.
@@ -166,7 +168,7 @@ describe('the hull and the packs are the stake', () => {
     const state = structuredClone(newGame('sea-win'));
     const food = state.party.food;
     settleSeaFight(state, true);
-    expect(state.party.hullHoled).toBeUndefined();
+    expect(holed(state.ship)).toBe(false);
     expect(state.party.food).toBe(food + SEA_SALVAGE.food);
   });
 
@@ -181,9 +183,9 @@ describe('the hull and the packs are the stake', () => {
     }
     expect(water).toBeTruthy();
     const sound = moveEffort(state, water!);
-    state.party.hullHoled = true;
-    const holed = moveEffort(state, water!);
-    expect(holed!).toBeGreaterThan(sound!);
+    springStrake(state.ship);
+    const hurt = moveEffort(state, water!);
+    expect(hurt!).toBeGreaterThan(sound!);
     // Land does not care about the hull.
     const landNeighbour = Object.entries(state.world.tiles).find(
       ([, t]) => t.terrain === 'meadow',
@@ -193,20 +195,20 @@ describe('the hull and the packs are the stake', () => {
 
   it('a night ashore mends her, for the price of the timber', () => {
     const state = structuredClone(newGame('sea-mend'));
-    state.party.hullHoled = true;
+    springStrake(state.ship);
     state.party.firewood = 10;
 
     const next = apply(state, { type: 'CAMP' });
-    expect(next.party.hullHoled).toBeUndefined();
+    expect(holed(next.ship)).toBe(false);
     expect(next.saga.some((l) => l.text.includes('strake'))).toBe(true);
   });
 
   it('with no wood to mend with, she stays holed', () => {
     const state = structuredClone(newGame('sea-nowood'));
-    state.party.hullHoled = true;
+    springStrake(state.ship);
     state.party.firewood = HULL_MEND_WOOD - 1;
     expect(mendHull(state)).toBe(false);
-    expect(state.party.hullHoled).toBe(true);
+    expect(holed(state.ship)).toBe(true);
   });
 
   it('an old save comes forward with a sound hull', () => {
@@ -218,5 +220,21 @@ describe('the hull and the packs are the stake', () => {
     const migrated = migrate(old).save;
     expect(migrated['version']).toBe(SAVE_VERSION);
     expect((migrated['party'] as { hullHoled?: boolean }).hullHoled).toBeUndefined();
+    // And she is a ship now, with a name, not an absent flag.
+    const ship = migrated['ship'] as { name: string; strakes: number };
+    expect(ship.strakes).toBe(SHIP_STRAKES);
+    expect(ship.name.length).toBeGreaterThan(0);
+  });
+
+  it('carries a holed old save forward as one sprung strake', () => {
+    // The whole promise of the migration: `hullHoled` MEANT one strake, so a
+    // save written under the flag sails at exactly the speed it was saved at.
+    const old = structuredClone(newGame('sea-migrate-holed')) as unknown as Record<string, unknown>;
+    old['version'] = 20;
+    (old['party'] as Record<string, unknown>)['hullHoled'] = true;
+    delete old['ship'];
+    const migrated = migrate(old).save;
+    const ship = migrated['ship'] as { strakes: number };
+    expect(ship.strakes).toBe(SHIP_STRAKES - 1);
   });
 });

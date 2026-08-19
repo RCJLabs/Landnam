@@ -13,6 +13,8 @@ import { distance, key } from '../hex';
 import { placeKind } from '../data/places';
 import { stream } from '../rng';
 import { chronicle } from './saga';
+import { holed, mendStrake, springStrake, unseaworthy } from './ship';
+import { STRAKE_MEND_WOOD } from '../data/ships';
 
 /** Share of the packs that goes over the side when a sea fight is lost. */
 export const CARGO_LOST_SHARE = 0.35;
@@ -20,8 +22,13 @@ export const CARGO_LOST_SHARE = 0.35;
 /** What winning strips out of their hull. */
 export const SEA_SALVAGE = { food: 5, firewood: 4 };
 
-/** Timber (as firewood) a night ashore spends putting the hull right. */
-export const HULL_MEND_WOOD = 2;
+/**
+ * Timber (as firewood) a night ashore spends putting ONE strake right.
+ *
+ * Re-exported from `data/ships` rather than owned here now that the hull has
+ * more than one of them — two numbers for the same nail is how they drift.
+ */
+export const HULL_MEND_WOOD = STRAKE_MEND_WOOD;
 
 /** True when this battle is being fought afloat, hulls at stake. */
 /**
@@ -91,12 +98,19 @@ export function settleSeaFight(state: GameState, won: boolean): void {
   const firewood = Math.round(state.party.firewood * CARGO_LOST_SHARE * rng.float(0.8, 1.1));
   state.party.food = Math.max(0, state.party.food - food);
   state.party.firewood = Math.max(0, state.party.firewood - firewood);
-  state.party.hullHoled = true;
+  springStrake(state.ship);
   chronicle(
     state,
-    `We broke off with the packs going over the side — ${food} of food and ${firewood} of wood to the water — and the hull took a strake's worth of hurt doing it.`,
+    `We broke off with the packs going over the side — ${food} of food and ${firewood} of wood to the water — and ${state.ship.name} took a strake's worth of hurt doing it.`,
     'grim',
   );
+  if (unseaworthy(state.ship)) {
+    chronicle(
+      state,
+      `There was nothing sound left in her. ${state.ship.name} would float and go nowhere until she was hauled out and worked on.`,
+      'grim',
+    );
+  }
 }
 
 /**
@@ -104,13 +118,12 @@ export function settleSeaFight(state: GameState, won: boolean): void {
  * from CAMP on land; the mend is part of the night's work, not a new verb.
  */
 export function mendHull(state: GameState): boolean {
-  if (!state.party.hullHoled) return false;
-  if (state.party.firewood < HULL_MEND_WOOD) return false;
-  state.party.firewood -= HULL_MEND_WOOD;
-  delete state.party.hullHoled;
+  if (!mendStrake(state)) return false;
   chronicle(
     state,
-    'We had her over on the beach by firelight and got a sound strake over the sprung one. She swims like herself again.',
+    holed(state.ship)
+      ? `We had ${state.ship.name} over on the beach by firelight and got a sound strake over a sprung one. There is more of her to do.`
+      : `We had ${state.ship.name} over on the beach by firelight and got a sound strake over the sprung one. She swims like herself again.`,
     'good',
   );
   return true;

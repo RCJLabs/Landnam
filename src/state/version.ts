@@ -37,7 +37,11 @@
 //                     colony half of the sim's event stream.
 // v31 (ids): `nextId` starts past the founders. Before this the first six
 //             people to join took the ids of the six who came off the knarr.
-export const SAVE_VERSION = 31;
+// v32 (ship): the root gained `ship` — a knarr with a name and strakes that
+//              grade — and Party LOST `hullHoled`, the one-bit version of the
+//              same idea. A holed hull comes forward as one sprung strake,
+//              which is exactly what the flag meant.
+export const SAVE_VERSION = 32;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

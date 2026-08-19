@@ -16,6 +16,7 @@ import {
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast, markVisible, reachable } from '../sim/winter';
+import { holed, sprung, unseaworthy } from '../sim/ship';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
 import { threatReading } from '../sim/raid';
@@ -389,9 +390,14 @@ export function renderHint(state: GameState): HTMLElement {
   if (state.event) return el('div', { class: 'hint' }, ['Something needs answering.']);
   // A holed hull is a fact the player must never have to remember unaided —
   // it halves the pace of every sea hex until a night ashore mends it.
-  if (state.party.hullHoled) {
+  if (unseaworthy(state.ship)) {
     return el('div', { class: 'hint holed' }, [
-      'The knarr is making water — she rows at half pace. Camp ashore to mend her.',
+      `${state.ship.name} has nothing sound left in her — she will not be rowed. Camp ashore to work on her.`,
+    ]);
+  }
+  if (holed(state.ship)) {
+    return el('div', { class: 'hint holed' }, [
+      `${state.ship.name} is making water — ${sprung(state.ship)} strake${sprung(state.ship) === 1 ? '' : 's'} sprung, and slower for each. Camp ashore to mend her.`,
     ]);
   }
   // AFLOAT BESIDE SOMETHING WORTH TAKING.

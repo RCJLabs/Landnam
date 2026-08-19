@@ -20,6 +20,7 @@ import { seasonOf } from './calendar';
 import { chronicle } from './saga';
 import { hasLineOfSight, onHighGround } from './fog';
 import { STRAND_HAUL, STRAND_INFAMY } from './sea';
+import { holdShare } from './ship';
 import { learn, knows } from './lore';
 import { shiftStanding } from './neighbours';
 import { note } from './tally';
@@ -309,7 +310,10 @@ export function settlePlace(state: GameState, id: string, fromSea = false): void
 
   // A hold takes more than backs can carry, and the coast remembers a sail
   // far longer than it remembers men on the road. See sim/sea.ts.
-  const haul = fromSea ? STRAND_HAUL : 1;
+  // The hold is what makes a strandhögg worth more than walking up to the
+  // same gate — `STRAND_HAUL` has said so in a comment since the sea work and
+  // multiplied by a constant regardless. A sprung hull carries less home.
+  const haul = fromSea ? STRAND_HAUL * holdShare(state.ship) : 1;
   state.party.food += Math.round(def.loot.food * haul);
   state.party.firewood += Math.round(def.loot.firewood * haul);
   state.party.morale = Math.min(100, Math.max(0, state.party.morale + def.loot.morale));

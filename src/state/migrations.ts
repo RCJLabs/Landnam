@@ -9,6 +9,8 @@
 //   3. Migrations never throw on missing fields; they fill defaults.
 
 import { SAVE_VERSION } from './version';
+import { makeShip } from '../sim/ship';
+import { SHIP_STRAKES } from '../data/ships';
 import { stream } from '../rng';
 import { seedPlaces } from '../sim/places';
 
@@ -298,6 +300,24 @@ export const MIGRATIONS: Record<number, Migration> = {
 
     const counter = typeof save['nextId'] === 'number' ? (save['nextId'] as number) : 1;
     return { ...save, nextId: Math.max(counter, highest + 1), version: 31 };
+  },
+  // The knarr became a thing. `party.hullHoled` was one bit; she has a name
+  // and three strakes now. A holed hull comes forward with one strake sprung
+  // — the same speed, the same mend, the same night ashore — and a sound one
+  // whole. Her name comes off the run's own seed, so a saga reloaded is
+  // sailing the ship it was always sailing.
+  31: (save) => {
+    const seed = typeof save['seed'] === 'string' ? (save['seed'] as string) : '';
+    const party = save['party'] as Record<string, unknown> | undefined;
+    const wasHoled = Boolean(party?.['hullHoled']);
+    const nextParty = { ...(party ?? {}) };
+    delete nextParty['hullHoled'];
+    return {
+      ...save,
+      party: nextParty,
+      ship: { ...makeShip(seed), strakes: SHIP_STRAKES - (wasHoled ? 1 : 0) },
+      version: 32,
+    };
   },
 };
 

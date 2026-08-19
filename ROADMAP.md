@@ -1866,6 +1866,47 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — The knarr became a thing** — Item 7. She was
+  `party.hullHoled`: one bit, two states, mended by a night and two of timber.
+  Everything the sea does hung off it — sea fights, cargo over the side,
+  salvage, the strandhögg — including `STRAND_HAUL`, whose comment has said
+  "the hold takes more than backs can carry" since the sea work while there
+  was no hold to take anything.
+  **The premise checked out first, unlike items 5 and 6.** 30 raider sagas
+  spend **543 days afloat**, so the sea is genuinely reached and a ship that
+  is a thing has days to matter on.
+  She has a **name** off the run seed (she is named in the landing line now),
+  and **three strakes** instead of a boolean. Each sprung strake costs a day
+  on the water again — the old flag charged for the first and gave the second
+  away free — and shrinks the **hold**: 24 whole, 16, 8. Nothing sound left
+  and she will not be rowed at all.
+  **Short of sunk, still.** `sea.ts` has said since the sea work that a run
+  must end by decision rather than one bad fight on the water, and that holds:
+  `isCoastalWater` only ever lets the band float on water touching land, so a
+  hull with nothing left can always be rowed the one hex ashore. There is a
+  test that says so.
+  **The hold bites, which was the whole risk.** Item 6 had just caught the
+  Thing's checklist carrying two needs met by 78 settled sagas out of 78, and
+  a hold that never capped a load would be the same mistake with a sail on it.
+  The first cut had `HOLD_PER_STRAKE = 6`, which left a two-strake hull
+  holding twelve — more than three backs carry — so the cap existed and never
+  once refused anybody. At **8** she holds 24 / 16 / 8, and one sprung strake
+  already bites on a full band of six.
+  **It changed no gameplay, by construction.** A sound hull behaves exactly as
+  the old flag did and one sprung strake exactly as `hullHoled` did, so
+  everything new happens past what the old model could describe. Proved rather
+  than asserted: across the regenerated `port/parity.json`, `world`, `band`,
+  `coast`, `steading` and `field` are **byte-identical**, and `run` moved only
+  because `SAVE_VERSION` sits inside it. Neither recorded run needed
+  re-recording.
+  `ship` is its own parity facet rather than a field folded into `band` — for
+  the port, not for tidiness: `band` serialises `s.party` by identity, so
+  making room would have rewritten stage 2's canonical bytes and churned a
+  stage that already passes. A port green on the six stays green and owes only
+  the new one.
+  Save v32, with a migration: a holed old save comes forward with one strake
+  sprung — the same speed, the same mend, the same night ashore.
+
 - **2026-08-19 — The middle of a run is not shapeless, it is unreached** —
   Item 6, and the premise did not survive contact. It was written as "the only
   goals are survive five winters and be proclaimed jarl, so the middle has no

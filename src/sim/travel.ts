@@ -19,6 +19,7 @@ import {
 } from './places';
 import { placeKind } from '../data/places';
 import { mendHull, strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
+import { sprung, unseaworthy } from './ship';
 import { bonus } from './lore';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
@@ -74,12 +75,17 @@ export function moveEffort(state: GameState, to: Hex): number | null {
   const penalty = effectsOn(state.day).travelPenalty;
   if (tile.terrain === 'ocean') {
     if (!isCoastalWater(state, to)) return null;
+    // Nothing sound left in her: she floats and will not be rowed. The band
+    // is never stuck by this — `isCoastalWater` only lets them float on water
+    // that touches land, so the one hex ashore is always open.
+    if (unseaworthy(state.ship)) return null;
     // A band that knows how a hull is meant to sit gets more out of a day on
     // the water. Never below one: a hex of sea is still a hex of sea.
-    // A holed hull swims at half the pace — she is baled as much as rowed —
-    // but she swims: short of sunk, on purpose.
-    const holed = state.party.hullHoled ? SEA_EFFORT : 0;
-    return Math.max(1, SEA_EFFORT + holed + penalty - bonus(state, 'sea'));
+    // A sprung strake costs her the same as `hullHoled` always did; the
+    // second one costs it again, which is what makes a beating worse than a
+    // scratch.
+    const hurt = sprung(state.ship) * SEA_EFFORT;
+    return Math.max(1, SEA_EFFORT + hurt + penalty - bonus(state, 'sea'));
   }
   const def = terrainDef(tile.terrain);
   if (!Number.isFinite(def.cost)) return null;

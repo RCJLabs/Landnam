@@ -45,6 +45,7 @@ rather than at the end.
 | --- | --- | --- |
 | `world` | tiles, landing, places | 1 — worldgen |
 | `band` | people, stores, position | 2 — party, upkeep, calendar |
+| `ship` | the knarr: name, sound strakes | 2 — sea, travel |
 | `coast` | neighbours, grudges, lore | 3 — the social layer |
 | `steading` | settlement, expedition, jarldom | 4 — colony |
 | `field` | battle, aftermath | 5 — combat |
@@ -191,6 +192,11 @@ for a band with no steading, and matches every facet at `runs/long.json`
 held. With the deck, the steading and the work pass below, the port is green
 at **@0 through @55 of `runs/long.json` and @0 through @13 of
 `runs/example.json` — 25 checkpoints across two countries, six facets each**
+(**seven** since the ship: `ship` was added as its own facet rather than
+folded into `band`, precisely so stage 2's existing canonical bytes did not
+move. Every facet but `run` is byte-identical across that change, and `run`
+moved only because `SAVE_VERSION` sits inside it — so a port green on the six
+stays green, and owes only the new one.)
 — and stops where it names its own blockers.
 
 **The draw order, written out before any C++ as stages 2 to 4 taught.** A

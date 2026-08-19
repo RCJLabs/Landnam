@@ -14,6 +14,7 @@
 //      veteran, and a veteran is shown nothing at all.
 
 import { describe, it, expect } from 'vitest';
+import { springStrake } from '../src/sim/ship';
 import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
 import { encode } from '../src/state/save';
@@ -291,7 +292,7 @@ describe('lessons arrive when the thing matters', () => {
       },
       'the-hull': () => {
         const s = fresh('hull');
-        s.party.hullHoled = true;
+        springStrake(s.ship);
         return s;
       },
       'the-word': () => {

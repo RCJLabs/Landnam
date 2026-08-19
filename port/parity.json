@@ -10,6 +10,10 @@
    "blurb": "The people and what they carry. Stage 2 — party, upkeep, calendar."
   },
   {
+   "id": "ship",
+   "blurb": "The knarr — her name and what is sound in her. Stage 2 — sea, travel."
+  },
+  {
    "id": "coast",
    "blurb": "Who else is out there and what they think of you. Stage 3 — neighbours, feuds."
   },
@@ -176,6 +180,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "ae266584ade2a419",
        "size": 468,
@@ -209,7 +221,7 @@
        }
       },
       "run": {
-       "hash": "04b4aec89701aa9b",
+       "hash": "04adf30397086660",
        "size": 253,
        "samples": {
         "day": 1,
@@ -261,6 +273,14 @@
         "atR": 16
        }
       },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "80516337cb405a4c",
        "size": 473,
@@ -294,7 +314,7 @@
        }
       },
       "run": {
-       "hash": "f428281c83a4ba9b",
+       "hash": "f41fd95783ab7660",
        "size": 251,
        "samples": {
         "day": 1,
@@ -346,6 +366,14 @@
         "atR": 13
        }
       },
+      "ship": {
+       "hash": "91ef10b58732ea0a",
+       "size": 41,
+       "samples": {
+        "name": "Vágabrúðr",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "67fc154df758433e",
        "size": 477,
@@ -379,7 +407,7 @@
        }
       },
       "run": {
-       "hash": "80605fa4f83a7c01",
+       "hash": "805810dff8383d6a",
        "size": 244,
        "samples": {
         "day": 1,
@@ -431,6 +459,14 @@
         "atR": 13
        }
       },
+      "ship": {
+       "hash": "91ef10b58732ea0a",
+       "size": 41,
+       "samples": {
+        "name": "Vágabrúðr",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "67fc154df758433e",
        "size": 477,
@@ -464,7 +500,7 @@
        }
       },
       "run": {
-       "hash": "5e5f10e939378560",
+       "hash": "5e5cd2523930c99b",
        "size": 244,
        "samples": {
         "day": 1,
@@ -516,6 +552,14 @@
         "atR": 18
        }
       },
+      "ship": {
+       "hash": "d8d29bec86e9fa7b",
+       "size": 39,
+       "samples": {
+        "name": "Selreið",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "5340ec0c8be9b807",
        "size": 471,
@@ -549,7 +593,7 @@
        }
       },
       "run": {
-       "hash": "8d5021990f27ad2a",
+       "hash": "8d4de3020f29ebc1",
        "size": 245,
        "samples": {
         "day": 1,
@@ -608,6 +652,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "ae266584ade2a419",
        "size": 468,
@@ -641,7 +693,7 @@
        }
       },
       "run": {
-       "hash": "32fe357aaf258435",
+       "hash": "33007411af23459e",
        "size": 253,
        "samples": {
         "day": 1,
@@ -684,6 +736,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "1d8a8b3c2c520091",
        "size": 526,
@@ -717,7 +777,7 @@
        }
       },
       "run": {
-       "hash": "b8195a10c73c3f7d",
+       "hash": "b8129e4bc73a00e6",
        "size": 270,
        "samples": {
         "day": 2,
@@ -759,6 +819,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "3d990c8e5986e5cf",
        "size": 526,
@@ -792,7 +860,7 @@
        }
       },
       "run": {
-       "hash": "c46897577945ef06",
+       "hash": "c470e61c79482d9d",
        "size": 270,
        "samples": {
         "day": 3,
@@ -834,6 +902,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "297178e8c2d85511",
        "size": 526,
@@ -867,7 +943,7 @@
        }
       },
       "run": {
-       "hash": "af387be66f1ccd77",
+       "hash": "af3aba7d6f251c3c",
        "size": 270,
        "samples": {
         "day": 4,
@@ -909,6 +985,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "b4ebeb346b3ee219",
        "size": 526,
@@ -942,7 +1026,7 @@
        }
       },
       "run": {
-       "hash": "3458eb54ad09b969",
+       "hash": "34509c8fad077ad2",
        "size": 270,
        "samples": {
         "day": 6,
@@ -984,6 +1068,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "d1ed0780a15e9909",
        "size": 526,
@@ -1017,7 +1109,7 @@
        }
       },
       "run": {
-       "hash": "bd91076be0e71402",
+       "hash": "bd97c330e0e95299",
        "size": 270,
        "samples": {
         "day": 7,
@@ -1059,6 +1151,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "d6b99474085e6739",
        "size": 526,
@@ -1092,7 +1192,7 @@
        }
       },
       "run": {
-       "hash": "314ae0b123003c7c",
+       "hash": "3148a21a22f980b7",
        "size": 270,
        "samples": {
         "day": 9,
@@ -1135,6 +1235,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "e01755ba6242192f",
        "size": 526,
@@ -1168,7 +1276,7 @@
        }
       },
       "run": {
-       "hash": "0bd2bbf7219e9694",
+       "hash": "0bdb0abc2197dacf",
        "size": 271,
        "samples": {
         "day": 10,
@@ -1210,6 +1318,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "04cd28ae2fa5cbe1",
        "size": 539,
@@ -1243,7 +1359,7 @@
        }
       },
       "run": {
-       "hash": "2a3cd98b8a3b4550",
+       "hash": "2a4528508a32f68b",
        "size": 271,
        "samples": {
         "day": 14,
@@ -1286,6 +1402,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "f88fe0d87854ecef",
        "size": 539,
@@ -1319,7 +1443,7 @@
        }
       },
       "run": {
-       "hash": "10165d16d7ddccb1",
+       "hash": "10189badd7db8e1a",
        "size": 819,
        "samples": {
         "day": 15,
@@ -1362,6 +1486,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "f88fe0d87854ecef",
        "size": 539,
@@ -1395,7 +1527,7 @@
        }
       },
       "run": {
-       "hash": "282b6c98004a9287",
+       "hash": "2824b0d300514e4c",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1438,6 +1570,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "f88fe0d87854ecef",
        "size": 539,
@@ -1471,7 +1611,7 @@
        }
       },
       "run": {
-       "hash": "282b6c98004a9287",
+       "hash": "2824b0d300514e4c",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1513,6 +1653,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "f88fe0d87854ecef",
        "size": 539,
@@ -1546,7 +1694,7 @@
        }
       },
       "run": {
-       "hash": "282b6c98004a9287",
+       "hash": "2824b0d300514e4c",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1588,6 +1736,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "f88fe0d87854ecef",
        "size": 539,
@@ -1621,7 +1777,7 @@
        }
       },
       "run": {
-       "hash": "282b6c98004a9287",
+       "hash": "2824b0d300514e4c",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1663,6 +1819,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "f88fe0d87854ecef",
        "size": 539,
@@ -1696,7 +1860,7 @@
        }
       },
       "run": {
-       "hash": "282b6c98004a9287",
+       "hash": "2824b0d300514e4c",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1738,6 +1902,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "f88fe0d87854ecef",
        "size": 539,
@@ -1771,7 +1943,7 @@
        }
       },
       "run": {
-       "hash": "282b6c98004a9287",
+       "hash": "2824b0d300514e4c",
        "size": 303,
        "samples": {
         "day": 15,
@@ -1814,6 +1986,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "f88fe0d87854ecef",
        "size": 539,
@@ -1847,7 +2027,7 @@
        }
       },
       "run": {
-       "hash": "ef45784c2c093d45",
+       "hash": "ef3ebc872c06feae",
        "size": 436,
        "samples": {
         "day": 15,
@@ -1912,6 +2092,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "ae266584ade2a419",
        "size": 468,
@@ -1945,7 +2133,7 @@
        }
       },
       "run": {
-       "hash": "04b4aec89701aa9b",
+       "hash": "04adf30397086660",
        "size": 253,
        "samples": {
         "day": 1,
@@ -1988,6 +2176,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "1d8a8b3c2c520091",
        "size": 526,
@@ -2021,7 +2217,7 @@
        }
       },
       "run": {
-       "hash": "8f69827e27130fe3",
+       "hash": "8f6bc1152719cba8",
        "size": 270,
        "samples": {
         "day": 2,
@@ -2063,6 +2259,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "3d990c8e5986e5cf",
        "size": 526,
@@ -2096,7 +2300,7 @@
        }
       },
       "run": {
-       "hash": "bdf8c32dd0484d3c",
+       "hash": "bdf68496d03ffe77",
        "size": 270,
        "samples": {
         "day": 3,
@@ -2138,6 +2342,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "4925f86645328241",
        "size": 539,
@@ -2171,7 +2383,7 @@
        }
       },
       "run": {
-       "hash": "22846d1c760d1d4d",
+       "hash": "227c1e57760adeb6",
        "size": 270,
        "samples": {
         "day": 4,
@@ -2213,6 +2425,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "d184f472aa2e23c9",
        "size": 539,
@@ -2246,7 +2466,7 @@
        }
       },
       "run": {
-       "hash": "5d7a4caa0f665417",
+       "hash": "5d7c8b410f6d0fdc",
        "size": 270,
        "samples": {
         "day": 6,
@@ -2288,6 +2508,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "c95c37b25d1d3419",
        "size": 539,
@@ -2321,7 +2549,7 @@
        }
       },
       "run": {
-       "hash": "c214ba239669212a",
+       "hash": "c21d08e8966b5fc1",
        "size": 594,
        "samples": {
         "day": 9,
@@ -2364,6 +2592,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "c95c37b25d1d3419",
        "size": 539,
@@ -2397,7 +2633,7 @@
        }
       },
       "run": {
-       "hash": "928293b5a670a3e6",
+       "hash": "9280551ea672e27d",
        "size": 759,
        "samples": {
         "day": 9,
@@ -2440,6 +2676,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "c95c37b25d1d3419",
        "size": 539,
@@ -2473,7 +2717,7 @@
        }
       },
       "run": {
-       "hash": "01c9f8d84295e33d",
+       "hash": "01c1aa13429211a6",
        "size": 292,
        "samples": {
         "day": 9,
@@ -2516,6 +2760,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "fa41f84c5f1aff0f",
        "size": 539,
@@ -2549,7 +2801,7 @@
        }
       },
       "run": {
-       "hash": "36adc91a44add575",
+       "hash": "36b007b144ab96de",
        "size": 293,
        "samples": {
         "day": 10,
@@ -2592,6 +2844,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "fa41f84c5f1aff0f",
        "size": 539,
@@ -2625,7 +2885,7 @@
        }
       },
       "run": {
-       "hash": "8175e996da690def",
+       "hash": "8178282dda715cb4",
        "size": 302,
        "samples": {
         "day": 10,
@@ -2668,6 +2928,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "fa41f84c5f1aff0f",
        "size": 539,
@@ -2701,7 +2969,7 @@
        }
       },
       "run": {
-       "hash": "8175e996da690def",
+       "hash": "8178282dda715cb4",
        "size": 302,
        "samples": {
         "day": 10,
@@ -2744,6 +3012,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "fa41f84c5f1aff0f",
        "size": 539,
@@ -2777,7 +3053,7 @@
        }
       },
       "run": {
-       "hash": "8175e996da690def",
+       "hash": "8178282dda715cb4",
        "size": 302,
        "samples": {
         "day": 10,
@@ -2820,6 +3096,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "fa41f84c5f1aff0f",
        "size": 539,
@@ -2853,7 +3137,7 @@
        }
       },
       "run": {
-       "hash": "36adc91a44add575",
+       "hash": "36b007b144ab96de",
        "size": 293,
        "samples": {
         "day": 10,
@@ -2896,6 +3180,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "862fe80e007f8ca9",
        "size": 539,
@@ -2929,7 +3221,7 @@
        }
       },
       "run": {
-       "hash": "128765712219dfb8",
+       "hash": "128526da221190f3",
        "size": 308,
        "samples": {
         "day": 11,
@@ -2971,6 +3263,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "d0d997e6ad10f5e5",
        "size": 539,
@@ -3004,7 +3304,7 @@
        }
       },
       "run": {
-       "hash": "69ef84643ff04a17",
+       "hash": "69e8c89f3ff705dc",
        "size": 317,
        "samples": {
         "day": 21,
@@ -3046,6 +3346,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "a19087fe3a91d1f9",
        "size": 539,
@@ -3079,7 +3387,7 @@
        }
       },
       "run": {
-       "hash": "1f07ca50db7c6221",
+       "hash": "1eff7b8bdb78908a",
        "size": 376,
        "samples": {
         "day": 32,
@@ -3121,6 +3429,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "46138370689d404f",
        "size": 547,
@@ -3154,7 +3470,7 @@
        }
       },
       "run": {
-       "hash": "de3aa139cf62a78c",
+       "hash": "de3862a2cf5bebc7",
        "size": 424,
        "samples": {
         "day": 78,
@@ -3196,6 +3512,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "4a6837e363ade4ce",
        "size": 516,
@@ -3229,7 +3553,7 @@
        }
       },
       "run": {
-       "hash": "b801562218fbd5b5",
+       "hash": "b80394b918f9971e",
        "size": 447,
        "samples": {
         "day": 259,
@@ -3272,6 +3596,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "4a6837e363ade4ce",
        "size": 516,
@@ -3305,7 +3637,7 @@
        }
       },
       "run": {
-       "hash": "fcf4fd086f147225",
+       "hash": "fcecae436f12338e",
        "size": 456,
        "samples": {
         "day": 312,
@@ -3348,6 +3680,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "4a6837e363ade4ce",
        "size": 516,
@@ -3381,7 +3721,7 @@
        }
       },
       "run": {
-       "hash": "743cc284c576477b",
+       "hash": "743473bfc57d0340",
        "size": 447,
        "samples": {
         "day": 312,
@@ -3424,6 +3764,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "4a6837e363ade4ce",
        "size": 516,
@@ -3457,7 +3805,7 @@
        }
       },
       "run": {
-       "hash": "743cc284c576477b",
+       "hash": "743473bfc57d0340",
        "size": 447,
        "samples": {
         "day": 312,
@@ -3499,6 +3847,14 @@
         "atR": 15
        }
       },
+      "ship": {
+       "hash": "fe45944c4e5c0f89",
+       "size": 40,
+       "samples": {
+        "name": "Vindkápa",
+        "strakes": 3
+       }
+      },
       "coast": {
        "hash": "cdef32511cc9a7be",
        "size": 673,
@@ -3532,7 +3888,7 @@
        }
       },
       "run": {
-       "hash": "07240c128082b997",
+       "hash": "07264aa98089755c",
        "size": 830,
        "samples": {
         "day": 439,

@@ -46,7 +46,7 @@ import type { GameState } from '../state/types';
  * none would be checked never, and the second is how a port ships a
  * silently divergent subsystem.
  */
-export type FacetId = 'world' | 'band' | 'coast' | 'steading' | 'field' | 'run';
+export type FacetId = 'world' | 'band' | 'ship' | 'coast' | 'steading' | 'field' | 'run';
 
 export interface Facet {
   id: FacetId;
@@ -82,6 +82,22 @@ export const FACETS: Facet[] = [
       morale: Math.round(s.party.morale),
       atQ: s.party.at.q,
       atR: s.party.at.r,
+    }),
+  },
+  {
+    id: 'ship',
+    /**
+     * Her own facet rather than a field folded into `band`, and the reason is
+     * the port rather than tidiness: `band` serialises `s.party` by identity,
+     * so nesting it to make room would rewrite stage 2's canonical bytes and
+     * churn a stage that already passes. Additive costs the port one small
+     * new check and nothing else.
+     */
+    blurb: 'The knarr — her name and what is sound in her. Stage 2 — sea, travel.',
+    of: (s) => ({ ship: s.ship }),
+    samples: (s) => ({
+      name: s.ship.name,
+      strakes: s.ship.strakes,
     }),
   },
   {
