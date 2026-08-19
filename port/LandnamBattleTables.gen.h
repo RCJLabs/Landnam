@@ -38,13 +38,23 @@ namespace Tables
 		std::string Temperament;
 		int32_t Throws;
 		int32_t Weight;
+		/**
+		 * How much the band's word moves this one's odds. The port's
+		 * WeightFor is `max(0, Weight + Word * Renown)` — it used to name
+		 * 'huscarl' and 'raider' in code on both sides.
+		 */
+		int32_t Renown;
 	};
 
 	const std::vector<FFoeArchetype> FoeArchetypes = {
-		{ "scout", "Scout", 6, { "wits", "wits", "spirit" }, -2, "cautious", 2, 10 },
-		{ "raider", "Raider", 8, { "might", "might", "spirit" }, 0, "aggressive", 1, 12 },
-		{ "skirmisher", "Skirmisher", 8, { "wits", "might", "spirit" }, -1, "flanker", 1, 9 },
-		{ "huscarl", "Huscarl", 11, { "might", "spirit", "craft" }, 3, "aggressive", 0, 5 },
+		{ "scout", "Scout", 6, { "wits", "wits", "spirit" }, -2, "cautious", 2, 10, 0 },
+		{ "raider", "Raider", 8, { "might", "might", "spirit" }, 0, "aggressive", 1, 12, 1 },
+		{ "skirmisher", "Skirmisher", 8, { "wits", "might", "spirit" }, -1, "flanker", 1, 9, 0 },
+		{ "huscarl", "Huscarl", 11, { "might", "spirit", "craft" }, 3, "aggressive", 0, 5, 3 },
+		{ "spearman", "Spearman", 7, { "wits", "might", "wits" }, -1, "cautious", 3, 8, 0 },
+		{ "bondi", "Bondi", 4, { "craft", "might" }, -2, "aggressive", 0, 14, -2 },
+		{ "wolfcoat", "Wolf-coat", 10, { "might", "might", "spirit" }, 2, "aggressive", 0, 3, 2 },
+		{ "outlaw", "Outlaw", 7, { "wits", "spirit" }, -1, "flanker", 2, 7, 0 },
 	};
 
 	inline const FFoeArchetype* ArchetypeById(const std::string& Id)

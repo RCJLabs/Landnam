@@ -52,7 +52,13 @@ export function wordBump(state: GameState): number {
  * count has hit its cap: the same six men, but a harder six.
  */
 export function weightFor(archetype: FoeArchetype, word: number): number {
-  if (archetype.id === 'huscarl') return archetype.weight + word * 3;
-  if (archetype.id === 'raider') return archetype.weight + word;
-  return archetype.weight;
+  // Data, not a list of ids. This was three lines naming 'huscarl' and
+  // 'raider', which meant a new foe could not change with your reputation
+  // without an engine edit — see FoeArchetype.renown, and the test that
+  // holds this file to it.
+  //
+  // Never below zero: a negative weight is not "rare", it is a weighted pick
+  // reaching for a number that cannot be drawn. The levies thin out to
+  // nothing and stop, which is the intent.
+  return Math.max(0, archetype.weight + word * archetype.renown);
 }

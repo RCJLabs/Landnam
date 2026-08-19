@@ -237,9 +237,18 @@ describe('the stream reaches the field', () => {
   // which is stronger than a rare sample rather than weaker: the same roll
   // decides both, so walking the rounds gets both outcomes out of it.
   it('a broken fighter rallies or runs, and both are beats', () => {
+    // Over SEEDS as well as rounds. It used to break the first foe of one
+    // fight on one seed and ask that man to both rally and run across forty
+    // rounds — which passed only for as long as that seed happened to roll
+    // somebody of middling spirit. Adding archetypes rolled a different man
+    // and the test failed without the mechanism changing at all. What is
+    // being checked is that both outcomes REACH the beat stream, so the
+    // sample has to be the coast rather than one fighter.
     const seen = new Set<BeatKind>();
-    for (let round = 1; round <= 40 && seen.size < 2; round += 1) {
-      const state = structuredClone(newGame('beats-broken'));
+    const seeds = ['beats-broken', 'beats-broken-2', 'beats-broken-3', 'beats-broken-4'];
+    for (let step = 0; step < 40 * seeds.length && seen.size < 2; step += 1) {
+      const round = (step % 40) + 1;
+      const state = structuredClone(newGame(seeds[Math.floor(step / 40)]!));
       startBattle(state, 'meadow', 1);
       const battle = state.battle!;
       battle.round = round;

@@ -70,14 +70,47 @@ describe('every knob BINDS — the Math.min lesson, applied in advance', () => {
     expect(share(6)).toBeGreaterThan(share(0));
   });
 
-  it('the weights are monotone in word, and only for the hard men', () => {
-    for (const archetype of FOE_ARCHETYPES) {
-      const atSix = weightFor(archetype, 6);
-      const atNought = weightFor(archetype, 0);
-      if (archetype.id === 'huscarl' || archetype.id === 'raider') {
-        expect(atSix, archetype.id).toBeGreaterThan(atNought);
-      } else {
-        expect(atSix, archetype.id).toBe(atNought);
+  it('word never makes the men who come SOFTER', () => {
+    // This used to name 'huscarl' and 'raider' and require everything else to
+    // be flat — the same list of ids the engine carried, and it broke the
+    // moment a foe was added whose odds FALL with word. A levy thinning out
+    // is not a violation of the rule, it is the rule: somebody's cousins do
+    // not turn out against a band with a name.
+    //
+    // So the property is stated on what the coast actually sends. The
+    // expected budget of a man drawn at random must not fall as word grows,
+    // and over the whole range it has to rise — a reputation that changed
+    // nothing would be a knob that does not bind, which is this file's
+    // subject.
+    const expectedBudget = (word: number): number => {
+      const total = FOE_ARCHETYPES.reduce((sum, a) => sum + weightFor(a, word), 0);
+      return FOE_ARCHETYPES.reduce(
+        (sum, a) => sum + a.budget * (weightFor(a, word) / total), 0);
+    };
+
+    let last = expectedBudget(0);
+    for (const word of [1, 2, 3, 6, 10, 20]) {
+      const now = expectedBudget(word);
+      expect(now, `word ${word} sent softer men than word ${word - 1}`)
+        .toBeGreaterThanOrEqual(last - 1e-9);
+      last = now;
+    }
+    expect(expectedBudget(10)).toBeGreaterThan(expectedBudget(0));
+  });
+
+  it('lets only the hard men gain by your name', () => {
+    // The aggregate rule above is the OUTCOME, and it turned out to be too
+    // blunt to guard the input: giving the cheapest levy a strongly positive
+    // renown still left expected budget rising, because the huscarls and
+    // wolf-coats grow faster than the levies dilute. Checked directly, then:
+    // a foe may only become MORE likely as your word grows if it is at least
+    // as hard as the coast's average man. Anything softer may hold steady or
+    // thin out, never crowd in.
+    const mean = FOE_ARCHETYPES.reduce((s, a) => s + a.budget, 0) / FOE_ARCHETYPES.length;
+    for (const a of FOE_ARCHETYPES) {
+      if (a.renown > 0) {
+        expect(a.budget, `${a.id} grows with word but is softer than average`)
+          .toBeGreaterThanOrEqual(mean);
       }
     }
   });

@@ -135,7 +135,7 @@ export function renderBattleTables(): string {
   const archetypes = FOE_ARCHETYPES.map(
     (a) =>
       `\t\t{ ${quote(a.id)}, ${quote(a.kind)}, ${a.budget}, ${list(a.favours)}, `
-      + `${a.toughness}, ${quote(a.temperament)}, ${a.throws}, ${a.weight} },`,
+      + `${a.toughness}, ${quote(a.temperament)}, ${a.throws}, ${a.weight}, ${num(a.renown)} },`,
   ).join('\n');
 
   const lore = LORE.map(
@@ -194,6 +194,12 @@ namespace Tables
 		std::string Temperament;
 		int32_t Throws;
 		int32_t Weight;
+		/**
+		 * How much the band's word moves this one's odds. The port's
+		 * WeightFor is \`max(0, Weight + Word * Renown)\` — it used to name
+		 * 'huscarl' and 'raider' in code on both sides.
+		 */
+		int32_t Renown;
 	};
 
 	const std::vector<FFoeArchetype> FoeArchetypes = {

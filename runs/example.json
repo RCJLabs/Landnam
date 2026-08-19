@@ -172,54 +172,49 @@
    "type": "B_END_TURN"
   },
   {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
+   "type": "B_END_TURN"
+  },
+  {
    "type": "B_LEAVE"
-  },
-  {
-   "type": "DISMISS_AFTERMATH"
-  },
-  {
-   "type": "MOVE",
-   "to": {
-    "q": 8,
-    "r": 15
-   }
-  },
-  {
-   "type": "FORAGE"
-  },
-  {
-   "type": "MOVE",
-   "to": {
-    "q": 9,
-    "r": 15
-   }
-  },
-  {
-   "type": "CHOOSE",
-   "index": 0
-  },
-  {
-   "type": "DISMISS_EVENT"
-  },
-  {
-   "type": "MOVE",
-   "to": {
-    "q": 10,
-    "r": 15
-   }
-  },
-  {
-   "type": "FORAGE"
-  },
-  {
-   "type": "FORAGE"
-  },
-  {
-   "type": "MOVE",
-   "to": {
-    "q": 11,
-    "r": 15
-   }
   }
  ]
 }

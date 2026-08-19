@@ -28,6 +28,20 @@ export interface FoeArchetype {
   /** Spears and hand-axes carried into the fight. */
   throws: number;
   weight: number;
+  /**
+   * How much your WORD changes the odds of meeting this one.
+   *
+   * A coast that has heard about you stops sending the men it can spare and
+   * starts sending the men it cannot. Positive means a fearsome reputation
+   * brings more of them; negative means it drives them away — nobody's
+   * cousins turn out against a band with a name.
+   *
+   * This lives here because it used to live in `sim/word.ts` as
+   * `if (archetype.id === 'huscarl')`, which meant adding a foe meant editing
+   * the engine — against this project's oldest rule. Now a new archetype is
+   * this file and nothing else, and a test holds the engine to it.
+   */
+  renown: number;
 }
 
 export const FOE_ARCHETYPES: FoeArchetype[] = [
@@ -40,6 +54,7 @@ export const FOE_ARCHETYPES: FoeArchetype[] = [
     temperament: 'cautious',
     throws: 2,
     weight: 10,
+    renown: 0,
   },
   {
     id: 'raider',
@@ -50,6 +65,7 @@ export const FOE_ARCHETYPES: FoeArchetype[] = [
     temperament: 'aggressive',
     throws: 1,
     weight: 12,
+    renown: 1,
   },
   {
     id: 'skirmisher',
@@ -60,6 +76,7 @@ export const FOE_ARCHETYPES: FoeArchetype[] = [
     temperament: 'flanker',
     throws: 1,
     weight: 9,
+    renown: 0,
   },
   {
     id: 'huscarl',
@@ -70,6 +87,66 @@ export const FOE_ARCHETYPES: FoeArchetype[] = [
     temperament: 'aggressive',
     throws: 0,
     weight: 5,
+    renown: 3,
+  },
+  /*
+   * The four below are the coast filling out. Each one is meant to make a
+   * DIFFERENT fight rather than a differently-statted one, using what the
+   * field already has: a volley before contact, numbers against a wall, one
+   * man who has to be dealt with, and somebody who will not stand still.
+   */
+  {
+    // Cautious opens with a throw when the lane is clear, so three of them is
+    // a real volley: close fast or eat it.
+    id: 'spearman',
+    kind: 'Spearman',
+    budget: 7,
+    favours: ['wits', 'might', 'wits'],
+    toughness: -1,
+    temperament: 'cautious',
+    throws: 3,
+    weight: 8,
+    renown: 0,
+  },
+  {
+    // Somebody's cousins, turned out with what they had. Cheap and many,
+    // which is what makes a shield wall worth forming — and they stop coming
+    // as your word grows, because farmers do not march against a name.
+    id: 'bondi',
+    kind: 'Bondi',
+    budget: 4,
+    favours: ['craft', 'might'],
+    toughness: -2,
+    temperament: 'aggressive',
+    throws: 0,
+    weight: 14,
+    renown: -2,
+  },
+  {
+    // One man who has to be dealt with. Rare, and rarer still on a quiet
+    // coast — he comes looking once there is something worth the walk.
+    id: 'wolfcoat',
+    kind: 'Wolf-coat',
+    budget: 10,
+    favours: ['might', 'might', 'spirit'],
+    toughness: 2,
+    temperament: 'aggressive',
+    throws: 0,
+    weight: 3,
+    renown: 2,
+  },
+  {
+    // Hunts whoever is already busy and will not be the first into contact.
+    // The reason to keep a flank clear rather than pile everyone forward.
+    id: 'outlaw',
+    kind: 'Outlaw',
+    budget: 7,
+    favours: ['wits', 'spirit'],
+    toughness: -1,
+    temperament: 'flanker',
+    throws: 2,
+    weight: 7,
+    renown: 0,
   },
 ];
 

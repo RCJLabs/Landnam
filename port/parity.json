@@ -570,13 +570,12 @@
    "script": "runs/example.json",
    "worldHash": "688411ba38a7cea1",
    "actionCounts": {
-    "B_END_TURN": 35,
-    "FORAGE": 13,
-    "MOVE": 8,
-    "CHOOSE": 2,
-    "DISMISS_EVENT": 2,
-    "B_LEAVE": 1,
-    "DISMISS_AFTERMATH": 1
+    "B_END_TURN": 49,
+    "FORAGE": 10,
+    "MOVE": 4,
+    "CHOOSE": 1,
+    "DISMISS_EVENT": 1,
+    "B_LEAVE": 1
    },
    "checkpoints": [
     {
@@ -1386,8 +1385,8 @@
        }
       },
       "field": {
-       "hash": "2a466286807f843d",
-       "size": 5289,
+       "hash": "45903bcf5d24755c",
+       "size": 5185,
        "samples": {
         "fighting": 1,
         "round": 1,
@@ -1462,8 +1461,8 @@
        }
       },
       "field": {
-       "hash": "4f08439399be7894",
-       "size": 5289,
+       "hash": "2db62ab346d8bf80",
+       "size": 5281,
        "samples": {
         "fighting": 1,
         "round": 1,
@@ -1537,8 +1536,8 @@
        }
       },
       "field": {
-       "hash": "75df6534051782fb",
-       "size": 5577,
+       "hash": "6812882f148e1fd0",
+       "size": 5789,
        "samples": {
         "fighting": 1,
         "round": 1,
@@ -1560,7 +1559,7 @@
      }
     },
     {
-     "afterActions": 31,
+     "afterActions": 33,
      "action": "B_END_TURN",
      "day": 15,
      "refusedSoFar": 0,
@@ -1577,7 +1576,157 @@
        }
       },
       "band": {
-       "hash": "b0f08290cf0c1d9b",
+       "hash": "ffd737d555a7733e",
+       "size": 1587,
+       "samples": {
+        "people": 6,
+        "alive": 6,
+        "food": 31,
+        "firewood": 0,
+        "morale": 60,
+        "atQ": 7,
+        "atR": 15
+       }
+      },
+      "coast": {
+       "hash": "f88fe0d87854ecef",
+       "size": 539,
+       "samples": {
+        "neighbours": 4,
+        "found": 1,
+        "standing": 3,
+        "grudges": 0,
+        "lore": 0
+       }
+      },
+      "steading": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "settled": 0,
+        "foundedOn": -1,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "05d5b45801413747",
+       "size": 7613,
+       "samples": {
+        "fighting": 1,
+        "round": 3,
+        "combatants": 11,
+        "standing": 11
+       }
+      },
+      "run": {
+       "hash": "282b6c98004a9287",
+       "size": 303,
+       "samples": {
+        "day": 15,
+        "ended": "-",
+        "mode": "BATTLE",
+        "flags": 3,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 34,
+     "action": "B_END_TURN",
+     "day": 15,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "00a01d7d88ffab34",
+       "size": 80310,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 3,
+        "landingR": 15,
+        "seen": 58
+       }
+      },
+      "band": {
+       "hash": "ffd737d555a7733e",
+       "size": 1587,
+       "samples": {
+        "people": 6,
+        "alive": 6,
+        "food": 31,
+        "firewood": 0,
+        "morale": 60,
+        "atQ": 7,
+        "atR": 15
+       }
+      },
+      "coast": {
+       "hash": "f88fe0d87854ecef",
+       "size": 539,
+       "samples": {
+        "neighbours": 4,
+        "found": 1,
+        "standing": 3,
+        "grudges": 0,
+        "lore": 0
+       }
+      },
+      "steading": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "settled": 0,
+        "foundedOn": -1,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "2a54582ef651c127",
+       "size": 7612,
+       "samples": {
+        "fighting": 1,
+        "round": 4,
+        "combatants": 11,
+        "standing": 11
+       }
+      },
+      "run": {
+       "hash": "282b6c98004a9287",
+       "size": 303,
+       "samples": {
+        "day": 15,
+        "ended": "-",
+        "mode": "BATTLE",
+        "flags": 3,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 55,
+     "action": "B_END_TURN",
+     "day": 15,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "00a01d7d88ffab34",
+       "size": 80310,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 3,
+        "landingR": 15,
+        "seen": 58
+       }
+      },
+      "band": {
+       "hash": "2d1dc28c7ff18a93",
        "size": 1585,
        "samples": {
         "people": 6,
@@ -1612,13 +1761,13 @@
        }
       },
       "field": {
-       "hash": "91927d0cb4f57ffb",
-       "size": 7557,
+       "hash": "e1ca98c204ecd3f3",
+       "size": 10512,
        "samples": {
         "fighting": 1,
-        "round": 3,
+        "round": 8,
         "combatants": 11,
-        "standing": 10
+        "standing": 9
        }
       },
       "run": {
@@ -1635,82 +1784,7 @@
      }
     },
     {
-     "afterActions": 34,
-     "action": "B_END_TURN",
-     "day": 15,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 58
-       }
-      },
-      "band": {
-       "hash": "32fc3371069f3504",
-       "size": 1584,
-       "samples": {
-        "people": 6,
-        "alive": 6,
-        "food": 31,
-        "firewood": 0,
-        "morale": 60,
-        "atQ": 7,
-        "atR": 15
-       }
-      },
-      "coast": {
-       "hash": "f88fe0d87854ecef",
-       "size": 539,
-       "samples": {
-        "neighbours": 4,
-        "found": 1,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "9fe992b208c13c8b",
-       "size": 7886,
-       "samples": {
-        "fighting": 1,
-        "round": 4,
-        "combatants": 11,
-        "standing": 10
-       }
-      },
-      "run": {
-       "hash": "282b6c98004a9287",
-       "size": 303,
-       "samples": {
-        "day": 15,
-        "ended": "-",
-        "mode": "BATTLE",
-        "flags": 3,
-        "battles": 1
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 52,
+     "afterActions": 66,
      "action": "B_LEAVE",
      "firstOf": true,
      "day": 15,
@@ -1728,246 +1802,20 @@
        }
       },
       "band": {
-       "hash": "d21912210b0a7fa6",
-       "size": 1909,
+       "hash": "e0ba51ba1447836d",
+       "size": 1901,
        "samples": {
         "people": 6,
-        "alive": 5,
+        "alive": 0,
         "food": 31,
-        "firewood": 0,
-        "morale": 25,
-        "atQ": 7,
-        "atR": 15
-       }
-      },
-      "coast": {
-       "hash": "f88fe0d87854ecef",
-       "size": 539,
-       "samples": {
-        "neighbours": 4,
-        "found": 1,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "561a568cfb9d11f9",
-       "size": 152,
-       "samples": {
-        "fighting": 0,
-        "round": -1,
-        "combatants": 0,
-        "standing": 0
-       }
-      },
-      "run": {
-       "hash": "ce11b08eb08eb84b",
-       "size": 294,
-       "samples": {
-        "day": 15,
-        "ended": "-",
-        "mode": "TRAVEL",
-        "flags": 3,
-        "battles": 1
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 53,
-     "action": "DISMISS_AFTERMATH",
-     "firstOf": true,
-     "day": 15,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "00a01d7d88ffab34",
-       "size": 80310,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 58
-       }
-      },
-      "band": {
-       "hash": "d21912210b0a7fa6",
-       "size": 1909,
-       "samples": {
-        "people": 6,
-        "alive": 5,
-        "food": 31,
-        "firewood": 0,
-        "morale": 25,
-        "atQ": 7,
-        "atR": 15
-       }
-      },
-      "coast": {
-       "hash": "f88fe0d87854ecef",
-       "size": 539,
-       "samples": {
-        "neighbours": 4,
-        "found": 1,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "fighting": 0,
-        "round": -1,
-        "combatants": 0,
-        "standing": 0
-       }
-      },
-      "run": {
-       "hash": "ce11b08eb08eb84b",
-       "size": 294,
-       "samples": {
-        "day": 15,
-        "ended": "-",
-        "mode": "TRAVEL",
-        "flags": 3,
-        "battles": 1
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 55,
-     "action": "FORAGE",
-     "day": 17,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "8288e2ad58f91fbc",
-       "size": 80390,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 63
-       }
-      },
-      "band": {
-       "hash": "48a91a9e7e6b7b6d",
-       "size": 1909,
-       "samples": {
-        "people": 6,
-        "alive": 5,
-        "food": 33,
-        "firewood": 0,
-        "morale": 19,
-        "atQ": 8,
-        "atR": 15
-       }
-      },
-      "coast": {
-       "hash": "eab6f29efeaed0f9",
-       "size": 539,
-       "samples": {
-        "neighbours": 4,
-        "found": 1,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "fighting": 0,
-        "round": -1,
-        "combatants": 0,
-        "standing": 0
-       }
-      },
-      "run": {
-       "hash": "fa06f9ac7e8cc201",
-       "size": 294,
-       "samples": {
-        "day": 17,
-        "ended": "-",
-        "mode": "TRAVEL",
-        "flags": 3,
-        "battles": 1
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 62,
-     "action": "MOVE",
-     "day": 22,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "92412da073de891d",
-       "size": 80452,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 67
-       }
-      },
-      "band": {
-       "hash": "c93d2a642e34266f",
-       "size": 1909,
-       "samples": {
-        "people": 6,
-        "alive": 5,
-        "food": 30,
         "firewood": 0,
         "morale": 0,
-        "atQ": 11,
+        "atQ": 7,
         "atR": 15
        }
       },
       "coast": {
-       "hash": "8c89866afe48832d",
+       "hash": "f88fe0d87854ecef",
        "size": 539,
        "samples": {
         "neighbours": 4,
@@ -1989,8 +1837,8 @@
        }
       },
       "field": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
+       "hash": "e0fb3618e904da65",
+       "size": 154,
        "samples": {
         "fighting": 0,
         "round": -1,
@@ -1999,13 +1847,13 @@
        }
       },
       "run": {
-       "hash": "a21c62894f7976a2",
-       "size": 519,
+       "hash": "ef45784c2c093d45",
+       "size": 436,
        "samples": {
-        "day": 22,
-        "ended": "despair",
+        "day": 15,
+        "ended": "slain",
         "mode": "TRAVEL",
-        "flags": 5,
+        "flags": 3,
         "battles": 1
        }
       }
@@ -2020,17 +1868,17 @@
    "script": "runs/long.json",
    "worldHash": "688411ba38a7cea1",
    "actionCounts": {
-    "CAMP": 447,
-    "ENTER_COLONY": 321,
-    "LEAVE_COLONY": 321,
-    "B_END_TURN": 130,
-    "ASSIGN": 32,
-    "CHOOSE": 16,
-    "DISMISS_EVENT": 16,
-    "QUEUE_BUILD": 14,
+    "CAMP": 429,
+    "ENTER_COLONY": 327,
+    "LEAVE_COLONY": 327,
+    "B_END_TURN": 213,
+    "ASSIGN": 33,
+    "CHOOSE": 12,
+    "DISMISS_EVENT": 12,
+    "QUEUE_BUILD": 12,
     "MOVE": 8,
-    "B_LEAVE": 7,
-    "DISMISS_AFTERMATH": 7,
+    "B_LEAVE": 6,
+    "DISMISS_AFTERMATH": 5,
     "FOUND": 1
    },
    "checkpoints": [
@@ -3244,9 +3092,9 @@
      }
     },
     {
-     "afterActions": 132,
+     "afterActions": 138,
      "action": "ENTER_COLONY",
-     "day": 76,
+     "day": 78,
      "refusedSoFar": 0,
      "facets": {
       "world": {
@@ -3261,20 +3109,20 @@
        }
       },
       "band": {
-       "hash": "82d4c02254523683",
+       "hash": "0887004f9da2de72",
        "size": 1714,
        "samples": {
         "people": 6,
         "alive": 6,
         "food": 5,
-        "firewood": 16,
+        "firewood": 19,
         "morale": 100,
         "atQ": 11,
         "atR": 15
        }
       },
       "coast": {
-       "hash": "1dc09de47328ed1b",
+       "hash": "46138370689d404f",
        "size": 547,
        "samples": {
         "neighbours": 4,
@@ -3306,10 +3154,10 @@
        }
       },
       "run": {
-       "hash": "e281f90f5595a7fa",
+       "hash": "de3aa139cf62a78c",
        "size": 424,
        "samples": {
-        "day": 76,
+        "day": 78,
         "ended": "-",
         "mode": "COLONY",
         "flags": 9,
@@ -3319,9 +3167,9 @@
      }
     },
     {
-     "afterActions": 660,
-     "action": "LEAVE_COLONY",
-     "day": 248,
+     "afterActions": 692,
+     "action": "CAMP",
+     "day": 259,
      "refusedSoFar": 0,
      "facets": {
       "world": {
@@ -3336,13 +3184,13 @@
        }
       },
       "band": {
-       "hash": "ea51d3dce63d98dd",
-       "size": 3266,
+       "hash": "915d6cf4580c4cff",
+       "size": 3527,
        "samples": {
-        "people": 12,
-        "alive": 12,
-        "food": 240,
-        "firewood": 118,
+        "people": 13,
+        "alive": 13,
+        "food": 200,
+        "firewood": 40,
         "morale": 100,
         "atQ": 11,
         "atR": 15
@@ -3381,10 +3229,10 @@
        }
       },
       "run": {
-       "hash": "aac4aa31265d2c12",
+       "hash": "b801562218fbd5b5",
        "size": 447,
        "samples": {
-        "day": 248,
+        "day": 259,
         "ended": "-",
         "mode": "TRAVEL",
         "flags": 10,
@@ -3412,8 +3260,8 @@
        }
       },
       "band": {
-       "hash": "4407c1253927ffb0",
-       "size": 3526,
+       "hash": "f8ea5824a9c52f53",
+       "size": 3527,
        "samples": {
         "people": 13,
         "alive": 13,
@@ -3447,8 +3295,8 @@
        }
       },
       "field": {
-       "hash": "f9b0246869b188a7",
-       "size": 6719,
+       "hash": "4d451a2ce9cfda07",
+       "size": 6493,
        "samples": {
         "fighting": 1,
         "round": 1,
@@ -3470,7 +3318,7 @@
      }
     },
     {
-     "afterActions": 874,
+     "afterActions": 880,
      "action": "B_LEAVE",
      "firstOf": true,
      "day": 312,
@@ -3488,8 +3336,8 @@
        }
       },
       "band": {
-       "hash": "9bd1fcfd119d7d32",
-       "size": 4013,
+       "hash": "033740c38e2c794c",
+       "size": 4051,
        "samples": {
         "people": 13,
         "alive": 7,
@@ -3523,7 +3371,7 @@
        }
       },
       "field": {
-       "hash": "f7a7c2225bdf7dc1",
+       "hash": "af4632640c715567",
        "size": 153,
        "samples": {
         "fighting": 0,
@@ -3546,7 +3394,7 @@
      }
     },
     {
-     "afterActions": 875,
+     "afterActions": 881,
      "action": "DISMISS_AFTERMATH",
      "firstOf": true,
      "day": 312,
@@ -3564,8 +3412,8 @@
        }
       },
       "band": {
-       "hash": "9bd1fcfd119d7d32",
-       "size": 4013,
+       "hash": "033740c38e2c794c",
+       "size": 4051,
        "samples": {
         "people": 13,
         "alive": 7,
@@ -3622,9 +3470,9 @@
      }
     },
     {
-     "afterActions": 1320,
-     "action": "CAMP",
-     "day": 457,
+     "afterActions": 1385,
+     "action": "B_LEAVE",
+     "day": 439,
      "refusedSoFar": 0,
      "facets": {
       "world": {
@@ -3639,43 +3487,43 @@
        }
       },
       "band": {
-       "hash": "767dc9052424e1e2",
-       "size": 8031,
+       "hash": "61492f9706a00aea",
+       "size": 8934,
        "samples": {
-        "people": 24,
-        "alive": 1,
-        "food": 3,
-        "firewood": 17,
-        "morale": 100,
+        "people": 25,
+        "alive": 0,
+        "food": 24,
+        "firewood": 52,
+        "morale": 11,
         "atQ": 11,
         "atR": 15
        }
       },
       "coast": {
-       "hash": "4a6837e363ade4ce",
-       "size": 516,
+       "hash": "cdef32511cc9a7be",
+       "size": 673,
        "samples": {
         "neighbours": 4,
         "found": 4,
         "standing": 0,
-        "grudges": 0,
+        "grudges": 1,
         "lore": 0
        }
       },
       "steading": {
-       "hash": "39d2fdc3d12edfc6",
-       "size": 1016,
+       "hash": "741351870b18abf6",
+       "size": 1006,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
         "built": 7,
-        "queued": 1,
+        "queued": 0,
         "out": 0
        }
       },
       "field": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
+       "hash": "5f22df280fa6c317",
+       "size": 143,
        "samples": {
         "fighting": 0,
         "round": -1,
@@ -3684,14 +3532,14 @@
        }
       },
       "run": {
-       "hash": "477cd25aa159e295",
-       "size": 955,
+       "hash": "07240c128082b997",
+       "size": 830,
        "samples": {
-        "day": 457,
-        "ended": "survived",
+        "day": 439,
+        "ended": "slain",
         "mode": "TRAVEL",
-        "flags": 20,
-        "battles": 7
+        "flags": 17,
+        "battles": 6
        }
       }
      }

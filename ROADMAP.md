@@ -1866,6 +1866,45 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — Four kinds of man became eight, and the rule that said they
+  could not** — Item 4. Four archetypes carried the whole combat game against
+  shield walls, nerve, zone-of-control and five actions — a rich system fed
+  by very little.
+  **It could not be content until an engine rule was fixed.** `weightFor` in
+  `sim/word.ts` was `if (archetype.id === 'huscarl') … if (id === 'raider')`,
+  so a new foe could not respond to reputation without an engine edit —
+  against this project's oldest rule, quietly, for months. `renown` is a
+  field on `FoeArchetype` now and `weightFor` is one line of arithmetic.
+  A test walks every file in `src/sim` (comments stripped) and fails if any
+  of them names an archetype id.
+  The four added are meant to make different FIGHTS: a **Spearman** whose
+  three throws are a real volley before contact, **Bondi** levies who are
+  cheap and many and make a shield wall worth forming, a **Wolf-coat** who
+  has to be dealt with, and an **Outlaw** who hunts whoever is already busy.
+  Renown ties them to the coast's memory: levies thin to nothing as your word
+  grows (`renown: -2`) while wolf-coats and huscarls come looking.
+  **Measured — the curve barely moved and stayed ordered**: 87/83/70 to the
+  first winter and 65/30/12 to spring, against 87/78/73 and 62/27/12. The
+  levies offset the heavy men, which is what the negative renown is for.
+  **The cost was the fixtures, and it was real.** Changing who turns up
+  changes the draws in every fight, so both recorded runs had to be
+  re-recorded and `port/parity.json` regenerated — `runs/long.json` is 1385
+  actions to day 439 now and **ends slain where it used to survive 457
+  days**. `test/headless.test.ts` says this outright: "a refusal here means
+  the sim now offers different choices than it did when this was recorded —
+  which is a real finding about a rules change, not a broken test." The C++
+  port's vectors move with it and it must be re-run when it resumes.
+  **Two bars were wrong and both were mine.** `word.test.ts` asserted "only
+  huscarl and raider scale with word" — the same list of ids the engine
+  carried — so it broke on a foe that scales DOWN, which is the rule rather
+  than a violation. Restated on the outcome: the expected budget of a man
+  drawn at random must never fall as word grows. That proved too blunt to
+  catch a levy given strongly positive renown (the heavy men's growth masks
+  it), so a sharp rule sits beside it: **a foe may only grow with word if it
+  is at least as hard as the average**. And `beats.test.ts` broke one foe of
+  one seed and asked him to both rally and run; it samples four seeds now,
+  because what is being checked is that both outcomes reach the beat stream.
+  977 tests.
 - **2026-08-19 — A counter with a calendar** — Items 1–3 of the brainstorm,
   and **two of the three premises were wrong.** They rested on numbers that
   measure the BOT's itinerary, and the game-side rules turned out to be
