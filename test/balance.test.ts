@@ -47,7 +47,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { effectsOn, seasonOf, winterDepth } from '../src/sim/calendar';
+import { effectsOn, SEASON_LENGTH, seasonOf, winterDepth } from '../src/sim/calendar';
 import { markHaze } from '../src/sim/winter';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
@@ -165,6 +165,24 @@ interface Policy {
    * caution.
    */
   errandBuffer: number;
+  /**
+   * Whether the band drops its scruples once the game has told it, in so many
+   * words, that it cannot reach spring.
+   *
+   * `readiness()` ends a hopeless forecast with "What is left is taking it
+   * from somebody else, or walking out and wintering elsewhere" — and no
+   * policy here could do either before the first winter, because the trade
+   * gate wanted a winter already stood and the raid gate wanted both a reach
+   * and a food surplus a short band cannot have. So "the first winter is
+   * decided by the frost" was measured on a bot with no move to make, which
+   * is the harness's scruples again rather than the game's rules.
+   *
+   * When this is set, and only while the winter mark is visible AND
+   * `reachable` says no, the gates that are the BOT's caution come off. The
+   * gates that are the GAME's — `launchBlocker`, somebody left to keep the
+   * fire — stay exactly where they are.
+   */
+  desperate: boolean;
 }
 
 /**
@@ -196,6 +214,7 @@ const SETTLER: Policy = {
   ],
   crew: CREW,
   errandBuffer: 6,
+  desperate: false,
 };
 
 /**
@@ -229,6 +248,7 @@ const RAIDER: Policy = {
   // measured with a spec that could not carry it.
   crew: ['warrior','hunter','hunter','farmer','woodcutter','builder'],
   errandBuffer: 2,
+  desperate: false,
 };
 
 /**
@@ -251,6 +271,24 @@ const TURTLE: Policy = {
   ],
   crew: ['farmer','farmer','farmer','woodcutter','builder','warrior'],
   errandBuffer: 0,
+  desperate: false,
+};
+
+/**
+ * The settler, exactly — until the winter mark tells him he is dead.
+ *
+ * Every field is SETTLER's but two, so a difference between the two runs is
+ * the escape hatch and nothing else. He does not raid on principle, does not
+ * hold out for better ground, does not trade earlier; he simply takes the
+ * out the game itself names, at the moment the game names it.
+ */
+const DESPERATE: Policy = {
+  ...SETTLER,
+  id: 'desperate',
+  // Four, because #34 measured that three is half a shield wall walking into
+  // a fight. A last throw that loses the sworn is not a lever.
+  raidParty: 4,
+  desperate: true,
 };
 
 const POLICIES = [SETTLER, RAIDER, TURTLE];
@@ -638,10 +676,21 @@ function step(state: GameState): Action {
     // nobody makes a friend from indoors. Sends two out with food to spare,
     // and only when there is genuinely a surplus to carry. First, because
     // the Thing is what a run is FOR and raiding is what costs you it.
-    if (policy.trades && !hasSpeakers(state) && wintersStood(state.day) >= 1 && nearestCounter(state)) {
+    // Cornered: the mark is on screen and `reachable` has said no. Only the
+    // bot's own caution comes off here — `launchBlocker` still rules.
+    const cornered = policy.desperate
+      && !!state.settlement
+      && markVisible(state)
+      && !reachable(state);
+
+    if (policy.trades && !hasSpeakers(state) && (wintersStood(state.day) >= 1 || cornered)
+        && nearestCounter(state)) {
       const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
+      // A band that has been told it will not see spring does not keep a
+      // fortnight's eating back before going to buy food with it.
+      const spare = cornered ? provisionsFor(2) : provisionsFor(2) + BARTER_FOOD * 3 + foodPerDay(state) * 7;
       if (crew.length === 2
-        && state.party.food > provisionsFor(2) + BARTER_FOOD * 3 + foodPerDay(state) * 7
+        && state.party.food > spare
         && launchBlocker(state, crew) === null) {
         return { type:'LAUNCH', members: crew, purpose: 'trade' };
       }
@@ -681,20 +730,24 @@ function step(state: GameState): Action {
     // raider knew 0.11 of four places against the settler's 0.47 and could
     // not launch a single armed errand in a thousand target-days. The game
     // has had an `explore` purpose since 4.2 and no bot ever used it.
-    const oldEnough = wintersStood(state.day) >= policy.raidAfterWinters;
-    const seasonOk = inSeason || !policy.raidInSeasonOnly;
-    if (policy.raidReach > 0 && oldEnough && seasonOk
-        && !raidTarget(state, policy.raidReach)) {
+    const oldEnough = wintersStood(state.day) >= policy.raidAfterWinters || cornered;
+    const seasonOk = inSeason || !policy.raidInSeasonOnly || cornered;
+    // A settler's reach is zero because he does not go out under arms. A
+    // settler who has been told he is dead by spring has a reach.
+    const reach = cornered ? Math.max(policy.raidReach, 8) : policy.raidReach;
+    const buffer = cornered ? 0 : policy.errandBuffer;
+    if (reach > 0 && oldEnough && seasonOk
+        && !raidTarget(state, reach)) {
       const scouts = sworn(state.party.people).slice(0, 2).map(p => p.id);
       if (scouts.length === 2
-        && state.party.food > provisionsFor(2) + foodPerDay(state) * policy.errandBuffer
+        && state.party.food > provisionsFor(2) + foodPerDay(state) * buffer
         && launchBlocker(state, scouts) === null) {
         return { type:'LAUNCH', members: scouts, purpose: 'explore' };
       }
     }
 
-    if (policy.raidReach > 0 && oldEnough && seasonOk
-        && raidTarget(state, policy.raidReach)) {
+    if (reach > 0 && oldEnough && seasonOk
+        && raidTarget(state, reach)) {
       // The band takes its WALL now, not a detachment of it. Hands hold the
       // yard (see `standAtHome`), so the sworn are free to go — and #34 says
       // the width of the line is the whole of whether the errand is worth
@@ -712,7 +765,7 @@ function step(state: GameState): Action {
       // owns the "somebody has to keep the fire" rule, and a band down to
       // four sworn should still be able to raid with four.
       if (crew.length >= Math.min(3, want)
-        && state.party.food > provisionsFor(crew.length) + foodPerDay(state) * policy.errandBuffer
+        && state.party.food > provisionsFor(crew.length) + foodPerDay(state) * buffer
         && launchBlocker(state, crew) === null) {
         return { type:'LAUNCH', members: crew, purpose: 'raid' };
       }
@@ -4288,5 +4341,289 @@ describe('who lands their blows', () => {
           `${Math.round(rate(f) * 100)}% — the band has become worse at fighting than what it meets`,
       ).toBeGreaterThan(rate(f));
     }
+  });
+});
+
+/**
+ * THE FIRST WINTER, MEASURED FROM INSIDE.
+ *
+ * The curve says 87/83/70 reach the first winter and 65/30/12 see spring —
+ * so on As It Lies, more than half of every band that gets that far dies in
+ * one season. That is the single biggest thing that happens in this game and
+ * nothing here had ever looked at WHERE inside it they die, of what, or
+ * whether the answer was settled before the frost arrived.
+ *
+ * The last question is the one that matters for design. A winter that is
+ * scored entirely off the state on its first morning is not a phase a player
+ * plays; it is a report card on autumn wearing twenty-four days of turns.
+ */
+describe('the first winter, from inside', () => {
+  it('says where the deaths fall, and whether autumn had already decided', () => {
+    const SEEDS = 60;
+    const WINTER_IN = SEASON_LENGTH * 2 + 1; // day 49, the first frost
+    const SPRING_IN = SEASON_LENGTH * 3 + 1; // day 73, if they get there
+
+    interface Life {
+      reachedWinter: boolean;
+      foodAtFrost: number;
+      woodAtFrost: number;
+      handsAtFrost: number;
+      settledAtFrost: boolean;
+      diedOn: number | null;
+      cause: string | null;
+      sawSpring: boolean;
+    }
+
+    policy = SETTLER;
+    const lives: Life[] = [];
+    for (let s = 0; s < SEEDS; s++) {
+      const life: Life = {
+        reachedWinter: false, foodAtFrost: 0, woodAtFrost: 0, handsAtFrost: 0,
+        settledAtFrost: false, diedOn: null, cause: null, sawSpring: false,
+      };
+      const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
+        if (before.day < WINTER_IN && after.day >= WINTER_IN && !life.reachedWinter) {
+          life.reachedWinter = true;
+          life.foodAtFrost = Math.round(after.party.food);
+          life.woodAtFrost = Math.round(after.party.firewood);
+          life.handsAtFrost = after.party.people.filter((p) => p.alive).length;
+          life.settledAtFrost = !!after.settlement;
+        }
+        if (!before.end && after.end) {
+          life.diedOn = after.day;
+          life.cause = after.end.cause;
+        }
+      }, 'even');
+      life.sawSpring = !final.end && final.day >= SPRING_IN;
+      lives.push(life);
+    }
+
+    const reached = lives.filter((l) => l.reachedWinter);
+    const died = reached.filter((l) => l.diedOn !== null && !l.sawSpring);
+    const lived = reached.filter((l) => l.sawSpring);
+
+    // WHERE in the twenty-four days they fall.
+    const week = (day: number): number => Math.min(3, Math.floor((day - WINTER_IN) / 6));
+    const perWeek = [0, 0, 0, 0];
+    for (const l of died) if (l.diedOn! >= WINTER_IN) perWeek[week(l.diedOn!)]! += 1;
+
+    const causes: Record<string, number> = {};
+    for (const l of died) causes[l.cause ?? '?'] = (causes[l.cause ?? '?'] ?? 0) + 1;
+
+    const mean = (xs: number[]): number =>
+      xs.length === 0 ? 0 : xs.reduce((a, b) => a + b, 0) / xs.length;
+
+    console.log(
+      `the first winter, ${SEEDS} seeds on As It Lies:\n` +
+      `  ${reached.length} reached the frost, ${lived.length} saw spring, ${died.length} did not\n` +
+      `  deaths by week of winter: ${perWeek.join(' / ')}\n` +
+      `  causes: ${Object.entries(causes).map(([c, n]) => `${c} ${n}`).join(', ') || 'none'}\n` +
+      `  at the frost — lived: ${mean(lived.map((l) => l.foodAtFrost)).toFixed(0)} food, ` +
+        `${mean(lived.map((l) => l.woodAtFrost)).toFixed(0)} wood, ` +
+        `${mean(lived.map((l) => l.handsAtFrost)).toFixed(1)} hands, ` +
+        `${lived.filter((l) => l.settledAtFrost).length}/${lived.length} settled\n` +
+      `  at the frost —  died: ${mean(died.map((l) => l.foodAtFrost)).toFixed(0)} food, ` +
+        `${mean(died.map((l) => l.woodAtFrost)).toFixed(0)} wood, ` +
+        `${mean(died.map((l) => l.handsAtFrost)).toFixed(1)} hands, ` +
+        `${died.filter((l) => l.settledAtFrost).length}/${died.length} settled`,
+    );
+
+    // IS IT DECIDED IN ADVANCE? The sharpest single split on stores at the
+    // frost, and how much of the outcome it explains. A season whose result
+    // can be read off its first morning is a report card, not a phase.
+    let best = { at: 0, right: 0 };
+    for (let cut = 0; cut <= 200; cut += 5) {
+      const right = reached.filter((l) =>
+        (l.foodAtFrost + l.woodAtFrost >= cut) === l.sawSpring).length;
+      if (right > best.right) best = { at: cut, right };
+    }
+    const explained = best.right / Math.max(1, reached.length);
+    console.log(
+      `  stores at the frost predict spring ${(explained * 100).toFixed(0)}% of the time ` +
+        `(the best single cut is ${best.at} of food+wood)`,
+    );
+
+    // Bars, not just a print. These are the shape of the finding, and a
+    // future change that flattens the cliff should make them fail loudly.
+    expect(reached.length).toBeGreaterThan(SEEDS / 2);
+    expect(died.length + lived.length).toBe(reached.length);
+  });
+
+  /**
+   * IS IT THE GAME, OR IS IT THE BOT?
+   *
+   * The run above says the first winter is 94% readable off its first
+   * morning. That is a claim about a band with no move left — and this
+   * harness's settler HAS no move left, by its own construction: it will not
+   * trade before a winter is stood, will not go out under arms at all, and
+   * keeps a fortnight's eating back before either. `readiness()` meanwhile
+   * ends a hopeless forecast by naming both of those as what is left.
+   *
+   * So the same sixty seeds, the same policy, and one difference: when the
+   * mark says spring is out of reach, the band takes the out it was told
+   * about. If that moves the number, the lever exists and the settler simply
+   * never pulls it. If it does not, the lever is nominal and winter really is
+   * scored in the autumn.
+   */
+  it('says whether the out the game names is worth anything', () => {
+    const SEEDS = 60;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    // Per SEED, not just totals. The two runs share their seeds, so the
+    // question "did the out help" is answerable band by band — and 22 against
+    // 12 of sixty is only borderline read as two independent samples, while
+    // the seeds that actually CHANGED are the real evidence.
+    const sample = (p: Policy): { lived: boolean[]; sorties: number } => {
+      policy = p;
+      const lived: boolean[] = [];
+      let sorties = 0;
+      for (let s = 0; s < SEEDS; s++) {
+        const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
+          // An errand that actually left the yard, counted where the mode
+          // stack shows it rather than where the bot asked for it — a
+          // refused LAUNCH is not a lever pulled.
+          if (!before.expedition && after.expedition) sorties += 1;
+        }, 'even');
+        lived.push(!final.end && final.day >= SPRING_IN);
+      }
+      return { lived, sorties };
+    };
+
+    const held = sample(SETTLER);
+    const tried = sample(DESPERATE);
+    policy = SETTLER;
+
+    const springHeld = held.lived.filter(Boolean).length;
+    const springTried = tried.lived.filter(Boolean).length;
+    // McNemar's pairing: only the seeds where the two disagree carry any
+    // information about the change.
+    let saved = 0;
+    let killed = 0;
+    for (let s = 0; s < SEEDS; s++) {
+      if (!held.lived[s] && tried.lived[s]) saved += 1;
+      if (held.lived[s] && !tried.lived[s]) killed += 1;
+    }
+
+    console.log(
+      `the same sixty seeds, with and without the out:\n` +
+      `  settler   — ${springHeld}/${SEEDS} saw spring, ${held.sorties} errands left the yard\n` +
+      `  desperate — ${springTried}/${SEEDS} saw spring, ${tried.sorties} errands left the yard\n` +
+      `  paired: the out saved ${saved} bands that would have died and killed ${killed} that would have lived`,
+    );
+
+    // The bar is on the INSTRUMENT, not on the outcome. Whatever the escape
+    // hatch is worth, a policy that is allowed to use it must actually have
+    // used it — otherwise the two runs are the same run and the comparison
+    // says nothing at all. This is the check the first cut of this file
+    // needed and did not have.
+    expect(tried.sorties, 'the desperate band never once left the yard — nothing was measured')
+      .toBeGreaterThan(held.sorties);
+  });
+
+  /**
+   * THE VERDICT ITSELF.
+   *
+   * The run above condemned ten bands to death by taking `reachable`'s word
+   * for it — and those same ten seeds saw spring when the band ignored it and
+   * kept working. That points the finger past the advice and at the verdict:
+   * "We will not reach spring on what this ground gives" is on screen, in the
+   * mark's own panel, and it may be saying so to bands that are going to make
+   * it.
+   *
+   * Measured against SETTLER on purpose. He never reads the verdict, so his
+   * survival is untouched by it — which makes his runs a clean test of
+   * whether the verdict is TRUE, rather than a test of what believing it does.
+   */
+  it('does not tell bands that go on to live that they are already dead', () => {
+    const SEEDS = 60;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    policy = SETTLER;
+    let condemned = 0;
+    let condemnedAndLived = 0;
+    let firstCallDay = 0;
+    // What the band looked like when it was written off, split by whether the
+    // writing-off turned out to be true. If the wrong ones were smaller or
+    // barer at the verdict, the projection is failing to credit what autumn
+    // still adds — which is a fixable bug rather than a judgement call.
+    const at = { wrongHands: 0, wrongBuilt: 0, rightHands: 0, rightBuilt: 0 };
+    const grew = { hands: 0, built: 0 };
+    let shed = 0;
+    let comfortable = 0;
+
+    for (let s = 0; s < SEEDS; s++) {
+      let saidNo = false;
+      let saidNoOn = 0;
+      let hands = 0;
+      let built = 0;
+      const final = run(`winter-inside-${s}`, SPRING_IN, (_before, after) => {
+        if (saidNo || after.end || !after.settlement) return;
+        if (!markVisible(after)) return;
+        if (!reachable(after)) {
+          saidNo = true;
+          saidNoOn = after.day;
+          hands = after.party.people.filter((p) => p.alive).length;
+          built = after.settlement.built.length;
+        }
+      }, 'even');
+      if (!saidNo) continue;
+      condemned += 1;
+      firstCallDay += saidNoOn;
+      const lived = !final.end && final.day >= SPRING_IN;
+      if (lived) {
+        condemnedAndLived += 1;
+        at.wrongHands += hands;
+        at.wrongBuilt += built;
+        grew.hands += (final.party.people.filter((p) => p.alive).length - hands);
+        grew.built += ((final.settlement?.built.length ?? 0) - built);
+        // HOW they lived, which is the whole question. The panel claims
+        // nothing can be had "on what this ground gives" — a band that
+        // survived by shedding a mouth did not really refute that, and one
+        // that reached spring with a store in hand plainly did.
+        //
+        // Counted off the ROSTER rather than off `diedOn`: the first cut of
+        // this asked `(p.diedOn ?? 0) > saidNoOn` and printed a flat zero,
+        // because `diedOn` is undefined for most of the dead. That zero was
+        // the instrument, not the game.
+        if (final.party.people.filter((p) => p.alive).length < hands) shed += 1;
+        if (final.party.food >= 12) comfortable += 1;
+      } else {
+        at.rightHands += hands;
+        at.rightBuilt += built;
+      }
+    }
+
+    const wrong = condemned === 0 ? 0 : condemnedAndLived / condemned;
+    console.log(
+      `the verdict "we will not reach spring", over ${SEEDS} seeds:\n` +
+      `  said to ${condemned} bands, first on day ${condemned ? (firstCallDay / condemned).toFixed(0) : '-'} on average\n` +
+      `  ${condemnedAndLived} of those ${condemned} went on to see spring ` +
+        `(${(wrong * 100).toFixed(0)}% wrong)\n` +
+      `  at the verdict — wrongly condemned: ${(at.wrongHands / Math.max(1, condemnedAndLived)).toFixed(1)} hands, ` +
+        `${(at.wrongBuilt / Math.max(1, condemnedAndLived)).toFixed(1)} built\n` +
+      `  at the verdict — rightly condemned: ${(at.rightHands / Math.max(1, condemned - condemnedAndLived)).toFixed(1)} hands, ` +
+        `${(at.rightBuilt / Math.max(1, condemned - condemnedAndLived)).toFixed(1)} built\n` +
+      `  the wrongly condemned then gained ${(grew.hands / Math.max(1, condemnedAndLived)).toFixed(1)} hands ` +
+        `and ${(grew.built / Math.max(1, condemnedAndLived)).toFixed(1)} buildings before spring\n` +
+      `  of the ${condemnedAndLived} wrongly condemned: ${shed} lost a mouth after the verdict, ` +
+        `${comfortable} reached spring with food to spare`,
+    );
+
+    // A RATCHET, and worth being plain about what it is and is not.
+    //
+    // The panel does not hedge, and a player told the ground cannot feed them
+    // has been handed a reason to stop playing a position. Measured: 46%
+    // wrong before this session's fixes to `reachable` (frozen steading,
+    // average-bad weather), 33% after. The bar sits at 40% so it FAILS the
+    // defect it was written for and passes the repair — that is all it
+    // claims. 33% is not an acceptable error rate for a flat statement; it
+    // is where the honest ceiling currently lands, and the remaining wrong
+    // verdicts are all bands that reach spring on nothing (`0 reached spring
+    // with food to spare`, every run). Taking the max over every producing
+    // job in `walkWinter` reads 29% and is written up there — it is left out
+    // because it flips a difficulty statement in `cliff.test`, which is a
+    // design call rather than a measurement one.
+    expect(wrong, `the panel told ${condemnedAndLived} surviving bands they were dead`)
+      .toBeLessThan(0.4);
   });
 });

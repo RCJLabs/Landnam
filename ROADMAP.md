@@ -1866,6 +1866,64 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — The first winter was measured, and the panel was wrong about
+  it** — Item 5. The curve has said for months that more than half of every
+  band reaching the first winter dies in it, and nothing had ever looked at
+  WHERE inside it they die, of what, or whether the answer was settled before
+  the frost.
+  **Measured, 60 seeds on As It Lies**: 52 reached the frost, 22 saw spring.
+  Deaths are flat across the season — 9 / 8 / 7 / 6 by week — so it is a
+  slope, not a cliff. 27 of 30 are plain starvation. The bands that lived
+  held 37 food and 63 wood on the first morning; the bands that died held 4
+  and 13, and **stores at the frost predict spring 94% of the time**. Winter
+  is a report card on autumn.
+  **Which put the question on the warning, and the warning failed it.** The
+  mark's own panel says "We will not reach spring on what this ground gives"
+  without hedging. It said so to 26 bands in 60 sagas and **12 of them saw
+  spring anyway — 46% wrong**. Two real bugs in `reachable`, both of them the
+  same mistake `bestShelter` had already been fixed for:
+  `survivesWinter` froze the steading for the whole walk, crediting none of
+  the buildings the band was plainly about to raise (the wrongly condemned
+  had 1.7 standing and went on to raise 4.5 more), and it read the winter at
+  the MARK's middling estimate rather than the mildest the years guarantee —
+  a ceiling computed against an average-bad year is not a ceiling.
+  `bestSteading` grants the houses the band can PAY for and charges the wood;
+  the first cut forgave timber on `bestShelter`'s precedent and `cliff.test`
+  caught it at once, handing a whole steading to a band with nought wood.
+  Timber is firewood here — the very store the walk spends — so forgiving it
+  is a different game, not an optimistic projection. The walk now runs twice,
+  building and not building, and takes the better: spending wood on houses in
+  a cold autumn is not always right.
+  **46% wrong to 33%**, still firing on 21 bands of 60 — narrowed, not
+  silenced. The bar in `balance.test` sits at 40%: a ratchet that fails the
+  defect and passes the repair, not a claim that 33% is acceptable.
+  **Two things were tried and are deliberately NOT in.** A `VERDICT_MARGIN`,
+  letting the walk end a couple of days light without speaking — every
+  remaining false condemnation reaches spring on 0–4 food, so the idea fits
+  the evidence, but any margin at all, down to half a day, flips
+  `cliff.test`'s pivot band and a band holding nothing should be told so.
+  And taking the max over every producing job instead of naming the hunter,
+  which reads truer (**33% to 29%**) and flips the same band from doomed to
+  saveable. Both are noted in the code. Whether that band is lost is a
+  statement about difficulty, not about this projection, and it is not a call
+  to make quietly inside a bug fix.
+  **The second finding fell out of the first.** `readiness()` ends a hopeless
+  forecast by naming the two ways out — take it from somebody else, or walk
+  out and winter elsewhere — and no policy in the harness could do either
+  before the first winter, so "winter is decided at the frost" had been
+  measured on a bot with no move to make. A `desperate` knob drops the BOT's
+  scruples when the mark says spring is out of reach, leaving the GAME's
+  rules (`launchBlocker`, somebody left to keep the fire) exactly in place.
+  Paired on the same 60 seeds it **saved 0 bands and killed 10** — and after
+  the `reachable` fix, killed 6. Much of the harm was the false verdicts
+  themselves: the bot was abandoning winnable positions because the panel
+  told it they were lost. **The out is still worth nothing — zero bands saved
+  in any run — and that is the open design question**, not something to
+  retune quietly.
+  No save-shape change; the `reachable` vectors in `port/golden.json` belong
+  to the hex pathfinder, not to this verdict, so parity and both recorded
+  runs are untouched.
+
 - **2026-08-19 — Four kinds of man became eight, and the rule that said they
   could not** — Item 4. Four archetypes carried the whole combat game against
   shield walls, nerve, zone-of-control and five actions — a rich system fed
