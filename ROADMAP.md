@@ -1866,6 +1866,52 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — A shared coast, and still no server** — Item 10, and the
+  premise held: challenge codes carried seed, hardship, mark and world hash,
+  and nothing of the band that cut them. A code now carries a **ghost** —
+  where a fallen steading stood, what it was called, and what finished it —
+  and the receiving world stands it up as a ruin to find.
+  **Zero network, still.** No server, no account, no request: a line of text
+  somebody pastes into a chat. `LN1 raven-skerry-317 fair d128 w2
+  g3,-2,Eikstead,128,starved #a1b2c3d4`.
+  **One token, comma-separated inside it**, because the format's whole
+  reason for not being base64 is that it survives being retyped with a thumb,
+  and a second space-separated field is one more thing to lose. A steading
+  called "Two Rivers" packs the way a seed does; the name is NOT lowered,
+  because a name is a name.
+  **A mangled ghost costs the ruin and never the coast.** Five ways a string
+  gets chewed on its way through a chat app are tested by name, and every one
+  of them still lands the player on the right seed and the right terms with
+  no ghost.
+  **Worldgen never grows its own.** `PlaceKindDef.seeded: false` — a kind that
+  only exists when something deliberately places it. Skipped before any
+  candidate is gathered, so worldgen draws exactly the numbers it drew before
+  the ruin existed and the `world` parity vectors do not move — **verified
+  rather than asserted**: across the regenerated `port/parity.json` exactly
+  zero `world` facets changed, and only `run` moved, because `SAVE_VERSION`
+  sits inside it. A test pins
+  that the ruin is the only unseeded kind AND that every other kind is still
+  seeded, so the flag cannot quietly spread.
+  **It never fails loudly.** A ghost naming ground this world put under the
+  sea settles for the nearest hex that will hold it, never the landing beach,
+  and if there is none it simply is not there.
+  **A haunted coast is not an easier coast**, which is the property that keeps
+  a challenge worth what it claims — a windfall would make the code worth more
+  than the seed it was cut from and every shared run softer than the one being
+  bragged about. The ruin pays **2 food and 8 firewood**, under the wreck's
+  2/9: mostly timber, because what survives an abandoned steading is the
+  woodpile and not the larder — the larder is what ran out.
+  **My own bar was mis-specified and my own numbers were wrong.** The first
+  cut paid 3/12, which out-paid the wreck, and the bar demanded the ruin be
+  the poorest thing on the coast — unsatisfiable, because the oreseam pays
+  nothing in goods at all, it pays in lore. Comparing goods totals across
+  kinds that trade in different currencies is not a comparison. The bar names
+  the wreck now and says why.
+  A ghost is only ever offered from a saga that **ended**: a run still being
+  played has a steading, not a ruin, and sending one claims a death that has
+  not happened — the same reason `coastOf` carries no mark.
+  Save v34 with a migration; absence is exactly true of every older saga.
+
 - **2026-08-19 — Born on this coast, and everybody a year older** — Item 9,
   and **the item as written cannot be built**. It asked for "children born in
   the steading who grow into the band". `GENERATION` is 16 years,

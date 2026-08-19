@@ -22,7 +22,7 @@
 
 import { hardshipById, type HardshipId } from '../data/hardship';
 import { wintersStood } from './calendar';
-import type { GameState } from '../state/types';
+import type { GameState, Ghost } from '../state/types';
 
 /** What a run got to. The thing another player is chasing. */
 export interface Mark {
@@ -46,6 +46,15 @@ export interface Challenge {
    * tell them.
    */
   world?: string;
+  /**
+   * A fallen steading to stand in the receiver's country.
+   *
+   * One token, comma-separated inside it, because the format is a line of
+   * text people retype with a thumb and a second space-separated field would
+   * be one more thing to lose. A mangled ghost costs the ruin and still lands
+   * you on the right coast, which is the rule the whole format is built on.
+   */
+  ghost?: Ghost;
 }
 
 const PREFIX = 'LN1';
@@ -54,6 +63,31 @@ const PREFIX = 'LN1';
 const packSeed = (seed: string) => (seed === '' ? '~' : seed.replace(/\s+/g, '+'));
 const unpackSeed = (token: string) => (token === '~' ? '' : token.replace(/\+/g, ' '));
 
+/**
+ * `g<q>,<r>,<name>,<day>,<cause>` — one whitespace-free token.
+ *
+ * The name is packed the way a seed is, because a steading called "Two Rivers"
+ * would otherwise split the line in half and take the world hash with it.
+ * Commas are stripped from it for the same reason they separate the fields.
+ */
+function packGhost(g: Ghost): string {
+  const name = g.name.replace(/[\s,]+/g, '+') || '~';
+  const cause = g.cause.replace(/[^a-z]/gi, '').toLowerCase() || 'gone';
+  return `g${Math.round(g.at.q)},${Math.round(g.at.r)},${name},${Math.max(0, Math.round(g.day))},${cause}`;
+}
+
+function unpackGhost(token: string): Ghost | undefined {
+  const bits = token.slice(1).split(',');
+  if (bits.length < 5) return undefined;
+  const q = Number(bits[0]);
+  const r = Number(bits[1]);
+  const day = Number(bits[3]);
+  if (!Number.isFinite(q) || !Number.isFinite(r) || !Number.isFinite(day)) return undefined;
+  const name = (bits[2] ?? '').replace(/\+/g, ' ').trim();
+  if (name === '' || name === '~') return undefined;
+  return { name, at: { q, r }, day: Math.max(0, day), cause: bits[4] ?? 'gone' };
+}
+
 export function encodeChallenge(c: Challenge): string {
   const parts = [PREFIX, packSeed(c.seed), c.hardship];
   if (c.mark) {
@@ -61,6 +95,7 @@ export function encodeChallenge(c: Challenge): string {
     parts.push(`w${Math.max(0, Math.round(c.mark.winters))}`);
     if (c.mark.jarl) parts.push('jarl');
   }
+  if (c.ghost) parts.push(packGhost(c.ghost));
   if (c.world) parts.push(`#${c.world}`);
   return parts.join(' ');
 }
@@ -98,6 +133,12 @@ export function decodeChallenge(text: string): Challenge | null {
     else if (/^d\d+$/.test(lower)) day = Number(lower.slice(1));
     else if (/^w\d+$/.test(lower)) winters = Number(lower.slice(1));
     else if (/^#[0-9a-f]{1,16}$/.test(lower)) challenge.world = lower.slice(1);
+    // Case is NOT lowered for a ghost: a steading is named, and a name that
+    // comes back as "eikstead" is not the same steading.
+    else if (/^g-?\d+,-?\d+,/.test(lower)) {
+      const ghost = unpackGhost(token);
+      if (ghost) challenge.ghost = ghost;
+    }
   }
 
   // A mark needs a day to mean anything; winters and the jarldom are colour
@@ -153,12 +194,26 @@ export function coastOf(state: GameState): string {
   return encodeChallenge({ seed: state.seed, hardship: state.hardship ?? 'even' });
 }
 
+/**
+ * This run's steading as somebody else's ruin, or nothing.
+ *
+ * Only from a saga that ENDED. A run still being played has a steading, not a
+ * ruin, and sending one would be claiming a death that has not happened —
+ * the same reason `coastOf` carries no mark.
+ */
+export function ghostOf(state: GameState): Ghost | undefined {
+  const home = state.settlement;
+  if (!home || !state.end) return undefined;
+  return { name: home.name, at: home.at, day: state.day, cause: state.end.cause };
+}
+
 /** The code for the run as it stands, mark and all. */
 export function challengeOf(state: GameState, world?: string): string {
   return encodeChallenge({
     seed: state.seed,
     hardship: state.hardship ?? 'even',
     mark: markOf(state),
+    ...(ghostOf(state) ? { ghost: ghostOf(state)! } : {}),
     ...(world ? { world: world.slice(0, 8) } : {}),
   });
 }

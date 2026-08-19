@@ -29,6 +29,7 @@ import { applyMotionPref, motionPref, setMotionPref } from './motion';
 import { buzz, hapticPref, hapticsSupported, setHapticPref } from './haptics';
 import { lastHardship, rememberHardship } from './hardshipPref';
 import { decodeChallenge } from './sim/challenge';
+import { haunt } from './sim/haunt';
 import type { HardshipId } from './data/hardship';
 import { deedsFor } from './render/deeds';
 import {
@@ -373,6 +374,9 @@ function startRun(seed: string, hardship: HardshipId = lastHardship()): void {
   rememberHardship(terms);
   state = newGame(finalSeed, terms);
   if (challenge?.mark) state.chasing = challenge.mark;
+  // Somebody else's steading, if the code brought one. Never fatal: a ghost
+  // naming ground this world put under the sea simply is not there.
+  if (challenge?.ghost) haunt(state, challenge.ghost);
   save(state);
   resetForRun(ui);
   mountGame();

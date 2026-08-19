@@ -44,7 +44,10 @@
 // v33 (lineage): Settlement gained `children` — everyone born on this coast.
 //                 An old save's steading has borne nobody, which is exactly
 //                 what an empty list says.
-export const SAVE_VERSION = 33;
+// v34 (ghost): the root gained the optional `ghost` — somebody else's fallen
+//               steading, carried in on a challenge code. Absent is the truth
+//               about every saga played before anyone could send one.
+export const SAVE_VERSION = 34;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

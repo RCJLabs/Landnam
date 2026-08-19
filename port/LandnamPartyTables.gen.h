@@ -281,6 +281,7 @@ namespace Tables
 	struct FPlaceKindRow { std::string Id; std::vector<std::string> Ground; int32_t MinFromLanding; };
 	const std::vector<FPlaceKindRow> PlaceKinds = {
 		{ "monastery", { "shore" }, 6 },
+		{ "ruin", { "meadow", "shore", "valley", "hills" }, 1 },
 		{ "town", { "shore", "valley", "meadow" }, 11 },
 		{ "wreck", { "shore" }, 3 },
 		{ "oreseam", { "bog", "hills", "mountains" }, 4 },
@@ -465,6 +466,6 @@ namespace Tables
 		{ "watchpost", { "warrior" } },
 	};
 
-	constexpr int32_t SaveVersion = 33;
+	constexpr int32_t SaveVersion = 34;
 }
 }

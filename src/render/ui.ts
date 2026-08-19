@@ -19,6 +19,7 @@ import { forecast, markVisible, reachable } from '../sim/winter';
 import { holed, sprung, unseaworthy } from '../sim/ship';
 import { weatherNext, weatherNow } from '../sim/weather';
 import { childrenOf } from '../sim/lineage';
+import { ghostLine } from '../sim/haunt';
 import { yearOf } from '../sim/calendar';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
@@ -469,10 +470,15 @@ export function renderHint(state: GameState): HTMLElement {
   const here = placeHere(state);
   if (here) {
     const def = placeKind(here.kind);
+    // Whose ruin it was — the kind's blurb says what a ruin looks like, and
+    // only the ghost knows who died in this one.
+    const whose = here.kind === 'ruin' ? ghostLine(state) : undefined;
     return el('div', { class: 'hint place' }, [
       here.sackedOn !== undefined
         ? `What is left of ${def.name}. It was taken, and it shows.`
-        : `${def.name[0]!.toUpperCase()}${def.name.slice(1)}. ${def.blurb}`,
+        : `${def.name[0]!.toUpperCase()}${def.name.slice(1)}. ${def.blurb}${
+            whose ? ` ${whose}` : ''
+          }`,
     ]);
   }
   if (!state.settlement) {

@@ -21,6 +21,16 @@ export interface PlaceKindDef {
   deed: string;
   /** Terrain it can be seeded on. */
   ground: Terrain[];
+  /**
+   * Whether worldgen puts one in every country.
+   *
+   * False for a kind that only exists when something deliberately places it —
+   * a ruin is somebody else's dead steading arriving on a challenge code, and
+   * a world that grew its own would be a world where the ghost meant nothing.
+   * Absent means true, so every kind that came before this is untouched and
+   * `port/golden.json`'s worldgen vectors do not move.
+   */
+  seeded?: boolean;
   /** How far from the landing it is seeded, so the rich ones are a voyage. */
   minFromLanding: number;
   /**
@@ -154,6 +164,34 @@ export const PLACE_KINDS: PlaceKindDef[] = [
         line: 'We carried firewood up to the house of the White Christ and came away with bread. Nobody drew anything.',
       },
     ],
+  },
+  {
+    id: 'ruin',
+    // Never seeded. This kind exists so a challenge code can carry a band's
+    // fallen steading onto somebody else's coast — see `sim/haunt.ts`.
+    seeded: false,
+    name: 'a steading nobody came back to',
+    blurb: 'Posts still standing, a hearth full of rain, and a woodpile somebody stacked and never burned.',
+    deed: 'Go through the ruin',
+    ground: ['meadow', 'shore', 'valley', 'hills'],
+    // Never seeded, so this is not a seeding constraint — it is the same
+    // truth `haunt.ts` enforces: a ruin never stands on the landing beach,
+    // because the first thing a player sees should be their own shore and
+    // not somebody else's grave.
+    minFromLanding: 1,
+    // Nobody holds it. Taking a dead steading apart is a day's work and no
+    // fight, the way the wreck is.
+    garrison: null,
+    // Deliberately modest, and mostly TIMBER: what survives a bad winter in
+    // an abandoned steading is the woodpile and the walls, not the larder —
+    // the larder is what ran out. It also keeps a haunted coast from being an
+    // easier coast, which would make a challenge worth less than the seed it
+    // was cut from.
+    // Under the wreck's, deliberately — 2/9 is what an unowned salvage pays
+    // and a ruin must not beat it, or a haunted coast is a richer coast.
+    loot: { food: 2, firewood: 8, morale: 4 },
+    infamy: 0,
+    sackLine: 'We took what the last people here had stacked against a winter they did not see the end of.',
   },
   {
     id: 'town',

@@ -42,6 +42,10 @@ export function seedPlaces(world: World, rng: Rng): Place[] {
   const placed: Place[] = [];
 
   for (const kind of PLACE_KINDS) {
+    // A kind that only exists when something puts it there. Skipped before
+    // any candidate is even gathered, so worldgen draws exactly the numbers
+    // it drew before the ruin existed and the parity vectors hold.
+    if (kind.seeded === false) continue;
     const candidates: Hex[] = [];
     const distant: Hex[] = [];
     for (const [k, tile] of Object.entries(world.tiles)) {

@@ -326,6 +326,9 @@ export const MIGRATIONS: Record<number, Migration> = {
     if (!home) return { ...save, version: 33 };
     return { ...save, settlement: { ...home, children: home['children'] ?? [] }, version: 33 };
   },
+  // The root gained the optional `ghost`. Nobody could be haunted before
+  // this, so its absence is exactly true of every older save.
+  33: (save) => ({ ...save, version: 34 }),
 };
 
 export interface MigrationResult {

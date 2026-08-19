@@ -60,10 +60,22 @@ export interface World {
  */
 export interface Place {
   id: string;
-  kind: 'monastery' | 'town' | 'wreck' | 'oreseam';
+  kind: 'monastery' | 'town' | 'wreck' | 'oreseam' | 'ruin';
   at: Hex;
   /** Set the day it was sacked or picked clean. A place is taken once. */
   sackedOn?: number;
+}
+
+/** A band that came before, and where it ended. */
+export interface Ghost {
+  /** What they called their steading. */
+  name: string;
+  /** Where the posts went in. */
+  at: Hex;
+  /** The day it ended. */
+  day: number;
+  /** How it ended — a `RunEnd` cause. */
+  cause: string;
 }
 
 // --- People ---
@@ -559,6 +571,14 @@ export interface GameState {
    * the tab being closed on day 12 of a chase.
    */
   chasing?: Mark;
+  /**
+   * Somebody else's steading, standing in ruins on this coast.
+   *
+   * Carried in on a challenge code. The whole of the asynchronous-multiplayer
+   * idea and the whole of what it costs: no server, no network, no account —
+   * a line of text somebody pasted into a chat, and the ground it names.
+   */
+  ghost?: Ghost;
   /**
    * The run as data: the ordered events of a day, for a presentation layer
    * that has to show them happening rather than print them. The battle
