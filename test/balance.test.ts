@@ -2370,6 +2370,11 @@ describe('the long game', () => {
      */
     const everNeed: Record<string, number> = {};
     const everShort: Record<string, number> = {};
+    /** Days on which this need alone stood between the band and the Thing. */
+    const lastStanding: Record<string, number> = {};
+    let allSixDays = 0;
+    const unmetDays: Record<string, number> = {};
+    let settledDays = 0;
     let sixEver = 0;
     let settledSagas = 0;
     let metAnybody = 0;
@@ -2424,6 +2429,29 @@ describe('the long game', () => {
         if (canCallThing(after)) couldCall = true;
         if (after.settlement) settled = true;
         for (const n of thingNeeds(after)) if (n.met) ticked.add(n.id);
+        // WHICH NEED IS ACTUALLY BLOCKING, on the days it matters.
+        //
+        // `ticked` above is "ever met", and for a MOMENTARY need that is
+        // nearly free — `gathered` asks only that nobody is away right now, so
+        // of course every band satisfies it at some point. Reading 76/76 off
+        // that and concluding the need never refuses anybody is the
+        // instrument, not the game.
+        //
+        // The Thing wants all six AT ONCE, so the binding constraint is what
+        // is missing on a day when everything else is there. Counted per day
+        // rather than per saga, because that is the shape of the question.
+        if (after.settlement && !after.end) {
+          const needs = thingNeeds(after);
+          const missing = needs.filter((n) => !n.met);
+          if (missing.length === 1) lastStanding[missing[0]!.id] = (lastStanding[missing[0]!.id] ?? 0) + 1;
+          if (missing.length === 0) allSixDays += 1;
+          // And how often each is unmet AT ALL on a settled day, which is a
+          // different question from being the last one standing: a need can
+          // fail constantly and never be decisive because something else is
+          // also missing. Both readings are needed to call a need decoration.
+          for (const n of missing) unmetDays[n.id] = (unmetDays[n.id] ?? 0) + 1;
+          settledDays += 1;
+        }
         for (const n of after.neighbours) {
           if (!n.found) continue;
           met = true;
@@ -2520,7 +2548,14 @@ describe('the long game', () => {
       `the Thing's six needs, all countries pooled — ${settledSagas} settled sagas:\n` +
         `  ever ticked: ${(['winters','hall','peace','friends','feast','gathered'] as NeedId[])
           .map((id) => `${id} ${everNeed[id] ?? 0}`).join(', ')}\n` +
-        `  ${sixEver} ticked all six at some point; one short: ${
+        `  unmet on a settled day, of ${settledDays}: ${
+          (['winters','hall','peace','friends','feast','gathered'] as NeedId[])
+            .map((id) => `${id} ${unmetDays[id] ?? 0}`).join(', ')}\n` +
+      `  the ONE need still missing, counted per day: ${
+          (['winters','hall','peace','friends','feast','gathered'] as NeedId[])
+            .map((id) => `${id} ${lastStanding[id] ?? 0}`).join(', ')} `
+        + `(${allSixDays} days with all six)\n` +
+      `  ${sixEver} ticked all six at some point; one short: ${
           Object.entries(everShort).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`,
     );
 
@@ -2538,6 +2573,33 @@ describe('the long game', () => {
         `${terms.name} promises ${Math.round(terms.odds.ruled * 100)}% ever rule; `
           + `the long game measured ${Math.round(ruled * 100)}%`,
       ).toBeLessThan(0.1);
+    }
+
+    /**
+     * EVERY NEED ON THE CHECKLIST CAN REFUSE SOMEBODY.
+     *
+     * The guard item 6 asked for and could not state. It read `peace` and
+     * `gathered` as met by 78 settled sagas out of 78 and called them
+     * decoration; an audit repeated the claim and proposed cutting the
+     * checklist to four. Both were the INSTRUMENT. "Ever ticked" is nearly
+     * free for a momentary need — `gathered` asks only that nobody is away
+     * right now — so of course every band satisfies it at some point.
+     *
+     * Measured properly, on days a settled band actually had it unmet:
+     * winters 19947, friends 18894, feast 16981, hall 15223, gathered 2637,
+     * peace 143 of 29220. Rare is not the same as vestigial, and a
+     * requirement that stands for a rare event is allowed to be rare.
+     *
+     * So the bar is the honest version of the claim: a need that can never
+     * refuse anybody is a line of text pretending to be a rule, and this
+     * fails when one becomes that.
+     */
+    for (const id of ['winters', 'hall', 'peace', 'friends', 'feast', 'gathered'] as NeedId[]) {
+      expect(
+        unmetDays[id] ?? 0,
+        `the Thing's "${id}" was never once unmet across ${settledDays} settled days — `
+          + `it cannot refuse anybody, so it is not a requirement`,
+      ).toBeGreaterThan(0);
     }
 
     // A Hard Country is a DIFFICULTY, not a wall, and this is where that

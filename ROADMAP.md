@@ -1866,6 +1866,34 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — Neither dead need was dead, and the checklist keeps all six**
+  — audit idea 3, and **the premise was mine and it was wrong**. It was
+  written as "make `peace` and `gathered` bite, or cut the checklist to four",
+  on the reading that both were met by 76 settled sagas out of 76 and so
+  refused nobody. Item 6 said the same thing first, from the same readout.
+  **It was the instrument, twice.** "Ever ticked" is nearly free for a
+  MOMENTARY need — `gathered` asks only that nobody is away right now — so of
+  course every band satisfies it at some point. Measured on days a settled
+  band actually had each need unmet, out of 29,220: **winters 19947, friends
+  18894, feast 16981, hall 15223, gathered 2637, peace 143.** Rare is not
+  vestigial, and a requirement standing for a rare event is allowed to be
+  rare. **No need was cut and no rule changed.**
+  **What the right question turned up instead.** Counting which need is the
+  LAST one standing — the only one missing on a day when everything else is
+  there — the checklist has a dominant gate nobody knew about: **feast 3066
+  days, against friends 615, winters 455, hall 206, gathered 109, peace 0.**
+  Five times the next. The commonest thing between a band and its Thing is
+  thirty spare food on the day, and it is on the checklist, so the player is
+  told — but nothing had ever said it was the wall.
+  **The guard item 6 wanted and could not state** is in now: every need must
+  be unmet on at least one settled day across the long game, or it is a line
+  of text pretending to be a rule. Watched fail by making `houseAtPeace`
+  always true, which names it — *"the Thing's `peace` was never once unmet
+  across 29220 settled days"*.
+  Third interpretation of mine this audit that dissolved on measurement,
+  after the speaker wall and both halves of the difficulty menu. The
+  measurements have held; the stories I told about them have not.
+
 - **2026-08-19 — The difficulty menu says what it measured, and now it has to
   be true** — audit idea 5, and **the premise was wrong twice over**, which is
   worth recording because both errors were mine.
