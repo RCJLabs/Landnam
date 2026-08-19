@@ -9,6 +9,7 @@
 import { button, el } from '../svg';
 import { HARDSHIPS, hardshipById, type HardshipId } from '../../data/hardship';
 import { decodeChallenge, describeMark } from '../../sim/challenge';
+import { measuredLine } from '../../data/hardship';
 import { lastHardship } from '../../hardshipPref';
 
 export function renderTitle(
@@ -81,7 +82,7 @@ export function renderTitle(
       }),
     );
     const terms = hardshipById(showing);
-    hardshipNote.replaceChildren(`${terms.blurb} ${terms.measured}`);
+    hardshipNote.replaceChildren(`${terms.blurb} ${measuredLine(terms)}`);
   };
   paintChase();
   paintHardship();

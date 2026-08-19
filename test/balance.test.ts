@@ -2142,9 +2142,24 @@ describe('how hard the country is', () => {
     expect(spring['fair']! - spring['even']!).toBeGreaterThan(0.1);
     expect(spring['even']! - spring['hard']!).toBeGreaterThan(0.1);
 
-    // And every setting says what it was measured at, in words.
+    // AND WHAT EACH SETTING PROMISES IS TRUE, which is the whole point of a
+    // measured difficulty and is not what this used to check.
+    //
+    // The old bar was `expect(terms.measured.length).toBeGreaterThan(10)` —
+    // it asserted that a claim EXISTS, not that it is correct. The menu could
+    // have promised anything over ten characters and this would have passed,
+    // while balance moved five times in a single day's work. This is the one
+    // screen where the game tells a player what it will do to them before
+    // they agree to it.
+    //
+    // Ten points is the tolerance, the same figure this file has used for
+    // "outside what sixty seeds can resolve" since the event-chance sweep.
     for (const terms of HARDSHIPS) {
-      expect(terms.measured.length, terms.id).toBeGreaterThan(10);
+      expect(
+        Math.abs(terms.odds.spring - spring[terms.id]!),
+        `${terms.name} promises ${Math.round(terms.odds.spring * 100)}% see spring; `
+          + `the harness measured ${Math.round(spring[terms.id]! * 100)}%`,
+      ).toBeLessThan(0.1);
     }
   });
 });
@@ -2378,6 +2393,7 @@ describe('the long game', () => {
      * about once in sixty and cannot be barred on at any affordable N.
      */
     const firstWinters: Record<string, number> = {};
+    const allJarlsBy: Record<string, number> = {};
 
     for (const TERMS of ['even', 'fair', 'hard'] as HardshipId[]) {
     reachedJarl = 0; ruledYears = 0; alive = 0; days = 0;
@@ -2456,6 +2472,7 @@ describe('the long game', () => {
     );
     allEarlyFoes += earlyFoes; allEarlyFights += earlyFights;
     allLateFoes += lateFoes; allLateFights += lateFights;
+    allJarlsBy[TERMS] = reachedJarl;
     allFriends += everHadFriend; allCouldCall += everCouldCall;
     allHalls += everHadHall; allSecondWinters += sawSecondWinter; allJarls += reachedJarl;
     }
@@ -2506,6 +2523,22 @@ describe('the long game', () => {
         `  ${sixEver} ticked all six at some point; one short: ${
           Object.entries(everShort).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`,
     );
+
+    // AND WHAT THE MENU PROMISES ABOUT RULING IS TRUE.
+    //
+    // The other half of the measured difficulty, checked where jarldoms are
+    // actually counted — the sweep in `how hard the country is` only runs to
+    // day 73 and cannot see one. Loose on purpose: a jarldom is rare enough
+    // that forty seeds resolve it to about a tenth, so this catches a promise
+    // that has rotted rather than one that has drifted a seed.
+    for (const terms of HARDSHIPS) {
+      const ruled = (allJarlsBy[terms.id] ?? 0) / LONG_SEEDS;
+      expect(
+        Math.abs(terms.odds.ruled - ruled),
+        `${terms.name} promises ${Math.round(terms.odds.ruled * 100)}% ever rule; `
+          + `the long game measured ${Math.round(ruled * 100)}%`,
+      ).toBeLessThan(0.1);
+    }
 
     // A Hard Country is a DIFFICULTY, not a wall, and this is where that
     // stays true. Measured over sixty seeds on 2026-08-11: it reaches the

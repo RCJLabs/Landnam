@@ -1866,6 +1866,41 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — The difficulty menu says what it measured, and now it has to
+  be true** — audit idea 5, and **the premise was wrong twice over**, which is
+  worth recording because both errors were mine.
+  It was written as "the difficulty picker is the one place this game does not
+  tell the player the number, and As It Lies is the default at 28% spring".
+  Neither holds. Every setting has carried a `measured` line since the
+  hardship work — *"Three bands in ten saw the first spring. One in twenty
+  ruled."* — and `DEFAULT_HARDSHIP` is **`fair`**, not `even`. I had read
+  `BALANCED_HARDSHIP = 'even'` and assumed it was what a new player gets; the
+  file separates the two deliberately and its comment says the default is Fair
+  so "the hard truth is one menu tap away rather than the price of admission".
+  Checked against today's audit, all three claims were still accurate: 60% /
+  28% / 12% measured against three-in-five, three-in-ten, one-in-eight.
+  **The real gap was that nothing kept them true.** The only bar on the
+  player-facing promise was
+  `expect(terms.measured.length).toBeGreaterThan(10)` — an assertion that a
+  claim EXISTS, not that it is correct. The menu could have promised anything
+  over ten characters long and the suite would have passed, while balance
+  moved five times in a single day's work. The comment beside the numbers had
+  already rotted a little on its own: "Latest: 62% / 27% / 12%" against
+  today's 60 / 28 / 12.
+  So the claim is numbers now — `odds: { spring, ruled }` — and the sentence
+  the player reads is **generated** from them by `measuredLine`, so prose and
+  data cannot drift apart. The generated text is byte-identical to the three
+  hand-written strings it replaced: the player sees exactly what they saw.
+  The harness bars both halves where each can actually be seen: the hardship
+  sweep checks `spring` against the sixty seeds it has just run, and the long
+  game checks `ruled` against its jarldom counts, since a sweep to day 73
+  cannot see a jarldom. Watched fail first — a claim of 75% against a measured
+  28% is named in the failure: *"As It Lies promises 75% see spring; the
+  harness measured 28%."*
+  This is the one screen where the game tells a player what it will do to them
+  before they agree to it, and it was the screen with the weakest bar in the
+  repo.
+
 - **2026-08-19 — The port was building against numbers that no longer
   existed, and the speaker wall was never a wall** — an audit and the two
   things it turned up.

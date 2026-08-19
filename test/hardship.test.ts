@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { BALANCED_HARDSHIP, DEFAULT_HARDSHIP, HARDSHIPS, hardshipById } from '../src/data/hardship';
+import { BALANCED_HARDSHIP, DEFAULT_HARDSHIP, HARDSHIPS, hardshipById, measuredLine } from '../src/data/hardship';
 import { eventChance } from '../src/sim/events';
 import { raidOdds } from '../src/sim/raid';
 import { firewoodPerNight } from '../src/sim/upkeep';
@@ -49,7 +49,12 @@ describe('the three countries', () => {
     for (const terms of HARDSHIPS) {
       expect(terms.name.length).toBeGreaterThan(3);
       expect(terms.blurb.length).toBeGreaterThan(40);
-      expect(terms.measured.length).toBeGreaterThan(10);
+      // The generated sentence, not a hand-typed one. The odds themselves
+      // are barred against the harness in test/balance.test.ts; this is the
+      // prose being well-formed for every setting.
+      expect(measuredLine(terms).length).toBeGreaterThan(10);
+      expect(terms.odds.spring).toBeGreaterThan(0);
+      expect(terms.odds.spring).toBeLessThanOrEqual(1);
       for (const knob of [terms.stir, terms.raid, terms.winter, terms.stores]) {
         expect(knob).toBeGreaterThan(0);
       }

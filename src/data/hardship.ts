@@ -29,11 +29,29 @@ export interface HardshipDef {
   /** What it is like, in the game's own voice. */
   blurb: string;
   /**
-   * What the harness actually measured for this setting, in plain words.
-   * Shown to the player, and asserted non-empty by a content lint: a
-   * difficulty whose labels are not measured is a lie told three times.
+   * What the harness measured for this setting, AS NUMBERS.
+   *
+   * The prose the player reads is generated from these by `measuredLine`,
+   * and the balance harness asserts these against what it has just measured.
+   * Both halves matter and neither existed before 2026-08-19:
+   *
+   *   - the prose used to be hand-written beside the numbers, so the two
+   *     could disagree and nothing would notice;
+   *   - and the only bar on it was `expect(terms.measured.length)
+   *     .toBeGreaterThan(10)`, which asserts that a claim EXISTS rather than
+   *     that it is TRUE. The menu could have promised anything over ten
+   *     characters long and the suite would have been satisfied.
+   *
+   * That matters here more than most places. This is the one screen where
+   * the game tells a player what it is going to do to them before they
+   * agree to it, and balance moved five times in a single day's work.
    */
-  measured: string;
+  odds: {
+    /** Fraction of bands that saw the first spring. */
+    spring: number;
+    /** Fraction that were ever proclaimed jarl. */
+    ruled: number;
+  };
   /** Multiplier on how often the road interrupts you. */
   stir: number;
   /** Multiplier on the chance a raid comes for the steading. */
@@ -61,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, and a fuller hold when the keel touches sand. Where a saga has room to become one.',
-    measured: 'Three bands in five saw the first spring. Four in twenty ruled.',
+    odds: { spring: 0.6, ruled: 0.2 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -73,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    measured: 'Three bands in ten saw the first spring. One in twenty ruled.',
+    odds: { spring: 0.28, ruled: 0.05 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -85,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, and men who have heard of you sooner than you would like. Nothing here is unfair. It is only that less of it goes your way.',
-    measured: 'One band in eight saw the first spring. None of twenty ever ruled.',
+    odds: { spring: 0.12, ruled: 0.025 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -139,4 +157,57 @@ export const MEASURED_ON = 'sixty landings, the same sixty for each';
 
 export function hardshipById(id: string | undefined): HardshipDef {
   return HARDSHIPS.find((h) => h.id === id) ?? HARDSHIPS[1]!;
+}
+
+/**
+ * The measured odds as the sentence the player reads.
+ *
+ * Generated rather than written beside the numbers, so the prose and the data
+ * cannot drift apart — which they could, and silently, when `measured` was a
+ * hand-typed string sitting next to the knobs it described.
+ *
+ * "One band in eight" rather than "12%" because this game says things in its
+ * own voice, and because a fraction with a small denominator is a thing a
+ * person can hold in their head while deciding.
+ */
+export function measuredLine(def: HardshipDef): string {
+  const spring = asFraction(def.odds.spring);
+  const ruled = def.odds.ruled < 0.03
+    ? 'None of twenty ever ruled.'
+    : `${cap(inTwenty(def.odds.ruled))} in twenty ruled.`;
+  return `${cap(spring.n)} ${spring.n === 'one' ? 'band' : 'bands'} in ${spring.d} saw the first spring. ${ruled}`;
+}
+
+/** Number words, which is as far as this needs to count. */
+const WORDS = [
+  'none', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+  'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
+  'seventeen', 'eighteen', 'nineteen', 'twenty',
+];
+
+const cap = (s: string): string => `${s[0]!.toUpperCase()}${s.slice(1)}`;
+
+/** How many in twenty, in words. */
+function inTwenty(fraction: number): string {
+  return WORDS[Math.max(0, Math.min(20, Math.round(fraction * 20)))]!;
+}
+
+/**
+ * The tidiest small "n in d" for a fraction.
+ *
+ * Denominators a person reads without effort, and the one whose rounding is
+ * least wrong is chosen — so 0.28 reads "three in ten" rather than
+ * "six in twenty", and 0.12 reads "one in eight" rather than "one in ten".
+ */
+function asFraction(fraction: number): { n: string; d: string } {
+  const clamped = Math.max(0, Math.min(1, fraction));
+  let best = { d: 20, n: 1, err: Infinity };
+  for (const d of [3, 4, 5, 8, 10, 20]) {
+    const n = Math.round(clamped * d);
+    if (n < 1) continue;
+    const err = Math.abs(n / d - clamped);
+    // Ties go to the smaller denominator, which is the easier sentence.
+    if (err < best.err - 1e-9) best = { d, n, err };
+  }
+  return { n: WORDS[best.n] ?? `${best.n}`, d: WORDS[best.d] ?? `${best.d}` };
 }
