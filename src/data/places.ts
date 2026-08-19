@@ -6,7 +6,7 @@
 // The rich ones are guarded, the guarded ones are provocations, and every
 // one is taken ONCE — a monastery does not restock.
 
-import type { Place, Terrain } from '../state/types';
+import type { Place, Season, Terrain } from '../state/types';
 import type { LoreId } from './lore';
 
 export type PlaceKind = Place['kind'];
@@ -63,6 +63,35 @@ export interface PlaceKindDef {
  * buys and sells the same goods on one hex must lose on the spread, or two
  * deeds standing still make timber out of nothing.
  */
+/**
+ * What a good is WORTH in each season, and the whole of the seasonal market.
+ *
+ * The game is about surviving a winter and its only counter charged the same
+ * in high summer as in deep frost, which made a market a fixed exchange rate
+ * rather than a decision. These numbers give it a calendar: nobody pays much
+ * for grain the week after harvest, and everybody pays for it in Thorri.
+ *
+ * A rate is scaled by `worth(given) / worth(taken)`, so carrying the scarce
+ * thing to a counter is what pays — timber to the monastery in autumn, food
+ * to the town in summer.
+ *
+ * **The spread cannot be broken by waiting.** On a round trip through two
+ * offers the two ratios are reciprocal and cancel exactly, whatever the
+ * season, so a town that buys and sells the same goods still loses on the
+ * spread in every month of the year. That is a property rather than a
+ * hope — test/places.test.ts checks it in all four.
+ */
+export const GOOD_WORTH: Record<Season, { food: number; firewood: number }> = {
+  // Nothing is scarce, and the woods are being cut.
+  summer: { food: 1, firewood: 0.85 },
+  // The harvest is in. Grain is cheap and everyone wants fuel laid by.
+  autumn: { food: 0.8, firewood: 1 },
+  // Both dear, and dear together — which is why winter is no time to deal.
+  winter: { food: 1.35, firewood: 1.35 },
+  // The stores are down and the woods are not cut yet.
+  spring: { food: 1.2, firewood: 1 },
+};
+
 export interface PlaceOffer {
   id: string;
   /** What the button says. */

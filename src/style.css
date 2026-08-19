@@ -1016,6 +1016,16 @@ h2.grim {
   font-style: normal;
 }
 
+/*
+ * A chance that is only there while the hull is where it is. Gold and upright
+ * like the expedition line, because it is an offer rather than a description
+ * of the ground — and unlike the ground, it goes away if you row on.
+ */
+.hint.strand {
+  color: var(--gold);
+  font-style: normal;
+}
+
 .launch-crew {
   display: grid;
   gap: 3px;

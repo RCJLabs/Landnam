@@ -10,11 +10,13 @@ import { distance, fromKey, key, type Hex } from '../hex';
 import { stream, type Rng } from '../rng';
 import type { GameState, Place, World } from '../state/types';
 import {
+  GOOD_WORTH,
   PLACE_KINDS,
   PLACE_MAX_FROM_LANDING,
   placeKind,
   type PlaceOffer,
 } from '../data/places';
+import { seasonOf } from './calendar';
 import { chronicle } from './saga';
 import { hasLineOfSight, onHighGround } from './fog';
 import { STRAND_HAUL, STRAND_INFAMY } from './sea';
@@ -195,6 +197,24 @@ export const TRADE_REASON: Record<TradeBlock, string> = {
   stores: 'We have not got enough to carry in.',
 };
 
+/**
+ * What one offer pays TODAY.
+ *
+ * The rate on a `PlaceOffer` is its high-summer price; the season moves it by
+ * what each good is worth that quarter (see GOOD_WORTH). Both the counter and
+ * the button that describes the counter come through here — they used to do
+ * the same arithmetic in two places, which is exactly how a shown price and a
+ * paid price come to differ.
+ *
+ * Never less than one: a deed that costs stores and returns nothing is a bug
+ * wearing a price tag.
+ */
+export function offerGot(offer: PlaceOffer, day: number): number {
+  const worth = GOOD_WORTH[seasonOf(day)];
+  const rate = offer.rate * (worth[offer.give] / worth[offer.take]);
+  return Math.max(1, Math.round(offer.cost * rate));
+}
+
 /** The offers this place makes, or none. */
 export function offersAt(state: GameState, id: string): PlaceOffer[] {
   const place = placeById(state, id);
@@ -234,7 +254,7 @@ export function tradeAt(state: GameState, id: string, offerId: string): PlaceTra
   const def = placeKind(place.kind);
   const offer = (def.market ?? []).find((o) => o.id === offerId)!;
 
-  const got = Math.max(1, Math.round(offer.cost * offer.rate));
+  const got = offerGot(offer, state.day);
   state.party[offer.give] -= offer.cost;
   state.party[offer.take] += got;
   state.party.morale = Math.min(100, state.party.morale + 2);

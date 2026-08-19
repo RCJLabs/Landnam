@@ -1866,6 +1866,41 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — A counter with a calendar** — Items 1–3 of the brainstorm,
+  and **two of the three premises were wrong.** They rested on numbers that
+  measure the BOT's itinerary, and the game-side rules turned out to be
+  sound: a settled player can launch an errand freely (the one real gate,
+  the stores block, went last commit), **markets already repeat
+  indefinitely** — "traded with as often as you like, until somebody draws
+  on them" — and the strandhögg is reachable, its 3-in-120 being a want of
+  OPPORTUNITY (five afloat-days beside a target in thirty sagas) rather than
+  a gate. The oreseam and the wreck are one-shot on purpose: the seam is a
+  LORE source at 80% smithing, and once you understand a thing you
+  understand it.
+  What was real, and is the honest version of all three: **the economy was
+  season-blind.** The whole game is surviving a winter and its only counter
+  charged the same in high summer as in deep frost. `GOOD_WORTH` in
+  `data/places.ts` gives each good a worth per season and a rate is scaled by
+  `worth(given) / worth(taken)` — so carrying the scarce thing is what pays.
+  Timber to the monastery in autumn; food to the town in summer. Two markets
+  with two calendars, which is the decision that was missing.
+  **The spread cannot be broken by waiting**, and that is a property rather
+  than a hope: on a round trip the two ratios are exact reciprocals and
+  cancel, so a town that buys and sells the same goods still loses on the
+  spread in every month. Watched failing on the natural mistake — scaling by
+  the given good and forgetting the divisor — with "winter: 10 food came back
+  as 14", a free 40% standing on one hex.
+  The deed's blurb and `tradeAt` were two copies of the same arithmetic,
+  which is how a shown price and a paid price come to differ; both go
+  through `offerGot` now.
+  **Measured, thirty settler sagas: counter bargains 195 → 261 (+34%)**,
+  settled days 4,261 → 4,233 — the market got worth using without moving
+  survival.
+  And the strandhögg is SURFACED: it was reachable only by opening the Act
+  sheet on exactly the right hex of water, so a band could row past a
+  monastery and never learn the chance was there. The hint line now says so
+  while you are in it. Nothing about the deed itself changed.
+  968 tests.
 - **2026-08-18 — Can a thumb get to it?** — Mobile item 7, the last of the
   ten, and the audit found something the eye had not.
   Ten surfaces measured at 390×844 — title, travel, the Act sheet, a fight,

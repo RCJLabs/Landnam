@@ -12,7 +12,7 @@ import { atHome, BLOCK_REASON, foundBlocker } from '../sim/site';
 import { atSea, canFish, canGather } from '../sim/travel';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
-import { placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
+import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
 import { placeKind } from '../data/places';
 import { BARTER_FOOD } from '../data/clans';
 import { FEAST_FOOD } from '../data/thing';
@@ -104,7 +104,7 @@ export function deedsFor(
       const blocked = tradeBlocker(state, here.id, offer.id);
       const gave = offer.give === 'food' ? 'food' : 'firewood';
       const took = offer.take === 'food' ? 'food' : 'timber';
-      const got = Math.max(1, Math.round(offer.cost * offer.rate));
+      const got = offerGot(offer, state.day);
       deeds.push({
         id: `trade-${offer.id}`,
         label: offer.deed,

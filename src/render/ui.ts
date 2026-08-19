@@ -24,6 +24,7 @@ import { chaseLine } from '../sim/announce';
 import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
 import { placeHere } from '../sim/places';
+import { strandTarget } from '../sim/sea';
 import { placeKind } from '../data/places';
 import { angriest, neighbourHere, neighbourLine, standingOf } from '../sim/neighbours';
 import { button, el } from './svg';
@@ -393,6 +394,23 @@ export function renderHint(state: GameState): HTMLElement {
       'The knarr is making water — she rows at half pace. Camp ashore to mend her.',
     ]);
   }
+  // AFLOAT BESIDE SOMETHING WORTH TAKING.
+  //
+  // The strandhögg is a whole way of playing — the ship's way into a place,
+  // with its own odds and its own stakes — and it was reachable only by
+  // opening the Act sheet on exactly the right hex of water. A band could row
+  // straight past a monastery and never learn the chance had been there.
+  // Measured over thirty raider sagas: five days afloat beside a target, and
+  // the coast is 120 places wide. Nothing about the deed changes here; the
+  // player is simply told it exists while they are standing in it.
+  const strand = strandTarget(state);
+  if (strand) {
+    const def = placeKind(strand.kind);
+    return el('div', { class: 'hint strand' }, [
+      `${def.name[0]!.toUpperCase()}${def.name.slice(1)}, off the bow. They are not watching the water · Act`,
+    ]);
+  }
+
   // Standing somewhere that is somewhere: the place introduces itself, and
   // the Act sheet holds the decision about it.
   const here = placeHere(state);
