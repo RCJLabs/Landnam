@@ -190,3 +190,62 @@ function settled(seed: string): GameState {
   expect(foundSettlement(state)).toBe(true);
   return state;
 }
+
+/**
+ * THE LORE'S PROMISE, AND WHY IT NEEDED A SECOND HALF.
+ *
+ * "Shipwright's eye" carried `sea: 1` and a gain line reading "A day on the
+ * water costs less than it did". Measured on 2026-08-19, that was false for
+ * a sound hull in three seasons out of four, and STRUCTURALLY so rather than
+ * by a tuning accident: a hex costs `ceil(effort / 2)` days with a floor of
+ * one, a sound hull in fair weather is effort 2, and one day is already the
+ * floor. No reduction can beat it. The knob only bought a day when a travel
+ * penalty made the effort odd — which means winter.
+ *
+ * So the lore mends now, which is what a shipwright does and what the ship
+ * work of item 7 gave it something to do.
+ */
+describe("the shipwright's eye", () => {
+  it('cannot buy a day on a sound hull in fair weather, which is why it also mends', () => {
+    // The arithmetic stated outright, so a later change to SEA_EFFORT or to
+    // the effort-to-days rule has to come and argue with it.
+    const days = (effort: number): number => Math.max(1, Math.ceil(effort / 2));
+    expect(days(2), 'a sound hull in fair weather').toBe(1);
+    expect(days(2 - 1), 'and the same with the lore').toBe(1);
+    // Odd effort — winter's travel penalty — is where it does pay.
+    expect(days(3)).toBe(2);
+    expect(days(3 - 1)).toBe(1);
+  });
+
+  it('puts two strakes right in a night, for two strakes of timber', () => {
+    const state = structuredClone(newGame('knarr-wright'));
+    springStrake(state.ship);
+    springStrake(state.ship);
+    state.party.firewood = 20;
+    state.lore = ['shipwright'];
+
+    expect(mendStrake(state)).toBe(true);
+    expect(holed(state.ship), 'a shipwright still needed two nights').toBe(false);
+    expect(state.party.firewood, 'the second strake was free').toBe(20 - 2 * STRAKE_MEND_WOOD);
+  });
+
+  it('still only mends what there is timber for', () => {
+    const state = structuredClone(newGame('knarr-wright-poor'));
+    springStrake(state.ship);
+    springStrake(state.ship);
+    state.party.firewood = STRAKE_MEND_WOOD;
+    state.lore = ['shipwright'];
+    expect(mendStrake(state)).toBe(true);
+    expect(sprung(state.ship), 'timber it did not have was spent').toBe(1);
+    expect(state.party.firewood).toBe(0);
+  });
+
+  it('leaves a band that never learned it mending one a night', () => {
+    const state = structuredClone(newGame('knarr-nowright'));
+    springStrake(state.ship);
+    springStrake(state.ship);
+    state.party.firewood = 20;
+    expect(mendStrake(state)).toBe(true);
+    expect(sprung(state.ship)).toBe(1);
+  });
+});

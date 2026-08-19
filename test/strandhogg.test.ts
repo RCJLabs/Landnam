@@ -10,6 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { holed } from '../src/sim/ship';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
+import { isCoastalWater } from '../src/sim/travel';
 import { distance, neighbors, key } from '../src/hex';
 import { placeKind } from '../src/data/places';
 import { settlePlace } from '../src/sim/places';
@@ -163,5 +164,63 @@ describe('what coming out of the water is worth', () => {
     const next = apply(state, { type: 'STRANDHOGG' });
     expect(next.battle!.foes.length).toBeGreaterThan(0);
     expect(STRAND_FEWER).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * IS THERE ANYWHERE TO DO IT?
+ *
+ * The strandhögg is measured at 9 sagas in 120, and the audit that found that
+ * proposed "give the band a reason to be afloat beside a place" on the
+ * assumption that the opportunity was the scarce thing. Measured, it is not:
+ * every world has somewhere, and three guarded places in four can be reached
+ * from the water.
+ *
+ * So this is not a diagnosis of why the verb is rare — it is the floor under
+ * that question. A world with nothing strandable in it makes the whole verb
+ * unreachable content there, and no amount of policy fixes that. If this ever
+ * goes red, stop looking at the bot.
+ */
+describe('a coast worth falling on', () => {
+  it('puts something strandable in every world', () => {
+    const WORLDS = 40;
+    let guarded = 0;
+    let reachable = 0;
+    const bare: string[] = [];
+
+    for (let s = 0; s < WORLDS; s += 1) {
+      const seed = `strand-ground-${s}`;
+      const state = newGame(seed);
+      let here = 0;
+      for (const p of state.world.places) {
+        if (placeKind(p.kind).garrison === null) continue;
+        guarded += 1;
+        // What `strandTarget` actually asks: water the band can float on,
+        // one hex from the place.
+        const fromWater = neighbors(p.at).some((n) => {
+          const tile = state.world.tiles[key(n)];
+          return tile?.terrain === 'ocean' && isCoastalWater(state, n);
+        });
+        if (fromWater) {
+          reachable += 1;
+          here += 1;
+        }
+      }
+      if (here === 0) bare.push(seed);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `over ${WORLDS} worlds: ${guarded} guarded places, ${reachable} of them `
+        + `reachable from the water (${Math.round((reachable / guarded) * 100)}%)`,
+    );
+
+    expect(
+      bare,
+      `these worlds have no place that can be fallen on from the sea, so the `
+        + `strandhögg does not exist in them at all: ${bare.join(', ')}`,
+    ).toEqual([]);
+    // And it is not one lucky place carrying it — most guarded ground is wet.
+    expect(reachable / guarded).toBeGreaterThan(0.5);
   });
 });

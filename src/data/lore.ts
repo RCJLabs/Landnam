@@ -32,8 +32,31 @@ export interface LoreDef {
   check?: number;
   /** Softens the morale drag of each death, 0..1. */
   solace?: number;
-  /** Effort knocked off a hex of coastal water. */
+  /**
+   * Effort knocked off a hex of coastal water.
+   *
+   * Worth LESS than it looks, and measured on 2026-08-19 rather than assumed:
+   * a hex costs `ceil(effort / 2)` days with a floor of one, so knocking a
+   * point off an even effort buys nothing at all. A sound hull in fair
+   * weather is effort 2 — one day — and one day is the floor, so this knob
+   * cannot pay out. It saves a real day only when a travel penalty makes the
+   * effort odd, which in practice means winter.
+   *
+   * Kept, because a day saved in winter is a day saved in winter. But it is
+   * why `shipwright` exists below: the lore that promised "a day on the water
+   * costs less" was inert in three seasons out of four.
+   */
   sea?: number;
+  /**
+   * Strakes a night ashore can put right, beyond the first.
+   *
+   * The Shipwright's eye doing what a shipwright does. Added because its own
+   * gain line — "A day on the water costs less than it did" — was measurably
+   * false for a sound hull outside winter, and a promise in player-facing
+   * text that the numbers do not keep is the thing this project spends most
+   * of its time hunting.
+   */
+  shipwright?: number;
   /** Added to the damage of a landed blow. */
   bite?: number;
   /** Firewood a night's fire no longer needs. */
@@ -59,8 +82,11 @@ export const LORE: LoreDef[] = [
     id: 'shipwright',
     name: "Shipwright's eye",
     blurb: 'How a hull is meant to sit, where she takes water, and what to do about both before you are out in it.',
-    gain: 'A day on the water costs less than it did.',
+    // What it DOES, both halves, and the second half is the one that is
+    // always true. See the note on `sea` above for why the first was not.
+    gain: 'Two strakes mended in a night instead of one, and hard water crossed quicker.',
     sea: 1,
+    shipwright: 1,
   },
   {
     id: 'smithing',
@@ -98,4 +124,6 @@ export function loreById(id: string): LoreDef | undefined {
 }
 
 /** Every knob a LoreDef can carry, for summing. */
-export type LoreKnob = 'check' | 'solace' | 'sea' | 'bite' | 'warmth' | 'mend' | 'physic' | 'wall';
+export type LoreKnob =
+  | 'check' | 'solace' | 'sea' | 'bite' | 'warmth' | 'mend' | 'physic' | 'wall'
+  | 'shipwright';

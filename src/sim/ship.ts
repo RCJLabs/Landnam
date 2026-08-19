@@ -22,6 +22,7 @@ import {
   STRAKE_MEND_WOOD,
 } from '../data/ships';
 import { stream } from '../rng';
+import { bonus } from './lore';
 
 /** The ship a new saga comes ashore in. Named off the seed, so replays hold. */
 export function makeShip(seed: string): Ship {
@@ -86,5 +87,17 @@ export function mendStrake(state: GameState): boolean {
   if (state.party.firewood < STRAKE_MEND_WOOD) return false;
   state.party.firewood -= STRAKE_MEND_WOOD;
   ship.strakes += 1;
+
+  // A shipwright gets more done in the same night — and pays for it, because
+  // a second strake is a second strake's worth of timber. This is what the
+  // Shipwright's eye is FOR: its speed knob is inert outside winter (a hex
+  // already costs a minimum of one day), so the lore's promise rested on
+  // something the arithmetic could not deliver. See `data/lore.ts`.
+  let extra = bonus(state, 'shipwright');
+  while (extra > 0 && holed(ship) && state.party.firewood >= STRAKE_MEND_WOOD) {
+    state.party.firewood -= STRAKE_MEND_WOOD;
+    ship.strakes += 1;
+    extra -= 1;
+  }
   return true;
 }

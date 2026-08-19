@@ -1866,6 +1866,36 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — The coast has plenty to fall on, and a lore that promised
+  nothing** — audit idea 4. The framing was "give the band a reason to be
+  afloat beside a place; the gap is proximity". **Tested first, and the
+  proximity half is false**: over 40 worlds, 56 of 80 guarded places (70%) can
+  be reached from the water and **not one world has none**. The opportunity
+  exists everywhere; a bar pins it, because a world with nothing strandable in
+  it makes the whole verb unreachable content there and no policy fixes that.
+  **A fourth wrong reading, caught before it was built on.** Following the
+  thread, `SEA_EFFORT` is 2 and shore costs 1, so I had "the sea is the slow
+  road" half-written — until checking what effort does. `daysForMove` is
+  `ceil(effort / 2)` with a floor of one, so **sea and shore both cost one day
+  a hex**. The sea is not slower. That would have been the fourth
+  interpretation of this audit to dissolve, and the first I nearly acted on.
+  **The same arithmetic turned up a real defect.** "Shipwright's eye" carried
+  `sea: 1` and the gain line *"A day on the water costs less than it did"*.
+  Measured across every hull condition and both travel penalties: a point off
+  an even effort buys **nothing**, and a sound hull in fair weather is effort
+  2 — one day, which is already the floor. It bought a day only when a
+  penalty made the effort odd, which in practice means winter. A promise in
+  player-facing text that the numbers cannot keep, in three seasons out of
+  four.
+  So the lore mends now — **two strakes in a night instead of one, and two
+  strakes' worth of timber** — which is what a shipwright does and what item
+  7's strakes gave it to do. `sea: 1` is kept, because a day saved in winter
+  is a day saved, and both halves are named in the gain line. Watched fail by
+  zeroing the bonus.
+  The strandhögg itself was NOT retuned. Its opportunity is real, and when a
+  band is beside a target it strikes about one time in five; what it is short
+  of is days afloat, and that is a bigger question than this item.
+
 - **2026-08-19 — Neither dead need was dead, and the checklist keeps all six**
   — audit idea 3, and **the premise was mine and it was wrong**. It was
   written as "make `peace` and `gathered` bite, or cut the checklist to four",
