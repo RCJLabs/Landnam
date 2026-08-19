@@ -2342,6 +2342,7 @@ describe('the long game', () => {
      * It costs nothing — the watch already runs.
      */
     const peakStanding: number[] = [];
+    const peakByFate: { peak: number; reachedSecondWinter: boolean }[] = [];
     /**
      * Which of the Thing's SIX needs a settled band ever ticked at all.
      *
@@ -2416,6 +2417,7 @@ describe('the long game', () => {
       if (settled) {
         settledSagas += 1;
         peakStanding.push(peak);
+        peakByFate.push({ peak, reachedSecondWinter: state.day >= 169 });
         if (met) metAnybody += 1;
         for (const id of ticked) everNeed[id] = (everNeed[id] ?? 0) + 1;
         const missing = (['winters','hall','peace','friends','feast','gathered'] as NeedId[])
@@ -2461,6 +2463,31 @@ describe('the long game', () => {
     // Standing, pooled across both arms — the reading here a thin sample CAN
     // carry, because it is one number per settled saga rather than per
     // jarldom, and every band that puts posts in the ground contributes one.
+    // WHY the coast never speaks for anybody, split by how far the band got.
+    //
+    // Added after an experiment on 2026-08-19 that was aimed at the wrong
+    // thing. `SPEAKER_STANDING` is 25 and the median settled band peaks at
+    // about 10, so the obvious suspects were the threshold and `REP_DRIFT`
+    // bleeding goodwill at 0.12 a day. Switching the positive drift off
+    // entirely moved the median to 15.0 and the speaker count from 22 to 25
+    // of 76 — real, and nowhere near enough.
+    //
+    // The rest of it is upstream: standing comes almost entirely from trading
+    // at +9 a bargain, the harness measured 94 trade errands across 120
+    // sagas, and a band cannot trade until it has stood a winter. So the
+    // coast is silent because the band is dead, not because the number is
+    // high. Split here so that cannot be mis-attributed again.
+    const lived = peakByFate.filter((p) => p.reachedSecondWinter).map((p) => p.peak);
+    const short = peakByFate.filter((p) => !p.reachedSecondWinter).map((p) => p.peak);
+    const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+    // eslint-disable-next-line no-console
+    console.log(
+      `standing by how far they got — ${lived.length} stood a second winter `
+        + `(peak ${mean(lived).toFixed(1)}, ${lived.filter((v) => v >= SPEAKER_STANDING).length} spoke); `
+        + `${short.length} did not (peak ${mean(short).toFixed(1)}, `
+        + `${short.filter((v) => v >= SPEAKER_STANDING).length} spoke)`,
+    );
+
     const peaks = [...peakStanding].sort((a, b) => a - b);
     const median = peaks[Math.floor(peaks.length / 2)] ?? 0;
     const spoke = peaks.filter((v) => v >= SPEAKER_STANDING).length;

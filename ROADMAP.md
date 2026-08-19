@@ -1866,6 +1866,44 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — The port was building against numbers that no longer
+  existed, and the speaker wall was never a wall** — an audit and the two
+  things it turned up.
+  **The port had silently diverged.** Comparing the two repos file by file:
+  `Content/Data/parity.json` five regenerations behind, both recorded runs
+  re-recorded twice since the last copy, and two of three generated tables
+  stale. Every one had come out of a green `npm run parity` here and then not
+  been carried across, because carrying it across was a thing a person
+  remembered to do and nothing failed when they did not.
+  `npm run port:sync` copies the seven files this repo owns into
+  `../landnam-ue` and stamps `port/contract.json` with their hashes;
+  `test/contract.test.ts` goes red the moment they no longer hash to that.
+  Watched fail first — no manifest, then again on a single changed byte of
+  `runs/example.json`, which it named. `Content/Data/foes.json` is still stale
+  (four archetypes against eight) and is deliberately NOT in the contract,
+  because nothing here generates it: it is maintained on the port side, and
+  listing it would claim a sync this script does not perform.
+  The port has the new contract now and that does **not** make it green — it
+  carries a seventh facet, `ship`, that nothing there implements, and
+  `SaveVersion` 34. Said plainly in the hand-over commit rather than implied.
+  **The speaker wall was the wrong target, and the measurement says so.** The
+  audit read median peak standing 10.7 against the 25 a speaker needs, 22 of
+  76 settled sagas crossing it — a number that had not moved since 2026-08-10
+  and that gates the whole endgame, since every band that can call the Thing
+  wins it. Two suspects: the threshold, and `REP_DRIFT` bleeding goodwill at
+  0.12 a day. Switching the positive drift off entirely moved the median to
+  **15.0** and speakers from 22 to 25 — real, and nowhere near enough.
+  Split by fate instead, and it is not close: **17 bands that stood a second
+  winter peaked at 60.7 standing and 15 of them spoke; the 59 that did not
+  peaked at 10.7 and 7 spoke.** A band that lives reaches more than twice the
+  bar. Standing comes almost entirely from trading at +9 a bargain, and a band
+  cannot trade until it has stood a winter — so the coast is silent because
+  the band is dead, not because the number is high. `SPEAKER_STANDING` is
+  well-calibrated and was never the problem; the endgame is gated on the first
+  winter, which is the same finding items 5 and 6 landed on from two other
+  directions. The split is a permanent readout now so it cannot be
+  mis-attributed again.
+
 - **2026-08-19 — A shared coast, and still no server** — Item 10, and the
   premise held: challenge codes carried seed, hardship, mark and world hash,
   and nothing of the band that cut them. A code now carries a **ghost** —
