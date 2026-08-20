@@ -1876,6 +1876,44 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-20 — The panel stopped offering a door that is not there** — audit
+  item 6, "abandon a steading without dying", and the measurement turned it
+  into a truthfulness fix rather than a feature.
+  **The premise checked out, and worse than stated.** There is no abandon
+  verb: `foundBlocker` answers `settled` the moment the posts are in, and
+  NOTHING anywhere clears `state.settlement`. But `readiness()` — the line a
+  band reads when the mark has written it off — said *"What is left is taking
+  it from somebody else, or walking out and wintering elsewhere."* Half that
+  sentence named a move the game would refuse, offered at the worst moment it
+  could be offered.
+  **So it names one way out now, and it is the one that exists.** Falling on a
+  place is a real verb; walking out is not.
+  **Barred as a PAIR so it cannot rot in either direction:** the test reads
+  the action union off `src/sim/actions.ts` AND `src/sim/travel.ts` and
+  asserts the prose may only promise walking out when an `ABANDON` verb is
+  actually there. Build the verb and the test tells you to put the sentence
+  back. Watched fail by restoring the old line. Its first cut read only
+  `actions.ts` and went red on `FALL_ON`, which lives in travel.ts — the right
+  way for a bar like that to be wrong.
+  **What is NOT decided here.** Whether a band should be able to walk out is
+  a live design question. The "saved nobody" figure everyone quotes measured
+  the escape hatch AS IT EXISTS — raids and errands — and an
+  abandon-and-resettle has never existed, so nothing has ever measured it.
+  Removing a promise is not the same as ruling out a feature.
+  **The other three audit ideas, measured and reported rather than built:**
+  - **#9, a reason to go inland — premise is false.** 47 of 120 places across
+    30 worlds are off the shore, and every world carries all four kinds. The
+    sharper question underneath it is real and different: the oreseam, the one
+    place that is always inland, pays no goods.
+  - **#10, the ~300-line rule — 52 files, not 20.** Most are tests and
+    `eventCards.ts`, which is a data table; the rule is about domains, and a
+    5,159-line harness and a 2,046-line card list are not the defect it was
+    written against. The source files that genuinely read long are
+    `winter.ts`, `battleActions.ts`, `main.ts` and `travel.ts` at ~630 each.
+  - **#8, the coast remembering the ghost** — `sim/haunt.ts` already ships the
+    ruin a challenge code carries onto somebody else's coast. What is missing
+    is narrower than the idea and was not chased today.
+
 - **2026-08-20 — One run green, the other one checkpoint short** — the second
   parity push. Everything the port had DECLARED as skipped is now ported, and
   `runs/example.json` passes outright.

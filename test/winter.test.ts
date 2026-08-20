@@ -4,6 +4,21 @@
 // a measurement of the forecast's predictive accuracy.
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+
+/**
+ * The verbs the game actually has, read off the source rather than listed
+ * here. A second hand-typed list of action names is a second thing that can
+ * drift from the first, which is the defect this whole file keeps finding.
+ *
+ * BOTH files, because the union in actions.ts is assembled from parts —
+ * `FALL_ON` and the rest of the road live in travel.ts. The first cut read
+ * only actions.ts and went red on a verb that does exist, which is the right
+ * way for a bar like this to be wrong.
+ */
+const SOURCE = ['src/sim/actions.ts', 'src/sim/travel.ts']
+  .map((f) => readFileSync(f, 'utf8'))
+  .join('\n');
 import { fromKey } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { EVENTS } from '../src/data/events';
@@ -124,6 +139,41 @@ describe('the winter mark', () => {
     expect(markVisible(state)).toBe(false);
     expect(forecast(state).days).toBe(YEAR_LENGTH);
     expect(readiness(state)).toContain('ice');
+  });
+
+  /**
+   * THE PANEL DOES NOT NAME A VERB THE GAME DOES NOT HAVE.
+   *
+   * `readiness()` offered a dying band two ways out: rob somebody, or walk
+   * out and winter elsewhere. The second one does not exist. `foundBlocker`
+   * answers `settled` the moment the posts are in, and nothing anywhere
+   * clears `state.settlement` — so a player who took that advice would find
+   * the game refusing them, at the worst moment it could.
+   *
+   * The bar is written as a PAIR so it cannot rot in either direction: the
+   * prose may only promise walking out when the code can actually do it.
+   * Build the verb and this test tells you to put the sentence back.
+   */
+  it('offers no way out that the player cannot actually take', () => {
+    // A band the mark has written off: settled, the frost close, and nothing
+    // in the store to meet it with.
+    const state = toAutumn('no-way-out');
+    state.party.food = 0;
+    state.party.firewood = 0;
+    state.party.people.forEach((p) => { p.job = undefined; });
+    expect(markVisible(state)).toBe(true);
+    const line = readiness(state);
+    const canLeave = SOURCE.includes('ABANDON');
+    if (!canLeave) {
+      expect(
+        line.toLowerCase(),
+        'the panel tells a dying band to walk out, and nothing in the game lets them',
+      ).not.toContain('walking out');
+    }
+    // And the one it DOES name is real: falling on a place is a verb.
+    if (line.includes('taking it from somebody else')) {
+      expect(SOURCE).toContain('FALL_ON');
+    }
 
     // Autumn of the second year, and it is back on screen counting down.
     state.day = SURVIVAL_DAY + YEAR_LENGTH - MARK_WINDOW;

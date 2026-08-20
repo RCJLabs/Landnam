@@ -452,7 +452,21 @@ export function readiness(state: GameState): string {
   // the coast, and being told so on day 26 is fair where finding out on
   // day 50 is not.
   if (!reachable(state)) {
-    return `${gap} We cannot cut or hunt our way to that from here. What is left is taking it from somebody else, or walking out and wintering elsewhere.`;
+    // NAMES ONE WAY OUT, NOT TWO, AND IT IS THE ONE THAT EXISTS.
+    //
+    // This read "taking it from somebody else, or walking out and wintering
+    // elsewhere" until 2026-08-20, and the second half was a verb the game
+    // does not have: `foundBlocker` answers `settled` once the posts are in,
+    // and NOTHING anywhere clears `state.settlement`. A band cannot walk out.
+    // The panel was telling a dying player to do something the game would
+    // refuse, which is worse than telling them nothing.
+    //
+    // Whether it SHOULD be a verb is a live design question and deliberately
+    // not settled here. What was measured at "saved nobody" was the escape
+    // hatch as it exists — raids and errands — and an abandon-and-resettle
+    // has never existed, so nothing has ever measured it. Removing the
+    // promise is not the same as ruling out the feature.
+    return `${gap} We cannot cut or hunt our way to that from here. What is left is taking it from somebody else.`;
   }
   return gap;
 }
