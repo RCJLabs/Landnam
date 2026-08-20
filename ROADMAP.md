@@ -1876,6 +1876,65 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-20 — Parity chased from day one to day 273, and two of the four
+  causes were bugs on THIS side** — the red Parity workflow, diagnosed and
+  driven back. It had been failing since the first contract hand-over on
+  2026-08-19 and the reading "the port is five days behind" was only a
+  quarter right.
+  **Where it started.** Every facet diverged at checkpoint @0, day 1, before
+  a single action. Reproduced locally with `Tools/run-parity.sh`, which
+  compiles the sim core with g++ and needs no editor.
+  **Cause 1 — a generator bug here, not missing port work.** `PLACE_KINDS`
+  gained a `ruin` marked `seeded: false` when the shared-coast work landed;
+  `src/sim/places.ts` skips it, and `scripts/party-tables.ts` emitted it
+  anyway into a table its own header documents as "IN SEEDING ORDER —
+  seedPlaces walks this list". The port believed the header. `ruin` sat
+  SECOND, so the C++ seeded a place the reference never seeds and consumed
+  draws from the `places` stream before town, wreck and oreseam — every place
+  after it landed elsewhere and the two builds disagreed about the map from
+  day one. One `.filter(k => k.seeded !== false)`.
+  **Cause 2 — a stale hardcoded list in the port's harness.** `run-parity.sh`
+  asked for checkpoints `132/660/852/874/875/1320`; `runs/long.json` had been
+  re-recorded and grew from 1320 actions to 1478, moving them to
+  `147/739/855/883/884/1478`. Six indices the vectors no longer carried: the
+  expected side emitted nothing for them, the port printed its state at those
+  wrong offsets, and the diff compared sixteen lines against twenty-two. It
+  read as six deep divergences and was an artifact of asking the wrong
+  questions. The harness reads the indices out of the vectors now — the same
+  "unowned copy of a generated fact" defect as `foes.json`, in the same day.
+  **Cause 3 — short commons was genuinely unported.** The `run` facet was
+  exactly 13 bytes light: `"leanDays":0,`. Ported properly rather than
+  papered over — `RationShare`/`HalfRationHeart`/`HalfRationToll` generated,
+  a three-state `Rations` on the party (absent, "full" and "half" are three
+  different things to a canonical writer), the day's morale-and-toll block,
+  and `SET_RATIONS` as a colony verb. It also collapsed the port's TWO copies
+  of the mouths formula into one, which is the lesson `src/sim/upkeep.ts`
+  already had written on it.
+  **Cause 4 — weather was genuinely unported.** `reveal()` adds
+  `weatherOn(seed, day).sight`, so the port's sight radius was wrong from the
+  first day a gale or a sea fog turned up: four tiles stayed `"visible"` that
+  should have read `"seen"`, twelve bytes of the world facet. The table is
+  generated and `WeatherOn` is a pure function of seed and day, matching
+  `rng.weighted` subtraction order exactly. Its `firewood` is applied to the
+  night's burn too.
+  **Plus the `children` list**, fourteen bytes of steading from the day the
+  posts go in.
+  **Where it stands, measured rather than claimed:**
+
+  | | before | after |
+  | --- | --- | --- |
+  | first divergence | @0, day 1 | @739, **day 273** |
+  | checkpoints matching | 0 of 14 | **9 of 14** |
+  | facets clean to day 81 | none | **all six** |
+
+  **What is still out, and it says so itself.** The port reports
+  `unported=2` at the point it diverges — `passDay: a cold night with teeth
+  in it` and `coldNight: a fireless night in the dark half of the year`. That
+  is the next rung, and it is declared rather than faked. BIRTHS are the other
+  one: `birthBlocker` gates on `houseAtPeace` and the Thing is not ported, so
+  the children list ships empty, which is the honest state of these runs — the
+  vectors and the port agree on every facet to day 81 with an empty array.
+
 - **2026-08-20 — The port was building against half a roster, and now nothing
   owns nothing** — the known-and-deferred `foes.json` drift, closed. An
   artifact comparison, which continues to be the category that survives

@@ -256,6 +256,30 @@ namespace Tables
 	constexpr int32_t WinterDepthMax = 6;
 	constexpr int32_t WinterBiteMax = 4;
 
+	/**
+	 * The weather, IN DECLARATION ORDER — weighted() subtracts in this order.
+	 *
+	 * Weights are per season and an absent season means never, so the pool is
+	 * filtered to the ones with a weight above nought before the pick, keeping
+	 * this order. Reorder the rows and every seed gets a different sky.
+	 */
+	struct FWeatherRow
+	{
+		std::string Id, Label;
+		int32_t Travel;
+		bool bShutsTheSea;
+		int32_t Firewood, Sight;
+		/** Per season, in SeasonOrder. Nought means it never happens then. */
+		std::vector<double> Weight;
+	};
+	const std::vector<FWeatherRow> Weathers = {
+		{ "fair", "Fair", 0, false, 0, 0, { 30, 22, 20, 24 } },
+		{ "gale", "A gale", 0, true, 1, -1, { 2, 6, 6, 4 } },
+		{ "frost", "Hard frost", 0, false, 2, 0, { 0, 3, 8, 2 } },
+		{ "thaw", "Thaw", 1, false, -1, 0, { 0, 0, 3, 6 } },
+		{ "seafog", "Sea fog", 0, false, 0, -1, { 4, 5, 2, 5 } },
+	};
+
 	/** How hard the country is. Every knob the balance harness reads. */
 	struct FHardshipRow
 	{
@@ -281,7 +305,6 @@ namespace Tables
 	struct FPlaceKindRow { std::string Id; std::vector<std::string> Ground; int32_t MinFromLanding; };
 	const std::vector<FPlaceKindRow> PlaceKinds = {
 		{ "monastery", { "shore" }, 6 },
-		{ "ruin", { "meadow", "shore", "valley", "hills" }, 1 },
 		{ "town", { "shore", "valley", "meadow" }, 11 },
 		{ "wreck", { "shore" }, 3 },
 		{ "oreseam", { "bog", "hills", "mountains" }, 4 },
@@ -302,6 +325,17 @@ namespace Tables
 	constexpr double HearthShare = 0.55;
 	/** The band the firewood figures were tuned against. Six off the knarr. */
 	constexpr int32_t BandBase = 6;
+
+	/**
+	 * Short commons — the winter lever, ported 2026-08-20.
+	 *
+	 * The band can choose to eat less. RationShare multiplies the mouths
+	 * formula, HalfRationHeart is taken off morale every day it is kept, and
+	 * the weakest is wounded every HalfRationToll lean days.
+	 */
+	constexpr double RationShare = 0.5;
+	constexpr int32_t HalfRationHeart = 2;
+	constexpr int32_t HalfRationToll = 10;
 	/** How fast a mood moves toward where the day is pushing it. */
 	constexpr double MoodDrift = 0.28;
 	/** What each body past the roof's room takes off everyone's mood. */

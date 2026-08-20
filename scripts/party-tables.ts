@@ -24,7 +24,27 @@ import {
 } from '../src/data/clans';
 import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
 import type { Terrain } from '../src/state/types';
+import { WEATHER } from '../src/data/weather';
+import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../src/data/rations';
 import { PLACE_KINDS, PLACE_MAX_FROM_LANDING } from '../src/data/places';
+
+/**
+ * The kinds `seedPlaces` ACTUALLY walks, which is not all of them.
+ *
+ * `src/sim/places.ts` skips any kind marked `seeded: false`, and the header
+ * below documents its table as "IN SEEDING ORDER — seedPlaces walks this
+ * list". Emitting the unseeded ones broke that promise, and the port believed
+ * it: `ruin` shipped as the SECOND row, so the C++ seeded a ruin the reference
+ * never seeds AND consumed draws from the `places` stream before town, wreck
+ * and oreseam — every place after it landed somewhere else, and the two builds
+ * disagreed about the map from day one.
+ *
+ * It went unnoticed for five days because the port was verifying against
+ * vectors as stale as its own code. The contract sync of 2026-08-19 handed it
+ * current ones and the parity workflow went red immediately, which is exactly
+ * what that sync was built to do.
+ */
+const SEEDED_KINDS = PLACE_KINDS.filter((k) => k.seeded !== false);
 import { LANDMARK_SIGHT } from '../src/sim/places';
 import { SOIL } from '../src/sim/site';
 import {
@@ -273,6 +293,26 @@ ${SEASON_ORDER.map((s) => {
 \tconstexpr int32_t WinterDepthMax = ${int(WINTER_DEPTH_MAX)};
 \tconstexpr int32_t WinterBiteMax = ${int(WINTER_BITE_MAX)};
 
+\t/**
+\t * The weather, IN DECLARATION ORDER — weighted() subtracts in this order.
+\t *
+\t * Weights are per season and an absent season means never, so the pool is
+\t * filtered to the ones with a weight above nought before the pick, keeping
+\t * this order. Reorder the rows and every seed gets a different sky.
+\t */
+\tstruct FWeatherRow
+\t{
+\t\tstd::string Id, Label;
+\t\tint32_t Travel;
+\t\tbool bShutsTheSea;
+\t\tint32_t Firewood, Sight;
+\t\t/** Per season, in SeasonOrder. Nought means it never happens then. */
+\t\tstd::vector<double> Weight;
+\t};
+\tconst std::vector<FWeatherRow> Weathers = {
+${WEATHER.map((w) => `\t\t{ ${quote(w.id)}, ${quote(w.label)}, ${w.travel}, ${w.shutsTheSea ? 'true' : 'false'}, ${w.firewood}, ${w.sight}, { ${SEASON_ORDER.map((s) => num(w.weight[s] ?? 0)).join(', ')} } },`).join('\n')}
+\t};
+
 \t/** How hard the country is. Every knob the balance harness reads. */
 \tstruct FHardshipRow
 \t{
@@ -295,7 +335,7 @@ ${HARDSHIPS.map((h) => `\t\t{ ${quote(h.id)}, ${num(h.stir)}, ${num(h.raid)}, ${
 \t/** Fixed places, IN SEEDING ORDER — seedPlaces walks this list. */
 \tstruct FPlaceKindRow { std::string Id; std::vector<std::string> Ground; int32_t MinFromLanding; };
 \tconst std::vector<FPlaceKindRow> PlaceKinds = {
-${PLACE_KINDS.map((k) => `\t\t{ ${quote(k.id)}, { ${k.ground.map(quote).join(', ')} }, ${k.minFromLanding} },`).join('\n')}
+${SEEDED_KINDS.map((k) => `\t\t{ ${quote(k.id)}, { ${k.ground.map(quote).join(', ')} }, ${k.minFromLanding} },`).join('\n')}
 \t};
 \tconstexpr int32_t PlaceMaxFromLanding = ${PLACE_MAX_FROM_LANDING};
 
@@ -313,6 +353,17 @@ ${PLACE_KINDS.map((k) => `\t\t{ ${quote(k.id)}, { ${k.ground.map(quote).join(', 
 \tconstexpr double HearthShare = ${num(HEARTH_SHARE)};
 \t/** The band the firewood figures were tuned against. Six off the knarr. */
 \tconstexpr int32_t BandBase = ${int(BAND_BASE)};
+
+\t/**
+\t * Short commons — the winter lever, ported 2026-08-20.
+\t *
+\t * The band can choose to eat less. RationShare multiplies the mouths
+\t * formula, HalfRationHeart is taken off morale every day it is kept, and
+\t * the weakest is wounded every HalfRationToll lean days.
+\t */
+\tconstexpr double RationShare = ${num(RATION_SHARE)};
+\tconstexpr int32_t HalfRationHeart = ${int(HALF_RATION_HEART)};
+\tconstexpr int32_t HalfRationToll = ${int(HALF_RATION_TOLL)};
 \t/** How fast a mood moves toward where the day is pushing it. */
 \tconstexpr double MoodDrift = ${num(MOOD_DRIFT)};
 \t/** What each body past the roof's room takes off everyone's mood. */
