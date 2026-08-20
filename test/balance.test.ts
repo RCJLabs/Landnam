@@ -85,7 +85,7 @@ import { wintersStood } from '../src/sim/calendar';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
-import { HARDSHIPS, type HardshipId } from '../src/data/hardship';
+import { DEFAULT_HARDSHIP, HARDSHIPS, type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
 import { EVENTS } from '../src/data/events';
 import { LORE } from '../src/data/lore';
@@ -2430,6 +2430,16 @@ describe('the long game', () => {
      */
     const firstWinters: Record<string, number> = {};
     const allJarlsBy: Record<string, number> = {};
+    /**
+     * How many sagas reached a SECOND winter, per country — the bar under
+     * `DEFAULT_HARDSHIP` below.
+     *
+     * Second winters rather than jarldoms because a jarldom happens about
+     * once in sixty on the hard country and cannot be barred on at any N
+     * this file can afford, while a second winter is common enough on every
+     * setting to carry a reading at twenty seeds.
+     */
+    const secondWintersBy: Record<string, number> = {};
 
     for (const TERMS of ['even', 'fair', 'hard'] as HardshipId[]) {
     reachedJarl = 0; ruledYears = 0; alive = 0; days = 0;
@@ -2532,6 +2542,7 @@ describe('the long game', () => {
     allEarlyFoes += earlyFoes; allEarlyFights += earlyFights;
     allLateFoes += lateFoes; allLateFights += lateFights;
     allJarlsBy[TERMS] = reachedJarl;
+    secondWintersBy[TERMS] = sawSecondWinter;
     allFriends += everHadFriend; allCouldCall += everCouldCall;
     allHalls += everHadHall; allSecondWinters += sawSecondWinter; allJarls += reachedJarl;
     }
@@ -2605,6 +2616,38 @@ describe('the long game', () => {
           + `the long game measured ${Math.round(ruled * 100)}%`,
       ).toBeLessThan(0.1);
     }
+
+    /**
+     * AND THE COUNTRY A PLAYER GETS WITHOUT CHOOSING IS ONE WHERE THE MIDDLE
+     * GAME HAPPENS.
+     *
+     * `DEFAULT_HARDSHIP` has been a judgement call sitting in a comment since
+     * it was split from `BALANCED_HARDSHIP`, and the argument written beside
+     * it — "As It Lies at 28% spring is not a game most people get to see the
+     * middle of" — had its premise removed on 2026-08-20, when the winter
+     * lever took As It Lies to 45%. A rationale whose figures have moved is
+     * exactly the thing this file exists to catch, so the claim is a bar now
+     * rather than a paragraph.
+     *
+     * SECOND WINTERS, because that is where the middle of this game starts:
+     * the hall, the coast, the Thing and the jarldom all sit past the first
+     * thaw, and a country where most bands never get there is a country whose
+     * back half a default player never sees.
+     *
+     * A QUARTER, and the threshold is picked off the spread rather than felt.
+     * Measured at sixty seeds: fair 27/60, even 9/60, hard 2/60 — so a
+     * quarter sits at roughly half of what the gentle country delivers and
+     * nearly double what the balanced one does, with room on both sides for
+     * the twenty-seed sample this normally runs at. Watched fail by pointing
+     * DEFAULT_HARDSHIP at 'even', which reads 15% and goes red.
+     */
+    const middle = (secondWintersBy[DEFAULT_HARDSHIP] ?? 0) / LONG_SEEDS;
+    expect(
+      middle,
+      `the default country is ${DEFAULT_HARDSHIP}, where only `
+        + `${Math.round(middle * 100)}% of sagas reach a second winter — a player who `
+        + `chooses nothing is being handed a game whose middle they will not see`,
+    ).toBeGreaterThanOrEqual(0.25);
 
     /**
      * EVERY NEED ON THE CHECKLIST CAN REFUSE SOMEBODY.

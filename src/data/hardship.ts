@@ -78,8 +78,8 @@ export const HARDSHIPS: HardshipDef[] = [
     id: 'fair',
     name: 'A Fair Country',
     blurb:
-      'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, and a fuller hold when the keel touches sand. Where a saga has room to become one.',
-    odds: { spring: 0.73, ruled: 0.35 },
+      'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
+    odds: { spring: 0.73, ruled: 0.28 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.45, ruled: 0.05 },
+    odds: { spring: 0.45, ruled: 0.08 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -102,8 +102,8 @@ export const HARDSHIPS: HardshipDef[] = [
     id: 'hard',
     name: 'A Hard Country',
     blurb:
-      'Lean ground and a long winter, and men who have heard of you sooner than you would like. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.1, ruled: 0.05 },
+      'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
+    odds: { spring: 0.1, ruled: 0.03 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -116,16 +116,33 @@ export const HARDSHIPS: HardshipDef[] = [
  * The setting a player who chooses nothing gets, and it is deliberately not
  * the one named for the real coast.
  *
- * "As It Lies" is exactly what its blurb says — the terms every number here
- * was balanced against — and the long-game harness finally measured what
- * those terms produce over five hundred days: a hundred and eighteen days a
- * saga, eight mead halls in twenty, and one band in twenty ever ruling. That
- * is a defensible game and it is the one the tuning is FOR, but it is not a
- * game most people get to see the middle of. On A Fair Country the same
- * twenty sagas ran two hundred and twenty-three days, raised eleven mead
- * halls and put seven jarls on the coast. So the default is the country
- * where the thing plays out, and the hard truth is one menu tap away rather
- * than the price of admission.
+ * THE ARGUMENT FOR IT WAS RE-MADE ON 2026-08-20, because the old one had
+ * quietly stopped being true. It read "As It Lies gives 28% a first spring,
+ * which is not a game most people get to see the middle of" — and the winter
+ * lever took As It Lies to 45%. A default resting on a figure that has moved
+ * seventeen points is a judgement nobody has actually checked.
+ *
+ * So it was checked, at sixty sagas a country rather than the twenty the
+ * long game normally runs, and the argument SURVIVED — it simply lives
+ * somewhere else now. The lever fixed the first winter and did almost
+ * nothing for the second:
+ *
+ *              avg saga   2nd winter   mead hall   friend   jarl
+ *   fair       220 days      27/60       36/60      33/60   17/60
+ *   even       119 days       9/60       17/60      12/60    5/60
+ *   hard        74 days       2/60        3/60       5/60    2/60
+ *
+ * On the balanced terms, one band in seven reaches a second winter and one
+ * in five ever makes a friend on that coast — so the hall, the Thing and the
+ * jarldom are content a default player would almost never see. On A Fair
+ * Country it is nearly half and better than half. That is the whole case:
+ * the default is the country where the back half of this game happens, and
+ * the hard truth is one menu tap away rather than the price of admission.
+ *
+ * And it is a BAR now rather than this paragraph — see "the country a player
+ * gets without choosing" in test/balance.test.ts. The next time these
+ * figures move, something fails instead of a comment going quietly stale,
+ * which is what happened here.
  */
 export const DEFAULT_HARDSHIP: HardshipId = 'fair';
 
@@ -160,11 +177,13 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * belt in hand the harder countries fail in the same place, and it is the
  * thaw rather than the frost that separates them.
  *
- * The jarldom figures come from the long game, which runs twenty seeds of
- * the same worlds out to day 500 — and a count that small is a "does the
- * endgame happen", never a number that moved. It is why As It Lies and A
- * Hard Country both read one in twenty: twenty seeds cannot tell them apart
- * at the far end, and claiming a difference there would be inventing one.
+ * The jarldom figures come from the long game, run at SIXTY sagas a country
+ * rather than the twenty it defaults to — `LANDNAM_LONG_SEEDS=60`, about
+ * four minutes. They were set off the twenty-seed sample first, on the
+ * morning of the same day, and that was a mistake worth naming: a jarldom
+ * happens rarely enough that twenty seeds put A Fair Country at seven in
+ * twenty when sixty say seventeen in sixty, and the menu had no business
+ * quoting the thinner one when the thicker was four minutes away.
  */
 export const MEASURED_ON = 'sixty landings, the same sixty for each';
 

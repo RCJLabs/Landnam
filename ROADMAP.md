@@ -1876,6 +1876,57 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-20 — The default difficulty was re-argued, kept, and turned into
+  a bar** — and two smaller things were found on the way that were worth more
+  than the question.
+  **The question.** `DEFAULT_HARDSHIP` is A Fair Country, and the reason
+  written beside it was "As It Lies gives 28% a first spring, which is not a
+  game most people get to see the middle of". The winter lever took As It
+  Lies to 45% that same morning, so the default was resting on a figure that
+  had moved seventeen points and nobody had re-checked.
+  **Measured at sixty sagas a country** (`LANDNAM_LONG_SEEDS=60`, four
+  minutes) rather than the twenty the long game defaults to, **and the
+  argument survived — but it lives somewhere else now.** The lever fixed the
+  first winter and did almost nothing for the second:
+
+  | | avg saga | 2nd winter | mead hall | friend | jarl |
+  | --- | --- | --- | --- | --- | --- |
+  | A Fair Country | 220 days | 27/60 | 36/60 | 33/60 | 17/60 |
+  | As It Lies | 119 days | **9/60** | 17/60 | 12/60 | 5/60 |
+  | A Hard Country | 74 days | 2/60 | 3/60 | 5/60 | 2/60 |
+
+  On the balanced terms one band in seven reaches a second winter and one in
+  five ever makes a friend on that coast — so the hall, the Thing and the
+  jarldom are content a default player would essentially never see. The
+  default stays where it is, for a reason that is now about the back half of
+  the game rather than the first winter.
+  **And it is a bar rather than a paragraph.** "The country a player gets
+  without choosing" asserts that `DEFAULT_HARDSHIP` reaches a second winter
+  in at least a quarter of sagas. A quarter is picked off the spread — half
+  of what fair delivers, nearly double what even does — with room on both
+  sides for the twenty-seed sample it normally runs at. **Watched fail** by
+  pointing the default at `even`: *"the default country is even, where only
+  10% of sagas reach a second winter."* The next time these figures move,
+  something goes red instead of a comment going quietly stale, which is
+  precisely what had happened here.
+  **Found on the way #1 — the jarldom odds shipped that morning were read off
+  too thin a sample.** They came from twenty seeds; sixty says A Fair Country
+  is 17/60 rather than 7/20. Restated to 28% / 8% / 3%, and the menu now
+  reads "Six in twenty ruled" for fair and tells As It Lies and A Hard
+  Country apart, which twenty seeds could not. The old ±10 bar passed the
+  thin numbers, so nothing would have caught this — the lesson is that a bar
+  wide enough to survive a small sample is not permission to quote one.
+  **Found on the way #2 — the blurbs never mentioned that the country reaches
+  into the fighting.** `steel` shipped 2026-08-13 for one stated reason: a
+  player who reaches for the gentlest setting because the fighting is going
+  badly should get help with the fighting. The blurbs list the other knobs
+  almost exhaustively — strangers on the road, the bite of the winter, the
+  hold off the knarr — and silently omitted the only one that answers "will
+  this make fights easier?". A Fair Country now says *"your blows fall a
+  little truer than theirs"* and A Hard Country *"every one of them a shade
+  harder to put down"*. The odds were made honest a day earlier; this is the
+  mechanism being made honest too.
+
 - **2026-08-20 — The bot pulls the lever, and the menu says the odds of the
   game people actually play** — a one-line change to `SETTLER` and a
   restatement of every number on the difficulty screen.
