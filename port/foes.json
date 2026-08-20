@@ -1,0 +1,128 @@
+[
+ {
+  "Name": "scout",
+  "Id": "scout",
+  "Kind": "Scout",
+  "Budget": 6,
+  "Favours": [
+   "wits",
+   "wits",
+   "spirit"
+  ],
+  "Toughness": -2,
+  "Temperament": "cautious",
+  "Throws": 2,
+  "Weight": 10,
+  "Renown": 0
+ },
+ {
+  "Name": "raider",
+  "Id": "raider",
+  "Kind": "Raider",
+  "Budget": 8,
+  "Favours": [
+   "might",
+   "might",
+   "spirit"
+  ],
+  "Toughness": 0,
+  "Temperament": "aggressive",
+  "Throws": 1,
+  "Weight": 12,
+  "Renown": 1
+ },
+ {
+  "Name": "skirmisher",
+  "Id": "skirmisher",
+  "Kind": "Skirmisher",
+  "Budget": 8,
+  "Favours": [
+   "wits",
+   "might",
+   "spirit"
+  ],
+  "Toughness": -1,
+  "Temperament": "flanker",
+  "Throws": 1,
+  "Weight": 9,
+  "Renown": 0
+ },
+ {
+  "Name": "huscarl",
+  "Id": "huscarl",
+  "Kind": "Huscarl",
+  "Budget": 11,
+  "Favours": [
+   "might",
+   "spirit",
+   "craft"
+  ],
+  "Toughness": 3,
+  "Temperament": "aggressive",
+  "Throws": 0,
+  "Weight": 5,
+  "Renown": 3
+ },
+ {
+  "Name": "spearman",
+  "Id": "spearman",
+  "Kind": "Spearman",
+  "Budget": 7,
+  "Favours": [
+   "wits",
+   "might",
+   "wits"
+  ],
+  "Toughness": -1,
+  "Temperament": "cautious",
+  "Throws": 3,
+  "Weight": 8,
+  "Renown": 0
+ },
+ {
+  "Name": "bondi",
+  "Id": "bondi",
+  "Kind": "Bondi",
+  "Budget": 4,
+  "Favours": [
+   "craft",
+   "might"
+  ],
+  "Toughness": -2,
+  "Temperament": "aggressive",
+  "Throws": 0,
+  "Weight": 14,
+  "Renown": -2
+ },
+ {
+  "Name": "wolfcoat",
+  "Id": "wolfcoat",
+  "Kind": "Wolf-coat",
+  "Budget": 10,
+  "Favours": [
+   "might",
+   "might",
+   "spirit"
+  ],
+  "Toughness": 2,
+  "Temperament": "aggressive",
+  "Throws": 0,
+  "Weight": 3,
+  "Renown": 2
+ },
+ {
+  "Name": "outlaw",
+  "Id": "outlaw",
+  "Kind": "Outlaw",
+  "Budget": 7,
+  "Favours": [
+   "wits",
+   "spirit"
+  ],
+  "Toughness": -1,
+  "Temperament": "flanker",
+  "Throws": 2,
+  "Weight": 7,
+  "Renown": 0
+ }
+]

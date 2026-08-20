@@ -6,6 +6,9 @@
     "port/LandnamPartyTables.gen.h": "ef6fc01337a7ad0f",
     "port/LandnamEventTables.gen.h": "b69db440a54c4f19",
     "port/LandnamBattleTables.gen.h": "892f13f230f9d58a",
+    "port/foes.json": "439a3f32508b3949",
+    "port/terrain.json": "7a04a0b5d57da3ed",
+    "port/foe-names.json": "1433effc53cf7753",
     "runs/example.json": "8e20d5a88942a743",
     "runs/long.json": "fbc88aa2a4796f31"
   }

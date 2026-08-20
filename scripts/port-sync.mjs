@@ -27,11 +27,18 @@ const UE = process.env['LANDNAM_UE'] ?? join(process.cwd(), '..', 'landnam-ue');
 /**
  * Every file this repo OWNS and the port consumes, and where it lands.
  *
- * `Content/Data/foes.json` and its neighbours are deliberately absent: nothing
- * here generates them, they are maintained on the port side, and listing them
- * would be claiming a sync this script does not perform. They have drifted too
- * — see ROADMAP — but that is a different job and pretending otherwise here
- * would be the worse bug.
+ * `Content/Data/foes.json` and its neighbours USED to be deliberately absent,
+ * on the honest grounds that nothing here generated them and listing them
+ * would have claimed a sync this script did not perform. That note also said
+ * they had drifted and that fixing it was a different job. It was done on
+ * 2026-08-20: `scripts/port-data.ts` generates all three from src/data, and
+ * they are contract files like any other now.
+ *
+ * The drift that comment was pointing at was real. `foes.json` held FOUR of
+ * this repo's eight archetypes and its row struct had no `Renown` column, so
+ * the editor and Blueprint side of the port had been building against half a
+ * roster. The C++ sim never was — it reads the generated battle tables, which
+ * are and were correct — which is precisely why no parity run could see it.
  */
 export const CONTRACT = [
   { from: 'port/parity.json', to: 'Content/Data/parity.json' },
@@ -39,6 +46,9 @@ export const CONTRACT = [
   { from: 'port/LandnamPartyTables.gen.h', to: 'Source/LandnamUE/Sim/LandnamPartyTables.gen.h' },
   { from: 'port/LandnamEventTables.gen.h', to: 'Source/LandnamUE/Sim/LandnamEventTables.gen.h' },
   { from: 'port/LandnamBattleTables.gen.h', to: 'Source/LandnamUE/Sim/LandnamBattleTables.gen.h' },
+  { from: 'port/foes.json', to: 'Content/Data/foes.json' },
+  { from: 'port/terrain.json', to: 'Content/Data/terrain.json' },
+  { from: 'port/foe-names.json', to: 'Content/Data/foe-names.json' },
   { from: 'runs/example.json', to: 'Content/Data/runs/example.json' },
   { from: 'runs/long.json', to: 'Content/Data/runs/long.json' },
 ];

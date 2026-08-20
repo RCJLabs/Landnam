@@ -53,8 +53,16 @@ describe('the port contract', () => {
       'port/LandnamBattleTables.gen.h',
       'port/LandnamEventTables.gen.h',
       'port/LandnamPartyTables.gen.h',
+      // The three DataTable files, added 2026-08-20. They were outside the
+      // contract for the honest reason that nothing generated them — and
+      // `foes.json` had drifted to four of eight archetypes in the meantime,
+      // which is what an unowned file does. `scripts/port-data.ts` owns them
+      // now. See test/portData.test.ts.
+      'port/foe-names.json',
+      'port/foes.json',
       'port/golden.json',
       'port/parity.json',
+      'port/terrain.json',
       'runs/example.json',
       'runs/long.json',
     ]);

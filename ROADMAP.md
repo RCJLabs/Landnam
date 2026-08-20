@@ -1876,6 +1876,42 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-20 — The port was building against half a roster, and now nothing
+  owns nothing** — the known-and-deferred `foes.json` drift, closed. An
+  artifact comparison, which continues to be the category that survives
+  measurement.
+  **What was wrong.** `Content/Data/foes.json` held FOUR of this repo's eight
+  archetypes — `spearman`, `bondi`, `wolfcoat` and `outlaw` simply absent —
+  and `FFoeArchetypeRow` had no `Renown` column at all, so the knob that
+  decides which foes a famous band meets could not have been imported even if
+  the rows had been there.
+  **Why no parity run could ever have caught it.** The C++ sim reads
+  `Tables::FoeArchetypes` out of `port/LandnamBattleTables.gen.h` — generated,
+  under contract, correct with all eight throughout. What drifted was the
+  editor and Blueprint side. **The half a parity harness cannot see is the
+  half that drifted**, which is the general lesson and worth more than the fix.
+  **The cause was written on the file next door.** `foe-names.json` credits a
+  generator — `ue-port/tools/export-data.mjs` — that exists in neither repo.
+  Generated once, generator lost, hand-maintained ever after. Of the three
+  files it produced, `terrain.json` and `foe-names.json` were still correct
+  and `foes.json` was not: unowned files are right by luck, not by property.
+  **So all three are generated, not just the broken one.**
+  `scripts/port-data.ts` emits them from `src/data`, `npm run port:sync`
+  carries them (10 contract files now, was 7), and `test/contract.test.ts`
+  goes red when they move. The port-sync comment that honestly said "nothing
+  here generates them" is no longer true, so it no longer says it.
+  **The proof the generator is right rather than plausible:** it reproduces
+  `terrain.json` BYTE FOR BYTE against what the port already held — same key
+  order, same one-space indent, same `Name` row key, same `-1`-for-impassable
+  convention — and the four pre-existing foe rows come out with nothing
+  changed and only `Renown` added. Watched fail three ways: a single altered
+  terrain value, a dropped archetype, and a stripped renown column.
+  **What is NOT done, and cannot be from here.** `foes.uasset` and
+  `terrain.uasset` are real DataTable binaries in LFS; the JSON beside them is
+  only the source they were imported from. **Until somebody opens the project
+  and re-imports, the DataTable still holds four foes and no renown column.**
+  Recorded in `port/sim.md` rather than quietly left as a green tick.
+
 - **2026-08-20 — The mark says what to do about it now** — the follow-through
   on the winter-work measurement, and the first thing in a while whose premise
   was measured before it was built rather than after.

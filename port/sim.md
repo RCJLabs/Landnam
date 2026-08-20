@@ -16,6 +16,29 @@ a game nobody is playing.
 | `port/golden.json` | this repo | `landnam-ue` → `Content/Data/golden.json` |
 | `port/parity.json` | this repo | `landnam-ue` → `Content/Data/parity.json` |
 | `runs/example.json`, `runs/long.json` | this repo | copied alongside |
+| `port/foes.json`, `port/terrain.json`, `port/foe-names.json` | this repo | `landnam-ue` → `Content/Data/` |
+
+### The DataTable files, and the one step this repo cannot take
+
+The last row is the editor and Blueprint side rather than the sim, and it was
+outside the contract until 2026-08-20 on the honest grounds that nothing here
+generated it. In the meantime `foes.json` drifted to FOUR of this repo's eight
+archetypes — `spearman`, `bondi`, `wolfcoat` and `outlaw` were missing — and
+`FFoeArchetypeRow` had no `Renown` column, so the number that decides which
+foes a famous band meets could not have been imported even if the rows had
+been there. No parity run could see any of it: the C++ sim reads
+`Tables::FoeArchetypes` out of the generated battle tables, which were correct
+throughout. The half a parity harness cannot see is the half that drifted.
+
+`scripts/port-data.ts` generates all three now and `npm run port:sync` carries
+them over, so `test/contract.test.ts` goes red when they move.
+
+**`Content/Data/foes.uasset` and `terrain.uasset` still need a re-import in
+the editor.** They are real DataTable binaries (LFS), and the JSON beside them
+is only the source they were imported FROM — writing the JSON does not touch
+the asset. Until somebody opens the project and re-imports, the DataTable
+still holds four foes and no renown column. That step cannot be taken from the
+TypeScript repo and is not pretended to be done here.
 
 `test/goldenport.test.ts` and `test/parity.test.ts` recompute every stored
 value from the live source and fail if it moved. **The stored inputs are the
