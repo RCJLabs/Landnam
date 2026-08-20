@@ -54,7 +54,7 @@ import { apply, type Action } from '../src/sim/actions';
 import { moveOptions, canGather, canFish, atSea, isCoastalWater } from '../src/sim/travel';
 import { canFound, siteReport } from '../src/sim/site';
 import { holed } from '../src/sim/ship';
-import { assign, queueBuild } from '../src/sim/colony';
+import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
 import { BAND_BASE, foodPerDay, firewoodPerNight, passDay } from '../src/sim/upkeep';
 import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
 import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
@@ -84,7 +84,7 @@ import { BARTER_FOOD, CLAN_KINDS } from '../src/data/clans';
 import { wintersStood } from '../src/sim/calendar';
 import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
-import type { JobId } from '../src/data/jobs';
+import { jobById, type JobId } from '../src/data/jobs';
 import { DEFAULT_HARDSHIP, HARDSHIPS, type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
 import { EVENTS } from '../src/data/events';
@@ -195,6 +195,63 @@ interface Policy {
    * worth the save version it costs.
    */
   tightensBelt: boolean;
+  /**
+   * Whether the band ever moves a pair of hands off a job the season has
+   * emptied.
+   *
+   * AUDIT ITEM 7, and it started as an instrument fault rather than a design
+   * question. `ASSIGN` is a verb the player holds every day of the saga;
+   * until this knob existed the harness issued it ONCE, on settling day, and
+   * never again — the `jobsSet` one-shot below. So "is there anything to do
+   * in winter" could not be answered from any measurement this repo has
+   * ever taken, because the bot doing the measuring never did any.
+   *
+   * That matters most in the season it was never checked in. Winter forage
+   * is 0.15, so `seasonFactor` pays a farmer 0.15 of a day's work and a
+   * fisher 0.575 — and the settler crew is two farmers. Twenty-four days of
+   * two people standing in a frozen field, with the water right there.
+   */
+  recrews: boolean;
+  /**
+   * Whether the band moves hands onto whatever the winter mark says it is
+   * short of, day by day.
+   *
+   * A knob as of audit item 7, and it should have been one years ago. This
+   * is the loop the bot has run since the mark existed — everyone onto wood
+   * or onto food according to the forecast gap — and because it was
+   * unconditional, NOTHING in this file has ever measured what it is worth.
+   * It is the most consequential thing the harness does between settling and
+   * the frost and it sat below the bars, not on them.
+   */
+  crewsToNeed: boolean;
+}
+
+/**
+ * Move every food-hand onto whatever food job this site and this season
+ * actually pay for.
+ *
+ * DELIBERATELY the smallest move a player could make from the panel they
+ * already have, rather than an optimiser. It does not rebalance food against
+ * firewood, does not touch the builder or the watch, and does not know
+ * anything the steading screen does not show — it is one person noticing
+ * that the fields are frozen and the fish are not. If a change this small
+ * moves survival, the game has a lever nobody is told about; if it moves
+ * nothing, winter genuinely has no work in it and item 7 stands.
+ */
+function recrew(state: GameState): number {
+  let moved = 0;
+  for (const p of state.party.people) {
+    if (!p.alive || !p.job) continue;
+    const current = jobById(p.job);
+    if (!current || current.produces !== 'food') continue;
+    let best = current;
+    for (const j of availableJobs(state)) {
+      if (j.produces !== 'food') continue;
+      if (output(state, p, j) > output(state, p, best)) best = j;
+    }
+    if (best.id !== p.job && assign(state, p.id, best.id)) moved += 1;
+  }
+  return moved;
 }
 
 /**
@@ -236,6 +293,8 @@ const SETTLER: Policy = {
   // (Fair 73%, Even 45%) rather than a floor for a band that never reads its
   // own winter mark, and `src/data/hardship.ts` was restated to match.
   tightensBelt: true,
+  recrews: false,
+  crewsToNeed: true,
 };
 
 /**
@@ -271,6 +330,8 @@ const RAIDER: Policy = {
   errandBuffer: 2,
   desperate: false,
   tightensBelt: false,
+  recrews: false,
+  crewsToNeed: true,
 };
 
 /**
@@ -295,6 +356,8 @@ const TURTLE: Policy = {
   errandBuffer: 0,
   desperate: false,
   tightensBelt: false,
+  recrews: false,
+  crewsToNeed: true,
 };
 
 /**
@@ -323,6 +386,14 @@ const POLICIES = [SETTLER, RAIDER, TURTLE];
  * every figure in this file.
  */
 let policy: Policy = SETTLER;
+/**
+ * How many hands the bot has moved between jobs since a test last zeroed it.
+ *
+ * The instrument bar for audit item 7: a re-crewing arm that never actually
+ * re-crewed is the same run twice, and this file has shipped that mistake
+ * before.
+ */
+let recrewed = 0;
 // NOTE: 'farmplots' has no hyphen. The first version of this list wrote
 // 'farm-plots', which matches no building, so that entry silently never
 // queued and the measured bot had been building three things while this file
@@ -1050,6 +1121,8 @@ function run(
 ): GameState {
   let state = structuredClone(newGame(seed, hardship));
   let jobsSet = false;
+  /** Which season the current crew was picked for. */
+  let crewedFor = '';
 
   for (let i = 0; i < 6000 && !state.end && state.day <= maxDay; i += 1) {
     if (state.settlement && !jobsSet) {
@@ -1057,6 +1130,15 @@ function run(
         .filter((p) => p.alive)
         .forEach((p, ix) => assign(state, p.id, policy.crew[ix % policy.crew.length]!));
       jobsSet = true;
+      crewedFor = seasonOf(state.day);
+    }
+    // And the season is allowed to change that opinion, which until audit
+    // item 7 it never was. Once per turn of the year, not per day: this is a
+    // player looking up when the weather changes, not an optimiser running
+    // every morning.
+    if (policy.recrews && state.settlement && jobsSet && seasonOf(state.day) !== crewedFor) {
+      crewedFor = seasonOf(state.day);
+      recrewed += recrew(state);
     }
     // Keep the queue fed. The old one-shot queued the whole list on settle
     // day and never came back — anything unaffordable that day was silently
@@ -1110,7 +1192,7 @@ function run(
       if ((state.party.rations ?? 'full') !== want) state.party.rations = want;
     }
 
-    if (state.settlement && markVisible(state)) {
+    if (policy.crewsToNeed && state.settlement && markVisible(state)) {
       const need = forecast(state);
       const shortWood = state.party.firewood < need.firewood;
       const shortFood = state.party.food < need.food;
@@ -4875,6 +4957,97 @@ describe('the first winter, from inside', () => {
       `short commons saved ${saved} and killed ${killed} — a lever that costs `
         + `about as many as it saves is a coin the player is asked to flip`,
     ).toBeGreaterThan(killed);
+  });
+
+  /**
+   * IS THERE WORK IN WINTER, AND IS IT WORTH ANYTHING?
+   *
+   * AUDIT ITEM 7, which was framed as "winter has one verb and it is short
+   * commons" and turned out to be wrong twice over before it turned up
+   * anything true.
+   *
+   * The first framing was that `ASSIGN` is a verb the harness issues once a
+   * saga, on settling day. It is not: the block in `run()` above moves every
+   * hand onto wood or onto food each day the winter mark says the band is
+   * short of one. The bot has been doing winter work all along.
+   *
+   * The second framing was that the season is the thing nobody accounts for
+   * — winter forage is 0.15, so a farmer works at 0.15 of a day against a
+   * fisher at 0.575, and nobody was reading that. Measured: a band that
+   * re-crews its food-hands on every turn of the year moves 236 hands over
+   * 120 sagas and changes the outcome on NOT ONE SEED. It is already crewed
+   * by need, daily, which is strictly better information than the calendar.
+   *
+   * So the question that was left is the one nobody had asked: what is the
+   * daily crewing worth? It has run unconditionally since the mark existed
+   * and never had a knob, so no bar in this file has ever touched the most
+   * consequential thing the bot does between settling and the frost. Three
+   * arms on the same seeds settle it.
+   */
+  it('says what winter work is worth', { timeout: 400_000 }, () => {
+    const SEEDS = 120;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    const sample = (p: Policy): { lived: boolean[]; moves: number } => {
+      policy = p;
+      recrewed = 0;
+      const lived: boolean[] = [];
+      for (let s = 0; s < SEEDS; s += 1) {
+        const final = run(`winter-inside-${s}`, SPRING_IN, undefined, 'even');
+        lived.push(!final.end && final.day >= SPRING_IN);
+      }
+      return { lived, moves: recrewed };
+    };
+
+    // The crew picked on settling day and never touched again — what the
+    // harness was assumed to be doing, and what it turns out never to have
+    // done.
+    const fixed = sample({ ...SETTLER, id: 'fixed-crew', crewsToNeed: false });
+    // What the bot has actually always done.
+    const need = sample(SETTLER);
+    // And the calendar on top of it.
+    const season = sample({ ...SETTLER, id: 'recrew', recrews: true });
+    policy = SETTLER;
+
+    const pair = (a: boolean[], b: boolean[]) => {
+      let saved = 0;
+      let killed = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        if (!a[s] && b[s]) saved += 1;
+        if (a[s] && !b[s]) killed += 1;
+      }
+      return { saved, killed };
+    };
+    const worth = pair(fixed.lived, need.lived);
+    const extra = pair(need.lived, season.lived);
+    const spring = (a: boolean[]) => a.filter(Boolean).length;
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `winter work, ${SEEDS} seeds on As It Lies:\n` +
+      `  crew set once, never touched — ${spring(fixed.lived)}/${SEEDS} saw spring\n` +
+      `  crewed to the mark, daily    — ${spring(need.lived)}/${SEEDS} saw spring ` +
+        `(saved ${worth.saved}, killed ${worth.killed})\n` +
+      `  and re-crewed by season too  — ${spring(season.lived)}/${SEEDS} saw spring ` +
+        `(saved ${extra.saved}, killed ${extra.killed} on top), ${season.moves} hands moved`,
+    );
+
+    // THE INSTRUMENT FIRST. A season arm that never moved anybody is the
+    // same run twice, and this file has shipped that mistake before.
+    expect(season.moves, 'nobody was ever moved between jobs — nothing was measured')
+      .toBeGreaterThan(0);
+    expect(need.moves, 'the control re-crewed by season too').toBe(0);
+
+    // AND THE FINDING: winter work is worth something, which is the answer
+    // item 7 asked for. The bar is on the daily crewing rather than on the
+    // calendar, because that is the lever measurement found — a band that
+    // picks a crew on settling day and stops thinking about it does worse
+    // than one that reads its own winter mark.
+    expect(
+      worth.saved,
+      `crewing to the winter mark saved ${worth.saved} and killed ${worth.killed} — `
+        + `if it stops paying, the mark has stopped being worth reading`,
+    ).toBeGreaterThan(worth.killed);
   });
 
   /**

@@ -1876,6 +1876,49 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-20 — Winter work: the premise was wrong twice, and the thing it
+  was wrong about turns out to be the biggest lever in the game** — audit
+  item 7, which asked for "winter work that isn't food and wood". Nothing was
+  built. What shipped is a knob, a measurement and the first bar that has
+  ever touched the most consequential thing the bot does.
+  **Wrong the first time: "`ASSIGN` is issued once a saga."** It is not.
+  `run()` sets a crew on settling day AND re-crews every day the winter mark
+  says the band is short of wood or food. The bot has been doing winter work
+  since the mark existed.
+  **Wrong the second time: "nobody accounts for the season."** Winter forage
+  is 0.15, so `seasonFactor` pays a farmer 0.15 of a day against a fisher at
+  0.575, and that looked like a lever lying in the open. Measured: a band
+  that re-crews its food-hands on every turn of the year moves **236 hands
+  over 120 sagas and changes the outcome on not one seed**. It is already
+  crewed by need, daily, which is strictly better information than a
+  calendar.
+  **What was actually left is the question nobody had asked.** The daily
+  crewing had run unconditionally since the mark existed, so it had never
+  been a knob, so no bar in this file had ever measured it. Three arms, same
+  120 seeds, As It Lies:
+
+  | | saw spring | |
+  | --- | --- | --- |
+  | crew set once, never touched | 21/120 | |
+  | crewed to the mark, daily | **48/120** | saved 30, killed 3 |
+  | and re-crewed by season too | 48/120 | saved 0, killed 0 on top |
+
+  **Reading the winter mark and moving hands to what it says is short more
+  than doubles survival** — bigger than short commons, which saved 14. It is
+  the largest single effect this project has measured, and until today it sat
+  below every bar in the file rather than on one.
+  **So item 7's premise is false in every direction.** There is winter work,
+  it is decisive, and the game already tells the player: the mark panel
+  carries Food and Wood as held-against-needed with the gap, which is exactly
+  the signal the bot reads. Nothing needed building.
+  **It has a bar now.** "Says what winter work is worth" asserts the daily
+  crewing saves more than it kills. **Watched fail** by making the crewing
+  answer every shortfall with the watch instead of the woodpile: spring falls
+  21 → 2 of 120 and it goes red with *"saved 0 and killed 19"*.
+  The knob stays in the harness (`crewsToNeed`, `recrews`), because the arm
+  that measures a lever has to be able to switch it off — that is the whole
+  reason this was invisible for so long.
+
 - **2026-08-20 — The default difficulty was re-argued, kept, and turned into
   a bar** — and two smaller things were found on the way that were worth more
   than the question.
