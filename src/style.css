@@ -923,6 +923,22 @@ h2.grim {
   color: var(--moss);
 }
 
+/*
+ * The counsel reads as an instruction, not as part of the measurement above
+ * it — its own line, and in the gold this game already reserves for the thing
+ * you are meant to act on, rather than the blood of the shortfall it sits
+ * under.
+ *
+ * NOT `--ink`, which was the first cut and is the page BACKGROUND: the line
+ * would have been invisible on every screen it appears on. This palette is
+ * dark ground and parchment text.
+ */
+.mark-counsel {
+  display: block;
+  margin-top: 4px;
+  color: var(--gold);
+}
+
 
 /* --- The chart --- */
 

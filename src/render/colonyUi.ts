@@ -27,6 +27,7 @@ import { CROWDING_BITE } from '../sim/minds';
 import { foodPerDay } from '../sim/upkeep';
 import { HALF_RATION_HEART } from '../data/rations';
 import { forecast, reachable, readiness, sickCount } from '../sim/winter';
+import { counsel, counselLine } from '../sim/counsel';
 import { effectiveStat, living } from '../sim/people';
 import { plotTally } from './colony';
 import type { Dispatch } from './ui';
@@ -176,7 +177,11 @@ export function renderNeeds(state: GameState): HTMLElement {
               !f.ready && !reachable(state) ? ' lost' : ''
             }`,
           },
-          [readiness(state)],
+          // The gap, and then what to DO about it. Measured at 21/120 bands
+          // seeing spring without moving hands against 48/120 with — the
+          // largest single effect in the game, and until this line existed
+          // the panel named the number and never the move.
+          [readiness(state), ...counselSpan(state)],
         ),
       );
     }
@@ -397,6 +402,18 @@ export function renderColonyActions(
     button('Back to the land', () => dispatch({ type: 'LEAVE_COLONY' }), { class: 'action' }),
   );
   return bar;
+}
+
+/**
+ * The move that closes the mark, when there is a safe one.
+ *
+ * Its own element so it can be styled apart from the gap above it: one is a
+ * measurement and the other is an instruction, and they should not read as
+ * one paragraph.
+ */
+function counselSpan(state: GameState): HTMLElement[] {
+  const said = counsel(state);
+  return said ? [el('span', { class: 'mark-counsel' }, [counselLine(said)])] : [];
 }
 
 /** A one-line summary of what the steading is good and bad at. */

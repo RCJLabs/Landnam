@@ -1876,6 +1876,44 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-20 — The mark says what to do about it now** — the follow-through
+  on the winter-work measurement, and the first thing in a while whose premise
+  was measured before it was built rather than after.
+  **The case.** Crewing to the winter mark is worth 21/120 bands seeing spring
+  against 48/120 — the largest single effect this project has measured. The
+  game showed it as a NUMBER (`Wood 40 / 62`) and never as a move. Worse,
+  `readiness()` — the one line of advice in the game — named the two ways out
+  it knew when the gap looked hopeless: rob somebody, or walk out and winter
+  elsewhere. **Both of those measured at zero bands saved and two killed.**
+  The advice named the two things that do not work and omitted the one that
+  doubles survival.
+  **`src/sim/counsel.ts`.** Under the gap, one line: *"Two more hands at the
+  woodpile would close it."* It re-runs `forecast()` on a copy with the hands
+  moved rather than doing its own arithmetic — the `foodPerDay` lesson, one
+  formula not two, so the counsel can never contradict the panel it sits
+  under. Conservative by construction: it only moves hands that are idle, on
+  the watch, on the walls, or producing something the band already has enough
+  of. It never robs the larder to fill the woodpile.
+  **The bar that made it honest, and it failed first.** "Says nothing it
+  cannot back up" carries out every counsel over sixty landings and re-reads
+  the mark. First cut: **22 of 51 did not close the gap they promised** — the
+  counsel counted its BEST hands while the panel says "two more hands"
+  without naming which two, so a player moving their two weakest came up
+  short. Fixed by counting the WORST eligible hands: if the worst two close
+  it, any two do. Now 51 of 51, with a second bar that swaps in a completely
+  different set of hands and requires the promise to survive that too.
+  **Also caught before shipping:** the first cut of the style rule coloured
+  the line `--ink`, which is the page BACKGROUND in this palette — it would
+  have been invisible on every screen it appears on. It is `--gold` now, the
+  ink this game already reserves for the thing you act on.
+  And one tautology of my own, written and then deleted: an assertion reading
+  `expect(anyOnOther || true).toBe(true)`, which would have passed against
+  advice that emptied the larder. Replaced with the outcome check — carry the
+  counsel out and the other store must be no worse off.
+  No save-shape change, so no version bump. The render wiring itself is not
+  unit-tested, which is this repo's convention rather than an omission: there
+  is no DOM environment because renderers are meant to hold no logic.
+
 - **2026-08-20 — Winter work: the premise was wrong twice, and the thing it
   was wrong about turns out to be the biggest lever in the game** — audit
   item 7, which asked for "winter work that isn't food and wood". Nothing was
