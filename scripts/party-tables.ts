@@ -24,6 +24,11 @@ import {
 } from '../src/data/clans';
 import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
 import type { Terrain } from '../src/state/types';
+import {
+  BEARING_MAX, BEARING_MIN, BIRTH_COOLDOWN, BIRTH_FOOD_FLOOR, BIRTH_HEART, BIRTH_ODDS,
+  CHILD_APPETITE,
+} from '../src/data/lineage';
+import { ILLNESSES, SICKNESS_BASE_DC } from '../src/sim/winter';
 import { WEATHER } from '../src/data/weather';
 import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../src/data/rations';
 import { PLACE_KINDS, PLACE_MAX_FROM_LANDING } from '../src/data/places';
@@ -353,6 +358,36 @@ ${SEEDED_KINDS.map((k) => `\t\t{ ${quote(k.id)}, { ${k.ground.map(quote).join(',
 \tconstexpr double HearthShare = ${num(HEARTH_SHARE)};
 \t/** The band the firewood figures were tuned against. Six off the knarr. */
 \tconstexpr int32_t BandBase = ${int(BAND_BASE)};
+
+\t/**
+\t * Being born, and getting older — src/data/lineage.ts.
+\t *
+\t * A generation is sixteen years and a run is five, so nobody here grows UP:
+\t * a child is a mouth, a lift to the band's heart, and a name the saga ends
+\t * with. ChildAppetite is what one of them eats against a grown share.
+\t */
+\tconstexpr int32_t BirthCooldown = ${int(BIRTH_COOLDOWN)};
+\tconstexpr double BirthOdds = ${num(BIRTH_ODDS)};
+\tconstexpr int32_t BirthFoodFloor = ${int(BIRTH_FOOD_FLOOR)};
+\tconstexpr double ChildAppetite = ${num(CHILD_APPETITE)};
+\tconstexpr int32_t BirthHeart = ${int(BIRTH_HEART)};
+\tconstexpr int32_t BearingMin = ${int(BEARING_MIN)};
+\tconstexpr int32_t BearingMax = ${int(BEARING_MAX)};
+
+\t/**
+\t * What a cold night gives you, IN PICK ORDER — pick() indexes this list.
+\t */
+\tstruct FIllnessRow
+\t{
+\t\tstd::string Label;
+\t\tstd::map<std::string, int32_t> Effect;
+\t\tint32_t Heals;
+\t};
+\tconst std::vector<FIllnessRow> Illnesses = {
+${ILLNESSES.map((i) => `\t\t{ ${quote(i.label)}, { ${Object.entries(i.effect).map(([k, v]) => `{ ${quote(k)}, ${int(v as number)} }`).join(', ')} }, ${int(i.heals)} },`).join('\n')}
+\t};
+\t/** What a body has to beat to come through a fireless night unharmed. */
+\tconstexpr int32_t SicknessBaseDc = ${int(SICKNESS_BASE_DC)};
 
 \t/**
 \t * Short commons — the winter lever, ported 2026-08-20.

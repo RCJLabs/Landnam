@@ -327,6 +327,39 @@ namespace Tables
 	constexpr int32_t BandBase = 6;
 
 	/**
+	 * Being born, and getting older — src/data/lineage.ts.
+	 *
+	 * A generation is sixteen years and a run is five, so nobody here grows UP:
+	 * a child is a mouth, a lift to the band's heart, and a name the saga ends
+	 * with. ChildAppetite is what one of them eats against a grown share.
+	 */
+	constexpr int32_t BirthCooldown = 90;
+	constexpr double BirthOdds = 0.02;
+	constexpr int32_t BirthFoodFloor = 40;
+	constexpr double ChildAppetite = 0.5;
+	constexpr int32_t BirthHeart = 8;
+	constexpr int32_t BearingMin = 16;
+	constexpr int32_t BearingMax = 44;
+
+	/**
+	 * What a cold night gives you, IN PICK ORDER — pick() indexes this list.
+	 */
+	struct FIllnessRow
+	{
+		std::string Label;
+		std::map<std::string, int32_t> Effect;
+		int32_t Heals;
+	};
+	const std::vector<FIllnessRow> Illnesses = {
+		{ "A cough that will not clear", { { "might", -1 } }, 14 },
+		{ "Fever in the night", { { "spirit", -1 }, { "wits", -1 } }, 12 },
+		{ "Frostbitten hands", { { "craft", -2 } }, 20 },
+		{ "Something on the lungs", { { "might", -1 }, { "spirit", -1 } }, 18 },
+	};
+	/** What a body has to beat to come through a fireless night unharmed. */
+	constexpr int32_t SicknessBaseDc = 9;
+
+	/**
 	 * Short commons — the winter lever, ported 2026-08-20.
 	 *
 	 * The band can choose to eat less. RationShare multiplies the mouths

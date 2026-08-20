@@ -459,7 +459,15 @@ export function readiness(state: GameState): string {
 
 // --- Sickness ---
 
-const ILLNESSES: Omit<Injury, 'id'>[] = [
+/**
+ * What a cold night gives you.
+ *
+ * Exported since 2026-08-20 so `scripts/party-tables.ts` can hand the port the
+ * same four. It stays here rather than moving to src/data because the ONLY
+ * thing that reads it is `coldNight` twenty lines below, and a table with one
+ * caller reads better beside its caller than in a file of its own.
+ */
+export const ILLNESSES: Omit<Injury, 'id'>[] = [
   { label: 'A cough that will not clear', effect: { might: -1 }, heals: 14 },
   { label: 'Fever in the night', effect: { spirit: -1, wits: -1 }, heals: 12 },
   { label: 'Frostbitten hands', effect: { craft: -2 }, heals: 20 },

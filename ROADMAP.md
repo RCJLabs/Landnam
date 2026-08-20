@@ -1876,6 +1876,46 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-20 — One run green, the other one checkpoint short** — the second
+  parity push. Everything the port had DECLARED as skipped is now ported, and
+  `runs/example.json` passes outright.
+  **Cold nights.** The port reported two gaps by name — `passDay: a cold night
+  with teeth in it` and `coldNight: a fireless night in the dark half of the
+  year` — and both are in: the bite that wounds everyone, and the roll that
+  decides who takes ill. The illness table and `SicknessBaseDc` are generated
+  rather than retyped, and `winterDepth` was split out of `FirewoodOn` so the
+  wood and the sickness read ONE seeded draw instead of two. **It took the
+  `band` facet from the wrong shape to the right one**: 3537 bytes against an
+  expected 4745 before, 4745 after.
+  **Lineage.** Ageing on the turn of the year, and births — six gates, the
+  name pool that refuses a name already standing in the band, `lastBorn`, the
+  heart it lifts, and children counted as mouths at `ChildAppetite`.
+  `houseAtPeace` is the sixth gate and reads a grudge list this rung does not
+  have; that is written down as safe rather than convenient, because
+  `stirGrudges` already reports the moment bad blood WOULD form, so any run
+  where the gate could have closed is one the harness has already flagged.
+  **Where it stands:**
+
+  | | before today | now |
+  | --- | --- | --- |
+  | `runs/example.json` | failing | **PARITY OK, 17 checkpoints** |
+  | `runs/long.json` | 0 of 14 | **13 of 14** |
+  | self-declared gaps | `unported=2` | **`unported=0`** |
+
+  **What is left is one checkpoint and a new investigation.** At @1478, day
+  457, the port reaches the right day and refuses 3 actions the reference
+  accepts. The `run` facet is 23 bytes light — about one `"seen_<card>":1`
+  flag — so an event card was dealt on one side and not the other, and the
+  child born on day 408 gets a different NAME as a result (steading differs by
+  four bytes, which is a name length, not a child). World, coast and field all
+  match at that checkpoint. That is a fresh thread rather than a known gap,
+  and it is not claimed as done.
+  **Two C++ helpers are named oddly on purpose** — `DiceRoll` and
+  `BornAWoman` rather than `Roll` and `IsWoman` — because the harness compiles
+  every file as ONE translation unit the way UnrealBuildTool does, and two
+  anonymous-namespace copies of a name are ambiguous there rather than
+  private. Both were caught by compiling, which is the point of compiling.
+
 - **2026-08-20 — Parity chased from day one to day 273, and two of the four
   causes were bugs on THIS side** — the red Parity workflow, diagnosed and
   driven back. It had been failing since the first contract hand-over on
