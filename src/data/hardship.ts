@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, and a fuller hold when the keel touches sand. Where a saga has room to become one.',
-    odds: { spring: 0.6, ruled: 0.2 },
+    odds: { spring: 0.73, ruled: 0.35 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.28, ruled: 0.05 },
+    odds: { spring: 0.45, ruled: 0.05 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, and men who have heard of you sooner than you would like. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.12, ruled: 0.025 },
+    odds: { spring: 0.1, ruled: 0.05 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -118,14 +118,14 @@ export const HARDSHIPS: HardshipDef[] = [
  *
  * "As It Lies" is exactly what its blurb says — the terms every number here
  * was balanced against — and the long-game harness finally measured what
- * those terms produce over five hundred days: eighty-two days a saga, four
- * mead halls in twenty, and one band in twenty ever ruling. That is a
- * defensible game and it is the one the tuning is FOR, but it is not a game
- * most people get to see the middle of. On A Fair Country the same twenty
- * sagas ran a hundred and fifty-three days, raised eleven mead halls and put
- * four jarls on the coast. So the default is the country where the thing
- * plays out, and the hard truth is one menu tap away rather than the price
- * of admission.
+ * those terms produce over five hundred days: a hundred and eighteen days a
+ * saga, eight mead halls in twenty, and one band in twenty ever ruling. That
+ * is a defensible game and it is the one the tuning is FOR, but it is not a
+ * game most people get to see the middle of. On A Fair Country the same
+ * twenty sagas ran two hundred and twenty-three days, raised eleven mead
+ * halls and put seven jarls on the coast. So the default is the country
+ * where the thing plays out, and the hard truth is one menu tap away rather
+ * than the price of admission.
  */
 export const DEFAULT_HARDSHIP: HardshipId = 'fair';
 
@@ -144,14 +144,27 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
 /**
  * Where the numbers above came from, so nobody has to guess later: the
  * balance harness runs its sixty seeds through every setting and prints
- * the spread. Latest: 62% / 27% / 12% seeing the first spring — gaps of 35
- * and 15 points, both comfortably past the ±10 this harness can resolve,
- * which is the only reason the three names are allowed to differ. Better
- * separated than the 60/25/7 these read before hardship reached the dice of
- * a fight, and properly ordered at the first winter too (87% / 78% / 73%),
- * which it had no way to be while every country's blows landed alike. The jarldom figures come from the long game, which runs
- * twenty seeds of the same worlds out to day 500 — and a count that small
- * is a "does the endgame happen", never a number that moved.
+ * the spread. Latest: 73% / 45% / 10% seeing the first spring — gaps of 28
+ * and 35 points, both comfortably past the ±10 this harness can resolve,
+ * which is the only reason the three names are allowed to differ.
+ *
+ * ALL THREE MOVED UP ON 2026-08-20, and not because anything got easier: the
+ * harness bot started pulling the winter lever. Short commons is signposted
+ * on the steading panel the moment the mark says the stores are short, so a
+ * bot that never touched it was measuring a game an attentive player does
+ * not play, and these numbers are now the odds AS PLAYED rather than a floor
+ * for a band that ignores its own winter mark.
+ *
+ * Reaching the first winter is 88% / 82% / 82% — the last two the same
+ * figure, and that is the honest reading rather than an ordering: with the
+ * belt in hand the harder countries fail in the same place, and it is the
+ * thaw rather than the frost that separates them.
+ *
+ * The jarldom figures come from the long game, which runs twenty seeds of
+ * the same worlds out to day 500 — and a count that small is a "does the
+ * endgame happen", never a number that moved. It is why As It Lies and A
+ * Hard Country both read one in twenty: twenty seeds cannot tell them apart
+ * at the far end, and claiming a difference there would be inventing one.
  */
 export const MEASURED_ON = 'sixty landings, the same sixty for each';
 

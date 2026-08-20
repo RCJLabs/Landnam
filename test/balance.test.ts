@@ -227,7 +227,15 @@ const SETTLER: Policy = {
   crew: CREW,
   errandBuffer: 6,
   desperate: false,
-  tightensBelt: false,
+  // TIGHTENS. The lever measured saved 32 bands and killed 3 over 240 seeds,
+  // and it is signposted on the steading panel the moment the mark says the
+  // stores are short — so a competent player presses it, and a bot that
+  // represents competent play has to press it too or every figure in this
+  // file describes a game nobody plays. The cost of the flip is that the
+  // difficulty menu's spring odds are now the odds of the game AS PLAYED
+  // (Fair 73%, Even 45%) rather than a floor for a band that never reads its
+  // own winter mark, and `src/data/hardship.ts` was restated to match.
+  tightensBelt: true,
 };
 
 /**
@@ -4563,11 +4571,17 @@ describe('who lands their blows', () => {
 /**
  * THE FIRST WINTER, MEASURED FROM INSIDE.
  *
- * The curve says 87/83/70 reach the first winter and 65/30/12 see spring —
- * so on As It Lies, more than half of every band that gets that far dies in
+ * The curve said 87/83/70 reach the first winter and 65/30/12 see spring —
+ * so on As It Lies, more than half of every band that gets that far died in
  * one season. That is the single biggest thing that happens in this game and
  * nothing here had ever looked at WHERE inside it they die, of what, or
  * whether the answer was settled before the frost arrived.
+ *
+ * The lever this investigation produced has since been given to the bot, and
+ * the same sweep reads 88/82/82 and 73/45/10 — so on As It Lies it is now
+ * about four in ten of the bands that reach the frost rather than six. The
+ * winter is survivable by a band that acts, which is the whole point, and it
+ * is still the biggest single thing that happens.
  *
  * The last question is the one that matters for design. A winter that is
  * scored entirely off the state on its first morning is not a phase a player
@@ -4773,8 +4787,14 @@ describe('the first winter, from inside', () => {
       return { lived, leanDays };
     };
 
-    const full = sample(SETTLER);
-    const lean = sample({ ...SETTLER, id: 'belt', tightensBelt: true });
+    // The CONTROL is the beltless policy now, not SETTLER — SETTLER tightens
+    // since 2026-08-20, and leaving him as the control would have made this a
+    // comparison of a band against itself. The instrument bar below caught
+    // exactly that (`the control went onto short commons too: expected 6468
+    // to be +0`), which is the whole reason it is written as an instrument
+    // check rather than an outcome check.
+    const full = sample({ ...SETTLER, id: 'loose', tightensBelt: false });
+    const lean = sample(SETTLER);
     policy = SETTLER;
 
     let saved = 0;

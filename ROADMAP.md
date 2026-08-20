@@ -145,6 +145,16 @@ the first winter, 62/27/12 to spring. What had blocked it for a day was a
 is the autopsy, and it is worth reading before trusting any other count in
 this document.
 
+**Those spring figures are superseded as of 2026-08-20 — read 73/45/10, not
+62/27/12.** Nothing got easier. The harness bot started pulling the winter
+lever, which is signposted on the steading panel the moment the mark says the
+stores are short, so every curve in this document below that date is the game
+as an inattentive band plays it. The winter mark reads 88/82/82 now, and the
+last two being equal is the honest reading rather than an ordering: with the
+belt in hand the harder countries fail at the thaw rather than at the frost.
+`src/data/hardship.ts` carries the restated numbers and the menu generates
+its prose from them.
+
 **The place economy was measured to the bottom on 2026-08-13, and the finding
 went three layers deep.** Places are not consumed, they are never LEARNED (11
 of 120 emptied; 42 known and still standing). Widening word of mouth is a
@@ -1865,6 +1875,51 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-20 — The bot pulls the lever, and the menu says the odds of the
+  game people actually play** — a one-line change to `SETTLER` and a
+  restatement of every number on the difficulty screen.
+  **The premise.** Short commons shipped the day before and the harness bot
+  never touched it. That is a defensible control for measuring the lever
+  itself, and an indefensible basis for a menu: the button is on the steading
+  panel, lit the moment the winter mark says the stores are short, and a
+  player who reads the panel presses it. `SETTLER` is the bot that stands for
+  "what an average competent player does", so every published figure was the
+  game as played by a band that ignores its own winter mark.
+  **`SETTLER.tightensBelt = true`.** The short-commons measurement keeps its
+  beltless control as a separate policy — and the instrument bar caught the
+  omission before a human did, failing with *"the control went onto short
+  commons too: expected 6468 to be +0"*. That bar exists because this file
+  has shipped two hollow ones before.
+  **Measured, and the whole menu moved:**
+
+  | setting | reached the first winter | saw spring | long game (20 sagas) |
+  | --- | --- | --- | --- |
+  | A Fair Country | 88% | **73%** | 223 days a saga, 11 mead halls, 7 jarls |
+  | As It Lies | 82% | **45%** | 118 days, 8 mead halls, 1 jarl |
+  | A Hard Country | 82% | **10%** | 79 days, 1 mead hall, 1 jarl |
+
+  Against 87/80/73 and 62/27/12 beltless, and against a menu that was
+  promising 60/28/12. Spring gaps of 28 and 35 points, both past the ±10 this
+  harness resolves, so the three names still mean three different things.
+  **Two claims were withdrawn rather than restated.** The winter mark is no
+  longer ordered — As It Lies and A Hard Country both read 82% — and that is
+  written down as the honest reading: with the belt in hand the harder
+  countries fail at the thaw, not at the frost. And "None of twenty ever
+  ruled" is gone from A Hard Country, because one of the twenty did. It now
+  reads one in twenty, the same as As It Lies, with a note saying plainly
+  that twenty seeds cannot tell those two apart at the far end and claiming a
+  difference there would be inventing one.
+  **What the same run says about everything else.** The lever itself is
+  unchanged where it is measured directly, which is the point of a control:
+  120 seeds on As It Lies, 35/120 against 48/120, **saved 14 and killed 1**.
+  `readiness()`'s escape hatch is still worthless beside it — saved 1, killed
+  2. And the verdict got better as a side effect, because `reachable` walks
+  the lean case now: it wrote off 17 bands and 3 of them saw spring, **18%
+  wrong against 33% before the lever existed**.
+  The prose on the menu is generated from the numbers by `measuredLine`, so
+  none of this is hand-typed twice: A Fair Country now reads "Three bands in
+  four saw the first spring. Seven in twenty ruled."
 
 - **2026-08-19 — Short commons: the first winter has a lever now** — THE
   WINTER CALL, answered. Three investigations from three directions found the
