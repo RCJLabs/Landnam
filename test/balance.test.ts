@@ -185,6 +185,16 @@ interface Policy {
    * fire — stay exactly where they are.
    */
   desperate: boolean;
+  /**
+   * Whether the band goes onto short commons when the winter mark says it is
+   * short of food.
+   *
+   * A knob, so the lever can be measured against itself on the same seeds
+   * rather than argued about. `readiness()`'s two named ways out were
+   * measured this way and saved nobody; a lever that cannot beat that is not
+   * worth the save version it costs.
+   */
+  tightensBelt: boolean;
 }
 
 /**
@@ -217,6 +227,7 @@ const SETTLER: Policy = {
   crew: CREW,
   errandBuffer: 6,
   desperate: false,
+  tightensBelt: false,
 };
 
 /**
@@ -251,6 +262,7 @@ const RAIDER: Policy = {
   crew: ['warrior','hunter','hunter','farmer','woodcutter','builder'],
   errandBuffer: 2,
   desperate: false,
+  tightensBelt: false,
 };
 
 /**
@@ -274,6 +286,7 @@ const TURTLE: Policy = {
   crew: ['farmer','farmer','farmer','woodcutter','builder','warrior'],
   errandBuffer: 0,
   desperate: false,
+  tightensBelt: false,
 };
 
 /**
@@ -1079,6 +1092,16 @@ function run(
     // no Thing, and therefore an endgame no measurement had ever reached.
     // A real player with wood to spare does not put the whole hall on the
     // woodpile.
+    // The winter lever, worked the way a player would: short commons while
+    // the mark says the food will not last, full shares the moment it will.
+    // Heeded BEFORE the jobs below, because what the band eats changes the
+    // number those jobs are being set against.
+    if (policy.tightensBelt && state.settlement && markVisible(state)) {
+      const short = forecast(state).foodGap < 0;
+      const want = short ? 'half' : 'full';
+      if ((state.party.rations ?? 'full') !== want) state.party.rations = want;
+    }
+
     if (state.settlement && markVisible(state)) {
       const need = forecast(state);
       const shortWood = state.party.firewood < need.firewood;
@@ -4711,6 +4734,84 @@ describe('the first winter, from inside', () => {
     // needed and did not have.
     expect(tried.sorties, 'the desperate band never once left the yard — nothing was measured')
       .toBeGreaterThan(held.sorties);
+  });
+
+  /**
+   * IS THE WINTER LEVER WORTH ANYTHING?
+   *
+   * The whole justification for short commons. Winter was measured as 94–98%
+   * predictable from the stores held on its first morning, with deaths flat
+   * across all four weeks and nothing on the board to answer them — so the
+   * game got something to DO. This is the bar that says whether it was worth
+   * a save version.
+   *
+   * The standard it has to beat is set by the last thing that claimed to be a
+   * way out: `readiness()`'s "take it from somebody else, or walk out and
+   * winter elsewhere", measured at zero bands saved and four killed. A lever
+   * that cannot beat nothing is decoration with a cost.
+   */
+  it('says whether short commons save anybody', { timeout: 300_000 }, () => {
+    // A HUNDRED AND TWENTY, and the number is measured rather than picked.
+    // At sixty this read "saved 3, killed 1" — four discordant pairs, which
+    // is noise, and a bar built on it would have flipped on the dice. At two
+    // hundred and forty it is saved 32, killed 3, and survival goes 64/240 to
+    // 93/240. A hundred and twenty is where the effect is resolvable inside a
+    // runtime this file can afford.
+    const SEEDS = 120;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    const sample = (p: Policy): { lived: boolean[]; leanDays: number } => {
+      policy = p;
+      const lived: boolean[] = [];
+      let leanDays = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        const final = run(`winter-inside-${s}`, SPRING_IN, (_before, after) => {
+          if (after.party.rations === 'half') leanDays += 1;
+        }, 'even');
+        lived.push(!final.end && final.day >= SPRING_IN);
+      }
+      return { lived, leanDays };
+    };
+
+    const full = sample(SETTLER);
+    const lean = sample({ ...SETTLER, id: 'belt', tightensBelt: true });
+    policy = SETTLER;
+
+    let saved = 0;
+    let killed = 0;
+    for (let s = 0; s < SEEDS; s += 1) {
+      if (!full.lived[s] && lean.lived[s]) saved += 1;
+      if (full.lived[s] && !lean.lived[s]) killed += 1;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `short commons, ${SEEDS} seeds on As It Lies:\n` +
+      `  full shares — ${full.lived.filter(Boolean).length}/${SEEDS} saw spring\n` +
+      `  tightened   — ${lean.lived.filter(Boolean).length}/${SEEDS} saw spring, ` +
+        `${lean.leanDays} days on short commons\n` +
+      `  paired: saved ${saved} bands that would have died, killed ${killed} that would have lived`,
+    );
+
+    // The instrument bar first: a band that never went onto short commons
+    // measured nothing at all, which is the hollow-bar trap this file has
+    // fallen into twice.
+    expect(lean.leanDays, 'nobody ever tightened their belt — nothing was measured')
+      .toBeGreaterThan(0);
+    expect(full.leanDays, 'the control went onto short commons too').toBe(0);
+
+    // AND THE LEVER ITSELF. It has to beat the thing it was built to replace,
+    // which saved nobody. Net, because a lever that saves five and kills five
+    // is a coin the player is being asked to flip.
+    expect(
+      saved,
+      `short commons saved nobody, which is exactly what the out it replaces did`,
+    ).toBeGreaterThan(0);
+    expect(
+      saved,
+      `short commons saved ${saved} and killed ${killed} — a lever that costs `
+        + `about as many as it saves is a coin the player is asked to flip`,
+    ).toBeGreaterThan(killed);
   });
 
   /**

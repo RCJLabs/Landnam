@@ -167,7 +167,16 @@ export interface Party {
   morale: number;
   /** Movement/effort spent today; a day ends when it runs out. */
   hasCamped: boolean;
+  /**
+   * What everyone is eating. Absent means full shares.
+   *
+   * The winter lever: short commons stretch the store and cost heart. See
+   * `data/rations.ts` for why the numbers are what they are.
+   */
+  rations?: Rations;
 }
+
+export type Rations = 'full' | 'half';
 
 // --- The knarr ---
 

@@ -354,7 +354,16 @@ function survivesWinter(state: GameState): boolean {
   // right — timber spent in a cold autumn is timber not burned in the dark —
   // so a "can this be done at all" verdict has to try both rather than
   // assume the band builds.
-  return walkWinter(state, state) || walkWinter(state, bestSteading(state));
+  // And on short commons, which is the winter lever: a verdict that ignored
+  // it would go on telling bands they are dead when the game now hands them
+  // something to do about it. The band eats less in every one of these walks
+  // — `foodPerDay` reads `party.rations`, so this is one clone and no second
+  // copy of the arithmetic.
+  const lean = { ...state, party: { ...state.party, rations: 'half' as const } };
+  return walkWinter(state, state)
+    || walkWinter(state, bestSteading(state))
+    || walkWinter(lean, lean)
+    || walkWinter(lean, bestSteading(lean));
 }
 
 /**

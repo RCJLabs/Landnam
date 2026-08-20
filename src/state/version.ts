@@ -47,7 +47,10 @@
 // v34 (ghost): the root gained the optional `ghost` — somebody else's fallen
 //               steading, carried in on a challenge code. Absent is the truth
 //               about every saga played before anyone could send one.
-export const SAVE_VERSION = 34;
+// v35 (rations): Party gained the optional `rations`. An absent value is
+//                 full shares, which is what every band before the winter
+//                 lever was eating.
+export const SAVE_VERSION = 35;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

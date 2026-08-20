@@ -2,8 +2,9 @@
 // Routing by mode lives here so each sim module stays focused on its own rules.
 
 import { cloneState } from '../state/clone';
+import { chronicle } from './saga';
 import { currentMode, popMode, pushMode } from '../modes';
-import type { GameState } from '../state/types';
+import type { GameState, Rations } from '../state/types';
 import type { Hex } from '../hex';
 import { chooseOption, dismissEvent, maybeFireEvent } from './events';
 import { applyTravel, type TravelAction } from './travel';
@@ -41,7 +42,8 @@ export type ColonyAction =
   | { type: 'LEAVE_COLONY' }
   | { type: 'ASSIGN'; personId: string; job: JobId | null }
   | { type: 'QUEUE_BUILD'; building: BuildingId }
-  | { type: 'UNQUEUE_BUILD'; building: BuildingId };
+  | { type: 'UNQUEUE_BUILD'; building: BuildingId }
+  | { type: 'SET_RATIONS'; rations: Rations };
 
 export type Action =
   | TravelAction
@@ -58,6 +60,7 @@ const COLONY_TYPES = new Set([
   'ASSIGN',
   'QUEUE_BUILD',
   'UNQUEUE_BUILD',
+  'SET_RATIONS',
 ]);
 
 const BATTLE_TYPES = new Set([
@@ -157,6 +160,23 @@ export function apply(state: GameState, action: Action): GameState {
     if (action.type === 'QUEUE_BUILD') {
       const next = cloneState(state);
       if (!queueBuild(next, action.building)) return state;
+      return next;
+    }
+    if (action.type === 'SET_RATIONS') {
+      // The winter lever. A steading decision — it is the household's rule
+      // for the season, and the steading is where the mark that answers it is
+      // shown. Refused when nothing would change, so the day's UI does not
+      // report a move that did nothing.
+      if ((state.party.rations ?? 'full') === action.rations) return state;
+      const next = cloneState(state);
+      next.party.rations = action.rations;
+      chronicle(
+        next,
+        action.rations === 'half'
+          ? 'We went onto short commons. Everyone knew what it was for and nobody said so.'
+          : 'Full shares again. It was the first evening in a while that anybody talked at the fire.',
+        action.rations === 'half' ? 'grim' : 'good',
+      );
       return next;
     }
     if (action.type === 'UNQUEUE_BUILD') {

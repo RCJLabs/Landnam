@@ -23,6 +23,7 @@ import {
   renderCrew,
   renderNeeds,
   renderRoom,
+  renderRations,
 } from './render/colonyUi';
 import { renderGuide, renderLesson, renderSettings, renderTitle, renderWall } from './render/cards';
 import { applyMotionPref, motionPref, setMotionPref } from './motion';
@@ -481,6 +482,7 @@ function renderColony(): void {
     hintSlot.replaceChildren(
       renderNeeds(state),
       renderRoom(state),
+      renderRations(state, colonyDispatch),
       renderBuilds(state, colonyDispatch),
     );
   } else {

@@ -1866,6 +1866,45 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-19 — Short commons: the first winter has a lever now** — THE
+  WINTER CALL, answered. Three investigations from three directions found the
+  same thing: winter is not a phase the player plays. Stores on its first
+  morning predict spring **94–98%** of the time, deaths run **flat across all
+  four weeks** (9/8/7/6) rather than at some playable moment, 27 of 30 are
+  plain starvation, and `readiness()`'s two named ways out were measured at
+  **zero bands saved and four killed**. There was nothing on the board to
+  reach for.
+  **The band can go onto short commons.** A full six eat 3 a day and 2 lean,
+  which over a twenty-four day winter is 72 against 48 — and the measured gap
+  between bands that saw spring and bands that did not was about 33 of stores
+  at the frost. So it can turn a near miss and cannot turn a rout, which is
+  the point: a lever that saved everybody would be a lower difficulty with
+  extra steps.
+  It is paid for in **heart**, the currency that already kills most — 2 a day
+  against the +1 a well-kept camp returns, so a net point a day and about 24
+  across a winter — and the weakest starts to show it every ten lean days.
+  Deliberately cheaper than the 8 involuntary hunger costs: choosing to eat
+  less is not the same as having nothing, and pricing them alike would mean
+  nobody ever chose it.
+  **The mark moves with the belt, and that is the lineage work paying off.**
+  `foodPerDay` is the single copy of the mouths formula, read by the night's
+  eating, the winter mark and the verdict alike — so a band that tightens is
+  told a smaller number by the mark at the same moment it starts eating less.
+  Split across two copies, as it was until item 9, the mark would have gone on
+  demanding a full winter's food. `reachable` walks the lean case too, so the
+  verdict no longer condemns a band that could live on short commons.
+  **Measured, paired on the same seeds, which is the only reason it shipped.**
+  At 60 seeds it read "saved 3, killed 1" — four discordant pairs, noise, and
+  a bar built on it would have flipped on the dice. At **240 seeds: saved 32,
+  killed 3, and spring goes 64/240 to 93/240.** The committed bar runs 120
+  (saved 14, killed 1) with an explicit timeout, and the sample size is
+  written down as measured rather than picked. Watched fail by setting
+  `RATION_SHARE` to 1 — a lever that costs heart and saves no food reads
+  "saved 0, killed 2" and goes red on the first assertion.
+  Save v35 with a migration; absent means full shares, and a test proves
+  absent still EATS like full shares rather than comparing the number to
+  itself, which is what the first cut of that bar did.
+
 - **2026-08-19 — The coast has plenty to fall on, and a lore that promised
   nothing** — audit idea 4. The framing was "give the band a reason to be
   afloat beside a place; the gap is proximity". **Tested first, and the

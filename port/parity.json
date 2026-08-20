@@ -221,7 +221,7 @@
        }
       },
       "run": {
-       "hash": "08a97c219af96222",
+       "hash": "04abb46c96f71d3f",
        "size": 253,
        "samples": {
         "day": 1,
@@ -314,7 +314,7 @@
        }
       },
       "run": {
-       "hash": "f82eea2d879c7222",
+       "hash": "f4312278839a2d3f",
        "size": 251,
        "samples": {
         "day": 1,
@@ -407,7 +407,7 @@
        }
       },
       "run": {
-       "hash": "846721b5f44741a8",
+       "hash": "80695a00f845095d",
        "size": 244,
        "samples": {
         "day": 1,
@@ -500,7 +500,7 @@
        }
       },
       "run": {
-       "hash": "5a6bd6903d2abfb9",
+       "hash": "5e699e45392e8b04",
        "size": 244,
        "samples": {
         "day": 1,
@@ -593,7 +593,7 @@
        }
       },
       "run": {
-       "hash": "895ce7400b2e62a3",
+       "hash": "8d5aaef50f30a786",
        "size": 245,
        "samples": {
         "day": 1,
@@ -693,7 +693,7 @@
        }
       },
       "run": {
-       "hash": "2f04eaf3ab1ec224",
+       "hash": "33072fd6af1c89d9",
        "size": 253,
        "samples": {
         "day": 1,
@@ -777,13 +777,13 @@
        }
       },
       "run": {
-       "hash": "bc0c9469c3357d6c",
-       "size": 270,
+       "hash": "42f899a52e3e76fa",
+       "size": 283,
        "samples": {
         "day": 2,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -860,13 +860,13 @@
        }
       },
       "run": {
-       "hash": "c8756996753aafc7",
-       "size": 270,
+       "hash": "b22b604c99bcec33",
+       "size": 283,
        "samples": {
         "day": 3,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -943,13 +943,13 @@
        }
       },
       "run": {
-       "hash": "ab2ba9a773299fb6",
-       "size": 270,
+       "hash": "246279d35095512c",
+       "size": 283,
        "samples": {
         "day": 4,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -1026,13 +1026,13 @@
        }
       },
       "run": {
-       "hash": "385fad65a9167f10",
-       "size": 270,
+       "hash": "45e46001883d0fde",
+       "size": 283,
        "samples": {
         "day": 6,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -1109,13 +1109,13 @@
        }
       },
       "run": {
-       "hash": "c188bef2dcef5c7b",
-       "size": 270,
+       "hash": "212a7ab8ccedf227",
+       "size": 283,
        "samples": {
         "day": 7,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -1192,13 +1192,13 @@
        }
       },
       "run": {
-       "hash": "2d57a6582708918d",
-       "size": 270,
+       "hash": "562354c663371729",
+       "size": 283,
        "samples": {
         "day": 9,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -1276,13 +1276,13 @@
        }
       },
       "run": {
-       "hash": "0fdf8e3625a6eba5",
-       "size": 271,
+       "hash": "72b96cacf49922c1",
+       "size": 284,
        "samples": {
         "day": 10,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -1359,13 +1359,13 @@
        }
       },
       "run": {
-       "hash": "2e3624128e2e7fa9",
-       "size": 271,
+       "hash": "eba8d6189cc83665",
+       "size": 284,
        "samples": {
         "day": 14,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -1443,13 +1443,13 @@
        }
       },
       "run": {
-       "hash": "0c098ad7d3ea9258",
-       "size": 819,
+       "hash": "b6c4f88d43515044",
+       "size": 832,
        "samples": {
         "day": 15,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 5,
+        "flags": 6,
         "battles": 0
        }
       }
@@ -1527,13 +1527,13 @@
        }
       },
       "run": {
-       "hash": "2c2039f1045764c6",
-       "size": 303,
+       "hash": "b37c9a9dcc1646c0",
+       "size": 316,
        "samples": {
         "day": 15,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 3,
+        "flags": 4,
         "battles": 1
        }
       }
@@ -1611,13 +1611,13 @@
        }
       },
       "run": {
-       "hash": "2c2039f1045764c6",
-       "size": 303,
+       "hash": "b37c9a9dcc1646c0",
+       "size": 316,
        "samples": {
         "day": 15,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 3,
+        "flags": 4,
         "battles": 1
        }
       }
@@ -1694,13 +1694,13 @@
        }
       },
       "run": {
-       "hash": "2c2039f1045764c6",
-       "size": 303,
+       "hash": "b37c9a9dcc1646c0",
+       "size": 316,
        "samples": {
         "day": 15,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 3,
+        "flags": 4,
         "battles": 1
        }
       }
@@ -1777,13 +1777,13 @@
        }
       },
       "run": {
-       "hash": "2c2039f1045764c6",
-       "size": 303,
+       "hash": "b37c9a9dcc1646c0",
+       "size": 316,
        "samples": {
         "day": 15,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 3,
+        "flags": 4,
         "battles": 1
        }
       }
@@ -1860,13 +1860,13 @@
        }
       },
       "run": {
-       "hash": "2c2039f1045764c6",
-       "size": 303,
+       "hash": "b37c9a9dcc1646c0",
+       "size": 316,
        "samples": {
         "day": 15,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 3,
+        "flags": 4,
         "battles": 1
        }
       }
@@ -1943,13 +1943,13 @@
        }
       },
       "run": {
-       "hash": "2c2039f1045764c6",
-       "size": 303,
+       "hash": "b37c9a9dcc1646c0",
+       "size": 316,
        "samples": {
         "day": 15,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 3,
+        "flags": 4,
         "battles": 1
        }
       }
@@ -2027,13 +2027,13 @@
        }
       },
       "run": {
-       "hash": "f34dcd5d28027b34",
-       "size": 436,
+       "hash": "7745fd0f06acb7e0",
+       "size": 449,
        "samples": {
         "day": 15,
         "ended": "slain",
         "mode": "TRAVEL",
-        "flags": 3,
+        "flags": 4,
         "battles": 1
        }
       }
@@ -2133,7 +2133,7 @@
        }
       },
       "run": {
-       "hash": "08a97c219af96222",
+       "hash": "04abb46c96f71d3f",
        "size": 253,
        "samples": {
         "day": 1,
@@ -2217,13 +2217,13 @@
        }
       },
       "run": {
-       "hash": "8b5cb03f2b0ac76a",
-       "size": 270,
+       "hash": "44d42e53b5cd58e8",
+       "size": 283,
        "samples": {
         "day": 2,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -2300,13 +2300,13 @@
        }
       },
       "run": {
-       "hash": "b9f2011cd44f0f4d",
-       "size": 270,
+       "hash": "1994773a9337fd51",
+       "size": 283,
        "samples": {
         "day": 3,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -2383,13 +2383,13 @@
        }
       },
       "run": {
-       "hash": "268b2f2d72065b3c",
-       "size": 270,
+       "hash": "2b3f41f15090fa1a",
+       "size": 283,
        "samples": {
         "day": 4,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -2466,13 +2466,13 @@
        }
       },
       "run": {
-       "hash": "5981022313719356",
-       "size": 270,
+       "hash": "08d1a9e70fcf12d4",
+       "size": 283,
        "samples": {
         "day": 6,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -2549,13 +2549,13 @@
        }
       },
       "run": {
-       "hash": "c60e04aa926fd6a3",
-       "size": 594,
+       "hash": "6395dca863cb3767",
+       "size": 607,
        "samples": {
         "day": 9,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 2,
+        "flags": 3,
         "battles": 0
        }
       }
@@ -2633,13 +2633,13 @@
        }
       },
       "run": {
-       "hash": "8e7bd1a4a263d1a7",
-       "size": 759,
+       "hash": "1710e5c8963d8e81",
+       "size": 772,
        "samples": {
         "day": 9,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -2717,13 +2717,13 @@
        }
       },
       "run": {
-       "hash": "05bd33313e8d8e2c",
-       "size": 292,
+       "hash": "dcdfd983eae2ed90",
+       "size": 305,
        "samples": {
         "day": 9,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -2801,13 +2801,13 @@
        }
       },
       "run": {
-       "hash": "32b47e9340a58064",
-       "size": 293,
+       "hash": "eccac1bd6bae6b08",
+       "size": 306,
        "samples": {
         "day": 10,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -2885,13 +2885,13 @@
        }
       },
       "run": {
-       "hash": "7d691757de75e02e",
-       "size": 302,
+       "hash": "635b7bdfa86f46a0",
+       "size": 315,
        "samples": {
         "day": 10,
         "ended": "-",
         "mode": "COLONY",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -2969,13 +2969,13 @@
        }
       },
       "run": {
-       "hash": "7d691757de75e02e",
-       "size": 302,
+       "hash": "635b7bdfa86f46a0",
+       "size": 315,
        "samples": {
         "day": 10,
         "ended": "-",
         "mode": "COLONY",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -3053,13 +3053,13 @@
        }
       },
       "run": {
-       "hash": "7d691757de75e02e",
-       "size": 302,
+       "hash": "635b7bdfa86f46a0",
+       "size": 315,
        "samples": {
         "day": 10,
         "ended": "-",
         "mode": "COLONY",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -3137,13 +3137,13 @@
        }
       },
       "run": {
-       "hash": "32b47e9340a58064",
-       "size": 293,
+       "hash": "eccac1bd6bae6b08",
+       "size": 306,
        "samples": {
         "day": 10,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -3221,13 +3221,13 @@
        }
       },
       "run": {
-       "hash": "0e929818260d1a11",
-       "size": 308,
+       "hash": "f175141ae5f8b411",
+       "size": 321,
        "samples": {
         "day": 11,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 4,
+        "flags": 5,
         "battles": 0
        }
       }
@@ -3304,13 +3304,13 @@
        }
       },
       "run": {
-       "hash": "6df7d97543fb8956",
-       "size": 317,
+       "hash": "2e767e7f6dbedfd2",
+       "size": 330,
        "samples": {
         "day": 21,
         "ended": "-",
         "mode": "COLONY",
-        "flags": 4,
+        "flags": 5,
         "battles": 0
        }
       }
@@ -3387,13 +3387,13 @@
        }
       },
       "run": {
-       "hash": "22fb04a9d78794c8",
-       "size": 376,
+       "hash": "b91d8ffd2d77468a",
+       "size": 389,
        "samples": {
         "day": 32,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 7,
+        "flags": 8,
         "battles": 0
        }
       }
@@ -3470,13 +3470,13 @@
        }
       },
       "run": {
-       "hash": "76070590a7ccc7cd",
-       "size": 424,
+       "hash": "c70d20c8edec5bd3",
+       "size": 437,
        "samples": {
         "day": 81,
         "ended": "-",
         "mode": "COLONY",
-        "flags": 9,
+        "flags": 10,
         "battles": 0
        }
       }
@@ -3553,13 +3553,13 @@
        }
       },
       "run": {
-       "hash": "63ecf9efc29e2da2",
-       "size": 462,
+       "hash": "77b929357699f15a",
+       "size": 475,
        "samples": {
         "day": 273,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 11,
+        "flags": 12,
         "battles": 0
        }
       }
@@ -3637,13 +3637,13 @@
        }
       },
       "run": {
-       "hash": "668512908d1eb8bb",
-       "size": 471,
+       "hash": "16befee2ddd24b9f",
+       "size": 484,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 11,
+        "flags": 12,
         "battles": 1
        }
       }
@@ -3721,13 +3721,13 @@
        }
       },
       "run": {
-       "hash": "bb9e1a8ef0bc0277",
-       "size": 462,
+       "hash": "4aa5885e0003c9cd",
+       "size": 475,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 11,
+        "flags": 12,
         "battles": 1
        }
       }
@@ -3805,13 +3805,13 @@
        }
       },
       "run": {
-       "hash": "bb9e1a8ef0bc0277",
-       "size": 462,
+       "hash": "4aa5885e0003c9cd",
+       "size": 475,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 11,
+        "flags": 12,
         "battles": 1
        }
       }
@@ -3888,13 +3888,13 @@
        }
       },
       "run": {
-       "hash": "7e0ee5e1b0e8fb94",
-       "size": 846,
+       "hash": "122622bfe8ea66b4",
+       "size": 859,
        "samples": {
         "day": 457,
         "ended": "survived",
         "mode": "TRAVEL",
-        "flags": 15,
+        "flags": 16,
         "battles": 4
        }
       }

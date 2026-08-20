@@ -77,7 +77,20 @@ describe('whether the mark can be met at all', () => {
     // Same late day, same ground — stores are the only difference, and they
     // flip the answer. Without this, "late" could be a proxy that happens to
     // look right while measuring nothing.
-    const doomed = settled('cliff-pivot', 40);
+    //
+    // DAY 48, WAS 40, AND THE ASSERTION IS UNTOUCHED. Short commons — the
+    // winter lever — means a band can eat 2 a day instead of 3, which frees
+    // enough labour that this band on the best ground in the world is no
+    // longer beyond saving eight days out from the frost. `reachable` walks
+    // the lean case deliberately: a verdict that ignored the lever would go
+    // back to condemning bands that could use it, which is the false-
+    // condemnation bug the ship-and-weather work spent a session removing.
+    //
+    // Measured rather than nudged until it passed: the 0/0 band on this
+    // ground reads saveable at days 40 and 44 and doomed from 48 onward.
+    // The eve of winter is where a band with nothing is out of options, and
+    // that is a truer statement of this test's own point than day 40 was.
+    const doomed = settled('cliff-pivot', 48);
     doomed.party.food = 0;
     doomed.party.firewood = 0;
     const saved = structuredClone(doomed);

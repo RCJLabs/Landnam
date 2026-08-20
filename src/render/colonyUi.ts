@@ -24,6 +24,8 @@ import {
 } from '../sim/colony';
 import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
 import { CROWDING_BITE } from '../sim/minds';
+import { foodPerDay } from '../sim/upkeep';
+import { HALF_RATION_HEART } from '../data/rations';
 import { forecast, reachable, readiness, sickCount } from '../sim/winter';
 import { effectiveStat, living } from '../sim/people';
 import { plotTally } from './colony';
@@ -121,6 +123,40 @@ export function renderRoom(state: GameState): HTMLElement {
         over > 0 ? `${over * CROWDING_BITE} off every heart` : 'enough',
       ]),
     ]),
+  ]);
+}
+
+/**
+ * Short commons — the winter lever, and the one thing a band can DO once the
+ * frost is down.
+ *
+ * Shown beside the room mark rather than buried in a menu, because the whole
+ * reason it exists is that a band in trouble had nothing to reach for. The
+ * cost is named on the button: this game does not hide a price.
+ */
+export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement {
+  if (!state.settlement) return el('div');
+  const half = state.party.rations === 'half';
+  const mouths = foodPerDay(state);
+  const other = half ? 'full' : 'half';
+  const wouldEat = foodPerDay({ ...state, party: { ...state.party, rations: other } });
+
+  return el('div', { class: `room-mark${half ? ' short' : ''}` }, [
+    el('div', { class: 'mark-head' }, [
+      half ? 'On short commons' : 'Full shares',
+    ]),
+    el('div', { class: 'mark-row' }, [
+      el('span', { class: 'mark-name' }, ['The larder']),
+      el('span', { class: 'mark-value' }, [`${mouths} a day`]),
+      el('span', { class: 'mark-gap' }, [
+        half ? `${HALF_RATION_HEART} off every heart` : 'nobody goes short',
+      ]),
+    ]),
+    button(
+      half ? `Full shares again (${wouldEat} a day)` : `Go onto short commons (${wouldEat} a day)`,
+      () => dispatch({ type: 'SET_RATIONS', rations: other }),
+      { class: 'action wide' },
+    ),
   ]);
 }
 

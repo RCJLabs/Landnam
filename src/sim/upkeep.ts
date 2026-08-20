@@ -8,6 +8,7 @@ import { worldBeat } from './beats';
 import { omenFor, weatherOn } from './weather';
 import { ageTheBand, childrenOf, maybeBirth } from './lineage';
 import { CHILD_APPETITE } from '../data/lineage';
+import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../data/rations';
 import { hardshipById } from '../data/hardship';
 import { living } from './people';
 import { stream } from '../rng';
@@ -67,7 +68,14 @@ export function foodPerDay(state: GameState): number {
   // fire do.
   const mouths = living(state.party.people).length
     + childrenOf(state).length * CHILD_APPETITE;
-  return Math.max(1, Math.ceil(mouths / 2));
+  // Short commons, applied HERE and nowhere else — which is the whole payoff
+  // of there being one copy of this formula. The winter mark, the verdict and
+  // the night's eating all read this function, so a band that goes on half
+  // rations is told a smaller number by the mark at the same moment it starts
+  // eating less. Split across two copies, the mark would have gone on asking
+  // for a full winter's food.
+  const share = state.party.rations === 'half' ? RATION_SHARE : 1;
+  return Math.max(1, Math.ceil((mouths / 2) * share));
 }
 
 /**
@@ -215,6 +223,22 @@ export function passDay(state: GameState): boolean {
   party.firewood -= burned;
   const cold = burned < wood;
   worldBeat(state, { kind: 'burned', took: burned, needed: wood, short: wood - burned });
+
+  // What short commons cost, on a day the band actually ate its (smaller)
+  // share. Paid whether or not the store held out: going hungry ON half
+  // rations is both penalties, which is correct — that band is in real
+  // trouble and the game should not soften it.
+  if (party.rations === 'half') {
+    party.morale = Math.max(0, party.morale - HALF_RATION_HEART);
+    const lean = (state.flags['leanDays'] ?? 0) + 1;
+    state.flags['leanDays'] = lean;
+    if (lean % HALF_RATION_TOLL === 0) {
+      const thin = weakest(party.people);
+      if (thin) wound(state, thin, 1, 'short commons');
+    }
+  } else {
+    state.flags['leanDays'] = 0;
+  }
 
   if (hungry) {
     party.morale = Math.max(0, party.morale - 8);
