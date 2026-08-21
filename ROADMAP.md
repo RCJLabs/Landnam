@@ -1876,6 +1876,41 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-21 — PARITY OK: 39 checkpoints, two runs, six facets each** — the
+  port reproduces the reference exactly, across 1478 actions and 457 days on
+  one script and 66 on the other. Four causes, and the last three are the same
+  cause wearing different clothes.
+  **1. Orphan grief.** `ORPHAN_GRIEF` was the only lineage constant the
+  generator never emitted, because nothing on the port side read it: the
+  port's `Mourn` did the kin half and not the children half. Ported, and
+  called BEFORE the kin guard, because the reference calls `orphaned` before
+  it looks for kin at all — a death that leaves a child costs the steading
+  whether or not the dead had anybody bound to them. Putting it after the
+  early return would have been right on every death that happened to have kin
+  and silently wrong on the rest. First divergence moved 220 actions later.
+  **2. A THIRD copy of the mouths formula.** The draw odds inlined
+  `(Household + 1) / 2` — grown heads only — where the reference calls
+  `foodPerDay`. On day 412, with three children under the roof, the port read
+  a larder of four against the reference's five; a smaller larder makes
+  `plenty` bigger; the odds cleared a roll of 0.0647 that the reference's
+  0.0596 did not, and the port took in a hand that never existed on the other
+  side. Two copies of this formula were already collapsed when short commons
+  landed and this one was missed. It is the whole argument for there being
+  one.
+  **3. The `wound` event effect**, which the port had been declaring as
+  unported all along. A card took four health off a sworn man; `health: 7`
+  against `health: 11` was the last byte in an 8,350-character facet.
+  **A latent divergence closed on the way out.** The first cut of the wound
+  port stamped `diedOn` on a card death. The reference does not — it sets
+  health, alive and fate and nothing else. Nobody dies of a card in either
+  recorded run, so it would have passed today and diverged on the first save
+  that did. Matched exactly instead. Whether the reference SHOULD stamp it is
+  a real question for that repo and not a licence for the port to differ.
+  **What made all of this findable** was a per-action trace on both sides and
+  `LANDNAM_DUMP`. Every one of these was a value at a matching size — five
+  points of morale, one hand, one digit of health — and a size cannot name any
+  of them.
+
 - **2026-08-21 — The last parity gap is one child** — the three refusals
   chased to a single named root cause, and `runs/example.json` verified green
   independently rather than taken on trust.
@@ -1898,14 +1933,18 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   reference pays five more, and five is `ORPHAN_GRIEF`.
   **The chain, proven rather than assumed.** The reference bore two children,
   Halli on day 140 and Bersi on day 291. A raid on day 353 killed Bersi's
-  mother. `orphaned()` took 5 heart for the child left behind. The port has
-  no children because BIRTHS ARE NOT PORTED — `birthBlocker` gates on
-  `houseAtPeace` and the Thing is not on this rung — so it never pays it, and
-  every later divergence including the three refusals follows from those five
-  points.
-  **So the last checkpoint is not a bug, it is a dependency**, and the
-  dependency is now named end to end: births, which need the Thing. Nothing
-  was papered over to make a number match.
+  mother. `orphaned()` took 5 heart for the child left behind, and the port
+  never paid it.
+  **CORRECTED THE NEXT DAY — the reason given here was wrong.** This entry
+  said the port had no children "because BIRTHS ARE NOT PORTED, blocked on
+  `houseAtPeace` and the Thing". Births WERE ported, and the evidence was in
+  the same readout: the steading facet matched at the divergence, which it
+  could not have if one side held two children and the other none. What was
+  missing was only the other half of mourning — `orphaned()` — and
+  `ORPHAN_GRIEF` was the single lineage constant the generator never emitted,
+  because nothing on the port side used it. The diagnosis of WHAT (five
+  points, that child, that raid) was right; the diagnosis of WHY was not
+  checked and should have been. See the entry above this one.
   **`runs/example.json` is green on its own** — 17 checkpoints, six facets,
   run separately because the harness stops at the first failure and I had not
   actually seen it pass since the cold-night work.

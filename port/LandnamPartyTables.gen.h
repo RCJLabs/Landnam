@@ -340,6 +340,17 @@ namespace Tables
 	constexpr int32_t BirthHeart = 8;
 	constexpr int32_t BearingMin = 16;
 	constexpr int32_t BearingMax = 44;
+	/**
+	 * What a death costs the steading for the children it leaves behind.
+	 *
+	 * Per orphaned child, off the BAND's heart rather than one person's — the
+	 * kin grief beside it is the one who lost somebody, this is everyone
+	 * looking at who is left. Emitted since 2026-08-21: it was the only lineage
+	 * number the port did not carry, because the port's Mourn did the kin
+	 * half and not this one, and five points of it was the last divergence in
+	 * runs/long.json.
+	 */
+	constexpr int32_t OrphanGrief = 5;
 
 	/**
 	 * What a cold night gives you, IN PICK ORDER — pick() indexes this list.

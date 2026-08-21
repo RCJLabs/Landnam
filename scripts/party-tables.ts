@@ -26,8 +26,7 @@ import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
 import type { Terrain } from '../src/state/types';
 import {
   BEARING_MAX, BEARING_MIN, BIRTH_COOLDOWN, BIRTH_FOOD_FLOOR, BIRTH_HEART, BIRTH_ODDS,
-  CHILD_APPETITE,
-} from '../src/data/lineage';
+  CHILD_APPETITE, ORPHAN_GRIEF } from '../src/data/lineage';
 import { ILLNESSES, SICKNESS_BASE_DC } from '../src/sim/winter';
 import { WEATHER } from '../src/data/weather';
 import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../src/data/rations';
@@ -373,6 +372,17 @@ ${SEEDED_KINDS.map((k) => `\t\t{ ${quote(k.id)}, { ${k.ground.map(quote).join(',
 \tconstexpr int32_t BirthHeart = ${int(BIRTH_HEART)};
 \tconstexpr int32_t BearingMin = ${int(BEARING_MIN)};
 \tconstexpr int32_t BearingMax = ${int(BEARING_MAX)};
+\t/**
+\t * What a death costs the steading for the children it leaves behind.
+\t *
+\t * Per orphaned child, off the BAND's heart rather than one person's — the
+\t * kin grief beside it is the one who lost somebody, this is everyone
+\t * looking at who is left. Emitted since 2026-08-21: it was the only lineage
+\t * number the port did not carry, because the port's Mourn did the kin
+\t * half and not this one, and five points of it was the last divergence in
+\t * runs/long.json.
+\t */
+\tconstexpr int32_t OrphanGrief = ${int(ORPHAN_GRIEF)};
 
 \t/**
 \t * What a cold night gives you, IN PICK ORDER — pick() indexes this list.
