@@ -187,10 +187,20 @@ up in the changelog with the seeds and the paired counts:
   never happened was the RECORD naming them: 0 takings out of 17 wrote whose
   steading it was. Fixed, plus a bug the fix would otherwise have shipped —
   the band's own abandoned hall is a ruin too. See the changelog.
-- **The retreat verb's real case is unmeasured** — ground taken too fast and
-  walked off early. The bot cannot test it because it only settles on ground
-  that already clears its site floor, and inventing a worse-settling bot
-  would measure a strawman.
+- ~~**The retreat verb's real case is unmeasured**~~ CLOSED 2026-08-21.
+  Measured, and the verb has no case even in the best one the game can be
+  made to produce: a band taking the FIRST legal ground still measures
+  **saved 0, killed 11**. The "worse-settling bot is a strawman" objection
+  did not survive contact — `siteFloor` is a dial the Policy type already
+  exposes and RAIDER already sets to 7 — and the case itself is thinner than
+  it looked: only 0.5% of foundable ground scores below "Hard ground".
+- **NEW, and it is Evan's call: the settler bot's `siteFloor` of 9 is
+  costing it enormously.** Dropping it takes 48/120 to **75/120** seeing
+  spring — the same size as the winter-mark lever, the biggest thing ever
+  measured here. Being choosy is far more lethal than poor ground, because
+  the picky band fails to settle at all in 45 of 120 seeds. Changing it
+  would move every hardship figure in this document, so it is not a change
+  to make quietly. See the changelog entry of 2026-08-21.
 
 **How this project works, and it is not optional.** Measure the premise before
 building: five design intuitions died on contact on 2026-08-20 and four
@@ -1969,6 +1979,57 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-21 — Walking out has no real case either, and being choosy is
+  what actually kills (open thread closed)** — the last item on the
+  open-threads list, and it was filed as unmeasurable: *"the bot only settles
+  on ground that already clears its site floor, and inventing a worse-settling
+  bot would measure a strawman."*
+
+  **Half of that objection was wrong.** The floor is not a property of the
+  game — it is `policy.siteFloor`, a dial the `Policy` type already exposes,
+  and one RAIDER already sets to 7 against the settler's 9. Dropping it to 0
+  is not a bot that hunts for bad ground; it is a band that takes the first
+  ground the game will let it have, which is the impatient player and exactly
+  the thread's own case. One variable moved. The seeds, the day count, the
+  hardship and the McNemar pairing are the published walk-out measurement's
+  own, and the floor-9 arm reproduces its **48/120** exactly, which is the
+  cross-check that says the instrument is the same one.
+
+  | arm | settled | ground | day | saw spring |
+  | --- | --- | --- | --- | --- |
+  | floor 9 — the published settler | 75/120 | 9.4 | 16 | 48/120 |
+  | floor 0 — first legal ground | 102/120 | 8.5 | 15 | **75/120** |
+  | floor 0 + walks out | — | — | — | 64/120 |
+
+  **The verb still has no case: saved 0, killed 11**, paired against floor 0.
+  That is its most favourable possible setting and it is no better than the
+  measurement it already had. The thread is closed on the answer it was
+  asking for.
+
+  **The case itself is thinner than the thread assumed.** Over 10,899
+  foundable hexes in 20 worlds the scores run 4–16, half of them at exactly 7
+  ("Hard ground — it could be held, by people with nothing better"), and only
+  **53 of them, 0.5%, fall below 6** into "a place to die in, slowly". A band
+  cannot easily take ground bad enough to regret: `canFound` already refuses
+  sea, rock and waterless ground. That is why a floor of 6 and a floor of 0
+  are the same policy in practice — nothing below is ever offered — and why
+  the rash arm still lands on a mean of 8.5.
+
+  **And the thing that fell out of it, which is bigger than the item.**
+  Dropping the floor took **48/120 to 75/120 seeing spring** — the same size
+  as the winter-mark lever, the largest effect ever measured in this project.
+  It is not that poor ground is fine; it is that the picky band **never
+  settles at all** in 45 of 120 seeds and dies on the road. Being choosy
+  costs more than bad ground does. The mechanism is stated rather than
+  inferred: the arms are decomposed into who saw spring with posts in the
+  ground (46 vs 73) and who was still roaming (2 vs 2).
+
+  **What is NOT decided here.** Whether `SETTLER.siteFloor` should change.
+  Every hardship curve in this document was measured with it at 9, so moving
+  it would restate all of them, and that is a call to make deliberately
+  rather than as a side effect of closing an unrelated thread. It is on the
+  open-threads list now with the number attached.
 
 - **2026-08-21 — The coast remembers whose steading it was (audit #8)** —
   the last unchased design idea, and **the premise was the opposite of the

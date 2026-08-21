@@ -5303,7 +5303,11 @@ describe('the first winter, from inside', () => {
 //     own doorstep and being taken on day 2. It comes from a real steading
 //     in a real saga now, which is what a challenge code actually carries.
 describe('the coast remembering the ghost', () => {
-  it('measures whether a haunted band finds the ruin, and what the record says', () => {
+  // An explicit budget, like every other measurement of this size in this
+  // file. Without one it inherits vitest's 60s default and it does not fit:
+  // measured at 64s on a slow runner, so the bar passed or failed on what
+  // else the machine was doing. It was committed that way and CI got lucky.
+  it('measures whether a haunted band finds the ruin, and what the record says', { timeout: 900_000 }, () => {
     const SEEDS = 30;
     // Cannot be composed from the name pool, so a hit is always the ghost.
     const NAME = 'Zzyrmvik';
@@ -5372,5 +5376,120 @@ describe('the coast remembering the ghost', () => {
     // This file's convention: hand the shared policy back the way it was
     // found, so an added test cannot change the meaning of one after it.
     policy = SETTLER;
+  });
+});
+
+// --- The retreat verb's real case ---
+//
+// The open thread said this could not be measured: "the bot only settles on
+// ground that already clears its site floor, and inventing a worse-settling
+// bot would measure a strawman." Half of that is true and half is not.
+//
+// The floor is not a property of the game, it is `policy.siteFloor` — a dial
+// the Policy type already exposes, and one RAIDER already sets to 7 against
+// the settler's 9. Dropping it to 0 is not a strawman bot that hunts for bad
+// ground: it is a band that takes the FIRST ground the game will let it have,
+// which is the impatient player, and the thread's own case — ground taken too
+// fast.
+//
+// And the ground below is thinner than the thread assumed. Measured over
+// 10,899 foundable hexes in 20 worlds, the scores run 4-16 with half of them
+// at exactly 7 ("Hard ground — it could be held, by people with nothing
+// better"); only 53 of them, 0.5%, fall below 6 into "a place to die in".
+// A band cannot easily take ground bad enough to regret, which is why the
+// floor-0 arm lands on a mean of 8.5 — it is not that the bot refuses worse
+// ground, it is that the map does not offer it.
+describe('walking out, for a band that took its ground too fast', () => {
+  it('says whether the verb has a real case', { timeout: 900_000 }, () => {
+    const SEEDS = 120;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    // The first legal ground, whatever the verdict says of it. The verb's
+    // ABSOLUTE best case: if walking out ever pays, it pays here. (A floor of
+    // 6 was measured too and is the same policy in practice — nothing below
+    // it is ever offered — so it is not run twice.)
+    const RASH: Policy = { ...SETTLER, id: 'rash', siteFloor: 0 };
+
+    const sample = (p: Policy) => {
+      policy = p;
+      walkedOut = 0;
+      const lived: boolean[] = [];
+      const scores: number[] = [];
+      const days: number[] = [];
+      const settledEver: boolean[] = [];
+      let livedSettled = 0;
+      let livedRoaming = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        // The FIRST founding only: the walk-out arm founds again, and the
+        // question is what ground the band originally took.
+        let noted = false;
+        const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
+          if (!noted && !before.settlement && after.settlement) {
+            noted = true;
+            const r = siteReport(after.world, after.settlement.at);
+            if (r) scores.push(r.total);
+            days.push(after.day);
+          }
+        }, 'even');
+        const alive = !final.end && final.day >= SPRING_IN;
+        lived.push(alive);
+        // Which mechanism is doing the work: settling MORE, or doing better
+        // once settled. A mean site score taken only over the bands that
+        // settled cannot tell them apart on its own.
+        settledEver.push(noted);
+        if (noted && alive) livedSettled += 1;
+        if (!noted && alive) livedRoaming += 1;
+      }
+      const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+      return {
+        lived, left: walkedOut, ground: mean(scores), day: mean(days),
+        settled: settledEver.filter(Boolean).length, livedSettled, livedRoaming,
+      };
+    };
+
+    const fair = sample(SETTLER);
+    const rash = sample(RASH);
+    const rashOut = sample({ ...RASH, retreats: true });
+    policy = SETTLER;
+
+    let saved = 0;
+    let killed = 0;
+    for (let s = 0; s < SEEDS; s += 1) {
+      if (!rash.lived[s] && rashOut.lived[s]) saved += 1;
+      if (rash.lived[s] && !rashOut.lived[s]) killed += 1;
+    }
+
+    const pct = (a: boolean[]) => `${a.filter(Boolean).length}/${SEEDS}`;
+    // eslint-disable-next-line no-console
+    console.log(
+      `walking out on ground taken too fast, ${SEEDS} seeds on As It Lies:\n` +
+      `  floor 9 (the published settler) — settled ${fair.settled}, ` +
+        `ground ${fair.ground.toFixed(1)}, day ${fair.day.toFixed(0)}, ` +
+        `${pct(fair.lived)} saw spring (${fair.livedSettled} with posts, ` +
+        `${fair.livedRoaming} still roaming)\n` +
+      `  floor 0 (first legal ground)   — settled ${rash.settled}, ` +
+        `ground ${rash.ground.toFixed(1)}, day ${rash.day.toFixed(0)}, ` +
+        `${pct(rash.lived)} saw spring (${rash.livedSettled} with posts, ` +
+        `${rash.livedRoaming} still roaming)\n` +
+      `  floor 0 + walks out            — ${pct(rashOut.lived)} saw spring, ` +
+        `${rashOut.left} steadings left standing empty\n` +
+      `  paired against floor 0: saved ${saved}, killed ${killed}`,
+    );
+
+    // THE INSTRUMENT FIRST, and this is what the thread was really about. If
+    // the lower floor does not put the band on worse ground, sooner, and more
+    // often, the two arms are the same run twice and nothing below means
+    // anything.
+    expect(rash.ground, 'the lower floor did not take worse ground')
+      .toBeLessThan(fair.ground);
+    expect(rash.settled, 'the lower floor did not commit more often')
+      .toBeGreaterThan(fair.settled);
+    expect(rashOut.left, 'nobody ever walked out — nothing was measured')
+      .toBeGreaterThan(0);
+    expect(rash.left, 'the control walked out too').toBe(0);
+
+    // AND NO BAR ON THE OUTCOME, for the same reason the sibling measurement
+    // above states: walking out measured at saved 0 / killed 11 even here, in
+    // the most favourable case the game can be made to produce. There is no
+    // "it beats nothing" bar to hold it to, because it does not.
   });
 });
