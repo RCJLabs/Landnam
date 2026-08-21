@@ -64,7 +64,7 @@ export function hauntedHex(state: GameState, ghost: Ghost): Hex | undefined {
 export function haunt(state: GameState, ghost: Ghost): boolean {
   const at = hauntedHex(state, ghost);
   if (!at) return false;
-  const place: Place = { id: 'pl_ruin', kind: 'ruin', at: { q: at.q, r: at.r } };
+  const place: Place = { id: GHOST_RUIN_ID, kind: 'ruin', at: { q: at.q, r: at.r } };
   state.world.places.push(place);
   state.ghost = ghost;
   chronicle(
@@ -75,9 +75,25 @@ export function haunt(state: GameState, ghost: Ghost): boolean {
   return true;
 }
 
-/** The ruin standing in this world, if one is. */
+/**
+ * The id the ghost's ruin is placed under.
+ *
+ * It matters that this is checked by ID and not by KIND. `abandonSteading`
+ * also leaves a `ruin` behind — the band's own hall, under `ruin:<hex>` — and
+ * a ghost is not whoever walked out of that. Keying the name off the kind put
+ * a stranger's name on the band's own posts, and nothing caught it because
+ * the balance bot never walks out (`retreats: false` on all three policies).
+ */
+export const GHOST_RUIN_ID = 'pl_ruin';
+
+/** Whether this place is the one a challenge code's ghost stood in. */
+export function isGhostRuin(place: Place): boolean {
+  return place.id === GHOST_RUIN_ID;
+}
+
+/** The ghost's ruin standing in this world, if one is. */
 export function theRuin(state: GameState): Place | undefined {
-  return state.world.places.find((p) => p.kind === 'ruin');
+  return state.world.places.find(isGhostRuin);
 }
 
 /**
@@ -89,7 +105,38 @@ export function theRuin(state: GameState): Place | undefined {
 export function ghostLine(state: GameState): string | undefined {
   const ghost = state.ghost;
   if (!ghost) return undefined;
-  return `${ghost.name} stood here. They ${endedAs(ghost.cause)} on day ${ghost.day}.`;
+  return `${ghost.name} stood here. ${theirEnd(ghost)}`;
+}
+
+/**
+ * What finished them, as one sentence.
+ *
+ * Shared by the panel and the saga deliberately: they are two surfaces onto
+ * the same fact, and two copies of a sentence are two sentences that can
+ * disagree once somebody edits one of them.
+ */
+function theirEnd(ghost: Ghost): string {
+  return `They ${endedAs(ghost.cause)} on day ${ghost.day}.`;
+}
+
+/**
+ * What the saga says when the band takes the dead steading apart.
+ *
+ * Audit #8, and the premise was measured before it was built. The fear was
+ * that a band never reaches the ruin at all — the place economy has taught
+ * this repo that lesson twice. It is false: across 30 haunted settler sagas
+ * the bot found the ruin and TOOK it 17 times, and stood in it 78.
+ *
+ * What it never did once, in 17 takings, was write down whose it was. The
+ * name reached the permanent log exactly once, on day one, in a rumour
+ * written before anyone had seen the place — and the taking closed that loop
+ * anonymously. The panel knew while you stood there; the saga, which is what
+ * a player reads back and what a run is remembered by, did not.
+ */
+export function ghostTakenLine(state: GameState): string | undefined {
+  const ghost = state.ghost;
+  if (!ghost) return undefined;
+  return `So this was ${ghost.name}, that we had been told of. ${theirEnd(ghost)}`;
 }
 
 /** A run-end cause as something a person would say about strangers. */

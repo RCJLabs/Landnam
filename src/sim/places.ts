@@ -24,6 +24,7 @@ import { holdShare } from './ship';
 import { learn, knows } from './lore';
 import { shiftStanding } from './neighbours';
 import { note } from './tally';
+import { ghostTakenLine, isGhostRuin } from './haunt';
 import { worldBeat } from './beats';
 
 /** Places keep out of each other's way, and out of the landing's. */
@@ -345,6 +346,14 @@ export function settlePlace(state: GameState, id: string, fromSea = false): void
     ...(fromSea ? { bySea: true as const } : {}),
   });
   chronicle(state, def.sackLine, def.garrison !== null ? 'grim' : 'good');
+  // A ruin is the one place that belonged to somebody with a name. The panel
+  // has always said whose it was while the band stood in it; the saga is
+  // where a run is actually remembered, and it said nothing at all. See
+  // `ghostTakenLine` for the measurement that found this.
+  if (isGhostRuin(place)) {
+    const whose = ghostTakenLine(state);
+    if (whose) chronicle(state, whose, 'saga');
+  }
   if (fromSea) {
     chronicle(state, 'We loaded the knarr to the thwarts and were gone on the tide.', 'good');
   }

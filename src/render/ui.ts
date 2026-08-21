@@ -20,7 +20,7 @@ import { reachable } from '../sim/reach';
 import { holed, sprung, unseaworthy } from '../sim/ship';
 import { weatherNext, weatherNow } from '../sim/weather';
 import { childrenOf } from '../sim/lineage';
-import { ghostLine } from '../sim/haunt';
+import { ghostLine, isGhostRuin } from '../sim/haunt';
 import { yearOf } from '../sim/calendar';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
@@ -471,16 +471,21 @@ export function renderHint(state: GameState): HTMLElement {
   const here = placeHere(state);
   if (here) {
     const def = placeKind(here.kind);
-    // Whose ruin it was — the kind's blurb says what a ruin looks like, and
-    // only the ghost knows who died in this one.
-    const whose = here.kind === 'ruin' ? ghostLine(state) : undefined;
-    return el('div', { class: 'hint place' }, [
+    // Whose ruin it was: the kind's blurb says what a ruin looks like, and
+    // only the ghost knows who died in THIS one. Matched by id rather than by
+    // kind, because `abandonSteading` leaves a ruin too — the band's own hall
+    // — and a stranger's name does not belong on their posts.
+    const whose = isGhostRuin(here) ? ghostLine(state) : undefined;
+    // `whose` is appended OUTSIDE the branch on purpose. It used to hang off
+    // the un-sacked arm alone, so taking the ruin turned it back into "a
+    // steading nobody came back to" for the rest of the run — the coast
+    // forgetting the one thing the ghost was there to say. A branch cannot
+    // forget what it does not carry.
+    const body =
       here.sackedOn !== undefined
         ? `What is left of ${def.name}. It was taken, and it shows.`
-        : `${def.name[0]!.toUpperCase()}${def.name.slice(1)}. ${def.blurb}${
-            whose ? ` ${whose}` : ''
-          }`,
-    ]);
+        : `${def.name[0]!.toUpperCase()}${def.name.slice(1)}. ${def.blurb}`;
+    return el('div', { class: 'hint place' }, [`${body}${whose ? ` ${whose}` : ''}`]);
   }
   if (!state.settlement) {
     return el('div', { class: 'hint' }, ['Find ground worth holding · tap a marked hex to travel']);

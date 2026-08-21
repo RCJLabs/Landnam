@@ -180,9 +180,13 @@ up in the changelog with the seeds and the paired counts:
   since no unit test reaches it); `travel.ts` into the reducer, the road
   and the gathering. Every split found a stranded doc comment, four for
   four. The three commits and the changelog entries have the detail.
-- **Audit #8, the coast remembering the ghost.** `sim/haunt.ts` already ships
-  the ruin a challenge code carries; what is missing was judged "narrower
-  than the idea" and never chased to something concrete.
+- ~~**Audit #8, the coast remembering the ghost.**~~ CLOSED 2026-08-21, and
+  the premise it was built on was the opposite of the guess. The fear was
+  that a band never walks onto the ruin at all; measured, they take it in
+  about half of all haunted runs (15 of 30 settler sagas, 87 visits). What
+  never happened was the RECORD naming them: 0 takings out of 17 wrote whose
+  steading it was. Fixed, plus a bug the fix would otherwise have shipped —
+  the band's own abandoned hall is a ruin too. See the changelog.
 - **The retreat verb's real case is unmeasured** — ground taken too fast and
   walked off early. The bot cannot test it because it only settles on ground
   that already clears its site floor, and inventing a worse-settling bot
@@ -1965,6 +1969,71 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-21 — The coast remembers whose steading it was (audit #8)** —
+  the last unchased design idea, and **the premise was the opposite of the
+  guess**, which is why it got measured first.
+
+  **What I expected to find, and did not.** The fear was reach: that a band
+  never walks onto the ruin, the way places are never LEARNED and the market
+  turned out to be under-VISITED. It is false. Across 30 haunted sagas the
+  bot found the ruin and TOOK it 15 times (raider 14), standing in it 87
+  times; the ruin is placed in 29 of 30 worlds and its hex is seen in 21.
+  A haunted coast meets its ghost about half the time it is offered one.
+
+  **What was actually missing was the record.** In 17 takings the saga named
+  the ghost **zero** times. The name reached the permanent log exactly once,
+  on day one, in a rumour written before anybody had seen the place — *"they
+  called their steading Eikstead. Nobody said where it was"* — and the taking
+  closed that loop anonymously, with a data-table line about a winter someone
+  did not see the end of. The panel knew whose it was while the band stood in
+  the ruin; the saga, which is what a player reads back and what a run is
+  remembered by, did not. That is exactly the "narrower than the idea" the
+  audit judged and never wrote down.
+
+  **What shipped.** `ghostTakenLine` in `sim/haunt.ts`, written by
+  `settlePlace`: *"So this was Eikstead, that we had been told of. They ran
+  out of food on day 128."* It shares one `theirEnd` sentence with
+  `ghostLine` on purpose — two surfaces onto one fact, and two copies of a
+  sentence are two sentences that disagree the first time somebody edits one.
+  And the panel keeps naming them after the ruin is taken: `whose` used to
+  hang off the un-sacked arm of a ternary alone, so taking the ruin turned it
+  back into "a steading nobody came back to" for the rest of the run. It is
+  appended outside the branch now — a branch cannot forget what it does not
+  carry.
+
+  **A bug the fix would otherwise have shipped.** `abandonSteading` leaves a
+  ruin behind too — the band's OWN hall, under `ruin:<hex>` — and the name
+  was keyed off the KIND. Own-ruins are marked sacked the day they are made,
+  so showing the name in the sacked branch would have put a stranger's name
+  on the band's own posts. It is keyed by id (`GHOST_RUIN_ID`) now. Nothing
+  in the suite caught it because the balance bot never walks out
+  (`retreats: false` on all three policies); the bar for it was watched
+  failing against the old rule before it was trusted.
+
+  **Three instrument faults, all of which produced believable numbers.** This
+  is the part worth keeping.
+  1. The probe's ghost was named `Eikstead` — a name the GAME can compose for
+     the band's own steading, so every line about home counted as the ghost.
+     Found only because 76 writes from 17 sackings is arithmetic that cannot
+     happen. The name in the bar cannot be composed from the pool.
+  2. The write counter keyed off `saga.length` growing, but `chronicle`
+     splices at the 300-entry cap, so a write into a full log was invisible.
+     That read as 13 of 14 and looked like a game fault. It keys off the
+     sacking transition now.
+  3. The ghost's hex came from another world's LANDING, and landings sit in
+     similar places across worlds — the ruin was arriving on the band's own
+     doorstep and being taken on day 2. It comes from a real steading in a
+     real saga now (the sender seed played 90 days; 15 of 30 had posts in the
+     ground by then, the rest fall back to their landing, which is stated
+     rather than hidden).
+
+  **The port is unaffected, checked rather than assumed.** The ruin is
+  `seeded: false`, so worldgen draws exactly what it drew before, and no
+  recorded run carries a ghost — the `contract` and `goldenport` fixtures
+  recompute every stored vector unchanged. Nothing to carry across; when the
+  port reaches places, this is one line in `settlePlace` and an id check.
+  No save-shape change. npm test green, tsc clean.
 
 - **2026-08-21 — `travel.ts` is the reducer again, and the fourth stranded
   doc comment of the day is found** — the last of the four ~630-line files.

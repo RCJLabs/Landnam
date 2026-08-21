@@ -101,6 +101,7 @@ import { reachable } from '../src/sim/reach';
 import { eventChance, isEligible } from '../src/sim/events';
 import { currentMode } from '../src/modes';
 import { stream } from '../src/rng';
+import { GHOST_RUIN_ID, haunt, theRuin } from '../src/sim/haunt';
 
 const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
 
@@ -1144,8 +1145,15 @@ function run(
   /** Called with every state transition, for measurements the tally misses. */
   watch?: (before: GameState, after: GameState) => void,
   hardship: HardshipId = 'even',
+  /**
+   * Run once on the fresh world, before the first turn. For planting the
+   * things a challenge code carries — a ghost's ruin — which `newGame` cannot
+   * know about because they come from somebody else's saga.
+   */
+  prepare?: (state: GameState) => void,
 ): GameState {
   let state = structuredClone(newGame(seed, hardship));
+  if (prepare) prepare(state);
   let jobsSet = false;
   walkOutHold = 0;
   /** Which season the current crew was picked for. */
@@ -5274,5 +5282,95 @@ describe('the first winter, from inside', () => {
     // design call rather than a measurement one.
     expect(wrong, `the panel told ${condemnedAndLived} surviving bands they were dead`)
       .toBeLessThan(0.4);
+  });
+});
+
+// --- Audit #8: does a haunted coast ever actually meet its ghost? ---
+//
+// `sim/haunt.ts` stands the ruin up and `ghostLine` names whose it was, but
+// neither is worth anything if a band never walks onto the hex. The place
+// economy has taught this file that lesson twice — places are never LEARNED,
+// and the market was under-VISITED rather than under-found — so the premise
+// was measured before anything was built on it.
+//
+// Two instrument faults were found and fixed while measuring, both of which
+// had produced believable numbers:
+//   - the test name 'Eikstead' is one the GAME can generate for the band's
+//     own steading, so every line about home counted as the ghost. The name
+//     here cannot be composed from the pool;
+//   - the ghost's hex came from another world's LANDING, and landings sit in
+//     similar places across worlds, so the ruin was arriving on the band's
+//     own doorstep and being taken on day 2. It comes from a real steading
+//     in a real saga now, which is what a challenge code actually carries.
+describe('the coast remembering the ghost', () => {
+  it('measures whether a haunted band finds the ruin, and what the record says', () => {
+    const SEEDS = 30;
+    // Cannot be composed from the name pool, so a hit is always the ghost.
+    const NAME = 'Zzyrmvik';
+    const TAKEN = 'So this was ';
+
+    for (const [label, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
+      let placed = 0, seen = 0, stood = 0, sacked = 0, wrote = 0, survived = 0, fromSteading = 0;
+
+      for (let s = 0; s < SEEDS; s += 1) {
+        // The sender: a real saga on another coast, played until it has posts
+        // in the ground. Its steading is what the code carries.
+        policy = { ...SETTLER };
+        const sender = run(`ghost-${s}`, 90);
+        const ghostAt = sender.settlement
+          ? { ...sender.settlement.at }
+          : { ...sender.world.landing };
+        if (sender.settlement) fromSteading += 1;
+
+        policy = { ...pol };
+        let ruinAt: { q: number; r: number } | null = null;
+
+        const state = run(
+          `curve-${s}`,
+          400,
+          (before, after) => {
+            if (ruinAt && after.party.at.q === ruinAt.q && after.party.at.r === ruinAt.r) stood += 1;
+            // Keyed off the SACKING ITSELF, not off the log growing. The saga
+            // is capped at 300 entries and `chronicle` splices when it is
+            // full, so once the log is full `saga.length` stops rising and a
+            // write becomes invisible — which is what made this read 13 of 14
+            // and looked like a game fault rather than an instrument one.
+            const was = before.world.places.find((p) => p.id === GHOST_RUIN_ID);
+            const now = after.world.places.find((p) => p.id === GHOST_RUIN_ID);
+            if (was?.sackedOn === undefined && now?.sackedOn !== undefined) {
+              if (after.saga.some((e) => e.text.startsWith(TAKEN))) wrote += 1;
+            }
+          },
+          'even',
+          (fresh) => {
+            if (haunt(fresh, { at: ghostAt, name: NAME, day: 128, cause: 'starved' })) {
+              const r = theRuin(fresh);
+              if (r) { ruinAt = { ...r.at }; placed += 1; }
+            }
+          },
+        );
+
+        const ruin = theRuin(state);
+        if (ruin) {
+          if (state.world.seen[key(ruin.at)] !== undefined) seen += 1;
+          if (ruin.sackedOn !== undefined) sacked += 1;
+        }
+        if (state.saga.some((e) => e.text.startsWith(TAKEN))) survived += 1;
+      }
+
+      console.log(
+        `[ghost/${label}] of ${SEEDS}: ghost from a real steading ${fromSteading}, ` +
+          `ruin placed ${placed}, hex seen ${seen}, visits ${stood}, sacked ${sacked}, ` +
+          `NAMED AT THE TAKING ${wrote}, still in the log at day 400 ${survived}`,
+      );
+
+      // The bar. Every taking of a ghost's steading names them; before this
+      // the count was 0 out of 17. Written, not survived — the saga cap is
+      // allowed to trim it later, like any other line.
+      expect(wrote, `${label}: the taking did not name the ghost`).toBe(sacked);
+    }
+    // This file's convention: hand the shared policy back the way it was
+    // found, so an added test cannot change the meaning of one after it.
+    policy = SETTLER;
   });
 });

@@ -21,9 +21,16 @@ import {
   challengeOf,
   ghostOf,
 } from '../src/sim/challenge';
-import { HAUNT_REACH, ghostLine, haunt, hauntedHex, theRuin } from '../src/sim/haunt';
+import {
+  GHOST_RUIN_ID,
+  HAUNT_REACH,
+  ghostLine,
+  haunt,
+  hauntedHex,
+  theRuin,
+} from '../src/sim/haunt';
 import { PLACE_KINDS, placeKind } from '../src/data/places';
-import { seedPlaces } from '../src/sim/places';
+import { seedPlaces, settlePlace } from '../src/sim/places';
 import { stream } from '../src/rng';
 import { distance } from '../src/hex';
 import { canFound, foundSettlement } from '../src/sim/site';
@@ -200,3 +207,97 @@ function settled(seed: string): GameState {
   expect(foundSettlement(state)).toBe(true);
   return state;
 }
+
+// --- Audit #8: the coast remembering the ghost ---
+//
+// Measured first, because the obvious guess was wrong. The fear was that a
+// band never walks onto the ruin at all — the place economy has taught this
+// repo that lesson twice. It does not hold: across 30 haunted settler sagas
+// the bot found and TOOK the dead steading 17 times, and stood in it 78.
+//
+// What it never did once, in 17 takings, was record whose it was. The name
+// reaches the permanent log exactly once, on day one, in a rumour written
+// before anybody has seen the place — "Nobody said where it was" — and the
+// taking itself closes the loop anonymously. Stand in the ruin and the panel
+// names them; take it and the coast forgets them for the rest of the run.
+describe('the coast remembers whose steading it was', () => {
+  /** A world with the ruin standing, and the band on top of it. */
+  function haunted(seed: string): { state: GameState; ruinId: string } {
+    const state = structuredClone(newGame(seed));
+    const at = Object.keys(state.world.tiles).map(fromKey).find(
+      (h) => placeKind('ruin').ground.includes(state.world.tiles[`${h.q},${h.r}`]!.terrain)
+        && !state.world.places.some((p) => p.at.q === h.q && p.at.r === h.r)
+        && distance(h, state.world.landing) > 0,
+    );
+    expect(at, 'no ground in this world holds a ruin').toBeTruthy();
+    expect(haunt(state, { ...GHOST, at: at! })).toBe(true);
+    const ruin = theRuin(state)!;
+    state.party.at = { ...ruin.at };
+    return { state, ruinId: ruin.id };
+  }
+
+  it('names them in the saga when the band takes the ruin', () => {
+    const { state, ruinId } = haunted('ghost-taking');
+    const before = state.saga.length;
+    settlePlace(state, ruinId);
+    const written = state.saga.slice(before).map((e) => e.text).join(' ');
+    // The generic line still says what was carried off.
+    expect(written).toContain('stacked against a winter');
+    // And the record now says whose winter it was.
+    expect(written, 'the taking never named the ghost').toContain('Eikstead');
+    expect(written, 'the taking never said what finished them').toContain('ran out of food');
+  });
+
+  it('is written once, not on every later day', () => {
+    // A saga line is permanent; a band that camps in the ruin for a week must
+    // not get the same sentence seven times.
+    const { state, ruinId } = haunted('ghost-once');
+    settlePlace(state, ruinId);
+    settlePlace(state, ruinId);
+    const named = state.saga.filter((e) => e.text.includes('Eikstead')
+      && !e.text.includes('Nobody said where it was'));
+    expect(named).toHaveLength(1);
+  });
+
+  it('still knows whose it was after the ruin has been taken', () => {
+    // The panel reads `ghostLine`, and this is the half of that guarantee a
+    // node-environment suite can hold: the fact survives the sacking. The
+    // renderer's own half — that the SACKED branch prints it, which it did
+    // not — is structural now: `whose` is appended outside the branch, so no
+    // arm of it can drop the name. This repo runs no DOM tests by design;
+    // the render layer is checked in a real browser instead.
+    const { state, ruinId } = haunted('ghost-panel');
+    settlePlace(state, ruinId);
+    expect(theRuin(state)?.sackedOn).toBeDefined();
+    expect(ghostLine(state), 'the ruin forgot whose it was once taken').toContain('Eikstead');
+  });
+
+  it("never puts the ghost's name on a ruin that is not theirs", () => {
+    // `abandonSteading` leaves a ruin behind too — the band's OWN hall, under
+    // `ruin:<hex>`. Keying the name off the KIND meant a band that walked out
+    // and later stood on its own posts was told a stranger had died there.
+    // Nothing caught it because the balance bot never walks out.
+    const { state } = haunted('ghost-own');
+    // Unshifted, so a find-by-kind would pick this one first.
+    state.world.places.unshift({ id: 'ruin:9,9', kind: 'ruin', at: { q: 9, r: 9 } });
+    expect(theRuin(state)?.id).toBe(GHOST_RUIN_ID);
+    const before = state.saga.length;
+    settlePlace(state, 'ruin:9,9');
+    const written = state.saga.slice(before).map((e) => e.text).join(' ');
+    expect(written, "a stranger's name on the band's own posts").not.toContain('So this was');
+    expect(written).not.toContain(GHOST.name);
+  });
+
+  it('says nothing extra when the ruin is not a ghost of anyone', () => {
+    // Defensive: a ruin with no ghost on the state must not produce a line
+    // with an empty name in it.
+    const { state, ruinId } = haunted('ghost-absent');
+    delete state.ghost;
+    const before = state.saga.length;
+    settlePlace(state, ruinId);
+    const written = state.saga.slice(before).map((e) => e.text).join(' ');
+    expect(written).toContain('stacked against a winter');
+    expect(written).not.toContain('undefined');
+    expect(written).not.toContain('  ');
+  });
+});
