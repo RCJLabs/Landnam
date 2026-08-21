@@ -24,11 +24,22 @@
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
 > **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
-> (C++), item 5 (parity CI) is BUILT on both sides, and STAGE 5 IS DONE:
-> both scripted runs are green END TO END — 41 checkpoints, every facet,
-> 1320 actions and 457 days on one and a run that breaks on day 22 on the
-> other — and the standalone harness replays the whole long script with
-> `unported=0`, meaning nothing anywhere in it was skipped.**
+> (C++), item 5 (parity CI) is BUILT on both sides, and BOTH SCRIPTED RUNS
+> ARE GREEN END TO END: `PARITY OK — 39 checkpoints across two runs, six
+> facets each`, 1478 actions and 457 days on `runs/long.json` and 66 actions
+> to day 15 on `runs/example.json`, with `unported=0` — nothing anywhere in
+> either was skipped.**
+>
+> **Re-earned on 2026-08-21 after five days of drift.** The figures above
+> read "41 checkpoints, 1320 actions" until then, and were true when written;
+> the recorded runs have since been re-recorded and the sim has moved. The
+> workflow went red on 2026-08-19 the moment the contract sync started
+> handing the port CURRENT vectors instead of the stale ones it had been
+> grading itself against, and it stayed red until today. Four rounds of
+> causes, all in the changelog: two generator bugs in the TypeScript repo, a
+> stale hardcoded checkpoint list in the port's own harness, four unported
+> features (weather, short commons, cold nights, the `wound` effect), and
+> three separate copies of the mouths formula collapsed into one.
 >
 > **AND IT HAS NOW RUN IN A REAL UNREAL EDITOR — both automation tests pass.**
 > `Landnam.SimParity`: sim.day 308 checks, sim.landing 40, sim.coast 10,
@@ -42,11 +53,18 @@
 > vectors existed only on the Unreal side, owned by nobody. They are owned
 > and recomputed here now.
 >
-> **THE PORT IS PAUSED, ON PURPOSE (2026-08-17).** Evan's call: polish the
-> TypeScript build — mobile first — and see how good it can get before more
-> of it is carried into C++. The port is at a clean stopping point (both
-> automation tests green in a real editor, both lines merged), so nothing is
-> half-done while it waits. The item below is what it resumes ON.
+> **THE PORT WAS PAUSED ON PURPOSE (2026-08-17), AND THAT PAUSE IS OVER —
+> not by decision but by arithmetic.** Evan's call was to polish the
+> TypeScript build first and carry more into C++ later. What that missed is
+> that the reference kept moving: a paused port beside a live reference is
+> not a stopping point, it is a widening gap, and by 2026-08-19 the two
+> builds disagreed about the map on day one. The port is caught up now and
+> the pause cannot simply resume — anything that changes the sim has to be
+> carried across in the same breath, or the workflow goes red and says so.
+> That is the contract sync working as designed rather than a new burden.
+>
+> The item below is what the port's own FEATURE work resumes on, whenever
+> that is; keeping parity green is not optional in the meantime.
 >
 > Ten candidates were surveyed against the live tree on 2026-08-17 and
 > written up in chat. FIVE are DONE and in the changelog: terrain you can
