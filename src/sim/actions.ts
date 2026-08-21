@@ -14,6 +14,7 @@ import { doDash, doDefend, doMove, doReach, doShove, doStrike, doThrow, doWarCry
 import { endTurn, leaveBattle } from './battleTurn';
 import { assign, makePlots, queueBuild, unqueueBuild } from './colony';
 import { atHome } from './site';
+import { abandonSteading } from './retreat';
 import { stream } from '../rng';
 import { key } from '../hex';
 import type { JobId } from '../data/jobs';
@@ -43,7 +44,8 @@ export type ColonyAction =
   | { type: 'ASSIGN'; personId: string; job: JobId | null }
   | { type: 'QUEUE_BUILD'; building: BuildingId }
   | { type: 'UNQUEUE_BUILD'; building: BuildingId }
-  | { type: 'SET_RATIONS'; rations: Rations };
+  | { type: 'SET_RATIONS'; rations: Rations }
+  | { type: 'ABANDON' };
 
 export type Action =
   | TravelAction
@@ -61,6 +63,7 @@ const COLONY_TYPES = new Set([
   'QUEUE_BUILD',
   'UNQUEUE_BUILD',
   'SET_RATIONS',
+  'ABANDON',
 ]);
 
 const BATTLE_TYPES = new Set([
@@ -162,6 +165,18 @@ export function apply(state: GameState, action: Action): GameState {
       if (!queueBuild(next, action.building)) return state;
       return next;
     }
+    if (action.type === 'ABANDON') {
+      // The door `readiness()` has been pointing at since the winter work.
+      // A steading decision, taken standing in it — see src/sim/retreat.ts
+      // for the cost and src/data/retreat.ts for why it is that much.
+      const next = cloneState(state);
+      if (!abandonSteading(next)) return state;
+      // Out of the colony panel, because there is no colony to be in. The
+      // stack never empties: popping the last mode is refused elsewhere and
+      // a settled band always has TRAVEL under it.
+      return currentMode(next) === 'COLONY' ? popMode(next) : next;
+    }
+
     if (action.type === 'SET_RATIONS') {
       // The winter lever. A steading decision — it is the household's rule
       // for the season, and the steading is where the mark that answers it is

@@ -1876,6 +1876,48 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-20 — The door is built, and measured at not worth walking
+  through** — audit item 6 again, and it answers the question the entry below
+  explicitly left open rather than re-fixing the same thing.
+  **What shipped.** `ABANDON`, a steading verb: it gives up the hall, puts the
+  band back on the road, and lets it found again — which `foundSettlement` had
+  said in its own comment was impossible ("no unfound, no second steading").
+  It costs the whole of the work — buildings, shelter, watch, queue and banked
+  builder-days — plus 12 heart against the 8 founding paid, so the round trip
+  is a net loss and cannot be done idly, and a ten-day floor since founding
+  stops it being a free look at the site report. Save v36 with a migration.
+  **Two hazards closed on the way, both watched failing.** The ruin left
+  behind is marked SACKED THE DAY IT IS MADE: the `ruin` kind carries loot for
+  `haunt.ts`, and a lootable one would have made walking out a way to get your
+  own timber back, so the cost would have funded itself. And the CHILDREN come
+  along — `Settlement.children` is a record kept on the ground and
+  `childrenOf` feeds `foodPerDay`, so a naive retreat would have been a way to
+  stop feeding your own children. They ride on `state.bairns` until there are
+  posts to keep them at.
+  **Then it was measured, and it is bad.** Given to the bot as "walk out when
+  the verdict condemns this ground", 120 paired landings on As It Lies:
+  **50 retreats, saved 0, killed 11**, spring 48/120 down to 37/120. Obvious
+  once said — what dooms a band in autumn is empty stores and no time, and
+  retreating spends the buildings and a week of road to make both worse.
+  **So the panel still does not offer it**, and the reason has changed from
+  "that verb does not exist" to "that verb is measured to kill you". The
+  control sits on the steading screen as the quietest thing there, with the
+  cost on its face. A band that wants to leave can leave; nothing suggests
+  they should. The bar in `winter.test.ts` turned out to be one-directional in
+  code while its comment claimed a pair — the comment was corrected to match
+  what it actually holds, which is the direction that was ever a defect: the
+  game must not advertise a move it would REFUSE. Advertising a move it merely
+  disagrees with is a design call, not something a string search should make.
+  **The instrument earned its keep again.** The first cut parked the walk-out
+  delay in `settleNotBefore`, which is shared across a whole sample, so one
+  retreat on day 54 barred all 119 later landings from settling at all. It
+  read **"killed 46" off THREE retreats** — arithmetic that cannot happen, and
+  the retreat count printed beside the outcome is what caught it.
+  **What is NOT claimed:** that the verb is useless. The case it is actually
+  for — ground taken too fast, walked off early in the summer — cannot be
+  measured with this bot, which only ever settles on ground that already
+  clears its site floor. Saying so beats inventing a bot that would.
+
 - **2026-08-20 — The panel stopped offering a door that is not there** — audit
   item 6, "abandon a steading without dying", and the measurement turned it
   into a truthfulness fix rather than a feature.

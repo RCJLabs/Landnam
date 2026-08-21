@@ -332,6 +332,9 @@ export const MIGRATIONS: Record<number, Migration> = {
   // Party gained the optional `rations`. Nobody could choose short commons
   // before this, so an absent value is exactly true of every older save.
   34: (save) => ({ ...save, version: 35 }),
+  // Nothing to carry: a band that could not walk out never left anybody
+  // behind, so absent is the whole truth and the field stays absent.
+  35: (save) => ({ ...save, version: 36 }),
 };
 
 export interface MigrationResult {

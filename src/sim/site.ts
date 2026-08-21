@@ -217,8 +217,14 @@ export function nameFor(state: GameState, at: Hex, report: SiteReport): string {
 }
 
 /**
- * Founds the settlement. One way: there is no unfound, no second steading,
- * and no moving it. Mutates the state clone.
+ * Founds the settlement. Mutates the state clone.
+ *
+ * This said "one way: there is no unfound, no second steading, and no moving
+ * it" until 2026-08-20, and that had quietly become a lie the winter panel
+ * was telling: `readiness()` advises a band that cannot reach spring to walk
+ * out and winter elsewhere, and there was no verb for it. There is now — see
+ * src/sim/retreat.ts — and it is still not free, and still not a way to move
+ * a steading. It is a way to give one up.
  */
 export function foundSettlement(state: GameState): boolean {
   const at = state.party.at;
@@ -238,8 +244,12 @@ export function foundSettlement(state: GameState): boolean {
     built: [],
     queue: [],
     works: 0,
-    children: [],
+    // Anyone born under the old roof comes in under this one. `bairns` is
+    // empty for every band that has not walked out on a steading, which is
+    // almost all of them — see src/sim/retreat.ts.
+    children: [...(state.bairns ?? [])],
   };
+  delete state.bairns;
   // The land-taking is the moment the run stops being a walk, so it is
   // written in saga voice rather than as another day's line.
   const eldest = bestAt(state.party.people, 'spirit');

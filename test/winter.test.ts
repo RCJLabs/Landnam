@@ -150,9 +150,19 @@ describe('the winter mark', () => {
    * clears `state.settlement` — so a player who took that advice would find
    * the game refusing them, at the worst moment it could.
    *
-   * The bar is written as a PAIR so it cannot rot in either direction: the
-   * prose may only promise walking out when the code can actually do it.
-   * Build the verb and this test tells you to put the sentence back.
+   * The bar is ONE-DIRECTIONAL and the comment used to overstate it. It said
+   * "build the verb and this test tells you to put the sentence back", which
+   * the code below never did: it only checks that the prose does not promise
+   * walking out while `ABANDON` is absent. Worth being exact about, because
+   * the verb arrived on 2026-08-20 and the sentence deliberately did NOT come
+   * back — walking out measured at saved 0 and killed 11 over 120 paired
+   * landings, so this panel, which is the one place the game tells a dying
+   * band what to try, does not spend itself on it. See src/data/retreat.ts.
+   *
+   * The direction that remains is the one that was ever a defect: the game
+   * must not advertise a move it would refuse. Whether it advertises a move
+   * it merely disagrees with is a design call, and it is not one a string
+   * search should be making.
    */
   it('offers no way out that the player cannot actually take', () => {
     // A band the mark has written off: settled, the frost close, and nothing

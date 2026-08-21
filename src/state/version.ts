@@ -50,7 +50,11 @@
 // v35 (rations): Party gained the optional `rations`. An absent value is
 //                 full shares, which is what every band before the winter
 //                 lever was eating.
-export const SAVE_VERSION = 35;
+// v36 (retreat): the root gained the optional `bairns` — children carried
+//                 between steadings by a band that walked out on one. Absent
+//                 is the truth about every saga played before there was a way
+//                 to leave.
+export const SAVE_VERSION = 36;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

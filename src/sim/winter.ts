@@ -452,20 +452,26 @@ export function readiness(state: GameState): string {
   // the coast, and being told so on day 26 is fair where finding out on
   // day 50 is not.
   if (!reachable(state)) {
-    // NAMES ONE WAY OUT, NOT TWO, AND IT IS THE ONE THAT EXISTS.
+    // STILL ONE WAY OUT, AND NOW FOR A BETTER REASON THAN LAST TIME.
     //
-    // This read "taking it from somebody else, or walking out and wintering
-    // elsewhere" until 2026-08-20, and the second half was a verb the game
-    // does not have: `foundBlocker` answers `settled` once the posts are in,
-    // and NOTHING anywhere clears `state.settlement`. A band cannot walk out.
-    // The panel was telling a dying player to do something the game would
-    // refuse, which is worse than telling them nothing.
+    // This line read "taking it from somebody else, or walking out and
+    // wintering elsewhere" for a long time while walking out was not a verb
+    // at all — nothing cleared `state.settlement` and `foundBlocker` answered
+    // `settled` forever. That promise was withdrawn earlier on 2026-08-20 as
+    // a thing the rules would refuse, with a note that whether it SHOULD be a
+    // verb was unmeasured.
     //
-    // Whether it SHOULD be a verb is a live design question and deliberately
-    // not settled here. What was measured at "saved nobody" was the escape
-    // hatch as it exists — raids and errands — and an abandon-and-resettle
-    // has never existed, so nothing has ever measured it. Removing the
-    // promise is not the same as ruling out the feature.
+    // It is a verb now (`ABANDON`, src/sim/retreat.ts) and it is MEASURED,
+    // and the measurement says do not put it in this sentence. A band that
+    // walks out when the verdict condemns it does worse than one that stays:
+    // 120 paired landings, 50 retreats, SAVED NOBODY AND KILLED ELEVEN, and
+    // spring fell 48/120 to 37/120.
+    //
+    // Which is obvious once said. What dooms a band here is no stores and no
+    // time, and retreating spends the buildings and a week of walking to make
+    // both worse. The door exists and the player may take it; this panel is
+    // the one place in the game that tells a dying band what to try, and it
+    // must not spend that on the thing measured to kill them.
     return `${gap} We cannot cut or hunt our way to that from here. What is left is taking it from somebody else.`;
   }
   return gap;

@@ -1951,3 +1951,29 @@ button.hardship-chip {
     right: auto;
   }
 }
+
+
+/* Walking out. The quietest control on the steading panel on purpose: it is
+   measured at saved nobody and killed eleven, so it is offered and never
+   urged. Muted until touched, and the note under it carries the cost.
+   44px min height like every other target — see the mobile rule. */
+.leaving {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--edge, #3a3027);
+  padding-top: 0.75rem;
+}
+.action.wide.grim {
+  background: transparent;
+  border: 1px solid var(--grim, #7b4a3a);
+  color: var(--grim, #7b4a3a);
+}
+.action.wide.grim:active {
+  background: var(--grim, #7b4a3a);
+  color: var(--ink-on-grim, #f2e7d8);
+}
+.leave-note {
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  opacity: 0.72;
+}

@@ -589,6 +589,20 @@ export interface GameState {
    */
   ghost?: Ghost;
   /**
+   * Children carried between steadings, when a band walks out on one.
+   *
+   * Named `bairns` rather than `carried` because `Expedition.carried` is a
+   * number of provisions, and two fields called the same thing meaning
+   * different things is how a reader ends up feeding the wrong one.
+   *
+   * `Settlement.children` is a record kept on the ground it was born on, so
+   * abandoning would simply delete them — and `childrenOf` feeds
+   * `foodPerDay`, which would make walking out a way to stop feeding your own
+   * children. They ride here until there are posts to keep them at, and
+   * `foundSettlement` picks them up again.
+   */
+  bairns?: Child[];
+  /**
    * The run as data: the ordered events of a day, for a presentation layer
    * that has to show them happening rather than print them. The battle
    * equivalent lives on `Battle.beats` and dies with the fight; this one

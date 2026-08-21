@@ -25,6 +25,8 @@ import {
 import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
 import { CROWDING_BITE } from '../sim/minds';
 import { foodPerDay } from '../sim/upkeep';
+import { abandonBlocker, ABANDON_REASON } from '../sim/retreat';
+import { ABANDON_HEART } from '../data/retreat';
 import { HALF_RATION_HEART } from '../data/rations';
 import { forecast, reachable, readiness, sickCount } from '../sim/winter';
 import { counsel, counselLine } from '../sim/counsel';
@@ -158,6 +160,36 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
       () => dispatch({ type: 'SET_RATIONS', rations: other }),
       { class: 'action wide' },
     ),
+    renderLeaving(state, dispatch),
+  ]);
+}
+
+/**
+ * The door out, and it is deliberately the quietest control on the panel.
+ *
+ * Walking out measured at saved nobody and killed eleven over 120 paired
+ * landings — see src/data/retreat.ts. So it is offered rather than urged: no
+ * primary styling, the cost written on the face of it, and a refusal that
+ * says WHICH rule is refusing rather than going grey with no explanation. A
+ * player who wants to leave can leave; nothing here suggests they should.
+ */
+function renderLeaving(state: GameState, dispatch: Dispatch): HTMLElement {
+  const why = abandonBlocker(state);
+  if (why === 'nosteading' || why === 'ended') return el('span');
+  const home = state.settlement!;
+  if (why !== null) {
+    return el('div', { class: 'leave-note' }, [ABANDON_REASON[why]]);
+  }
+  return el('div', { class: 'leaving' }, [
+    button(
+      `Leave ${home.name} standing empty`,
+      () => dispatch({ type: 'ABANDON' }),
+      { class: 'action wide grim' },
+    ),
+    el('div', { class: 'leave-note' }, [
+      `Everything raised here is lost, and ${ABANDON_HEART} off every heart. `
+        + 'The stores come with us.',
+    ]),
   ]);
 }
 

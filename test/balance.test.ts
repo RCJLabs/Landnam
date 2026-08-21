@@ -55,6 +55,7 @@ import { moveOptions, canGather, canFish, atSea, isCoastalWater } from '../src/s
 import { canFound, siteReport } from '../src/sim/site';
 import { holed } from '../src/sim/ship';
 import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
+import { abandonSteading, canAbandon } from '../src/sim/retreat';
 import { BAND_BASE, foodPerDay, firewoodPerNight, passDay } from '../src/sim/upkeep';
 import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
 import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
@@ -224,6 +225,16 @@ interface Policy {
    * the frost and it sat below the bars, not on them.
    */
   crewsToNeed: boolean;
+  /**
+   * Whether the band walks out on a steading the verdict has written off.
+   *
+   * AUDIT ITEM 6. `readiness()` named this as a way out for a long time while
+   * it was not a verb, and when the promise was withdrawn the note said
+   * whether it SHOULD be one was a live question nothing had measured. This
+   * knob is how it gets measured, against the standard the escape hatch set:
+   * saved nobody, killed two.
+   */
+  retreats: boolean;
 }
 
 /**
@@ -295,6 +306,7 @@ const SETTLER: Policy = {
   tightensBelt: true,
   recrews: false,
   crewsToNeed: true,
+  retreats: false,
 };
 
 /**
@@ -332,6 +344,7 @@ const RAIDER: Policy = {
   tightensBelt: false,
   recrews: false,
   crewsToNeed: true,
+  retreats: false,
 };
 
 /**
@@ -358,6 +371,7 @@ const TURTLE: Policy = {
   tightensBelt: false,
   recrews: false,
   crewsToNeed: true,
+  retreats: false,
 };
 
 /**
@@ -394,6 +408,14 @@ let policy: Policy = SETTLER;
  * before.
  */
 let recrewed = 0;
+/** How many steadings the bot has walked out on since a test zeroed it. */
+let walkedOut = 0;
+/**
+ * The day the bot may settle again after walking out. PER RUN — reset at the
+ * top of `run()`, unlike `settleNotBefore`, which a sweep sets deliberately
+ * and holds across a whole sample.
+ */
+let walkOutHold = 0;
 // NOTE: 'farmplots' has no hyphen. The first version of this list wrote
 // 'farm-plots', which matches no building, so that entry silently never
 // queued and the measured bot had been building three things while this file
@@ -868,7 +890,8 @@ function step(state: GameState): Action {
   }
 
   // Settle on anything workable rather than holding out for perfection.
-  if (canFound(state, state.party.at) && state.day >= settleNotBefore) {
+  if (canFound(state, state.party.at) && state.day >= settleNotBefore
+    && state.day >= walkOutHold) {
     const r = siteReport(state.world, state.party.at);
     if (r && r.total >= policy.siteFloor) return { type:'FOUND' };
   }
@@ -1121,10 +1144,33 @@ function run(
 ): GameState {
   let state = structuredClone(newGame(seed, hardship));
   let jobsSet = false;
+  walkOutHold = 0;
   /** Which season the current crew was picked for. */
   let crewedFor = '';
 
   for (let i = 0; i < 6000 && !state.end && state.day <= maxDay; i += 1) {
+    // WALKING OUT, and it is taken before anything else the day would do:
+    // there is no sense crewing or queueing a steading the band is leaving.
+    if (policy.retreats && state.settlement && markVisible(state)
+      && !reachable(state) && canAbandon(state)) {
+      abandonSteading(state);
+      walkedOut += 1;
+      // And it walks. Without this the bot re-founds on the hex it just
+      // abandoned the following morning — `foundBlocker` does not care that
+      // there is a ruin on it — which is not "wintering elsewhere", it is a
+      // loop that pays the cost and moves nowhere. Six days is roughly the
+      // week of walking the sentence implies, and it is the BOT's strategy
+      // rather than a rule of the game.
+      //
+      // ITS OWN VARIABLE, NOT `settleNotBefore`, and the first cut used that
+      // one. `settleNotBefore` is module-level and shared by every seed in a
+      // sample, so one band walking out on day 54 barred all 119 landings
+      // after it from ever settling: the arm read 2/120 against 48/120 and
+      // "killed 46" off THREE retreats, which is arithmetic that cannot
+      // happen and was the tell. Reset per run, below.
+      walkOutHold = state.day + 6;
+    }
+
     if (state.settlement && !jobsSet) {
       state.party.people
         .filter((p) => p.alive)
@@ -5048,6 +5094,76 @@ describe('the first winter, from inside', () => {
       `crewing to the winter mark saved ${worth.saved} and killed ${worth.killed} — `
         + `if it stops paying, the mark has stopped being worth reading`,
     ).toBeGreaterThan(worth.killed);
+  });
+
+  /**
+   * IS WALKING OUT WORTH ANYTHING?
+   *
+   * AUDIT ITEM 6, and the bar it has to clear is the one the escape hatch
+   * failed. `readiness()` named two ways out for a band that cannot reach
+   * spring; the one that existed — rob somebody — measured at SAVED NOBODY
+   * AND KILLED TWO, and the one that did not exist was never measured because
+   * there was no verb for it. There is now, so this is the measurement that
+   * was owed.
+   *
+   * Paired on the same seeds, because only the landings where the two arms
+   * disagree carry any information about the change — the same McNemar shape
+   * the belt was settled on.
+   */
+  it('says whether walking out saves anybody', { timeout: 400_000 }, () => {
+    const SEEDS = 120;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    const sample = (p: Policy): { lived: boolean[]; left: number } => {
+      policy = p;
+      walkedOut = 0;
+      const lived: boolean[] = [];
+      for (let s = 0; s < SEEDS; s += 1) {
+        const final = run(`winter-inside-${s}`, SPRING_IN, undefined, 'even');
+        lived.push(!final.end && final.day >= SPRING_IN);
+      }
+      return { lived, left: walkedOut };
+    };
+
+    const stayed = sample(SETTLER);
+    const walked = sample({ ...SETTLER, id: 'retreat', retreats: true });
+    policy = SETTLER;
+
+    let saved = 0;
+    let killed = 0;
+    for (let s = 0; s < SEEDS; s += 1) {
+      if (!stayed.lived[s] && walked.lived[s]) saved += 1;
+      if (stayed.lived[s] && !walked.lived[s]) killed += 1;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `walking out, ${SEEDS} seeds on As It Lies:\n` +
+      `  stayed put   — ${stayed.lived.filter(Boolean).length}/${SEEDS} saw spring\n` +
+      `  walked out   — ${walked.lived.filter(Boolean).length}/${SEEDS} saw spring, ` +
+        `${walked.left} steadings left standing empty\n` +
+      `  paired: saved ${saved} that would have died, killed ${killed} that would have lived`,
+    );
+
+    // THE INSTRUMENT FIRST. An arm that never walked out is the same run
+    // twice, and this file has shipped that mistake before. It earned its
+    // keep here: the first cut of this measurement parked the walk-out delay
+    // in `settleNotBefore`, which is shared across a whole sample, so one
+    // retreat on day 54 barred every later landing from settling at all. It
+    // read "killed 46" off THREE retreats — arithmetic that cannot happen,
+    // and the reason the count is printed next to the outcome.
+    expect(walked.left, 'nobody ever walked out — nothing was measured')
+      .toBeGreaterThan(0);
+    expect(stayed.left, 'the control walked out too').toBe(0);
+
+    // AND NO BAR ON THE OUTCOME, deliberately.
+    //
+    // Walking out measured at saved 0 / killed 11, so there is no "it beats
+    // nothing" bar to hold it to — it does not. That is written up in
+    // src/data/retreat.ts and the panel no longer recommends it. A bar
+    // asserting it stays harmful would be pinning a number nobody is tuning
+    // toward, and a bar asserting it helps would be a bar this file would
+    // have to lower. The console line above is the record.
   });
 
   /**
