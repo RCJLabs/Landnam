@@ -4,15 +4,14 @@ import { newGame, START_FIREWOOD, START_FOOD } from '../src/state/create';
 import { apply } from '../src/sim/actions';
 import {
   atSea,
-  canFish,
-  canGather,
   canMove,
   daysForMove,
   isCoastalWater,
   moveEffort,
   moveOptions,
   SEA_EFFORT,
-} from '../src/sim/travel';
+} from '../src/sim/road';
+import { canFish, canGather } from '../src/sim/gathering';
 import { canFound } from '../src/sim/site';
 import { living } from '../src/sim/people';
 import { foodPerDay, SURVIVAL_DAY } from '../src/sim/upkeep';

@@ -20,7 +20,7 @@ import { apply, type Action } from '../src/sim/actions';
 import { encode } from '../src/state/save';
 import { allLessonIds, lessonDue } from '../src/sim/lessons';
 import { LESSONS, lessonById } from '../src/data/lessons';
-import { moveOptions } from '../src/sim/travel';
+import { moveOptions } from '../src/sim/road';
 import { foundSettlement, canFound } from '../src/sim/site';
 import { startBattle } from '../src/sim/battleTurn';
 import { SEASON_LENGTH } from '../src/sim/calendar';

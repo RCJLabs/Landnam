@@ -85,7 +85,7 @@ import { CROWDING_BITE, MOOD_DRIFT } from '../src/sim/minds';
 import { BAND_BASE, HEARTH_SHARE } from '../src/sim/upkeep';
 import { BASE_EVENT_CHANCE, SETTLING_IN_DAYS } from '../src/sim/events';
 import { LONG_LIFE_WINTERS } from '../src/data/thing';
-import { ROW_REACH, SEA_EFFORT } from '../src/sim/travel';
+import { ROW_REACH, SEA_EFFORT } from '../src/sim/road';
 import { START_FIREWOOD, START_FOOD } from '../src/state/create';
 import { SAVE_VERSION } from '../src/state/version';
 

@@ -4,7 +4,7 @@ import { migrate, MIGRATIONS, type Migration } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { moveOptions } from '../src/sim/travel';
+import { moveOptions } from '../src/sim/road';
 
 describe('save codec', () => {
   it('round-trips a fresh game exactly', () => {

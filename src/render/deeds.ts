@@ -9,7 +9,8 @@
 import type { Action } from '../sim/actions';
 import type { GameState } from '../state/types';
 import { atHome, BLOCK_REASON, foundBlocker } from '../sim/site';
-import { atSea, canFish, canGather } from '../sim/travel';
+import { atSea } from '../sim/road';
+import { canFish, canGather } from '../sim/gathering';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
 import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';

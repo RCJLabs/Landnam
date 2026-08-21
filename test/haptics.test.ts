@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
 import { cuesFor } from '../src/audio/cues';
-import { moveOptions } from '../src/sim/travel';
+import { moveOptions } from '../src/sim/road';
 import { FEELINGS, FELT, buzzFor, patternFor, type Hand } from '../src/haptics';
 import type { CueId } from '../src/data/sounds';
 import longText from '../runs/long.json?raw';

@@ -15,7 +15,7 @@ import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
-import { ROW_REACH, daysForMove, moveOptions } from '../src/sim/travel';
+import { ROW_REACH, daysForMove, moveOptions } from '../src/sim/road';
 import type { GameState } from '../src/state/types';
 import { startBattle } from '../src/sim/battleTurn';
 import { MAX_FOES } from '../src/sim/battle';
@@ -31,7 +31,7 @@ import {
   widestStand,
 } from '../src/sim/battlefield';
 import { CARGO_LOST_SHARE, HULL_MEND_WOOD, SEA_SALVAGE, isSeaFight, mendHull, settleSeaFight } from '../src/sim/sea';
-import { moveEffort, isCoastalWater } from '../src/sim/travel';
+import { moveEffort, isCoastalWater } from '../src/sim/road';
 
 /**
  * The knarr, measured against legs.

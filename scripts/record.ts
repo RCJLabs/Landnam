@@ -24,7 +24,7 @@ import { writeFileSync } from 'node:fs';
 import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
 import { currentMode } from '../src/modes';
-import { moveOptions } from '../src/sim/travel';
+import { moveOptions } from '../src/sim/road';
 import { markVisible, forecast } from '../src/sim/winter';
 import type { GameState, HardshipId } from '../src/state/types';
 

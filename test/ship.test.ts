@@ -24,7 +24,7 @@ import {
 } from '../src/sim/ship';
 import { HOLD_PER_STRAKE, HOLD_WHOLE, SHIP_STRAKES, STRAKE_MEND_WOOD } from '../src/data/ships';
 import { launch, provisionsFor } from '../src/sim/expedition';
-import { isCoastalWater, moveEffort } from '../src/sim/travel';
+import { isCoastalWater, moveEffort } from '../src/sim/road';
 import { foundSettlement, canFound } from '../src/sim/site';
 import { fromKey } from '../src/hex';
 import type { GameState } from '../src/state/types';

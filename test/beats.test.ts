@@ -33,7 +33,7 @@ import {
   type BeatKind,
   type WorldBeatKind,
 } from '../src/sim/beats';
-import { moveOptions } from '../src/sim/travel';
+import { moveOptions } from '../src/sim/road';
 import { arriveHome, launch, launchBlocker } from '../src/sim/expedition';
 import {
   LANDMARK_SIGHT, offersAt, settlePlace, spotLandmarks, tradeAt,

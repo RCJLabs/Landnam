@@ -22,7 +22,7 @@ import { passDay } from '../src/sim/upkeep';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild, shelterSaving } from '../src/sim/colony';
 import { isEligible, checkOdds, presentEvent } from '../src/sim/events';
-import { moveOptions, moveEffort, isCoastalWater, SEA_EFFORT } from '../src/sim/travel';
+import { moveOptions, moveEffort, isCoastalWater, SEA_EFFORT } from '../src/sim/road';
 import { holdSteading } from '../src/sim/raid';
 import { doStrike } from '../src/sim/strike';
 import { coldNight } from '../src/sim/cold';

@@ -15,7 +15,7 @@ import { passDay } from '../src/sim/upkeep';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, buildable, dayLabour, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
-import { canMove, moveOptions } from '../src/sim/travel';
+import { canMove, moveOptions } from '../src/sim/road';
 import { startRaid } from '../src/sim/battleTurn';
 import { standing } from '../src/sim/battle';
 import {

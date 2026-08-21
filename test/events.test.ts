@@ -7,7 +7,7 @@ import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
 import { checkOdds, chooseOption, isEligible, presentEvent } from '../src/sim/events';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { moveOptions } from '../src/sim/travel';
+import { moveOptions } from '../src/sim/road';
 import { encode } from '../src/state/save';
 import type { GameState, Terrain } from '../src/state/types';
 

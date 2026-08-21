@@ -16,7 +16,7 @@ import { WEATHER, weatherById } from '../src/data/weather';
 import { omenFor, seaShut, weatherNow, weatherOn } from '../src/sim/weather';
 import { firewoodPerNight } from '../src/sim/upkeep';
 import { forecast, markHaze, PRUDENCE } from '../src/sim/winter';
-import { isCoastalWater, moveEffort } from '../src/sim/travel';
+import { isCoastalWater, moveEffort } from '../src/sim/road';
 import { effectsOn, nextThaw, SEASON_LENGTH, SEASON_ORDER, seasonOf } from '../src/sim/calendar';
 import { hardshipById } from '../src/data/hardship';
 import { fromKey } from '../src/hex';

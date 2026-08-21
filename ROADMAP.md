@@ -173,9 +173,13 @@ up in the changelog with the seeds and the paired counts:
   JSON beside them is generated and correct; the assets are LFS binaries and
   the import is a manual editor step. Until then the DataTables still hold
   four foes and no renown column. See `port/sim.md`.
-- **The other long files.** `battleActions.ts`, `main.ts` and `travel.ts` are
-  ~630 lines each. `winter.ts` was split on 2026-08-21 into the mark, the
-  reach, the cold and the telegraph — that commit is the template.
+- ~~**The other long files.**~~ CLOSED 2026-08-21: all three followed
+  `winter.ts`'s template the same day — `battleActions.ts` into the swing,
+  the strikes, the footwork and the cry; `main.ts` into the router, the
+  shell, the chrome and three mode screens (verified in a real browser,
+  since no unit test reaches it); `travel.ts` into the reducer, the road
+  and the gathering. Every split found a stranded doc comment, four for
+  four. The three commits and the changelog entries have the detail.
 - **Audit #8, the coast remembering the ghost.** `sim/haunt.ts` already ships
   the ruin a challenge code carries; what is missing was judged "narrower
   than the idea" and never chased to something concrete.
@@ -1961,6 +1965,34 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-21 — `travel.ts` is the reducer again, and the fourth stranded
+  doc comment of the day is found** — the last of the four ~630-line files.
+  All four are now split; the open thread is closed.
+
+  | file | lines | what it is |
+  | --- | --- | --- |
+  | `travel.ts` | 227 | the reducer: every verb's guard-and-spend, MOVE through LAY_DOWN_RULE |
+  | `road.ts` | 255 | what a hex costs over ground or coast, what a day advances, what dusk reveals, and the march lines |
+  | `gathering.ts` | 181 | living off the land: camp, forage, hunt, fish |
+  | `saga.ts` | 44 | gains `fresh` — the don't-repeat-yourself picker belongs beside `chronicle` |
+
+  `road.ts` exports `actionRng`, `advance` and `reveal` that were
+  module-private, with the same note as swing.ts's: verbs split across
+  files must roll from the same derived stream (events, here — NOT swing's
+  combat stream) and spend days through the same walk, or a replayed save
+  forks. The four gathering verbs moved whole and the reducer delegates to
+  them, which is the shape `actions.ts` already uses for battle verbs.
+  **The stranded doc:** "Once the posts are in, the band lives at the
+  steading and only a launched expedition walks the map" sat stacked above
+  `ROW_REACH`'s doc; it describes `canMove`'s first line, 30 lines away.
+  Reattached. Four files split this month, four stranded docs found —
+  that is not a coincidence, it is what 630-line files do.
+  No behaviour change, checked where it counts: the headless replay
+  fixtures recompute both recorded runs' checkpoints, so a forked stream
+  or a reordered day could not pass. npm test 1072/1072, tsc clean.
+  Twenty-one import sites repointed; only `actions.ts` and the reducer's
+  own test still import `travel.ts`, which is now true to its name.
 
 - **2026-08-21 — `main.ts` is a 199-line boot router again, verified in a
   real browser because no unit test can see it** — the third ~630-line file.

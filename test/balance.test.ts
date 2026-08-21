@@ -51,7 +51,8 @@ import { effectsOn, SEASON_LENGTH, seasonOf, winterDepth } from '../src/sim/cale
 import { markHaze } from '../src/sim/winter';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
-import { moveOptions, canGather, canFish, atSea, isCoastalWater } from '../src/sim/travel';
+import { moveOptions, atSea, isCoastalWater } from '../src/sim/road';
+import { canGather, canFish } from '../src/sim/gathering';
 import { canFound, siteReport } from '../src/sim/site';
 import { holed } from '../src/sim/ship';
 import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
@@ -75,7 +76,7 @@ import { shoveDestination } from '../src/sim/footwork';
 import { offersAt, placeHere, tradeBlocker } from '../src/sim/places';
 import { campStores } from '../src/sim/plunder';
 import { strandTarget } from '../src/sim/sea';
-import { atSea as _atSea } from '../src/sim/travel';
+import { atSea as _atSea } from '../src/sim/road';
 import { placeKind, PLACE_KINDS } from '../src/data/places';
 import { angerLevel, bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
 import { canCallThing, hasSpeakers, thingNeeds, yearsRuled } from '../src/sim/thing';

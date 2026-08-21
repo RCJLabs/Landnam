@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import { holed } from '../src/sim/ship';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { isCoastalWater } from '../src/sim/travel';
+import { isCoastalWater } from '../src/sim/road';
 import { distance, neighbors, key } from '../src/hex';
 import { placeKind } from '../src/data/places';
 import { settlePlace } from '../src/sim/places';

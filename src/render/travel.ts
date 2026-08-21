@@ -5,7 +5,7 @@ import { cornerPoints, fromKey, fromPixel, key, neighbors, toPixel, type Hex } f
 import { terrainDef } from '../data/terrain';
 import type { GameState, Neighbour, Place, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
-import { atSea, moveEffort } from '../sim/travel';
+import { atSea, moveEffort } from '../sim/road';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';

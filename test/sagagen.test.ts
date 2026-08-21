@@ -22,7 +22,7 @@ import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
-import { moveOptions } from '../src/sim/travel';
+import { moveOptions } from '../src/sim/road';
 import { learn } from '../src/sim/lore';
 import { bargain, fallOn, seeNeighbours } from '../src/sim/neighbours';
 import { note, tallyOf, emptyTally } from '../src/sim/tally';
