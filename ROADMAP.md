@@ -1876,6 +1876,40 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-21 — The last parity gap is one child** — the three refusals
+  chased to a single named root cause, and `runs/example.json` verified green
+  independently rather than taken on trust.
+  **The signal.** `runs/long.json` matched at 13 of 14 checkpoints with the
+  final one at day 457 reading `refused=3` against the reference's
+  `refused=0` — and the reference refuses NOTHING across all 1478 actions, so
+  all three were the port's.
+  **Which three.** Read out of the harness's per-action log rather than
+  guessed: `QUEUE_BUILD watchtower` on day 439, and `CHOOSE 0` and
+  `DISMISS_EVENT` on day 456.
+  **But they are all consequence.** A per-action trace of the reference,
+  written with the same canonical function the vectors use, put the FIRST
+  divergence 379 actions earlier: **action 1099, day 353, the `band` facet at
+  5161 bytes on both sides and a different hash.** Same size, different value
+  — which is the mismatch a size cannot name.
+  **One digit, and it is a whole feature.** `LANDNAM_DUMP` (added to the port
+  harness for this, and kept) printed the port's band: morale **39** against
+  the reference's **34**. The arithmetic of the lost raid accounts for 39
+  exactly — two ran (−8), two killed (−15 −24), the sacking (−14). The
+  reference pays five more, and five is `ORPHAN_GRIEF`.
+  **The chain, proven rather than assumed.** The reference bore two children,
+  Halli on day 140 and Bersi on day 291. A raid on day 353 killed Bersi's
+  mother. `orphaned()` took 5 heart for the child left behind. The port has
+  no children because BIRTHS ARE NOT PORTED — `birthBlocker` gates on
+  `houseAtPeace` and the Thing is not on this rung — so it never pays it, and
+  every later divergence including the three refusals follows from those five
+  points.
+  **So the last checkpoint is not a bug, it is a dependency**, and the
+  dependency is now named end to end: births, which need the Thing. Nothing
+  was papered over to make a number match.
+  **`runs/example.json` is green on its own** — 17 checkpoints, six facets,
+  run separately because the harness stops at the first failure and I had not
+  actually seen it pass since the cold-night work.
+
 - **2026-08-20 — The door is built, and measured at not worth walking
   through** — audit item 6 again, and it answers the question the entry below
   explicitly left open rather than re-fixing the same thing.
