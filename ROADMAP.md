@@ -1894,6 +1894,40 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-21 — `winter.ts` is four files, and one of them found a stray
+  doc comment** — audit item 10, on the one file that actually earned it.
+  The ~300-line rule was surveyed on 2026-08-20 and the honest finding was
+  that most of the 52 files over it are tests and data tables; the source
+  files that genuinely read long were `winter.ts`, `battleActions.ts`,
+  `main.ts` and `travel.ts` at ~630 each. This is the first of those, and it
+  was picked because every winter investigation this project has run has had
+  to navigate it by grep.
+
+  | file | lines | what it is |
+  | --- | --- | --- |
+  | `winter.ts` | 237 | the mark: the forecast, the haze, what is needed |
+  | `reach.ts` | 289 | whether it can still be met, and what to say about it |
+  | `cold.ts` | 106 | a fire that goes out, and the illness that follows |
+  | `telegraph.ts` | 79 | saying it before it happens |
+
+  **The seams were already drawn** — the file's own `// --- Sickness ---` and
+  `// --- Telegraphing it ---` banners. `reachable` had to move too, because
+  it alone is 225 lines: it is a whole second projection, reassigning a clone
+  and asking the forecast again at full effort.
+  **Two helpers are now exported that were module-private**,
+  `plannedFirewood` and `ratio`, and the note on them says why: they are the
+  projection the mark walks, and `reachable` walks the same ground. Sharing
+  them is what stops the two from being parallel models that can disagree,
+  which is the rule the original file was written to.
+  **And the thing worth doing it for.** There were TWO stacked doc comments
+  above `reachable`. The first — "One line naming where the band stands
+  against the winter" — describes `readiness`, which sat 226 lines below it
+  with no doc of its own, stranded by some earlier move. Nothing catches that
+  but reading, and nobody reads 655 lines. They are back together.
+  **No behaviour change**, and it is checked rather than asserted: 1072 tests
+  pass unchanged, including the parity fixtures that recompute every stored
+  reading, and the single-file build is unmoved.
+
 - **2026-08-21 — PARITY OK: 39 checkpoints, two runs, six facets each** — the
   port reproduces the reference exactly, across 1478 actions and 457 days on
   one script and 66 on the other. Four causes, and the last three are the same

@@ -15,7 +15,8 @@ import {
   verdictFor,
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
-import { forecast, markVisible, reachable } from '../sim/winter';
+import { forecast, markVisible } from '../sim/winter';
+import { reachable } from '../sim/reach';
 import { holed, sprung, unseaworthy } from '../sim/ship';
 import { weatherNext, weatherNow } from '../sim/weather';
 import { childrenOf } from '../sim/lineage';

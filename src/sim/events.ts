@@ -21,7 +21,7 @@ import { mourn } from './kin';
 import { atHome } from './site';
 import { WATCH_QUIET } from '../data/jobs';
 import { effectiveReport, standsFor } from './colony';
-import { sickCount } from './winter';
+import { sickCount } from './cold';
 import { checkRunEnd } from './upkeep';
 
 /** Chance an event fires after a travel action. */

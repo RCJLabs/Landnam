@@ -29,18 +29,10 @@ import { assign, buildable, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
 import { checkRunEnd, foodPerDay, passDay, SURVIVAL_DAY } from '../src/sim/upkeep';
 import { YEAR_LENGTH } from '../src/sim/calendar';
-import {
-  coldNight,
-  forecast,
-  markVisible,
-  MARK_WINDOW,
-  PRUDENCE,
-  readiness,
-  sickCount,
-  telegraphWinter,
-  WINTER_DAY,
-  winterVerdict,
-} from '../src/sim/winter';
+import { forecast, markVisible, MARK_WINDOW, PRUDENCE, WINTER_DAY } from '../src/sim/winter';
+import { coldNight, sickCount } from '../src/sim/cold';
+import { readiness } from '../src/sim/reach';
+import { telegraphWinter, winterVerdict } from '../src/sim/telegraph';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
 

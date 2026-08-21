@@ -25,7 +25,7 @@ import { isEligible, checkOdds, presentEvent } from '../src/sim/events';
 import { moveOptions, moveEffort, isCoastalWater, SEA_EFFORT } from '../src/sim/travel';
 import { holdSteading } from '../src/sim/raid';
 import { doStrike } from '../src/sim/battleActions';
-import { coldNight } from '../src/sim/winter';
+import { coldNight } from '../src/sim/cold';
 import { forecast } from '../src/sim/winter';
 import { defenceBonus, WALL_BONUS_ONE } from '../src/sim/wall';
 import { bonus, knows, known, learn, unknownLore } from '../src/sim/lore';

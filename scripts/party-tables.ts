@@ -27,7 +27,7 @@ import type { Terrain } from '../src/state/types';
 import {
   BEARING_MAX, BEARING_MIN, BIRTH_COOLDOWN, BIRTH_FOOD_FLOOR, BIRTH_HEART, BIRTH_ODDS,
   CHILD_APPETITE, ORPHAN_GRIEF } from '../src/data/lineage';
-import { ILLNESSES, SICKNESS_BASE_DC } from '../src/sim/winter';
+import { ILLNESSES, SICKNESS_BASE_DC } from '../src/sim/cold';
 import { WEATHER } from '../src/data/weather';
 import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../src/data/rations';
 import { PLACE_KINDS, PLACE_MAX_FROM_LANDING } from '../src/data/places';
