@@ -137,6 +137,74 @@ stops being true, unlike the changelog below, which is append-only history.
 Anyone — or any future session — should be able to read this and the "dead
 ends" table and pick the work up without re-deriving a day of measurement.*
 
+### STATE AS OF 2026-08-21 — read this paragraph before any figure below it
+
+**Both repos are green and pushed.** `npm test` 1072/1072 across 62 files,
+`tsc` clean, the site published. The port reaches **PARITY OK — 39
+checkpoints across two runs, six facets each** for the first time: 1478
+actions and 457 days on `runs/long.json`, 66 to day 15 on
+`runs/example.json`, `unported=0`. The Parity workflow on `landnam-ue` is
+passing.
+
+**The difficulty curve is 73% / 45% / 10% to spring** (fair / even / hard) and
+88% / 82% / 82% to the first winter. ANY spring figure dated before
+2026-08-20 in this document is superseded: the harness bot did not use the
+winter lever until then, so older curves describe a band that ignores its own
+winter mark. `src/data/hardship.ts` holds the numbers and the menu generates
+its prose from them — never hand-type an odds sentence.
+
+**Four measured facts not to re-derive.** Each cost a day and each is written
+up in the changelog with the seeds and the paired counts:
+1. **Reading the winter mark and moving hands to what it says is short is the
+   biggest lever in the game** — 21/120 → 48/120 seeing spring, saved 30 and
+   killed 3. Bigger than anything else measured. `src/sim/counsel.ts` is the
+   panel that finally says so.
+2. **Short commons saves 14 and kills 1** over 120 paired landings.
+3. **`readiness()`'s escape hatch — raiding out — saves nobody**, and so does
+   **walking out** (50 retreats, saved 0, killed 11). The retreat verb ships
+   anyway and the panel does not recommend it; the reason is in
+   `src/data/retreat.ts`.
+4. **Re-crewing by SEASON on top of crewing by need changes nothing** — 236
+   hands moved over 120 seeds, not one seed's outcome altered.
+
+**Open threads, in the order I would take them:**
+- **Waiting on a human, not on code:** `Content/Data/foes.uasset` and
+  `terrain.uasset` in the port need a re-import in the Unreal editor. The
+  JSON beside them is generated and correct; the assets are LFS binaries and
+  the import is a manual editor step. Until then the DataTables still hold
+  four foes and no renown column. See `port/sim.md`.
+- **The other long files.** `battleActions.ts`, `main.ts` and `travel.ts` are
+  ~630 lines each. `winter.ts` was split on 2026-08-21 into the mark, the
+  reach, the cold and the telegraph — that commit is the template.
+- **Audit #8, the coast remembering the ghost.** `sim/haunt.ts` already ships
+  the ruin a challenge code carries; what is missing was judged "narrower
+  than the idea" and never chased to something concrete.
+- **The retreat verb's real case is unmeasured** — ground taken too fast and
+  walked off early. The bot cannot test it because it only settles on ground
+  that already clears its site floor, and inventing a worse-settling bot
+  would measure a strawman.
+
+**How this project works, and it is not optional.** Measure the premise before
+building: five design intuitions died on contact on 2026-08-20 and four
+artifact comparisons survived, and that ratio has held all month. Watch every
+bar fail before trusting it — this file records three hollow bars that passed
+while measuring nothing. Two things not to do: lower a bar so a change
+passes, and commit with the suite red. Before any commit: `npm test` and
+`npx tsc --noEmit`.
+
+**Traps that have each cost real time:**
+- `scripts/*-tables.ts` emit C++ from TEMPLATE LITERALS — a backtick in a
+  comment you add is a syntax error, twice now.
+- `settleNotBefore` in `test/balance.test.ts` is module-level and shared
+  across a whole sample; a per-run hold belongs in its own variable, reset in
+  `run()`. Getting this wrong read as "killed 46" off three retreats.
+- `Tools/run-parity.sh` stops at the FIRST failing script, so a green
+  `example.json` proves nothing until you run it alone with `RUNS=`.
+- When a facet's size matches and its hash does not, it is a VALUE, and
+  `LANDNAM_DUMP=<action>` prints the canonical bytes to find it. Three
+  separate one-value divergences were found that way and none was findable
+  otherwise.
+
 **Shipped:** Phases 0–4 complete. 5.1 Sound, 5.2 Onboarding and 5.3 Balance &
 juice are done. **Phase 6 is complete**: 6.2 Hands, 6.3 Overwhelming force
 and 6.4 No last winter are all in, and 6.1 Winters that vary shipped and was
