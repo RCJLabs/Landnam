@@ -1,230 +1,50 @@
 // Boot and mode router. Owns the mutable "current state" reference; every
-// change flows through dispatch -> sim -> save -> render.
+// change flows through dispatch -> sim -> save -> render. The frame the modes
+// paint into is src/shell.ts, the pinned chrome around it is src/chrome.ts,
+// and each mode's screen wiring is render/*Screen.ts — this file is what
+// connects them to the one state.
 
 import './style.css';
 
-import { equals, type Hex } from './hex';
 import { currentMode } from './modes';
 import { makeSeedPhrase } from './rng';
 import { newGame } from './state/create';
 import { clearSave, hasSave, load, save } from './state/save';
 import type { GameState } from './state/types';
 import { apply, type Action } from './sim/actions';
-import { createTravelView } from './render/travel';
-import { createBattleView } from './render/battle';
-import { createColonyView } from './render/colony';
-import { travelOverlay } from './render/overlays';
-import {
-  renderBuilds,
-  renderColonyActions,
-  renderColonyBar,
-  renderColonyFooter,
-  renderColonyHint,
-  renderCrew,
-  renderNeeds,
-  renderRoom,
-  renderRations,
-} from './render/colonyUi';
-import { renderGuide, renderLesson, renderSettings, renderTitle, renderWall } from './render/cards';
-import { applyMotionPref, motionPref, setMotionPref } from './motion';
-import { buzz, hapticPref, hapticsSupported, setHapticPref } from './haptics';
+import { renderGuide, renderLesson, renderTitle } from './render/cards';
+import { applyMotionPref } from './motion';
+import { buzz } from './haptics';
 import { lastHardship, rememberHardship } from './hardshipPref';
 import { decodeChallenge } from './sim/challenge';
 import { haunt } from './sim/haunt';
 import type { HardshipId } from './data/hardship';
-import { deedsFor } from './render/deeds';
-import {
-  renderActionBar,
-  renderHint,
-  renderChaseMark,
-  renderMuteToggle,
-  renderSitePanel,
-  renderThingMark,
-  renderWatchMark,
-  renderTopBar,
-  renderWinterMark,
-  renderLine,
-} from './render/ui';
-import {
-  renderBattleActions,
-  renderBattleBar,
-  renderBattleHint,
-  renderBattleLog,
-  renderBattleResult,
-} from './render/battleUi';
-import { combatantAt, isWarbandTurn } from './sim/battle';
-import { button, el } from './render/svg';
-import { watchForNewBuild } from './freshness';
-import {
-  ambienceFor,
-  cuesFor,
-  hushAmbience,
-  isMuted,
-  play,
-  playAll,
-  sameAir,
-  setAmbience,
-  toggleMute,
-  wake,
-} from './audio';
-import type { AmbienceProfile } from './data/sounds';
+import { cuesFor, hushAmbience, playAll } from './audio';
 import { lessonDue } from './sim/lessons';
-import { forgetTeaching, markTaught, taught } from './taught';
-import { fallen, remember } from './memorial';
+import { markTaught, taught } from './taught';
+import { remember } from './memorial';
 import { fallenOf } from './sim/fallen';
 import { installDebug } from './debug';
 import { freshUi, resetForRun } from './uistate';
-import { announce, mapLabel } from './sim/announce';
+import { cry, shell, type ScreenHooks } from './shell';
+import { installChrome } from './chrome';
+import { renderBattleScreen } from './render/battleScreen';
+import { renderColonyScreen } from './render/colonyScreen';
+import {
+  labelTravelMap,
+  mountTravel,
+  renderTravelScreen,
+  travelMounted,
+  unmountTravel,
+} from './render/travelScreen';
+import { watchForNewBuild } from './freshness';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('missing #app');
 
 let state: GameState | null = null;
-let travelView: ReturnType<typeof createTravelView> | null = null;
-let battleView: ReturnType<typeof createBattleView> | null = null;
-let colonyView: ReturnType<typeof createColonyView> | null = null;
 /** Everything on screen that is not in the save. See src/uistate.ts. */
 const ui = freshUi();
-
-/** The last air we asked for, so an unchanged profile is not re-eased every render. */
-let air: AmbienceProfile | null = null;
-
-/**
- * The mute lives outside the shell: it has to be there in all three modes and
- * on the title screen, and it must survive replaceChildren on #app.
- */
-const muteSlot = el('div', { class: 'mute-slot' });
-
-function paintMute(): void {
-  muteSlot.replaceChildren(
-    renderMuteToggle(isMuted(), () => {
-      // Toggling is itself a gesture, so it is also a valid moment to start
-      // the audio — tapping "sound on" must actually produce sound.
-      wake();
-      const nowMuted = toggleMute();
-      paintMute();
-      if (!nowMuted) {
-        play('tap');
-        if (state) setAmbience(ambienceFor(state));
-      }
-    }),
-  );
-}
-
-/**
- * The settings, pinned beside the mute and rendered outside the mode chrome
- * for the same reason the mute is: they have to be reachable on the title
- * screen and in all three modes, and they must survive every replaceChildren
- * on #app.
- */
-const settingsSlot = el('div', { class: 'settings-slot' });
-const menuSlot = el('div', { class: 'menu-slot' });
-
-function paintGear(): void {
-  const gear = button('', () => {
-    ui.settingsOpen = true;
-    paintSettingsCard();
-  }, { class: 'gear', title: 'Settings', 'aria-label': 'Settings' });
-  gear.append(gearGlyph());
-  menuSlot.replaceChildren(gear);
-}
-
-function gearGlyph(): SVGElement {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('class', 'gear-glyph');
-  svg.setAttribute('aria-hidden', 'true');
-  const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  ring.setAttribute('cx', '12');
-  ring.setAttribute('cy', '12');
-  ring.setAttribute('r', '4');
-  svg.append(ring);
-  for (let i = 0; i < 8; i += 1) {
-    const angle = (Math.PI / 4) * i;
-    const spoke = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    spoke.setAttribute('x1', `${12 + Math.cos(angle) * 6.5}`);
-    spoke.setAttribute('y1', `${12 + Math.sin(angle) * 6.5}`);
-    spoke.setAttribute('x2', `${12 + Math.cos(angle) * 9.5}`);
-    spoke.setAttribute('y2', `${12 + Math.sin(angle) * 9.5}`);
-    svg.append(spoke);
-  }
-  return svg;
-}
-
-function paintSettingsCard(): void {
-  if (!ui.settingsOpen) {
-    settingsSlot.replaceChildren();
-    return;
-  }
-  settingsSlot.replaceChildren(
-    renderSettings({
-      muted: isMuted(),
-      onToggleSound: () => {
-        wake();
-        const nowMuted = toggleMute();
-        paintMute();
-        if (!nowMuted) {
-          play('tap');
-          if (state) setAmbience(ambienceFor(state));
-        }
-        paintSettingsCard();
-      },
-      motionStill: motionPref() === 'still',
-      // Offered only where it can do something. Every iPhone lands here
-      // with `false` and simply does not see the row — a switch wired to
-      // nothing is worse than no switch.
-      ...(hapticsSupported() ? { rumbleOn: hapticPref() === 'on' } : {}),
-      onToggleRumble: () => {
-        setHapticPref(hapticPref() === 'on' ? 'off' : 'on');
-        if (hapticPref() === 'on') buzz(['strike']);
-        paintSettingsCard();
-      },
-      ...(state?.hardship ? { hardship: state.hardship } : {}),
-      onToggleMotion: () => {
-        setMotionPref(motionPref() === 'still' ? 'system' : 'still');
-        paintSettingsCard();
-      },
-      ...(state ? { seed: state.seed } : {}),
-      ...(taught().length > 0
-        ? {
-            onRelearn: () => {
-              forgetTeaching();
-              paintSettingsCard();
-            },
-          }
-        : {}),
-      ...(fallen().length > 0
-        ? {
-            onWall: () => {
-              // The memorial opens IN the settings slot and comes back to
-              // the settings, so it is reachable mid-run for the first time.
-              settingsSlot.replaceChildren(renderWall(fallen(), paintSettingsCard));
-            },
-          }
-        : {}),
-      onClose: () => {
-        ui.settingsOpen = false;
-        paintSettingsCard();
-      },
-    }),
-  );
-}
-
-/**
- * Every mobile browser refuses to start an AudioContext outside a real user
- * gesture, so the game stays silent until the player touches it — which is
- * also the polite default. One listener, removed once it has done its job.
- */
-function armAudio(): void {
-  const start = (): void => {
-    wake();
-    if (state) setAmbience(ambienceFor(state));
-    window.removeEventListener('pointerdown', start);
-    window.removeEventListener('keydown', start);
-  };
-  window.addEventListener('pointerdown', start);
-  window.addEventListener('keydown', start);
-}
 
 /**
  * The lesson, if one is due, as a ready-to-mount overlay. Every mode asks,
@@ -242,80 +62,18 @@ function lessonOverlay(): HTMLElement | null {
   });
 }
 
-// Chrome that persists across renders, so the map keeps its camera.
-const topbarSlot = el('div', { class: 'slot topbar-slot' });
-const mapSlot = el('div', { class: 'slot map-slot' });
-const hintSlot = el('div', { class: 'slot hint-slot' });
-const actionSlot = el('div', { class: 'slot action-slot' });
-const sagaSlot = el('div', { class: 'slot saga-slot' });
-const overlaySlot = el('div', { class: 'slot overlay-slot' });
-
-/**
- * What a screen reader hears. Audit item 10.
- *
- * Off-screen and always present: a polite live region is only announced when
- * its contents CHANGE, so it has to exist from the first render and be
- * rewritten rather than replaced. The game is turn-based and every action
- * rewrites the whole page, which is exactly the case a live region is for —
- * without one a listener took an action and was told nothing at all.
- *
- * `announce()` is pure and lives in src/sim, with the tests. This is only
- * the wire.
- */
-const criesSlot = el('div', {
-  class: 'offscreen',
-  'aria-live': 'polite',
-  'aria-atomic': 'true',
-  role: 'status',
-});
-let criedFrom = 0;
-
-/**
- * Gives every card that covers the screen the semantics of one.
- *
- * Twelve overlay sites all build `.overlay`, and each is now `role="dialog"`
- * `aria-modal="true"` — but a dialog also needs a NAME and needs the reading
- * position to be inside it, or a listener is told "dialog" and left at the
- * top of the page behind it. Both come off the card's own heading, so no
- * call site has to remember anything.
- */
-function nameOverlays(): void {
-  for (const node of overlaySlot.querySelectorAll('[role="dialog"]')) {
-    const heading = node.querySelector('h2');
-    if (heading?.textContent) node.setAttribute('aria-label', heading.textContent);
-    const card = node.querySelector<HTMLElement>('.card');
-    if (!card) continue;
-    if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
-    if (!node.contains(document.activeElement)) card.focus({ preventScroll: true });
-  }
-}
-
-/** Says what just happened, then where we stand. */
-function cry(): void {
-  if (!state) return;
-  const text = announce(state, criedFrom);
-  criedFrom = state.saga.length;
-  // Same string twice is not a change and would be swallowed; a hair of
-  // difference is cheaper than tracking every reason it might repeat.
-  criesSlot.textContent = criesSlot.textContent === text ? `${text} ` : text;
-}
-
-/** replaceChildren wants a list; a missing overlay is an empty one. */
-function asNodes(node: HTMLElement | null): HTMLElement[] {
-  return node ? [node] : [];
-}
-
-function shell(): HTMLElement {
-  return el('div', { class: 'shell' }, [
-    criesSlot,
-    topbarSlot,
-    mapSlot,
-    hintSlot,
-    actionSlot,
-    sagaSlot,
-    overlaySlot,
-  ]);
-}
+/** The one bundle every screen and overlay works through. */
+const hooks: ScreenHooks = {
+  current: () => state,
+  ui,
+  dispatch,
+  rerender: render,
+  onRunOver: () => {
+    clearSave();
+    showTitle();
+  },
+  lesson: lessonOverlay,
+};
 
 function dispatch(action: Action): void {
   if (!state) return;
@@ -337,29 +95,6 @@ function dispatch(action: Action): void {
   // tab on the death screen has still lost those people.
   if (!before.end && next.end) remember(fallenOf(next));
   render();
-}
-
-function onHexTap(target: Hex): void {
-  if (!state || state.event || state.aftermath || state.end) return;
-  if (ui.foundingOpen || ui.mapOpen || ui.launchOpen || ui.actOpen) return;
-  if (equals(target, state.party.at)) return;
-  dispatch({ type: 'MOVE', to: target });
-}
-
-/** On the field, a tap is either a step or the armed action on a foe. */
-function onFieldTap(target: Hex): void {
-  if (!state?.battle || state.battle.outcome || !isWarbandTurn(state)) return;
-  const occupant = combatantAt(state.battle, target);
-  if (occupant) {
-    if (occupant.side !== 'foe') return;
-    const id = occupant.personId;
-    if (ui.aim === 'throw') dispatch({ type: 'B_THROW', targetId: id });
-    else if (ui.aim === 'shove') dispatch({ type: 'B_SHOVE', targetId: id });
-    else if (ui.aim === 'reach') dispatch({ type: 'B_REACH', targetId: id });
-    else dispatch({ type: 'B_STRIKE', targetId: id });
-    return;
-  }
-  dispatch({ type: 'B_MOVE', to: target });
 }
 
 function startRun(seed: string, hardship: HardshipId = lastHardship()): void {
@@ -395,16 +130,13 @@ function continueRun(): void {
 
 function mountGame(): void {
   app!.replaceChildren(shell());
-  travelView = createTravelView(onHexTap);
-  mapSlot.replaceChildren(travelView.root);
-  if (state) travelView.centreOn(state.party.at);
+  mountTravel(hooks);
   render();
 }
 
 function showTitle(): void {
   state = null;
-  travelView = null;
-  air = null;
+  unmountTravel();
   hushAmbience();
   if (ui.guideOpen) {
     app!.replaceChildren(
@@ -426,197 +158,30 @@ function showTitle(): void {
   );
 }
 
-function renderBattle(): void {
-  if (!state?.battle) return;
-  if (!battleView) {
-    battleView = createBattleView(onFieldTap);
-  }
-  if (mapSlot.firstChild !== battleView.root) {
-    mapSlot.replaceChildren(battleView.root);
-  }
-  // A fresh fighter starts with a sword in hand, not a spear cocked.
-  const turnKey = `${state.battle.round}:${state.battle.turnIndex}`;
-  if (turnKey !== ui.aimTurnKey) {
-    ui.aimTurnKey = turnKey;
-    ui.aim = 'strike';
-  }
-
-  topbarSlot.replaceChildren(renderBattleBar(state));
-  battleView.update(state, ui.aim);
-  hintSlot.replaceChildren(renderBattleHint(state, ui.aim));
-  actionSlot.replaceChildren(
-    renderBattleActions(state, ui.aim, (next) => {
-      ui.aim = next;
-      render();
-    }, dispatch),
-  );
-  sagaSlot.replaceChildren(renderBattleLog(state));
-  overlaySlot.replaceChildren(
-    ...(state.battle.outcome ? [renderBattleResult(state, dispatch)] : asNodes(lessonOverlay())),
-  );
-  nameOverlays();
-}
-
-function renderColony(): void {
-  if (!state?.settlement) return;
-  if (!colonyView) colonyView = createColonyView();
-  if (mapSlot.firstChild !== colonyView.root) mapSlot.replaceChildren(colonyView.root);
-
-  // A dead or departed selection must not strand the picker open.
-  if (ui.picked && !state.party.people.some((p) => p.id === ui.picked && p.alive)) ui.picked = null;
-
-  // Setting someone to work returns you to the roster, so the next person is
-  // one tap away rather than two. On a phone that is the difference between
-  // the panel being usable and being a chore.
-  const colonyDispatch = (action: Action): void => {
-    if (action.type === 'ASSIGN') ui.picked = null;
-    dispatch(action);
-  };
-
-  colonyView.update(state);
-  topbarSlot.replaceChildren(renderColonyBar(state));
-
-  // Work and Build are two views of the same steading. Selecting a person
-  // always wins, because the picker replaces the action bar.
-  if (ui.colonyTab === 'build' && !ui.picked) {
-    hintSlot.replaceChildren(
-      renderNeeds(state),
-      renderRoom(state),
-      renderRations(state, colonyDispatch),
-      renderBuilds(state, colonyDispatch),
-    );
-  } else {
-    hintSlot.replaceChildren(
-      renderColonyHint(state),
-      renderCrew(state, ui.picked, (id) => {
-        ui.picked = id;
-        render();
-      }),
-    );
-  }
-
-  actionSlot.replaceChildren(
-    renderColonyActions(state, ui.picked, ui.colonyTab, (tab) => {
-      ui.colonyTab = tab;
-      ui.picked = null;
-      render();
-    }, colonyDispatch),
-  );
-  sagaSlot.replaceChildren(renderColonyFooter(state));
-  overlaySlot.replaceChildren(...asNodes(lessonOverlay()));
-  nameOverlays();
-}
-
 function render(): void {
-  if (!state || !travelView) return;
+  if (!state || !travelMounted()) return;
   // Whatever else this render does, the listener is told. Placed at the top
   // so the three mode branches below cannot each forget it.
-  cry();
-  travelView.root.setAttribute('aria-label', mapLabel(state));
+  cry(state);
+  labelTravelMap(state);
 
   if (currentMode(state) === 'BATTLE' && state.battle) {
-    renderBattle();
+    renderBattleScreen(state, hooks);
     return;
   }
 
   if (currentMode(state) === 'COLONY') {
-    renderColony();
+    renderColonyScreen(state, hooks);
     return;
   }
 
-  // Back on the road: make sure the map is the thing on screen.
-  if (mapSlot.firstChild !== travelView.root) {
-    mapSlot.replaceChildren(travelView.root);
-    travelView.centreOn(state.party.at);
-  }
-
-  topbarSlot.replaceChildren(renderTopBar(state));
-  travelView.update(state);
-  hintSlot.replaceChildren(
-    renderHint(state),
-    renderChaseMark(state),
-    renderWinterMark(state),
-    renderLine(state),
-    renderWatchMark(state),
-    renderThingMark(state),
-    renderSitePanel(state),
-  );
-
-  const deeds = deedsFor(
-    state,
-    dispatch,
-    () => {
-      ui.foundingOpen = true;
-      render();
-    },
-    () => {
-      ui.launchOpen = true;
-      ui.launchPicked = new Set();
-      render();
-    },
-  );
-
-  const actions = renderActionBar(state, deeds.length, () => {
-    ui.actOpen = true;
-    render();
-  }, () => {
-    ui.mapOpen = true;
-    render();
-  });
-  if (!state.end && !state.event) {
-    actions.append(
-      button('Band', () => {
-        ui.rosterOpen = true;
-        render();
-      }, { class: 'action secondary' }),
-      button('Saga', () => {
-        ui.sagaOpen = true;
-        render();
-      }, { class: 'action secondary' }),
-    );
-  }
-  actionSlot.replaceChildren(actions);
-
-  // The saga lives behind its button now — the map gets the height the
-  // panel used to hold. Battle and colony still use this slot for theirs.
-  sagaSlot.replaceChildren();
-
-  // Which one card sits over the map is a priority chain with opinions of
-  // its own — see render/overlays.ts.
-  overlaySlot.replaceChildren(
-    ...asNodes(
-      travelOverlay(state, deeds, {
-        ui,
-        dispatch,
-        rerender: render,
-        onRunOver: () => {
-          clearSave();
-          showTitle();
-        },
-        lesson: lessonOverlay,
-      }),
-    ),
-  );
-  nameOverlays();
-
-  // Keep the party in view after it moves.
-  if (currentMode(state) === 'TRAVEL') travelView.centreOn(state.party.at);
-
-  // And keep the weather honest. Easing means calling this every render costs
-  // nothing when nothing has changed.
-  const wanted = ambienceFor(state);
-  if (!air || !sameAir(air, wanted)) {
-    air = wanted;
-    setAmbience(wanted);
-  }
+  // Back on the road.
+  renderTravelScreen(state, hooks);
 }
 
-paintMute();
-document.body.append(muteSlot, menuSlot, settingsSlot);
-paintGear();
+installChrome(ui, () => state);
 // The stillness choice has to be on the root before anything animates.
 applyMotionPref();
-armAudio();
 
 // Console levers for testing. See src/debug.ts — they go through the same
 // save-and-render path a real dispatch does.

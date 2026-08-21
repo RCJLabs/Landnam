@@ -1962,6 +1962,36 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-21 — `main.ts` is a 199-line boot router again, verified in a
+  real browser because no unit test can see it** — the third ~630-line file.
+  Its seams were the ones its own comments had already drawn: the pinned
+  chrome "outside the shell", the screen-reader wiring of audit item 10, and
+  the three mode paints.
+
+  | file | lines | what it is |
+  | --- | --- | --- |
+  | `main.ts` | 199 | boot, the one state reference, dispatch, run lifecycle, the router |
+  | `shell.ts` | 91 | the persistent slots, the live region, `nameOverlays`, `ScreenHooks` |
+  | `chrome.ts` | 169 | the pinned mute/gear/settings and the first-gesture audio start |
+  | `render/travelScreen.ts` | 157 | the road's screen; owns the map view and the ambience easing |
+  | `render/battleScreen.ts` | 82 | the fight's screen; owns the field view and the field tap |
+  | `render/colonyScreen.ts` | 83 | the steading's screen and the picker's small rules |
+
+  The screens thread through `ScreenHooks` — `OverlayHooks` (the shape
+  `travelOverlay` already used) plus a `current()` getter, because a tap
+  handler outlives the render that installed it. No new machinery, one
+  interface. `debug.ts`'s own header had already named this split: "main.ts
+  was six hundred lines and every milestone added to it."
+  **Verification is the real point.** `main.ts` is the one file the suite
+  cannot reach, so the bar was a browser, not an assertion: the repo's
+  offline check (boots the built page with the network cut, plays to day 2,
+  zero page errors) plus a 16-check Playwright smoke — settings card open
+  and shut in travel AND colony, Band overlay, a fight started and a Shield
+  set with the log advancing, the save reloaded INTO battle mode, and a
+  settled save reloaded into the colony with both tabs painting. All green,
+  `tsc` clean, singlefile build unchanged in size class. The suite does not
+  import any touched file, so 1072/1072 stands.
+
 - **2026-08-21 — `battleActions.ts` is four files, and this one had a
   stranded doc comment too** — the second of the four ~630-line files, split
   to the winter.ts template: along the file's own verb banners, importers
