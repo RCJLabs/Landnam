@@ -19,7 +19,7 @@ import {
   doReach,
   reachTargets,
   screenFor,
-} from '../src/sim/battleActions';
+} from '../src/sim/strike';
 import type { Combatant, GameState } from '../src/state/types';
 
 /** A clear field with everyone parked, ready to be arranged by hand. */

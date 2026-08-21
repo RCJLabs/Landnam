@@ -4,7 +4,9 @@
 import { cornerPoints, fromKey, fromPixel, key, toPixel, type Hex } from '../hex';
 import type { Battle, GameState, Ground } from '../state/types';
 import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '../sim/battle';
-import { isLeader, reachTargets, shoveDestination, throwTargets } from '../sim/battleActions';
+import { reachTargets, throwTargets } from '../sim/strike';
+import { shoveDestination } from '../sim/footwork';
+import { isLeader } from '../sim/warcry';
 import { beatsSince, type Beat } from '../sim/beats';
 import { isThreatened } from '../sim/zoc';
 import { wallPairs } from '../sim/wall';

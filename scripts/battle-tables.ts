@@ -77,19 +77,19 @@ import {
   STEADIED_PER_LINK,
 } from '../src/sim/morale';
 import {
-  THROW_RANGE,
   DEFEND_BONUS,
   WALL_EXPOSED,
   OUTNUMBERED_PENALTY,
   MAX_OUTNUMBERED,
   WALL_PUSH_MAX,
+} from '../src/sim/swing';
+import {
+  THROW_RANGE,
   REACH_RANGE,
   REACH_PENALTY,
   REACH_DAMAGE_OFF,
-  WARCRY_RANGE,
-  WARCRY_HEART,
-  WARCRY_DREAD,
-} from '../src/sim/battleActions';
+} from '../src/sim/strike';
+import { WARCRY_RANGE, WARCRY_HEART, WARCRY_DREAD } from '../src/sim/warcry';
 import { PATIENCE_ROUNDS } from '../src/sim/battleAi';
 import { ROUND_LIMIT } from '../src/sim/battleTurn';
 import { DISENGAGE_COST } from '../src/sim/zoc';

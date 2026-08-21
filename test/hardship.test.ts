@@ -16,7 +16,7 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { startBattle } from '../src/sim/battleTurn';
-import { edge } from '../src/sim/battleActions';
+import { edge } from '../src/sim/swing';
 import { fromKey } from '../src/hex';
 import type { GameState, HardshipId } from '../src/state/types';
 

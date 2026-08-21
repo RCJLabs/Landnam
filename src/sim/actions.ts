@@ -9,8 +9,9 @@ import type { Hex } from '../hex';
 import { chooseOption, dismissEvent, maybeFireEvent } from './events';
 import { applyTravel, type TravelAction } from './travel';
 import { isWarbandTurn } from './battle';
-import { doDash, doDefend, doMove, doReach, doShove, doStrike, doThrow, doWarCry,
-} from './battleActions';
+import { doReach, doStrike, doThrow } from './strike';
+import { doDash, doDefend, doMove, doShove } from './footwork';
+import { doWarCry } from './warcry';
 import { endTurn, leaveBattle } from './battleTurn';
 import { assign, makePlots, queueBuild, unqueueBuild } from './colony';
 import { atHome } from './site';

@@ -1962,6 +1962,38 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-21 — `battleActions.ts` is four files, and this one had a
+  stranded doc comment too** — the second of the four ~630-line files, split
+  to the winter.ts template: along the file's own verb banners, importers
+  repointed at the module that owns what they use, no facade.
+
+  | file | lines | what it is |
+  | --- | --- | --- |
+  | `swing.ts` | 179 | what every blow shares: evasion, the country's edge, the wall's push, the named wound, the fall |
+  | `strike.ts` | 289 | the three ways iron reaches a man: swing, second-rank thrust, thrown spear |
+  | `footwork.ts` | 150 | legs and stance: move, shove, defend, dash |
+  | `warcry.ts` | 62 | the leader's cry — an action, so it sits beside morale.ts rather than in it |
+
+  Not `reach.ts` for the thrust: winter's reach already owns that name, which
+  is itself an argument for the split — two unrelated `reach` concepts were
+  one grep before. **Two helpers are exported that were module-private**,
+  `actionRng` and `drop`, noted in place: every verb must roll from the same
+  derived stream or a replayed save forks, and every kill must walk the same
+  fall bookkeeping (tally, nerve while the fallen still counts as a link,
+  the leader's fall after the cause) or the verbs grow two orderings. `blow`
+  and `ourBite` stayed private — they moved into `strike.ts`, the only
+  module that uses them. **The same disease the winter split found, found
+  here:** the doc "How hard this fighter is to land a blow on right now"
+  sat stacked on `ourBite`'s doc at the top of the file, 155 lines from the
+  undocumented `evasion` it describes. They are back together. And the
+  `groundCost` re-export "for the renderer's preview" at the bottom was
+  DEAD — every real consumer already imports `battlefield.ts` — so it died
+  with the file rather than being carried.
+  No behaviour change, checked: npm test 1072/1072 including the parity
+  fixtures, tsc clean. Fifteen import sites repointed;
+  `test/battleActions.test.ts` keeps its name because the five verbs are
+  still one suite, and two other test files cite it by name.
+
 - **2026-08-21 — `winter.ts` is four files, and one of them found a stray
   doc comment** — audit item 10, on the one file that actually earned it.
   The ~300-line rule was surveyed on 2026-08-20 and the honest finding was

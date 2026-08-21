@@ -8,16 +8,15 @@ import { apply } from '../src/sim/actions';
 import { distance, offsetToAxial } from '../src/hex';
 import { leaderOf } from '../src/sim/people';
 import { startingNerve } from '../src/sim/morale';
+import { WALL_PUSH_MAX, wallPush } from '../src/sim/swing';
+import { doStrike } from '../src/sim/strike';
 import {
-  WALL_PUSH_MAX,
   WARCRY_HEART,
   WARCRY_RANGE,
   canWarCry,
-  doStrike,
   doWarCry,
   isLeader,
-  wallPush,
-} from '../src/sim/battleActions';
+} from '../src/sim/warcry';
 import type { Beat } from '../src/sim/beats';
 import type { Combatant, GameState } from '../src/state/types';
 

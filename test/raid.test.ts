@@ -16,7 +16,7 @@ import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, standing as builtIn } from '../src/sim/colony';
 import { activeCombatant, standing } from '../src/sim/battle';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
-import { throwTargets } from '../src/sim/battleActions';
+import { throwTargets } from '../src/sim/strike';
 import { reachWithZoc } from '../src/sim/zoc';
 import { fighterPerson } from '../src/sim/battle';
 import {

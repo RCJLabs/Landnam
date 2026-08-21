@@ -19,7 +19,7 @@ import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
 import { activeCombatant, fighterPerson, standing } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
-import { reachTargets, throwTargets } from '../src/sim/battleActions';
+import { reachTargets, throwTargets } from '../src/sim/strike';
 import { reachWithZoc } from '../src/sim/zoc';
 import { takeBrokenTurn } from '../src/sim/morale';
 import {

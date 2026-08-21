@@ -5,16 +5,9 @@ import { distance, fromKey, type Hex } from '../hex';
 import type { Combatant, GameState } from '../state/types';
 import type { Temperament } from '../data/foes';
 import { activeCombatant, archetypeOf, fighterPerson, standing } from './battle';
-import {
-  canThrowAt,
-  doDefend,
-  doReach,
-  doShove,
-  doStrike,
-  doThrow,
-  evasion,
-  reachTargets,
-} from './battleActions';
+import { canThrowAt, doReach, doStrike, doThrow, reachTargets } from './strike';
+import { doDefend, doShove } from './footwork';
+import { evasion } from './swing';
 import { beat } from './beats';
 import { reachWithZoc, threatCount } from './zoc';
 import { canAnchor } from './wall';

@@ -15,7 +15,7 @@ import {
 import { leaveBattle } from '../src/sim/battleTurn';
 import { seeNeighbours } from '../src/sim/neighbours';
 import { CHAMPION_BYNAMES } from '../src/data/foes';
-import { doStrike } from '../src/sim/battleActions';
+import { doStrike } from '../src/sim/strike';
 import { NERVE_LEADER_FELL, fellLeading } from '../src/sim/morale';
 import { leaderOf } from '../src/sim/people';
 import { migrate } from '../src/state/migrations';

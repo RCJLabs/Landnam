@@ -24,7 +24,7 @@ import { assign, finishBuilds, queueBuild, shelterSaving } from '../src/sim/colo
 import { isEligible, checkOdds, presentEvent } from '../src/sim/events';
 import { moveOptions, moveEffort, isCoastalWater, SEA_EFFORT } from '../src/sim/travel';
 import { holdSteading } from '../src/sim/raid';
-import { doStrike } from '../src/sim/battleActions';
+import { doStrike } from '../src/sim/strike';
 import { coldNight } from '../src/sim/cold';
 import { forecast } from '../src/sim/winter';
 import { defenceBonus, WALL_BONUS_ONE } from '../src/sim/wall';

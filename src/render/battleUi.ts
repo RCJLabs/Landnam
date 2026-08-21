@@ -3,7 +3,8 @@
 
 import type { GameState } from '../state/types';
 import { activeCombatant, fighterPerson, isWarbandTurn, standing } from '../sim/battle';
-import { throwTargets, reachTargets, canWarCry, isLeader } from '../sim/battleActions';
+import { throwTargets, reachTargets } from '../sim/strike';
+import { canWarCry, isLeader } from '../sim/warcry';
 import { wallBonus, wallLinks } from '../sim/wall';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';

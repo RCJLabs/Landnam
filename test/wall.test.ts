@@ -15,13 +15,9 @@ import { encode } from '../src/state/save';
 import { apply } from '../src/sim/actions';
 import { BASE_MOVES, activeCombatant, effective, fighterPerson, standing } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
-import {
-  DEFEND_BONUS,
-  evasion,
-  reachTargets,
-  shoveDestination,
-  throwTargets,
-} from '../src/sim/battleActions';
+import { DEFEND_BONUS, evasion } from '../src/sim/swing';
+import { reachTargets, throwTargets } from '../src/sim/strike';
+import { shoveDestination } from '../src/sim/footwork';
 import {
   SHIELD_IN_WALL,
   WALL_BONUS_FULL,
