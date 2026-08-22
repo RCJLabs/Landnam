@@ -1,7 +1,7 @@
 // TRAVEL renderer: the world map as layered SVG. Pure view — it reads state
 // and emits a hex click; it never mutates anything.
 
-import { cornerPoints, fromKey, fromPixel, key, neighbors, toPixel, type Hex } from '../hex';
+import { cornerPoints, corners, fromKey, fromPixel, key, neighbors, toPixel, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import type { GameState, Neighbour, Place, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
@@ -9,7 +9,7 @@ import { atSea, moveEffort } from '../sim/road';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
-import { terrainFill, terrainPatterns } from './terrainArt';
+import { deepOceanFill, reliefDef, terrainFill, terrainPatterns } from './terrainArt';
 
 export const HEX_SIZE = 26;
 
@@ -21,8 +21,50 @@ export interface TravelView {
   centreOn(h: Hex): void;
 }
 
-function tileFill(tile: Tile, visible: boolean): string {
+function tileFill(tile: Tile, visible: boolean, deep: boolean): string {
+  if (deep) return deepOceanFill(visible);
   return terrainFill(tile.terrain, visible);
+}
+
+/**
+ * Open water with no land in sight of it: every neighbour is ocean too.
+ *
+ * Read off the STATIC tiles rather than the fog, so a hex's depth never
+ * changes once drawn — which is what lets it live in the fill and ride the
+ * build-once/relight-only repaint path untouched.
+ */
+function isDeep(state: GameState, k: string): boolean {
+  const tile = state.world.tiles[k];
+  if (tile?.terrain !== 'ocean') return false;
+  return neighbors(fromKey(k)).every(
+    (n) => state.world.tiles[key(n)]?.terrain === 'ocean',
+  );
+}
+
+/**
+ * The surf line: this ocean hex's edges that face land, as one path.
+ *
+ * Built from the static tiles like the depth is. A foam edge can face land
+ * the fog has not lifted from, which is technically a whisper about the
+ * coastline — accepted, because sight always reaches further than one hex,
+ * so by the time a player can SEE the foam they can see the shore it breaks
+ * on.
+ */
+function foamPath(state: GameState, p: { x: number; y: number }): string {
+  const ring = corners(p.x, p.y, HEX_SIZE - 1.5);
+  let d = '';
+  for (let i = 0; i < 6; i++) {
+    const a = ring[i]!;
+    const b = ring[(i + 1) % 6]!;
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    // The hex on the far side of this edge, found by stepping through it —
+    // no corner-to-direction table to get quietly wrong.
+    const across = fromPixel(p.x + (mid.x - p.x) * 2, p.y + (mid.y - p.y) * 2, HEX_SIZE);
+    const there = state.world.tiles[key(across)];
+    if (!there || there.terrain === 'ocean') continue;
+    d += `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} L ${b.x.toFixed(1)} ${b.y.toFixed(1)} `;
+  }
+  return d;
 }
 
 export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
@@ -39,7 +81,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
   // Built once, and the whole point of them: the terrain patterns are what
   // every hex's fill points at, so the map's texture costs no per-hex nodes.
   const defs = mapDefs();
-  defs.append(...terrainPatterns());
+  defs.append(...terrainPatterns(), reliefDef());
   root.append(defs);
 
   const sea = svgEl('rect', { class: 'sea', x: -4000, y: -4000, width: 12000, height: 12000 });
@@ -72,7 +114,10 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
    * Two maps rather than one so `repaintWork` can stay a pure function of
    * hex keys and light, with no idea that SVG exists.
    */
-  const drawn = new Map<string, { poly: SVGPolygonElement; river: SVGCircleElement | null }>();
+  const drawn = new Map<
+    string,
+    { poly: SVGPolygonElement; river: SVGCircleElement | null; foam: SVGPathElement | null }
+  >();
   const lit = new Map<string, Lit>();
 
   function centreOn(h: Hex): void {
@@ -159,14 +204,33 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       const p = toPixel(fromKey(k), HEX_SIZE);
       const visible = now === 'visible';
 
+      const deep = isDeep(state, k);
       const poly = svgEl('polygon', {
         points: cornerPoints(p.x, p.y, HEX_SIZE),
-        fill: tileFill(tile, visible),
+        fill: tileFill(tile, visible, deep),
         stroke: terrainDef(tile.terrain).edge,
         'stroke-width': 1,
         opacity: visible ? 1 : 0.55,
       });
       layerTerrain.append(poly);
+
+      // Surf where the sea meets the land — built once with the hex, lit
+      // with it, and costing the repaint nothing after that.
+      let foam: SVGPathElement | null = null;
+      if (tile.terrain === 'ocean' && !deep) {
+        const d = foamPath(state, p);
+        if (d) {
+          foam = svgEl('path', {
+            d,
+            fill: 'none',
+            stroke: '#e8f0f2',
+            'stroke-width': 1.6,
+            'stroke-linecap': 'round',
+            opacity: visible ? 0.45 : 0.22,
+          });
+          layerRivers.append(foam);
+        }
+      }
 
       // Mountains, forest and hills used to get a group of paths each here.
       // They are in the terrain pattern now — see render/terrainArt.ts — so
@@ -184,7 +248,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
         layerRivers.append(river);
       }
 
-      drawn.set(k, { poly, river });
+      drawn.set(k, { poly, river, foam });
       lit.set(k, now);
     }
 
@@ -194,9 +258,10 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       const now = seen[k];
       if (!held || !tile || now === undefined) continue;
       const visible = now === 'visible';
-      held.poly.setAttribute('fill', tileFill(tile, visible));
+      held.poly.setAttribute('fill', tileFill(tile, visible, isDeep(state, k)));
       held.poly.setAttribute('opacity', visible ? '1' : '0.55');
       held.river?.setAttribute('opacity', visible ? '0.85' : '0.4');
+      held.foam?.setAttribute('opacity', visible ? '0.45' : '0.22');
       lit.set(k, now);
     }
 
@@ -568,6 +633,17 @@ function shipToken(): SVGGElement {
   const half = s * 0.5;
 
   g.append(
+    // The wake: the water remembering where the keel has been. Two spreading
+    // lines astern, drawn before everything so the hull sits on them.
+    svgEl('path', {
+      d: `M ${-s * 0.5} ${s * 0.22} q ${-s * 0.45} ${s * 0.1} ${-s * 0.95} ${s * 0.34}`
+        + ` M ${-s * 0.5} ${s * 0.3} q ${-s * 0.4} ${s * 0.16} ${-s * 0.8} ${s * 0.5}`,
+      fill: 'none',
+      stroke: '#cfe0e8',
+      'stroke-width': 1.4,
+      'stroke-linecap': 'round',
+      opacity: 0.5,
+    }),
     svgEl('ellipse', { cx: 0, cy: s * 0.18, rx: s * 0.62, ry: s * 0.26, fill: '#1d1a14', opacity: 0.45 }),
     // Mast, then the square sail on it: one red stripe on undyed wool, which
     // is the whole of what a longship reads as at this size.

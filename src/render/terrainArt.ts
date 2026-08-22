@@ -332,6 +332,14 @@ export const RECIPES: Record<Terrain, Recipe> = {
       const cap = h * 0.34;
       const capW = w * 0.42;
       return [
+        svgEl('ellipse', {
+          cx: x + w * 0.12,
+          cy: foot + 1.5,
+          rx: w * 1.02,
+          ry: 2.6,
+          fill: darken(base, 0.5),
+          opacity: 0.3,
+        }),
         svgEl('path', {
           d: `M ${x} ${apex} L ${x + w} ${foot} L ${x - w} ${foot} Z`,
           fill: darken(base, 0.38),
@@ -415,13 +423,18 @@ export const RECIPES: Record<Terrain, Recipe> = {
 
 // ---- building the defs ----
 
-function buildPattern(terrain: Terrain, marks: Mark[], dim: boolean): SVGPatternElement {
+function buildPattern(
+  terrain: Terrain,
+  marks: Mark[],
+  dim: boolean,
+  override?: { id: string; base: string },
+): SVGPatternElement {
   const def = terrainDef(terrain);
-  const base = dim ? def.edge : def.fill;
+  const base = override?.base ?? (dim ? def.edge : def.fill);
   const recipe = RECIPES[terrain];
 
   const pattern = svgEl('pattern', {
-    id: patternId(terrain, dim),
+    id: override?.id ?? patternId(terrain, dim),
     patternUnits: 'userSpaceOnUse',
     width: TILE_W,
     height: TILE_H,
@@ -430,14 +443,53 @@ function buildPattern(terrain: Terrain, marks: Mark[], dim: boolean): SVGPattern
 
   // Remembered country is drawn fainter as well as darker, which is what the
   // per-hex glyphs did before this. The hex polygon dims further on top.
-  const ground = svgEl('g', dim ? { opacity: '0.6' } : {});
+  const ground = svgEl('g', {
+    ...(dim ? { opacity: '0.6' } : {}),
+    // The sea's crests carry a class so the map can let them drift — the one
+    // pattern whose subject actually moves. CSS-only, and frozen by the same
+    // stillness guards as everything else.
+    ...(terrain === 'ocean' ? { class: 'sea-drift' } : {}),
+  });
   for (const mark of marks) {
     for (const at of copies(mark, recipe.reach)) {
       ground.append(...recipe.draw(at.x, at.y, mark, base));
     }
   }
   pattern.append(ground);
+  // The low sun (art queue item 7): the LAND lit from the north-west by one
+  // shared gradient. It lives in the pattern so it costs no per-hex nodes
+  // and survives the relight path untouched. The gradient spans the tile —
+  // eight hexes — which on textured ground reads as gentle undulation, and
+  // on the flat sea read as diagonal banding: watched in a screenshot, so
+  // the sea keeps its own light (the crests) and skips this one.
+  if (terrain !== 'ocean') {
+    pattern.append(
+      svgEl('rect', {
+        x: 0, y: 0, width: TILE_W, height: TILE_H,
+        fill: 'url(#terrain-relief)',
+      }),
+    );
+  }
   return pattern;
+}
+
+/**
+ * The map's light, one gradient shared by every terrain pattern. Must be in
+ * the same <defs> the patterns are — render/travel.ts appends it.
+ */
+export function reliefDef(): SVGElement {
+  const g = svgEl('linearGradient', { id: 'terrain-relief', x1: '0', y1: '0', x2: '1', y2: '1' });
+  g.append(
+    svgEl('stop', { offset: '0', 'stop-color': '#ffffff', 'stop-opacity': 0.09 }),
+    svgEl('stop', { offset: '0.5', 'stop-color': '#ffffff', 'stop-opacity': 0 }),
+    svgEl('stop', { offset: '1', 'stop-color': '#000000', 'stop-opacity': 0.12 }),
+  );
+  return g;
+}
+
+/** Open water far from any coast: darker, quieter. Fill for the deep. */
+export function deepOceanFill(visible: boolean): string {
+  return `url(#terrain-ocean-deep${visible ? '' : '-dim'})`;
 }
 
 /**
@@ -455,5 +507,20 @@ export function terrainPatterns(): SVGPatternElement[] {
     const marks = scatter(art.derive(terrain), recipe.perHex, recipe.spread);
     out.push(buildPattern(terrain, marks, false), buildPattern(terrain, marks, true));
   }
+  // The deep (art queue item 6): the same sea, further from land — darker
+  // and quieter, so a coast reads as a coast and not as a lake's edge. Same
+  // marks as the shallows, fewer of them.
+  const deepMarks = scatter(art.derive('ocean-deep'), 3, RECIPES.ocean.spread);
+  const oceanDef = terrainDef('ocean');
+  out.push(
+    buildPattern('ocean', deepMarks, false, {
+      id: 'terrain-ocean-deep',
+      base: mix(oceanDef.fill, '#000000', 0.22),
+    }),
+    buildPattern('ocean', deepMarks, true, {
+      id: 'terrain-ocean-deep-dim',
+      base: mix(oceanDef.edge, '#000000', 0.22),
+    }),
+  );
   return out;
 }

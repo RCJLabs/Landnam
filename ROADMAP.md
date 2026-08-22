@@ -2006,6 +2006,37 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — The sea lives and the land is lit (art queue 6+7 of 10)** —
+  the travel map's turn, inside the repaint discipline it already paid for.
+
+  **A living sea.** Surf breaks where the water meets the land: each coastal
+  ocean hex carries one foam path along its land-facing edges, found by
+  stepping THROUGH each edge with `fromPixel` rather than by a
+  corner-to-direction table that could be quietly wrong. Open water with no
+  land beside it is THE DEEP — darker, quieter, its own pattern — so a coast
+  reads as a coast and not as a lake's edge. The crests drift (CSS on the
+  pattern's own mark group, frozen by stillness), and the knarr trails a
+  wake astern. All of it rides the build-once/relight-only path: foam is
+  built with its hex and relit with it, depth lives in the FILL, and the
+  repaint bar (78 builds across the long run) is untouched — it counts work
+  items, which was checked before a line was written.
+  One accepted whisper, stated rather than hidden: foam is computed from the
+  static tiles, so an edge can face land the fog has not lifted from. Sight
+  always reaches past one hex, so by the time the foam is visible the shore
+  it breaks on is too.
+
+  **Relief light.** Every LAND pattern carries one shared NW-light gradient —
+  in the pattern, so it costs no per-hex nodes — and the mountains got the
+  foot shadow that seats a peak on the ground. **The sea skips the relief,
+  and that was watched, not guessed:** the gradient spans the 8-hex tile,
+  which on textured ground reads as gentle undulation and on flat water read
+  as diagonal banding in the first screenshot. The sea's light is its
+  crests.
+
+  Verified by eye at the landing and afloat (the wake shot), 57 targeted
+  pins (repaint, camera, chart, terrainArt, fieldArt), all six browser bars,
+  and the suite.
+
 - **2026-08-22 — The beats are choreographed, the wall is drawn, and the sky
   reaches the field (art queue 3+4+5 of 10)** — three battle-side items in
   one render-only commit.

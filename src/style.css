@@ -1842,12 +1842,25 @@ button.gear {
   to { transform: translateX(var(--drift)); }
 }
 
-:root.still .weather * {
+/* The sea's crests drift inside their pattern — the one texture whose
+   subject actually moves. Gentle on purpose: the map is read, not watched. */
+.sea-drift {
+  animation: sea-drift 9s ease-in-out infinite alternate;
+}
+
+@keyframes sea-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(5px); }
+}
+
+:root.still .weather *,
+:root.still .sea-drift {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .weather * {
+  .weather *,
+  .sea-drift {
     animation: none;
   }
 }
