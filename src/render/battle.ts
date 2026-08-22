@@ -7,7 +7,7 @@ import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '.
 import { reachTargets, throwTargets } from '../sim/strike';
 import { shoveDestination } from '../sim/footwork';
 import { isLeader } from '../sim/warcry';
-import { beatsSince, type Beat } from '../sim/beats';
+import { beatsSince } from '../sim/beats';
 import { isThreatened } from '../sim/zoc';
 import { wallPairs } from '../sim/wall';
 import type { Aim } from './battleUi';
@@ -21,6 +21,10 @@ import {
   sunWash,
 } from './fieldArt';
 import { figure } from './figures';
+import { showBeat, type WallMemory } from './fx';
+import { seasonTint, skyNodes } from './fieldWeather';
+import { seasonOf } from '../sim/calendar';
+import { weatherOn } from '../sim/weather';
 
 const HEX = FIELD_HEX;
 
@@ -82,6 +86,10 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     // other layers wholesale, and an animation that gets rebuilt mid-flight
     // is an animation that never happened.
     effects: svgEl('g', { class: 'fx' }),
+    // The sky: over the men (fog and snow fall in FRONT of people), under
+    // the vignette. Looping decoration — see the .weather CSS for how
+    // stillness freezes rather than clears it.
+    weather: svgEl('g', { class: 'weather' }),
     shade: svgEl('g'),
   };
   root.append(
@@ -90,6 +98,7 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     layers.overlay,
     layers.fighters,
     layers.effects,
+    layers.weather,
     layers.shade,
   );
 
@@ -130,6 +139,13 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
   let beatMark: number | null = null;
   /** The field's extent, kept by fitViewBox for the light layers. */
   let bounds: { x: number; y: number; w: number; h: number } | null = null;
+  /**
+   * The wall as the LAST paint drew it, so a fall can snap the link it was
+   * holding — the fallen are already out of `wallPairs` by the time their
+   * `fell` beat plays. View memory, not sim state: beats live in the save
+   * and the parity vectors, and must not grow kinds for decoration's sake.
+   */
+  let wallBefore = new Map<string, WallMemory>();
 
   /** Beats land this far apart when a whole foe turn arrives at once. */
   const BEAT_GAP = 140;
@@ -146,66 +162,6 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
   function spawn(node: SVGElement, life = 750): void {
     layers.effects.append(node);
     window.setTimeout(() => node.remove(), life);
-  }
-
-  /** Where a fighter is standing, for a beat that names them. */
-  function spotOf(battle: Battle, personId: string): { x: number; y: number } | undefined {
-    const c = battle.combatants.find((f) => f.personId === personId);
-    return c ? toPixel(c.at, HEX) : undefined;
-  }
-
-  /** One beat, drawn. Everything this layer knows how to show is in here. */
-  function show(battle: Battle, b: Beat): void {
-    if (b.kind === 'struck' || b.kind === 'reached' || b.kind === 'threw') {
-      const a = spotOf(battle, b.who);
-      const t = spotOf(battle, b.target);
-      if (!a || !t) return;
-      // A blow that did not land in earnest reads as a graze: a turned blow,
-      // a graze and a clean miss are all the same streak with less weight.
-      const soft = b.result !== 'hit';
-      spawn(
-        svgEl('line', {
-          x1: a.x, y1: a.y, x2: t.x, y2: t.y,
-          class: `blow${soft ? ' glance' : ''}`,
-        }),
-        450,
-      );
-      // The landing and the cost — unless nothing got through, where the
-      // streak alone tells the story and "−0" would be noise.
-      if (b.damage > 0) {
-        spawn(svgEl('circle', { cx: t.x, cy: t.y, r: HEX * 0.5, class: 'hit-flash' }), 450);
-        const text = svgEl('text', {
-          x: t.x, y: t.y - HEX * 0.55,
-          class: `float-dmg${soft ? ' glance' : ''}`,
-          'text-anchor': 'middle',
-        });
-        text.textContent = `−${b.damage}`;
-        spawn(text, 900);
-      }
-      return;
-    }
-
-    if (b.kind === 'warcry') {
-      const p = spotOf(battle, b.who);
-      if (!p) return;
-      spawn(svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.6, class: 'cry-ring' }), 900);
-      spawn(svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.6, class: 'cry-ring late' }), 1100);
-      return;
-    }
-
-    if (b.kind === 'fell') {
-      // The fall: the shield stays where it fell for a breath.
-      const p = spotOf(battle, b.who);
-      if (!p) return;
-      spawn(
-        svgEl('circle', {
-          cx: p.x, cy: p.y, r: HEX * 0.42,
-          class: 'fall-fade',
-          fill: b.side === 'warband' ? '#b23b2e' : '#3f4a5a',
-        }),
-        900,
-      );
-    }
   }
 
   function playEffects(state: GameState): void {
@@ -231,9 +187,10 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     // at once, and firing them on the same frame is a single flicker rather
     // than a fight. They are dealt out in order instead — which is the point
     // of a stream over a slot.
+    const wall = wallBefore;
     beats.forEach((b, i) => {
-      if (i === 0) show(battle, b);
-      else window.setTimeout(() => show(battle, b), Math.min(i, 8) * BEAT_GAP);
+      if (i === 0) showBeat(battle, b, spawn, wall);
+      else window.setTimeout(() => showBeat(battle, b, spawn, wall), Math.min(i, 8) * BEAT_GAP);
     });
   }
 
@@ -323,9 +280,13 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     layers.fighters.replaceChildren();
     layers.shade.replaceChildren();
     fitViewBox(battle);
+    layers.weather.replaceChildren();
     if (bounds) {
       layers.light.append(sunWash(bounds.x, bounds.y, bounds.w, bounds.h));
       layers.shade.append(duskVignette(bounds.x, bounds.y, bounds.w, bounds.h));
+      const tint = seasonTint(seasonOf(state.day), bounds);
+      if (tint) layers.light.append(tint);
+      layers.weather.append(...skyNodes(weatherOn(state.seed, state.day).id, bounds));
     }
 
     for (const [k, tile] of Object.entries(battle.grid)) {
@@ -417,21 +378,58 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       }
     }
 
-    // The wall itself: a bar of shields between shoulder-mates. Drawn under
-    // the fighters so the line reads as something they are standing in.
-    for (const [a, b] of wallPairs(battle)) {
+    // The wall itself, drawn as the thing it is: a brace of overlapped
+    // shields between shoulder-mates — a plank with its lit edge and the
+    // studs where the rims cross — under the fighters, so the line reads as
+    // something they stand IN. A fighter braced on BOTH shoulders gets the
+    // full-wall ring, since that is the state every wall number keys off.
+    const pairs = wallPairs(battle);
+    const linkCount = new Map<string, number>();
+    const wallNow = new Map<string, WallMemory>();
+    for (const [a, b] of pairs) {
       const pa = toPixel(a.at, HEX);
       const pb = toPixel(b.at, HEX);
+      const friendly = a.side === 'warband';
+      const ink = friendly ? '#e8dcc0' : '#9fb0c4';
+      linkCount.set(a.personId, (linkCount.get(a.personId) ?? 0) + 1);
+      linkCount.set(b.personId, (linkCount.get(b.personId) ?? 0) + 1);
+      wallNow.set(`${a.personId}|${b.personId}`, {
+        ax: pa.x, ay: pa.y, bx: pb.x, by: pb.y, friendly,
+      });
+      const dx = pb.x - pa.x;
+      const dy = pb.y - pa.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const nx = -dy / d;
+      const ny = dx / d;
       layers.overlay.append(
         svgEl('line', {
-          x1: pa.x,
-          y1: pa.y,
-          x2: pb.x,
-          y2: pb.y,
-          stroke: a.side === 'warband' ? '#e8dcc0' : '#9fb0c4',
-          'stroke-width': 6,
-          'stroke-linecap': 'round',
-          opacity: 0.5,
+          x1: pa.x, y1: pa.y, x2: pb.x, y2: pb.y,
+          stroke: ink, 'stroke-width': 7, 'stroke-linecap': 'round', opacity: 0.4,
+        }),
+        svgEl('line', {
+          x1: pa.x + nx * 2, y1: pa.y + ny * 2, x2: pb.x + nx * 2, y2: pb.y + ny * 2,
+          stroke: '#ffffff', 'stroke-width': 1.4, 'stroke-linecap': 'round', opacity: 0.18,
+        }),
+      );
+      for (const f of [0.32, 0.5, 0.68]) {
+        layers.overlay.append(
+          svgEl('circle', {
+            cx: pa.x + dx * f, cy: pa.y + dy * f, r: 2.4,
+            fill: '#5b6570', stroke: '#2b2a22', 'stroke-width': 0.8, opacity: 0.9,
+          }),
+        );
+      }
+    }
+    for (const combatant of battle.combatants) {
+      if ((linkCount.get(combatant.personId) ?? 0) < 2) continue;
+      const p = toPixel(combatant.at, HEX);
+      layers.overlay.append(
+        svgEl('circle', {
+          cx: p.x, cy: p.y, r: HEX * 0.42 + 4.5,
+          fill: 'none',
+          stroke: combatant.side === 'warband' ? '#e8dcc0' : '#9fb0c4',
+          'stroke-width': 4,
+          opacity: 0.3,
         }),
       );
     }
@@ -459,6 +457,7 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     }
 
     playEffects(state);
+    wallBefore = wallNow;
   }
 
   // The field is `flex: 1 1 auto` under a log that grows as the fight is

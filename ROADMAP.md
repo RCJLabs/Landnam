@@ -2006,6 +2006,46 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — The beats are choreographed, the wall is drawn, and the sky
+  reaches the field (art queue 3+4+5 of 10)** — three battle-side items in
+  one render-only commit.
+
+  **Choreography (`render/fx.ts`).** The beat stream was built so a view
+  could show HOW a swing finished, and the view drew every one as the same
+  straight line. Now each verb has its shape: a swing sweeps in an arc bowed
+  to the off side, a thrust runs flat and fast, a thrown spear actually
+  flies (CSS-variable keyframes, since every flight is its own length) and
+  the impact waits for it to land, a turned blow sparks iron off the rim.
+  **And a reading bug: `shoved` beats were never drawn at all** — the one
+  verb with no effect, invisible except for its log line since the beat
+  stream shipped. All four endings show now: the brace flash when they held,
+  motion streaks when they gave ground, rock dust when they were crushed,
+  rings on the water when they drowned.
+
+  **The wall (`render/battle.ts`).** wallPairs drew as a translucent line;
+  it is a brace now — the plank, its lit edge, iron studs where the rims
+  cross — and a fighter braced on BOTH shoulders gets the full-wall ring,
+  because two links is the state every wall number keys off. When a fighter
+  falls out of a wall the link visibly SNAPS, two halves pulling apart. That
+  needed the wall as it stood on the PREVIOUS paint (the fallen are already
+  out of `wallPairs` when their `fell` beat plays), and it is view memory,
+  deliberately: beats live in the save and the parity vectors, and must not
+  grow kinds for decoration's sake.
+
+  **The sky (`render/fieldWeather.ts`).** The top bar has named the day's
+  weather since the weather work and the field ignored it. Now a gale
+  streaks across, frost falls as snow with each flake's own sway, sea fog
+  drifts as breathing banks — ellipses, not filters — and the season tints
+  the light (winter blue and thin, autumn amber, spring green-gold; summer
+  is the palette everything was tuned in). Weather LOOPS, unlike the
+  one-shot fx layer, so stillness FREEZES it by CSS rather than clearing
+  it: gusts and flakes only exist mid-animation, so a still field reads as
+  a calm day, and the fog bank simply stops breathing.
+
+  Verified with caught frames — a spear mid-flight and sparks off a rim,
+  polled out of real foe turns — plus the sea-fog field, all five browser
+  bars, and the suite. Render-only throughout.
+
 - **2026-08-22 — The fight looks like a saga illustration (art queue 1+2 of
   10)** — the first of the visual work, and the answer to "can we enhance the
   art without separate assets" is what this commit is: yes, because the
