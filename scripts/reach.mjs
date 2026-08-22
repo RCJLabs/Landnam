@@ -112,8 +112,21 @@ const survey = (primarySelector) => [...document.querySelectorAll('button, [role
 
 const browser = await chromium.launch({ executablePath: CHROME });
 
+/**
+ * The screen this audit runs on.
+ *
+ * It was 390x844 and nothing else for as long as it has existed — the size
+ * CLAUDE.md names as the design target. But the 44px rule is not a rule about
+ * the design size, it is a rule about thumbs, and a control that clears it at
+ * 390 can fall under it at 320 where every width-bound thing shrinks. That is
+ * exactly what the battlefield did. `npm run reach -- 320x568` asks the
+ * question at any width; with no argument it asks it at the design size, so
+ * the default is what it always was.
+ */
+const [W, H] = (process.argv[2] ?? '390x844').split('x').map(Number);
+
 async function look(label, act, save) {
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  const page = await browser.newPage({ viewport: { width: W, height: H }, hasTouch: true });
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(`file://${process.cwd()}/${PAGE}`);
@@ -134,6 +147,28 @@ async function look(label, act, save) {
     await page.locator('button', { hasText: /Take the land/i }).first().click();
     await page.waitForTimeout(800);
   }
+
+  // Clear anything covering the screen BEFORE acting, on every path.
+  //
+  // Only the save path did this, and a fresh run can raise a lesson card too —
+  // so `act` would sometimes reach for a control the card was sitting on and
+  // the whole audit died with "lesson-card intercepts pointer events". It is
+  // intermittent, which is worse than broken: measured today at two failures
+  // in four runs, on a script that is in no CI and that nobody would suspect
+  // because it passes when you rerun it.
+  if (label !== 'title') {
+    for (let i = 0; i < 6; i += 1) {
+      const card = page.locator('.overlay-slot button, .overlay button').first();
+      if (!(await card.count())) break;
+      await card.click().catch(() => {});
+      await page.waitForTimeout(250);
+    }
+    for (let i = 0; i < 20; i += 1) {
+      if ((await page.locator('.overlay-slot .overlay, .overlay').count()) === 0) break;
+      await page.waitForTimeout(100);
+    }
+  }
+
   if (act) await act(page);
 
   const found = await page.evaluate(survey, PRIMARY_SELECTOR);
@@ -194,4 +229,5 @@ if (fail.length > 0) {
   for (const said of fail) console.error(`reach: ${said}`);
   process.exit(1);
 }
-console.log(`\nreach OK — every target clears ${TAP}px, and every primary control is under the thumb`);
+console.log(`\nreach OK at ${W}x${H} — every target clears ${TAP}px, `
+  + 'and every primary control is under the thumb');

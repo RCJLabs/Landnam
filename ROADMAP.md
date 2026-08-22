@@ -2006,6 +2006,58 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — The one-thumb audit had never been run on a small phone, and
+  it was flaky** — the small-screen sweep. `scripts/reach.mjs` has audited ten
+  surfaces since the mobile work, and it ran at 390x844 and nothing else: the
+  size CLAUDE.md names as the design target. But 44px is a rule about thumbs,
+  not about the design size, and a control that clears it at 390 can fall
+  under it at 320 where every width-bound thing shrinks — which is exactly
+  what the battlefield did yesterday. It takes a viewport now
+  (`node scripts/reach.mjs 320x568`), defaulting to 390x844 so the old
+  behaviour is the default.
+
+  **The instrument was broken before it found anything, and intermittently,
+  which is worse than broken.** The audit died twice with "lesson-card
+  intercepts pointer events" and then passed on a rerun. Only its
+  save-loading path dismissed cards; a fresh run can raise a lesson too, so
+  `act` would sometimes reach for a control a card was sitting on. Two
+  failures in four runs, on a script that is in no CI and that nobody would
+  suspect, because rerunning it makes the problem go away. It clears the
+  screen on every path now — and this is the second script in two days with
+  that exact fault, after `pan.mjs`.
+
+  **Then it found something real at 320: Camp at 25% of the screen, the hard
+  band.** That is the same failure the mobile audit recorded FIXING at 390
+  ("Overlay cards are bottom-anchored on phone widths now and it sits at
+  38%") — the fix holds at the design size and fails one size down.
+
+  **Why, measured rather than guessed.** The Act sheet needs ~601px for seven
+  deeds. `.card` caps at 88dvh: 743px at 844 tall, so the card is shorter
+  than its cap, `margin-top: auto` engages and it floats to the thumb. At 568
+  tall the cap is 500px, the card is exactly at it, the auto margin resolves
+  to nought and the sheet starts at the TOP — which is the documented,
+  deliberate fallback, chosen because `align-items: end` would push the
+  overflow off the top where scrolling cannot reach it. Bottom-anchoring
+  cannot help a card taller than the space it is anchored in.
+
+  **So the card gives up height on a short screen** — `.deeds-card` caps at
+  64dvh below 700px tall, and the deeds themselves tighten (padding 9→5, gap
+  6→3, line-height 1.35→1.25, all still over the 44px `min-height`). The card
+  is smaller than the container again, the margin engages, the sheet drops to
+  the thumb, and the deeds that no longer fit scroll — which the card already
+  did. Keyed to HEIGHT, like the fight log's cap below 700px, because the
+  constraint is the cap and the cap is a height.
+
+  **The first cut capped `.card` and not `.deeds-card`, and the audit priced
+  it:** the title screen went from one control behind a scroll to three, and
+  settings and the battle result gained one each — four surfaces paying for
+  one. Scoped to the sheet, they are all back where they were. Nothing is
+  removed anywhere: every deed keeps the blurb it was given when they moved
+  off the action bar.
+
+  `reach OK` at 320x568, 360x640 and 390x844, and the other five browser bars
+  — field, pan, offline, landscape, pinch — all still green.
+
 - **2026-08-22 — The market is not under-visited by mistake (design question
   closed)** — the last open design call, and reading the gate answered half of
   it before anything was measured: **every condition on it is the harness's,

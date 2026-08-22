@@ -1131,6 +1131,58 @@ h2.grim {
   font-style: italic;
 }
 
+/* The Act sheet on a short screen.
+ *
+ * The sheet is bottom-anchored so its first deed — Camp, what a player does
+ * most nights — sits near the thumb. That works only while the card is
+ * SHORTER than its 88dvh cap. Seven deeds need about 601px; a 844px screen
+ * caps at 743 and the card floats low, but a 568px screen caps at 500, the
+ * card fills the screen, and the first deed rides up to 25% — the band the
+ * reach audit calls hard, where the hand has to shuffle. Bottom-anchoring
+ * cannot help a card taller than the space it is anchored in.
+ *
+ * So on a short screen the deeds give back the ~100px that costs. Nothing is
+ * removed: every deed keeps its blurb, which is the whole reason they were
+ * moved off the action bar. The 44px floor is `min-height` and is untouched —
+ * a tighter deed is still a legal target.
+ *
+ * Keyed to HEIGHT rather than width because the cap is, exactly as the fight
+ * log's is below 700px. */
+@media (max-height: 700px) {
+  .deeds {
+    gap: 3px;
+    margin: 8px 0;
+  }
+
+  .deed {
+    padding: 5px 12px;
+    line-height: 1.25;
+  }
+
+  /* And the card itself gives up height, which is what actually moves the
+   * first deed into reach.
+   *
+   * `margin-top: auto` only floats a card that is SHORTER than the space it
+   * sits in. At 88dvh on a 568px screen the sheet is exactly at its cap, the
+   * auto margin resolves to nought, and the card starts at the top with Camp
+   * at 25% — the hard band. Capping it shorter makes the card smaller than
+   * the container again, so the margin engages and the sheet drops to the
+   * thumb; the deeds that no longer fit scroll, which the card already does.
+   *
+   * Seeing fewer deeds at once is the price, and it is the right way round:
+   * a deed you have to scroll to is reachable, and a deed at 25% of a phone
+   * is a deed you have to put the phone down to press.
+   *
+   * `.deeds-card` and not `.card`. Capping every card took the title screen
+   * from one control behind a scroll to three, and the settings and the
+   * battle result one each — a cost paid by four surfaces to fix one. The
+   * Act sheet is the only card with seven full-width targets in it. */
+  .deeds-card {
+    max-height: 64vh;
+    max-height: 64dvh;
+  }
+}
+
 /* Passing the coast on. Ruled off from the deeds above it because it is not
    one: the list is what the day can be spent on, and this costs no day. */
 .coast {
