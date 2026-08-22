@@ -2,7 +2,7 @@
 // a hex tap. Fighters are drawn from their Person, same as anywhere else.
 
 import { cornerPoints, fromKey, fromPixel, key, toPixel, type Hex } from '../hex';
-import type { Battle, GameState, Ground } from '../state/types';
+import type { Battle, GameState } from '../state/types';
 import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '../sim/battle';
 import { reachTargets, throwTargets } from '../sim/strike';
 import { shoveDestination } from '../sim/footwork';
@@ -12,8 +12,17 @@ import { isThreatened } from '../sim/zoc';
 import { wallPairs } from '../sim/wall';
 import type { Aim } from './battleUi';
 import { svgEl } from './svg';
+import {
+  FIELD_HEX,
+  duskVignette,
+  fieldFill,
+  fieldPatterns,
+  lightDefs,
+  sunWash,
+} from './fieldArt';
+import { figure } from './figures';
 
-const HEX = 30;
+const HEX = FIELD_HEX;
 
 /**
  * The thumb rule, and the scale a hex needs to meet it.
@@ -44,14 +53,6 @@ function isLeaderHere(state: GameState, combatant: { personId: string; side: str
   return isLeader(state, combatant as Parameters<typeof isLeader>[1]);
 }
 
-const GROUND_FILL: Record<Ground, string> = {
-  open: '#5e6b40',
-  rough: '#6d6446',
-  block: '#4a453c',
-  water: '#2e5468',
-  wall: '#4a3b28',
-};
-
 export interface BattleView {
   root: SVGSVGElement;
   update(state: GameState, aim: Aim): void;
@@ -63,16 +64,34 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     xmlns: 'http://www.w3.org/2000/svg',
     preserveAspectRatio: 'xMidYMid meet',
   });
+  // The ground's patterns and the light's gradients, built once. Same move
+  // as the travel map's terrain defs, for the same repaint reason.
+  const defs = svgEl('defs');
+  defs.append(...fieldPatterns(), ...lightDefs());
+  root.append(defs);
+
   const layers = {
     ground: svgEl('g'),
+    // The low sun: a wash between the ground and the men, and a vignette
+    // over everything, so the fight sits IN the country instead of on a
+    // diagram of one. Two rects, resized to the field each paint.
+    light: svgEl('g'),
     overlay: svgEl('g'),
     fighters: svgEl('g'),
     // Effects survive repaints and remove themselves: paint() rebuilds the
     // other layers wholesale, and an animation that gets rebuilt mid-flight
     // is an animation that never happened.
     effects: svgEl('g', { class: 'fx' }),
+    shade: svgEl('g'),
   };
-  root.append(layers.ground, layers.overlay, layers.fighters, layers.effects);
+  root.append(
+    layers.ground,
+    layers.light,
+    layers.overlay,
+    layers.fighters,
+    layers.effects,
+    layers.shade,
+  );
 
   let latest: GameState | null = null;
   /**
@@ -109,6 +128,8 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
    * beats of a fight the player was not watching.
    */
   let beatMark: number | null = null;
+  /** The field's extent, kept by fitViewBox for the light layers. */
+  let bounds: { x: number; y: number; w: number; h: number } | null = null;
 
   /** Beats land this far apart when a whole foe turn arrives at once. */
   const BEAT_GAP = 140;
@@ -236,6 +257,7 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       w: maxX - minX + pad * 2,
       h: maxY - minY + pad * 2,
     };
+    bounds = box;
 
     // How big a hex would be if the whole field were framed. `xMidYMid meet`
     // scales by the tighter axis, and a pointy-top hex is narrower than it is
@@ -296,9 +318,15 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     if (!battle) return;
 
     layers.ground.replaceChildren();
+    layers.light.replaceChildren();
     layers.overlay.replaceChildren();
     layers.fighters.replaceChildren();
+    layers.shade.replaceChildren();
     fitViewBox(battle);
+    if (bounds) {
+      layers.light.append(sunWash(bounds.x, bounds.y, bounds.w, bounds.h));
+      layers.shade.append(duskVignette(bounds.x, bounds.y, bounds.w, bounds.h));
+    }
 
     for (const [k, tile] of Object.entries(battle.grid)) {
       const h = fromKey(k);
@@ -309,13 +337,15 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       layers.ground.append(
         svgEl('polygon', {
           points: cornerPoints(p.x, p.y, HEX_TILE),
-          fill: GROUND_FILL[tile.ground],
+          // The country the fight stands on decides what open ground looks
+          // like — the log has always said "they met us on wet sand", and
+          // now the sand is there to be met on.
+          fill: fieldFill(tile.ground, battle.terrain),
           stroke: '#2b2a22',
           'stroke-width': 1,
         }),
       );
       if (tile.ground === 'block') layers.ground.append(boulder(p.x, p.y));
-      if (tile.ground === 'rough') layers.ground.append(tussock(p.x, p.y));
     }
 
     const active = activeCombatant(battle);
@@ -413,20 +443,18 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       const p = toPixel(combatant.at, HEX);
       const isActive = active?.personId === combatant.personId;
       layers.fighters.append(
-        fighter(
-          p.x,
-          p.y,
-          combatant.side === 'warband',
-          person.health / person.maxHealth,
-          isActive,
-          combatant.defending,
-          combatant.broken,
-          isLeaderHere(state, combatant)
+        figure(p.x, p.y, HEX * 0.42, person, {
+          friendly: combatant.side === 'warband',
+          health: person.health / person.maxHealth,
+          active: isActive,
+          defending: combatant.defending,
+          broken: combatant.broken,
+          pennant: isLeaderHere(state, combatant)
             ? 'gold'
             : battle.champion === combatant.personId
               ? 'blood'
               : null,
-        ),
+        }),
       );
     }
 
@@ -537,125 +565,6 @@ function boulder(cx: number, cy: number): SVGGElement {
     svgEl('path', {
       d: `M ${cx - HEX * 0.42} ${cy + HEX * 0.2} q ${HEX * 0.16} ${-HEX * 0.5} ${HEX * 0.42} ${-HEX * 0.24} q ${HEX * 0.3} ${-HEX * 0.16} ${HEX * 0.42} ${HEX * 0.44} Z`,
       fill: '#7b756b',
-    }),
-  );
-  return g;
-}
-
-function tussock(cx: number, cy: number): SVGGElement {
-  const g = svgEl('g', { opacity: 0.55 });
-  for (const dx of [-0.3, 0, 0.3]) {
-    g.append(
-      svgEl('path', {
-        d: `M ${cx + dx * HEX} ${cy + HEX * 0.22} l ${HEX * 0.06} ${-HEX * 0.3} l ${HEX * 0.06} ${HEX * 0.3} Z`,
-        fill: '#8d8459',
-      }),
-    );
-  }
-  return g;
-}
-
-function fighter(
-  cx: number,
-  cy: number,
-  friendly: boolean,
-  healthFraction: number,
-  isActive: boolean,
-  defending: boolean,
-  broken: boolean,
-  pennant: 'gold' | 'blood' | null = null,
-): SVGGElement {
-  const g = svgEl('g', broken ? { opacity: '0.6' } : {});
-  const radius = HEX * 0.42;
-
-  // Whoever leads carries the banner, readable from any zoom: gold over the
-  // one shield that can raise the war-cry, blood over the man the raid
-  // follows — the one worth singling out.
-  if (pennant) {
-    const mastX = cx + radius * 0.55;
-    const top = cy - radius - 12;
-    g.append(
-      svgEl('line', {
-        x1: mastX, y1: cy - radius * 0.4, x2: mastX, y2: top,
-        stroke: '#e8dcc0', 'stroke-width': 1.6,
-      }),
-      svgEl('path', {
-        d: `M ${mastX} ${top} l 11 3.5 l -11 3.5 Z`,
-        fill: pennant === 'gold' ? '#d3a441' : '#b23b2e',
-        class: 'leader-pennant',
-      }),
-    );
-  }
-
-  // A braced shield reads as a heavier rim.
-  if (defending) {
-    g.append(
-      svgEl('circle', {
-        cx,
-        cy,
-        r: radius + 3,
-        fill: 'none',
-        stroke: '#cfd8dc',
-        'stroke-width': 4,
-        opacity: 0.85,
-      }),
-    );
-  }
-
-  if (isActive) {
-    g.append(
-      svgEl('circle', {
-        cx,
-        cy,
-        r: radius + 5,
-        fill: 'none',
-        stroke: '#d3a441',
-        'stroke-width': 3,
-      }),
-    );
-  }
-
-  // A shield seen face-on: friendly shields carry the warband's red.
-  g.append(
-    svgEl('circle', { cx, cy: cy + 2, r: radius, fill: '#14110d', opacity: 0.45 }),
-    svgEl('circle', {
-      cx,
-      cy,
-      r: radius,
-      fill: friendly ? '#b23b2e' : '#3f4a5a',
-      stroke: '#e8dcc0',
-      'stroke-width': 2,
-    }),
-    svgEl('circle', { cx, cy, r: radius * 0.28, fill: '#e8dcc0' }),
-  );
-
-  // Broken: a fighter with nothing left, marked so you can see the line go.
-  if (broken) {
-    g.append(
-      svgEl('path', {
-        d: `M ${cx - radius * 0.5} ${cy - radius - 6} l ${radius} 0 l ${-radius * 0.5} ${-radius * 0.6} Z`,
-        fill: '#d3a441',
-      }),
-    );
-  }
-
-  // Health bar under the shield.
-  const width = radius * 2;
-  g.append(
-    svgEl('rect', {
-      x: cx - width / 2,
-      y: cy + radius + 4,
-      width,
-      height: 4,
-      fill: '#14110d',
-      opacity: 0.6,
-    }),
-    svgEl('rect', {
-      x: cx - width / 2,
-      y: cy + radius + 4,
-      width: Math.max(0, width * healthFraction),
-      height: 4,
-      fill: healthFraction > 0.5 ? '#7d9150' : healthFraction > 0.25 ? '#d3a441' : '#b23b2e',
     }),
   );
   return g;

@@ -62,18 +62,21 @@ export const TILE_H = 4 * 1.5 * HEX;
  * drift from the grid the renderer actually draws: x = sqrt(3)*HEX*(q + r/2),
  * y = 1.5*HEX*r, folded back into the tile.
  */
-export const CENTRES: { x: number; y: number }[] = (() => {
+export function latticeCentres(hexSize: number): { x: number; y: number }[] {
+  const tileW = 2 * Math.sqrt(3) * hexSize;
   const out: { x: number; y: number }[] = [];
-  const step = Math.sqrt(3) * HEX;
+  const step = Math.sqrt(3) * hexSize;
   for (let r = 0; r < 4; r++) {
     for (let q = -2; q <= 2; q++) {
       const x = step * (q + r / 2);
-      if (x < -0.001 || x >= TILE_W - 0.001) continue;
-      out.push({ x, y: 1.5 * HEX * r });
+      if (x < -0.001 || x >= tileW - 0.001) continue;
+      out.push({ x, y: 1.5 * hexSize * r });
     }
   }
   return out;
-})();
+}
+
+export const CENTRES: { x: number; y: number }[] = latticeCentres(HEX);
 
 /** The fill for a hex: the terrain's pattern, dimmed if merely remembered. */
 export function terrainFill(terrain: Terrain, visible: boolean): string {
@@ -134,10 +137,15 @@ export interface Mark {
  * placed uniformly at random clump and leave bald patches. Jitter on both
  * keeps it from looking set out with a ruler.
  */
-export function scatter(rng: Rng, perHex: number, spread: number): Mark[] {
+export function scatter(
+  rng: Rng,
+  perHex: number,
+  spread: number,
+  centres: { x: number; y: number }[] = CENTRES,
+): Mark[] {
   const GOLDEN = Math.PI * (3 - Math.sqrt(5));
   const marks: Mark[] = [];
-  for (const centre of CENTRES) {
+  for (const centre of centres) {
     for (let i = 0; i < perHex; i++) {
       const radius = spread * Math.sqrt((i + 0.5 + rng.float(-0.35, 0.35)) / perHex);
       const angle = i * GOLDEN + rng.float(-0.5, 0.5);
@@ -166,13 +174,18 @@ export function scatter(rng: Rng, perHex: number, spread: number): Mark[] {
  * that should appear twice and appears once leaves a seam nobody sees until
  * they are looking at a map.
  */
-export function copies(mark: Mark, reach: number): { x: number; y: number }[] {
+export function copies(
+  mark: Mark,
+  reach: number,
+  tileW: number = TILE_W,
+  tileH: number = TILE_H,
+): { x: number; y: number }[] {
   const xs = [mark.x];
-  if (mark.x - reach < 0) xs.push(mark.x + TILE_W);
-  if (mark.x + reach > TILE_W) xs.push(mark.x - TILE_W);
+  if (mark.x - reach < 0) xs.push(mark.x + tileW);
+  if (mark.x + reach > tileW) xs.push(mark.x - tileW);
   const ys = [mark.y];
-  if (mark.y - reach < 0) ys.push(mark.y + TILE_H);
-  if (mark.y + reach > TILE_H) ys.push(mark.y - TILE_H);
+  if (mark.y - reach < 0) ys.push(mark.y + tileH);
+  if (mark.y + reach > tileH) ys.push(mark.y - tileH);
   const out: { x: number; y: number }[] = [];
   for (const x of xs) {
     for (const y of ys) out.push({ x, y });

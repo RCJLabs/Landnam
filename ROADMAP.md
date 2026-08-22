@@ -2006,6 +2006,55 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — The fight looks like a saga illustration (art queue 1+2 of
+  10)** — the first of the visual work, and the answer to "can we enhance the
+  art without separate assets" is what this commit is: yes, because the
+  zero-assets rule bans FILES, not drawing. Everything here is seeded
+  procedural SVG, the same philosophy WebAudio already proved for sound.
+
+  **Fighters are people now, not counters** (`render/figures.ts`). Every
+  combatant used to be the same circle with a dot. A Person is one object
+  across the whole game — pillar 1 — so their LOOK is too: shield paint
+  (halved, quartered, sunwheel, rayed or ringed, in period colours — warband
+  warm, foes cold), cloak, helm with a nasal, a spear behind the shield, all
+  seeded from `person.id + name` the way terrainArt seeds its marks, so the
+  same Ulf carries the same quartered madder shield every time he stands on a
+  field. Damage is painted as well as counted: the shield cracks past
+  two-thirds health and dulls past a third; broken, it sags and tilts. The
+  leader's pennant flies from the spear instead of a floating mast. Every
+  signal the counter carried — side, health bar, active ring, defend rim,
+  broken mark — is unchanged in geometry, so nothing a player learned moves.
+
+  **The field is a place now, not a diagram** (`render/fieldArt.ts`). Open
+  ground takes its base colour and its marks from `battle.terrain` — the
+  country the fight actually stands on. The log has said "they met us on wet
+  sand" over meadow-green fills since the field existed; now the sand is
+  there to be met on, pebbles and all. Grass tufts inland, scree on stone,
+  crested pools on water, churned earth under the palisade. Plus the low
+  sun: one NW wash and one vignette — four nodes, no filters, because
+  filter-class effects are the one genuinely expensive thing on a phone GPU.
+
+  **Built with the machinery the travel map already paid for.**
+  `scatter`/`copies` took optional lattice parameters (defaults unchanged,
+  all 14 terrainArt pins green) and the field tiles them at its own hex
+  size. `test/fieldArt.test.ts` holds the same bars terrainArt's phone bug
+  wrote: every recipe's `spread + reach` inside the field inradius, the
+  scatter deterministic, every terrain mapped. Patterns build once into
+  `<defs>` and are referenced by fill string, for the exact repaint reason
+  terrainArt documents — per-hex glyph groups were the old cost model.
+
+  Verified the way art has to be: screenshots at 390 and at the 320 panned
+  view, judged by eye, plus all five browser bars (field, pan, reach at two
+  widths, offline) and the suite. Bundle 351→358 kB. Render-only: sim,
+  saves, parity untouched.
+
+  **The queue (ideas 3–10, in order):** choreographed beats (swing arcs,
+  thrust ghosts, shield sparks); the shield wall drawn (wallPairs visible);
+  weather and season reaching the field; a living sea (drifting waves, foam,
+  depth, wake); relief light on terrain; the map as the saga's artifact
+  (parchment, knot border, worn trod); life marks (hearth smoke, birds,
+  fire-glow); a unified season/day light pass via CSS variables.
+
 - **2026-08-22 — The one-thumb audit had never been run on a small phone, and
   it was flaky** — the small-screen sweep. `scripts/reach.mjs` has audited ten
   surfaces since the mobile work, and it ran at 390x844 and nothing else: the
