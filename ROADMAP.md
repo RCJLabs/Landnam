@@ -124,9 +124,27 @@
 > neither can drift in silence — but the fix is for the UE one to become a
 > thin ADAPTER over the sim one, keeping `FWorldTile`, `FLandnamWorld` and
 > the four `UFUNCTION`s exactly as Blueprints see them and replacing only
-> the bodies. It needs two small things first: a seed/state accessor on
-> `ULandnamRng`, and `Sim::GenerateWorld` reporting `attempts` so the
-> adapter does not have to invent it.
+> the bodies. **Both prerequisites are DONE as of 2026-08-22** (landnam-ue
+> `54d10c0`): `Sim::GenerateWorld` reports `Attempts` and `bValid`, and
+> `ULandnamRng::GetState()` exists so a live generator's POSITION can be
+> carried across — seeding from `GetSeed()` alone would rewind it and build
+> a different island. Parity stayed green through both. A third unknown was
+> settled on the way: the sim inserts tiles `for Row { for Col }`, which is
+> the row-major offset order `FLandnamWorld.Tiles` documents, so the
+> conversion can copy in order.
+>
+> **The adapter itself is deliberately NOT written, and this is not a
+> deferral for lack of time.** It cannot be verified from a container with
+> no Unreal and no UnrealHeaderTool: `Tools/run-parity.sh` compiles only
+> `Sim/`, which is exactly why that core is kept free of Unreal, and the
+> Blueprint-facing file is covered only by the in-editor automation test.
+> A hundred lines written blind into the path that feeds the game's map
+> would be found by whoever next opens the editor. Compiling it behind a
+> stub Unreal was considered and rejected: UHT parses those macros
+> separately and generates the `.generated.h`, so a shim that compiled
+> would prove syntax while LOOKING like verification — a fourth hollow bar.
+> It is an hour's work for anyone with the editor open, and nothing is in
+> its way now.
 
 ---
 
@@ -1981,6 +1999,36 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-22 — The worldgen adapter is unblocked, and stops one step
+  short on purpose** — the port's own next item. `LandnamWorldgen.cpp`
+  (UE-typed, Blueprint-facing) and `Sim/LandnamSimWorldgen.cpp` are the same
+  generator transcribed twice; the fix is for the first to become a thin
+  adapter over the second. Both prerequisites shipped in landnam-ue
+  `54d10c0`, and parity stayed green through both — `PARITY OK, 39
+  checkpoints across two runs`, plus the 8 golden worlds hex for hex.
+  **`Attempts` and `bValid` on `FSimWorld`**, because `FLandnamWorld` has
+  always reported both and an adapter that re-derived them would keep the
+  duplicate it exists to remove. They cannot move a parity hash and that was
+  checked rather than assumed: `CanonicalWorld` names the TypeScript world's
+  keys one at a time and does not reflect over the struct.
+  **`ULandnamRng::GetState()`**, because `FSimRng` is `{ Seed, State }` and a
+  generator handed to the adapter may already have been advanced — seeding
+  from the seed alone would silently rewind it and build a different island
+  from the one the caller was about to get. Not a `UFUNCTION`: the Blueprint
+  surface is a promise and this is not part of it.
+  **And the one part of the conversion that could have been silently wrong**
+  rather than loudly wrong: tile ORDER. `FLandnamWorld.Tiles` documents
+  row-major offset order and `FSimWorld.Keys` is insertion order that
+  worldgen deliberately leans on. They agree — the sim inserts under
+  `for Row { for Col }`.
+  **Why the adapter itself is not written.** It cannot be verified from
+  here: no Unreal, no UHT, and `run-parity.sh` compiles only `Sim/`. The
+  Blueprint-facing file is covered only by the in-editor automation test, so
+  writing it blind means a compile error found by somebody with an editor and
+  no author. A stub-Unreal shim was considered and rejected — UHT parses
+  those macros separately, so a shim that compiled would prove syntax while
+  looking like verification. This document records three hollow bars already.
 
 - **2026-08-22 — The bot gives way as winter closes, and every published
   curve is restated** — the finding that fell out of closing the retreat
