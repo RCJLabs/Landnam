@@ -2006,6 +2006,45 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — "Some hexes aren't travelable even when you are right next
+  to them"** — a bug report about shallow water, and it was three bugs, two
+  of them older than the report.
+
+  **The map and the sim read the same fact two ways.** The renderer asked "is
+  every neighbour ocean?" to decide deep water; the sim asked "is any
+  neighbour land?" to decide whether the knarr could row there. Those agree
+  everywhere except where the tiles run out — the world is a finite 52x36
+  rectangle — and at the rim an off-map neighbour is *not ocean* (so the map
+  drew ordinary coastal water) and *not land* (so the sim refused the
+  crossing). Measured before anything was touched: **1332 of 2866
+  shallow-drawn hexes could never be entered, every single one on the rim,
+  none of them touching real land.** The whole perimeter of the world was a
+  promise the game would not keep. Fixed by deleting the second reading:
+  `deepOcean` lives in `sim/road.ts` beside the rule it must agree with, and
+  the renderer asks it. The rim now reads as open sea, which is what it is.
+  After: **0**.
+
+  **The knarr's reach was invisible.** `moveOptions` has computed the ship's
+  three-hex day since the rowing work and **had no caller in `src/`** — the
+  renderer kept its own list of immediate neighbours. So the thing the ship
+  exists for was never offered: **60 legal moves over 15 afloat turns, undrawn**,
+  and the sea read as a wall three hexes thick. The renderer now calls the
+  sim's list, which also hands it the returning-expedition leash and the
+  settled-band rule for free. After: **0** hidden moves, **0** phantoms.
+
+  **And the fix exposed a trap.** With the real reach drawn, the new browser
+  bar found a marker at span ZERO — the band's own hex. `rowable` is trivially
+  true from a hex to itself, so afloat the sim accepted a MOVE that advanced
+  the day and moved nobody: **32 of 35 afloat states could spend a day rowing
+  nowhere.** Nothing had ever offered it, so nobody had found it; drawing the
+  truth is what made it visible. Standing still is not a move now. After: **0**.
+
+  New: `scripts/sea.mjs` (drives a band onto real water in the BUILT page,
+  reads the markers back out of the document, and fails if any sits on water
+  the sim refuses or if none reaches past one hex) and `test/reachable.test.ts`
+  (5 bars). Verified: the suite, tsc clean, all seven browser bars, and the
+  reach seen by eye on a knarr under way.
+
 - **2026-08-22 — The chart is an artifact and the land is lived-in (art queue
   8+9+10 of 10 — the queue is finished)** — three travel-side items in one
   render-only commit.

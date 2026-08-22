@@ -30,6 +30,23 @@ export function isCoastalWater(state: GameState, at: Hex): boolean {
   });
 }
 
+/**
+ * Open sea: ocean the knarr cannot work, because no shore is in sight of it.
+ *
+ * The map draws depth from THIS, so what looks like open water and what the
+ * band is refused are one fact in one place. They used to be two readings in
+ * two files — the renderer asked "is every neighbour ocean?", the sim asked
+ * "is any neighbour land?" — and they disagreed wherever the tiles run out at
+ * the world's rim: an off-map neighbour is not ocean, so the map drew coastal
+ * water, and it is not land either, so the sim refused the crossing. 1332 of
+ * 2866 shallow-drawn hexes were shut like that, the whole perimeter of the
+ * world, and nothing in the game said why.
+ */
+export function deepOcean(state: GameState, at: Hex): boolean {
+  if (state.world.tiles[key(at)]?.terrain !== 'ocean') return false;
+  return !isCoastalWater(state, at);
+}
+
 /** The band is afloat. */
 export function atSea(state: GameState): boolean {
   return state.world.tiles[key(state.party.at)]?.terrain === 'ocean';
@@ -115,6 +132,12 @@ export function canMove(state: GameState, to: Hex): boolean {
   if (!permittedStep(state, to)) return false;
   if (moveEffort(state, to) === null) return false;
   const span = distance(state.party.at, to);
+  // Standing still is not a move. Afloat this was ACCEPTED — `rowable` is
+  // trivially true from a hex to itself, so the band could spend a day
+  // rowing nowhere in 32 of 35 afloat states measured. Nothing offered it
+  // until the map started drawing the knarr's true reach, which is how a
+  // ten-year-old trap surfaced: the day was real and the distance was zero.
+  if (span === 0) return false;
   if (span === 1) return true;
   // Afloat, a day is worth three hexes of open coast rather than one.
   return span <= ROW_REACH && rowable(state, state.party.at, to);
@@ -133,6 +156,8 @@ export function moveOptions(state: GameState): Hex[] {
   const reach = new Map<string, Hex>();
   for (const h of steps) reach.set(key(h), h);
   for (const h of range(state.party.at, ROW_REACH)) {
+    // `range` includes its own centre; the band is already there.
+    if (key(h) === key(state.party.at)) continue;
     if (reach.has(key(h))) continue;
     if (moveEffort(state, h) === null || !permittedStep(state, h)) continue;
     if (!rowable(state, state.party.at, h)) continue;

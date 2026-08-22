@@ -5,7 +5,7 @@ import { cornerPoints, corners, fromKey, fromPixel, key, neighbors, toPixel, typ
 import { terrainDef } from '../data/terrain';
 import type { GameState, Neighbour, Place, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
-import { atSea, moveEffort } from '../sim/road';
+import { atSea, deepOcean, moveOptions } from '../sim/road';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
@@ -30,18 +30,14 @@ function tileFill(tile: Tile, visible: boolean, deep: boolean): string {
 }
 
 /**
- * Open water with no land in sight of it: every neighbour is ocean too.
- *
- * Read off the STATIC tiles rather than the fog, so a hex's depth never
- * changes once drawn — which is what lets it live in the fill and ride the
- * build-once/relight-only repaint path untouched.
+ * Open water, asked of the sim rather than decided here: `deepOcean` is the
+ * same predicate that refuses the crossing, so the map cannot promise water
+ * the knarr will not row. Read off the STATIC tiles like the sim's is, so a
+ * hex's depth never changes once drawn — which is what lets it live in the
+ * fill and ride the build-once/relight-only repaint path untouched.
  */
 function isDeep(state: GameState, k: string): boolean {
-  const tile = state.world.tiles[k];
-  if (tile?.terrain !== 'ocean') return false;
-  return neighbors(fromKey(k)).every(
-    (n) => state.world.tiles[key(n)]?.terrain === 'ocean',
-  );
+  return deepOcean(state, fromKey(k));
 }
 
 /**
@@ -157,7 +153,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     }
 
     // Where we could step next.
-    for (const option of neighbourOptions(state)) {
+    for (const option of travelOptions(state)) {
       const p = toPixel(option, HEX_SIZE);
       layerOverlay.append(
         svgEl('polygon', {
@@ -359,9 +355,19 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     token.setAttribute('transform', `translate(${p.x} ${p.y})`);
   }
 
-  function neighbourOptions(state: GameState): Hex[] {
+  /**
+   * What the map offers — the sim's own list, not a second one kept here.
+   *
+   * This used to be `neighbors` filtered by `moveEffort`, which knew nothing
+   * about the leash on a returning expedition, nothing about a settled band,
+   * and — the one that was actually costing the player moves — nothing about
+   * the knarr's day of rowing. `moveOptions` has computed all of it since the
+   * rowing work and had NO caller in src/: 60 legal moves over 15 afloat
+   * turns were never drawn, so the sea read as a wall three hexes thick.
+   */
+  function travelOptions(state: GameState): Hex[] {
     if (state.event || state.end) return [];
-    return neighbors(state.party.at).filter((h) => moveEffort(state, h) !== null);
+    return moveOptions(state);
   }
 
   // Pointer handling: drag to pan, pinch to zoom, tap to move.
