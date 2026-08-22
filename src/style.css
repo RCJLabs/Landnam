@@ -1853,15 +1853,85 @@ button.gear {
   to { transform: translateX(5px); }
 }
 
+/* --- Life marks and the chart's frame (art queue items 8 and 9) --- */
+
+/* The map as the saga's own artifact: an edge vignette and a faint chart
+   frame, only when the WORLD map is up — the battlefield draws its own
+   vignette and does not need a second one on top. */
+.map-slot:has(> svg.map)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 54px 10px rgba(10, 8, 6, 0.5),
+    inset 0 0 0 1px rgba(232, 220, 192, 0.1);
+}
+
+/* Hearth smoke: two puffs on their own loops, rising and thinning. */
+.smoke .puff {
+  opacity: 0;
+  animation: smoke-rise 3.6s linear infinite;
+}
+
+.smoke .puff.p1 {
+  animation-delay: 1.7s;
+}
+
+@keyframes smoke-rise {
+  0% { opacity: 0; transform: translateY(0); }
+  18% { opacity: 0.55; }
+  100% { opacity: 0; transform: translateY(-9px) translateX(1.5px); }
+}
+
+/* The fire a camped band sleeps beside. */
+.campglow {
+  opacity: 0.16;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: glow-breathe 2.8s ease-in-out infinite alternate;
+}
+
+@keyframes glow-breathe {
+  from { opacity: 0.1; transform: scale(0.92); }
+  to { opacity: 0.2; transform: scale(1.05); }
+}
+
+/* Gulls over the water, drifting a little. */
+.bird {
+  animation: bird-drift 5.5s ease-in-out infinite alternate;
+}
+
+@keyframes bird-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(6px, -3px); }
+}
+
 :root.still .weather *,
-:root.still .sea-drift {
+:root.still .sea-drift,
+:root.still .smoke .puff,
+:root.still .campglow,
+:root.still .bird {
   animation: none;
+}
+
+/* Under stillness the smoke must still SAY lived-in — its animation is the
+   only thing that makes the puffs visible, so give them a static shape. */
+:root.still .smoke .puff {
+  opacity: 0.4;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .weather *,
-  .sea-drift {
+  .sea-drift,
+  .smoke .puff,
+  .campglow,
+  .bird {
     animation: none;
+  }
+
+  .smoke .puff {
+    opacity: 0.4;
   }
 }
 

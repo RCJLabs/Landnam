@@ -106,6 +106,10 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
     if (distance(from.at, to.at) !== 1) continue;
     const a = toPixel(from.at, HEX);
     const b = toPixel(to.at, HEX);
+    // A worn trail, not a drawn line: the ground remembers when it was
+    // walked, so the early road fades as the saga gets longer — never to
+    // nothing, because the chart is the record.
+    const age = Math.max(0.28, 1 - (state.day - to.day) / 220);
     layers.trail.append(
       svgEl('line', {
         x1: a.x,
@@ -114,14 +118,15 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
         y2: b.y,
         stroke: '#e8dcc0',
         'stroke-width': 1.6,
-        opacity: 0.5,
+        opacity: 0.5 * age,
       }),
     );
   }
   for (const step of walked) {
     const p = toPixel(step.at, HEX);
+    const age = Math.max(0.28, 1 - (state.day - step.day) / 220);
     layers.trail.append(
-      svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.22, fill: '#e8dcc0', opacity: 0.55 }),
+      svgEl('circle', { cx: p.x, cy: p.y, r: HEX * 0.22, fill: '#e8dcc0', opacity: 0.55 * age }),
     );
   }
 

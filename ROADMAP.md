@@ -2006,6 +2006,49 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — The chart is an artifact and the land is lived-in (art queue
+  8+9+10 of 10 — the queue is finished)** — three travel-side items in one
+  render-only commit.
+
+  **The map as the saga's artifact (8).** The world map sits inside an edge
+  vignette and a faint chart frame now — a `::after` on the map slot, scoped
+  with `:has(> svg.map)` so the battlefield, which draws its own vignette,
+  never gets a second one. And the trod is WORN: the chart's trail fades with
+  the days since it was walked (`1 − age/220`, floored at 0.28), so the early
+  road reads as an old road and the chart keeps its record — never to
+  nothing, because the map is the saga's memory, not a snapshot.
+  One honest downscope: the queue said "parchment, knot border" — the frame
+  is a plain inset line, not interlace. Knotwork corners at 1px inset cost
+  real nodes on every paint of the slot and read as noise at phone size; the
+  vignette and the worn trod carry the artifact reading on their own.
+
+  **Life marks (9).** A steading is lived-in now, not just built: hearth
+  smoke rises off the settlement's longhouse and off every neighbour camp
+  that has not been sacked — two puffs on staggered loops, and the loop is
+  what a sacked camp loses. A camped band sleeps beside a visible fire
+  (`campglow`, breathing, gone the moment they move on — it keys off
+  `hasCamped`, a fact the sim already kept). Some days there are gulls over
+  seen water near the band — seeded `landnam-birds:${seed}:${day}`, so a
+  replay has the same sky and the sim rolls nothing for decoration.
+  Stillness discipline, same as the field's weather: every loop is frozen by
+  `:root.still` and `prefers-reduced-motion` — and because the smoke's
+  animation is the only thing that makes its puffs visible, stillness gives
+  them a static opacity instead of erasing the lived-in read.
+
+  **Season light on the country (10).** The travel map takes the same
+  season tint the battlefield already wears — `seasonTint` from
+  `fieldWeather`, reused rather than a second palette that could drift —
+  over the sea rect's whole reach so panning never finds its edge, swapped
+  only when the season actually turns. Under the overlay layer, so every
+  gameplay mark stays full-strength. The queue said "via CSS variables";
+  one shared function turned out to be the smaller mechanism, and one
+  mechanism for one fact is the rule that matters.
+
+  Verified by eye at the settled steading and at a camp (smoke, glow, frame
+  all present; smoke sits behind the band's token when they are home, which
+  is right — they are standing in front of their own house), 57 targeted
+  pins, all six browser bars at 390x844, tsc clean, and the full suite.
+
 - **2026-08-22 — The sea lives and the land is lit (art queue 6+7 of 10)** —
   the travel map's turn, inside the repaint discipline it already paid for.
 

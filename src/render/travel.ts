@@ -10,6 +10,9 @@ import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
 import { deepOceanFill, reliefDef, terrainFill, terrainPatterns } from './terrainArt';
+import { seasonTint } from './fieldWeather';
+import { seasonOf } from '../sim/calendar';
+import { makeRng } from '../rng';
 
 export const HEX_SIZE = 26;
 
@@ -87,9 +90,14 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
   const sea = svgEl('rect', { class: 'sea', x: -4000, y: -4000, width: 12000, height: 12000 });
   const layerTerrain = svgEl('g');
   const layerRivers = svgEl('g');
+  // The season's light over the country (art queue item 10): one tinted
+  // rect, swapped only when the season turns. Under the overlay so every
+  // gameplay mark stays full-strength.
+  const layerLight = svgEl('g');
   const layerOverlay = svgEl('g');
   const layerParty = svgEl('g');
-  root.append(sea, layerTerrain, layerRivers, layerOverlay, layerParty);
+  root.append(sea, layerTerrain, layerRivers, layerLight, layerOverlay, layerParty);
+  let litSeason = '';
 
   // Start zoomed in enough that a hex clears the 44px touch target.
   const camera: Camera = { x: 0, y: 0, zoom: 1.35 };
@@ -138,6 +146,16 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
 
     chartCountry(state);
 
+    const season = seasonOf(state.day);
+    if (season !== litSeason) {
+      litSeason = season;
+      layerLight.replaceChildren();
+      // The tint covers the sea rect's whole reach, so panning never finds
+      // its edge.
+      const tint = seasonTint(season, { x: -4000, y: -4000, w: 12000, h: 12000 });
+      if (tint) layerLight.append(tint);
+    }
+
     // Where we could step next.
     for (const option of neighbourOptions(state)) {
       const p = toPixel(option, HEX_SIZE);
@@ -173,6 +191,45 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
 
     if (state.settlement) {
       layerOverlay.append(steading(state.settlement.at));
+    }
+
+    // A camped band has a fire going: the glow is the mark of a night's rest,
+    // gone the moment they move on.
+    if (state.party.hasCamped && !atSea(state)) {
+      const p = toPixel(state.party.at, HEX_SIZE);
+      layerOverlay.append(
+        svgEl('circle', {
+          cx: p.x, cy: p.y + HEX_SIZE * 0.2, r: HEX_SIZE * 0.55,
+          class: 'campglow', fill: '#d3a441',
+        }),
+      );
+    }
+
+    // Some days there are birds over the water. Seeded from the day, so a
+    // replay has the same sky; near the band, so they are actually seen.
+    const birdRng = makeRng(`landnam-birds:${state.seed}:${state.day}`);
+    if (birdRng.next() < 0.35) {
+      const water = neighbors(state.party.at)
+        .concat(neighbors(state.party.at).flatMap((n) => neighbors(n)))
+        .filter((h) => {
+          const k = key(h);
+          return state.world.seen[k] && state.world.tiles[k]?.terrain === 'ocean';
+        });
+      if (water.length > 0) {
+        const at = toPixel(birdRng.pick(water), HEX_SIZE);
+        for (const [dx, dy] of [[0, 0], [7, -4], [-6, -7]] as const) {
+          layerOverlay.append(
+            svgEl('path', {
+              d: `M ${at.x + dx - 3} ${at.y + dy} q 3 -2.6 3 0 q 0 -2.6 3 0`,
+              class: 'bird',
+              fill: 'none',
+              stroke: '#dfe6ea',
+              'stroke-width': 1.1,
+              opacity: 0.8,
+            }),
+          );
+        }
+      }
     }
 
     placeToken(state);
@@ -498,6 +555,7 @@ function neighbourMark(n: Neighbour): SVGGElement {
       opacity: 0.85,
     }),
   );
+  if (n.sackedOn === undefined) g.append(smoke(p.x + r * 0.5, p.y - r * 1.1));
   if (clanKind(n.kind).id === 'native') {
     // A tent: two poles crossed over a hide.
     g.append(
@@ -526,6 +584,26 @@ function neighbourMark(n: Neighbour): SVGGElement {
 }
 
 /** A longhouse: a turf roof with a smoke-hole, readable at thumb size. */
+/**
+ * Hearth smoke: two puffs rising off a roof, looping. The one mark that says
+ * somebody LIVES here rather than "a building stands here". Frozen static by
+ * the stillness guards like every other loop.
+ */
+function smoke(x: number, y: number): SVGGElement {
+  const g = svgEl('g', { class: 'smoke' });
+  for (const [i, dx] of [[0, 0], [1, 2.4]] as const) {
+    const puff = svgEl('circle', {
+      cx: x + dx,
+      cy: y,
+      r: 1.6 + i * 0.5,
+      fill: '#cfd8dc',
+      class: `puff p${i}`,
+    });
+    g.append(puff);
+  }
+  return g;
+}
+
 function steading(at: Hex): SVGGElement {
   const p = toPixel(at, HEX_SIZE);
   const w = HEX_SIZE * 0.62;
@@ -550,6 +628,7 @@ function steading(at: Hex): SVGGElement {
       'stroke-width': 1.5,
     }),
     svgEl('circle', { cx: p.x, cy: p.y + h * 0.1, r: HEX_SIZE * 0.07, fill: '#d3a441' }),
+    smoke(p.x + w * 0.22, p.y - h * 0.55),
   );
   return g;
 }
