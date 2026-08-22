@@ -1,9 +1,9 @@
 {
   "note": "What the port was last handed. Written by scripts/port-sync.mjs; test/contract.test.ts fails when the files no longer hash to this.",
   "files": {
-    "port/parity.json": "2f3e6fc90af9608c",
+    "port/parity.json": "a748c85187ad08d6",
     "port/golden.json": "90766813a77b89ab",
-    "port/LandnamPartyTables.gen.h": "44019afa8fd978dd",
+    "port/LandnamPartyTables.gen.h": "6725238b0f9a978a",
     "port/LandnamEventTables.gen.h": "b69db440a54c4f19",
     "port/LandnamBattleTables.gen.h": "892f13f230f9d58a",
     "port/foes.json": "439a3f32508b3949",

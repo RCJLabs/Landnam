@@ -13,6 +13,7 @@ import { fieldCrew } from './expedition';
 import { mendHull } from './sea';
 import { worldBeat } from './beats';
 import { actionRng, advance, atSea, reveal } from './road';
+import { landmarkHere } from './landmark';
 import { abundance, noteTake, type Larder } from './abundance';
 
 /** Water worth putting a net in, from where we are standing (or floating). */
@@ -104,6 +105,11 @@ export function doCamp(state: GameState): GameState {
   }
   party.morale = Math.min(100, party.morale + (fed ? (home ? 7 : 5) : 1));
 
+  // Where the night was spent, in words a person would use. This is what
+  // landmarks are FOR: "we made camp" three nights running reads as one
+  // night, and "we made camp under the Split Rock" is somewhere.
+  const mark = home || afloat ? null : landmarkHere(state);
+
   advance(state, 1);
   if (state.end) return state;
   reveal(state);
@@ -113,9 +119,13 @@ export function doCamp(state: GameState): GameState {
       ? `We rested at ${state.settlement!.name}, and the work went on around us.`
       : afloat
         ? 'We lay at anchor in the lee of the land and slept in the boat.'
-        : wood > 0
-          ? `We made camp and cut ${wood} of firewood.`
-          : 'We made camp. There was nothing here worth burning.',
+        : mark
+          ? wood > 0
+            ? `We made camp under ${mark.name} and cut ${wood} of firewood.`
+            : `We made camp under ${mark.name}. There was nothing there worth burning.`
+          : wood > 0
+            ? `We made camp and cut ${wood} of firewood.`
+            : 'We made camp. There was nothing here worth burning.',
     'plain',
   );
   return state;

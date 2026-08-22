@@ -30,9 +30,10 @@ const marks = await page.evaluate(() => ({
   halls: document.querySelectorAll('.rival-hall').length,
   fences: [...document.querySelectorAll('polygon[stroke="#b23b2e"]')].length,
   skerries: document.querySelectorAll('.skerry').length,
+  landmarks: document.querySelectorAll('.landmark').length,
   warned: [...document.querySelectorAll('polygon[stroke="#d3a441"]')].length,
 }));
-console.log(`look: ${marks.halls} hall, ${marks.fences} fenced, ${marks.skerries} skerries, ${marks.warned} warned crossings`);
+console.log(`look: ${marks.halls} hall, ${marks.fences} fenced, ${marks.skerries} skerries, ${marks.landmarks} landmarks, ${marks.warned} warned`);
 if (errors.length) console.error('page errors:', errors.join(' | '));
 await page.screenshot({ path: process.env.SHOT ?? '/tmp/rival.png' });
 await browser.close();

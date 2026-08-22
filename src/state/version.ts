@@ -65,7 +65,13 @@
 //                  has learnt about. The skerries themselves are derived from
 //                  the seed and stored nowhere. Absent is an unread coast,
 //                  which is what every old saga has.
-export const SAVE_VERSION = 39;
+// v40 (landmarks): Tile LOST `landmark` and `explored`. They were declared
+//                   years ago, pointed at a `data/landmarks` that was never
+//                   written, and were set by nothing in either repo — a
+//                   promise in the data model that no code kept. Landmarks
+//                   are real now and are DERIVED from the seed (sim/landmark
+//                   .ts), so they need no field at all.
+export const SAVE_VERSION = 40;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

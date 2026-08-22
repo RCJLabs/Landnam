@@ -19,6 +19,8 @@ import { strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
 import { rowThrough } from './skerry';
+import { landmarkAt, landmarkName } from './landmark';
+import { landmarkDef } from '../data/landmarks';
 import { springStrake, unseaworthy } from './ship';
 import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
@@ -65,7 +67,8 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       party.hasCamped = false;
       // Remember the route, not just the view: the map draws where we walked.
       const there = key(action.to);
-      if (state.world.trod[there] === undefined) state.world.trod[there] = state.day;
+      const firstHere = state.world.trod[there] === undefined;
+      if (firstHere) state.world.trod[there] = state.day;
       if (tile.terrain === 'ocean') note(state, 'seaDays', days);
       // What the water did to her on the way. Only a crossing that was
       // actually rowed: walking a shore hex passes over no rocks.
@@ -86,6 +89,18 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
         ...(tile.terrain === 'ocean' ? { bySea: true as const } : {}),
       });
       chronicle(state, marchLine(state, tile.terrain, days, changedGround, fromSea));
+      // Standing under one for the first time. `trod` already remembers first
+      // visits, so this costs no new state — and it is said ONCE, which is
+      // what makes it read as arriving somewhere rather than as scenery.
+      const standing = firstHere ? landmarkAt(state.world, state.seed, action.to) : null;
+      if (standing) {
+        chronicle(
+          state,
+          `We came to ${landmarkName(state.world, state.seed, action.to)}: `
+            + `${landmarkDef(standing).blurb}.`,
+          'saga',
+        );
+      }
       // The rocks get their own line: a strake going is the loudest thing
       // that can happen on a quiet day, and it must never be buried in the
       // march line's prose.

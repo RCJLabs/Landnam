@@ -347,6 +347,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // older band never struck one, so it has learnt nothing about them. An
   // empty chart is the honest record of that, and absent IS the empty chart.
   38: (save) => ({ ...save, version: 39 }),
+  // Nothing to strip in practice — the two fields this drops were never
+  // written by anything, so no save on earth carries them. The version moves
+  // anyway, because the SHAPE changed and a save's shape is the contract.
+  39: (save) => ({ ...save, version: 40 }),
 };
 
 export interface MigrationResult {

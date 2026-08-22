@@ -8,6 +8,7 @@ import { clanKind, standingFor } from '../data/clans';
 import { atSea, deepOcean, moveOptions } from '../sim/road';
 import { rivalSettled } from '../sim/rival';
 import { charted, crossed } from '../sim/skerry';
+import { landmarkAt } from '../sim/landmark';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
@@ -122,7 +123,12 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
    */
   const drawn = new Map<
     string,
-    { poly: SVGPolygonElement; river: SVGCircleElement | null; foam: SVGPathElement | null }
+    {
+      poly: SVGPolygonElement;
+      river: SVGCircleElement | null;
+      foam: SVGPathElement | null;
+      mark: SVGGElement | null;
+    }
   >();
   const lit = new Map<string, Lit>();
 
@@ -287,7 +293,9 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
    * What it replaces cleared the layer and rebuilt every seen hex every time,
    * which cost the size of the chart per repaint and therefore grew as the
    * run went on. Measured over runs/long.json in test/repaint.test.ts:
-   * 102,612 polygons built, against 78 here.
+   * 114,936 polygons built, against 78 here. (The baseline moved when
+   * landmarks gave the band a reason to see more country from a ridge; the
+   * 78 did not, which is the whole claim.)
    */
   function chartCountry(state: GameState): void {
     const seen = state.world.seen as Record<string, Lit>;
@@ -345,7 +353,18 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
         layerRivers.append(river);
       }
 
-      drawn.set(k, { poly, river, foam });
+      // The country's fixed points, built with their hex and relit with it —
+      // the same build-once path everything else on this layer rides, so the
+      // repaint bar does not move for them.
+      let mark: SVGGElement | null = null;
+      const landmark = landmarkAt(state.world, state.seed, fromKey(k));
+      if (landmark) {
+        const glyph = landmarkMark(p.x, p.y, landmark, visible);
+        layerRivers.append(glyph);
+        mark = glyph;
+      }
+
+      drawn.set(k, { poly, river, foam, mark });
       lit.set(k, now);
     }
 
@@ -359,6 +378,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       held.poly.setAttribute('opacity', visible ? '1' : '0.55');
       held.river?.setAttribute('opacity', visible ? '0.85' : '0.4');
       held.foam?.setAttribute('opacity', visible ? '0.45' : '0.22');
+      held.mark?.setAttribute('opacity', visible ? '0.95' : '0.5');
       lit.set(k, now);
     }
 
@@ -367,6 +387,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       if (!held) continue;
       held.poly.remove();
       held.river?.remove();
+      held.mark?.remove();
       drawn.delete(k);
       lit.delete(k);
     }
@@ -651,6 +672,79 @@ function smoke(x: number, y: number): SVGGElement {
     });
     g.append(puff);
   }
+  return g;
+}
+
+/**
+ * A fixed point, drawn small and pale.
+ *
+ * Deliberately quieter than a steading or a claim: a landmark is not a thing
+ * to act on, it is a thing to navigate BY, so it has to read as part of the
+ * country rather than as another marker competing for the thumb.
+ */
+function landmarkMark(x: number, y: number, kind: string, visible: boolean): SVGGElement {
+  const g = svgEl('g', { class: 'landmark', opacity: visible ? 0.95 : 0.5 });
+  const s = HEX_SIZE * 0.3;
+  const ink = '#e8dcc0';
+  if (kind === 'falls') {
+    // Water going down: three short strokes over a pool.
+    for (const dx of [-s * 0.4, 0, s * 0.4]) {
+      g.append(svgEl('path', {
+        d: `M ${x + dx} ${y - s * 0.7} L ${x + dx} ${y + s * 0.2}`,
+        stroke: '#cfe4ec', 'stroke-width': 1.4, 'stroke-linecap': 'round', fill: 'none',
+      }));
+    }
+    g.append(svgEl('ellipse', {
+      cx: x, cy: y + s * 0.5, rx: s * 0.7, ry: s * 0.24, fill: '#3f7d94', opacity: 0.8,
+    }));
+    return g;
+  }
+  if (kind === 'burn') {
+    // Black trunks standing.
+    for (const [dx, h] of [[-s * 0.5, 0.9], [0, 1.15], [s * 0.5, 0.8]] as const) {
+      g.append(svgEl('path', {
+        d: `M ${x + dx} ${y + s * 0.5} L ${x + dx} ${y - s * h}`,
+        stroke: '#241f1a', 'stroke-width': 1.6, 'stroke-linecap': 'round', fill: 'none',
+      }));
+    }
+    return g;
+  }
+  if (kind === 'mere') {
+    g.append(svgEl('ellipse', {
+      cx: x, cy: y, rx: s * 0.85, ry: s * 0.55, fill: '#1d2b30',
+      stroke: ink, 'stroke-width': 0.8, opacity: 0.9,
+    }));
+    return g;
+  }
+  if (kind === 'stack') {
+    // A pillar off the beach.
+    g.append(svgEl('path', {
+      d: `M ${x - s * 0.35} ${y + s * 0.6} L ${x - s * 0.2} ${y - s} L ${x + s * 0.25} ${y - s} L ${x + s * 0.4} ${y + s * 0.6} Z`,
+      fill: '#6a7684', stroke: ink, 'stroke-width': 0.8,
+    }));
+    return g;
+  }
+  if (kind === 'cairn') {
+    // Stacked stones.
+    for (const [dy, w] of [[0.45, 0.8], [0, 0.6], [-0.45, 0.38]] as const) {
+      g.append(svgEl('ellipse', {
+        cx: x, cy: y + s * dy, rx: s * w, ry: s * 0.22, fill: '#8a8478',
+        stroke: ink, 'stroke-width': 0.6,
+      }));
+    }
+    return g;
+  }
+  // The split rock: one stone with a line through it.
+  g.append(
+    svgEl('path', {
+      d: `M ${x - s * 0.6} ${y + s * 0.6} L ${x - s * 0.35} ${y - s * 0.85} L ${x + s * 0.45} ${y - s * 0.7} L ${x + s * 0.6} ${y + s * 0.6} Z`,
+      fill: '#8a8478', stroke: ink, 'stroke-width': 0.8,
+    }),
+    svgEl('path', {
+      d: `M ${x + s * 0.05} ${y - s * 0.8} L ${x - s * 0.05} ${y + s * 0.6}`,
+      stroke: '#241f1a', 'stroke-width': 1.1, fill: 'none',
+    }),
+  );
   return g;
 }
 

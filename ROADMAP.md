@@ -2006,6 +2006,58 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — The country has fixed points, and the data model stops
+  lying about it** — landmarks and wayfinding (queue idea 3).
+
+  **The idea had been DECLARED and never built.** `Tile.landmark` has sat in
+  the state shape for years pointing at a `data/landmarks` that was never
+  written, beside an `explored` flag with the same story — and a search of
+  both repos found nothing that ever set either one. `spotLandmarks` was
+  named for them and actually spots PLACES. So the map had no fixed points at
+  all: every march line named a terrain ("we moved on into hills"), three
+  days' walking read as the same day three times, and a player who passed one
+  waterfall twice had nothing to tell them it was the same water.
+
+  **Landmarks are real now, and derived from the seed.** Six kinds in
+  `data/landmarks.ts` — a split rock, a falls, a burnt wood, a cairn, a sea
+  stack, a black mere — each only on ground it belongs on, each named twice
+  over ("the Broken Falls", "Stormcairn"). Measured at **5.1% of eligible
+  hexes**, roughly sixty in a world: enough to steer by, sparse enough to
+  mean something. Nothing is stored: `landmarkAt` is a hash of the seed and
+  the hex, so worldgen's hash (a contract with the C++ port) does not move,
+  and which ones the band KNOWS needs no field either — a landmark stands on
+  a hex, and the fog already remembers which hexes have been seen.
+
+  **What wayfinding buys, stated exactly.** Weather takes sight away; a
+  fixed point does not give a crew longer eyes, it gives them their
+  bearings — so beside a known landmark the SKY's penalty is cancelled and
+  nothing else about sight moves. And from a ridge they are picked out to
+  eight hexes, far past ordinary sight, which is the reason to climb one.
+
+  **Said in words a person would use.** The saga names where the night was
+  spent ("we made camp under the Split Rock"), and arriving at one is
+  chronicled ONCE, keyed off `world.trod`, which already remembered first
+  visits — so it costs no new state and reads as arriving somewhere rather
+  than as scenery.
+
+  **The chart carries the names; the map carries the marks.** Names were
+  tried on the chart first and could not be read — it is the whole island in
+  300px, so a name there is three pixels tall and overlaps its neighbours.
+  The chart marks WHERE with a ring and the key says WHICH, nearest first,
+  capped at twelve. On the travel map each kind has its own small glyph,
+  built once with its hex and relit with it: the repaint bar is **still 78
+  work items**. (The naive baseline in that bar moved from 102,612 to 114,936
+  polygons, because a band that can spot fixed points from a ridge sees more
+  country — the comment in `render/travel.ts` was restated rather than left
+  stale.)
+
+  Save goes to **v40**, and it goes DOWN a field: `landmark` and `explored`
+  are gone from `Tile`. No save on earth carries them, so the migration
+  strips nothing — the version moves because the shape did, and a save's
+  shape is the contract. Published odds measured unchanged.
+  `port/parity.json` regenerated and handed over.
+
+
 - **2026-08-22 — The coast has teeth, and a chart is something you earn** —
   the sea gets opinions (queue idea 1), scoped to the half that changes how
   the game is played.

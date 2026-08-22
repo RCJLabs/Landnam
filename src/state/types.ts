@@ -32,10 +32,6 @@ export interface Tile {
   terrain: Terrain;
   /** A river runs through this hex — fresh water, harder to cross. */
   river: boolean;
-  /** Landmark id from data/landmarks, if any. */
-  landmark?: string;
-  /** True once the party has fully explored it (landmark consumed). */
-  explored?: boolean;
 }
 
 /**

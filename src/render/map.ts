@@ -8,6 +8,16 @@
 import { cornerPoints, distance, fromKey, toPixel, key, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import { exploredFraction } from '../sim/fog';
+import { knownLandmarks } from '../sim/landmark';
+
+/**
+ * How many named points the chart will carry.
+ *
+ * Capped, and nearest-first: a long run has seen dozens, and a chart with
+ * every one of them on it is a wall of text rather than a way to find
+ * anything. The ones near the band are the ones being navigated by.
+ */
+const CHART_LANDMARKS = 12;
 import type { GameState, Neighbour, Place } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
 import { placeKind } from '../data/places';
@@ -131,6 +141,24 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
   }
 
   // The knarr, where it all started.
+  // The country's fixed points, NAMED. This is what the chart is for and
+  // what a landmark is for: on the travel map they are glyphs you steer by,
+  // and here they are the names the saga has been using for them.
+  // Marked on the chart, but NOT lettered on it. Names were tried here first
+  // and could not be read: this is the whole island in 300px, so a name at
+  // that scale is three pixels tall and overlaps its neighbours. The mark
+  // says where, and the key below says which — which is what a key is for.
+  const marks = knownLandmarks(state).slice(0, CHART_LANDMARKS);
+  for (const mark of marks) {
+    const p = toPixel(mark.at, HEX);
+    layers.marks.append(
+      svgEl('circle', {
+        cx: p.x, cy: p.y, r: HEX * 0.34, class: 'chart-landmark',
+        fill: 'none', stroke: '#e8dcc0', 'stroke-width': 1, opacity: 0.7,
+      }),
+    );
+  }
+
   layers.marks.append(knarr(world.landing));
 
   const met = state.neighbours.filter((n) => n.found);
@@ -166,6 +194,8 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
     ...known.map((p) =>
       placeKey(p, `${placeKind(p.kind).name}${p.sackedOn !== undefined ? ' — picked clean' : ''}`),
     ),
+    // The names the saga has been using, nearest first.
+    ...marks.map((m) => legendItem('landmark', m.name)),
   ]);
 
   const card = el('div', { class: 'card chart-card' }, [
@@ -194,7 +224,7 @@ export function renderMap(state: GameState, close: () => void): HTMLElement {
  * squares standing in for a ship and a hall would leave the player matching
  * shapes by guesswork.
  */
-function legendItem(kind: 'knarr' | 'hall' | 'here' | 'trail', text: string): HTMLElement {
+function legendItem(kind: 'knarr' | 'hall' | 'here' | 'trail' | 'landmark', text: string): HTMLElement {
   const swatch = svgEl('svg', {
     class: `chart-swatch ${kind}`,
     viewBox: '-11 -11 22 22',
@@ -203,7 +233,16 @@ function legendItem(kind: 'knarr' | 'hall' | 'here' | 'trail', text: string): HT
   if (kind === 'knarr') swatch.append(knarr({ q: 0, r: 0 }));
   else if (kind === 'hall') swatch.append(hall({ q: 0, r: 0 }));
   else if (kind === 'here') swatch.append(hereToken({ q: 0, r: 0 }));
-  else {
+  else if (kind === 'landmark') {
+    // The same ring the chart draws, so the key is matched by eye rather
+    // than by guesswork — the rule the rest of this legend already follows.
+    swatch.append(
+      svgEl('circle', {
+        cx: 0, cy: 0, r: 6, fill: 'none', stroke: '#e8dcc0',
+        'stroke-width': 1.4, opacity: 0.8,
+      }),
+    );
+  } else {
     swatch.append(
       svgEl('line', {
         x1: -8, y1: 0, x2: 8, y2: 0,

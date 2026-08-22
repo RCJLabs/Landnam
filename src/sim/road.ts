@@ -8,13 +8,14 @@ import { stream, type Rng } from '../rng';
 import { terrainDef } from '../data/terrain';
 import type { GameState, Terrain } from '../state/types';
 import { effectsOn } from './calendar';
-import { revealAround, sightRadius } from './fog';
-import { fresh } from './saga';
+import { onHighGround, revealAround, sightRadius } from './fog';
+import { chronicle, fresh } from './saga';
 import { permittedStep } from './expedition';
 import { seeNeighbours } from './neighbours';
 import { spotLandmarks } from './places';
 import { sprung, unseaworthy } from './ship';
 import { meetRival } from './rival';
+import { keepsBearings, spotFixedPoints } from './landmark';
 import { weatherOn } from './weather';
 import { bonus } from './lore';
 import { passDay } from './upkeep';
@@ -182,7 +183,15 @@ export function reveal(state: GameState): void {
   const effects = effectsOn(state.day);
   // Fog and gales close the country in. Never below one: a band can always
   // see the ground it is standing on.
-  const sight = Math.max(1, effects.sight + weatherOn(state.seed, state.day).sight);
+  //
+  // Unless they know where they are. A fixed point does not give a crew
+  // longer eyes — it gives them their bearings — so beside a landmark the
+  // SKY's penalty is cancelled and nothing else about sight moves. That is
+  // what wayfinding buys, and it is why climbing a ridge to mark the Split
+  // Rock is worth the day it costs.
+  const sky = weatherOn(state.seed, state.day).sight;
+  const weather = keepsBearings(state) ? Math.max(0, sky) : sky;
+  const sight = Math.max(1, effects.sight + weather);
   revealAround(
     state.world,
     state.party.at,
@@ -195,6 +204,16 @@ export function reveal(state: GameState): void {
   // And from a ridge, the things a country is navigated by — a town, a
   // monastery, a wreck — are picked out far past the ground itself.
   spotLandmarks(state);
+  // The natural ones too, and those are the ones a coast is remembered by.
+  if (onHighGround(state.world, state.party.at)) {
+    for (const found of spotFixedPoints(state, state.party.at)) {
+      chronicle(
+        state,
+        `From the high ground we made out ${found.name}, and took our bearings off it.`,
+        'plain',
+      );
+    }
+  }
 }
 
 /** Spends whole days, stopping the moment one of them ends the run. */
