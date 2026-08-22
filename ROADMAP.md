@@ -87,8 +87,8 @@
 >
 > **What is left is not on the list of ten:** the design half of the place
 > economy (the market is under-VISITED, not under-discovered — an errand
-> launches ten times in thirty sagas), and whether a 320px-wide phone should
-> get a battlefield that pans, since it cannot show 44px hexes otherwise.
+> launches ten times in thirty sagas). The 320px battlefield is DECIDED and
+> BUILT as of 2026-08-21: it pans, and a hex clears 44px at every width.
 > Both are Evan's call. And the port resumes on the worldgen adapter.
 >
 > **Two bugs came back from a real phone on 2026-08-18 and both were real.**
@@ -1979,6 +1979,72 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-21 — The narrow field moves, and a hex clears 44px at every
+  width** — the 320px battlefield, decided and built. It had sat as an open
+  design question since the mobile audit: a battle hex is a touch target, the
+  field frames the whole grid so hex size falls out of screen WIDTH, and
+  320px tops out below the 44px rule however much height it is given.
+
+  **Two ways out, and one of them is not a design call at all.** Panning is a
+  renderer change. A smaller grid on small screens is not: `FIELD_WIDTH = 7`
+  is a SIM constant and it is generated into the port as
+  `constexpr int32_t FieldWidth = 7`, so a screen-dependent grid would make
+  the same seed play differently on different phones, break replay
+  determinism, break parity, and let the renderer dictate sim state. That
+  ruled it out on grounds the open thread never stated.
+
+  **What shipped.** The field zooms exactly as far as 44px demands and no
+  further — zoom is NOT a user control — and the player drags for the rest.
+  Above 360px nothing changed at all: `canPan` is false, the field frames
+  itself as it always has, and a drag on it does nothing. The pan follows
+  whoever is acting and a new turn drops it, because a field that will not
+  show you whose turn it is is worse than one that moves.
+
+  | | hex before | hex after |
+  | --- | --- | --- |
+  | 412×915 | 54px | 54px, untouched |
+  | 390×844 | 51px | 51px, untouched |
+  | 360×640 | 47px | 47px, untouched |
+  | 320×568 | **39–43px** | **44px** |
+
+  **The measurement corrected me twice before a line was written.** The
+  ROADMAP's own 42px figure for 320 is the WIDTH-bound ceiling taken with
+  height removed; the real viewport measures 39px, so the shortfall was 5px
+  and not 2. And the first cut derived the rule from `HEX`, the layout size —
+  but the tile is DRAWN at `HEX - 0.5` for the hairline between hexes, and
+  that smaller shape is what a thumb lands on. It predicted 44.00 and
+  rendered 43.27: a miss of under a pixel, invisible in the code, caught only
+  by measuring the rendered polygon in a browser. They are one constant now.
+
+  **It found a bug that predates it, on every screen size.** A drag on the
+  field ended in a tap, because `pointerup` was a tap unconditionally — so
+  dragging a finger across a 390px battlefield, reaching for the action bar
+  or trying to scroll, ordered whoever was up to WALK to wherever the finger
+  stopped. It had nothing to do with 320px and had been there as long as the
+  field has. The drag is tracked at every width now and only the panning is
+  gated on there being anything to pan; the slop that separates a tap from a
+  drag is measured in screen pixels, since two world units is under two
+  pixels once the field is zoomed and would make a shaky tap read as a drag.
+
+  **`scripts/pan.mjs`, and the hazard it exists for.** The same `pointerup`
+  that ends a pan used to order a fighter to walk there — a drag that marches
+  a warrior into a shield wall because the player wanted to see the left
+  flank is worse than the 5px it fixes, and no unit test in this repo can see
+  it, because the suite runs in node and the renderer is deliberately
+  untested there. `npm run pan` drives a real fight at 320 and 390 and checks
+  that the narrow field pans, the wide one does not, neither taps by
+  accident, and a tap still moves a fighter.
+  **And the first version of that check was itself flaky**, which is worth
+  more than the feature. It dragged once and asserted the view moved; the
+  zoom is only ~1.7%, so a few pixels are ever off screen and the view is
+  usually already hard against a clamp, where dragging legitimately changes
+  nothing. It read "did not pan" on two runs in four. A flaky check is worse
+  than no check: it compares both extremes now, and was run five times before
+  it was believed.
+
+  `scripts/field.mjs` holds the 44px line at every width now instead of
+  exempting 320 — the exemption and its `SUPPORTED` constant are gone.
 
 - **2026-08-21 — Walking out has no real case either, and being choosy is
   what actually kills (open thread closed)** — the last item on the

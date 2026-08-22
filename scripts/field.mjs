@@ -47,8 +47,18 @@ if (!existsSync(PAGE)) {
   process.exit(2);
 }
 
-/** The smallest phone the 44px rule is held at. 320 is measured, not held. */
-const SUPPORTED = 360;
+/**
+ * The 44px rule is held at EVERY width now, 320 included.
+ *
+ * It used to be held only at 360 and up, and this script measured 320 and
+ * printed it rather than asserting a line it could not reach — because a
+ * 320px screen tops out at a 39px hex however much height it is given: the
+ * whole grid always fits, so hex size falls out of screen width and no
+ * layout work can move it.
+ *
+ * The field zooms to the rule and pans the rest now, so there is nothing left
+ * to exempt and no width-dependent branch here any more.
+ */
 const TAP = 44;
 
 const fail = [];
@@ -106,13 +116,12 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   }
   const late = await page.evaluate(survey);
 
-  const supported = w >= SUPPORTED;
   const share = (m) => Math.round((100 * m.field) / m.vh);
 
   console.log(
     `${w}x${h}: field ${opening.field}px (${share(opening)}%) -> ${late.field}px (${share(late)}%) ` +
       `after 14 turns, hex ${opening.hex}px -> ${late.hex}px, log ${opening.saga} -> ${late.saga}px ` +
-      `(${late.lines} lines)${supported ? '' : '   [measured only — see the header]'}`,
+      `(${late.lines} lines)`,
   );
 
   // The field must stay the biggest thing on the screen through a whole
@@ -132,14 +141,14 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
       `${Math.round(100 - (100 * late.field) / opening.field)}% of it, and the log took it`);
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);
 
-  if (supported) {
-    // A hex is something you tap. This is the same 44px rule the action bar
-    // has had to keep since 5.2, applied to the thing the fight is played on.
-    check(opening.hex >= TAP,
-      `${w}x${h}: a battle hex is ${opening.hex}px, under the ${TAP}px touch target`);
-    check(late.hex >= TAP,
-      `${w}x${h}: by turn 14 a battle hex is ${late.hex}px, under the ${TAP}px touch target`);
-  }
+  // A hex is something you tap. This is the same 44px rule the action bar has
+  // had to keep since 5.2, applied to the thing the fight is played on — and
+  // held at every width, including the one that cannot frame the whole grid
+  // and now pans instead.
+  check(opening.hex >= TAP,
+    `${w}x${h}: a battle hex is ${opening.hex}px, under the ${TAP}px touch target`);
+  check(late.hex >= TAP,
+    `${w}x${h}: by turn 14 a battle hex is ${late.hex}px, under the ${TAP}px touch target`);
 
   await page.close();
 }
@@ -150,4 +159,4 @@ if (fail.length > 0) {
   for (const said of fail) console.error(`field: ${said}`);
   process.exit(1);
 }
-console.log(`field OK — the fight keeps the screen, and a hex clears ${TAP}px at ${SUPPORTED}px and up`);
+console.log(`field OK — the fight keeps the screen, and a hex clears ${TAP}px at every width`);

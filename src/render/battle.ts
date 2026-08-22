@@ -15,6 +15,30 @@ import { svgEl } from './svg';
 
 const HEX = 30;
 
+/**
+ * The thumb rule, and the scale a hex needs to meet it.
+ *
+ * A battle hex is a touch target — tap one to move, another to strike — so it
+ * is bound by the 44px minimum the rest of the game holds. A pointy-top hex
+ * of size `HEX` is `sqrt(3) * HEX` across the flats, which is its smallest
+ * dimension and the one a thumb actually has to land on.
+ */
+const TAP_MIN = 44;
+
+/**
+ * The size a tile is DRAWN at, which is not the size it is spaced at.
+ *
+ * `HEX` is the layout size — what `toPixel` steps by. The polygon is drawn a
+ * half-unit inside it so the tiles have a hairline between them, and that
+ * smaller shape is the one a thumb actually lands on. Deriving the rule from
+ * `HEX` instead put the hex at 43.27px against a 44px bar and predicted 44.00
+ * — a miss of less than a pixel, invisible in the code and caught only by
+ * measuring the rendered polygon. They are one constant now so they cannot
+ * drift apart again.
+ */
+const HEX_TILE = HEX - 0.5;
+const NEEDED_SCALE = TAP_MIN / (Math.sqrt(3) * HEX_TILE);
+
 /** The leader, if they are standing on this field at all. */
 function isLeaderHere(state: GameState, combatant: { personId: string; side: string }): boolean {
   return isLeader(state, combatant as Parameters<typeof isLeader>[1]);
@@ -51,6 +75,22 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
   root.append(layers.ground, layers.overlay, layers.fighters, layers.effects);
 
   let latest: GameState | null = null;
+  /**
+   * Where a zoomed field is looking, or null to follow whoever is acting.
+   *
+   * Only ever non-null on a screen too narrow to frame the grid at 44px, and
+   * cleared when the turn passes so the view goes back to the action rather
+   * than stranding the player where they last dragged.
+   */
+  let panAt: { x: number; y: number } | null = null;
+  /** Whose turn the view last followed, so a new one re-centres. */
+  let followed = '';
+  /**
+   * Whether the field is currently showing less than the whole grid — which
+   * is the only condition under which a drag means anything. Set by
+   * `fitViewBox`, which is the one place that decides it.
+   */
+  let canPan = false;
   /**
    * How far into the fight's beat stream the effects layer has read.
    *
@@ -190,14 +230,68 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       maxY = Math.max(maxY, p.y);
     }
     const pad = HEX * 0.85;
-    root.setAttribute(
-      'viewBox',
-      `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`,
-    );
+    const box = {
+      x: minX - pad,
+      y: minY - pad,
+      w: maxX - minX + pad * 2,
+      h: maxY - minY + pad * 2,
+    };
+
+    // How big a hex would be if the whole field were framed. `xMidYMid meet`
+    // scales by the tighter axis, and a pointy-top hex is narrower than it is
+    // tall, so its smallest on-screen dimension — the one a thumb has to hit,
+    // and the one scripts/field.mjs measures — is the flat-to-flat width.
+    const rect = root.getBoundingClientRect();
+    const framed = rect.width > 0 && rect.height > 0
+      ? Math.min(rect.width / box.w, rect.height / box.h)
+      : NEEDED_SCALE;
+
+    if (framed >= NEEDED_SCALE) {
+      // The field frames itself, exactly as it always has. Nothing below this
+      // line runs on a phone the game was designed for.
+      panAt = null;
+      canPan = false;
+      root.setAttribute('viewBox', `${box.x} ${box.y} ${box.w} ${box.h}`);
+      return;
+    }
+
+    // It cannot. A 320px screen tops out at a 39px hex however much height it
+    // is given, because the whole grid always fits — so the choice is a hex
+    // under the thumb rule or a field that moves. Zoom is NOT a user control:
+    // it goes exactly as far as 44px demands and no further, so the field
+    // still frames as much of itself as it possibly can.
+    canPan = true;
+    const w = rect.width / NEEDED_SCALE;
+    const h = rect.height / NEEDED_SCALE;
+    const centre = panAt ?? focusOf(battle) ?? { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+    // Clamped to the field: panning must not sail off into empty space. An
+    // axis that still fits whole is centred rather than clamped.
+    const cx = w >= box.w
+      ? box.x + box.w / 2
+      : Math.min(Math.max(centre.x, box.x + w / 2), box.x + box.w - w / 2);
+    const cy = h >= box.h
+      ? box.y + box.h / 2
+      : Math.min(Math.max(centre.y, box.y + h / 2), box.y + box.h - h / 2);
+    root.setAttribute('viewBox', `${cx - w / 2} ${cy - h / 2} ${w} ${h}`);
+  }
+
+  /** Where a zoomed field looks by default: whoever is taking their turn. */
+  function focusOf(battle: Battle): { x: number; y: number } | undefined {
+    const active = activeCombatant(battle);
+    return active ? toPixel(active.at, HEX) : undefined;
   }
 
   function paint(state: GameState, aim: Aim): void {
     latest = state;
+    // A new turn drops the player's pan: on a narrow screen the fighter who
+    // is acting may be off the edge of where they last dragged to, and a
+    // field that will not show you whose turn it is is worse than one that
+    // moves under you.
+    const acting = state.battle ? activeCombatant(state.battle)?.personId ?? '' : '';
+    if (acting !== followed) {
+      followed = acting;
+      panAt = null;
+    }
     const battle = state.battle;
     if (!battle) return;
 
@@ -214,7 +308,7 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       if (tile.ground === 'wall') layers.overlay.append(stakes(p.x, p.y));
       layers.ground.append(
         svgEl('polygon', {
-          points: cornerPoints(p.x, p.y, HEX - 0.5),
+          points: cornerPoints(p.x, p.y, HEX_TILE),
           fill: GROUND_FILL[tile.ground],
           stroke: '#2b2a22',
           'stroke-width': 1,
@@ -234,7 +328,7 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
         const p = toPixel(h, HEX);
         layers.overlay.append(
           svgEl('polygon', {
-            points: cornerPoints(p.x, p.y, HEX - 0.5),
+            points: cornerPoints(p.x, p.y, HEX_TILE),
             fill: '#b23b2e',
             opacity: 0.13,
           }),
@@ -339,19 +433,92 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     playEffects(state);
   }
 
-  root.addEventListener('pointerup', (e) => {
-    if (!latest?.battle) return;
+  // The field is `flex: 1 1 auto` under a log that grows as the fight is
+  // written, so the element it is measured against changes size AFTER a paint
+  // has already fitted the box to it. Left alone that costs the hex a pixel or
+  // two exactly when the log fills — measured at 43px against the 44px rule,
+  // which is the whole defect this work exists to fix, reappearing by the
+  // back door. Refit whenever the element actually changes.
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => {
+      if (latest?.battle) fitViewBox(latest.battle);
+    }).observe(root);
+  }
+
+  /** The world point under a pointer, whatever the field is framed at. */
+  function worldUnder(e: PointerEvent): { x: number; y: number } {
     const rect = root.getBoundingClientRect();
     const box = root.viewBox.baseVal;
     // The field uses xMidYMid meet, so work out the letterboxed draw area.
+    // When the field is zoomed the box fills the element and both margins are
+    // zero, so the same arithmetic covers framed and panned alike.
     const scale = Math.min(rect.width / box.width, rect.height / box.height);
-    const drawWidth = box.width * scale;
-    const drawHeight = box.height * scale;
-    const originX = rect.left + (rect.width - drawWidth) / 2;
-    const originY = rect.top + (rect.height - drawHeight) / 2;
-    const worldX = box.x + (e.clientX - originX) / scale;
-    const worldY = box.y + (e.clientY - originY) / scale;
-    onTap(fromPixel(worldX, worldY, HEX));
+    const originX = rect.left + (rect.width - box.width * scale) / 2;
+    const originY = rect.top + (rect.height - box.height * scale) / 2;
+    return {
+      x: box.x + (e.clientX - originX) / scale,
+      y: box.y + (e.clientY - originY) / scale,
+    };
+  }
+
+  // Dragging the field, on the screens that need it. A drag must never end in
+  // a tap: the same pointerup that finishes a pan would otherwise order a
+  // fighter to walk there, which is the one way this feature could be worse
+  // than the problem it solves. Same `dragged` guard render/travel.ts uses.
+  let dragging: number | null = null;
+  let dragged = false;
+  let from: { x: number; y: number } | null = null;
+  let fromScreen: { x: number; y: number } | null = null;
+
+  root.addEventListener('pointerdown', (e) => {
+    dragged = false;
+    // Tracked at EVERY width, not just where the field can pan. A drag must
+    // never end in a tap anywhere: before this, dragging a finger across a
+    // 390px field — reaching for the action bar, or trying to scroll the
+    // page — ordered whoever was up to walk to wherever the finger stopped,
+    // because pointerup was a tap unconditionally. Only the PANNING below is
+    // gated on there being anything to pan.
+    dragging = e.pointerId;
+    from = worldUnder(e);
+    fromScreen = { x: e.clientX, y: e.clientY };
+    root.setPointerCapture(e.pointerId);
+  });
+
+  root.addEventListener('pointermove', (e) => {
+    if (dragging !== e.pointerId || !from || !fromScreen || !latest?.battle) return;
+    // The slop that separates a tap from a drag is measured in SCREEN pixels,
+    // the way a thumb is: two world units is under two pixels once the field
+    // is zoomed, which would make a slightly shaky tap read as a drag and do
+    // nothing at all.
+    if (Math.abs(e.clientX - fromScreen.x) + Math.abs(e.clientY - fromScreen.y) > 3) {
+      dragged = true;
+    }
+    if (!dragged || !canPan) return;
+    const now = worldUnder(e);
+    const box = root.viewBox.baseVal;
+    panAt = {
+      x: box.x + box.width / 2 - (now.x - from.x),
+      y: box.y + box.height / 2 - (now.y - from.y),
+    };
+    fitViewBox(latest.battle);
+  });
+
+  function endDrag(e: PointerEvent): void {
+    if (dragging === e.pointerId) {
+      dragging = null;
+      from = null;
+      fromScreen = null;
+    }
+  }
+
+  root.addEventListener('pointercancel', endDrag);
+
+  root.addEventListener('pointerup', (e) => {
+    const wasDragged = dragged;
+    endDrag(e);
+    if (wasDragged || !latest?.battle) return;
+    const p = worldUnder(e);
+    onTap(fromPixel(p.x, p.y, HEX));
   });
 
   return {
