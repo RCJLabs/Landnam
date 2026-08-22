@@ -11,6 +11,7 @@ import type { GameState } from '../state/types';
 import { atHome, BLOCK_REASON, foundBlocker } from '../sim/site';
 import { atSea } from '../sim/road';
 import { canFish, canGather } from '../sim/gathering';
+import { thinWord, thinness, type Larder } from '../sim/abundance';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
 import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
@@ -68,18 +69,27 @@ export function deedsFor(
 
   // Gathering is for the road: at the steading the jobs already are the day's
   // work, and at sea there is nothing ashore to pick.
+  // What the ground has left, said BEFORE the day is spent. A larder that
+  // quietly pays less is a tax the player cannot see; one that says the
+  // tracks are old is a reason to move camp, which is the whole point.
+  const state_ = state;
+  const leftHere = (kind: Larder, full: string): string => {
+    const how = thinness(state_, kind, state_.party.at);
+    return how === 'good' ? full : `${full} ${thinWord(kind, how)}`;
+  };
+
   if (!home && !host) {
     if (canGather(state)) {
       deeds.push({
         id: 'forage',
         label: 'Forage',
-        blurb: 'Search the ground for roots and berries. Best wits leads.',
+        blurb: leftHere('forage', 'Search the ground for roots and berries. Best wits leads.'),
         run: () => dispatch({ type: 'FORAGE' }),
       });
       deeds.push({
         id: 'hunt',
         label: 'Hunt',
-        blurb: 'Follow tracks for meat. Slow, and some days it is nothing.',
+        blurb: leftHere('hunt', 'Follow tracks for meat. Slow, and some days it is nothing.'),
         run: () => dispatch({ type: 'HUNT' }),
       });
     }
@@ -87,9 +97,10 @@ export function deedsFor(
       deeds.push({
         id: 'fish',
         label: 'Fish',
-        blurb: afloat
-          ? 'Put the nets over the side. The best water there is.'
-          : 'Set nets in the water here.',
+        blurb: leftHere(
+          'fish',
+          afloat ? 'Put the nets over the side. The best water there is.' : 'Set nets in the water here.',
+        ),
         run: () => dispatch({ type: 'FISH' }),
       });
     }

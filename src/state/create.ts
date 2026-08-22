@@ -4,6 +4,7 @@
 import { key } from '../hex';
 import { makeShip } from '../sim/ship';
 import { stream } from '../rng';
+import { makeRival } from '../sim/rival';
 import { LANDING_NAMES } from '../data/names';
 import { effectsOn } from '../sim/calendar';
 import { revealAround, sightRadius } from '../sim/fog';
@@ -60,6 +61,13 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
     lore: [],
     tally: emptyTally(),
     neighbours: placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours')),
+    // The other boat. Built from the finished world rather than inside
+    // `generateWorld`, so the port's worldgen hash — a contract with the C++
+    // side — does not move for a rule about people.
+    ...(() => {
+      const rival = makeRival(seed, world);
+      return rival ? { rival } : {};
+    })(),
     // PAST the founders, not at 1. `makeWarband` hands out `p1`..`p6`, so a
     // counter starting at 1 gave the first person who ever joined the band
     // the leader's own id — and the next five the ids of the rest. Latent

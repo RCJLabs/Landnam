@@ -18,6 +18,7 @@ import { telegraphWinter, winterVerdict } from './telegraph';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
 import { driftStandings, neighboursCallOn } from './neighbours';
+import { rivalDay } from './rival';
 import { renderTribute } from './thing';
 import { handsLeave, maybeJoin, maybeSword } from './joining';
 import { raidable, raidDifficulty, raidOdds } from './raid';
@@ -196,6 +197,10 @@ export function passDay(state: GameState): boolean {
   // that diffed two states could work this out; a view being handed a
   // sequence should not have to.
   if (season !== wasSeason) worldBeat(state, { kind: 'seasonTurned', season });
+
+  // Somebody else's day, taken before ours: their fences go up whether the
+  // band spent the day marching, resting or arguing.
+  rivalDay(state);
 
   // Work comes before eating: what the day produced is available to the mouths
   // it has to feed that same evening.

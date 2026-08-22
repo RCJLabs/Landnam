@@ -13,6 +13,7 @@ import { fieldCrew } from './expedition';
 import { mendHull } from './sea';
 import { worldBeat } from './beats';
 import { actionRng, advance, atSea, reveal } from './road';
+import { abundance, noteTake, type Larder } from './abundance';
 
 /** Water worth putting a net in, from where we are standing (or floating). */
 function fishableWater(state: GameState): boolean {
@@ -40,22 +41,35 @@ export function canFish(state: GameState): boolean {
 interface Gather {
   amount: number;
   scout?: Person;
+  /** The share of full yield this hex still paid, for the chronicle's voice. */
+  left: number;
 }
 
-/** Shared yield maths for forage/hunt/fish. */
+/**
+ * Shared yield maths for forage/hunt/fish.
+ *
+ * `kind` is also the larder the day is taken FROM: what the hex has left is
+ * folded in here, and the take is recorded, so every verb pays the same
+ * attention to worked ground without three copies of the rule.
+ */
 function gather(
   state: GameState,
   base: number,
   stat: 'wits' | 'might',
-  label: string,
+  kind: Larder,
 ): Gather {
   const effects = effectsOn(state.day);
   const scout = bestAt(fieldCrew(state), stat);
   const skill = scout ? effectiveStat(scout, stat) : 1;
-  const rng = actionRng(state, label);
+  const rng = actionRng(state, kind);
   const roll = rng.float(0.7, 1.3);
-  const amount = Math.max(0, Math.round(base * effects.forage * (0.6 + skill * 0.16) * roll));
-  return scout ? { amount, scout } : { amount };
+  const left = abundance(state, kind, state.party.at);
+  const amount = Math.max(
+    0,
+    Math.round(base * effects.forage * (0.6 + skill * 0.16) * roll * left),
+  );
+  noteTake(state, kind, state.party.at);
+  return scout ? { amount, scout, left } : { amount, left };
 }
 
 export function doCamp(state: GameState): GameState {
@@ -112,7 +126,7 @@ export function doForage(prev: GameState, state: GameState): GameState {
   const party = state.party;
   const here = state.world.tiles[key(party.at)]!;
   const def = terrainDef(here.terrain);
-  const { amount, scout } = gather(state, def.forage, 'wits', 'forage');
+  const { amount, scout, left } = gather(state, def.forage, 'wits', 'forage');
   party.food += amount;
   worldBeat(state, {
     kind: 'gathered',
@@ -126,7 +140,9 @@ export function doForage(prev: GameState, state: GameState): GameState {
   chronicle(
     state,
     amount > 0
-      ? `${scout ? scout.name : 'We'} came back with ${amount} of roots and berries.`
+      ? left < 0.6
+        ? `${scout ? scout.name : 'We'} came back with ${amount}. This ground has been gone over too often.`
+        : `${scout ? scout.name : 'We'} came back with ${amount} of roots and berries.`
       : 'We searched all day and found nothing worth carrying.',
     amount > 0 ? 'plain' : 'grim',
   );
@@ -138,7 +154,7 @@ export function doHunt(prev: GameState, state: GameState): GameState {
   const party = state.party;
   const here = state.world.tiles[key(party.at)]!;
   const def = terrainDef(here.terrain);
-  const { amount, scout } = gather(state, def.hunt, 'wits', 'hunt');
+  const { amount, scout, left } = gather(state, def.hunt, 'wits', 'hunt');
   party.food += amount;
   worldBeat(state, {
     kind: 'gathered',
@@ -152,7 +168,9 @@ export function doHunt(prev: GameState, state: GameState): GameState {
   chronicle(
     state,
     amount > 0
-      ? `${scout ? scout.name : 'We'} brought down game enough for ${amount}.`
+      ? left < 0.6
+        ? `${scout ? scout.name : 'We'} took ${amount}. The game has learnt this valley and keeps off it.`
+        : `${scout ? scout.name : 'We'} brought down game enough for ${amount}.`
       : 'We followed tracks all day and came back with empty hands.',
     amount > 0 ? 'plain' : 'grim',
   );
@@ -166,7 +184,7 @@ export function doFish(prev: GameState, state: GameState): GameState {
   const here = state.world.tiles[key(party.at)]!;
   const def = terrainDef(here.terrain);
   const base = Math.max(def.fish, here.river ? 3 : 0, 2);
-  const { amount } = gather(state, base, 'wits', 'fish');
+  const { amount, left } = gather(state, base, 'wits', 'fish');
   party.food += amount;
   worldBeat(state, { kind: 'gathered', how: 'fish', got: amount });
   advance(state, 1);
@@ -174,7 +192,11 @@ export function doFish(prev: GameState, state: GameState): GameState {
   reveal(state);
   chronicle(
     state,
-    amount > 0 ? `The nets came up with ${amount} of fish.` : 'The nets came up empty.',
+    amount > 0
+      ? left < 0.6
+        ? `The nets came up with ${amount}. This water has been fished hard.`
+        : `The nets came up with ${amount} of fish.`
+      : 'The nets came up empty.',
     amount > 0 ? 'plain' : 'grim',
   );
   return state;

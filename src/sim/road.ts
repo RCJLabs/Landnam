@@ -14,6 +14,7 @@ import { permittedStep } from './expedition';
 import { seeNeighbours } from './neighbours';
 import { spotLandmarks } from './places';
 import { sprung, unseaworthy } from './ship';
+import { meetRival } from './rival';
 import { weatherOn } from './weather';
 import { bonus } from './lore';
 import { passDay } from './upkeep';
@@ -189,6 +190,8 @@ export function reveal(state: GameState): void {
   );
   // Somebody else's smoke shows up the moment the ground it stands on does.
   seeNeighbours(state);
+  // Including the other landnamsmadr's, which is a different kind of news.
+  meetRival(state);
   // And from a ridge, the things a country is navigated by — a town, a
   // monastery, a wreck — are picked out far past the ground itself.
   spotLandmarks(state);

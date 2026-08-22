@@ -2006,6 +2006,55 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — The land runs out, and somebody else wants it** — two ideas
+  off the enhancement queue, both measured against the difficulty screen's
+  own promises before either was allowed to stand.
+
+  **The larder has a bottom (idea 2).** Forage, hunt and fish paid the same
+  yield on the hundredth day in a valley as on the first, so a band that
+  found one good hex had no reason ever to leave it. Now each larder in each
+  hex remembers how hard it has been worked, and recovers — stored lazily, so
+  a take folds the regrowth since the last one into the figure it writes:
+  no per-day tick, nothing to walk on load, and a hex nobody has worked costs
+  the save nothing. Measured on the real verb: **a valley hunted twelve days
+  pays 0.39x what it paid the first three.**
+
+  **The first cut was wrong and the odds said so.** It taxed the FIRST take,
+  which is the take a starving band makes, and the published survival odds
+  for As It Lies fell from 72% to 52%. Softening the slope barely moved it
+  (55%) while gutting the decision (a 1.71x edge became 1.03x) — which is
+  what proved the slope was never the problem. The fix is a GRACE of two
+  days: one band of six does not strip a valley in an afternoon, so passing
+  through is free and squatting is what costs. The promise on the difficulty
+  screen is measured true again, unchanged.
+  The warning reaches the player BEFORE the day is spent — the deed sheet
+  says "The game has been driven off this ground" — because a depletion you
+  cannot read is not a decision, it is bad luck. `scripts/larder.mjs` holds
+  that in the built page.
+
+  **Somebody else wants this island (idea 5).** Every clock in this game
+  belonged to the weather; the land waited politely while the band made up
+  its mind. Now a second landnamsmadr comes ashore the same spring, puts his
+  posts in on day nine whatever we are doing, and closes his hand on the map
+  one hex at a time — always the best unclaimed ground nearest his hall, so
+  he wants what we want. Ground he holds is ground we cannot found on: the
+  refusal the older clans already had, in his name. Measured: **he holds
+  three hexes by day sixty, and every one of them is shut to us.**
+  He is deliberately small — a name, a hall, and the ground he has taken.
+  There is no second colony being simulated behind him and there is not meant
+  to be. What makes him a rival is that the good land runs out while you
+  decide.
+  He is drawn as what he is: the same longhouse shape as ours in his own
+  colour, and his claim as a red WASH rather than an outline — the first cut
+  drew a dashed border and it read as one more move marker at phone size.
+
+  Save goes to **v38** (two shapes, two migrations: an old world has worked
+  nothing and has this coast to itself, which is exactly what absent says).
+  `port/parity.json` regenerated — **the C++ port needs a re-sync**, and the
+  rival is carried in the `coast` facet because he is a person with a
+  schedule, not terrain.
+
+
 - **2026-08-22 — "Some hexes aren't travelable even when you are right next
   to them"** — a bug report about shallow water, and it was three bugs, two
   of them older than the report.

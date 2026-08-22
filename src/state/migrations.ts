@@ -335,6 +335,14 @@ export const MIGRATIONS: Record<number, Migration> = {
   // Nothing to carry: a band that could not walk out never left anybody
   // behind, so absent is the whole truth and the field stays absent.
   35: (save) => ({ ...save, version: 36 }),
+  // No hex has been worked, because until now no hex could be. An absent
+  // record is exactly that, so the field stays absent and every old valley
+  // starts full — which is what it was when the save was written.
+  36: (save) => ({ ...save, version: 37 }),
+  // An old saga had this coast to itself and keeps it: planting a rival
+  // mid-run would drop fences on ground the band may already be standing on,
+  // and there is no honest day for him to have landed on. Absent stays absent.
+  37: (save) => ({ ...save, version: 38 }),
 };
 
 export interface MigrationResult {

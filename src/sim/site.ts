@@ -18,6 +18,7 @@ import {
   type Verdict,
 } from '../data/sites';
 import { CLAN_ELBOW } from '../data/clans';
+import { rivalBlocks } from './rival';
 import { stream } from '../rng';
 import type { GameState, SiteReport, Terrain, World } from '../state/types';
 import { chronicle } from './saga';
@@ -192,6 +193,10 @@ export function foundBlocker(state: GameState, at: Hex): FoundBlock | null {
   // native camp's home field, and "four neighbours share this coast"
   // becomes "one of them is in the yard".
   if (state.neighbours.some((n) => distance(n.at, at) < CLAN_ELBOW)) return 'taken';
+  // And the other landnamsmadr, who is doing exactly what we are doing and
+  // started the same spring. Ground he has fenced is ground we cannot have —
+  // which is the whole cost of a slow week.
+  if (rivalBlocks(state, at)) return 'taken';
   return null;
 }
 

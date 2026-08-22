@@ -103,13 +103,17 @@ export const FACETS: Facet[] = [
   {
     id: 'coast',
     blurb: 'Who else is out there and what they think of you. Stage 3 — neighbours, feuds.',
-    of: (s) => ({ neighbours: s.neighbours, grudges: s.grudges, lore: s.lore }),
+    // The other landnamsmadr belongs here rather than in `world`: he is a
+    // person with a schedule, not terrain, and what the port has to reproduce
+    // about him is exactly what it has to reproduce about a neighbour.
+    of: (s) => ({ neighbours: s.neighbours, grudges: s.grudges, lore: s.lore, rival: s.rival }),
     samples: (s) => ({
       neighbours: s.neighbours.length,
       found: s.neighbours.filter((n) => n.found).length,
       standing: s.neighbours.reduce((a, n) => a + n.standing, 0),
       grudges: s.grudges.length,
       lore: s.lore.length,
+      claims: s.rival?.claims.length ?? 0,
     }),
   },
   {

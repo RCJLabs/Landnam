@@ -180,10 +180,24 @@ describe('a migrated save is a playable save', () => {
   it('comes forward with every field a new game has', () => {
     const migrated = migrate(frozenV1()).save;
     const today = newGame('shape-reference') as unknown as Record<string, unknown>;
-    const missing = Object.keys(today).filter((field) => !(field in migrated));
-    // Optional fields are absent on a fresh game too, so anything `newGame`
-    // sets is something every save must have — that is the whole contract.
+    // `rival` is the one field a fresh game sets that an old save must NOT
+    // be given, and it is exempted by name rather than by loosening the rule.
+    // Two reasons, both the same reason `kin` is exempt below: he is supposed
+    // to have landed the same spring we did, so planting him into a saga
+    // that has been played for two hundred summers without him rewrites that
+    // run's history — and there is no honest day to say he arrived. He is
+    // also genuinely optional on a fresh game: a world with no ground far
+    // enough from the landing has no second boat at all.
+    const optionalByDesign = new Set(['rival']);
+    const missing = Object.keys(today).filter(
+      (field) => !optionalByDesign.has(field) && !(field in migrated),
+    );
+    // Anything else `newGame` sets is something every save must have — that
+    // is the whole contract.
     expect(missing, `migrated save is missing: ${missing.join(', ')}`).toEqual([]);
+    // And the exemption is not a hole: the field must still be one the code
+    // treats as optional, which means a save without it has to load and play.
+    for (const field of optionalByDesign) expect(field in migrated).toBe(false);
   });
 
   it('gives every carried-forward person the fields the code reads today', () => {

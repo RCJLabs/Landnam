@@ -6,6 +6,7 @@ import { terrainDef } from '../data/terrain';
 import type { GameState, Neighbour, Place, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
 import { atSea, deepOcean, moveOptions } from '../sim/road';
+import { rivalSettled } from '../sim/rival';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
@@ -187,6 +188,32 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
 
     if (state.settlement) {
       layerOverlay.append(steading(state.settlement.at));
+    }
+
+    // The other landnam. Only what the band has actually laid eyes on: a
+    // fence on ground nobody has walked is not something they could know.
+    if (state.rival && rivalSettled(state)) {
+      for (const k of state.rival.claims) {
+        if (!state.world.seen[k]) continue;
+        const at = fromKey(k);
+        const p = toPixel(at, HEX_SIZE);
+        // A WASH, not another outline. The first cut drew a dashed border in
+        // his colour and it read as one more move marker at phone size —
+        // claimed ground is an area, and an area is said with a fill.
+        layerOverlay.append(
+          svgEl('polygon', {
+            points: cornerPoints(p.x, p.y, HEX_SIZE - 1),
+            fill: '#8a2f24',
+            'fill-opacity': 0.22,
+            stroke: '#b23b2e',
+            'stroke-width': 1.4,
+            opacity: 0.9,
+          }),
+        );
+      }
+      if (state.world.seen[key(state.rival.at)]) {
+        layerOverlay.append(rivalHall(state.rival.at));
+      }
     }
 
     // A camped band has a fire going: the glow is the mark of a night's rest,
@@ -607,6 +634,28 @@ function smoke(x: number, y: number): SVGGElement {
     });
     g.append(puff);
   }
+  return g;
+}
+
+/**
+ * Somebody else's hall: the same longhouse shape as ours, in their colour.
+ * The same shape on purpose — he is doing what we are doing, and the map
+ * should say so at a glance rather than mark him as a monster.
+ */
+function rivalHall(at: Hex): SVGGElement {
+  const p = toPixel(at, HEX_SIZE);
+  const w = HEX_SIZE * 0.5;
+  const h = HEX_SIZE * 0.34;
+  const g = svgEl('g', { class: 'rival-hall' });
+  g.append(
+    svgEl('path', {
+      d: `M ${p.x - w} ${p.y + h} L ${p.x - w * 0.66} ${p.y - h} L ${p.x + w * 0.66} ${p.y - h} L ${p.x + w} ${p.y + h} Z`,
+      fill: '#6b2b22',
+      stroke: '#e8dcc0',
+      'stroke-width': 1.2,
+    }),
+    smoke(p.x + w * 0.2, p.y - h * 0.9),
+  );
   return g;
 }
 

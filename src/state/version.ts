@@ -54,7 +54,14 @@
 //                 between steadings by a band that walked out on one. Absent
 //                 is the truth about every saga played before there was a way
 //                 to leave.
-export const SAVE_VERSION = 36;
+// v37 (larder): World gained the optional `worked` — how hard each hex's
+//                forage, game and fishing have been pressed, so a valley can
+//                be hunted out and grow back. Absent is the truth about every
+//                saga played on ground that never ran thin.
+// v38 (rival): the root gained the optional `rival` — a second landnamsmadr
+//               taking ground on his own schedule. Absent is the truth about
+//               every saga played on an island with one boat on it.
+export const SAVE_VERSION = 38;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

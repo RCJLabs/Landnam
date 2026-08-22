@@ -38,12 +38,53 @@ export interface Tile {
   explored?: boolean;
 }
 
+/**
+ * The other band on this island — see sim/rival.ts.
+ *
+ * Deliberately small: a name, a hall, and the ground their hand has closed
+ * on. There is no second colony being simulated behind this, and there is
+ * not meant to be; what makes them a rival is that the good land runs out
+ * while you are deciding.
+ */
+export interface Rival {
+  /** Their landnamsmadr, named like one of ours because he is one. */
+  leader: string;
+  /** What their hall is called. */
+  hall: string;
+  /** Where their posts went in. */
+  at: Hex;
+  /** Hexes they hold, hall first, in the order they took them. */
+  claims: HexKey[];
+  /** The day of the last claim. */
+  lastClaim: number;
+  /** True once we have laid eyes on the hall. */
+  met: boolean;
+  /** True once the saga has recorded that they landed at all. */
+  told: boolean;
+}
+
+/** One larder's history in one hex: days' take, and when the last one was. */
+export interface Worked {
+  /** Days' take standing against this hex, recovery already folded in. */
+  n: number;
+  /** The day that figure was written. */
+  day: number;
+}
+
 export interface World {
   width: number;
   height: number;
   tiles: Record<HexKey, Tile>;
   /** Fog of war, keyed like tiles. Absent means 'unseen'. */
   seen: Record<HexKey, Visibility>;
+  /**
+   * How hard each larder has been worked, keyed `${kind}:${hexKey}`.
+   *
+   * Only hexes somebody has actually worked appear here, so an untouched
+   * country costs the save nothing — see sim/abundance.ts for why the figure
+   * can be written once and read lazily.
+   */
+  worked?: Record<string, Worked>;
   /** Where the knarr made landfall — the run's anchor point. */
   landing: Hex;
   /** What the landing was called, so the map can label it. */
@@ -561,6 +602,12 @@ export interface GameState {
   expedition?: Expedition;
   /** Everybody else on this coast, and what they think of you. */
   neighbours: Neighbour[];
+  /**
+   * The other landnamsmadr. Absent on a coast that has only one — every
+   * saga played before there was a second boat, and any world with no
+   * ground far enough from the landing to put one.
+   */
+  rival?: Rival;
   /** Lore ids the band has worked out, in the order it worked them out. */
   lore: string[];
   /** What the band did, for the saga to read back. */
