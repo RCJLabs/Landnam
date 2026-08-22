@@ -123,6 +123,18 @@ interface Policy {
   id: string;
   /** How good a site has to be before the posts go in. */
   siteFloor: number;
+  /**
+   * The day the band starts lowering that bar, or undefined to never lower it.
+   *
+   * OPT-IN, and undefined on every policy that existed before it, so no
+   * measurement in this file moves by adding it. A fixed floor is the one
+   * thing the settling bot does that no player does: winter comes on day 49,
+   * and a band still walking on day 40 does not hold out for good soil, it
+   * takes what it can get. Measured, the fixed floor of 9 fails to settle AT
+   * ALL in 45 of 120 seeds — the band dies on the road with the posts still
+   * in the boat.
+   */
+  relaxFrom?: number;
   /** Last day a band still looking for a home turns aside for plunder. */
   plunderWindow: number;
   /** How far out it goes under arms once settled. Zero: it never does. */
@@ -253,6 +265,22 @@ interface Policy {
  * moves survival, the game has a lever nobody is told about; if it moves
  * nothing, winter genuinely has no work in it and item 7 stands.
  */
+/**
+ * How good a site has to be TODAY.
+ *
+ * A flat `policy.siteFloor` unless the policy says to start lowering it, in
+ * which case it gives up a point a week and never falls below the bottom of
+ * "Hard ground" — the verdict the game itself writes as "it could be held, by
+ * people with nothing better". Below that the game says "a place to die in,
+ * slowly", and a band that would take THAT is not a player, it is a strawman.
+ */
+const HARD_GROUND = 6;
+function floorOn(day: number): number {
+  if (policy.relaxFrom === undefined || day <= policy.relaxFrom) return policy.siteFloor;
+  const given = Math.floor((day - policy.relaxFrom) / 7);
+  return Math.max(HARD_GROUND, policy.siteFloor - given);
+}
+
 function recrew(state: GameState): number {
   let moved = 0;
   for (const p of state.party.people) {
@@ -284,6 +312,13 @@ function recrew(state: GameState): number {
 const SETTLER: Policy = {
   id: 'settler',
   siteFloor: 9,
+  /**
+   * And gives way as winter closes, which is the whole difference between a
+   * player and a search. Measured 2026-08-22: a FIXED floor of 9 never
+   * settled at all in 45 of 120 seeds and saw spring in 48; giving way from
+   * day 14 settles 98 and sees spring in 67, saved 20 against killed 1.
+   */
+  relaxFrom: 14,
   plunderWindow: 24,
   raidReach: 0,
   raidParty: 0,
@@ -897,7 +932,7 @@ function step(state: GameState): Action {
   if (canFound(state, state.party.at) && state.day >= settleNotBefore
     && state.day >= walkOutHold) {
     const r = siteReport(state.world, state.party.at);
-    if (r && r.total >= policy.siteFloor) return { type:'FOUND' };
+    if (r && r.total >= floorOn(state.day)) return { type:'FOUND' };
   }
 
   const here = state.world.tiles[key(state.party.at)]!.terrain;
@@ -5491,5 +5526,82 @@ describe('walking out, for a band that took its ground too fast', () => {
     // above states: walking out measured at saved 0 / killed 11 even here, in
     // the most favourable case the game can be made to produce. There is no
     // "it beats nothing" bar to hold it to, because it does not.
+  });
+});
+
+// --- Is the settling bot a fair instrument? ---
+//
+// Closing the retreat thread turned up something bigger than the thread: the
+// settler bot sees spring in 48 of 120 seeds at `siteFloor` 9, and 75 of 120
+// at 0. Not because poor ground is fine — because a floor of 9 means the band
+// NEVER SETTLES AT ALL in 45 of them and dies walking.
+//
+// That is a defect in the instrument, not a strategy: every published curve
+// in ROADMAP.md was read off a band that behaves like no player. But floor 0
+// is not the fix either, because a player does care what ground they take.
+// What a player actually does is hold out, and then stop holding out as
+// winter closes. This measures that third thing against both extremes before
+// anything is decided, because changing the bot restates the whole document.
+describe('PROBE: what the settling floor is worth', () => {
+  it('measures holding out, taking anything, and giving way as winter nears',
+    { timeout: 900_000 }, () => {
+    const SEEDS = 120;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    const sample = (p: Policy) => {
+      policy = p;
+      const lived: boolean[] = [];
+      let settled = 0;
+      let ground = 0;
+      let day = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        let noted = false;
+        const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
+          if (!noted && !before.settlement && after.settlement) {
+            noted = true;
+            const r = siteReport(after.world, after.settlement.at);
+            if (r) { ground += r.total; day += after.day; settled += 1; }
+          }
+        }, 'even');
+        lived.push(!final.end && final.day >= SPRING_IN);
+      }
+      return {
+        saw: lived.filter(Boolean).length,
+        lived,
+        settled,
+        ground: settled ? ground / settled : 0,
+        day: settled ? day / settled : 0,
+      };
+    };
+
+    const arms: [string, Policy][] = [
+      ['holds out (floor 9, today)', { ...SETTLER }],
+      ['takes anything (floor 0)', { ...SETTLER, id: 'rash', siteFloor: 0 }],
+      ['gives way from day 14', { ...SETTLER, id: 'relax', relaxFrom: 14 }],
+      ['gives way from day 21', { ...SETTLER, id: 'relax21', relaxFrom: 21 }],
+    ];
+    const out = arms.map(([label, p]) => ({ label, r: sample(p) }));
+    policy = SETTLER;
+
+    for (const { label, r } of out) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[floor] ${String(label).padEnd(26)} settled ${String(r.settled).padStart(3)}/${SEEDS}, ` +
+          `ground ${r.ground.toFixed(1)}, day ${r.day.toFixed(0)}, ` +
+          `saw spring ${r.saw}/${SEEDS}`,
+      );
+    }
+    // Paired against today's bot, so the seeds that agree carry no weight.
+    const base = out[0]!.r;
+    for (const { label, r } of out.slice(1)) {
+      let saved = 0;
+      let killed = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        if (!base.lived[s] && r.lived[s]) saved += 1;
+        if (base.lived[s] && !r.lived[s]) killed += 1;
+      }
+      // eslint-disable-next-line no-console
+      console.log(`[floor]   ${String(label).padEnd(24)} vs today: saved ${saved}, killed ${killed}`);
+    }
   });
 });

@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
-    odds: { spring: 0.73, ruled: 0.28 },
+    odds: { spring: 0.87, ruled: 0.4 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.45, ruled: 0.08 },
+    odds: { spring: 0.72, ruled: 0.1 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.1, ruled: 0.03 },
+    odds: { spring: 0.23, ruled: 0.05 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,

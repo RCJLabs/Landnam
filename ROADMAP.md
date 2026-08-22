@@ -146,12 +146,17 @@ actions and 457 days on `runs/long.json`, 66 to day 15 on
 `runs/example.json`, `unported=0`. The Parity workflow on `landnam-ue` is
 passing.
 
-**The difficulty curve is 73% / 45% / 10% to spring** (fair / even / hard) and
-88% / 82% / 82% to the first winter. ANY spring figure dated before
-2026-08-20 in this document is superseded: the harness bot did not use the
-winter lever until then, so older curves describe a band that ignores its own
-winter mark. `src/data/hardship.ts` holds the numbers and the menu generates
-its prose from them — never hand-type an odds sentence.
+**The difficulty curve is 87% / 72% / 23% to spring** (fair / even / hard) and
+97% / 92% / 83% to the first winter, restated 2026-08-22. **ANY curve dated
+before 2026-08-22 is superseded**, and this is the second such restatement:
+the first was 2026-08-20, when the bot learned to use the winter lever. This
+one is bigger. The bot held out for good ground on a FIXED floor and so never
+settled at all in 45 of 120 seeds — it died walking, with the posts still in
+the boat, and every figure this project has published was read off that band.
+It gives way as winter closes now. The winter marks are properly ordered for
+the first time as a result (83 was tied with 82 before). `src/data/hardship.ts`
+holds the numbers and the menu generates its prose from them — never hand-type
+an odds sentence.
 
 **Four measured facts not to re-derive.** Each cost a day and each is written
 up in the changelog with the seeds and the paired counts:
@@ -194,13 +199,10 @@ up in the changelog with the seeds and the paired counts:
   did not survive contact — `siteFloor` is a dial the Policy type already
   exposes and RAIDER already sets to 7 — and the case itself is thinner than
   it looked: only 0.5% of foundable ground scores below "Hard ground".
-- **NEW, and it is Evan's call: the settler bot's `siteFloor` of 9 is
-  costing it enormously.** Dropping it takes 48/120 to **75/120** seeing
-  spring — the same size as the winter-mark lever, the biggest thing ever
-  measured here. Being choosy is far more lethal than poor ground, because
-  the picky band fails to settle at all in 45 of 120 seeds. Changing it
-  would move every hardship figure in this document, so it is not a change
-  to make quietly. See the changelog entry of 2026-08-21.
+- ~~**NEW, and it is Evan's call: the settler bot's `siteFloor` of 9**~~
+  DONE 2026-08-22. The bot gives way as winter closes now, and **every
+  hardship figure in this document dated before 2026-08-22 is superseded**
+  — read 97/92/83 to winter and 87/72/23 to spring. See the changelog.
 
 **How this project works, and it is not optional.** Measure the premise before
 building: five design intuitions died on contact on 2026-08-20 and four
@@ -1979,6 +1981,65 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-22 — The bot gives way as winter closes, and every published
+  curve is restated** — the finding that fell out of closing the retreat
+  thread, chased to the bottom. **This supersedes every hardship figure in
+  this document dated before today.**
+
+  **The instrument was defective, not merely different.** `policy.siteFloor`
+  was a FIXED 9, so the band held out for Fair-to-Good ground for as long as
+  it took — and in **45 of 120 seeds it never settled at all**, dying on the
+  road with the posts still in the boat. No player does that: winter comes on
+  day 49, and a band still walking on day 40 takes what it can get. The
+  file's own comment above that branch said "settle on anything workable
+  rather than holding out for perfection", which is exactly what the fixed
+  floor did not do.
+
+  **Four strategies, same seeds, same day, paired.**
+
+  | | settled | ground | day | saw spring | vs today |
+  | --- | --- | --- | --- | --- | --- |
+  | holds out (floor 9, the old bot) | 75/120 | 9.4 | 16 | 48/120 | — |
+  | takes anything (floor 0) | 102/120 | 8.5 | 15 | 75/120 | saved 29, killed 2 |
+  | **gives way from day 14** | 98/120 | 8.9 | 18 | **67/120** | **saved 20, killed 1** |
+  | gives way from day 21 | 98/120 | 8.9 | 20 | 63/120 | saved 16, killed 1 |
+
+  **Floor 0 wins and was NOT adopted, which is a judgement and is worth
+  stating as one.** The instrument's job is to stand in for a reasonable
+  band, not to play optimally: a player does not plant posts on the first
+  legal hex on day two without looking, and one who did would make every
+  curve describe a strategy nobody uses. `relaxFrom: 14` gives up a point a
+  week and never goes below the bottom of "Hard ground" — the verdict the
+  game itself writes as "it could be held, by people with nothing better".
+  **And the sharper finding underneath: WHEN you settle beats WHAT you settle
+  on.** Taking anything lands on worse ground than giving way (8.5 against
+  8.9) and still sees more springs, because it settles three days earlier.
+
+  **What it cost to adopt: two assertions, both honest restatements.** The
+  whole suite was run with the new bot before anything was decided, and
+  exactly 2 of 1080 failed — both the published `odds` in
+  `src/data/hardship.ts` no longer matching what the harness measures. Those
+  are promises the difficulty menu reads its prose from, so a promise that no
+  longer holds is a lie to the player, not a bar to loosen. Restated:
+
+  | | reached winter | saw spring | ever rule |
+  | --- | --- | --- | --- |
+  | A Fair Country | 88 → **97%** | 73 → **87%** | 28 → **40%** |
+  | As It Lies | 82 → **92%** | 45 → **72%** | 8 → **10%** |
+  | A Hard Country | 82 → **83%** | 10 → **23%** | 3 → **5%** |
+
+  **The winter marks are properly ordered for the first time.** They read
+  88/82/82 before, and this document recorded the tie honestly as "the honest
+  reading rather than an ordering". With a band that actually settles they
+  separate: 97/92/83. An instrument that could not tell As It Lies from A
+  Hard Country at the winter mark was hiding a real difference.
+
+  Nothing about the GAME changed here — `siteFloor` is the harness, not the
+  sim — so no save shape moved, the port is untouched (the odds are web-only
+  prose, generated into no C++ table), and the parity fixtures recompute
+  unchanged. What changed is that the numbers now describe a band that plays
+  like a person.
 
 - **2026-08-21 — The narrow field moves, and a hex clears 44px at every
   width** — the 320px battlefield, decided and built. It had sat as an open
