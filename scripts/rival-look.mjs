@@ -27,12 +27,12 @@ for (let i = 0; i < 6; i++) {
   await page.waitForTimeout(200);
 }
 const marks = await page.evaluate(() => ({
-  day: document.body.innerText.slice(0, 60).replace(/\n/g, ' '),
-  saved: (localStorage.getItem('landnam_save') ?? '').length,
   halls: document.querySelectorAll('.rival-hall').length,
   fences: [...document.querySelectorAll('polygon[stroke="#b23b2e"]')].length,
+  skerries: document.querySelectorAll('.skerry').length,
+  warned: [...document.querySelectorAll('polygon[stroke="#d3a441"]')].length,
 }));
-console.log(`rival-look: ${marks.halls} hall, ${marks.fences} fenced hexes drawn`);
+console.log(`look: ${marks.halls} hall, ${marks.fences} fenced, ${marks.skerries} skerries, ${marks.warned} warned crossings`);
 if (errors.length) console.error('page errors:', errors.join(' | '));
 await page.screenshot({ path: process.env.SHOT ?? '/tmp/rival.png' });
 await browser.close();

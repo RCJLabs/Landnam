@@ -18,6 +18,8 @@ import { placeKind } from '../data/places';
 import { strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
+import { rowThrough } from './skerry';
+import { springStrake, unseaworthy } from './ship';
 import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
 import { THING_OPENING } from '../data/thing';
@@ -65,6 +67,13 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const there = key(action.to);
       if (state.world.trod[there] === undefined) state.world.trod[there] = state.day;
       if (tile.terrain === 'ocean') note(state, 'seaDays', days);
+      // What the water did to her on the way. Only a crossing that was
+      // actually rowed: walking a shore hex passes over no rocks.
+      const rocks =
+        wasOn === 'ocean' || tile.terrain === 'ocean'
+          ? rowThrough(state, cameFrom, action.to)
+          : { struck: [], found: [] };
+      for (const _ of rocks.struck) springStrake(state.ship);
       advance(state, days);
       if (state.end) return state;
       reveal(state);
@@ -77,6 +86,26 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
         ...(tile.terrain === 'ocean' ? { bySea: true as const } : {}),
       });
       chronicle(state, marchLine(state, tile.terrain, days, changedGround, fromSea));
+      // The rocks get their own line: a strake going is the loudest thing
+      // that can happen on a quiet day, and it must never be buried in the
+      // march line's prose.
+      if (rocks.struck.length > 0) {
+        chronicle(
+          state,
+          rocks.struck.length > 1
+            ? `We came through a skerry field and she took ${rocks.struck.length} strakes doing it.`
+            : unseaworthy(state.ship)
+              ? 'Rock under the keel, and the last sound strake with it. She will not swim until she is mended.'
+              : 'There was rock under the water where none showed. A strake went.',
+          'grim',
+        );
+      } else if (rocks.found.length > 0) {
+        chronicle(
+          state,
+          'We felt rock go by close enough to touch, and marked where it lay.',
+          'plain',
+        );
+      }
       return state;
     }
 

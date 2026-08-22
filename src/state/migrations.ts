@@ -343,6 +343,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // mid-run would drop fences on ground the band may already be standing on,
   // and there is no honest day for him to have landed on. Absent stays absent.
   37: (save) => ({ ...save, version: 38 }),
+  // The rocks were always there — they are a function of the seed — but an
+  // older band never struck one, so it has learnt nothing about them. An
+  // empty chart is the honest record of that, and absent IS the empty chart.
+  38: (save) => ({ ...save, version: 39 }),
 };
 
 export interface MigrationResult {

@@ -2006,6 +2006,56 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-22 — The coast has teeth, and a chart is something you earn** —
+  the sea gets opinions (queue idea 1), scoped to the half that changes how
+  the game is played.
+
+  **The knarr's three-hex day was free speed.** Rowing hard had no case
+  against it: water was uniform, every coastal hex cost the same and risked
+  nothing, and "hug the coast carefully" was a line in the guide rather than
+  a decision on the map. Now there are skerries — rocks in about a sixth of
+  coastal water — and the risk is charged PER HEX CROSSED, so a fast
+  three-hex day gambles three times and a careful step gambles once. That is
+  the whole mechanic, and it is the case the reach never had.
+
+  **The rocks are a fact of the seed, not of the save.** `skerryAt` is a hash
+  of the seed and the hex: no worldgen change (its hash is a contract with
+  the C++ port), no rocks in the save, and the same coast on every replay.
+  What IS stored is the CHART — the rocks the band has learnt about — because
+  that is the part a saga earns. Measured over 400 crossings of the same
+  rock: **28% of blind crossings spring a strake, against 8% once it is
+  charted.** Passing clear teaches as much as striking does, so a second
+  voyage along a coast is genuinely different from the first.
+
+  **What it costs, priced both ways.** Forty voyages each way over the same
+  coasts: **long hops make 1.71 hexes a day and lose 25 strakes; short steps
+  make 0.71 a day and lose 12.** Roughly two and a half times the pace for
+  about twice the damage — a decision with both sides on the table, not a
+  tax. An earlier cut of that bar compared days for the same number of
+  CROSSINGS and read the fast route as simply worse; a long hop covers three
+  times the water, so that was comparing unequal journeys. Ground per day is
+  the honest figure.
+  Nothing here can sink her — the rule the whole ship file is built on. The
+  worst a coast can do is take every strake, and a night ashore with timber
+  puts them back.
+
+  **The chart is on the map, and so is the warning.** Charted rocks are drawn
+  as teeth breaking the surface, and any crossing whose line runs over known
+  rock is marked in gold instead of cream — because with a three-hex reach
+  the dangerous water is water the player is not looking at, and a hazard you
+  cannot see before you commit is bad luck rather than a choice.
+
+  Save goes to **v39** (`world.charted`, migration: an old band never struck
+  a rock, so it has learnt nothing, and absent IS the empty chart). The
+  published survival odds are measured unchanged. `port/parity.json`
+  regenerated and handed over.
+
+  **Downscoped, and still queued:** tidal races and named waters. The idea
+  named three things; this is the one that changes a decision, and the other
+  two are flavour and wayfinding that deserve their own measurement rather
+  than being tacked on here.
+
+
 - **2026-08-22 — The land runs out, and somebody else wants it** — two ideas
   off the enhancement queue, both measured against the difficulty screen's
   own promises before either was allowed to stand.

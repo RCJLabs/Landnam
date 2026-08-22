@@ -85,6 +85,14 @@ export interface World {
    * can be written once and read lazily.
    */
   worked?: Record<string, Worked>;
+  /**
+   * Skerries the band has found out about, the hard way or the careful way.
+   *
+   * The rocks themselves are derived from the seed (sim/skerry.ts) and are
+   * not stored; this is the CHART, which is the part a saga earns. Absent
+   * means a coast nobody has read yet.
+   */
+  charted?: HexKey[];
   /** Where the knarr made landfall — the run's anchor point. */
   landing: Hex;
   /** What the landing was called, so the map can label it. */

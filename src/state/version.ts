@@ -61,7 +61,11 @@
 // v38 (rival): the root gained the optional `rival` — a second landnamsmadr
 //               taking ground on his own schedule. Absent is the truth about
 //               every saga played on an island with one boat on it.
-export const SAVE_VERSION = 38;
+// v39 (skerries): World gained the optional `charted` — the rocks the band
+//                  has learnt about. The skerries themselves are derived from
+//                  the seed and stored nowhere. Absent is an unread coast,
+//                  which is what every old saga has.
+export const SAVE_VERSION = 39;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

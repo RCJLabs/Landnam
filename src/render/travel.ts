@@ -7,6 +7,7 @@ import type { GameState, Neighbour, Place, Tile } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
 import { atSea, deepOcean, moveOptions } from '../sim/road';
 import { rivalSettled } from '../sim/rival';
+import { charted, crossed } from '../sim/skerry';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
@@ -153,19 +154,35 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       if (tint) layerLight.append(tint);
     }
 
-    // Where we could step next.
+    // Where we could step next — and which of those crossings the band knows
+    // has rock in it. A three-hex row passes over water the player is not
+    // looking at, so the marker itself has to carry the warning: seeing the
+    // skerry on the map is no use if the route to somewhere else runs over
+    // it.
     for (const option of travelOptions(state)) {
       const p = toPixel(option, HEX_SIZE);
+      const overRock = crossed(state.party.at, option).some(
+        (h) => state.world.seen[key(h)] && charted(state, h),
+      );
       layerOverlay.append(
         svgEl('polygon', {
           points: cornerPoints(p.x, p.y, HEX_SIZE - 3),
           fill: 'none',
-          stroke: '#e8dcc0',
+          stroke: overRock ? '#d3a441' : '#e8dcc0',
           'stroke-width': 2,
-          'stroke-dasharray': '5 5',
-          opacity: 0.75,
+          'stroke-dasharray': overRock ? '2 4' : '5 5',
+          opacity: overRock ? 0.9 : 0.75,
         }),
       );
+    }
+
+    // Rocks the band has learnt about. Only charted ones: the sea keeps what
+    // nobody has read yet, and a chart that showed rocks before they were
+    // found would make the learning worthless.
+    for (const k of state.world.charted ?? []) {
+      if (!state.world.seen[k]) continue;
+      const p = toPixel(fromKey(k), HEX_SIZE);
+      layerOverlay.append(skerryMark(p.x, p.y));
     }
 
     // Other people's places, once somebody has laid eyes on them.
@@ -633,6 +650,27 @@ function smoke(x: number, y: number): SVGGElement {
       class: `puff p${i}`,
     });
     g.append(puff);
+  }
+  return g;
+}
+
+/**
+ * Rocks under the water: three teeth breaking the surface, in the surf's own
+ * colour so they read as part of the sea rather than as another marker.
+ */
+function skerryMark(x: number, y: number): SVGGElement {
+  const g = svgEl('g', { class: 'skerry' });
+  const s = HEX_SIZE * 0.2;
+  for (const [dx, scale] of [[-s * 1.2, 0.8], [0, 1], [s * 1.2, 0.7]] as const) {
+    g.append(
+      svgEl('path', {
+        d: `M ${x + dx - s * 0.5 * scale} ${y + s * 0.5} L ${x + dx} ${y - s * scale} L ${x + dx + s * 0.5 * scale} ${y + s * 0.5} Z`,
+        fill: '#4a555f',
+        stroke: '#dfe6ea',
+        'stroke-width': 0.8,
+        opacity: 0.95,
+      }),
+    );
   }
   return g;
 }
