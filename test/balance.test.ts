@@ -164,6 +164,45 @@ interface Policy {
   raidInSeasonOnly: boolean;
   /** Whether it will carry food out to make a friend on the coast. */
   trades: boolean;
+  /**
+   * And whether it will do so as a matter of course rather than as a means to
+   * the Thing. OPT-IN, undefined everywhere it existed before.
+   *
+   * The bot's trade errand is gated on `!hasSpeakers` and a winter stood,
+   * because it goes to market to find somebody who will SPEAK for it, not to
+   * buy anything. That is a strategy, not a rule of the game — the only rule
+   * is `launchBlocker`, which still applies. So "the market is under-visited"
+   * has always been a statement about this file, and this flag is what lets
+   * the other reading be measured.
+   */
+  tradesFreely?: boolean;
+  /**
+   * And whether it will do so before it has stood a winter. Separate from
+   * `tradesFreely` on purpose: dropping both gates at once measures "trades
+   * more" and "trades earlier" as one number, and they are not the same
+   * claim — the first winter is exactly when a steading can least afford to
+   * send two of its hands away.
+   */
+  tradesEarly?: boolean;
+  /**
+   * A PLACEBO errand: walks to the counter and comes home having dealt
+   * nothing. It exists to separate the two ways a trade errand could cost a
+   * band — the goods it swaps, or simply the two pairs of hands that are not
+   * at home cutting wood while it is away. Those imply different fixes, so
+   * measuring them as one number answers neither.
+   */
+  tradesNothing?: boolean;
+  /**
+   * Trades, but never gives FIREWOOD away.
+   *
+   * The last thing that needs separating. The bot sells wood whenever it
+   * holds more than twelve nights of it, and twelve nights is a thin hedge
+   * against a winter — so "trading hurts" may be "this bot sells the wrong
+   * thing" rather than anything about the market. A player who reads the
+   * winter mark would not make that trade, and the harness should not be
+   * allowed to answer a design question on the strength of a bad habit.
+   */
+  keepsWood?: boolean;
   /** Whether it falls on neighbours' camps as a matter of course. */
   robsCamps: boolean;
   /** What it raises, in the order it wants it. */
@@ -683,8 +722,11 @@ function step(state: GameState): Action {
       // deals — the first cut also demanded they be SHORT of what was on
       // offer, which is narrower than anyone actually is, and left the whole
       // market system firing twice in sixty sagas.
+      if (policy.keepsWood && offer.give === 'firewood') continue;
       const spare = offer.give === 'food' ? days > 12 : nights > 12;
-      if (spare) return { type:'TRADE_AT', id: dealHere.id, offer: offer.id };
+      if (spare && !policy.tradesNothing) {
+        return { type:'TRADE_AT', id: dealHere.id, offer: offer.id };
+      }
     }
   }
 
@@ -812,7 +854,10 @@ function step(state: GameState): Action {
       if (counter) {
         for (const offer of offersAt(state, counter.id)) {
           if (tradeBlocker(state, counter.id, offer.id) === null) {
-            return { type:'TRADE_AT', id: counter.id, offer: offer.id };
+            if (policy.keepsWood && offer.give === 'firewood') continue;
+            if (!policy.tradesNothing) {
+              return { type:'TRADE_AT', id: counter.id, offer: offer.id };
+            }
           }
         }
       }
@@ -838,8 +883,13 @@ function step(state: GameState): Action {
       && markVisible(state)
       && !reachable(state);
 
-    if (policy.trades && !hasSpeakers(state) && (wintersStood(state.day) >= 1 || cornered)
-        && nearestCounter(state)) {
+    // A band that trades freely wants the counter itself, so neither the
+    // speakers it already has nor the winter it has not yet stood stops it.
+    const stoodOne = wintersStood(state.day) >= 1 || cornered;
+    const wantsMarket = policy.tradesFreely
+      ? (policy.tradesEarly || stoodOne)
+      : (!hasSpeakers(state) && stoodOne);
+    if (policy.trades && wantsMarket && nearestCounter(state)) {
       const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
       // A band that has been told it will not see spring does not keep a
       // fortnight's eating back before going to buy food with it.
@@ -5442,6 +5492,11 @@ describe('walking out, for a band that took its ground too fast', () => {
     // ABSOLUTE best case: if walking out ever pays, it pays here. (A floor of
     // 6 was measured too and is the same policy in practice — nothing below
     // it is ever offered — so it is not run twice.)
+    //
+    // The baseline is today's settler, which GIVES WAY as winter closes since
+    // 2026-08-22. It was a fixed floor of 9 when this was first measured, and
+    // the label said so; leaving that label in place after the bot changed
+    // would have made the printout describe a band that no longer exists.
     const RASH: Policy = { ...SETTLER, id: 'rash', siteFloor: 0 };
 
     const sample = (p: Policy) => {
@@ -5497,7 +5552,7 @@ describe('walking out, for a band that took its ground too fast', () => {
     // eslint-disable-next-line no-console
     console.log(
       `walking out on ground taken too fast, ${SEEDS} seeds on As It Lies:\n` +
-      `  floor 9 (the published settler) — settled ${fair.settled}, ` +
+      `  today's settler (gives way)   — settled ${fair.settled}, ` +
         `ground ${fair.ground.toFixed(1)}, day ${fair.day.toFixed(0)}, ` +
         `${pct(fair.lived)} saw spring (${fair.livedSettled} with posts, ` +
         `${fair.livedRoaming} still roaming)\n` +
@@ -5574,11 +5629,13 @@ describe('PROBE: what the settling floor is worth', () => {
       };
     };
 
+    // The old bot is named explicitly rather than spelled `SETTLER`, because
+    // SETTLER now RELAXES — this measurement is why. Pairing is against the
+    // old one, so the table reads as "what the change bought".
     const arms: [string, Policy][] = [
-      ['holds out (floor 9, today)', { ...SETTLER }],
+      ['the old bot (fixed floor 9)', { ...SETTLER, id: 'fixed', relaxFrom: undefined }],
+      ['today (gives way from 14)', { ...SETTLER }],
       ['takes anything (floor 0)', { ...SETTLER, id: 'rash', siteFloor: 0 }],
-      ['gives way from day 14', { ...SETTLER, id: 'relax', relaxFrom: 14 }],
-      ['gives way from day 21', { ...SETTLER, id: 'relax21', relaxFrom: 21 }],
     ];
     const out = arms.map(([label, p]) => ({ label, r: sample(p) }));
     policy = SETTLER;
@@ -5591,7 +5648,8 @@ describe('PROBE: what the settling floor is worth', () => {
           `saw spring ${r.saw}/${SEEDS}`,
       );
     }
-    // Paired against today's bot, so the seeds that agree carry no weight.
+    // Paired against the OLD bot, so the table reads as what the change
+    // bought; the seeds where the two agree carry no information either way.
     const base = out[0]!.r;
     for (const { label, r } of out.slice(1)) {
       let saved = 0;
@@ -5601,7 +5659,122 @@ describe('PROBE: what the settling floor is worth', () => {
         if (base.lived[s] && !r.lived[s]) killed += 1;
       }
       // eslint-disable-next-line no-console
-      console.log(`[floor]   ${String(label).padEnd(24)} vs today: saved ${saved}, killed ${killed}`);
+      console.log(`[floor]   ${String(label).padEnd(24)} vs the old bot: `
+        + `saved ${saved}, killed ${killed}`);
     }
+  });
+});
+
+// --- Is the market worth visiting? ---
+//
+// ANSWERED, and the answer is no under every variation measured. Kept because
+// the next person to read "the market is under-visited" will reach for the
+// gate, and this is the record of what happens when they do.
+//
+// The open question was "the market is under-VISITED — an errand launches ten
+// times in thirty sagas, behind !hasSpeakers, a winter, and a surplus; whether
+// that gate should open is a design call". Reading the gate settles half of it
+// before any measuring: every one of those conditions is THIS FILE's, not the
+// game's. The only rule the game imposes is `launchBlocker`. The bot goes to
+// market to find somebody who will speak for it at the Thing, so once it has
+// speakers it stops going — which is a strategy, not a shut door.
+//
+// So the decision-relevant question is not whether the band CAN go more often.
+// It is whether going more often is worth anything, because a door nobody
+// should walk through does not need opening.
+describe('the market, and whether visiting it is worth anything', () => {
+  it('measures a band that trades as a matter of course against one that does not',
+    { timeout: 900_000 }, () => {
+    const SEEDS = 60;
+    const LAST_DAY = 400;
+
+    const sample = (p: Policy) => {
+      policy = p;
+      const lived: boolean[] = [];
+      let errands = 0;
+      let deals = 0;
+      let food = 0;
+      let firewood = 0;
+      let settledDays = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        const final = run(`curve-${s}`, LAST_DAY, (before, after) => {
+          if (!before.expedition && after.expedition?.purpose === 'trade') errands += 1;
+          // A deal is a bargain, which is the tally the sim keeps itself —
+          // `note(state, 'bargains')` in both places.ts and neighbours.ts.
+          const was = before.tally?.bargains ?? 0;
+          const now = after.tally?.bargains ?? 0;
+          if (now > was) deals += now - was;
+          if (after.settlement) settledDays += 1;
+        }, 'even');
+        lived.push(!final.end && final.day >= LAST_DAY);
+        food += final.party.food;
+        firewood += final.party.firewood;
+      }
+      return {
+        saw: lived.filter(Boolean).length, lived, errands, deals,
+        food: food / SEEDS, firewood: firewood / SEEDS, settledDays,
+      };
+    };
+
+    const gated = sample({ ...SETTLER });
+    const after = sample({ ...SETTLER, id: 'market', tradesFreely: true });
+    const early = sample({ ...SETTLER, id: 'market-early', tradesFreely: true, tradesEarly: true });
+    const keepsWood = sample({
+      ...SETTLER, id: 'market-keeps-wood', tradesFreely: true, keepsWood: true,
+    });
+    // The placebo: same errand, same absence, no deal struck.
+    const placebo = sample({
+      ...SETTLER, id: 'market-placebo', tradesFreely: true, tradesNothing: true,
+    });
+    policy = SETTLER;
+
+    const pair = (r: typeof gated) => {
+      let saved = 0;
+      let killed = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        if (!gated.lived[s] && r.lived[s]) saved += 1;
+        if (gated.lived[s] && !r.lived[s]) killed += 1;
+      }
+      return `saved ${saved}, killed ${killed}`;
+    };
+
+    for (const [label, r] of [
+      ['gated (today)', gated],
+      ['freely, after a winter', after],
+      ['freely, from the start', early],
+      ['freely, never sells wood', keepsWood],
+      ['placebo: goes, deals nothing', placebo],
+    ] as const) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[market] ${label.padEnd(15)} errands ${String(r.errands).padStart(3)}, ` +
+          `deals ${String(r.deals).padStart(4)}, settled days ${r.settledDays}, ` +
+          `end food ${r.food.toFixed(0)}, wood ${r.firewood.toFixed(0)}, ` +
+          `alive at ${LAST_DAY}: ${r.saw}/${SEEDS}`,
+      );
+    }
+    // eslint-disable-next-line no-console
+    console.log(`[market] paired vs today — after a winter: ${pair(after)}; `
+      + `from the start: ${pair(early)}; never sells wood: ${pair(keepsWood)}; `
+      + `placebo: ${pair(placebo)}`);
+
+    // THE INSTRUMENT FIRST. An arm that never went to market is the same run
+    // twice, and this file has shipped that mistake before.
+    //
+    // AND NO BAR ON THE OUTCOME, for the same reason the walk-out measurement
+    // above states: every way of visiting more measured at worse, so there is
+    // no "it beats nothing" line to hold it to. Pinning "trading stays
+    // harmful" would freeze a number nobody is tuning toward.
+    expect(after.errands, 'the free arm never went to market — nothing was measured')
+      .toBeGreaterThan(gated.errands);
+    expect(early.errands, 'the early arm did not go any earlier')
+      .toBeGreaterThan(gated.errands);
+    // The two diagnostic arms have to actually differ from the trading one,
+    // or they explain nothing: the placebo must strike far fewer deals, and
+    // refusing to sell wood must visibly cut the volume.
+    expect(placebo.deals, 'the placebo struck as many deals as the trader')
+      .toBeLessThan(after.deals / 2);
+    expect(keepsWood.deals, 'refusing to sell wood changed nothing')
+      .toBeLessThan(after.deals / 2);
   });
 });

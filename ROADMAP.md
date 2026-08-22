@@ -85,10 +85,12 @@
 > of the screen, in the band where the hand has to shuffle. Overlay cards
 > are bottom-anchored on phone widths now and it sits at 38%.
 >
-> **What is left is not on the list of ten:** the design half of the place
-> economy (the market is under-VISITED, not under-discovered — an errand
-> launches ten times in thirty sagas). The 320px battlefield is DECIDED and
-> BUILT as of 2026-08-21: it pans, and a hex clears 44px at every width.
+> **Both of the two that were left are now closed.** The 320px battlefield is
+> DECIDED and BUILT (2026-08-21): it pans, and a hex clears 44px at every
+> width. And the place economy's design half is ANSWERED (2026-08-22): the
+> market is not under-visited by mistake — visiting it more is worse every
+> way it was measured, the gate is the harness's rather than the game's, and
+> three-quarters of all counter volume was the band selling its own winter.
 > Both are Evan's call. And the port resumes on the worldgen adapter.
 >
 > **Two bugs came back from a real phone on 2026-08-18 and both were real.**
@@ -295,13 +297,17 @@ out to be false — the errand is gated behind the first winter, so the
 hardship curve (87/78/73, then 62/27/12) did not move by a single point, and
 all 83 balance assertions passed untouched.
 
-**What is left is a design question, not a measurement one.** Ten errands
-produced a hundred and ninety-five deals, so reach never limited the volume,
-and the settler knew of an open counter on 2,310 of 4,261 settled days, so
-discovery does not either. The market is not under-discovered, it is
-**under-visited**: an errand launches ten times in thirty sagas, behind
-`!hasSpeakers`, a winter, and a surplus. Whether that gate should open is
-Evan's call — see the changelog.
+**That design question is ANSWERED as of 2026-08-22, and the answer is no.**
+The gate turned out to be the HARNESS's, not the game's — `!hasSpeakers`, the
+winter and the surplus are all `test/balance.test.ts`, and the only rule the
+game imposes is `launchBlocker`. So "under-visited" was a statement about the
+bot, which goes to market to find somebody to speak for it and stops once it
+has them. Measured over 60 sagas to day 400, opening it is worse every way it
+was tried, and even a PLACEBO errand that deals nothing is worse: two hands
+away from the steading is a real cost that no trading recovers. And
+**three-quarters of the volume the market has ever produced was the band
+selling its own firewood** — the resource winter kills it for. Reach was never
+the constraint; the trip is. See the changelog.
 
 **Phase 7 is the Unreal build, and it is under way.** Item 1 is decided: the
 rules get rewritten in C++, the TypeScript becomes the reference
@@ -1999,6 +2005,65 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-22 — The market is not under-visited by mistake (design question
+  closed)** — the last open design call, and reading the gate answered half of
+  it before anything was measured: **every condition on it is the harness's,
+  not the game's.** `!hasSpeakers`, the winter stood and the food surplus all
+  live in `test/balance.test.ts`; the only rule the game imposes is
+  `launchBlocker`. The bot goes to market to find somebody who will SPEAK for
+  it at the Thing, so once it has speakers it stops going. "The market is
+  under-visited" was a description of that strategy, not of a shut door — the
+  same mistake `siteFloor` was, two days running.
+
+  So the question worth asking was not whether a band CAN go more often but
+  whether going more often is worth anything. 60 sagas to day 400, paired:
+
+  | | errands | deals | settled days | wood at the end | alive at 400 | vs today |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | gated (today) | 30 | 974 | 31,140 | 296 | 12/60 | — |
+  | freely, after a winter | 48 | 1,495 | 27,298 | 190 | 8/60 | saved 0, killed 4 |
+  | freely, from the start | 62 | 1,770 | 22,726 | 186 | 8/60 | saved 2, killed 6 |
+  | freely, never sells wood | 67 | 381 | 28,542 | 271 | 10/60 | saved 2, killed 4 |
+  | placebo — goes, deals nothing | 66 | 269 | 29,415 | 328 | 10/60 | saved 3, killed 5 |
+
+  **Every way of visiting more measured at worse**, so the gate is protective
+  rather than restrictive and should not open.
+
+  **Two arms exist to say WHY, because "worse" on its own names no fix.** The
+  placebo walks to the counter and comes home having dealt nothing: it keeps
+  more wood than today's bot does (328 against 296) and is still net harmful,
+  which prices the errand itself — two of the sworn away from the steading are
+  two pairs of hands not cutting wood, and no trade recovers that. And
+  refusing to sell firewood cuts the deals from 1,495 to **381**: three
+  quarters of everything the market has ever traded was the band selling the
+  one resource winter kills it for. The 195-deals-from-10-errands figure that
+  made the market look reachable was mostly a band liquidating its own winter.
+
+  **What this leaves for design, stated as a direction rather than a verdict.**
+  Reach is not the problem and never was. If the market is to matter, either
+  the trip has to stop costing two workers for days, or what is on the counter
+  has to be worth more than the labour it costs to fetch. Opening the gate buys
+  nothing.
+
+  The measurement is kept rather than deleted, because the next person to read
+  "under-visited" will reach for the gate. It costs **456s**, which is real —
+  the effect sizes are 4 to 6 deaths in 60, so fewer seeds would measure
+  nothing at all, making it keep-at-full-price or not at all. Instrument bars
+  only, no bar on the outcome, for the reason the walk-out measurement beside
+  it gives.
+
+  **Two printouts were relabelled in the same commit, and the reason is the
+  point.** Adopting the relaxing floor earlier the same day changed what
+  `SETTLER` IS, which silently made two existing measurements describe a band
+  that no longer exists: the retreat table still called its baseline "floor 9
+  (the published settler)" while that arm now gives way, and the floor
+  measurement ended up comparing today against itself — "gives way from day
+  14 vs today: saved 0, killed 0". Both passed. A green test whose printout
+  misdescribes what it ran is the same defect as a stranded doc comment, and
+  this file found four of those in two days. The floor table names the old bot
+  explicitly now and pairs against it, so it reads as what the change bought:
+  48/120 to 67/120 seeing spring, saved 20 against killed 1.
 
 - **2026-08-22 — The worldgen adapter is unblocked, and stops one step
   short on purpose** — the port's own next item. `LandnamWorldgen.cpp`
