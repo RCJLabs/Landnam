@@ -21,6 +21,7 @@ import { startBattle } from './battleTurn';
 import { rowThrough } from './skerry';
 import { landmarkAt, landmarkName } from './landmark';
 import { breakGround, canMakeWay, wayDays, wayLine } from './ways';
+import { callTheBlot } from './blot';
 import { landmarkDef } from '../data/landmarks';
 import { springStrake, unseaworthy } from './ship';
 import { shakeNerve } from './morale';
@@ -33,6 +34,7 @@ export type TravelAction =
   | { type: 'MOVE'; to: Hex }
   | { type: 'CAMP' }
   | { type: 'MAKE_WAY' }
+  | { type: 'HOLD_BLOT' }
   | { type: 'FORAGE' }
   | { type: 'HUNT' }
   | { type: 'FISH' }
@@ -123,6 +125,14 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
           'plain',
         );
       }
+      return state;
+    }
+
+    case 'HOLD_BLOT': {
+      // Spends no day of its own: the rite is held in the middle of one. What
+      // it does is put the card on the table, and the card is where the
+      // choosing happens.
+      if (!callTheBlot(state)) return prev;
       return state;
     }
 

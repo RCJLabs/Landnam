@@ -2006,6 +2006,70 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — An oath that binds, and what the deck costs** — oaths, blót
+  and omens (queue idea 9).
+
+  **Omens already existed and already worked.** `omenFor` reads the next
+  day's weather back as a portent the band plans around — the forecast IS the
+  omen, and has been since the weather work. Nothing here touched it.
+
+  **Oaths did not, and nothing else in the game does what they do.** The
+  Norse vocabulary was everywhere and none of it bound anything: the Thing is
+  a roll, wergild is a price, "oath-brother" is a word in a tie-table. An
+  oath is the only thing in the game that makes the band WORSE at something
+  on purpose — take nothing by force until the year turns, or do not leave
+  this hall — in exchange for what keeping it is worth. Carried to the turn
+  of the year it pays heart; broken it costs more than that, and every
+  neighbour on the coast hears, because an oath is given in front of
+  witnesses and that is the whole reason it is worth anything.
+  It needed **no new save field and no new engine vocabulary**: the blót card
+  raises a flag, which the deck could already do and the save already had.
+  Only the holding-to-it is engine code.
+
+  **Then the odds bar spent the afternoon teaching a lesson about decks.**
+  Four measurements, in order:
+
+  1. As a weighted card at 7, only **half of settled runs ever met it** —
+     a headline mechanic half the players would never see.
+  2. At weight 30 it reached 90% of runs and **spring survival on As It Lies
+     fell 72% → 53%**. The event deck is ZERO-SUM: every draw the blót wins
+     is a draw an autumn food card loses, right before the winter.
+  3. Putting the slaughter into the card (which is what a blood-month blót
+     IS) bought back four points. Not the cause.
+  4. Reordering so the NON-binding choice is first bought back nothing
+     measurable — but it stays, and it is right on its own terms: the
+     harness answers every card with choice 0 and so does a player in a
+     hurry, and a card that BINDS you must not make binding the easiest
+     button. The card says nobody is made to say anything; now it means it.
+
+  5. Off the deck, fired by the calendar on the turn into autumn: no
+     crowding, full reach — and a card on the table that nobody asked for,
+     which **desynced every recorded run in `runs/*.json`**. A replay meets
+     an event it never agreed to and refuses every action after it; eight
+     bars went red, and the fix would have meant re-recording the fixture
+     the C++ port is checked against. Too much blast radius for one card.
+
+  **The answer was to let the player call for it.** "Hold the blót" is a deed
+  at the hall in autumn, so the card only ever exists because somebody asked
+  for it: no crowding, no interruption, nothing to re-record. Weight 0 now
+  means "something else puts this on the table", and the content lint knows
+  the difference between that and a card that fell to zero by accident —
+  which is what the lint is for.
+  A rite you choose to hold is also better fiction than one that ambushes you
+  anyway.
+
+  **And a finding that predates all of it, which Evan should see.** Measured
+  at HEAD before a line of this was written: **As It Lies promised 72% and
+  the game delivered 63%** — nine points adrift, one point inside the bar's
+  own tolerance, so any small change trips it. That is what made a
+  noise-level change look like a regression at first. With the blót off the
+  deck the reading is **68%**, closer to the promise than the baseline was,
+  because a reliable autumn slaughter is a real if small buff to a settled
+  band. The drift itself is still there and is worth its own look.
+
+  Ten bars, and no save bump.
+
+
 - **2026-08-23 — What goes round a hall, and who stops it** — wounds,
   sickness and the healer (queue idea 8), scoped by what was already built.
 

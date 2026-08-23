@@ -172,7 +172,12 @@ export function maybeFireEvent(state: GameState): void {
   const rng = stream(state.seed, 'events').derive(`fire:${state.day}:${key(state.party.at)}`);
   if (!rng.chance(eventChance(state))) return;
 
-  const pool = EVENTS.filter((def) => isEligible(state, def));
+  // Weight 0 means "never drawn at random" — a card the calendar fires, not
+  // the deck. The blót is the first: it is a rite on a known day, and leaving
+  // it in the draw made it compete with the autumn cards that hand out food
+  // and firewood. Measured, that competition cost spring survival seven
+  // points at the weight the card needed for anybody to actually meet it.
+  const pool = EVENTS.filter((def) => def.weight > 0 && isEligible(state, def));
   if (pool.length === 0) return;
   const def = rng.weighted(pool, (e) => e.weight);
   state.event = presentEvent(state, def);

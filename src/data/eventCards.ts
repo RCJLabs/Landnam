@@ -14,6 +14,75 @@ import type { EventDef } from './events';
 
 export const EVENTS: EventDef[] = [
   {
+    // The blót: the one card that offers the player a CONSTRAINT.
+    //
+    // Everything here is the deck's existing vocabulary — a season, a hearth,
+    // a flag — so swearing costs the engine nothing. What holds the band to
+    // it is sim/oath.ts, and what it is worth is measured there.
+    id: 'blot',
+    title: 'The Blood-Month Blót',
+    body: 'The beasts that will not winter are killed today, and the hall eats meat '
+      + 'for the first time since summer. When the eating is done men stand up and '
+      + 'say what they will do before the year turns, and the hall hears it. '
+      + 'Nobody is made to say anything.',
+    // Heavy for a card, and safe to be: it gates ITSELF off the moment an
+    // oath is sworn and only comes back when that oath has ended, so a big
+    // weight buys reach without crowding the autumn deck for long.
+    //
+    // WEIGHT 0: never drawn at random. sim/upkeep.ts fires this on the turn
+    // into autumn, because a blót is a rite on a known day rather than a
+    // thing you stumble on.
+    //
+    // It was a weighted card first and the odds bar caught what that costs.
+    // The deck is zero-sum: at weight 7 only HALF of settled runs ever met
+    // it (measured over forty), and at the weight 30 it needed to reach 90%
+    // it displaced the autumn cards that hand out food and firewood — spring
+    // survival on As It Lies fell seven points. Off the deck it costs the
+    // draw nothing and every settled band gets its autumn.
+    //
+    // The slaughter stays in it either way: that is what a blood-month blót
+    // is, the beasts that will not winter killed and salted down, and the
+    // food comes whatever is sworn, because the feast is not the promise.
+    weight: 0,
+    when: [
+      { c: 'season', any: ['autumn'] },
+      { c: 'atHome' },
+      // One at a time. A band under an oath is not offered another.
+      { c: 'flagUnset', flag: 'oath:noSack' },
+      { c: 'flagUnset', flag: 'oath:holdFast' },
+    ],
+    choices: [
+      {
+        // FIRST on purpose. The bot that measures this game answers every
+        // card with choice 0, and so does a player in a hurry — and at
+        // index 0 the oaths were being sworn by people who had no intention
+        // of keeping them, then broken, at 22 heart and the coast's opinion
+        // a time. Spring survival on As It Lies fell 72% -> 53%. A card that
+        // BINDS you must not make binding the easiest button; the card says
+        // "nobody is made to say anything" and now it means it.
+        label: 'Eat, and swear nothing',
+        success: {
+          text: 'We ate the meat, salted the rest, and said nothing we would have to be held to.',
+          effects: [{ t: 'food', n: 7 }],
+        },
+      },
+      {
+        label: 'Swear to take nothing by force this year',
+        success: {
+          text: 'The beasts were killed and salted down, and it was said standing, with the horn going round.',
+          effects: [{ t: 'flag', flag: 'oath:noSack', n: 1 }, { t: 'morale', n: 4 }, { t: 'food', n: 7 }],
+        },
+      },
+      {
+        label: 'Swear not to leave this hall before the year turns',
+        success: {
+          text: 'The beasts were killed and salted down, and it was said standing, with a hand on the doorpost.',
+          effects: [{ t: 'flag', flag: 'oath:holdFast', n: 1 }, { t: 'morale', n: 4 }, { t: 'food', n: 7 }],
+        },
+      },
+    ],
+  },
+  {
     id: 'driftwood',
     title: 'Driftwood',
     body: 'The tide has left a tangle of sea-stripped timber along the strand — grey, salt-hard, and dry enough to burn.',

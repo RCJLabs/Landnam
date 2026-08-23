@@ -97,6 +97,21 @@ namespace Tables
 #pragma warning(disable: 4883)
 #endif
 	const std::vector<FEventCard> Events = {
+	{ "blot", "The Blood-Month Blót",
+		"The beasts that will not winter are killed today, and the hall eats meat for the first time since summer. When the eating is done men stand up and say what they will do before the year turns, and the hall hears it. Nobody is made to say anything.",
+		0, false,
+		{ { "season", { "autumn" }, 0, "" }, { "atHome", {  }, 0, "" }, { "flagUnset", {  }, 0, "oath:noSack" }, { "flagUnset", {  }, 0, "oath:holdFast" } },
+		{
+			{ "Eat, and swear nothing", false, "", 0,
+				{ "We ate the meat, salted the rest, and said nothing we would have to be held to.", { { "food", 7, 1, "" } } },
+				false, { "", {} } },
+			{ "Swear to take nothing by force this year", false, "", 0,
+				{ "The beasts were killed and salted down, and it was said standing, with the horn going round.", { { "flag", 1, 1, "oath:noSack" }, { "morale", 4, 1, "" }, { "food", 7, 1, "" } } },
+				false, { "", {} } },
+			{ "Swear not to leave this hall before the year turns", false, "", 0,
+				{ "The beasts were killed and salted down, and it was said standing, with a hand on the doorpost.", { { "flag", 1, 1, "oath:holdFast" }, { "morale", 4, 1, "" }, { "food", 7, 1, "" } } },
+				false, { "", {} } },
+		} },
 	{ "driftwood", "Driftwood",
 		"The tide has left a tangle of sea-stripped timber along the strand — grey, salt-hard, and dry enough to burn.",
 		10, false,

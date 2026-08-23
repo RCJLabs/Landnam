@@ -13,6 +13,7 @@ import { atSea } from '../sim/road';
 import { canFish, canGather } from '../sim/gathering';
 import { thinWord, thinness, type Larder } from '../sim/abundance';
 import { WAY_REASON, wayBlocker, wayDays } from '../sim/ways';
+import { canHoldBlot } from '../sim/blot';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
 import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
@@ -134,6 +135,20 @@ export function deedsFor(
         run: () => {},
       });
     }
+  }
+
+  // The blood-month rite. Only at the hall, only in autumn, and only when
+  // no oath already stands — `canHoldBlot` asks the card's own `when`, so
+  // the gate lives in one place.
+  if (canHoldBlot(state)) {
+    deeds.push({
+      id: 'blot',
+      label: 'Hold the blót',
+      blurb: 'Kill the beasts that will not winter, and let anyone who means to '
+        + 'swear something do it where the hall can hear.',
+      tone: 'weighty',
+      run: () => dispatch({ type: 'HOLD_BLOT' }),
+    });
   }
 
   const here = placeHere(state);

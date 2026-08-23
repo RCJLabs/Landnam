@@ -25,6 +25,15 @@ const SIM_FLAGS = [
   'winterTargetGiven', 'workedOnce',
 ];
 
+/**
+ * Cards nothing draws at random, because something else asks for them.
+ *
+ * Kept as an explicit list rather than "weight 0 is fine": a card that fell
+ * to weight 0 by accident is dead content, which is exactly what this lint
+ * exists to catch.
+ */
+const PLAYER_CALLED = new Set(['blot']);
+
 describe('content lint: events', () => {
   it('ids are unique and slug-shaped', () => {
     const ids = EVENTS.map((e) => e.id);
@@ -40,7 +49,14 @@ describe('content lint: events', () => {
     for (const event of EVENTS) {
       expect(event.title.length, event.id).toBeGreaterThan(0);
       expect(event.body.length, event.id).toBeGreaterThan(20);
-      expect(event.weight, event.id).toBeGreaterThan(0);
+      // Weight 0 means "never drawn at random" — a card something else in
+      // the game puts on the table. The blót is held from the deeds sheet.
+      // Everything else must be drawable, or it is dead content.
+      if (PLAYER_CALLED.has(event.id)) {
+        expect(event.weight, event.id).toBe(0);
+      } else {
+        expect(event.weight, event.id).toBeGreaterThan(0);
+      }
       expect(event.choices.length, event.id).toBeGreaterThanOrEqual(1);
       expect(event.choices.length, event.id).toBeLessThanOrEqual(4);
 

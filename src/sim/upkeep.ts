@@ -9,6 +9,7 @@ import { omenFor, weatherOn } from './weather';
 import { ageTheBand, childrenOf, maybeBirth } from './lineage';
 import { maybePair } from './household';
 import { careToday, maybeSpread } from './sickness';
+import { oathDay } from './oath';
 import { CHILD_APPETITE } from '../data/lineage';
 import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../data/rations';
 import { hardshipById } from '../data/hardship';
@@ -311,6 +312,8 @@ export function passDay(state: GameState): boolean {
   // And what is already in the hall goes round it, faster the more of them
   // there are under one roof.
   maybeSpread(state);
+  // Whatever the band swore at the blót is watched here, every day of it.
+  oathDay(state);
   // The evening's reading of the sky. This is the whole weather item: a gale
   // announced the night before is a decision about tomorrow, and the same
   // gale arriving unannounced is a dice roll. Said once, at the end of the
