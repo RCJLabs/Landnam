@@ -2006,6 +2006,55 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — The band writes something onto the country** — the land
+  remembers your work (queue idea 4).
+
+  **Everything in this game happened TO the band.** Winter came, the sea
+  sprang a strake, another landnamsmadr fenced the good ground. The band's
+  own work went into a steading and stopped at its fence: the map itself was
+  a fixed thing, walked over identically on the four hundredth day as on the
+  first. A made way is the exception — slow, permanent, and the only thing
+  here that outlives whoever dug it.
+
+  **The first design was wrong, and the bar that priced it said so before it
+  shipped.** A way was to buy a point of movement effort. But a day is
+  `ceil(effort / 2)`, so on forest and hills — the two commonest hard grounds
+  — cutting a way cost two days and saved **literally nothing** per crossing.
+  That is the trap this file's own comment had just warned against, written
+  into the very verb that warned about it. The day-cost model cannot express
+  "a bit faster"; it is the same wall `ROW_REACH` hit when the knarr was
+  exactly as fast as walking, and this is the same answer. **A made way
+  covers GROUND: two hexes of it in the day one hex of rough country takes.**
+
+  Which turns the verb into the thing a road actually is. One made hex is
+  nearly worthless; a CHAIN is a road. Measured: **a road of four costs six
+  to eight days to cut and saves a day a journey, so it pays back on the
+  sixth to eighth time the band walks it** — an investment in the trips you
+  take AGAIN (the trading run, the way out to the coast the raids go from),
+  which is exactly what a road is for.
+  That also reversed a refusal: easy ground may now be broken, because a
+  chain that has to jump a meadow is not a road. The deed sheet carries the
+  catch instead of the rules forbidding it — "Ways join up: two made hexes in
+  a row are crossed in a single day" — since a verb that hides the chaining
+  sells the player days for nothing.
+
+  **Drawn where the player can see their own work.** In the OVERLAY, not on
+  the build-once path: a hex is built the first time it is SEEN, and ground
+  is usually broken long after that, so a track built with its hex would
+  never appear on the hex that most needs it. The first cut of the track was
+  a pale dotted arc and vanished on sand; it is dark-under-light now, which
+  reads on any ground. The repaint bar is **still 78 work items**.
+
+  No new beat kind, deliberately: beats live in the save and the parity
+  vectors, so each is an obligation on the port, and nothing has to animate a
+  road being dug — the chronicle says it happened.
+
+  Save goes to **v41** (`world.made` — the one thing on the world the PLAYER
+  authors, so unlike skerries and landmarks it cannot be derived).
+  Published odds measured unchanged. `port/parity.json` regenerated and
+  handed over.
+
+
 - **2026-08-22 — The country has fixed points, and the data model stops
   lying about it** — landmarks and wayfinding (queue idea 3).
 

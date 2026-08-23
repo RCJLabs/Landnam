@@ -82,6 +82,15 @@ export interface World {
    */
   worked?: Record<string, Worked>;
   /**
+   * Ground the band has broken: hexes with a way made through them, keyed to
+   * the day the work was finished.
+   *
+   * The one thing on the world the PLAYER authors, so unlike skerries and
+   * landmarks it cannot be derived and has to be carried in the save. It is
+   * also the only thing here that outlives the band that made it.
+   */
+  made?: Record<HexKey, number>;
+  /**
    * Skerries the band has found out about, the hard way or the careful way.
    *
    * The rocks themselves are derived from the seed (sim/skerry.ts) and are

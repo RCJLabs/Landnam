@@ -351,6 +351,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // written by anything, so no save on earth carries them. The version moves
   // anyway, because the SHAPE changed and a save's shape is the contract.
   39: (save) => ({ ...save, version: 40 }),
+  // An older band broke no ground, because it could not. Absent is that,
+  // and inventing roads for a run that never dug them would rewrite what it
+  // spent its days on.
+  40: (save) => ({ ...save, version: 41 }),
 };
 
 export interface MigrationResult {

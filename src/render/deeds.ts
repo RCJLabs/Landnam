@@ -12,6 +12,7 @@ import { atHome, BLOCK_REASON, foundBlocker } from '../sim/site';
 import { atSea } from '../sim/road';
 import { canFish, canGather } from '../sim/gathering';
 import { thinWord, thinness, type Larder } from '../sim/abundance';
+import { WAY_REASON, wayBlocker, wayDays } from '../sim/ways';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
 import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
@@ -102,6 +103,35 @@ export function deedsFor(
           afloat ? 'Put the nets over the side. The best water there is.' : 'Set nets in the water here.',
         ),
         run: () => dispatch({ type: 'FISH' }),
+      });
+    }
+  }
+
+  // Breaking ground. Offered wherever it would actually pay — `wayBlocker`
+  // refuses ground that already walks easily rather than selling a wasted
+  // day — and priced in the sheet, because days are the one thing this game
+  // never gives back.
+  if (!home && !afloat) {
+    const blocked = wayBlocker(state, state.party.at);
+    if (blocked === null) {
+      const days = wayDays(state, state.party.at);
+      deeds.push({
+        id: 'make-way',
+        label: 'Break ground',
+        // The chaining has to be said. A lone made hex is nearly worthless —
+        // ways pay by JOINING UP — and a verb that hides that sells the
+        // player days for nothing.
+        blurb: `${days} ${days === 1 ? 'day' : 'days'} of work. Ways join up: two made hexes in a row are `
+          + 'crossed in a single day, so a road pays back on the journeys you take again.',
+        run: () => dispatch({ type: 'MAKE_WAY' }),
+      });
+    } else if (blocked === 'made') {
+      deeds.push({
+        id: 'make-way',
+        label: 'Break ground',
+        blurb: 'Cut a way through. The going here is easier ever after.',
+        blocked: WAY_REASON.made,
+        run: () => {},
       });
     }
   }

@@ -71,7 +71,11 @@
 //                   promise in the data model that no code kept. Landmarks
 //                   are real now and are DERIVED from the seed (sim/landmark
 //                   .ts), so they need no field at all.
-export const SAVE_VERSION = 40;
+// v41 (ways): World gained the optional `made` — hexes the band has cut a
+//              way through, which walk like a meadow ever after. The first
+//              thing in this game the player writes onto the country itself.
+//              Absent is ground nobody has broken.
+export const SAVE_VERSION = 41;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

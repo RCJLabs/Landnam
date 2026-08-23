@@ -182,6 +182,41 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       );
     }
 
+    // Ways the band has cut. In the OVERLAY, not on the build-once path —
+    // a hex is built the first time it is SEEN, and ground is usually broken
+    // long after that, so a track built with its hex would never appear on
+    // the hex that most needs it. A handful of hexes a run: cheap to redraw.
+    for (const k of Object.keys(state.world.made ?? {})) {
+      if (!state.world.seen[k]) continue;
+      const p = toPixel(fromKey(k), HEX_SIZE);
+      // Two strokes, dark under light. A single pale track vanished on sand
+      // and a single dark one would vanish on forest; the pair reads on both,
+      // which is the same trick the tokens use to stay legible over any
+      // ground.
+      const d = `M ${p.x - HEX_SIZE * 0.8} ${p.y + HEX_SIZE * 0.2} `
+        + `Q ${p.x} ${p.y - HEX_SIZE * 0.25} ${p.x + HEX_SIZE * 0.8} ${p.y + HEX_SIZE * 0.2}`;
+      layerOverlay.append(
+        svgEl('path', {
+          d,
+          class: 'made-way',
+          fill: 'none',
+          stroke: '#2b2118',
+          'stroke-width': 4.5,
+          'stroke-linecap': 'round',
+          opacity: 0.55,
+        }),
+        svgEl('path', {
+          d,
+          fill: 'none',
+          stroke: '#e0cfa4',
+          'stroke-width': 2,
+          'stroke-linecap': 'round',
+          'stroke-dasharray': '3 4',
+          opacity: 0.95,
+        }),
+      );
+    }
+
     // Rocks the band has learnt about. Only charted ones: the sea keeps what
     // nobody has read yet, and a chart that showed rocks before they were
     // found would make the learning worthless.

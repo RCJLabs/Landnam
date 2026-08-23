@@ -16,6 +16,7 @@ import { spotLandmarks } from './places';
 import { sprung, unseaworthy } from './ship';
 import { meetRival } from './rival';
 import { keepsBearings, spotFixedPoints } from './landmark';
+import { WAY_EFFORT, WAY_REACH, madeWay, wayable } from './ways';
 import { weatherOn } from './weather';
 import { bonus } from './lore';
 import { passDay } from './upkeep';
@@ -88,6 +89,10 @@ export function moveEffort(state: GameState, to: Hex): number | null {
   }
   const def = terrainDef(tile.terrain);
   if (!Number.isFinite(def.cost)) return null;
+  // A way the band cut walks like a meadow, and the ford it laid means the
+  // river costs nothing either. The weather still bites — a road in a gale
+  // is a road in a gale — so only the GROUND's share is bought off.
+  if (madeWay(state, to)) return Math.max(1, WAY_EFFORT + penalty);
   let effort = def.cost + penalty;
   if (tile.river) effort += 1; // fording costs time and dry clothes
   return effort;
@@ -141,6 +146,9 @@ export function canMove(state: GameState, to: Hex): boolean {
   // ten-year-old trap surfaced: the day was real and the distance was zero.
   if (span === 0) return false;
   if (span === 1) return true;
+  // Along a way the band cut, a day is worth two hexes rather than one —
+  // which is the only thing that makes cutting one worth the days it costs.
+  if (span <= WAY_REACH && wayable(state, state.party.at, to)) return true;
   // Afloat, a day is worth three hexes of open coast rather than one.
   return span <= ROW_REACH && rowable(state, state.party.at, to);
 }
@@ -151,7 +159,21 @@ export function moveOptions(state: GameState): Hex[] {
   const steps = neighbors(state.party.at).filter(
     (h) => moveEffort(state, h) !== null && permittedStep(state, h),
   );
-  if (!isCoastalWater(state, state.party.at)) return steps;
+  if (!isCoastalWater(state, state.party.at)) {
+    // Standing on a way the band cut: the map has to offer what the road is
+    // FOR, or it is invisible exactly like the knarr's reach used to be.
+    if (!madeWay(state, state.party.at)) return steps;
+    const along = new Map<string, Hex>();
+    for (const h of steps) along.set(key(h), h);
+    for (const h of range(state.party.at, WAY_REACH)) {
+      if (key(h) === key(state.party.at)) continue;
+      if (along.has(key(h))) continue;
+      if (moveEffort(state, h) === null || !permittedStep(state, h)) continue;
+      if (!wayable(state, state.party.at, h)) continue;
+      along.set(key(h), h);
+    }
+    return [...along.values()];
+  }
   // A hull under way. Every stretch of coast within a day's rowing, so the
   // player is offered the thing the ship is FOR rather than one hex at a
   // time.

@@ -20,6 +20,7 @@ import { note } from './tally';
 import { startBattle } from './battleTurn';
 import { rowThrough } from './skerry';
 import { landmarkAt, landmarkName } from './landmark';
+import { breakGround, canMakeWay, wayDays, wayLine } from './ways';
 import { landmarkDef } from '../data/landmarks';
 import { springStrake, unseaworthy } from './ship';
 import { shakeNerve } from './morale';
@@ -31,6 +32,7 @@ import { doCamp, doFish, doForage, doHunt } from './gathering';
 export type TravelAction =
   | { type: 'MOVE'; to: Hex }
   | { type: 'CAMP' }
+  | { type: 'MAKE_WAY' }
   | { type: 'FORAGE' }
   | { type: 'HUNT' }
   | { type: 'FISH' }
@@ -121,6 +123,23 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
           'plain',
         );
       }
+      return state;
+    }
+
+    case 'MAKE_WAY': {
+      if (!canMakeWay(state, party.at)) return prev;
+      const days = wayDays(state, party.at);
+      const line = wayLine(state, party.at);
+      breakGround(state, party.at);
+      party.hasCamped = false;
+      advance(state, days);
+      if (state.end) return state;
+      reveal(state);
+      // Deliberately NO new beat kind. Beats live in the save and in the
+      // parity vectors, so every one of them is an obligation on the port;
+      // the chronicle already says this happened and nothing has to animate
+      // a road being dug.
+      chronicle(state, line, 'saga');
       return state;
     }
 
