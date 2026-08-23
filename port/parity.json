@@ -3664,13 +3664,13 @@
        }
       },
       "band": {
-       "hash": "a70604548a407a99",
+       "hash": "26c93ad19ad69d78",
        "size": 3602,
        "samples": {
         "people": 13,
         "alive": 13,
         "food": 191,
-        "firewood": 388,
+        "firewood": 382,
         "morale": 100,
         "atQ": 11,
         "atR": 15
@@ -3709,7 +3709,7 @@
        }
       },
       "field": {
-       "hash": "f5bde5045d5bbde3",
+       "hash": "3b28ccad85944af6",
        "size": 6493,
        "samples": {
         "fighting": 1,
@@ -3750,13 +3750,13 @@
        }
       },
       "band": {
-       "hash": "df2708891edac8bc",
+       "hash": "90c657bf9189a582",
        "size": 4126,
        "samples": {
         "people": 13,
         "alive": 7,
         "food": 115,
-        "firewood": 233,
+        "firewood": 229,
         "morale": 23,
         "atQ": 11,
         "atR": 15
@@ -3836,13 +3836,13 @@
        }
       },
       "band": {
-       "hash": "df2708891edac8bc",
+       "hash": "90c657bf9189a582",
        "size": 4126,
        "samples": {
         "people": 13,
         "alive": 7,
         "food": 115,
-        "firewood": 233,
+        "firewood": 229,
         "morale": 23,
         "atQ": 11,
         "atR": 15
@@ -3921,8 +3921,8 @@
        }
       },
       "band": {
-       "hash": "a6da0bbf94669f60",
-       "size": 8387,
+       "hash": "8559d205fe6c4e1e",
+       "size": 8397,
        "samples": {
         "people": 24,
         "alive": 4,

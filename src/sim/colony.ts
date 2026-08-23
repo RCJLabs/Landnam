@@ -345,6 +345,8 @@ export interface DayLabour {
   firewood: number;
   shelter: number;
   watch: number;
+  /** Tending given today. Spent the same day — see data/jobs.ts. */
+  care: number;
   /** Per-person breakdown, for the panel. */
   byPerson: { id: string; name: string; job: JobId; amount: number }[];
   idle: number;
@@ -357,6 +359,7 @@ export function dayLabour(state: GameState): DayLabour {
     firewood: 0,
     shelter: 0,
     watch: 0,
+    care: 0,
     byPerson: [],
     idle: 0,
   };

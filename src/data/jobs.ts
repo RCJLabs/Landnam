@@ -1,4 +1,4 @@
-// The six things a person can spend a day on. Pure data — sim/colony.ts
+// The seven things a person can spend a day on. Pure data — sim/colony.ts
 // resolves these into stockpiles, so adding a job never touches engine code.
 //
 // Every job leans on ONE stat and ONE measure of the ground. That pairing is
@@ -9,10 +9,17 @@
 import type { Measure } from './sites';
 import type { Stats } from '../state/types';
 
-export type JobId = 'farmer' | 'hunter' | 'fisher' | 'woodcutter' | 'builder' | 'warrior';
+export type JobId = 'farmer' | 'hunter' | 'fisher' | 'woodcutter' | 'builder' | 'warrior' | 'healer';
 
-/** What a day's work adds to. */
-export type Produce = 'food' | 'firewood' | 'shelter' | 'watch';
+/**
+ * What a day's work adds to.
+ *
+ * `care` is the odd one out and deliberately so: it is not a stockpile that
+ * survives the night. A day of tending is spent the day it is given — it
+ * speeds what is mending and keeps what is going round the hall from going
+ * round it faster. See sim/sickness.ts.
+ */
+export type Produce = 'food' | 'firewood' | 'shelter' | 'watch' | 'care';
 
 export interface JobDef {
   id: JobId;
@@ -112,6 +119,24 @@ export const JOBS: JobDef[] = [
     produces: 'watch',
     floor: 0.25,
     perPoint: 0.14,
+    seasonal: 0,
+  },
+  {
+    id: 'healer',
+    name: 'Healer',
+    blurb: 'Tends the sick, sets what is broken, and keeps the hall clean.',
+    stat: 'wits',
+    // Fresh water, because that is what tending the sick actually runs on and
+    // because every job in this file leans on one measure of the ground.
+    measure: 'water',
+    produces: 'care',
+    // Worth something on any site — a healer with a bucket is still a healer —
+    // and worth a great deal beside clean water.
+    floor: 0.35,
+    perPoint: 0.3,
+    // Illness does not take the winter off. This is the only job the season
+    // cannot touch except the warrior, and for the same reason: what it works
+    // on is people, not ground.
     seasonal: 0,
   },
 ];

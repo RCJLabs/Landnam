@@ -2006,6 +2006,51 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — What goes round a hall, and who stops it** — wounds,
+  sickness and the healer (queue idea 8), scoped by what was already built.
+
+  **Two thirds of the item already existed.** Injuries outlive the battle and
+  always have — `data/injuries.ts` carries stat penalties and a `heals`
+  countdown, and `mendInjuries` ticks them down and refuses to in winter.
+  Illness existed too, and `coldNight` gives it when the fire goes out. What
+  neither could do was SPREAD. A cough in a longhouse with eleven people in it
+  and room for six behaved exactly like a cough in a hall with room to spare,
+  so crowding — which the game already counts and already docks morale for —
+  cost the band nothing it could feel in the body.
+
+  **Now it goes round, and the roof is the reason.** One person a day at most,
+  never on the road (six people walking in the open air is not a crowded
+  hall), scaled by how many are already down and by every body past what the
+  roof holds. Measured over one cough and one season, sixty halls each: **0.42
+  more went down with room to spare, 2.67 with six past the roof.** That is
+  the tradeoff taking in another pair of hands was missing.
+
+  **And it is answerable.** A healer is the seventh job and the only one that
+  produces no stockpile: `care` is spent the day it is given. It cuts the odds
+  of it going round AND goes into the mending rate beside what the band has
+  learned. Both halves priced, because pricing one would have mis-tuned it:
+  **2.67 catches falls to 2.22, and an illness that takes 14.0 days to mend
+  alone takes 9.1 with somebody tending it.** A hand that grows no food, for a
+  third off the recovery and fewer people going down.
+
+  **The instrument lied first, and it took the shape of good news.** The
+  fixture built its settlement by hand and left out `report`, so
+  `effectiveReport` spread `undefined`, the healer's output came out `NaN`,
+  and `chance(NaN)` is always false — which read as "a healer stops it
+  completely, 0.00". A fixture that founds the hall the way the game founds
+  one gave the real numbers above. Worth writing down: a measurement that
+  makes a new feature look perfect is the one to distrust.
+
+  **Downscoped, and said plainly:** no herbs. The item asked for them as the
+  healer's input, and a second resource with its own gathering, storage and
+  spoilage is a system rather than a detail — it deserves its own measurement
+  rather than riding in on this one.
+
+  No save bump: illnesses are `ill_`-marked entries in the `injuries` list a
+  Person already had, and `care` is a per-day figure that is never stored.
+  Published odds measured unchanged. `port/parity.json` regenerated.
+
+
 - **2026-08-23 — A hall makes households, and the high seat passes** —
   queue idea 7, and the measurement that decided what it could honestly be.
 

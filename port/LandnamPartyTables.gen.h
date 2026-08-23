@@ -492,6 +492,7 @@ namespace Tables
 		{ "woodcutter", "might", "timber", "firewood", 0.2, 0.4, 0.45 },
 		{ "builder", "craft", "timber", "shelter", 0.35, 0.18, 0.3 },
 		{ "warrior", "might", "defence", "watch", 0.25, 0.14, 0 },
+		{ "healer", "wits", "water", "care", 0.35, 0.3, 0 },
 	};
 
 	/** A measure and an amount — a building's needs or raises. */

@@ -8,6 +8,7 @@ import { worldBeat } from './beats';
 import { omenFor, weatherOn } from './weather';
 import { ageTheBand, childrenOf, maybeBirth } from './lineage';
 import { maybePair } from './household';
+import { careToday, maybeSpread } from './sickness';
 import { CHILD_APPETITE } from '../data/lineage';
 import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../data/rations';
 import { hardshipById } from '../data/hardship';
@@ -166,8 +167,11 @@ function mendInjuries(state: GameState): void {
   // Nothing mends in a cold hall on short rations. Winter illness that ticked
   // down like a summer scratch would take the teeth out of the whole season.
   const frozen = seasonOf(state.day) === 'winter';
-  // Somebody who knows what they are doing gets more out of a day's rest.
-  const care = 1 + bonus(state, 'mend');
+  // Somebody who knows what they are doing gets more out of a day's rest —
+  // what the band has LEARNED, plus whoever is set to tending today. The
+  // healer's day is spent here rather than banked, which is the whole reason
+  // `care` is not a stockpile.
+  const care = 1 + bonus(state, 'mend') + careToday(state);
   for (const person of state.party.people) {
     if (!person.alive) continue;
     person.injuries = person.injuries.filter((injury) => {
@@ -304,6 +308,9 @@ export function passDay(state: GameState): boolean {
   // hall that has buried one.
   maybePair(state);
   maybeBirth(state);
+  // And what is already in the hall goes round it, faster the more of them
+  // there are under one roof.
+  maybeSpread(state);
   // The evening's reading of the sky. This is the whole weather item: a gale
   // announced the night before is a decision about tomorrow, and the same
   // gale arriving unannounced is a dice roll. Said once, at the end of the
