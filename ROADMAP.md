@@ -2006,6 +2006,62 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — The knarr goes somewhere that is not on the map** — the ship
+  as a place (queue idea 10), and the last of the ten.
+
+  **She could already do a great deal and all of it inside the same eighteen
+  hundred hexes.** Row a coast, fight on the water, carry a strandhögg home,
+  spring a strake on rock — the hold was even there, scaling what a raid
+  brought back. What could not happen was the one thing a knarr was actually
+  FOR: crossing open water to somewhere else and coming back with what was
+  there.
+
+  **A voyage is not an expedition,** and that distinction is the whole
+  design. An expedition walks the map, can be seen, and can be recalled. A
+  voyage leaves the map entirely: the crew are simply gone, for most of a
+  year, and what it costs is their hands through the part of the year that
+  needs them. They are off the fields, off the map, and off the ration —
+  counting them at home would feed them twice, and `homeCrew`, `fieldCrew`
+  and `foodPerDay` all had to learn about them.
+
+  **It rides the picker the expedition already had.** "Sail east for home" is
+  a fourth PURPOSE rather than a second roster card, because the question is
+  the same one — which hands can the hall spare — and asking it twice with
+  two cards would be worse. `LAUNCH` branches on it; the card asks the
+  voyage's own refusals, which are its own: a hull with nothing sound left
+  will not cross open water, and two at the least or she does not answer the
+  steering-oar.
+
+  **What she brings back had to be measured before it was right.** Gated on
+  the hall's spare beds — the rule that governs everybody else who joins —
+  a voyage brought back **nobody** in the ordinary case, because a fresh
+  steading holds exactly the six already in it. The whole thing was **156
+  hand-days for nine food**: a trap, not a decision. So the knarr's own hold
+  decides how many, not the roof: people fetched from across an ocean have
+  nowhere else to walk to, and they crowd in. Measured now over forty
+  voyages: **2.77 people and 9.3 food back for 156 hand-days, and nine
+  crossings in forty spring a strake.**
+  That exception is narrow and written down where `takeIn` explains itself:
+  capacity turns away people who WANDER IN, because being told there is no
+  room they walk on somewhere else, and that is what makes building worth
+  doing. It does not turn away people you sailed an ocean to fetch. What it
+  costs instead is crowding — which, since the sickness work, is a thing the
+  body feels.
+
+  **Stated plainly: the harness does not sail.** The balance bot has no
+  reason to pick a purpose it was never taught, so the published odds are
+  unmoved (Fair 87%, As It Lies 63%, Hard 17%) and that is a measurement of
+  the voyage costing nothing, not of it being balanced. What a voyage does to
+  a run is the player's to find, and the numbers above are what it hands them.
+
+  **Downscoped, and said:** no cargo manifest and no per-voyage events. The
+  hold is still a capacity rather than a list of goods, and the crossing is
+  one roll rather than a season of cards at sea. Both are real features and
+  both want their own measurement.
+
+  Save goes to **v43** (`voyage` on the root).
+
+
 - **2026-08-23 — An oath that binds, and what the deck costs** — oaths, blót
   and omens (queue idea 9).
 

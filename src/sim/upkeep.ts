@@ -10,6 +10,7 @@ import { ageTheBand, childrenOf, maybeBirth } from './lineage';
 import { maybePair } from './household';
 import { careToday, maybeSpread } from './sickness';
 import { oathDay } from './oath';
+import { atSeaAway, voyageDay } from './voyage';
 import { CHILD_APPETITE } from '../data/lineage';
 import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../data/rations';
 import { hardshipById } from '../data/hardship';
@@ -72,7 +73,9 @@ export function foodPerDay(state: GameState): number {
   // adult and would have gone quietly wrong the moment children ate. The mark
   // and the larder have to move together for the same reason the mark and the
   // fire do.
-  const mouths = living(state.party.people).length
+  // A crew over the open sea took their stores with them and eats out of
+  // those; counting them here would feed them twice.
+  const mouths = living(state.party.people).filter((p) => !atSeaAway(state, p)).length
     + childrenOf(state).length * CHILD_APPETITE;
   // Short commons, applied HERE and nowhere else — which is the whole payoff
   // of there being one copy of this formula. The winter mark, the verdict and
@@ -314,6 +317,8 @@ export function passDay(state: GameState): boolean {
   maybeSpread(state);
   // Whatever the band swore at the blót is watched here, every day of it.
   oathDay(state);
+  // And the keel, if she is due.
+  voyageDay(state);
   // The evening's reading of the sky. This is the whole weather item: a gale
   // announced the night before is a decision about tomorrow, and the same
   // gale arriving unannounced is a dice roll. Said once, at the end of the

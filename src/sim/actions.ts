@@ -22,6 +22,7 @@ import type { JobId } from '../data/jobs';
 import type { BuildingId } from '../data/buildings';
 import type { Purpose } from '../state/types';
 import { launch, turnForHome } from './expedition';
+import { sailForHome } from './voyage';
 
 export type BattleAction =
   | { type: 'B_MOVE'; to: Hex }
@@ -210,7 +211,13 @@ export function apply(state: GameState, action: Action): GameState {
   if (action.type === 'LAUNCH') {
     if (currentMode(state) !== 'TRAVEL' || state.event || state.aftermath) return state;
     const next = cloneState(state);
-    if (!launch(next, action.members, action.purpose)) return state;
+    // 'home' is not an expedition. It rides the same picker because the
+    // question is the same — which hands can the hall spare — but what it
+    // makes is a voyage, and a voyage leaves the map.
+    const went = action.purpose === 'home'
+      ? sailForHome(next, action.members)
+      : launch(next, action.members, action.purpose);
+    if (!went) return state;
     return next;
   }
   if (action.type === 'TURN_HOME') {

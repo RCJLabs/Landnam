@@ -50,9 +50,21 @@ export function roomLeft(state: GameState): number {
  * Returns the ones who actually joined, which may be fewer than asked for and
  * may be none — a hall with no spare bed turns people away, and that refusal
  * is the whole reason capacity exists. Mutates; callers hold a clone.
+ *
+ * `overRoof` is the one exception and it is narrow on purpose. Capacity turns
+ * away people who WANDER IN: told there is no room, they walk on to somewhere
+ * else, which is what makes building worth doing. People fetched from across
+ * an ocean have nowhere else to walk to. They come in and they crowd, and
+ * crowding is now a thing the body feels — see sim/sickness.ts. Passing this
+ * is choosing that trade, not dodging the rule.
  */
-export function takeIn(state: GameState, count: number, why: string): Person[] {
-  const room = Math.min(count, roomLeft(state));
+export function takeIn(
+  state: GameState,
+  count: number,
+  why: string,
+  overRoof = false,
+): Person[] {
+  const room = overRoof ? count : Math.min(count, roomLeft(state));
   if (room <= 0) return [];
 
   const rng = stream(state.seed, 'party').derive(`join:${state.day}:${state.nextId}`);

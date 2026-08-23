@@ -407,12 +407,22 @@ describe('expeditions through the game', () => {
   });
 
   it('every purpose is offered, named and explained', () => {
-    expect(PURPOSES).toHaveLength(3);
+    // 'home' is in this list but is NOT an expedition: it rides the same
+    // picker because the question is the same one — which hands can the hall
+    // spare — and what it makes is a voyage, which leaves the map. Nothing
+    // reads its `stir` or `sight`, so they are zero and the bar says so by
+    // name rather than by dropping the rule for everybody.
+    const OFF_THE_MAP = new Set(['home']);
+    const walking = PURPOSES.filter((p) => !OFF_THE_MAP.has(p.id));
+    expect(walking).toHaveLength(3);
+
     for (const def of PURPOSES) {
       expect(def.name.length).toBeGreaterThan(3);
       expect(def.blurb.length).toBeGreaterThan(20);
-      expect(def.stir).toBeGreaterThan(0);
     }
+    // A purpose that walks the map must stir something, or it is a day out
+    // with nothing in it.
+    for (const def of walking) expect(def.stir).toBeGreaterThan(0);
   });
 
   it('a party out round-trips through a save, and an older one comes home', () => {

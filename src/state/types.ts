@@ -492,7 +492,15 @@ export interface Child {
 
 // --- Expeditions ---
 
-export type Purpose = 'raid' | 'trade' | 'explore';
+/**
+ * Why a crew is being sent out.
+ *
+ * 'home' is the odd one and does not make an Expedition at all: it takes the
+ * knarr over the open sea and off the map entirely. It rides the same picker
+ * because the decision is the same one — which hands can the hall spare —
+ * and building a second roster card to ask it again would be worse.
+ */
+export type Purpose = 'raid' | 'trade' | 'explore' | 'home';
 
 /**
  * A party sent out from the steading. Once there is a settlement this is the
@@ -508,6 +516,24 @@ export interface Expedition {
   carried: number;
   /** Set when they turn for home; the map then only offers the way back. */
   returning?: boolean;
+}
+
+/**
+ * The knarr away over the open sea, and who is on her.
+ *
+ * Not an expedition: an expedition walks the map and can be seen. A voyage
+ * home leaves the map entirely — the crew are simply GONE for a season, and
+ * what they cost is their hands through the part of the year that needs them
+ * most. See sim/voyage.ts.
+ */
+export interface Voyage {
+  /** personIds aboard. They are not at the steading and do not work. */
+  members: string[];
+  leftOn: number;
+  /** The day the keel is expected back on the sand. */
+  due: number;
+  /** Food taken from the store for the crossing. */
+  carried: number;
 }
 
 // --- Neighbours ---
@@ -632,6 +658,8 @@ export interface GameState {
   grudges: Grudge[];
   /** A party out from the steading. Absent means everyone is home. */
   expedition?: Expedition;
+  /** The knarr away over the open sea. Absent means she is on this coast. */
+  voyage?: Voyage;
   /** Everybody else on this coast, and what they think of you. */
   neighbours: Neighbour[];
   /**

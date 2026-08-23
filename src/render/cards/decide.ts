@@ -14,6 +14,8 @@ import { moodOf, MOOD_WORD } from '../../sim/minds';
 import { known } from '../../sim/lore';
 import { jobOf } from '../../sim/colony';
 import { LAUNCH_REASON, launchBlocker, provisionsFor, PURPOSES } from '../../sim/expedition';
+import type { LaunchBlock } from '../../sim/expedition';
+import { CROSSING, SAIL_REASON, sailBlocker, type SailBlock } from '../../sim/voyage';
 import { FEUD_THRESHOLD } from '../../data/feuds';
 import { MEASURES, MEASURE_MAX } from '../../data/sites';
 import type { GameState, Person, Purpose } from '../../state/types';
@@ -86,7 +88,14 @@ export function renderLaunch(
 ): HTMLElement {
   const crew = state.party.people.filter((p) => p.alive);
   const going = crew.filter((p) => picked.has(p.id));
-  const blocker = launchBlocker(state, [...picked]);
+  // A voyage has its own refusals — a hull that will not cross open water,
+  // two at the least to work her — so the card asks whichever gate applies
+  // rather than showing the expedition's answer to a different question.
+  const voyage = purpose === 'home';
+  const blocker = voyage ? sailBlocker(state, [...picked]) : launchBlocker(state, [...picked]);
+  const reason = voyage
+    ? (blocker ? SAIL_REASON[blocker as SailBlock] : '')
+    : (blocker ? LAUNCH_REASON[blocker as LaunchBlock] : '');
 
   const card = el('div', { class: 'card' }, [
     el('h2', {}, ['Send a Party Out']),
@@ -127,9 +136,12 @@ export function renderLaunch(
   card.append(
     el('p', { class: blocker ? 'outcome grim' : 'outcome good' }, [
       blocker
-        ? LAUNCH_REASON[blocker]
-        : `${going.length} out, ${crew.length - going.length} left at the steading · ` +
-          `${provisionsFor(going.length)} food provisioned.`,
+        ? reason
+        : voyage
+          ? `${going.length} aboard, ${crew.length - going.length} left at the steading · `
+            + `back about day ${state.day + CROSSING}.`
+          : `${going.length} out, ${crew.length - going.length} left at the steading · ` +
+            `${provisionsFor(going.length)} food provisioned.`,
     ]),
   );
 

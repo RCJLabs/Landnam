@@ -78,7 +78,10 @@
 // v42 (outlawry): the root gained the optional `outlaws` — people the band
 //                  drove out, who are still in the country and can come back
 //                  for it. Absent is a band that never made anybody outlaw.
-export const SAVE_VERSION = 42;
+// v43 (voyage): the root gained the optional `voyage` — the knarr away over
+//                the open sea with a crew aboard, gone from the map for a
+//                season. Absent is a band that never sailed for home.
+export const SAVE_VERSION = 43;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

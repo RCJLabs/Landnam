@@ -13,6 +13,7 @@ import { effectiveStat, living } from './people';
 import { chronicle } from './saga';
 import { note } from './tally';
 import { atHome } from './site';
+import { atSeaAway } from './voyage';
 import { worldBeat } from './beats';
 import { hold } from './ship';
 
@@ -54,6 +55,17 @@ export const PURPOSES: PurposeDef[] = [
     stir: 1.45,
     sight: 0,
   },
+  {
+    id: 'home',
+    name: 'Sail east for home',
+    blurb: 'Take the knarr across the open sea to the country we came from, and '
+      + 'come back with people who want land. Most of a year, and the hall keeps '
+      + 'the winter without them.',
+    // Neither is read for a voyage — she is off the map, so there is nothing
+    // to stir and nothing to see. They are here because PurposeDef says so.
+    stir: 0,
+    sight: 0,
+  },
 ];
 
 export function purposeDef(id: Purpose): PurposeDef {
@@ -67,19 +79,31 @@ export function everyoneHome(state: GameState): boolean {
   return !!state.settlement && !state.expedition;
 }
 
-/** The people out on the world map — the ones a field battle is fought with. */
+/**
+ * The people out on the world map — the ones a field battle is fought with.
+ *
+ * A crew over the open sea is on nobody's map, so they are not here either.
+ */
 export function fieldCrew(state: GameState): Person[] {
+  const here = living(state.party.people).filter((p) => !atSeaAway(state, p));
   const out = state.expedition;
-  if (!out) return living(state.party.people);
-  return living(state.party.people).filter((p) => out.members.includes(p.id));
+  if (!out) return here;
+  return here.filter((p) => out.members.includes(p.id));
 }
 
-/** The people at the steading — the ones who work it, and who defend it. */
+/**
+ * The people at the steading — the ones who work it, and who defend it.
+ *
+ * Whoever is away over the sea is neither. That is the whole cost of a
+ * voyage: not a fee, but a season of hands, through the part of the year
+ * that needs them.
+ */
 export function homeCrew(state: GameState): Person[] {
   if (!state.settlement) return [];
+  const here = living(state.party.people).filter((p) => !atSeaAway(state, p));
   const out = state.expedition;
-  if (!out) return living(state.party.people);
-  return living(state.party.people).filter((p) => !out.members.includes(p.id));
+  if (!out) return here;
+  return here.filter((p) => !out.members.includes(p.id));
 }
 
 export function isOut(state: GameState, person: Person): boolean {
