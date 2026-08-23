@@ -51,7 +51,7 @@ import { effectsOn, SEASON_LENGTH, seasonOf, winterDepth } from '../src/sim/cale
 import { markHaze } from '../src/sim/winter';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
-import { moveOptions, atSea, isCoastalWater } from '../src/sim/road';
+import { moveOptions, atSea, isCoastalWater, ROW_REACH } from '../src/sim/road';
 import { canGather, canFish } from '../src/sim/gathering';
 import { canFound, siteReport } from '../src/sim/site';
 import { holed } from '../src/sim/ship';
@@ -68,7 +68,7 @@ import { fallenOf } from '../src/sim/fallen';
 import { capacity, crowding } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
-import { distance, key, fromKey, neighbors } from '../src/hex';
+import { distance, key, fromKey, neighbors, type Hex } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
 import { reachWithZoc } from '../src/sim/zoc';
 import { reachTargets, throwTargets } from '../src/sim/strike';
@@ -3191,6 +3191,191 @@ describe('the sea is reached', () => {
     // And the knowledge economy that makes any of it possible: a settled
     // band must know of SOMETHING to go and take. This read 0.06 of 4.
     expect(placesKnown / Math.max(1, samples)).toBeGreaterThan(0.4);
+  });
+
+  /**
+   * PROBE, for queue item 23: how much water does a saga actually touch?
+   *
+   * Named waters and tidal races are both bets on the same premise — that
+   * the sea is a place the band moves AROUND in, with stretches distinct
+   * enough to be worth a name and pinches narrow enough to be worth a cost.
+   * The world's geometry says that premise is plausible: 12 worlds measured
+   * 123 coastal-water hexes each in 4.6 connected bodies, 2.7 of them eight
+   * hexes or more, and 5.2 gates — water with land on four sides and its two
+   * wet neighbours not touching, so a hull must pass THROUGH rather than
+   * around.
+   *
+   * But geometry is the map, not the saga. What decides whether either
+   * feature is content or decoration is how much of that water a band ever
+   * enters, and the answer was no: 0.0 true gates entered in forty sagas,
+   * 0.0 waters ever a third uncovered. Neither feature was built.
+   *
+   * The line that says WHY is the last one, and it is the reason this probe
+   * is kept rather than deleted with the idea it killed. The sea is not
+   * refused — it is OFFERED, on a fifth of every band's moving days, a third
+   * of the menu on those days — and declined 94 times in a hundred. Nothing
+   * on the water is worth going to, so nobody goes, so every feature laid on
+   * top of the water is content behind a door nobody opens.
+   *
+   * Measured on the RAIDER, deliberately: it is the most sea-inclined band
+   * the harness has, the only policy that leaves under arms at all. The
+   * settler does not sail by identity rather than by gap. So this is the
+   * GENEROUS reading, and it still reads 5.6%.
+   *
+   * Kept as a probe rather than a bar because it is an instrument, not a
+   * promise: any future work that means to give the sea a reason should move
+   * these numbers, and this is what it will be read against.
+   */
+  it('PROBE: how much of the coast a saga actually rows', { timeout: 900_000 }, async () => {
+    const SEEDS = 40;
+    let sagas = 0;
+    let wetSagas = 0;
+    let hexesEntered = 0;
+    let gatesEntered = 0;
+    let pinchesEntered = 0;
+    let bodiesTouched = 0;
+    let coastalOfWorld = 0;
+    let seenOfWorld = 0;
+    let namedSize = 0;
+    let daysWithAChoice = 0;
+    let daysWaterOffered = 0;
+    let daysWaterTaken = 0;
+    let wetOptions = 0;
+    let allOptions = 0;
+    let bodiesSeen = 0;
+    let bodiesGlimpsed = 0;
+    const spans: number[] = [];
+
+    /** The water bodies of a world, as a hex-key -> body-id map. */
+    const bodiesOf = (state: GameState): Map<string, number> => {
+      const coastal = new Set<string>();
+      for (const k of Object.keys(state.world.tiles)) {
+        if (isCoastalWater(state, fromKey(k))) coastal.add(k);
+      }
+      const id = new Map<string, number>();
+      let next = 0;
+      for (const k of coastal) {
+        if (id.has(k)) continue;
+        const mine = next; next += 1;
+        const stack = [k];
+        id.set(k, mine);
+        while (stack.length > 0) {
+          const cur = stack.pop()!;
+          for (const nb of neighbors(fromKey(cur))) {
+            const nk = key(nb);
+            if (coastal.has(nk) && !id.has(nk)) { id.set(nk, mine); stack.push(nk); }
+          }
+        }
+      }
+      return id;
+    };
+
+    /** Land on four sides, and the two wet sides not touching: a gate. */
+    const gate = (state: GameState, at: Hex): boolean => {
+      const wet = neighbors(at).filter((n) => state.world.tiles[key(n)]?.terrain === 'ocean');
+      if (wet.length !== 2) return false;
+      return !neighbors(wet[0]!).some((h) => key(h) === key(wet[1]!));
+    };
+
+    policy = RAIDER;
+    try {
+      for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
+        for (let s = 0; s < SEEDS / 2; s += 1) {
+          const wet = new Set<string>();
+          let bodies: Map<string, number> | null = null;
+          const state = run(armSeed(arm, s, SEEDS / 2), 400, (before, after) => {
+            if (!bodies) bodies = bodiesOf(after);
+            // OFFERED versus TAKEN, which is the difference between a game
+            // that refuses the water and a bot that declines it. Read on the
+            // state BEFORE the move, so it is the choice the bot actually had.
+            if (!before.settlement || before.expedition) {
+              const offered = moveOptions(before);
+              if (offered.length > 0) {
+                daysWithAChoice += 1;
+                const wetOffered = offered.filter(
+                  (h) => before.world.tiles[key(h)]?.terrain === 'ocean',
+                ).length;
+                if (wetOffered > 0) {
+                  daysWaterOffered += 1;
+                  wetOptions += wetOffered;
+                  allOptions += offered.length;
+                  if (after.world.tiles[key(after.party.at)]?.terrain === 'ocean'
+                      && key(after.party.at) !== key(before.party.at)) daysWaterTaken += 1;
+                }
+              }
+            }
+            const at = after.party.at;
+            if (key(at) === key(before.party.at)) return;
+            if (after.world.tiles[key(at)]?.terrain !== 'ocean') return;
+            wet.add(key(at));
+            const span = distance(before.party.at, at);
+            if (span > 0) spans.push(span);
+          }, terms);
+          sagas += 1;
+          const map = bodies ?? bodiesOf(state);
+          const coastal = [...map.keys()];
+          coastalOfWorld += coastal.length;
+          seenOfWorld += coastal.filter((k) => state.world.seen[k] !== undefined).length;
+          if (wet.size > 0) wetSagas += 1;
+          // A body is SEEN when the band has lifted the fog off a third of
+          // it — the test a name on the map would have to pass.
+          const perBody = new Map<number, { all: number; seen: number }>();
+          for (const [k, b] of map) {
+            const row = perBody.get(b) ?? { all: 0, seen: 0 };
+            row.all += 1;
+            if (state.world.seen[k] !== undefined) row.seen += 1;
+            perBody.set(b, row);
+          }
+          for (const row of perBody.values()) {
+            if (row.all < 8) continue;
+            namedSize += 1;
+            if (row.seen / row.all >= 0.33) bodiesSeen += 1;
+            if (row.seen > 0) bodiesGlimpsed += 1;
+          }
+          hexesEntered += wet.size;
+          const touched = new Set<number>();
+          for (const k of wet) {
+            const at = fromKey(k);
+            const b = map.get(k);
+            if (b !== undefined) touched.add(b);
+            const nWet = neighbors(at).filter(
+              (n) => state.world.tiles[key(n)]?.terrain === 'ocean',
+            ).length;
+            if (nWet <= 2) pinchesEntered += 1;
+            if (gate(state, at)) gatesEntered += 1;
+          }
+          bodiesTouched += touched.size;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      }
+    } finally {
+      policy = SETTLER;
+    }
+
+    const per = (n: number) => (n / Math.max(1, sagas)).toFixed(1);
+    const reach = spans.reduce((a, b) => a + b, 0) / Math.max(1, spans.length);
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE the water a saga touches — ${sagas} raider sagas to day 400:\n` +
+        `  ${wetSagas} ever floated; ${per(hexesEntered)} distinct water hexes entered per saga ` +
+        `(of ${per(coastalOfWorld)} coastal in the world, ${per(seenOfWorld)} ever seen)\n` +
+        `  ${per(bodiesTouched)} distinct bodies of water touched per saga\n` +
+        `  ${per(pinchesEntered)} pinches entered (<=2 wet sides), ${per(gatesEntered)} true gates\n` +
+        `  mean hexes per move afloat: ${reach.toFixed(2)} of a possible ${ROW_REACH}\n` +
+        `  waters big enough to name (8+ hexes): ${per(namedSize)} per saga; ` +
+        `${per(bodiesGlimpsed)} ever glimpsed, ${per(bodiesSeen)} a third uncovered\n` +
+        `  the choice: ${daysWithAChoice} days with a move to make, ${daysWaterOffered} of them ` +
+        `offering water (${((wetOptions / Math.max(1, allOptions)) * 100).toFixed(0)}% of the options ` +
+        `on those days), ${daysWaterTaken} taken`,
+    );
+
+    // The probe asserts only that its instrument still works — that the
+    // sample ran, and that the game is still OFFERING the water it is being
+    // measured for declining. Pinning the take-rate would pin the bot rather
+    // than the sea, and the take-rate is the finding, not the promise.
+    expect(sagas).toBe(SEEDS);
+    expect(daysWaterOffered, 'the water is never even on the menu — this probe is measuring nothing')
+      .toBeGreaterThan(200);
   });
 });
 

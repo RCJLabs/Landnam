@@ -2006,6 +2006,54 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — The sea is offered and declined** — queue item 23 (tidal
+  races and named waters) measured, and not built. The measurement is the
+  deliverable.
+
+  **Both halves rested on one premise: that the sea is a place the band moves
+  around in.** Tidal races want a strait narrow enough that which way you are
+  going matters. Named waters want stretches of coast distinct enough that a
+  band comes to know them. The world's geometry says both are plausible —
+  twelve worlds measured 123 coastal-water hexes each in 4.6 connected bodies,
+  2.7 of them eight hexes or more, and 5.2 gates: water with land on four
+  sides whose two wet neighbours do not touch, so a hull must pass through
+  rather than around.
+
+  **Geometry is the map, not the saga.** Forty raider sagas to day 400 — the
+  most sea-inclined band the harness has, the only policy that leaves under
+  arms at all, so this is the generous reading:
+
+  - 9 of 40 ever floated at all
+  - 0.6 distinct water hexes entered per saga, of 121.8 coastal in the world
+  - 0.2 bodies of water touched; **0.0 true gates entered, in any saga**
+  - 2.8 waters big enough to name per world; 1.0 ever glimpsed, **0.0 ever a
+    third uncovered**
+  - mean 1.01 hexes per move afloat, of a possible 3
+
+  A directional cost at a gate would fire zero times. A name on a water the
+  band never uncovers a third of is a name on nothing. Neither ships.
+
+  **The line worth keeping is the one that says why, and it clears the
+  instrument.** The obvious suspicion about all of the above is that it
+  measures the bot rather than the game — that the harness simply never steers
+  for water. It does not hold: `6782 days with a move to make, 1436 of them
+  offering water, 35% of the options on those days, 80 taken.` The sea is on
+  the menu on a fifth of every band's moving days and is declined 94 times in
+  a hundred. The game is not refusing the water; nobody wants it.
+
+  **So the sea does not need more texture, it needs a reason.** Both halves of
+  item 23 make the water more interesting for a band that already sails.
+  Neither gives anybody cause to sail. That is the same shape as the As It
+  Lies finding (item 26) and the same shape the five-winter wall had: content
+  behind a door nobody opens. Building either would have added code to a room
+  with no traffic.
+
+  **The probe is kept, not deleted with the idea it killed.** It is an
+  instrument: any future work that means to give the sea a reason should move
+  these numbers, and this is what it will be read against. It asserts only
+  that the water is still being offered — pinning the take-rate would pin the
+  bot rather than the sea, and the take-rate is the finding.
+
 - **2026-08-23 — Five winters is a reckoning, not an ending** — a saga can now
   outlive the coast it started on (queue item 24).
 
