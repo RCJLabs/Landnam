@@ -355,6 +355,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // and inventing roads for a run that never dug them would rewrite what it
   // spent its days on.
   40: (save) => ({ ...save, version: 41 }),
+  // Nobody was ever driven out, because there was no way to do it. Absent is
+  // exactly that, and inventing enemies for an old saga would be inventing
+  // judgements it never made.
+  41: (save) => ({ ...save, version: 42 }),
 };
 
 export interface MigrationResult {

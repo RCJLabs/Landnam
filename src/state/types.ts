@@ -35,6 +35,25 @@ export interface Tile {
 }
 
 /**
+ * Somebody the band drove out, still in the country.
+ *
+ * The one hostile thing in this game the PLAYER makes on purpose. A wergild
+ * spends stores and a Thing spends a roll; outlawry spends a person, and the
+ * person keeps existing.
+ */
+export interface Outlaw {
+  /** The id they had while they were ours, so the saga can match them up. */
+  id: string;
+  name: string;
+  /** The day they were driven out. */
+  since: number;
+  /** What they were worth in a fight when they left. */
+  might: number;
+  /** The last day they came back at us, if they have. */
+  struckOn?: number;
+}
+
+/**
  * The other band on this island — see sim/rival.ts.
  *
  * Deliberately small: a name, a hall, and the ground their hand has closed
@@ -615,6 +634,11 @@ export interface GameState {
   expedition?: Expedition;
   /** Everybody else on this coast, and what they think of you. */
   neighbours: Neighbour[];
+  /**
+   * Everyone the band has made outlaw. Absent on a band that never drove
+   * anybody out, which is most of them.
+   */
+  outlaws?: Outlaw[];
   /**
    * The other landnamsmadr. Absent on a coast that has only one — every
    * saga played before there was a second boat, and any world with no

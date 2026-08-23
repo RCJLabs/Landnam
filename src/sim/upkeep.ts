@@ -19,6 +19,7 @@ import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
 import { driftStandings, neighboursCallOn } from './neighbours';
 import { rivalDay } from './rival';
+import { maybeOutlawStrike } from './outlaw';
 import { renderTribute } from './thing';
 import { handsLeave, maybeJoin, maybeSword } from './joining';
 import { raidable, raidDifficulty, raidOdds } from './raid';
@@ -201,6 +202,8 @@ export function passDay(state: GameState): boolean {
   // Somebody else's day, taken before ours: their fences go up whether the
   // band spent the day marching, resting or arguing.
   rivalDay(state);
+  // And a man we drove out, who has been waiting.
+  maybeOutlawStrike(state);
 
   // Work comes before eating: what the day produced is available to the mouths
   // it has to feed that same evening.

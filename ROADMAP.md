@@ -2006,6 +2006,72 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — The judgement that makes an enemy** — the Thing as a living
+  court (queue idea 6), scoped by what was already there.
+
+  **Checking first cut the job in half, again.** The task said "disputes
+  brought to the player: wergild, outlawry, judgements that change standing".
+  The wergild court already EXISTS — `sim/minds.ts` ripens grudges into a
+  feud card and offers three answers: pay it out of the stores, hold a Thing
+  and let it be argued out, or tell them both to get back to work. What did
+  not exist was outlawry, and an `outlaw` archetype has been sitting unused
+  in `data/foes.ts` the whole time.
+
+  **So: a fourth answer, and it is the certain one.** Wergild spends stores
+  and can fail for want of them; the Thing spends a roll and can fail
+  outright; outlawry spends a PERSON and cannot fail. In a band of six that
+  is the dearest thing there is, and it ends the quarrel absolutely — one of
+  the two is gone. The card NAMES him, because a judgement this heavy must
+  not be a generic label the player reads afterwards and finds they picked
+  somebody they did not mean to.
+
+  **And he is still in the country.** That is the whole reason the verb is
+  worth building: every other hostile thing in this game is dealt out by the
+  world — a camp that was always there, a garrison, a rival who landed the
+  same spring — and an outlaw is one the player MADE. He keeps his head down
+  for thirty days, and after that he is sometimes waiting on the road, with
+  men the band does not know. He is `left`, not dead: upkeep stops feeding
+  him and the saga does not bury somebody who is walking around.
+
+  Measured over a year, thirty seeds: **one man driven out is about two
+  fights a year; three is six or seven.** The rest between raids is each
+  man's own, so a band that drove three people out really is in three men's
+  worth of danger — which was worth measuring, because the code comment
+  claimed the opposite until the number contradicted it and the comment was
+  fixed to match. Steep on purpose: it is the price of ending a quarrel for
+  good, and nobody drives out half their band by accident. Nothing happens
+  while a card or a fight is on the table, and nothing happens at sea — a man
+  on foot cannot reach a hull under way, which is also the one place the band
+  could not run.
+
+  **Two things this turned up that had nothing to do with outlawry.**
+
+  *The judgements are a contract with the past.* The new answer was written
+  third in the list, which pushed "tell them to get back to work" to fourth —
+  and `settleFeud` takes an INDEX, which the recorded runs in `runs/*.json`
+  replay by. So an old saga that told two men to go back to work would have
+  driven one of them out instead. It is appended now, and a bar pins the
+  order so the next person cannot do it either.
+
+  *A bar had been failing silently for a whole commit.* The reach audit exits
+  1 on a thumb-rule breach, and this session had been running it as
+  `node scripts/reach.mjs | tail -6` — which reports the exit code of `tail`,
+  always 0. The 390x844 audit had been RED since the ways commit: fourteen
+  deeds took the Act sheet to its 88dvh cap, `margin-top: auto` resolved to
+  nought exactly as it does on a short screen, and Camp rode up to 26% — the
+  hard band. Fixed with the same medicine the short-screen rule already used,
+  one size up (`.deeds-card` capped at 74dvh so the sheet drops back under
+  the thumb and the overflow scrolls). `scripts/bars.mjs` now runs all ten
+  browser bars and reports by EXIT CODE, because a bar that cannot fail
+  loudly is not a bar.
+
+  The card carries four choices at 390x844 with no scroll, seen by eye. Save
+  goes to **v42** (`outlaws` on the root, carried in the `coast` facet beside
+  the grudges that made them — a man driven out is the far end of a quarrel,
+  not a separate system). Published odds measured unchanged.
+  `port/parity.json` regenerated and handed over.
+
+
 - **2026-08-23 — The band writes something onto the country** — the land
   remembers your work (queue idea 4).
 

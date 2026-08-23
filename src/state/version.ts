@@ -75,7 +75,10 @@
 //              way through, which walk like a meadow ever after. The first
 //              thing in this game the player writes onto the country itself.
 //              Absent is ground nobody has broken.
-export const SAVE_VERSION = 41;
+// v42 (outlawry): the root gained the optional `outlaws` — people the band
+//                  drove out, who are still in the country and can come back
+//                  for it. Absent is a band that never made anybody outlaw.
+export const SAVE_VERSION = 42;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

@@ -17,6 +17,7 @@ import {
   WERGILD_FOOD,
 } from '../data/feuds';
 import { stream } from '../rng';
+import { driveOut } from './outlaw';
 import type { GameState, Grudge, Person } from '../state/types';
 import { crowding, jobOf } from './colony';
 import { checkOdds } from './events';
@@ -232,7 +233,10 @@ export function presentFeud(state: GameState, grudge: Grudge): boolean {
     body: `${grudge.cause} ${FEUD_BODY}`,
     feud: { a: a.id, b: b.id },
     choices: FEUD_CHOICES.map((choice) => ({
-      label: choice.label,
+      // The outlawry choice NAMES the man it would drive out. A judgement
+      // this heavy must not be a generic label the player reads afterwards
+      // and finds they picked somebody they did not mean to.
+      label: choice.label.replace(/\{A\}/g, a.name).replace(/\{B\}/g, b.name),
       hint:
         choice.kind === 'thing'
           ? `Spirit · ${Math.round(checkOdds(speaker, THING_DC) * 100)}%`
@@ -299,6 +303,20 @@ export function settleFeud(
     return {
       text: 'It was argued out in front of everyone and settled nothing. Now the whole band has a side.',
       good: false,
+    };
+  }
+
+  if (choice.kind === 'banish') {
+    // Certain, and permanent. No roll, no store to be short of: the quarrel
+    // is over because one of the two is gone. What it costs is a hand — and
+    // an enemy who knows the country, the band, and where the steading is.
+    grudge.settled = true;
+    driveOut(state, a);
+    b.morale = Math.min(100, b.morale + 6);
+    return {
+      text: `${a.name} was given until morning. Nobody walked out with ${a.name}, `
+        + 'and nobody said much for a while after.',
+      good: true,
     };
   }
 

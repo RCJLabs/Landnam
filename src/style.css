@@ -1183,6 +1183,26 @@ h2.grim {
   }
 }
 
+/* And the same cap on a TALL screen, for the same reason.
+ *
+ * The short-screen rule above was written when seven deeds needed 601px and a
+ * 844px screen had room to spare. The sheet has grown since — breaking ground
+ * made it fourteen — and at 88dvh on a 844px screen the card reached its cap,
+ * `margin-top: auto` resolved to nought exactly as it does at 568px, and Camp
+ * rode up to 26%: the hard band. The reach audit caught it at 390x844 and it
+ * had already shipped, because a `| tail` in the runner was swallowing the
+ * exit code and the failure read as a warning.
+ *
+ * Same medicine, one size up: cap the sheet shorter than its container so the
+ * auto margin engages again and the sheet drops back under the thumb. The
+ * deeds that no longer fit scroll, which the card already does. Deliberately
+ * NOT keyed to a height query — this is about the card being taller than the
+ * space it is anchored in, which is now true at every phone size. */
+.deeds-card {
+  max-height: 74vh;
+  max-height: 74dvh;
+}
+
 /* Passing the coast on. Ruled off from the deeds above it because it is not
    one: the list is what the day can be spent on, and this costs no day. */
 .coast {

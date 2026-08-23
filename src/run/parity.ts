@@ -106,7 +106,12 @@ export const FACETS: Facet[] = [
     // The other landnamsmadr belongs here rather than in `world`: he is a
     // person with a schedule, not terrain, and what the port has to reproduce
     // about him is exactly what it has to reproduce about a neighbour.
-    of: (s) => ({ neighbours: s.neighbours, grudges: s.grudges, lore: s.lore, rival: s.rival }),
+    // Outlaws sit here with the grudges that made them: a man driven out is
+    // the far end of a quarrel, not a separate system.
+    of: (s) => ({
+      neighbours: s.neighbours, grudges: s.grudges, lore: s.lore,
+      rival: s.rival, outlaws: s.outlaws,
+    }),
     samples: (s) => ({
       neighbours: s.neighbours.length,
       found: s.neighbours.filter((n) => n.found).length,
@@ -114,6 +119,7 @@ export const FACETS: Facet[] = [
       grudges: s.grudges.length,
       lore: s.lore.length,
       claims: s.rival?.claims.length ?? 0,
+      outlaws: s.outlaws?.length ?? 0,
     }),
   },
   {

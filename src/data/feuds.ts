@@ -64,9 +64,23 @@ export const FEUD_BODY =
 export interface FeudChoice {
   label: string;
   hint?: string;
-  /** 'wergild' pays it off, 'thing' rolls for it, 'ignore' walks away. */
-  kind: 'wergild' | 'thing' | 'ignore';
+  /**
+   * 'wergild' pays it off, 'thing' rolls for it, 'ignore' walks away, and
+   * 'banish' drives one of them into the country for good.
+   *
+   * `banish` rather than `outlaw` because `outlaw` is also a FOE ARCHETYPE
+   * id, and test/foes.test.ts forbids the engine naming one — a rule that
+   * keeps combat content data-driven. This is a different namespace and the
+   * bar cannot tell, so the name moves rather than the bar.
+   */
+  kind: 'wergild' | 'thing' | 'ignore' | 'banish';
 }
+
+/** Morale the whole band loses when one of its own is driven out. */
+export const OUTLAW_MORALE = 12;
+
+/** Days an outlaw keeps away before there is any chance of them coming back. */
+export const OUTLAW_LIE_LOW = 30;
 
 export const FEUD_CHOICES: FeudChoice[] = [
   {
@@ -76,6 +90,21 @@ export const FEUD_CHOICES: FeudChoice[] = [
   },
   { label: 'Hold a Thing and let it be argued out', kind: 'thing' },
   { label: 'Tell them both to get back to work', kind: 'ignore' },
+  {
+    // The certain one, and the dearest. Wergild spends stores and the Thing
+    // spends a roll; this spends a PERSON, which in a band of six is the
+    // most expensive thing there is — and it does not end there, because a
+    // man driven into the country is still in the country.
+    //
+    // LAST on purpose, not by taste. `settleFeud` takes an index and the
+    // recorded runs in runs/*.json replay CHOOSE actions BY that index, so
+    // inserting a choice in the middle silently rewrites what an old run
+    // did — a run that told two men to get back to work would drive one of
+    // them out instead. Appending cannot do that.
+    label: 'Drive {A} out — let them be outlaw',
+    hint: 'A hand, for good',
+    kind: 'banish',
+  },
 ];
 
 /** Difficulty of talking two angry people down. */
