@@ -11,6 +11,7 @@ import { ELDER_TIES, GENERATION, KIN_GRIEF, PEER_TIES } from '../data/kin';
 import { MEN, WOMEN } from '../data/names';
 import type { Rng } from '../rng';
 import { chronicle } from './saga';
+import { hallPasses } from './household';
 import { ORPHAN_GRIEF } from '../data/lineage';
 
 /** What a death does to the children it leaves. */
@@ -108,6 +109,10 @@ export function bindKin(people: Person[], rng: Rng, pairs = 2): void {
  * is a thing a reader can check.
  */
 export function mourn(state: GameState, dead: Person): void {
+  // The hall passes here, for the reason this function exists at all: every
+  // death site already calls `mourn`, and a succession that forgets to be
+  // announced is the same bug as a death that forgets to be mourned.
+  hallPasses(state, dead);
   // A death that leaves a child costs the steading something for who is left
   // behind rather than only for who is gone — the item's "consequences beyond
   // subtraction", made concrete.

@@ -2006,6 +2006,54 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — A hall makes households, and the high seat passes** —
+  queue idea 7, and the measurement that decided what it could honestly be.
+
+  **The item asked for children who grow into working hands. They cannot,
+  and the arithmetic is not close.** Measured rather than assumed: every run
+  ends on **day 457** — four years and ten months, and a jarldom does not
+  change it, because `checkRunEnd` fires at `LONG_LIFE_WINTERS` whatever the
+  Thing decided. A generation is sixteen years, **1536 days**. A child born
+  in the first hour of a saga is four years old when it closes: **3.4 whole
+  sagas short**. `data/lineage.ts` reached this conclusion years ago and said
+  so plainly, and it was right; the queue item inherited a wish rather than a
+  premise. Growing children up means moving the end of a run, which moves
+  every balance curve this project has measured — a decision about what the
+  game IS, not a feature to slip in behind one. It is queued as its own
+  question now, and a bar pins the arithmetic so that if a saga ever gets
+  longer, the test fails and the question is reopened on purpose.
+
+  **What DID fit was the hole underneath it.** `bindKin` runs exactly once,
+  in `makeWarband`, and nothing in the game has ever made a tie since. So a
+  woman widowed on day forty spent the next four years alone in a hall of
+  six, and every child she bore afterwards was recorded with no father — not
+  because the game decided anything about her, but because the only code that
+  could bind two people had already run before the run began.
+
+  Now a settled hall at peace makes households: one man, one woman, both
+  grown and bound to nobody, a year between weddings. It binds the tie the
+  sim already understands, which is what lets a birth name a father again.
+  Measured across forty sagas with every tie broken: **1.32 weddings a saga,
+  and 36 of 40 halls see one** — enough that the door is real, rare enough
+  that a marginal steading is not a village fete.
+
+  **And the high seat passes out loud.** Leadership already moved by
+  seniority — `leaderOf` returns the next sworn in first-ashore order — but
+  it moved SILENTLY, so the most important thing that can happen to a band
+  happened without the saga noticing. It is announced now, with what the dead
+  leader left behind, and the end of the line is marked when there is nobody
+  to hand it to. Hooked into `mourn`, which every death site already calls:
+  a succession that forgets to be announced is the same bug as a death that
+  forgets to be mourned. Asked of who the dead WERE, not who leads now —
+  every death site clears `alive` before it mourns.
+
+  **No save bump:** `Person.kin` and `flags` already existed, so this is
+  behaviour rather than shape — the worldgen parity readings did not move and
+  only the replayed run did, which is exactly the signature of a rule change
+  rather than a state change. `port/parity.json` regenerated. Published odds
+  measured unchanged.
+
+
 - **2026-08-23 — The judgement that makes an enemy** — the Thing as a living
   court (queue idea 6), scoped by what was already there.
 

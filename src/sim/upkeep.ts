@@ -7,6 +7,7 @@ import { LONG_LIFE_WINTERS } from '../data/thing';
 import { worldBeat } from './beats';
 import { omenFor, weatherOn } from './weather';
 import { ageTheBand, childrenOf, maybeBirth } from './lineage';
+import { maybePair } from './household';
 import { CHILD_APPETITE } from '../data/lineage';
 import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../data/rations';
 import { hardshipById } from '../data/hardship';
@@ -298,6 +299,10 @@ export function passDay(state: GameState): boolean {
   if (ageTheBand(state)) {
     chronicle(state, 'Another year on this coast, and every one of us a year older for it.', 'plain');
   }
+  // A household made before a child can come of it: `maybeBirth` names a
+  // father only where a tie exists, so this is what reopens that door for a
+  // hall that has buried one.
+  maybePair(state);
   maybeBirth(state);
   // The evening's reading of the sky. This is the whole weather item: a gale
   // announced the night before is a decision about tomorrow, and the same

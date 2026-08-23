@@ -3664,8 +3664,8 @@
        }
       },
       "band": {
-       "hash": "f74bd69100ce0f46",
-       "size": 3537,
+       "hash": "a70604548a407a99",
+       "size": 3602,
        "samples": {
         "people": 13,
         "alive": 13,
@@ -3719,13 +3719,13 @@
        }
       },
       "run": {
-       "hash": "a6347ab4e7944c19",
-       "size": 484,
+       "hash": "7a90b3e9032504f2",
+       "size": 501,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 12,
+        "flags": 13,
         "battles": 1
        }
       }
@@ -3750,8 +3750,8 @@
        }
       },
       "band": {
-       "hash": "8494277ba54c1ae0",
-       "size": 4061,
+       "hash": "df2708891edac8bc",
+       "size": 4126,
        "samples": {
         "people": 13,
         "alive": 7,
@@ -3805,13 +3805,13 @@
        }
       },
       "run": {
-       "hash": "40ec82401d17b2d7",
-       "size": 475,
+       "hash": "e26a0e071b34caa6",
+       "size": 492,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 12,
+        "flags": 13,
         "battles": 1
        }
       }
@@ -3836,8 +3836,8 @@
        }
       },
       "band": {
-       "hash": "8494277ba54c1ae0",
-       "size": 4061,
+       "hash": "df2708891edac8bc",
+       "size": 4126,
        "samples": {
         "people": 13,
         "alive": 7,
@@ -3891,13 +3891,13 @@
        }
       },
       "run": {
-       "hash": "40ec82401d17b2d7",
-       "size": 475,
+       "hash": "e26a0e071b34caa6",
+       "size": 492,
        "samples": {
         "day": 312,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 12,
+        "flags": 13,
         "battles": 1
        }
       }
@@ -3921,8 +3921,8 @@
        }
       },
       "band": {
-       "hash": "0a82b8a6e4f9a607",
-       "size": 8350,
+       "hash": "a6da0bbf94669f60",
+       "size": 8387,
        "samples": {
         "people": 24,
         "alive": 4,
@@ -3976,13 +3976,13 @@
        }
       },
       "run": {
-       "hash": "1be8233933a00bb6",
-       "size": 859,
+       "hash": "7d35b3671812dbc6",
+       "size": 876,
        "samples": {
         "day": 457,
         "ended": "survived",
         "mode": "TRAVEL",
-        "flags": 16,
+        "flags": 17,
         "battles": 4
        }
       }
