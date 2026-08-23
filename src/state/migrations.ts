@@ -363,6 +363,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // Absent is that, and a ship at sea is not a thing to invent for a saga
   // that never launched one.
   42: (save) => ({ ...save, version: 43 }),
+  // Nobody was ever out at the fishing, because there was nowhere worth
+  // fishing. An old expedition keeps whatever purpose it launched under; the
+  // new one is only ever chosen going forward.
+  43: (save) => ({ ...save, version: 44 }),
 };
 
 export interface MigrationResult {

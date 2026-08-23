@@ -500,7 +500,7 @@ export interface Child {
  * because the decision is the same one — which hands can the hall spare —
  * and building a second roster card to ask it again would be worse.
  */
-export type Purpose = 'raid' | 'trade' | 'explore' | 'home';
+export type Purpose = 'raid' | 'trade' | 'explore' | 'fish' | 'home';
 
 /**
  * A party sent out from the steading. Once there is a settlement this is the

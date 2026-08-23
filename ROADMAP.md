@@ -2006,6 +2006,75 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — Somewhere on the water worth going to** — fishing grounds
+  (queue item 28), and the answer to the finding that killed item 23.
+
+  **The sea was not dull, it was empty.** The item-23 probe measured a game
+  that offers a wet hex on a fifth of every band's moving days, a third of the
+  menu on those days, and is declined ninety-four times in a hundred. Nothing
+  out there was worth the day. What the same measurements say bands actually
+  want is food: starvation causes eleven endings in twenty, more than
+  everything else put together.
+
+  **So the reason the sea needed is a larder, and the sea already half had
+  one.** Ocean pays 5 to a beach's 4 — measured, a day afloat and a day
+  foraging a valley both grossed 5.72 for a net of 2.73. That is not a
+  gradient anybody rows for. A fishing ground is that gradient made worth the
+  trip: it pays a multiple, and it pays ONLY to a crew floating on it. The
+  beach next door is still a beach. **You cannot walk to a fishing ground**,
+  and that refusal is the whole design.
+
+  **Derived, not stored,** for the two reasons everything else on this map is:
+  worldgen's hash is a contract with the port, and a fact that can be computed
+  does not belong in a save. Knowing about one needs no field either — the
+  landmark note says it best, a ground sits on a hex and the fog already
+  remembers which hexes have been seen. The map draws them as birds working
+  the water, because that is what tells a crew.
+
+  **The multiplier was set from arithmetic, and the first cut of it was
+  wrong.** It was picked at 2.6 by reasoning about NET food per day and
+  measured at forty times the land verbs over five days — a solved food
+  problem rather than a reason to sail. Upkeep is a flat 3 a day, so
+  multiplying the GROSS take when the baseline net is small is hugely
+  leveraged: 2.6x gross is 4.3x net. At 2x a five-day trip returns 4.5 a day
+  against 3.3 for staying home, about half again as good.
+
+  **Then the diagnosis that made it real.** With the ground built, the probe
+  barely moved, and the instrument said why: on 4492 days a settled band had a
+  known ground within TWO HEXES and worked almost none of them — 2747 of those
+  days it was well fed, and on 1617 it was settled and could not move.
+  `moveOptions` returns nothing once the posts are in. The sea was not being
+  declined by a settled band; it was shut to one, and settled bands are the
+  ones that starve. The larder was out there and the door was locked. So a
+  settled band can now send an errand to the fishing, which is what opens it.
+
+  **The errand cost thirteen points before it earned two.** Its first cut
+  launched whenever the store fell under eight days, in any season, for a
+  ground up to seven hexes out, and As It Lies fell from 63% to 50% — the same
+  failure the raid errand had, and the same one the expedition harness has
+  been saying since 4.2: emptying the steading kills. A larder on the water
+  does not repeal it. Constrained to a genuine shortage, the growing half of
+  the year, and a ground close enough to be a day's row, the odds came back:
+
+  | | baseline | with fisheries |
+  |---|---|---|
+  | A Fair Country, saw spring | 87% | 87% |
+  | As It Lies, saw spring | 63% | 65% |
+  | A Hard Country, saw spring | 17% | 17% |
+
+  One saga in sixty is noise, and that is the right result: the sea is a
+  reachable OPTION now, not a free win. What did move is the traffic — sagas
+  that ever floated 9/40 to 27/40, water hexes entered 0.6 to 1.8 a saga,
+  water days taken 80 to 256, and the median band's nearest approach to a
+  ground from one hex to nought, which is to say they now stand on them.
+
+  **A count in a bar became a list.** `every purpose is offered, named and
+  explained` asserted `toHaveLength(3)` — a bar that must be edited whenever an
+  errand is added and has no opinion about which errands exist. It now asks
+  for each door by name.
+
+  Twelfth rule for the port. 1206 tests, all ten browser bars.
+
 - **2026-08-23 — The sea is offered and declined** — queue item 23 (tidal
   races and named waters) measured, and not built. The measurement is the
   deliverable.

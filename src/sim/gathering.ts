@@ -15,6 +15,7 @@ import { worldBeat } from './beats';
 import { actionRng, advance, atSea, reveal } from './road';
 import { landmarkHere } from './landmark';
 import { abundance, noteTake, type Larder } from './abundance';
+import { fisheryYield } from './fishery';
 
 /** Water worth putting a net in, from where we are standing (or floating). */
 function fishableWater(state: GameState): boolean {
@@ -193,7 +194,13 @@ export function doFish(prev: GameState, state: GameState): GameState {
   const party = state.party;
   const here = state.world.tiles[key(party.at)]!;
   const def = terrainDef(here.terrain);
-  const base = Math.max(def.fish, here.river ? 3 : 0, 2);
+  // A ground pays a multiple, and only to a crew floating on it — see
+  // sim/fishery.ts. Folded into the BASE rather than into the take, so the
+  // larder still thins with the same rule as any other worked hex: a ground
+  // fished four days running is a ground that has been fished four days
+  // running, and the boat has to move.
+  const ground = fisheryYield(state, party.at);
+  const base = Math.max(def.fish, here.river ? 3 : 0, 2) * ground;
   const { amount, left } = gather(state, base, 'wits', 'fish');
   party.food += amount;
   worldBeat(state, { kind: 'gathered', how: 'fish', got: amount });
@@ -205,7 +212,9 @@ export function doFish(prev: GameState, state: GameState): GameState {
     amount > 0
       ? left < 0.6
         ? `The nets came up with ${amount}. This water has been fished hard.`
-        : `The nets came up with ${amount} of fish.`
+        : ground > 1
+          ? `The nets came up with ${amount} of fish. There is a ground under us here.`
+          : `The nets came up with ${amount} of fish.`
       : 'The nets came up empty.',
     amount > 0 ? 'plain' : 'grim',
   );

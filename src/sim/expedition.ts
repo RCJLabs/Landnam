@@ -49,6 +49,17 @@ export const PURPOSES: PurposeDef[] = [
     sight: 0,
   },
   {
+    id: 'fish',
+    name: 'Take the boat out to the fishing',
+    blurb: 'Row out to a ground we know and work it while it lasts. The best '
+      + 'food in the country, and only a crew afloat on it can have any.',
+    // Quiet work by design. A fishing crew is not looking for anybody, and
+    // the ground is close enough to home that there is little country to
+    // find on the way — the errand's value is the catch, not the stir.
+    stir: 0.8,
+    sight: 0,
+  },
+  {
     id: 'raid',
     name: 'Go out under arms',
     blurb: 'Find somebody worth taking from. What you win, you carry home.',
@@ -199,6 +210,8 @@ function purposeLine(purpose: Purpose): string {
       return 'under arms';
     case 'trade':
       return 'to barter';
+    case 'fish':
+      return 'to the fishing';
     default:
       return 'to see the country';
   }

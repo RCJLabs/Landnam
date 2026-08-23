@@ -81,7 +81,13 @@
 // v43 (voyage): the root gained the optional `voyage` — the knarr away over
 //                the open sea with a crew aboard, gone from the map for a
 //                season. Absent is a band that never sailed for home.
-export const SAVE_VERSION = 43;
+// v44 (fisheries): Purpose gained 'fish' — the errand a settled band sends
+//                   out to work a fishing ground. The grounds themselves are
+//                   DERIVED from the seed (sim/fishery.ts) and stored nowhere,
+//                   and which ones the band knows needs no field either: a
+//                   ground sits on a hex, and the fog already remembers which
+//                   hexes have been seen. Only the errand is new shape.
+export const SAVE_VERSION = 44;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

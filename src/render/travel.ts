@@ -8,6 +8,7 @@ import { clanKind, standingFor } from '../data/clans';
 import { atSea, deepOcean, moveOptions } from '../sim/road';
 import { rivalSettled } from '../sim/rival';
 import { charted, crossed } from '../sim/skerry';
+import { knownGrounds } from '../sim/fishery';
 import { landmarkAt } from '../sim/landmark';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
@@ -224,6 +225,17 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       if (!state.world.seen[k]) continue;
       const p = toPixel(fromKey(k), HEX_SIZE);
       layerOverlay.append(skerryMark(p.x, p.y));
+    }
+
+    // Fishing grounds, once the band has laid eyes on the water.
+    //
+    // Birds rather than a marker: what tells a crew a ground is under them
+    // is a cloud of gulls working it, and the map says the same thing the
+    // sea does. No chart of its own — the ground is derived from the seed
+    // and the fog already remembers which water has been looked at.
+    for (const at of knownGrounds(state)) {
+      const p = toPixel(at, HEX_SIZE);
+      layerOverlay.append(fishingMark(p.x, p.y));
     }
 
     // Other people's places, once somebody has laid eyes on them.
@@ -798,6 +810,36 @@ function skerryMark(x: number, y: number): SVGGElement {
         stroke: '#dfe6ea',
         'stroke-width': 0.8,
         opacity: 0.95,
+      }),
+    );
+  }
+  return g;
+}
+
+/**
+ * A ground worth rowing to, drawn as the birds that give it away.
+ *
+ * Three gull strokes rather than a symbol. A marker would read as one more
+ * thing to tap at phone size, and this is not a place the band goes TO — it
+ * is a place the sea is doing something, which is what birds mean.
+ */
+function fishingMark(x: number, y: number): SVGGElement {
+  const g = svgEl('g', { class: 'fishing' });
+  const s = HEX_SIZE * 0.16;
+  for (const [dx, dy, scale] of [
+    [-s * 1.3, -s * 0.5, 0.9],
+    [s * 0.2, -s * 1.3, 1],
+    [s * 1.2, s * 0.2, 0.8],
+  ] as const) {
+    g.append(
+      svgEl('path', {
+        d: `M ${x + dx - s * scale} ${y + dy} q ${s * scale} ${-s * 0.7 * scale} `
+          + `${s * 2 * scale} 0`,
+        fill: 'none',
+        stroke: '#f2f7fa',
+        'stroke-width': 1.1,
+        'stroke-linecap': 'round',
+        opacity: 0.9,
       }),
     );
   }

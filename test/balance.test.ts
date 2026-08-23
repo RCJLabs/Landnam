@@ -53,6 +53,8 @@ import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
 import { moveOptions, atSea, isCoastalWater, ROW_REACH } from '../src/sim/road';
 import { canGather, canFish } from '../src/sim/gathering';
+import { groundAt } from '../src/sim/fishery';
+import { abundance } from '../src/sim/abundance';
 import { canFound, siteReport } from '../src/sim/site';
 import { holed } from '../src/sim/ship';
 import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
@@ -543,6 +545,23 @@ let settleNotBefore = 0;
  */
 const VERBS = { throw: true, shove: true, defend: true, dash: false };
 
+
+/** The nearest fishing ground the band has actually laid eyes on. */
+function nearestKnownGround(
+  state: GameState,
+  from: {q:number;r:number},
+): {q:number;r:number} | null {
+  let best: {q:number;r:number}|null = null;
+  let bestD = 99;
+  for (const k of Object.keys(state.world.seen)) {
+    const at = fromKey(k);
+    if (!groundAt(state, at)) continue;
+    const d = distance(at, from);
+    if (d < bestD) { bestD = d; best = at; }
+  }
+  return best;
+}
+
 function step(state: GameState): Action {
   if (state.event) {
     return state.event.outcome ? { type:'DISMISS_EVENT' } : { type:'CHOOSE', index:0 };
@@ -812,6 +831,43 @@ function step(state: GameState): Action {
         return { type:'CAMP' };
       }
 
+      if (out.purpose === 'fish') {
+        // Out to the fishing. Three things, in order: work the ground under
+        // us while it is worth working, come home when it is not, and
+        // otherwise row for the nearest one we know.
+        const ground = nearestKnownGround(state, state.party.at);
+        if (!out.returning && atSea(state) && groundAt(state, state.party.at)) {
+          // Stop when the ground is thin rather than when the days run out.
+          // `abundance` falls a quarter a day past the grace (sim/abundance
+          // .ts), so a crew that works one until it is bare is spending days
+          // on a floor yield — the whole point of knowing several grounds is
+          // that you move between them.
+          if (abundance(state, 'fish', state.party.at) > 0.5 && canFish(state)) {
+            return { type:'FISH' };
+          }
+        }
+        // Home much sooner than a raid. The ground is a day's row off the
+        // steading, so a crew still out after a week is not fishing, it is
+        // away — and away is what the hall cannot afford.
+        if (!out.returning && (!ground || state.day - out.launchedOn >= FISH_DAYS)) {
+          return { type:'TURN_HOME' };
+        }
+        const aim = out.returning ? state.settlement.at : ground!;
+        const optsF = moveOptions(state);
+        if (optsF.length > 0) {
+          // The same sea-pull the raid errand uses, and for the same reason:
+          // greedy stepping toward a hex of water only ever touches water on
+          // the last step, and a knarr under way covers three hexes to a
+          // walker's one.
+          const afloat = (at: {q:number;r:number}) =>
+            (!out.returning && isCoastalWater(state, at)) ? SEA_PULL : 0;
+          const to = optsF.reduce((a, b) =>
+            (distance(b, aim) - afloat(b)) < (distance(a, aim) - afloat(a)) ? b : a);
+          return { type:'MOVE', to };
+        }
+        return { type:'CAMP' };
+      }
+
       if (out.purpose === 'raid') {
         // Standing on the prize: take it. (Afloat BESIDE it is handled far
         // above, by the strandhögg rule, which fires wherever it is legal.)
@@ -928,7 +984,50 @@ function step(state: GameState): Action {
     // back before the mark matters, and only for something close enough to
     // be a raid rather than a voyage.
     const season = seasonOf(state.day);
-    const inSeason = season === 'spring' || season === 'summer';
+    // THE FISHING ERRAND, and it is asked before every other errand because
+    // it answers the thing that actually kills bands.
+    //
+    // The diagnostic that produced it: on 4492 days a settled band had a
+    // known fishing ground within two hexes, and worked one on almost none
+    // of them — 2747 of those days it was well fed, and on 1617 it was
+    // SETTLED AND COULD NOT MOVE. `moveOptions` returns nothing once the
+    // posts are in, so the sea is not declined by a settled band, it is
+    // unreachable to one. Starvation is the cause of eleven endings in
+    // twenty. The larder was out there and the door was shut.
+    //
+    // Small crew, and only while genuinely short. The lesson written above
+    // holds and is not weakened here: emptying the steading kills, and a
+    // fishing trip that costs the hall its hands through harvest would be a
+    // worse bargain than the hunger it answers.
+    //
+    // The two constraints written above for the raid errand apply here and
+    // the first cut of this had NEITHER — it launched whenever the store fell
+    // under eight days, in any season, for a ground up to seven hexes out.
+    // Measured, that cost As It Lies thirteen points of its spring odds
+    // (63% to 50%), which is the same failure the raid errand had and the
+    // same one the expedition harness has been saying since 4.2: emptying
+    // the steading kills. A larder on the water does not repeal it.
+    //
+    // So: genuinely short rather than merely not full, close enough to be a
+    // day's row rather than a voyage, and not in the half of the year when
+    // the hands are what stands between the hall and the mark.
+    const fedDays = state.party.food / Math.max(1, foodPerDay(state));
+    const growing = season === 'spring' || season === 'summer';
+    if (fedDays < 5 && growing) {
+      let ground: {q:number;r:number}|null = null; let groundD = 5;
+      for (const k of Object.keys(state.world.seen)) {
+        const at = fromKey(k);
+        if (!groundAt(state, at)) continue;
+        const d = distance(at, state.settlement!.at);
+        if (d < groundD) { groundD = d; ground = at; }
+      }
+      const boat = sworn(state.party.people).slice(0, 2).map(p => p.id);
+      if (ground && boat.length >= 2 && launchBlocker(state, boat) === null) {
+        return { type:'LAUNCH', members: boat, purpose: 'fish' };
+      }
+    }
+
+    const inSeason = growing;
     // Nothing known worth taking, and a band that lives by taking. The
     // knowledge economy from item 1 hands the country out over a TRADING
     // counter, so a policy that will not trade is blind — measured, the
@@ -988,6 +1087,41 @@ function step(state: GameState): Action {
   const here = state.world.tiles[key(state.party.at)]!.terrain;
   const wooded = here === 'forest' || here === 'hills' || here === 'valley';
   if (nights < 6 && wooded) return { type:'CAMP' };
+  // THE FISHING GROUND, and it is asked before the land verbs rather than
+  // after them.
+  //
+  // The first cut put it after, gated on `days < 6`, and it barely moved:
+  // the rule below returns FORAGE at `days < 4`, so the only window where
+  // the sea could win was the sliver between four days' food and six. The
+  // diagnostic said the same thing from the other end — 38 of 40 sagas SAW a
+  // ground and the median band walked within ONE HEX of one without ever
+  // stepping on it. Reach was never the constraint; the order was.
+  //
+  // Deliberately not clairvoyant. It steers only for water the band has
+  // actually laid eyes on, and only from two hexes out: a hungry crew that
+  // can see birds working a ground next door and rows to it is obvious play,
+  // not clever play, and a bot that marched across a country for one would
+  // be measuring a game nobody plays.
+  const shortOfFood = days < 6;
+  if (shortOfFood && atSea(state) && groundAt(state, state.party.at) && canFish(state)) {
+    return { type:'FISH' };
+  }
+  if (shortOfFood) {
+    let ground: {q:number;r:number}|null = null; let groundD = 3;
+    for (const k of Object.keys(state.world.seen)) {
+      const at = fromKey(k);
+      if (!groundAt(state, at)) continue;
+      const d = distance(at, state.party.at);
+      if (d > 0 && d < groundD) { groundD = d; ground = at; }
+    }
+    if (ground) {
+      const t = ground;
+      const toward = moveOptions(state);
+      if (toward.length > 0) {
+        return { type:'MOVE', to: toward.reduce((a,b)=>distance(b,t)<distance(a,t)?b:a) };
+      }
+    }
+  }
   if (days < 4 && canGather(state)) return { type:'FORAGE' };
   if (days < 4 && canFish(state)) return { type:'FISH' };
 
@@ -1095,6 +1229,8 @@ const SHIP_PULL = 4;
  * not the binding constraint, and the thing that is has not been found yet.
  */
 const RAID_DAYS = 10;
+/** A fishing trip is an errand of days, not a fortnight. See the fish case. */
+const FISH_DAYS = 6;
 
 /**
  * The nearest place still worth taking, or null.
@@ -3237,6 +3373,16 @@ describe('the sea is reached', () => {
     let coastalOfWorld = 0;
     let seenOfWorld = 0;
     let namedSize = 0;
+    let groundsInWorld = 0;
+    let groundsSeen = 0;
+    let groundsWorked = 0;
+    let sagasSeeingOne = 0;
+    const closest: number[] = [];
+    let dayGroundNear = 0;
+    let dayNearButFed = 0;
+    let dayNearButSettled = 0;
+    let dayNearButStuck = 0;
+    let dayNearAndFree = 0;
     let daysWithAChoice = 0;
     let daysWaterOffered = 0;
     let daysWaterTaken = 0;
@@ -3304,6 +3450,25 @@ describe('the sea is reached', () => {
                 }
               }
             }
+            // WHY the ground is not worked, counted at the moment of the
+            // choice rather than inferred from the outcome.
+            {
+              let near = 99;
+              for (const k of Object.keys(before.world.seen)) {
+                const h = fromKey(k);
+                if (!groundAt(before, h)) continue;
+                const d = distance(h, before.party.at);
+                if (d < near) near = d;
+              }
+              if (near <= 2) {
+                dayGroundNear += 1;
+                const fed = before.party.food / Math.max(1, foodPerDay(before));
+                if (fed >= 6) dayNearButFed += 1;
+                else if (before.settlement && !before.expedition) dayNearButSettled += 1;
+                else if (moveOptions(before).length === 0) dayNearButStuck += 1;
+                else dayNearAndFree += 1;
+              }
+            }
             const at = after.party.at;
             if (key(at) === key(before.party.at)) return;
             if (after.world.tiles[key(at)]?.terrain !== 'ocean') return;
@@ -3317,6 +3482,27 @@ describe('the sea is reached', () => {
           coastalOfWorld += coastal.length;
           seenOfWorld += coastal.filter((k) => state.world.seen[k] !== undefined).length;
           if (wet.size > 0) wetSagas += 1;
+          // Item 28's diagnostic: a fishing ground is only a reason to sail
+          // if the band ever LEARNS one is there. Counted three ways, because
+          // "never used" has three different causes and they need different
+          // fixes: none in the world, none ever seen, or seen and declined.
+          const allGrounds = Object.keys(state.world.tiles)
+            .map(fromKey).filter((h) => groundAt(state, h));
+          groundsInWorld += allGrounds.length;
+          const seenG = allGrounds.filter((h) => state.world.seen[key(h)] !== undefined);
+          groundsSeen += seenG.length;
+          if (seenG.length > 0) sagasSeeingOne += 1;
+          groundsWorked += allGrounds.filter((h) => wet.has(key(h))).length;
+          // And how close the band ever got to the nearest one, which is the
+          // number that says whether reach or reward is the binding thing.
+          let best = 99;
+          for (const g of allGrounds) {
+            for (const k of Object.keys(state.world.trod)) {
+              const d = distance(g, fromKey(k));
+              if (d < best) best = d;
+            }
+          }
+          if (best < 99) closest.push(best);
           // A body is SEEN when the band has lifted the fog off a third of
           // it — the test a name on the map would have to pass.
           const perBody = new Map<number, { all: number; seen: number }>();
@@ -3366,7 +3552,13 @@ describe('the sea is reached', () => {
         `${per(bodiesGlimpsed)} ever glimpsed, ${per(bodiesSeen)} a third uncovered\n` +
         `  the choice: ${daysWithAChoice} days with a move to make, ${daysWaterOffered} of them ` +
         `offering water (${((wetOptions / Math.max(1, allOptions)) * 100).toFixed(0)}% of the options ` +
-        `on those days), ${daysWaterTaken} taken`,
+        `on those days), ${daysWaterTaken} taken\n` +
+        `  fishing grounds: ${per(groundsInWorld)} in the world, ${per(groundsSeen)} ever seen ` +
+        `(${sagasSeeingOne}/${sagas} sagas saw one), ${per(groundsWorked)} ever worked; ` +
+        `nearest approach median ${closest.sort((a, b) => a - b)[Math.floor(closest.length / 2)] ?? '-'} hexes\n` +
+        `  days with a known ground within 2: ${dayGroundNear} — ${dayNearButFed} well fed, ` +
+        `${dayNearButSettled} settled and cannot move, ${dayNearButStuck} no move at all, ` +
+        `${dayNearAndFree} hungry and free to go`,
     );
 
     // The probe asserts only that its instrument still works — that the

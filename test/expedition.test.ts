@@ -414,7 +414,15 @@ describe('expeditions through the game', () => {
     // name rather than by dropping the rule for everybody.
     const OFF_THE_MAP = new Set(['home']);
     const walking = PURPOSES.filter((p) => !OFF_THE_MAP.has(p.id));
-    expect(walking).toHaveLength(3);
+    // Named rather than counted. This was `toHaveLength(3)`, which is a bar
+    // that has to be edited every time an errand is added and says nothing
+    // about which errands exist — it failed on the fishing errand without
+    // having an opinion about it. What the game actually owes is that each
+    // of these doors is open, so each is asked for by name.
+    for (const id of ['explore', 'trade', 'raid', 'fish']) {
+      expect(walking.some((p) => p.id === id), `no ${id} errand`).toBe(true);
+    }
+    expect(new Set(PURPOSES.map((p) => p.id)).size).toBe(PURPOSES.length);
 
     for (const def of PURPOSES) {
       expect(def.name.length).toBeGreaterThan(3);
