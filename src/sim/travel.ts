@@ -22,6 +22,7 @@ import { rowThrough } from './skerry';
 import { landmarkAt, landmarkName } from './landmark';
 import { breakGround, canMakeWay, wayDays, wayLine } from './ways';
 import { callTheBlot } from './blot';
+import { layDownSaga, sailOn } from './landnam';
 import { landmarkDef } from '../data/landmarks';
 import { springStrake, unseaworthy } from './ship';
 import { shakeNerve } from './morale';
@@ -35,6 +36,8 @@ export type TravelAction =
   | { type: 'CAMP' }
   | { type: 'MAKE_WAY' }
   | { type: 'HOLD_BLOT' }
+  | { type: 'SAIL_ON' }
+  | { type: 'LAY_DOWN_SAGA' }
   | { type: 'FORAGE' }
   | { type: 'HUNT' }
   | { type: 'FISH' }
@@ -125,6 +128,16 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
           'plain',
         );
       }
+      return state;
+    }
+
+    case 'SAIL_ON': {
+      if (!sailOn(state)) return prev;
+      return state;
+    }
+
+    case 'LAY_DOWN_SAGA': {
+      if (!layDownSaga(state)) return prev;
       return state;
     }
 

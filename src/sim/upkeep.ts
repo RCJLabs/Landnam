@@ -11,6 +11,7 @@ import { maybePair } from './household';
 import { careToday, maybeSpread } from './sickness';
 import { oathDay } from './oath';
 import { atSeaAway, voyageDay } from './voyage';
+import { markReckoning } from './landnam';
 import { CHILD_APPETITE } from '../data/lineage';
 import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../data/rations';
 import { hardshipById } from '../data/hardship';
@@ -430,20 +431,23 @@ function seasonOpening(season: string): string {
 export function checkRunEnd(state: GameState, _forage: number): void {
   const alive = living(state.party.people);
 
-  // A whole life on that coast, without ever being proclaimed anything. Not a
-  // failure — but the run has to stop somewhere, and a band that has stood
-  // five winters has said everything it is going to say.
+  // FIVE WINTERS USED TO END IT HERE. It does not any more.
+  //
+  // The old rule said "the run has to stop somewhere, and a band that has
+  // stood five winters has said everything it is going to say", and it fired
+  // whatever had been built — measured, day 457, jarldom or no jarldom. That
+  // was right while there was one coast. But a landnám is a thing people did
+  // more than once: a coast gives what it has, and then a household goes back
+  // on the ship and takes land somewhere else.
+  //
+  // So this is a RECKONING now. The saga says the coast is finished; laying
+  // it down and sailing on are both deeds the player takes. See sim/landnam.
+  //
+  // And it does NOT return: the endings below still apply. A band past the
+  // reckoning can still starve and can still break, and an early return here
+  // would have made five winters a kind of immortality.
   if (wintersStood(state.day) >= LONG_LIFE_WINTERS && alive.length > 0) {
-    const home = state.settlement;
-    endRun(state, 'survived', home ? `${home.name} Endured` : 'We Held the Land', [
-      `${alive.length} of ${state.party.people.length} were still there after ${wintersStood(state.day)} winters.`,
-      home
-        ? `${home.name} was founded on day ${home.foundedOn} and never fell.`
-        : 'We never set a post in the ground. We wintered where we stood, year on year.',
-      'No title, and no need of one.',
-    ]);
-    appendVerdict(state);
-    return;
+    markReckoning(state);
   }
 
   if (alive.length === 0) {

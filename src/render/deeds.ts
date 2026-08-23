@@ -14,6 +14,7 @@ import { canFish, canGather } from '../sim/gathering';
 import { thinWord, thinness, type Larder } from '../sim/abundance';
 import { WAY_REASON, wayBlocker, wayDays } from '../sim/ways';
 import { canHoldBlot } from '../sim/blot';
+import { SAIL_ON_REASON, reckoningDue, sailOnBlocker } from '../sim/landnam';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
 import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
@@ -135,6 +136,29 @@ export function deedsFor(
         run: () => {},
       });
     }
+  }
+
+  // The reckoning. Five winters used to end the saga here; now the two ways
+  // on are deeds, and both of them are the player's.
+  if (reckoningDue(state) && !state.end) {
+    const blocked = sailOnBlocker(state);
+    deeds.push({
+      id: 'sail-on',
+      label: 'Take land somewhere else',
+      blurb: 'Put what the knarr holds aboard her, leave this coast standing '
+        + 'empty, and go and do it again on a shore nobody here has walked.',
+      tone: 'weighty',
+      ...(blocked ? { blocked: SAIL_ON_REASON[blocked] } : {}),
+      run: () => { if (!blocked) dispatch({ type: 'SAIL_ON' }); },
+    });
+    deeds.push({
+      id: 'lay-down-saga',
+      label: 'Lay the saga down here',
+      blurb: 'Stop. This coast is what we came for and what we made of it is '
+        + 'what there is to say.',
+      tone: 'weighty',
+      run: () => dispatch({ type: 'LAY_DOWN_SAGA' }),
+    });
   }
 
   // The blood-month rite. Only at the hall, only in autumn, and only when

@@ -2006,6 +2006,67 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — Five winters is a reckoning, not an ending** — a saga can now
+  outlive the coast it started on (queue item 24).
+
+  **The wall was measurable and it was always in the same place.** `checkRunEnd`
+  fired `survived` the day `wintersStood` hit five, whatever the band had built,
+  and the harness read day 457 every time. Every long-game measurement in
+  `balance.test.ts` was really a measurement of the wall: bands that were going
+  to make it stopped there because the code said so, not because the coast had
+  finished with them.
+
+  **A landnám is a thing people did, not a place they were.** They did it more
+  than once. A coast gives what it has — the larder thins, another
+  landnámsmaðr's posts are in the good ground, the ways are cut and there is
+  nothing left to cut — and the ninth-century answer was to put the household
+  back aboard and go and take land somewhere else. So the five-winter mark says
+  so, once, in the saga log, and then offers two deeds. Both are the player's.
+
+  **"Lay the saga down here" is the old ending, chosen.** The lines are the ones
+  `checkRunEnd` used to write, because what they said was true and the only
+  thing wrong with them was that nobody picked them. It is a deed on the Act
+  sheet now, and it names the steading exactly as it did before.
+
+  **"Take land somewhere else" derives a new world** from `${seed}:landnam:N`,
+  the same rule every derived thing in this game follows, so a replay finds the
+  same second island. What crosses is the band and its memory: people, bairns,
+  saga, tally, lore, grudges. What does not is the coast — its country, its
+  neighbours, the rival's fences, and the man you drove out of your hall, who
+  is on that island and you are not. Stores are capped by `hold(ship)`, which
+  is the cost: five winters of larder does not fit in a knarr, and what will
+  not fit stays on the beach.
+
+  **`checkRunEnd` deliberately does not return early there.** An early return
+  would have made five winters a kind of immortality — the band would stop
+  starving, stop freezing, stop being killable, which is the opposite of what
+  removing the wall was for. The reckoning is a door, not a roof.
+
+  **What it did to the long game, measured at twenty seeds to day 500:** on the
+  balanced country the `survived` ending is simply gone from the tally, and
+  7/20 sagas are still standing when the harness stops instead of being told
+  they are finished at 457 — average length 315 days against a wall that used
+  to cap it. On the hard country nothing moved (avg 76 days), because almost
+  nothing there ever reached the wall to be stopped by it. That asymmetry is
+  the finding: the endgame was content that only the gentle country ever saw,
+  and now the gentle country has somewhere to spend it.
+
+  **Two bars had to be rewritten rather than loosened.** `surviving is no longer
+  winning` and `the steading is named in the ending you earn by enduring` both
+  asserted an ending that fires at you; their INTENT — that enduring earns no
+  title, and that the steading is named in what you get — survives the change
+  intact, so both now reach that ending through the deed and assert the same
+  things about it. Neither bar was weakened; one word in each title changed
+  from *earn* to *choose*.
+
+  **The reach bar gained a screen.** The deeds sheet at the reckoning is the
+  longest it ever gets, and measuring it on day 1 said nothing about the day it
+  matters: `npm run reach` now winds the calendar on, clears what the skipped
+  days raise, and reads the sheet where the two heaviest deeds in the game sit
+  — 78% and 89% of the screen, both under the thumb, everything clearing 44px.
+
+  Eleventh rule for the port. 1196 tests, all ten browser bars.
+
 - **2026-08-23 — The knarr goes somewhere that is not on the map** — the ship
   as a place (queue idea 10), and the last of the ten.
 

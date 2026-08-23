@@ -3910,8 +3910,8 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "a86276fec5b2eff1",
-       "size": 80575,
+       "hash": "abb0ccd618f8e899",
+       "size": 80587,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3976,13 +3976,13 @@
        }
       },
       "run": {
-       "hash": "8137f84a141096e3",
-       "size": 876,
+       "hash": "c9580c60610cabc3",
+       "size": 609,
        "samples": {
         "day": 457,
-        "ended": "survived",
+        "ended": "-",
         "mode": "TRAVEL",
-        "flags": 17,
+        "flags": 18,
         "battles": 4
        }
       }

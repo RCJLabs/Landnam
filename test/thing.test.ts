@@ -24,6 +24,7 @@ import { passDay } from '../src/sim/upkeep';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
 import { nextThaw, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from '../src/sim/calendar';
+import { layDownSaga, reckoningDue } from '../src/sim/landnam';
 import { checkOdds } from '../src/sim/events';
 import { angerLevel, driftStandings, goodwillLevel, shiftStanding, seeNeighbours } from '../src/sim/neighbours';
 import { forecast, markVisible } from '../src/sim/winter';
@@ -147,14 +148,37 @@ describe('THE BAR — surviving is no longer winning', () => {
     expect(forecast(state).days).toBe(40);
   });
 
-  it('a whole life on the coast ends the run on its own, without a title', () => {
+  it('a whole life on the coast still earns no title — but it is now a choice', () => {
+    // THIS BAR CHANGED ON PURPOSE, 2026-08-23, and only in its second half.
+    //
+    // What it was written to hold is that SURVIVING IS NOT WINNING: endure
+    // five winters and the saga closes without a title. That is untouched
+    // and asserted below.
+    //
+    // What it also used to hold — that the run ends there ON ITS OWN — was
+    // the premise the households work ran into: a saga capped at four years
+    // and ten months cannot contain a sixteen-year generation. A landnám is
+    // a thing people did more than once, so five winters is a RECKONING now
+    // and the two ways on are both deeds: lay it down here, or put what the
+    // knarr holds aboard and take land somewhere else.
     const state = settled('end-long');
     state.day = LONG_LIFE_WINTERS * YEAR_LENGTH - 24; // the last winter
     state.party.food = 99999;
     state.party.firewood = 99999;
-    for (let i = 0; i < 200 && !state.end; i++) passDay(state);
-    expect(state.end?.cause).toBe('survived');
+    for (let i = 0; i < 200 && !state.end && !reckoningDue(state); i++) passDay(state);
+
+    // The coast is finished with them, and the saga says so...
     expect(wintersStood(state.day)).toBeGreaterThanOrEqual(LONG_LIFE_WINTERS);
+    expect(reckoningDue(state)).toBe(true);
+    // ...and it does NOT close by itself any more.
+    expect(state.end).toBeUndefined();
+
+    // Laying it down is the old ending, and it still hands out no title.
+    // (A card on the table refuses the deed, as it refuses every deed — the
+    // player reads it first. Not what this bar is about.)
+    state.event = undefined;
+    expect(layDownSaga(state)).toBe(true);
+    expect(state.end?.cause).toBe('survived');
     expect(state.end!.lines.join(' ')).toContain('No title');
   });
 

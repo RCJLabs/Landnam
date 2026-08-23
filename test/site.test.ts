@@ -16,6 +16,7 @@ import { stream } from '../src/rng';
 import { YEAR_LENGTH } from '../src/sim/calendar';
 import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
+import { layDownSaga } from '../src/sim/landnam';
 import {
   atHome,
   canFound,
@@ -443,13 +444,20 @@ describe('home ground pays for itself', () => {
     expect(eventChance(open)).toBe(eventChance({ ...open, settlement: undefined }));
   });
 
-  it('the steading is named in the ending you earn by enduring', () => {
+  it('the steading is named in the ending you choose by enduring', () => {
     const state = homed('ending', {});
-    // Since 4.6 one winter is not an ending. A whole life on that coast is.
+    // Since 4.6 one winter is not an ending. A whole life on that coast is —
+    // and since the landnám change that life is a RECKONING you answer, not
+    // an ending that fires at you. The steading still has to be named in it.
     state.day = 4 * YEAR_LENGTH + 72;
     state.party.food = 9999;
     state.party.firewood = 9999;
     passDay(state);
+    expect(state.end).toBeUndefined();
+    // A card raised on the way there would block the deed; it is the day's
+    // business, not this bar's.
+    state.event = undefined;
+    expect(layDownSaga(state)).toBe(true);
     expect(state.end?.cause).toBe('survived');
     expect(state.end!.title).toContain('Testholt');
     expect(state.end!.lines.some((l) => l.includes('Testholt'))).toBe(true);

@@ -213,6 +213,28 @@ await look('band', async (p) => {
   await p.locator('button', { hasText: /^Band$/ }).click();
   await p.waitForTimeout(500);
 });
+// The deeds sheet at its LONGEST. Since the five-winter reckoning became a
+// choice rather than an ending, the two heaviest deeds in the game — sail on,
+// or lay the saga down — are appended to a card that was already the tallest
+// thing on the screen. Measuring the sheet on day 1 says nothing about the
+// day it matters, which is the state a player only reaches after five winters.
+await look('deeds at the reckoning', async (p) => {
+  await p.evaluate(() => {
+    window.landnam.stock(400, 400);
+    window.landnam.skip(4 * 96 + 80);
+  });
+  await p.waitForTimeout(400);
+  // Winding the calendar on raises whatever the skipped days had to say;
+  // clear it, the way the fresh-run path above does, before asking for Act.
+  for (let i = 0; i < 8; i += 1) {
+    const card = p.locator('.overlay-slot button, .overlay button').first();
+    if (!(await card.count())) break;
+    await card.click().catch(() => {});
+    await p.waitForTimeout(250);
+  }
+  await p.locator('button', { hasText: /^Act$/ }).click();
+  await p.waitForTimeout(600);
+});
 if (COLONY) {
   await look('colony work', null, COLONY);
   await look('colony build', async (p) => {
