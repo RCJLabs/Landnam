@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
-    odds: { spring: 0.87, ruled: 0.4 },
+    odds: { spring: 0.86, ruled: 0.28 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.72, ruled: 0.1 },
+    odds: { spring: 0.53, ruled: 0.15 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.23, ruled: 0.05 },
+    odds: { spring: 0.17, ruled: 0.06 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -159,31 +159,63 @@ export const DEFAULT_HARDSHIP: HardshipId = 'fair';
 export const BALANCED_HARDSHIP: HardshipId = 'even';
 
 /**
- * Where the numbers above came from, so nobody has to guess later: the
- * balance harness runs its sixty seeds through every setting and prints
- * the spread. Latest: 73% / 45% / 10% seeing the first spring — gaps of 28
- * and 35 points, both comfortably past the ±10 this harness can resolve,
- * which is the only reason the three names are allowed to differ.
+ * Where the numbers above came from, so nobody has to guess later.
  *
- * ALL THREE MOVED UP ON 2026-08-20, and not because anything got easier: the
- * harness bot started pulling the winter lever. Short commons is signposted
- * on the steading panel the moment the mark says the stores are short, so a
- * bot that never touched it was measuring a game an attentive player does
- * not play, and these numbers are now the odds AS PLAYED rather than a floor
- * for a band that ignores its own winter mark.
+ * THREE HUNDRED landings a setting, not sixty, and that is the whole lesson
+ * of this figure's history. Latest: 86% / 53% / 17% seeing the first spring.
  *
- * Reaching the first winter is 88% / 82% / 82% — the last two the same
- * figure, and that is the honest reading rather than an ordering: with the
- * belt in hand the harder countries fail in the same place, and it is the
- * thaw rather than the frost that separates them.
+ * As It Lies promised 72% for a day and a half and was never within twenty
+ * points of it. The 72 was written on 2026-08-22 off a sixty-seed reading,
+ * on the same day it was measured — and at sixty seeds the standard error on
+ * a rate near 0.7 is about six points, so a single sample can sit nine or
+ * ten points off the truth and look like a result. Re-measured at three
+ * hundred, the commit that published 72% was itself running at 52%. Nothing
+ * regressed. The instrument was too coarse to set a promise with, and the
+ * promise was set with it anyway.
  *
- * The jarldom figures come from the long game, run at SIXTY sagas a country
- * rather than the twenty it defaults to — `LANDNAM_LONG_SEEDS=60`, about
- * four minutes. They were set off the twenty-seed sample first, on the
- * morning of the same day, and that was a mistake worth naming: a jarldom
- * happens rarely enough that twenty seeds put A Fair Country at seven in
- * twenty when sixty say seventeen in sixty, and the menu had no business
- * quoting the thinner one when the thicker was four minutes away.
+ * So: a published figure here is measured at `LANDNAM_SEEDS=300` and nothing
+ * less. The suite still runs the bar at sixty, which is the right sample for
+ * a TRIPWIRE — it catches unwinnable and walkover — and the wrong one for a
+ * claim printed on the menu. The two jobs need different sample sizes and
+ * this file was doing both with one.
+ *
+ * The gaps between the three are 33 and 36 points, both comfortably past the
+ * ±10 this harness can resolve, which is the only reason the three names are
+ * allowed to differ.
+ *
+ * These are the odds AS PLAYED — the harness bot pulls the winter lever, and
+ * short commons is signposted on the steading panel the moment the mark says
+ * the stores are short, so a bot that never touched it was measuring a game
+ * an attentive player does not play.
+ *
+ * Reaching the first winter is 93% / 84% / 71%. The first two used to read
+ * the same figure and no longer do, which is the sample rather than the game:
+ * at sixty seeds they were indistinguishable.
+ *
+ * The jarldom figures come from the long game at ONE HUNDRED AND TWENTY
+ * sagas a country, and they caught the same disease as the spring figures in
+ * a place nobody had looked.
+ *
+ * They were published as 40% / 10% / 5% off a twenty-seed sample, and the bar
+ * that guards them runs at twenty seeds too — so it agreed, and went on
+ * agreeing. At sixty the same measurement reads 27% / 23% / 7%, which is not
+ * a drift but a collapse: A Fair Country and As It Lies, thirty points apart
+ * on the menu, four points apart in fact. At a hundred and twenty the
+ * ordering comes back — 28% / 19% / 6% — and that recovery is the tell. A
+ * jarldom is rare, rare events need sample, and twenty sagas cannot see one
+ * setting from another.
+ *
+ * As It Lies is quoted at 15% rather than the 19% a hundred and twenty
+ * landings gave, because two hundred and forty gave 14.6% and the larger
+ * sample wins. The other two are the 120-seed figures; nothing bigger has
+ * been run for them.
+ *
+ * The old note here said the twenty-seed sample was "a mistake worth naming"
+ * and named it, and then the fix was to re-measure at sixty — which was
+ * still not enough, and nothing said so for a day. That is the shape of this
+ * whole item: every time the answer was "measure wider", and every time the
+ * new sample was chosen by what was convenient rather than by what the
+ * figure needed.
  */
 export const MEASURED_ON = 'sixty landings, the same sixty for each';
 

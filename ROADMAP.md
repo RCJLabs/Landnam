@@ -2006,6 +2006,70 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — The promise was never true** — queue item 26 closed, and its
+  premise turned out to be the wrong way round.
+
+  **The item asked what drifted the curve. Nothing drifted.** As It Lies
+  published 72% seeing the first spring and the harness kept measuring 63%,
+  and the obvious reading was that something between the two had made the game
+  harder. Re-measured at three hundred landings instead of sixty, the answer
+  came out somewhere else entirely: the game runs at **53%**, and the commit
+  that published 72% — `89c82c9`, on 2026-08-22 — was itself running at
+  **52%** when it wrote the number.
+
+  | | promised | at 89c82c9 (300) | today (300) |
+  |---|---|---|---|
+  | A Fair Country | 87% | 85% | 86% |
+  | As It Lies | 72% | 52% | 53% |
+  | A Hard Country | 23% | 20% | 17% |
+
+  **The instrument was too coarse to set a promise with, and the promise was
+  set with it anyway.** At sixty seeds the standard error on a rate near 0.7
+  is about six points, so a single sample can sit nine or ten points off the
+  truth and read like a result. 72% was one such sample, written the same day
+  it was measured, and then guarded by a bar running on the same sixty seeds
+  with a ten-point tolerance — a tolerance chosen precisely because sixty
+  seeds cannot resolve better than that. The promise and its proof agreed with
+  each other and neither agreed with the game.
+
+  **The same disease, in a second place nobody had looked.** The menu's
+  jarldom figures were published at 40% / 10% / 5% off a *twenty*-seed sample
+  and guarded by a bar that also runs at twenty. At sixty the same measurement
+  reads 27% / 23% / 7% — A Fair Country and As It Lies four points apart where
+  the menu said thirty. At a hundred and twenty the ordering comes back, 28% /
+  19% / 6%, and that recovery is the tell: a jarldom is rare, rare events need
+  sample, and twenty sagas cannot see one setting from another.
+
+  **What changed, all of it measurement rather than game:**
+
+  - Every published figure restated from a wide sample — spring at 300
+    landings a setting, ruling at 120 (As It Lies at 240).
+  - `each setting is measured` now runs at **300 seeds** with a **five**-point
+    tolerance, down from sixty seeds and ten. Two extra minutes.
+  - The long game's default sample is **120**, up from 20, and the ruling bar
+    asks for **eight** points rather than ten. About five more minutes.
+  - `LANDNAM_SEEDS` and the existing `LANDNAM_LONG_SEEDS` make both
+    overridable, and hardship.ts now states the rule plainly: a figure printed
+    on the menu is measured at 300 and nothing less.
+
+  **The old tolerance's reasoning was right and its conclusion was backwards.**
+  It said a jarldom is rare enough that forty seeds resolve it to about a
+  tenth, so the bar should be loose. The answer to a sample too thin to
+  resolve a figure is a bigger sample, not a tolerance wide enough to accept
+  whatever the thin one says.
+
+  **And one rationale had quietly rotted.** The `DEFAULT_HARDSHIP` bar picked
+  its quarter-of-sagas threshold off a spread where a quarter was "nearly
+  double what the balanced country does". At 120 seeds the balanced country
+  reaches a second winter 27% of the time, so a quarter is now just under it.
+  The threshold survives on its own terms — the default country should put one
+  saga in four past the thaw, and A Fair Country puts one in two — but it can
+  no longer be what argues against As It Lies. The spring figure does that, at
+  53% against 86%.
+
+  No game logic changed. The menu tells the truth now, and the bars can tell
+  when it stops.
+
 - **2026-08-23 — The healer buys nothing, and the hall is never full** —
   queue item 25 (herbs as the healer's input) measured, and not built.
 

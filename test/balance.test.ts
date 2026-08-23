@@ -1551,8 +1551,17 @@ function foundAnywhere(state: GameState): boolean {
  *
  * The bars below are deliberately wide for the same reason. They exist to
  * catch "unwinnable" and "walkover", not to pin a number.
+ *
+ * `LANDNAM_SEEDS=300 npx vitest run test/balance.test.ts -t 'each setting'`
+ * widens the sample when a reading needs to be trusted rather than watched.
+ * Sixty is the working default because the whole file runs on it; it is NOT
+ * enough to resolve a difference of under about ten points, and item 26 was
+ * a whole afternoon spent on a nine-point one.
  */
-const SEEDS = 60;
+const SEEDS = Number(
+  (globalThis as { process?: { env: Record<string, string | undefined> } })
+    .process?.env?.['LANDNAM_SEEDS'] ?? 60,
+);
 
 interface Curve {
   reachedWinter: number;
@@ -2499,10 +2508,32 @@ describe('the rhythm of interruption', () => {
 
 describe('how hard the country is', () => {
   /**
+   * A PUBLISHED figure needs an instrument that can resolve it, and this bar
+   * ran for a day and a half on one that could not.
+   *
+   * Three hundred landings a setting rather than the sixty the rest of this
+   * file uses, and the extra two minutes buys the difference between a
+   * tripwire and a promise. At sixty seeds the standard error on a rate near
+   * 0.7 is about six points, so a sample can sit ten points off the truth and
+   * look like a reading — which is exactly what happened: As It Lies was
+   * published at 72% off a single sixty-seed run, and re-measured at three
+   * hundred, the very commit that published it was running at 52%. Nothing
+   * had regressed. The number was never true.
+   *
+   * Sixty is the right sample for catching "unwinnable" and "walkover".
+   * It is the wrong one for a claim printed on the menu, and this file was
+   * doing both jobs with one number.
+   */
+  const CURVE_SEEDS = Number(
+    (globalThis as { process?: { env: Record<string, string | undefined> } })
+      .process?.env?.['LANDNAM_CURVE_SEEDS'] ?? 300,
+  );
+
+  /**
    * Item 3, and the reason it is a test rather than four numbers in a data
    * file: a difficulty setting whose labels are not measured is a lie told
-   * three times. Every hardship runs the same sixty seeds through the same
-   * bot, so "A Fair Country" means something a player can be told.
+   * three times. Every hardship runs the same landings through the same bot,
+   * so "A Fair Country" means something a player can be told.
    */
   it('each setting is measured, and they are ordered', { timeout: CURVE_TIMEOUT }, async () => {
     const rows: string[] = [];
@@ -2510,20 +2541,20 @@ describe('how hard the country is', () => {
     for (const terms of HARDSHIPS) {
       let reachedWinter = 0;
       let sawSpring = 0;
-      for (let s = 0; s < SEEDS; s += 1) {
+      for (let s = 0; s < CURVE_SEEDS; s += 1) {
         const state = run(`curve-${s}`, 73, undefined, terms.id);
         if (state.day >= 49 || !state.end) reachedWinter += 1;
         if (!state.end) sawSpring += 1;
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
-      spring[terms.id] = sawSpring / SEEDS;
+      spring[terms.id] = sawSpring / CURVE_SEEDS;
       rows.push(
-        `${terms.name.padEnd(16)} reached winter ${Math.round((reachedWinter / SEEDS) * 100)}%, ` +
-          `saw spring ${Math.round((sawSpring / SEEDS) * 100)}% (${sawSpring}/${SEEDS})`,
+        `${terms.name.padEnd(16)} reached winter ${Math.round((reachedWinter / CURVE_SEEDS) * 100)}%, ` +
+          `saw spring ${Math.round((sawSpring / CURVE_SEEDS) * 100)}% (${sawSpring}/${CURVE_SEEDS})`,
       );
     }
     // eslint-disable-next-line no-console
-    console.log(`hardship over ${SEEDS} seeds each:\n  ${rows.join('\n  ')}`);
+    console.log(`hardship over ${CURVE_SEEDS} seeds each:\n  ${rows.join('\n  ')}`);
 
     // The bar: the order has to be real AND outside what this harness can
     // resolve. A setting called kinder that is only six points kinder is
@@ -2544,14 +2575,18 @@ describe('how hard the country is', () => {
     // screen where the game tells a player what it will do to them before
     // they agree to it.
     //
-    // Ten points is the tolerance, the same figure this file has used for
-    // "outside what sixty seeds can resolve" since the event-chance sweep.
+    // FIVE points now, not ten, and the tightening is the point rather than a
+    // flourish: ten was chosen to sit outside what sixty seeds could resolve,
+    // and three hundred resolve to about three. A tolerance loose enough to
+    // hide a twenty-point lie is not a guard.
     for (const terms of HARDSHIPS) {
       expect(
         Math.abs(terms.odds.spring - spring[terms.id]!),
         `${terms.name} promises ${Math.round(terms.odds.spring * 100)}% see spring; `
-          + `the harness measured ${Math.round(spring[terms.id]! * 100)}%`,
-      ).toBeLessThan(0.1);
+          + `the harness measured ${Math.round(spring[terms.id]! * 100)}% over ${CURVE_SEEDS} `
+          + 'landings. Re-measure and restate the figure in src/data/hardship.ts — '
+          + 'and measure it HERE, at this sample, not at the sixty the rest of the file uses.',
+      ).toBeLessThan(0.05);
     }
   });
 });
@@ -2701,7 +2736,22 @@ describe('the long game', () => {
   // bars for exactly this reason: "did this ever happen" survives a thin
   // sample, "did it happen five times" does not.
   const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env;
-  const LONG_SEEDS = Number(env?.['LANDNAM_LONG_SEEDS'] ?? 20);
+  /**
+   * ONE HUNDRED AND TWENTY, not twenty, and this is item 26's real fix.
+   *
+   * The menu's jarldom figures were published off a twenty-seed sample and
+   * guarded by a bar running on the same twenty seeds, so the promise and its
+   * proof agreed with each other and neither agreed with the game. At sixty
+   * the same measurement reads 27/23/7 against a published 40/10/5 — A Fair
+   * Country and As It Lies four points apart where the menu said thirty. At a
+   * hundred and twenty the ordering comes back, 28/19/6, and that recovery is
+   * what says the thin sample was the fault rather than the game.
+   *
+   * It costs about five minutes of the suite, which is what a figure printed
+   * on the one screen where this game tells a player what it will do to them
+   * is worth.
+   */
+  const LONG_SEEDS = Number(env?.['LANDNAM_LONG_SEEDS'] ?? 120);
   const LAST_DAY = 500;
   /**
    * Run on the GENTLE country, and that is an instrument choice rather than
@@ -2717,7 +2767,7 @@ describe('the long game', () => {
 
 
 
-  it('plays to day 500 and reports what the years actually do', { timeout: 600_000 }, async () => {
+  it('plays to day 500 and reports what the years actually do', { timeout: 1_800_000 }, async () => {
     void LONG_TERMS;
     let reachedJarl = 0;
     let ruledYears = 0;
@@ -2969,13 +3019,23 @@ describe('the long game', () => {
     // day 73 and cannot see one. Loose on purpose: a jarldom is rare enough
     // that forty seeds resolve it to about a tenth, so this catches a promise
     // that has rotted rather than one that has drifted a seed.
+    //
+    // THAT REASONING WAS RIGHT AND ITS CONCLUSION WAS BACKWARDS, and the
+    // tolerance is eight points now rather than ten. The answer to a sample
+    // too thin to resolve a figure is a bigger sample, not a tolerance wide
+    // enough to accept whatever the thin one says. Guarded at twenty seeds
+    // this bar agreed with a published 40% while the game ran at 28%, and
+    // went on agreeing until somebody ran it wider. At a hundred and twenty
+    // seeds two standard errors on a rate near a quarter is about eight
+    // points, so that is what it asks for.
     for (const terms of HARDSHIPS) {
       const ruled = (allJarlsBy[terms.id] ?? 0) / LONG_SEEDS;
       expect(
         Math.abs(terms.odds.ruled - ruled),
         `${terms.name} promises ${Math.round(terms.odds.ruled * 100)}% ever rule; `
-          + `the long game measured ${Math.round(ruled * 100)}%`,
-      ).toBeLessThan(0.1);
+          + `the long game measured ${Math.round(ruled * 100)}% over ${LONG_SEEDS} sagas. `
+          + 'Re-measure and restate the figure in src/data/hardship.ts.',
+      ).toBeLessThan(0.08);
     }
 
     /**
@@ -2996,11 +3056,29 @@ describe('the long game', () => {
      * back half a default player never sees.
      *
      * A QUARTER, and the threshold is picked off the spread rather than felt.
-     * Measured at sixty seeds: fair 27/60, even 9/60, hard 2/60 — so a
-     * quarter sits at roughly half of what the gentle country delivers and
-     * nearly double what the balanced one does, with room on both sides for
-     * the twenty-seed sample this normally runs at. Watched fail by pointing
-     * DEFAULT_HARDSHIP at 'even', which reads 15% and goes red.
+     *
+     * RESTATED at the hundred-and-twenty-seed sample this now runs at, and
+     * the restatement matters because the old rationale had quietly stopped
+     * describing the spread it was picked off. It read "fair 27/60, even
+     * 9/60, hard 2/60 — so a quarter sits at roughly half of what the gentle
+     * country delivers and nearly double what the balanced one does". At a
+     * hundred and twenty that spread is fair 61/120, even 32/120, hard
+     * 12/120: 51%, 27% and 10%. A quarter is still half of what the gentle
+     * country delivers, but it is no longer double the balanced one — it is
+     * just under it.
+     *
+     * The threshold survives anyway, and on its own terms rather than on the
+     * arithmetic that first suggested it: it asks that the default country
+     * put at least one saga in four past the thaw, and A Fair Country puts
+     * one in two. What has gone is the claim that the balanced country
+     * clearly fails it. As It Lies now sits close enough to a quarter that
+     * this bar can no longer be what argues against it — the spring figure
+     * does that, at 53% against 86%.
+     *
+     * Watched fail by pointing DEFAULT_HARDSHIP at 'hard', which reads 10%
+     * and goes red. It was 'even' that was watched to fail before, at 15%,
+     * and it would now pass at 27% — which is exactly the sort of quiet
+     * rot this comment exists to record.
      */
     const middle = (secondWintersBy[DEFAULT_HARDSHIP] ?? 0) / LONG_SEEDS;
     expect(
