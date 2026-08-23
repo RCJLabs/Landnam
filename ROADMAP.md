@@ -2006,6 +2006,55 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — The healer buys nothing, and the hall is never full** —
+  queue item 25 (herbs as the healer's input) measured, and not built.
+
+  **The item carried its own doubt and it was the right one to test:** does
+  gating care behind a stock make the healer a decision, or just a chore? A
+  resource nobody gathers, feeding a job nobody crews, to answer a problem
+  nobody has, is three layers of decoration. So the layers underneath were
+  measured before anything was built on them — thirty landings to day 400,
+  the same seeds run twice, once with a healer in the crew and once without.
+
+  | | no healer | a healer |
+  |---|---|---|
+  | person-days ill, per day lived | 0.48 | 0.46 |
+  | new illnesses | 33 | 36 |
+  | days tended | 0 | 364 |
+  | saw spring | 17/30 | 17/30 |
+
+  **364 days of tending changed survival by nothing.** That is not a job with
+  a bad rate, it is a job with no measurable output, and putting a herb stock
+  in front of it would only have made an ineffective job harder to use.
+
+  **The mechanism is the more useful half of the finding.** `crowding`
+  returned zero on EVERY settled day of sixty sagas — not rarely, never. The
+  roof runs a long way ahead of the band: 8.1 souls to 14.6 of room on the
+  average settled day, and the most crowded moment any saga reached was 19
+  souls to 19 of roof, which is still not crowded. So `CROWD_BITE` never
+  multiplies anything, spread runs at its floor rate of `CATCHING * down`, and
+  `CARE_GUARD` is a guard against a floor.
+
+  **Which means the tradeoff item 8 was built around cannot happen.** Its own
+  note says it plainly — "taking in another pair of hands is more work done
+  and one more chest by the fire; past what the roof has room for, it is also
+  how a bad week becomes a bad winter." There is no past-what-the-roof-holds.
+  The band never gets there, because the bot builds room faster than the band
+  grows and the game gives it no reason not to.
+
+  Making either half real — a healer worth a hand, or a roof the band can
+  outgrow — moves survival odds, so it is a design call rather than a fix, and
+  it is queued rather than taken.
+
+  **The probe is kept, and its own first cut is kept with it.** That cut
+  swapped the BUILDER out for the healer and read the healer arm as twice as
+  ill per day lived. That is not what care does, it is what losing the builder
+  does: no builder, no shelter, and shelter is what stops the cold nights that
+  hand out `ill_` in the first place. An A/B is only an A/B if one thing
+  changed.
+
+  No source changed. 1207 tests.
+
 - **2026-08-23 — Somewhere on the water worth going to** — fishing grounds
   (queue item 28), and the answer to the finding that killed item 23.
 

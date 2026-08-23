@@ -55,6 +55,7 @@ import { moveOptions, atSea, isCoastalWater, ROW_REACH } from '../src/sim/road';
 import { canGather, canFish } from '../src/sim/gathering';
 import { groundAt } from '../src/sim/fishery';
 import { abundance } from '../src/sim/abundance';
+import { ailingCount, careToday } from '../src/sim/sickness';
 import { canFound, siteReport } from '../src/sim/site';
 import { holed } from '../src/sim/ship';
 import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
@@ -3327,6 +3328,134 @@ describe('the sea is reached', () => {
     // And the knowledge economy that makes any of it possible: a settled
     // band must know of SOMETHING to go and take. This read 0.06 of 4.
     expect(placesKnown / Math.max(1, samples)).toBeGreaterThan(0.4);
+  });
+
+  /**
+   * PROBE, for queue item 25: what is illness worth, and what is a healer?
+   *
+   * Item 25 proposes herbs as the healer's input — a stock gathered in summer
+   * that tending draws on. Its own framing carries the doubt worth measuring
+   * first: does gating care behind a stock make the healer a DECISION, or
+   * just a chore? A resource nobody gathers, feeding a job nobody crews, to
+   * answer a problem nobody has, would be three layers of decoration.
+   *
+   * So this measures the layers underneath before anything is built on them:
+   * how much illness a saga actually carries, how much of it is the spread
+   * rule rather than the cold nights that were always there, and what
+   * crewing a healer is worth against the same landings crewed without one.
+   *
+   * The A/B is the point. "The bot never crews a healer" is not evidence the
+   * healer is worthless — the default crew simply has no healer in it, which
+   * is a fact about the harness. Running the same seeds both ways is what
+   * separates the two.
+   *
+   * WHAT IT FOUND, and item 25 was not built on the strength of it:
+   *
+   * A healer crewed for 364 days took illness from 0.48 person-days per day
+   * lived to 0.46, prevented no net illnesses, and changed survival by
+   * nothing at all — 17 of 30 saw spring in both arms. That is not a job
+   * with a bad rate; it is a job with no measurable output. Gating it behind
+   * a stock of herbs — a second resource with its own gathering, storage,
+   * seasonality and spoilage — would have made an ineffective job harder to
+   * use. The chore, not the decision.
+   *
+   * The mechanism is the second line of the readout. `crowding` returned
+   * zero on EVERY settled day of sixty sagas, because the roof runs a long
+   * way ahead of the band: 8.1 souls to 14.6 of room on the average settled
+   * day, and the most crowded moment any saga ever reached was 19 souls to
+   * 19 of roof. So `CROWD_BITE` never multiplies anything, spread runs at
+   * its floor rate of `CATCHING * down`, and `CARE_GUARD` is a guard against
+   * a floor. The crowding tradeoff item 8 was built around — another pair of
+   * hands is more work and one more chest by the fire — cannot happen.
+   *
+   * Kept as an instrument. Any work that means to make the healer a decision
+   * has to move the first line, and any work that means to make crowding
+   * bite has to move the second.
+   *
+   * The first cut of this measured neither, and its error is worth keeping:
+   * it swapped the BUILDER out for the healer and read the healer arm as
+   * twice as ill per day lived. That is what losing the builder does — no
+   * builder, no shelter, and shelter is what stops the cold nights that hand
+   * out `ill_`. An A/B is only an A/B if one thing changed.
+   */
+  it('PROBE: what illness costs, and what a healer buys', { timeout: 900_000 }, async () => {
+    const SEEDS = 30;
+    // A FARMER's place, not the builder's. The first cut of this swapped the
+    // builder out and read the healer arm as more than twice as ill per day
+    // lived — which is not what care does, it is what losing the builder
+    // does: no builder means no shelter, and shelter is what stops the cold
+    // nights that hand out `ill_` in the first place. The arm was measuring
+    // the hole, not the healer.
+    const HEALER: JobId[] = ['farmer','healer','woodcutter','hunter','builder','warrior'];
+
+    interface Arm {
+      illDays: number;   // person-days spent carrying something
+      newlyIll: number;  // new illnesses of any cause, cold nights included
+      crowdDays: number; // settled days with more bodies than roof
+      lived: number;     // saw spring
+      settled: number;
+      days: number;
+      careDays: number;  // settled days with any tending at all
+      mostSouls: number; // the largest the band ever got
+      mostRoom: number;  // and the most roof it ever had
+      settledDays: number;
+      soulSum: number;
+      roomSum: number;
+    }
+    const arms: Record<string, Arm> = {};
+
+    for (const [label, crew] of [['no healer', CREW], ['a healer', HEALER]] as const) {
+      const arm: Arm = {
+        illDays: 0, newlyIll: 0, crowdDays: 0, lived: 0, settled: 0, days: 0, careDays: 0,
+        mostSouls: 0, mostRoom: 0, settledDays: 0, soulSum: 0, roomSum: 0,
+      };
+      const was = policy;
+      policy = { ...SETTLER, crew };
+      try {
+        for (let s = 0; s < SEEDS; s += 1) {
+          const state = run(`ill-${s}`, 400, (before, after) => {
+            const down = ailingCount(after);
+            arm.illDays += down;
+            // New illness of ANY cause. Not the spread rule's own count —
+            // cold nights hand out `ill_` too, and most of this is them.
+            if (down > ailingCount(before)) arm.newlyIll += 1;
+            if (after.settlement) {
+              if (crowding(after) > 0) arm.crowdDays += 1;
+              if (careToday(after) > 0) arm.careDays += 1;
+              const souls = living(after.party.people).length;
+              if (souls > arm.mostSouls) arm.mostSouls = souls;
+              const room = capacity(after);
+              if (room > arm.mostRoom) arm.mostRoom = room;
+              arm.settledDays += 1;
+              arm.soulSum += souls;
+              arm.roomSum += room;
+            }
+          }, 'even');
+          arm.days += state.day;
+          if (state.settlement) arm.settled += 1;
+          if (!state.end || state.day >= 73) arm.lived += 1;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      } finally {
+        policy = was;
+      }
+      arms[label] = arm;
+    }
+
+    const rows = Object.entries(arms).map(([label, a]) =>
+      `  ${label.padEnd(10)} ${a.illDays} person-days ill (${(a.illDays / Math.max(1, a.days)).toFixed(2)} ` +
+      `per day lived), ${a.newlyIll} new illnesses, ${a.crowdDays} crowded days, ` +
+      `${a.careDays} days tended; ${a.lived}/${SEEDS} saw spring over ${a.days} days lived\n` +
+      `             band ${(a.soulSum / Math.max(1, a.settledDays)).toFixed(1)} souls to ` +
+      `${(a.roomSum / Math.max(1, a.settledDays)).toFixed(1)} of roof on the average settled day ` +
+      `(most ever ${a.mostSouls} souls, ${a.mostRoom} roof)`,
+    );
+    // eslint-disable-next-line no-console
+    console.log(`PROBE illness and the healer — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
+
+    // A probe: it asserts its instrument ran, not a rate.
+    expect(arms['no healer']!.settled).toBeGreaterThan(0);
+    expect(arms['a healer']!.settled).toBeGreaterThan(0);
   });
 
   /**
