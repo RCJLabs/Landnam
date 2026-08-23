@@ -2006,6 +2006,55 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-23 — The crossing has to be worth taking before it is worth
+  decorating** — queue item 27 (a cargo manifest and a season of cards at sea)
+  measured, and not built.
+
+  **Both halves assume there is a voyage to elaborate.** There was not.
+  `sailForHome` has existed since the ship became a place and no bot had ever
+  issued it, so the crossing, what she brings back and the season without
+  those hands were all unmeasured. Unlike the sea before the fishing errand,
+  the door was never shut — 'home' rides the same picker as trade and raid —
+  the bot simply never reached for it. So the first thing this needed was a
+  bot that does.
+
+  **Under a sane gate she sails about five times in forty sagas and changes
+  nothing.** Spring only, because 78 days away means she must be back before
+  the mark matters — and spring is the leanest the store ever is. Of 2527
+  spring days past the first winter, **2471 were too poor to spare a season**.
+  Loosening the purse from thirty days of food to ten moved that to five
+  crossings and left survival flat.
+
+  **The forced arm is the one that answers it.** Told to take every crossing
+  `sailBlocker` allowed, in any season, on any store:
+
+  | | sagas that sailed | crossings | people fetched | standing at day 400 | days lived |
+  |---|---|---|---|---|---|
+  | no voyage | 0/40 | 0 | 0 | 5/40 | 5684 |
+  | spare 30 | 2/40 | 2 | 2 | 5/40 | 5499 |
+  | spare 10 | 5/40 | 5 | 11 | 7/40 | 5888 |
+  | whenever she can | 16/40 | 26 | 40 | **3/40** | **4607** |
+
+  There is no setting at which the voyage is both common and good. Two hands
+  gone through a growing season cost more than twenty food and three people
+  return.
+
+  **Which makes sense of a note left in `sim/voyage.ts` when it was written.**
+  Gated on `roomLeft` the voyage brought back nobody and was called "a trap,
+  not a decision"; the fix was to land people over the roof, on the grounds
+  that "crowding is what makes a hall sick". Item 25 then measured `crowding`
+  returning zero on every settled day of sixty sagas. So the extra people cost
+  the hall nothing AND buy it too little at once, and the fix for the trap was
+  resting on a mechanic that never fires.
+
+  **The bot keeps the verb and does not use it.** `policy.sails` is false on
+  every policy, and that is a finding rather than an oversight: the bot models
+  an average player, an average player who sails does worse, and a bot that
+  sailed would push that into every published figure in the file. The probe
+  turns it on; nothing else does.
+
+  No source changed. 1208 tests.
+
 - **2026-08-23 — The promise was never true** — queue item 26 closed, and its
   premise turned out to be the wrong way round.
 

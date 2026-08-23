@@ -57,7 +57,7 @@ import { groundAt } from '../src/sim/fishery';
 import { abundance } from '../src/sim/abundance';
 import { ailingCount, careToday } from '../src/sim/sickness';
 import { canFound, siteReport } from '../src/sim/site';
-import { holed } from '../src/sim/ship';
+import { holed, sprung } from '../src/sim/ship';
 import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
 import { abandonSteading, canAbandon } from '../src/sim/retreat';
 import { BAND_BASE, foodPerDay, firewoodPerNight, passDay } from '../src/sim/upkeep';
@@ -86,6 +86,7 @@ import { canCallThing, hasSpeakers, thingNeeds, yearsRuled } from '../src/sim/th
 import type { NeedId } from '../src/data/thing';
 import { SPEAKER_STANDING } from '../src/data/thing';
 import { launchBlocker, provisionsFor } from '../src/sim/expedition';
+import { sailBlocker } from '../src/sim/voyage';
 import { BARTER_FOOD, CLAN_KINDS } from '../src/data/clans';
 import { wintersStood } from '../src/sim/calendar';
 import { terrainDef } from '../src/data/terrain';
@@ -212,6 +213,33 @@ interface Policy {
   want: readonly string[];
   /** What everyone does with their days. */
   crew: readonly JobId[];
+  /**
+   * Whether this band will send the knarr back across the open sea.
+   *
+   * A policy flag rather than a hard rule so item 27's probe can run the same
+   * landings both ways — which is what separates "the voyage pays" from
+   * "bands that could afford one were doing well anyway".
+   *
+   * FALSE on every policy here, and that is a finding rather than an
+   * oversight. The bot models an average player, and item 27's probe measured
+   * an average player who sails doing WORSE: forced to take every crossing
+   * she could, a band went from 5 of 40 standing at day 400 to 3, and lived
+   * a fifth fewer days. A bot that sailed would be modelling bad play, and
+   * every published figure in this file would inherit it.
+   */
+  sails: boolean;
+  /**
+   * Days of food in hand before this band will spare two hands for a season.
+   * Swept by item 27's probe rather than picked, because "she rarely sails"
+   * and "she cannot afford to" are different findings with different fixes.
+   */
+  sailSurplus: number;
+  /**
+   * Sail in any season, not only spring. Not a strategy anybody should play —
+   * it is the FORCED arm of item 27's probe, which measures what a crossing
+   * is worth when the gate is not what is deciding.
+   */
+  sailAnySeason: boolean;
   /**
    * Days of food the steading keeps back before an armed errand goes out.
    *
@@ -374,6 +402,9 @@ const SETTLER: Policy = {
     'hof', 'dock',
   ],
   crew: CREW,
+  sails: false,
+  sailSurplus: 30,
+  sailAnySeason: false,
   errandBuffer: 6,
   desperate: false,
   // TIGHTENS. The lever measured saved 32 bands and killed 3 over 240 seeds,
@@ -420,6 +451,9 @@ const RAIDER: Policy = {
   // of this policy was the site-floor strawman all over again — a strategy
   // measured with a spec that could not carry it.
   crew: ['warrior','hunter','hunter','farmer','woodcutter','builder'],
+  sails: false,
+  sailSurplus: 30,
+  sailAnySeason: false,
   errandBuffer: 2,
   desperate: false,
   tightensBelt: false,
@@ -447,6 +481,9 @@ const TURTLE: Policy = {
     'storehouse', 'earthworks', 'bud', 'meadhall', 'greathall', 'hof', 'dock',
   ],
   crew: ['farmer','farmer','farmer','woodcutter','builder','warrior'],
+  sails: false,
+  sailSurplus: 30,
+  sailAnySeason: false,
   errandBuffer: 0,
   desperate: false,
   tightensBelt: false,
@@ -985,6 +1022,31 @@ function step(state: GameState): Action {
     // back before the mark matters, and only for something close enough to
     // be a raid rather than a voyage.
     const season = seasonOf(state.day);
+
+    // THE VOYAGE HOME, which no bot has ever taken.
+    //
+    // `sailForHome` has existed since the ship became a place and the harness
+    // has never once issued it, so everything behind it — the crossing, what
+    // she brings back, the season without those hands — is unmeasured. The
+    // door is not shut, unlike the sea before the fishing errand: 'home'
+    // rides the same picker as trade and raid. The bot simply never reached
+    // for it.
+    //
+    // An average player sends her when the hall is established and there is
+    // food enough to feed it through a season two hands short. In SPRING, so
+    // she is back before the year turns — CROSSING is 78 days, and a keel
+    // that leaves in autumn is a keel that is somewhere else when the mark
+    // matters.
+    if (policy.sails
+        && (season === 'spring' || policy.sailAnySeason)
+        && wintersStood(state.day) >= 1
+        && state.party.food / Math.max(1, foodPerDay(state)) > policy.sailSurplus) {
+      const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
+      if (crew.length >= 2 && sailBlocker(state, crew) === null) {
+        return { type:'LAUNCH', members: crew, purpose: 'home' };
+      }
+    }
+
     // THE FISHING ERRAND, and it is asked before every other errand because
     // it answers the thing that actually kills bands.
     //
@@ -3406,6 +3468,150 @@ describe('the sea is reached', () => {
     // And the knowledge economy that makes any of it possible: a settled
     // band must know of SOMETHING to go and take. This read 0.06 of 4.
     expect(placesKnown / Math.max(1, samples)).toBeGreaterThan(0.4);
+  });
+
+  /**
+   * PROBE, for queue item 27: does anybody ever sail home, and does it pay?
+   *
+   * Item 27 proposes two elaborations of the voyage — a cargo manifest so
+   * loading is a decision, and a season of cards at sea so the crossing is
+   * lived through rather than waited out. Both assume there is a voyage to
+   * elaborate. There was not: `sailForHome` has existed since the ship became
+   * a place and no bot had ever issued it, so the crossing, what she brings
+   * back and the season without those hands were all unmeasured.
+   *
+   * Unlike the sea before the fishing errand, the door was never shut —
+   * 'home' rides the same picker as trade and raid. The bot simply never
+   * reached for it, so the first thing this needed was a bot that does.
+   *
+   * The A/B runs the same landings with the voyage available and with it
+   * refused, which is what separates "the voyage pays" from "bands that can
+   * afford a voyage were doing well anyway".
+   *
+   * WHAT IT FOUND, and neither half of item 27 was built on the strength of
+   * it: the voyage is a bad bargain, not merely a rare one.
+   *
+   * Under a sane gate she sails about five times in forty sagas and changes
+   * nothing — spring only, because 78 days away means she must be back before
+   * the mark matters, and spring is the leanest the store ever is. Of 2527
+   * spring days past the first winter, 2471 were simply too poor to spare a
+   * season. Loosening the purse from thirty days of food to ten moved that
+   * to five crossings and left survival flat.
+   *
+   * The forced arm is the one that answers it. Told to take every crossing
+   * `sailBlocker` allowed, bands sailed 26 times, fetched 40 people across
+   * the ocean — and went from 5 of 40 standing at day 400 to 3, living a
+   * fifth fewer days. There is no setting at which the voyage is both common
+   * and good. Two hands gone through a growing season cost more than twenty
+   * food and three people return.
+   *
+   * Which makes sense of a note left in sim/voyage.ts when it was written.
+   * Gated on `roomLeft` the voyage brought back nobody and was called "a
+   * trap, not a decision"; the fix was to land people over the roof, on the
+   * grounds that "crowding is what makes a hall sick". Item 25 then measured
+   * `crowding` returning zero on every settled day of sixty sagas. So the
+   * extra people cost the hall nothing AND buy it too little, and the fix
+   * for the trap was resting on a mechanic that never fires.
+   *
+   * A cargo manifest and a season of cards at sea would both be elaborations
+   * of that. The crossing has to be worth taking before it is worth
+   * decorating.
+   */
+  it('PROBE: whether the voyage home pays for the season it costs', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 40;
+    interface Arm {
+      sailed: number;      // sagas that ever sent her
+      voyages: number;     // crossings begun
+      returned: number;    // crossings that came home
+      brought: number;     // people fetched across the ocean
+      rough: number;       // crossings the sea took a strake out of
+      lived: number;
+      days: number;
+      souls: number;       // living at the end, summed
+      settledDays: number;
+      notSpring: number;
+      tooSoon: number;
+      tooPoor: number;
+      couldHaveGone: number;
+      blocked: Record<string, number>;
+    }
+    const arms: Record<string, Arm> = {};
+
+    for (const [label, sails, surplus, anySeason] of [
+      ['no voyage', false, 30, false],
+      ['spare 30', true, 30, false],
+      ['spare 10', true, 10, false],
+      // THE FORCED ARM. Sails whenever `sailBlocker` allows, in any season,
+      // on any store. Nobody should play this way — it exists to separate
+      // "the gate never opens" from "the crossing is not worth taking", which
+      // the thresholds above cannot tell apart.
+      ['whenever', true, 0, true],
+    ] as const) {
+      const arm: Arm = {
+        sailed: 0, voyages: 0, returned: 0, brought: 0, rough: 0, lived: 0, days: 0, souls: 0,
+        settledDays: 0, notSpring: 0, tooSoon: 0, tooPoor: 0, couldHaveGone: 0, blocked: {},
+      };
+      const was = policy;
+      policy = { ...SETTLER, sails, sailSurplus: surplus, sailAnySeason: anySeason };
+      try {
+        for (let s = 0; s < SEEDS; s += 1) {
+          let sentOne = false;
+          const state = run(`sail-${s}`, 400, (before, after) => {
+            // WHY SHE DOES NOT GO, counted at the moment of the choice. The
+            // gate has six clauses and "she rarely sails" says nothing about
+            // which one is doing the refusing.
+            if (before.settlement && !before.end) {
+              arm.settledDays += 1;
+              const crew = sworn(before.party.people).slice(0, 2).map(p => p.id);
+              const fed = before.party.food / Math.max(1, foodPerDay(before));
+              if (seasonOf(before.day) !== 'spring' && !anySeason) arm.notSpring += 1;
+              else if (wintersStood(before.day) < 1) arm.tooSoon += 1;
+              else if (fed <= surplus) arm.tooPoor += 1;
+              else {
+                const why = sailBlocker(before, crew);
+                if (why) arm.blocked[why] = (arm.blocked[why] ?? 0) + 1;
+                else arm.couldHaveGone += 1;
+              }
+            }
+            if (!before.voyage && after.voyage) { arm.voyages += 1; sentOne = true; }
+            if (before.voyage && !after.voyage) {
+              arm.returned += 1;
+              const home = living(after.party.people).length - living(before.party.people).length;
+              if (home > 0) arm.brought += home;
+              if (sprung(after.ship) > sprung(before.ship)) arm.rough += 1;
+            }
+          }, 'even');
+          if (sentOne) arm.sailed += 1;
+          arm.days += state.day;
+          arm.souls += living(state.party.people).length;
+          if (!state.end) arm.lived += 1;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      } finally {
+        policy = was;
+      }
+      arms[label] = arm;
+    }
+
+    const rows = Object.entries(arms).map(([label, a]) =>
+      `  ${label.padEnd(10)} ${a.sailed}/${SEEDS} sagas sailed, ${a.voyages} crossings ` +
+      `(${a.returned} came home, ${a.rough} rough), ${a.brought} people fetched; ` +
+      `${a.lived}/${SEEDS} still standing at day 400, ${a.souls} souls between them, ` +
+      `${a.days} days lived\n` +
+      `             of ${a.settledDays} settled days: ${a.notSpring} not spring, ${a.tooSoon} ` +
+      `before the first winter, ${a.tooPoor} too poor to spare a season, ` +
+      `${a.couldHaveGone} clear to go; blocked ` +
+      `${Object.entries(a.blocked).map(([k, v]) => `${k} ${v}`).join(', ') || 'never'}`,
+    );
+    // eslint-disable-next-line no-console
+    console.log(`PROBE the voyage home — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
+
+    // A probe: it asserts its instrument ran, not a rate. The bot has to be
+    // ABLE to sail, or this measures nothing at all — which is the state it
+    // was written to end.
+    expect(arms['whenever']!.voyages, 'the bot still never sails — this probe measures nothing')
+      .toBeGreaterThan(0);
+    expect(arms['no voyage']!.voyages).toBe(0);
   });
 
   /**
