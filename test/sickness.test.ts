@@ -22,6 +22,8 @@ import {
   maybeSpread,
 } from '../src/sim/sickness';
 import { living } from '../src/sim/people';
+import { OVER_ROOF, drawOdds, roomLeft, takeIn, willAdmit } from '../src/sim/joining';
+import { capacity } from '../src/sim/colony';
 import type { GameState, Person } from '../src/state/types';
 import { canFound, foundSettlement } from '../src/sim/site';
 import { fromKey } from '../src/hex';
@@ -108,6 +110,66 @@ describe('a crowded roof is the whole tradeoff', () => {
     expect(catchingOdds(many)).toBeGreaterThan(catchingOdds(one));
     // A hall is not a plague pit: there is a worst it can be in a day.
     expect(catchingOdds(many)).toBeLessThanOrEqual(CATCHING_CAP);
+  });
+});
+
+describe('a hall that is full will still take one more', () => {
+  // Item 30. `crowding` was unreachable — zero on EVERY settled day of sixty
+  // sagas — and the reason was not that roofs are generous. It was that two
+  // files disagreed about what capacity is FOR and neither knew it.
+  // sim/joining.ts said a hall with no spare bed turns people away and made
+  // that the whole point of capacity; sim/sickness.ts built its tradeoff on
+  // going PAST the roof. The band pressed up against the roof and stopped, so
+  // CROWD_BITE multiplied nothing and CARE_GUARD guarded a floor.
+
+  /** Fill a hall to exactly its capacity. */
+  function packed(seed: string): GameState {
+    const state = hall(seed);
+    const room = capacity(state);
+    const seed0 = state.party.people[0]!;
+    while (living(state.party.people).length < room) {
+      state.party.people.push({
+        ...structuredClone(seed0), id: `f${state.party.people.length}`,
+        name: `Full${state.party.people.length}`, bond: 'hand', injuries: [], kin: undefined,
+      } as Person);
+    }
+    return state;
+  }
+
+  it('admits the floor between the benches, and then refuses', () => {
+    const state = packed('packed');
+    expect(roomLeft(state)).toBe(0);
+    expect(willAdmit(state)).toBe(OVER_ROOF);
+
+    const came = takeIn(state, OVER_ROOF + 2, 'a probe knocked');
+    expect(came).toHaveLength(OVER_ROOF);
+    // And now it really is full: a hall is a building, not a tent.
+    expect(willAdmit(state)).toBe(0);
+    expect(takeIn(state, 1, 'one more')).toHaveLength(0);
+  });
+
+  it('is crowded once they are in, which is the whole point', () => {
+    const state = packed('packed-bite');
+    expect(crowding(state)).toBe(0);
+    takeIn(state, OVER_ROOF, 'a probe knocked');
+    expect(crowding(state)).toBe(OVER_ROOF);
+    // And the thing built on it finally moves.
+    makeSick(state.party.people[0]!);
+    const packedOdds = catchingOdds(state);
+    const roomy = hall('roomy-bite');
+    makeSick(roomy.party.people[0]!);
+    expect(packedOdds).toBeGreaterThan(catchingOdds(roomy));
+  });
+
+  it('does not shut the door the moment the last bed goes', () => {
+    // THE GATE BEHIND THE GATE. Lifting the cap inside `takeIn` changed
+    // nothing on its own, because `drawOdds` returns zero at `roomLeft <= 0`
+    // — at a hall exactly full nobody ever arrives to be crowded in. Both
+    // gates have to read the same number or the fix is invisible.
+    const state = packed('door');
+    state.party.food = 4000;
+    expect(roomLeft(state)).toBe(0);
+    expect(drawOdds(state)).toBeGreaterThan(0);
   });
 });
 

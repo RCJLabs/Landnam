@@ -2006,6 +2006,72 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-24 — The hall will take one more** — item 30. `crowding` was
+  unreachable, and the reason was not that roofs are generous.
+
+  **Two deliberate designs, both tested, pointing opposite ways.**
+  `sim/joining.ts` said "a hall with no spare bed turns people away, and that
+  refusal is the whole reason capacity exists", and had three bars saying so —
+  one of them naming the stake: "it is what makes a búð worth five timber".
+  `sim/sickness.ts` built its entire tradeoff on the other side of that line:
+  "taking in another pair of hands is more work done and one more chest by the
+  fire; past what the roof has room for, it is also how a bad week becomes a
+  bad winter."
+
+  There was no past-what-the-roof-holds. Over sixty sagas to day 400
+  `crowding` returned zero on EVERY settled day, and the tightest a hall ever
+  got was *exactly full* — the slack bottomed out at 0 and stopped. So
+  `CROWD_BITE` multiplied nothing, spread ran at its floor of `CATCHING *
+  down`, and `CARE_GUARD` guarded a floor. A shipped mechanic sat behind a
+  precondition another file forbade.
+
+  **The roof is a comfort you build for now, not a gate that silently stops
+  the band growing.** `OVER_ROOF` is three — the number who can sleep on the
+  floor between the benches. The refusal is still real and still falls, three
+  later; a búð still buys the difference between crowded and comfortable.
+
+  **The half-fix is worth recording, because it looked like a fix.** Lifting
+  the cap inside `takeIn` changed nothing at all: the door closes in
+  `drawOdds`, which returns zero at `roomLeft <= 0`, so at a hall exactly full
+  nobody ever arrives to be crowded in. A gate behind a gate, and only the
+  outer one was visible. Both had to read the same number.
+
+  **What it bought:**
+
+  | | before | after |
+  |---|---|---|
+  | crowded days, no healer | 0 | 309 |
+  | crowded days, a healer | 0 | 626 |
+  | illness per day lived, no healer | 0.52 | 0.58 |
+  | illness per day lived, a healer | 0.45 | 0.54 |
+  | tightest slack ever | 0 | −3 |
+
+  Growth now costs something, and the healer's guard finally has something to
+  guard. The first-winter curve holds at 86/52/15 against a published
+  86/53/17 — crowding happens after settling and growth, past the day the
+  curve stops. The long game is harder: bands take in people they must then
+  house, and day-400 survival in the probe fell 4/30 to 3/30 untended and 7/30
+  to 6/30 tended.
+
+  **Three bars were restated, not loosened,** and one wrong turn was found in
+  a fourth. The three now say where the refusal falls rather than that it
+  falls at the last bed. The fourth — `the winter mark shrinks as the winter
+  is walked through` — was walking from autumn to autumn and never entering
+  winter at all: `forecast` accumulates `max(0, mouths - grown)` a day, so a
+  day the fields cover contributes nothing and dropping it off the front
+  changes the food figure not at all. It passed only by accident of band size,
+  and the change exposed it. It walks thirty days into the frost now, and
+  pins the roster so a join cannot masquerade as the countdown.
+
+  Both recorded runs were re-recorded, which is what `runs/README.md` says to
+  do: "if it ever starts refusing actions, that is a rules change worth
+  knowing about — not a broken test." `example.json` did not need it and was
+  put back — a re-record produced a worse artifact, 23 actions to a day-24
+  starvation against the 66 it had.
+
+  Thirteenth rule for the port, and this one the contract can see. 1219 tests,
+  all ten browser bars.
+
 - **2026-08-24 — A winter illness mends for a healer and for nobody else** —
   item 29, which set out to make the healer worth a hand and instead found it
   already was, and corrected a wrong finding of my own.

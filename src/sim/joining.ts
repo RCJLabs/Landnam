@@ -45,6 +45,40 @@ export function roomLeft(state: GameState): number {
 }
 
 /**
+ * How far past the roof a hall will let people crowd in before it truly has
+ * to turn somebody away.
+ *
+ * THE LINE THAT MADE `crowding` MEAN ANYTHING, and it settles a disagreement
+ * between two files that had both been deliberate about it.
+ *
+ * This one said "a hall with no spare bed turns people away, and that refusal
+ * is the whole reason capacity exists", and had three bars saying so. But
+ * sim/sickness.ts built its entire tradeoff on the other side of that line:
+ * "taking in another pair of hands is more work done and one more chest by
+ * the fire; past what the roof has room for, it is also how a bad week
+ * becomes a bad winter."
+ *
+ * There was no past-what-the-roof-holds. Measured over sixty sagas to day
+ * 400, `crowding` returned zero on EVERY settled day — not rarely, never —
+ * and the tightest a hall ever got was exactly full, because the door shut at
+ * the last bed. So `CROWD_BITE` multiplied nothing, spread ran at its floor,
+ * and `CARE_GUARD` guarded a floor. A shipped mechanic sat behind a
+ * precondition this file forbade.
+ *
+ * The roof is a COMFORT you build for now, not a gate that silently stops the
+ * band growing. Three is the number who can sleep on the floor between the
+ * benches, and it is small on purpose: the refusal is still real, a búð still
+ * buys the difference between crowded and comfortable, and what has changed
+ * is that being over the roof is a state the game can actually be in.
+ */
+export const OVER_ROOF = 3;
+
+/** Beds plus floor: what a hall will actually admit before it says no. */
+export function willAdmit(state: GameState): number {
+  return Math.max(0, capacity(state) + OVER_ROOF - living(state.party.people).length);
+}
+
+/**
  * Takes people in, as many as there is room for.
  *
  * Returns the ones who actually joined, which may be fewer than asked for and
@@ -64,7 +98,10 @@ export function takeIn(
   why: string,
   overRoof = false,
 ): Person[] {
-  const room = overRoof ? count : Math.min(count, roomLeft(state));
+  // `overRoof` is the voyage's door — people fetched from across an ocean
+  // have nowhere else to walk to. Everyone else crowds in as far as the floor
+  // allows and no further.
+  const room = overRoof ? count : Math.min(count, willAdmit(state));
   if (room <= 0) return [];
 
   const rng = stream(state.seed, 'party').derive(`join:${state.day}:${state.nextId}`);
@@ -96,14 +133,21 @@ export function takeIn(
  * for being built, and for being a place with heart in it — and a coast that
  * wants you dead keeps them away, because nobody moves in next to a feud.
  *
- * The room and the larder are FLOORS rather than terms. A hall with no bed
- * takes nobody however famous it is, and a mouth you cannot feed is not
- * growth, it is a slower way of starving.
+ * The room and the larder are FLOORS rather than terms. A hall with nowhere
+ * left to put anybody takes nobody however famous it is, and a mouth you
+ * cannot feed is not growth, it is a slower way of starving.
+ *
+ * THE ROOM FLOOR IS `willAdmit`, NOT `roomLeft`, and the difference is what
+ * makes `crowding` reachable at all. Lifting the cap inside `takeIn` was a
+ * half-fix that changed nothing, because the door closes HERE: at a hall
+ * exactly full `roomLeft` is nought, the odds are nought, and nobody ever
+ * arrives to be crowded in. A gate behind a gate, and only the outer one was
+ * ever visible.
  */
 export function drawOdds(state: GameState): number {
   const home = state.settlement;
   if (!home || state.end) return 0;
-  if (roomLeft(state) <= 0) return 0;
+  if (willAdmit(state) <= 0) return 0;
   if (state.party.food < foodPerDay(state) * DRAW_LARDER_DAYS) return 0;
 
 
@@ -149,7 +193,7 @@ export function drawOdds(state: GameState): number {
 export function swordOdds(state: GameState): number {
   const home = state.settlement;
   if (!home || state.end) return 0;
-  if (roomLeft(state) <= 0) return 0;
+  if (willAdmit(state) <= 0) return 0;
   if (sworn(state.party.people).length >= SWORN_MAX) return 0;
   if (state.party.food < foodPerDay(state) * DRAW_LARDER_DAYS) return 0;
 

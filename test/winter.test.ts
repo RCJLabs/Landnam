@@ -35,6 +35,8 @@ import { readiness } from '../src/sim/reach';
 import { telegraphWinter, winterVerdict } from '../src/sim/telegraph';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
+import { willAdmit } from '../src/sim/joining';
+import { living } from '../src/sim/people';
 
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
@@ -117,10 +119,36 @@ describe('the winter mark', () => {
     // DOWN as the winter is walked through, all else equal. The cooldown
     // holds all else equal.
     state.flags['lastBorn'] = state.day;
-    const early = forecast(state).food;
-    for (let d = 0; d < 20 && !state.end; d++) passDay(state);
-    expect(forecast(state).food).toBeLessThan(early);
-    expect(forecast(state).days).toBeLessThan(SURVIVAL_DAY - 25);
+    // The same confound, through a second door, opened when the roof became a
+    // soft limit: somebody JOINS mid-walk and is another mouth, exactly as a
+    // child is. Pinned out the same way rather than the assertion weakened —
+    // fill the hall to what it will admit, so `drawOdds` is nought and the
+    // roster is constant across the twenty days. Safe to leave crowded here:
+    // spread needs somebody already down, nobody is, and the fire is lit.
+    const seed0 = state.party.people[0]!;
+    while (willAdmit(state) > 0) {
+      state.party.people.push({
+        ...structuredClone(seed0), id: `pin${state.party.people.length}`,
+        name: `Pinned${state.party.people.length}`, bond: 'hand', injuries: [], kin: undefined,
+      } as never);
+    }
+    const roster = living(state.party.people).length;
+    const early = forecast(state);
+    // INTO the winter, not merely towards it, and the walk used to stop
+    // short. `forecast` accumulates `max(0, mouths - grown)` a day, so a day
+    // the fields cover contributes nothing and dropping it off the front of
+    // the count changes the food figure not at all. Walking from autumn to
+    // autumn asked the mark to shrink over days that were never in it. Thirty
+    // days clears WINTER_DAY, and the days it drops are days that cost
+    // something — which is what "walked through" was always supposed to mean.
+    for (let d = 0; d < 30 && !state.end; d++) passDay(state);
+    expect(seasonOf(state.day)).toBe('winter');
+    expect(living(state.party.people).length, 'the roster moved — the pin leaks')
+      .toBe(roster);
+    const late = forecast(state);
+    expect(late.days).toBeLessThan(early.days);
+    expect(late.food).toBeLessThan(early.food);
+    expect(late.days).toBeLessThan(SURVIVAL_DAY - 25);
   });
 
   it('is put away once the ice has broken, and comes back for the next winter', () => {

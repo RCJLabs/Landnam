@@ -62,7 +62,7 @@ import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
 import { abandonSteading, canAbandon } from '../src/sim/retreat';
 import { BAND_BASE, foodPerDay, firewoodPerNight, passDay } from '../src/sim/upkeep';
 import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
-import { handsLeave, roomLeft, SETTLED_IN, takeIn } from '../src/sim/joining';
+import { OVER_ROOF, handsLeave, roomLeft, SETTLED_IN, takeIn, willAdmit } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { BASE_MOVES, MAX_RAIDERS, MAX_RAIDERS_FAMED, fighterPerson, raiderCap } from '../src/sim/battle';
@@ -2105,16 +2105,29 @@ describe('a band that can grow, and can bleed', () => {
     expect(drawOdds(poor)).toBeLessThan(drawOdds(rich));
   });
 
-  it('never past the beds, and never past the larder', () => {
+  it('never past the floor, and never past the larder', () => {
     const state = roofed('draw-floors', ['longhouse', 'bud', 'meadhall']);
     state.day = 180;
     state.party.food = 300;
     for (const n of state.neighbours) n.standing = 70;
     expect(drawOdds(state)).toBeGreaterThan(0);
 
-    // A hall with no spare bed takes nobody, however famous.
-    const full = structuredClone(state);
-    while (roomLeft(full) > 0) takeIn(full, 1, 'test');
+    // RESTATED, not loosened. This asked for the door to shut at the last
+    // BED, and that is what made `crowding` unreachable — the band pressed up
+    // against the roof and stopped, so the tradeoff sim/sickness.ts is built
+    // on ("past what the roof has room for, a bad week becomes a bad winter")
+    // could not occur on any settled day of sixty sagas. The refusal is still
+    // real and a búð still buys the difference; it now falls three later, at
+    // the floor between the benches rather than at the last bed.
+    const beds = structuredClone(state);
+    while (roomLeft(beds) > 0) takeIn(beds, 1, 'test');
+    expect(roomLeft(beds)).toBe(0);
+    expect(drawOdds(beds), 'a full hall still takes the ones who sleep on the floor')
+      .toBeGreaterThan(0);
+
+    const full = structuredClone(beds);
+    while (willAdmit(full) > 0) takeIn(full, 1, 'test');
+    expect(crowding(full)).toBe(OVER_ROOF);
     expect(drawOdds(full)).toBe(0);
 
     // Nor a mouth it cannot feed. That is not growth, it is company while
@@ -2243,20 +2256,30 @@ describe('a band that can grow, and can bleed', () => {
     expect(sworn(state.party.people)).toHaveLength(SWORN_MAX);
   });
 
-  it('turns people away when there is no bed, and says nothing about it', () => {
-    // A full hall refusing help is the whole reason capacity exists — and it
-    // is what makes a búð worth five timber.
+  it('turns people away when there is no floor left, and says nothing about it', () => {
+    // A hall that has run out of room refusing help is still the reason
+    // capacity exists, and still what makes a búð worth five timber. What
+    // changed is where "run out" falls: at the last bed the refusal made
+    // `crowding` impossible, and a shipped mechanic sat behind it.
     const full = roofed('full');
     expect(roomLeft(full)).toBe(0);
-    expect(takeIn(full, 2, 'they had nowhere else to be')).toHaveLength(0);
-    expect(living(full.party.people)).toHaveLength(6);
+    // The floor between the benches, and then the door.
+    expect(takeIn(full, OVER_ROOF + 2, 'they had nowhere else to be'))
+      .toHaveLength(OVER_ROOF);
+    expect(living(full.party.people)).toHaveLength(6 + OVER_ROOF);
+    expect(takeIn(full, 1, 'one more')).toHaveLength(0);
   });
 
-  it('takes as many as there is room for and no more', () => {
+  it('takes as many as it can put somewhere, and no more', () => {
     const state = roofed('partial', ['longhouse', 'bud']);
     expect(roomLeft(state)).toBe(4);
-    expect(takeIn(state, 9, 'word had got round that we had ground')).toHaveLength(4);
-    expect(roomLeft(state)).toBe(0);
+    expect(willAdmit(state)).toBe(4 + OVER_ROOF);
+    expect(takeIn(state, 9, 'word had got round that we had ground'))
+      .toHaveLength(4 + OVER_ROOF);
+    expect(willAdmit(state)).toBe(0);
+    // And the hall is now over its roof, which is a state this game could not
+    // previously be in.
+    expect(crowding(state)).toBe(OVER_ROOF);
   });
 
   it('writes every arrival into the saga with the reason they came', () => {
@@ -3780,13 +3803,15 @@ describe('the sea is reached', () => {
       settledDays: number;
       soulSum: number;
       roomSum: number;
+      roofFrom: Record<string, number>;
+      slack: number[];
     }
     const arms: Record<string, Arm> = {};
 
     for (const [label, crew] of [['no healer', CREW], ['a healer', HEALER]] as const) {
       const arm: Arm = {
         illDays: 0, newlyIll: 0, crowdDays: 0, lived: 0, settled: 0, days: 0, careDays: 0,
-        mostSouls: 0, mostRoom: 0, settledDays: 0, soulSum: 0, roomSum: 0,
+        mostSouls: 0, mostRoom: 0, settledDays: 0, soulSum: 0, roomSum: 0, roofFrom: {}, slack: [],
       };
       const was = policy;
       policy = { ...SETTLER, crew };
@@ -3805,6 +3830,19 @@ describe('the sea is reached', () => {
               if (souls > arm.mostSouls) arm.mostSouls = souls;
               const room = capacity(after);
               if (room > arm.mostRoom) arm.mostRoom = room;
+              // WHAT THE ROOF IS MADE OF. Item 30's question: the roof runs
+              // far ahead of the band, and whether that is fixable depends
+              // entirely on whether the room was BUILT FOR or came free with
+              // something the band wanted anyway.
+              for (const id of after.settlement.built) {
+                const def = BUILDINGS.find((b) => b.id === id);
+                if (!def?.room) continue;
+                arm.roofFrom[id] = (arm.roofFrom[id] ?? 0) + def.room;
+              }
+              // HOW CLOSE IT EVER COMES. "Never crowded" is a fact about a
+              // threshold; the slack is a fact about the shape, and it says
+              // whether crowding is a near miss or was never in the running.
+              arm.slack.push(room - souls);
               arm.settledDays += 1;
               arm.soulSum += souls;
               arm.roomSum += room;
@@ -3832,13 +3870,23 @@ describe('the sea is reached', () => {
     };
     const med = (xs: number[]): string => pct(xs, 0.5);
     void med;
+    const sortPct = (xs: number[], p: number): number => {
+      const sorted = [...xs].sort((x, y) => x - y);
+      return sorted[Math.floor((sorted.length - 1) * p)] ?? 0;
+    };
     const rows = Object.entries(arms).map(([label, a]) =>
       `  ${label.padEnd(10)} ${a.illDays} person-days ill (${(a.illDays / Math.max(1, a.days)).toFixed(2)} ` +
       `per day lived), ${a.newlyIll} new illnesses, ${a.crowdDays} crowded days, ` +
       `${a.careDays} days tended; ${a.lived}/${SEEDS} still standing at day 400, over ${a.days} days lived\n` +
       `             band ${(a.soulSum / Math.max(1, a.settledDays)).toFixed(1)} souls to ` +
       `${(a.roomSum / Math.max(1, a.settledDays)).toFixed(1)} of roof on the average settled day ` +
-      `(most ever ${a.mostSouls} souls, ${a.mostRoom} roof)`,
+      `(most ever ${a.mostSouls} souls, ${a.mostRoom} roof)\n` +
+      `             the roof came from: ${Object.entries(a.roofFrom)
+        .sort((x, y) => y[1] - x[1])
+        .map(([k, v]) => `${k} ${Math.round((v / Math.max(1, a.roomSum)) * 100)}%`)
+        .join(', ') || 'nothing'}\n` +
+      `             spare beds on a settled day: tightest ${Math.min(...a.slack)}, ` +
+      `10th pct ${sortPct(a.slack, 0.1)}, median ${sortPct(a.slack, 0.5)}`,
     );
     // eslint-disable-next-line no-console
     console.log(`PROBE illness and the healer — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
