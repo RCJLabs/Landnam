@@ -64,7 +64,7 @@ const readMap = () => page.evaluate(() => {
     terrain: hexes.length,
     lit: hexes.filter((n) => n.getAttribute('opacity') === '1').length,
     rivers: layers[1]?.childElementCount ?? 0,
-    patterns: map.querySelectorAll('pattern').length,
+    patterns: [...map.querySelectorAll('pattern')].map((n) => n.id),
     // Two nodes on one hex is what a renderer that forgot its cache looks
     // like, and it is invisible in a screenshot — the second covers the first.
     duplicates: hexes.length - new Set(hexes.map((n) => n.getAttribute('points'))).size,
@@ -74,7 +74,24 @@ const readMap = () => page.evaluate(() => {
 const box = await page.locator('svg.map').boundingBox();
 const opening = await readMap();
 check(opening.terrain > 0, 'the map charted nothing at all on the first paint');
-check(opening.patterns === 16, `expected 16 terrain patterns, found ${opening.patterns}`);
+// The claim here was `=== 16`, which went red the day the deep got its own
+// pair — eight terrains became eight terrains and a deep, and 16 became 18.
+// A count is the wrong thing to pin: it has to be restated every time art is
+// added, and nobody remembers to. What actually matters is the invariant the
+// patterns are FOR — every terrain fill is stamped twice from the same marks,
+// bright and dim, so a hex the band walked away from is the same ground it
+// was. So pin the twinning, which cannot drift.
+{
+  const ids = opening.patterns;
+  const lit = ids.filter((id) => !id.endsWith('-dim'));
+  const dim = new Set(ids.filter((id) => id.endsWith('-dim')));
+  const stray = ids.filter((id) => !id.startsWith('terrain-'));
+  const orphans = lit.filter((id) => !dim.has(`${id}-dim`));
+  check(ids.length > 0, 'the map defined no terrain patterns at all');
+  check(stray.length === 0, `patterns that are not terrain fills: ${stray.join(', ')}`);
+  check(orphans.length === 0, `terrain fills with no dim twin: ${orphans.join(', ')}`);
+  check(lit.length * 2 === ids.length, `${lit.length} lit fills but ${ids.length} patterns — a dim without a light`);
+}
 
 const growth = [opening.terrain];
 for (const [dx, dy] of STEPS) {

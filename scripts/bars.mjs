@@ -6,10 +6,13 @@
 // whole commit because of it. A bar that cannot fail loudly is not a bar.
 import { spawnSync } from 'node:child_process';
 
+// `repaint` was not on this list, so `npm run bars` never ran it and it sat
+// red for however long it took the deep to get its own pattern pair. A bar
+// nothing runs is not a bar either.
 const BARS = [
   ['offline', []], ['sea', []], ['larder', []], ['pan', []],
   ['field', []], ['pinch', []], ['landscape', []], ['way-look', []],
-  ['reach', []], ['reach', ['320x568']],
+  ['repaint', []], ['reach', []], ['reach', ['320x568']],
 ];
 
 let bad = 0;
