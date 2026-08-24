@@ -2006,6 +2006,50 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-24 — A winter illness mends for a healer and for nobody else** —
+  item 29, which set out to make the healer worth a hand and instead found it
+  already was, and corrected a wrong finding of my own.
+
+  **Item 25 said the healer bought nothing. That was the instrument.** It
+  counted bands that SAW SPRING, and nearly every band sees a first spring, so
+  the number read 17 of 30 in both arms whatever happened downstream of it.
+  Counting bands still standing when the harness stops — same seeds, same
+  code, one line changed in the probe — the two arms are **4 of 30 against 7**,
+  and the days lived between them differ by an eighth, 4570 against 5147. The
+  healer was never worthless. The measure was blunt.
+
+  That is the fourth time this week a measurement rather than the game turned
+  out to be the finding, and the probe now carries the lesson: an A/B is only
+  as sharp as the thing it counts, so pick an outcome most bands do not reach
+  or the arms will agree no matter what the code does.
+
+  **The one real gap was in the season that matters.** `mendInjuries` refused
+  to tick any `ill_` between the frost and the thaw — a rule with a good
+  stated reason, that winter illness mending like a summer scratch would take
+  the teeth out of the season. But the rule was TOTAL, and `coldNight` is
+  where illness comes from, so the healer's mending lever was dead in the only
+  season that uses it. Its other lever, the guard on `catchingOdds`, was
+  already guarding a floor, because `crowding` returns zero on every settled
+  day this harness has ever measured. Both levers off.
+
+  So the season keeps its teeth against a hall with nobody set to tending, and
+  a hall that spends a hand can nurse somebody through. Measured over twelve
+  winter days: a fourteen-day illness is still fourteen days from mending with
+  no healer, and 6.6 days closer with one — against 14.0 for the same illness
+  in summer, so the frost still bites, it is simply survivable now.
+
+  **It does not move the aggregate**, and that is said plainly rather than
+  buried: the probe reads identically with and without it, because a hall that
+  has a healer crewed AND somebody ill AND is in winter is rare in bot play —
+  364 tended days across thirty sagas. It fires, it is the one thing a healer
+  in a Norse winter would actually have done, and it costs no balance risk.
+  What it fixes is the job's coherence, not its rate.
+
+  Parity is unmoved for the same reason — no recorded run has a healer tending
+  through a winter illness. No save change.
+
+  1216 tests, all ten browser bars.
+
 - **2026-08-24 — Settlers arrive with what it takes to start** — the voyage
   home made worth taking, and gated behind a store you have to build first.
 

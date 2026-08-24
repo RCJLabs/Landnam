@@ -26,7 +26,7 @@ import type { GameState, Person } from '../src/state/types';
 import { canFound, foundSettlement } from '../src/sim/site';
 import { fromKey } from '../src/hex';
 import { passDay } from '../src/sim/upkeep';
-import { SEASON_LENGTH } from '../src/sim/calendar';
+import { SEASON_LENGTH, SEASON_ORDER, seasonOf } from '../src/sim/calendar';
 
 /**
  * A settled hall, founded the way the game founds one.
@@ -132,6 +132,85 @@ describe('a healer is a hand that grows no food', () => {
     expect(tended).toBeGreaterThan(0);
     expect(catchingOdds(state)).toBeLessThan(bare);
     expect(CARE_GUARD).toBeGreaterThan(0);
+  });
+});
+
+describe('a winter illness mends for a healer and for nobody else', () => {
+  // The healer's identity, and it was switched off until 2026-08-24.
+  //
+  // `mendInjuries` refuses to tick any `ill_` between the frost and the thaw,
+  // for a good reason it stated: winter illness that mended like a summer
+  // scratch would take the teeth out of the season. But the rule was TOTAL,
+  // and `coldNight` is where illness comes from — so the healer's mending
+  // lever was dead in the only season that uses it, while its other lever,
+  // the guard on `catchingOdds`, was already guarding a floor because
+  // `crowding` returns zero on every settled day the harness has measured.
+  //
+  // So the season keeps its teeth against a hall with nobody set to tending,
+  // and a hall that spends a hand can nurse somebody through.
+
+  function winterHall(seed: string, tended: boolean): GameState {
+    const state = hall(seed);
+    const crew = living(state.party.people);
+    crew.forEach((p, i) => { p.job = tended && i === 0 ? 'healer' : 'farmer'; });
+    state.day = SEASON_ORDER.indexOf('winter') * SEASON_LENGTH + 3;
+    state.party.food = 4000;
+    state.party.firewood = 4000;
+    for (const p of crew) makeSick(p);
+    return state;
+  }
+
+  const twelveDays = (state: GameState): void => {
+    for (let d = 0; d < 12; d += 1) {
+      state.event = undefined;
+      if (!passDay(state)) break;
+    }
+  };
+
+  it('does not mend at all in a hall with nobody tending', () => {
+    const state = winterHall('frost-alone', false);
+    const man = living(state.party.people)[1]!;
+    const before = man.injuries[0]!.heals;
+    twelveDays(state);
+    expect(seasonOf(state.day)).toBe('winter');
+    // Not one day of it, which is the rule the season rests on.
+    expect(man.injuries[0]?.heals).toBe(before);
+  });
+
+  it('mends under tending, and says so in the saga', () => {
+    const state = winterHall('frost-tended', true);
+    const man = living(state.party.people)[1]!;
+    const before = man.injuries[0]!.heals;
+    expect(careToday(state)).toBeGreaterThan(0);
+    twelveDays(state);
+    const after = man.injuries[0]?.heals ?? 0;
+    // eslint-disable-next-line no-console
+    console.log(`twelve winter days: ${before} to heal became ${after} under tending`);
+    expect(after).toBeLessThan(before);
+  });
+
+  it('mends slower than the same illness would out of the frost', () => {
+    // The season has to keep its teeth: tending is the ONLY thing ticking in
+    // winter, where out of it there is a free day-a-day on top. Measured as
+    // days actually taken off, not asserted from the constants — the first
+    // cut of this compared `care` with `1 + care` and was true whatever the
+    // code did.
+    const winter = winterHall('frost-rate', true);
+    const summer = winterHall('thaw-rate', true);
+    summer.day = SEASON_ORDER.indexOf('summer') * SEASON_LENGTH + 3;
+    const took = (state: GameState): number => {
+      const man = living(state.party.people)[1]!;
+      const before = man.injuries[0]!.heals;
+      twelveDays(state);
+      return before - (man.injuries[0]?.heals ?? 0);
+    };
+    const inFrost = took(winter);
+    const inThaw = took(summer);
+    // eslint-disable-next-line no-console
+    console.log(`twelve tended days took ${inFrost.toFixed(1)} off it in winter, `
+      + `${inThaw.toFixed(1)} in summer`);
+    expect(inFrost).toBeGreaterThan(0);
+    expect(inFrost).toBeLessThan(inThaw);
   });
 });
 

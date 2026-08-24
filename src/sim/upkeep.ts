@@ -176,11 +176,42 @@ function mendInjuries(state: GameState): void {
   // what the band has LEARNED, plus whoever is set to tending today. The
   // healer's day is spent here rather than banked, which is the whole reason
   // `care` is not a stockpile.
-  const care = 1 + bonus(state, 'mend') + careToday(state);
+  const tending = careToday(state);
+  const care = 1 + bonus(state, 'mend') + tending;
   for (const person of state.party.people) {
     if (!person.alive) continue;
     person.injuries = person.injuries.filter((injury) => {
-      if (frozen && injury.id.startsWith('ill_')) return true;
+      // WINTER ILLNESS MENDS FOR A HEALER AND FOR NOBODY ELSE, and this line
+      // is what the healer is FOR.
+      //
+      // The rule above is right and was total: no `ill_` mended between the
+      // frost and the thaw, whatever the hall did. Measured, that switched
+      // the healer's mending off in the only season that hands illness out —
+      // `coldNight` is where `ill_` comes from — while its other lever, the
+      // guard on `catchingOdds`, was already guarding a floor, because
+      // `crowding` returns zero on every settled day this harness has ever
+      // measured. Both levers neutralised, and the job read as worth nothing:
+      // 364 days of tending moved illness 0.48 to 0.46 person-days per day
+      // lived and survival not at all.
+      //
+      // So the season keeps its teeth against a band that has nobody set to
+      // it, and a hall that spends a hand on tending can nurse somebody
+      // through. That is the trade the job is supposed to be, and it is the
+      // one thing a healer in a Norse winter would actually have done.
+      if (frozen && injury.id.startsWith('ill_')) {
+        if (tending <= 0) return true;
+        injury.heals -= tending;
+        if (injury.heals <= 0) {
+          chronicle(
+            state,
+            `${person.name} was nursed through the worst of it, and the ${injury.label.toLowerCase()} `
+              + 'let go before the thaw.',
+            'good',
+          );
+          return false;
+        }
+        return true;
+      }
       injury.heals -= care;
       if (injury.heals <= 0) {
         chronicle(state, `${person.name}'s ${injury.label.toLowerCase()} had mended.`, 'good');

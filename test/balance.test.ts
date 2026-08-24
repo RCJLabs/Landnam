@@ -3716,15 +3716,23 @@ describe('the sea is reached', () => {
    * is a fact about the harness. Running the same seeds both ways is what
    * separates the two.
    *
-   * WHAT IT FOUND, and item 25 was not built on the strength of it:
+   * WHAT IT FOUND, in two passes, and the first pass was WRONG.
    *
-   * A healer crewed for 364 days took illness from 0.48 person-days per day
-   * lived to 0.46, prevented no net illnesses, and changed survival by
-   * nothing at all — 17 of 30 saw spring in both arms. That is not a job
-   * with a bad rate; it is a job with no measurable output. Gating it behind
-   * a stock of herbs — a second resource with its own gathering, storage,
-   * seasonality and spoilage — would have made an ineffective job harder to
-   * use. The chore, not the decision.
+   * It read "a healer crewed for 364 days took illness from 0.48 person-days
+   * per day lived to 0.46 and changed survival by nothing at all — 17 of 30
+   * saw spring in both arms", and concluded the healer was a job with no
+   * measurable output. That conclusion was the INSTRUMENT, and it is exactly
+   * the error this file has caught three times before in other clothes.
+   *
+   * `saw spring` was the outcome being counted, and nearly every band sees a
+   * first spring — so the number could not separate two arms and read 17 of
+   * 30 whatever happened downstream of it. Counting bands STILL STANDING when
+   * the harness stops, on the same seeds and the same code, the two arms are
+   * 4 of 30 against 7, and the days lived between them differ by an eighth:
+   * 4570 against 5147. The healer was never worthless. The measure was blunt.
+   *
+   * So item 25's verdict stands only in its narrow part — herbs would have
+   * been a chore — and its stated reason was false. The job pays.
    *
    * The mechanism is the second line of the readout. `crowding` returned
    * zero on EVERY settled day of sixty sagas, because the roof runs a long
@@ -3735,9 +3743,13 @@ describe('the sea is reached', () => {
    * a floor. The crowding tradeoff item 8 was built around — another pair of
    * hands is more work and one more chest by the fire — cannot happen.
    *
-   * Kept as an instrument. Any work that means to make the healer a decision
-   * has to move the first line, and any work that means to make crowding
-   * bite has to move the second.
+   * Kept as an instrument. Any work that means to make crowding bite has to
+   * move the second line — it is still zero, and still means `CROWD_BITE`
+   * multiplies nothing.
+   *
+   * A LESSON ABOUT THIS PROBE ITSELF, since it has now misled once: an A/B
+   * is only as sharp as the thing it counts. Pick an outcome most bands do
+   * not reach, or the arms will agree no matter what the code does.
    *
    * The first cut of this measured neither, and its error is worth keeping:
    * it swapped the BUILDER out for the healer and read the healer arm as
@@ -3759,7 +3771,7 @@ describe('the sea is reached', () => {
       illDays: number;   // person-days spent carrying something
       newlyIll: number;  // new illnesses of any cause, cold nights included
       crowdDays: number; // settled days with more bodies than roof
-      lived: number;     // saw spring
+      lived: number;     // still standing when the harness stopped
       settled: number;
       days: number;
       careDays: number;  // settled days with any tending at all
@@ -3800,7 +3812,11 @@ describe('the sea is reached', () => {
           }, 'even');
           arm.days += state.day;
           if (state.settlement) arm.settled += 1;
-          if (!state.end || state.day >= 73) arm.lived += 1;
+          // STILL STANDING, not "saw spring". Nearly every band sees a first
+          // spring, so that number cannot separate two arms — it read 17 of
+          // 30 both ways while the days lived between them differed by an
+          // eighth.
+          if (!state.end) arm.lived += 1;
           await new Promise((resolve) => setTimeout(resolve, 0));
         }
       } finally {
@@ -3819,7 +3835,7 @@ describe('the sea is reached', () => {
     const rows = Object.entries(arms).map(([label, a]) =>
       `  ${label.padEnd(10)} ${a.illDays} person-days ill (${(a.illDays / Math.max(1, a.days)).toFixed(2)} ` +
       `per day lived), ${a.newlyIll} new illnesses, ${a.crowdDays} crowded days, ` +
-      `${a.careDays} days tended; ${a.lived}/${SEEDS} saw spring over ${a.days} days lived\n` +
+      `${a.careDays} days tended; ${a.lived}/${SEEDS} still standing at day 400, over ${a.days} days lived\n` +
       `             band ${(a.soulSum / Math.max(1, a.settledDays)).toFixed(1)} souls to ` +
       `${(a.roomSum / Math.max(1, a.settledDays)).toFixed(1)} of roof on the average settled day ` +
       `(most ever ${a.mostSouls} souls, ${a.mostRoom} roof)`,
