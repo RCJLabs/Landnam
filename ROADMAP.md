@@ -2006,6 +2006,74 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-24 — Settlers arrive with what it takes to start** — the voyage
+  home made worth taking, and gated behind a store you have to build first.
+
+  **It was measurable as a trap.** Forced to take every crossing she could, a
+  band went from 5 of 40 standing at day 400 to 3, and lived a fifth fewer
+  days. Two changes fixed it, and only one of them was the obvious one.
+
+  **A voyage now needs the hall provisioned before she will sail** — a season
+  of food and a season of wood banked, or the card refuses and says which is
+  short and by how much. This is not a tax. It is the thing that decides
+  whether the people she brings home are hands or mouths, and the measurement
+  that showed it was separate: three extra pairs of hands dropped on a going
+  concern take a band from 6 of 40 standing to 7 and add nine per cent to the
+  days it lives, while eating the surplus down from 2934 food to 667. Six
+  pairs take it to 4 of 40 — worse than none at all. **People are worth having
+  exactly as far as they can be fed.**
+
+  The first cut of the rule asked for a whole crossing's food, about 312,
+  against a hall holding a median of 13 on a day it might have sailed. It
+  opened for nobody, ever, in forty sagas. What it had confused is who eats: a
+  crew at sea comes off the ration, so the hall is not feeding them while they
+  are gone. What a voyage costs is their LABOUR, which is a season's gap and
+  not a year's. Rebased on a season, the bar asks 72 food against a hall
+  holding 60 on a median autumn day and 162 at the ninetieth percentile — a
+  bar a working steading clears and a lean one does not.
+
+  **And settlers arrive with a season's eating each.** This is the line that
+  actually turned it. The hold used to return a flat share of itself whoever
+  was aboard — about twenty food — and twenty food feeds three new arrivals
+  for two days. Four separate measurements this week say the band is
+  FOOD-limited rather than hand-limited: fishing grounds changed the whole
+  shape of the sea by adding food; three hands help and six sink you; the
+  voyage converted a banked surplus into people. A crossing that trades the
+  scarce thing for the plentiful one cannot pay. Nobody sailed to a new
+  country empty-handed, so now they do not.
+
+  | | standing at day 400 | souls | days lived |
+  |---|---|---|---|
+  | voyage refused | 5/40 | 127 | 5684 |
+  | may sail | **6/40** | **138** | 5696 |
+  | every crossing she can take | 6/40 | 141 | 5696 |
+
+  That last row is the one that matters: overusing the voyage used to read 3
+  and 108. It is no longer a trap even when taken badly.
+
+  **A wrong turn worth keeping.** The first fix attempted was shortening the
+  crossing from 78 days to two seasons, on the theory that the problem was a
+  payback period — two hands gone against two and a third returned, breaking
+  even past the end of most sagas. It measured WORSE: 3 of 40 standing against
+  4, 108 souls against 124. What comes home sooner is not only hands, it is
+  mouths, arriving sooner in a hall whose binding constraint was never labour.
+  `CROSSING` is still 78 and the note explaining why is in the code.
+
+  **The bot sails again**, and its season is a tactic rather than a rule:
+  autumn, not spring. The store is at its thinnest in spring — a median of 13
+  food on a day she could otherwise have gone — and at its fullest after the
+  harvest. And a crew at sea is off the ration, so sending two away over
+  winter sheds two mouths through the season that kills.
+
+  The published odds are unmoved at 86/53/17: a voyage needs a first winter
+  behind it and the curve runs to day 73.
+
+  Thirteenth rule the port does not have — though the contract itself did not
+  move, because the parity runs are recorded action streams and none of them
+  ever launches a voyage. The hashes are silent about a rule that changed.
+
+  1213 tests, all ten browser bars.
+
 - **2026-08-23 — The crossing has to be worth taking before it is worth
   decorating** — queue item 27 (a cargo manifest and a season of cards at sea)
   measured, and not built.

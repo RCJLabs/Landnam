@@ -86,7 +86,7 @@ import { canCallThing, hasSpeakers, thingNeeds, yearsRuled } from '../src/sim/th
 import type { NeedId } from '../src/data/thing';
 import { SPEAKER_STANDING } from '../src/data/thing';
 import { launchBlocker, provisionsFor } from '../src/sim/expedition';
-import { sailBlocker } from '../src/sim/voyage';
+import { provisioning, sailBlocker } from '../src/sim/voyage';
 import { BARTER_FOOD, CLAN_KINDS } from '../src/data/clans';
 import { wintersStood } from '../src/sim/calendar';
 import { terrainDef } from '../src/data/terrain';
@@ -228,12 +228,6 @@ interface Policy {
    * every published figure in this file would inherit it.
    */
   sails: boolean;
-  /**
-   * Days of food in hand before this band will spare two hands for a season.
-   * Swept by item 27's probe rather than picked, because "she rarely sails"
-   * and "she cannot afford to" are different findings with different fixes.
-   */
-  sailSurplus: number;
   /**
    * Sail in any season, not only spring. Not a strategy anybody should play —
    * it is the FORCED arm of item 27's probe, which measures what a crossing
@@ -402,8 +396,7 @@ const SETTLER: Policy = {
     'hof', 'dock',
   ],
   crew: CREW,
-  sails: false,
-  sailSurplus: 30,
+  sails: true,
   sailAnySeason: false,
   errandBuffer: 6,
   desperate: false,
@@ -451,8 +444,7 @@ const RAIDER: Policy = {
   // of this policy was the site-floor strawman all over again — a strategy
   // measured with a spec that could not carry it.
   crew: ['warrior','hunter','hunter','farmer','woodcutter','builder'],
-  sails: false,
-  sailSurplus: 30,
+  sails: true,
   sailAnySeason: false,
   errandBuffer: 2,
   desperate: false,
@@ -481,8 +473,7 @@ const TURTLE: Policy = {
     'storehouse', 'earthworks', 'bud', 'meadhall', 'greathall', 'hof', 'dock',
   ],
   crew: ['farmer','farmer','farmer','woodcutter','builder','warrior'],
-  sails: false,
-  sailSurplus: 30,
+  sails: true,
   sailAnySeason: false,
   errandBuffer: 0,
   desperate: false,
@@ -1037,10 +1028,16 @@ function step(state: GameState): Action {
     // she is back before the year turns — CROSSING is 78 days, and a keel
     // that leaves in autumn is a keel that is somewhere else when the mark
     // matters.
+    // AUTUMN, not spring, and the season is the bot's tactic rather than the
+    // game's rule. Two measurements decided it. The store is at its thinnest
+    // in spring — a median of 13 food on a day she could otherwise have gone
+    // — and at its fullest after the harvest. And a crew at sea is off the
+    // ration, so sending two away over winter sheds two mouths through the
+    // season that kills, and gets them back in summer with the growing still
+    // to come. Spring departure does the opposite of both.
     if (policy.sails
-        && (season === 'spring' || policy.sailAnySeason)
-        && wintersStood(state.day) >= 1
-        && state.party.food / Math.max(1, foodPerDay(state)) > policy.sailSurplus) {
+        && (season === 'autumn' || policy.sailAnySeason)
+        && wintersStood(state.day) >= 1) {
       const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
       if (crew.length >= 2 && sailBlocker(state, crew) === null) {
         return { type:'LAUNCH', members: crew, purpose: 'home' };
@@ -3471,6 +3468,50 @@ describe('the sea is reached', () => {
   });
 
   /**
+   * PROBE: what is a pair of hands worth?
+   *
+   * Written for the voyage, because every lever that would make a crossing
+   * pay runs through this one number. She brings back three people; if three
+   * people are worth little, no amount of them makes the season back.
+   *
+   * Three extra hands landed on the same day, same seeds, against nothing.
+   * `takeIn` over the roof, which is what the voyage itself does.
+   */
+  it('PROBE: what a pair of hands is worth', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 40;
+    const rows: string[] = [];
+    for (const extra of [0, 3, 6]) {
+      let lived = 0;
+      let days = 0;
+      let souls = 0;
+      let food = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        let landed = false;
+        const state = run(`hands-${s}`, 400, (_before, after) => {
+          // On the first settled day past the first winter, so the gift lands
+          // on a going concern rather than on a band still walking.
+          if (!landed && extra > 0 && after.settlement && after.day > 100 && !after.end) {
+            landed = true;
+            takeIn(after, extra, 'a probe put them there', true);
+          }
+        }, 'even');
+        days += state.day;
+        souls += living(state.party.people).length;
+        food += state.party.food;
+        if (!state.end) lived += 1;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      rows.push(
+        `  +${extra} hands  ${lived}/${SEEDS} standing at day 400, ${days} days lived, ` +
+        `${souls} souls between them, ${food} food in store`,
+      );
+    }
+    // eslint-disable-next-line no-console
+    console.log(`PROBE what a pair of hands is worth — ${SEEDS} landings each:\n${rows.join('\n')}`);
+    expect(rows).toHaveLength(3);
+  });
+
+  /**
    * PROBE, for queue item 27: does anybody ever sail home, and does it pay?
    *
    * Item 27 proposes two elaborations of the voyage — a cargo manifest so
@@ -3516,6 +3557,28 @@ describe('the sea is reached', () => {
    * A cargo manifest and a season of cards at sea would both be elaborations
    * of that. The crossing has to be worth taking before it is worth
    * decorating.
+   *
+   * AND THEN IT WAS MADE WORTH TAKING, on 2026-08-24, and this probe is what
+   * drove it. Two changes, both of which this readout argued for:
+   *
+   *   - `provisioning` — a season of food and a season of wood banked before
+   *     she may sail at all. Not a tax: the store is what decides whether the
+   *     people she brings are hands or mouths.
+   *   - settlers arrive with a season's eating each (`SETTLER_STORES`). The
+   *     hold used to return a flat share of itself whoever was aboard, and
+   *     twenty food feeds three arrivals for two days.
+   *
+   * The second is the one that mattered, and the first cut of the fix was a
+   * different change that made things WORSE: shortening the crossing to two
+   * seasons, on the theory that the problem was a payback period. It read 3
+   * of 40 standing against 4, because what comes home sooner is not only
+   * hands, it is mouths. The band is food-limited, not hand-limited, and
+   * every measurement taken this day says so from a different direction.
+   *
+   * Where it landed: 6 of 40 standing at day 400 against 5 with the voyage
+   * refused, 138 souls against 127. The forced arm — every crossing she can
+   * take, any season — reads 6 and 141, which is the part that says it is no
+   * longer a trap. It was 3 and 108 before.
    */
   it('PROBE: whether the voyage home pays for the season it costs', { timeout: 1_800_000 }, async () => {
     const SEEDS = 40;
@@ -3534,25 +3597,29 @@ describe('the sea is reached', () => {
       tooPoor: number;
       couldHaveGone: number;
       blocked: Record<string, number>;
+      hadFood: number[];
+      hadWood: number[];
+      wantFood: number[];
+      wantWood: number[];
     }
     const arms: Record<string, Arm> = {};
 
-    for (const [label, sails, surplus, anySeason] of [
-      ['no voyage', false, 30, false],
-      ['spare 30', true, 30, false],
-      ['spare 10', true, 10, false],
-      // THE FORCED ARM. Sails whenever `sailBlocker` allows, in any season,
-      // on any store. Nobody should play this way — it exists to separate
-      // "the gate never opens" from "the crossing is not worth taking", which
-      // the thresholds above cannot tell apart.
-      ['whenever', true, 0, true],
+    for (const [label, sails, anySeason] of [
+      ['no voyage', false, false],
+      ['may sail', true, false],
+      // THE FORCED ARM, kept from the measurement that found the voyage was a
+      // trap: sails in any season the moment `sailBlocker` allows. It is not
+      // a strategy, it is the control that separates "the gate never opens"
+      // from "the crossing is not worth taking".
+      ['whenever', true, true],
     ] as const) {
       const arm: Arm = {
         sailed: 0, voyages: 0, returned: 0, brought: 0, rough: 0, lived: 0, days: 0, souls: 0,
         settledDays: 0, notSpring: 0, tooSoon: 0, tooPoor: 0, couldHaveGone: 0, blocked: {},
+        hadFood: [], hadWood: [], wantFood: [], wantWood: [],
       };
       const was = policy;
-      policy = { ...SETTLER, sails, sailSurplus: surplus, sailAnySeason: anySeason };
+      policy = { ...SETTLER, sails, sailAnySeason: anySeason };
       try {
         for (let s = 0; s < SEEDS; s += 1) {
           let sentOne = false;
@@ -3563,14 +3630,20 @@ describe('the sea is reached', () => {
             if (before.settlement && !before.end) {
               arm.settledDays += 1;
               const crew = sworn(before.party.people).slice(0, 2).map(p => p.id);
-              const fed = before.party.food / Math.max(1, foodPerDay(before));
-              if (seasonOf(before.day) !== 'spring' && !anySeason) arm.notSpring += 1;
+              if (seasonOf(before.day) !== 'autumn' && !anySeason) arm.notSpring += 1;
               else if (wintersStood(before.day) < 1) arm.tooSoon += 1;
-              else if (fed <= surplus) arm.tooPoor += 1;
               else {
                 const why = sailBlocker(before, crew);
                 if (why) arm.blocked[why] = (arm.blocked[why] ?? 0) + 1;
                 else arm.couldHaveGone += 1;
+                // What a band ACTUALLY has standing on an eligible day,
+                // against what the rule asks of it. A threshold picked
+                // without this is a threshold picked by feel.
+                const need = provisioning(before);
+                arm.hadFood.push(before.party.food);
+                arm.hadWood.push(before.party.firewood);
+                arm.wantFood.push(need.food);
+                arm.wantWood.push(need.firewood);
               }
             }
             if (!before.voyage && after.voyage) { arm.voyages += 1; sentOne = true; }
@@ -3593,6 +3666,13 @@ describe('the sea is reached', () => {
       arms[label] = arm;
     }
 
+    const pct = (xs: number[], p: number): string => {
+      if (xs.length === 0) return '-';
+      const sorted = [...xs].sort((x, y) => x - y);
+      return String(Math.round(sorted[Math.floor((sorted.length - 1) * p)]!));
+    };
+    const med = (xs: number[]): string => pct(xs, 0.5);
+    void med;
     const rows = Object.entries(arms).map(([label, a]) =>
       `  ${label.padEnd(10)} ${a.sailed}/${SEEDS} sagas sailed, ${a.voyages} crossings ` +
       `(${a.returned} came home, ${a.rough} rough), ${a.brought} people fetched; ` +
@@ -3601,7 +3681,10 @@ describe('the sea is reached', () => {
       `             of ${a.settledDays} settled days: ${a.notSpring} not spring, ${a.tooSoon} ` +
       `before the first winter, ${a.tooPoor} too poor to spare a season, ` +
       `${a.couldHaveGone} clear to go; blocked ` +
-      `${Object.entries(a.blocked).map(([k, v]) => `${k} ${v}`).join(', ') || 'never'}`,
+      `${Object.entries(a.blocked).map(([k, v]) => `${k} ${v}`).join(', ') || 'never'}\n` +
+      `             on an eligible day the hall HAD food ${med(a.hadFood)} wood ${med(a.hadWood)}; ` +
+      `the rule WANTS food ${med(a.wantFood)} wood ${med(a.wantWood)} ` +
+      `(food 90th pct ${pct(a.hadFood, 0.9)}, wood 90th pct ${pct(a.hadWood, 0.9)})`,
     );
     // eslint-disable-next-line no-console
     console.log(`PROBE the voyage home — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
@@ -3609,7 +3692,7 @@ describe('the sea is reached', () => {
     // A probe: it asserts its instrument ran, not a rate. The bot has to be
     // ABLE to sail, or this measures nothing at all — which is the state it
     // was written to end.
-    expect(arms['whenever']!.voyages, 'the bot still never sails — this probe measures nothing')
+    expect(arms['may sail']!.voyages, 'the bot still never sails — this probe measures nothing')
       .toBeGreaterThan(0);
     expect(arms['no voyage']!.voyages).toBe(0);
   });
@@ -3726,6 +3809,13 @@ describe('the sea is reached', () => {
       arms[label] = arm;
     }
 
+    const pct = (xs: number[], p: number): string => {
+      if (xs.length === 0) return '-';
+      const sorted = [...xs].sort((x, y) => x - y);
+      return String(Math.round(sorted[Math.floor((sorted.length - 1) * p)]!));
+    };
+    const med = (xs: number[]): string => pct(xs, 0.5);
+    void med;
     const rows = Object.entries(arms).map(([label, a]) =>
       `  ${label.padEnd(10)} ${a.illDays} person-days ill (${(a.illDays / Math.max(1, a.days)).toFixed(2)} ` +
       `per day lived), ${a.newlyIll} new illnesses, ${a.crowdDays} crowded days, ` +

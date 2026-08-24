@@ -22,10 +22,13 @@ import {
   aboard,
   atSeaAway,
   daysOut,
+  SETTLER_STORES,
+  provisioning,
   sailBlocker,
   sailForHome,
   voyageDay,
 } from '../src/sim/voyage';
+import { SEASON_LENGTH } from '../src/sim/calendar';
 import { living } from '../src/sim/people';
 import { roomLeft } from '../src/sim/joining';
 import { crowding } from '../src/sim/colony';
@@ -98,6 +101,56 @@ describe('what will stop her sailing', () => {
     // Everybody aboard leaves nobody at home.
     expect(sailBlocker(state, crew.map((p) => p.id))).toBe('unmanned');
     expect(MIN_ASHORE).toBeGreaterThan(0);
+  });
+});
+
+describe('she does not sail on an empty hall', () => {
+  // Added when the voyage was made worth taking. It was measurable as a TRAP
+  // before this — forced to take every crossing she could, a band went from
+  // 5 of 40 standing at day 400 to 3 — and the reason was that people came
+  // home into a hall that could not feed them. Requiring the store first is
+  // what turns the crossing from a thing you stumble into and regret into a
+  // thing you spend a season preparing.
+
+  it('asks for a season of food and a season of wood, and says which is short', () => {
+    const state = hall('provision');
+    const need = provisioning(state);
+    expect(need.food).toBeGreaterThan(0);
+    expect(need.firewood).toBeGreaterThan(0);
+
+    state.party.food = need.food - 1;
+    expect(sailBlocker(state, twoOf(state))).toBe('hungry');
+
+    state.party.food = need.food;
+    state.party.firewood = need.firewood - 1;
+    expect(sailBlocker(state, twoOf(state))).toBe('cold');
+
+    state.party.firewood = need.firewood;
+    expect(sailBlocker(state, twoOf(state))).toBeNull();
+  });
+
+  it('asks for the store LAST, so the reason given is the one to act on', () => {
+    // A hall short of wood AND short of hands should be told about the hands:
+    // one of those is answered by a different choice, the other by work, and
+    // a player sent to chop wood for a boat that would refuse them anyway has
+    // been told the wrong thing.
+    const state = hall('order');
+    state.party.food = 0;
+    state.party.firewood = 0;
+    expect(sailBlocker(state, [living(state.party.people)[0]!.id])).toBe('shorthanded');
+  });
+
+  it('is a bar a working steading can actually clear', () => {
+    // The first cut asked for `foodPerDay * CROSSING` — about 312 — against a
+    // median hall holding 13 on a day it might have sailed. It opened for
+    // nobody in forty sagas. A gate nothing can pass is not a decision.
+    const state = hall('clearable');
+    const need = provisioning(state);
+    // eslint-disable-next-line no-console
+    console.log(`a fresh hall of ${living(state.party.people).length} must bank `
+      + `${need.food} food and ${need.firewood} wood to sail`);
+    expect(need.food).toBeLessThan(150);
+    expect(need.firewood).toBeLessThan(150);
   });
 });
 
@@ -176,6 +229,36 @@ describe('what she brings back', () => {
     // Really over the roof, not merely filling it.
     expect(now - crew).toBeGreaterThan(room);
     expect(crowding(state)).toBeGreaterThan(0);
+  });
+});
+
+describe('settlers arrive with what it takes to start', () => {
+  it('brings a season of eating per head, on top of what the hull carries', () => {
+    // THE line that makes a crossing worth taking. The hold used to return a
+    // flat share of itself whoever was aboard — about twenty food — and
+    // twenty food feeds three new arrivals for two days. Measured across four
+    // separate experiments, the band is FOOD-limited rather than
+    // hand-limited, so a voyage that converted a banked surplus into people
+    // was trading the scarce thing for the plentiful one.
+    const state = hall('arrive');
+    state.party.food = 400;
+    state.party.firewood = 400;
+    sailForHome(state, twoOf(state));
+    const before = living(state.party.people).length;
+    const larder = state.party.food;
+    state.day = state.voyage!.due;
+    voyageDay(state);
+    const came = living(state.party.people).length - before;
+    const gained = state.party.food - larder;
+    // eslint-disable-next-line no-console
+    console.log(`she came home with ${came} people and ${gained} food — `
+      + `${came * SETTLER_STORES} of it theirs`);
+    expect(came).toBeGreaterThan(0);
+    // Every arrival's own season, and the hull's share on top.
+    expect(gained).toBeGreaterThanOrEqual(came * SETTLER_STORES);
+    // A season each is the point: they are not a mouth the hall has to find
+    // room for on the day they land.
+    expect(SETTLER_STORES * 2).toBe(SEASON_LENGTH);
   });
 });
 

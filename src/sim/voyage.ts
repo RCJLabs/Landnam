@@ -18,10 +18,22 @@ import { hold, sprung, springStrake, unseaworthy } from './ship';
 import { living } from './people';
 import { takeIn } from './joining';
 import { atHome } from './site';
+import { SEASON_LENGTH } from './calendar';
+import { firewoodPerNight, foodPerDay } from './upkeep';
 import { chronicle } from './saga';
 import type { GameState, Person } from '../state/types';
 
-/** Days over and back, before the sea has its say. */
+/**
+ * Days over and back, before the sea has its say.
+ *
+ * Left at seventy-eight after two seasons was tried and measured WORSE — 3
+ * of 40 bands standing at day 400 against 4, and 108 souls against 124. The
+ * reasoning for shortening it was sound and its premise was wrong: the
+ * voyage's problem looked like a payback period, so bringing the hands home
+ * sooner should have helped. It did the opposite, because what comes home is
+ * not only hands. It is MOUTHS, arriving sooner in a hall whose binding
+ * constraint was never labour.
+ */
 export const CROSSING = 78;
 
 /** Food a head takes for the crossing. */
@@ -36,8 +48,21 @@ export const MIN_ABOARD = 2;
 /** Odds the sea takes a strake out of her on the way. */
 export const CROSSING_ROUGH = 0.35;
 
+/**
+ * What each person who crosses to take land brings with them: one season's
+ * eating for one adult.
+ *
+ * Derived rather than picked. `foodPerDay` feeds an adult on half a share a
+ * day, so a season of twenty-four days is twelve — and the point of the
+ * number is that a new arrival is not a mouth the hall has to find room for
+ * on the day they land. They pay their own way until the next harvest, which
+ * is what a person crossing an ocean to settle actually did.
+ */
+export const SETTLER_STORES = SEASON_LENGTH / 2;
+
 export type SailBlock =
-  | 'nosteading' | 'away' | 'already' | 'out' | 'hull' | 'nobody' | 'unmanned' | 'shorthanded';
+  | 'nosteading' | 'away' | 'already' | 'out' | 'hull' | 'nobody' | 'unmanned'
+  | 'shorthanded' | 'hungry' | 'cold';
 
 export const SAIL_REASON: Record<SailBlock, string> = {
   nosteading: 'There is nowhere to come back to yet.',
@@ -48,7 +73,50 @@ export const SAIL_REASON: Record<SailBlock, string> = {
   nobody: 'Somebody has to work her.',
   unmanned: 'Somebody has to stay and keep the fire.',
   shorthanded: 'Two at the least, or she does not answer the steering-oar.',
+  hungry: 'Not enough in the store to see the hall through a season without them.',
+  cold: 'Not enough wood banked. The fire has to last while they are gone.',
 };
+
+/**
+ * What the hall must have banked before she may sail, and the reason this
+ * rule exists at all.
+ *
+ * The voyage was measured as a TRAP before this: told to take every crossing
+ * she could, a band went from 5 of 40 standing at day 400 to 3, and lived a
+ * fifth fewer days. The thing that makes it a trap is not the crossing, it is
+ * WHAT SHE BRINGS BACK LANDING IN A HALL THAT CANNOT FEED IT. Measured
+ * separately: three extra pairs of hands dropped on a going concern take a
+ * band from 6 of 40 standing to 7 and add nine per cent to the days it lives
+ * — but they eat the surplus down from 2934 to 667. Six pairs take it to 4 of
+ * 40, worse than none at all.
+ *
+ * So people are worth having exactly as far as they can be fed, and a voyage
+ * launched out of a lean store is a voyage that fetches mouths. Requiring the
+ * store FIRST is what turns it from a thing you stumble into and regret into
+ * a thing you spend a year preparing: bank a surplus through the good
+ * seasons, then convert it into people.
+ *
+ * A SEASON of each, and the first cut of this asked for a whole crossing's
+ * food — `foodPerDay * CROSSING`, about 312. Measured against what a hall
+ * actually holds on a day it could sail, that is absurd: the median is 13,
+ * and the ninetieth percentile is 43. The rule opened for nobody, ever, in
+ * forty sagas. What it had confused is who eats. A crew at sea takes its
+ * provisions with it and comes off the ration — `foodPerDay` says so — so the
+ * hall is not feeding them while they are gone. What the voyage costs is
+ * their LABOUR, and what the store has to cover is the gap that labour
+ * leaves, which is a season's worth and not a year's.
+ *
+ * The same measurement showed the wood is never the binding half — a hall
+ * holds a median 141 against the 48 this asks — and it is kept anyway,
+ * because the one that never binds on a well-run steading is exactly the one
+ * that bites the band that has been cutting nothing.
+ */
+export function provisioning(state: GameState): { food: number; firewood: number } {
+  return {
+    food: Math.ceil(foodPerDay(state) * SEASON_LENGTH),
+    firewood: Math.ceil(firewoodPerNight(state) * SEASON_LENGTH),
+  };
+}
 
 /**
  * Why she cannot sail, or null when she can.
@@ -70,6 +138,12 @@ export function sailBlocker(state: GameState, members: string[]): SailBlock | nu
   if (going.length === 0) return 'nobody';
   if (going.length < MIN_ABOARD) return 'shorthanded';
   if (crew.length - going.length < MIN_ASHORE) return 'unmanned';
+  // Provisioned, and asked LAST so the reason a player is given is the one
+  // they can act on: a hall short of wood should be told about the wood, not
+  // about the steering-oar.
+  const need = provisioning(state);
+  if (state.party.food < need.food) return 'hungry';
+  if (state.party.firewood < need.firewood) return 'cold';
   return null;
 }
 
@@ -146,7 +220,27 @@ export function voyageDay(state: GameState): boolean {
   // a real cost, because crowding is what makes a hall sick.
   const berths = Math.max(0, Math.floor(hold(state.ship) / 8));
   const brought = berths > 0 ? takeIn(state, berths, 'came back on the knarr', true) : [];
-  const stores = Math.round(hold(state.ship) * (rough ? 0.5 : 0.85));
+  // WHAT THEY BRING WITH THEM, and this is the line that makes a voyage worth
+  // taking rather than a way to buy mouths.
+  //
+  // The hold used to return a flat share of itself — about twenty food,
+  // whoever was aboard — and twenty food feeds three new arrivals for two
+  // days. Measured, that made the crossing a bad bargain at every setting
+  // tried: forced to take every one she could, a band went from 5 of 40
+  // standing to 3. Four separate measurements this day said the same thing
+  // from different directions — the band is FOOD-limited, not hand-limited.
+  // Three extra pairs of hands help a going concern; six sink it; a hex of
+  // water that pays food changed the whole shape of the sea. A voyage that
+  // converts a banked surplus into people is trading the scarce thing for the
+  // plentiful one.
+  //
+  // So people crossing an ocean to take land arrive with what it takes to
+  // start, which is also simply what happened: nobody sailed to a new country
+  // empty-handed. Each pays their own way for a season, and the hull's own
+  // share comes on top of it.
+  const ownStores = brought.length * SETTLER_STORES;
+  const hullStores = Math.round(hold(state.ship) * (rough ? 0.5 : 0.85));
+  const stores = ownStores + hullStores;
   state.party.food += stores;
 
   chronicle(

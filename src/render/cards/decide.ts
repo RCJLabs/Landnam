@@ -15,7 +15,7 @@ import { known } from '../../sim/lore';
 import { jobOf } from '../../sim/colony';
 import { LAUNCH_REASON, launchBlocker, provisionsFor, PURPOSES } from '../../sim/expedition';
 import type { LaunchBlock } from '../../sim/expedition';
-import { CROSSING, SAIL_REASON, sailBlocker, type SailBlock } from '../../sim/voyage';
+import { CROSSING, SAIL_REASON, provisioning, sailBlocker, type SailBlock } from '../../sim/voyage';
 import { FEUD_THRESHOLD } from '../../data/feuds';
 import { MEASURES, MEASURE_MAX } from '../../data/sites';
 import type { GameState, Person, Purpose } from '../../state/types';
@@ -93,8 +93,19 @@ export function renderLaunch(
   // rather than showing the expedition's answer to a different question.
   const voyage = purpose === 'home';
   const blocker = voyage ? sailBlocker(state, [...picked]) : launchBlocker(state, [...picked]);
+  // A refusal that cannot say what is short is a refusal nobody can act on,
+  // which is the reason these are blockers rather than a boolean. The two
+  // provisioning ones are the only refusals here answered by WORK rather than
+  // by a different choice, so they carry the numbers: what the hall has
+  // against what it needs, in the units the panel already counts in.
+  const need = voyage ? provisioning(state) : null;
+  const shortfall = need && (blocker === 'hungry' || blocker === 'cold')
+    ? (blocker === 'hungry'
+      ? ` ${Math.floor(state.party.food)} of ${need.food} food.`
+      : ` ${Math.floor(state.party.firewood)} of ${need.firewood} wood.`)
+    : '';
   const reason = voyage
-    ? (blocker ? SAIL_REASON[blocker as SailBlock] : '')
+    ? (blocker ? SAIL_REASON[blocker as SailBlock] + shortfall : '')
     : (blocker ? LAUNCH_REASON[blocker as LaunchBlock] : '');
 
   const card = el('div', { class: 'card' }, [
@@ -139,7 +150,8 @@ export function renderLaunch(
         ? reason
         : voyage
           ? `${going.length} aboard, ${crew.length - going.length} left at the steading · `
-            + `back about day ${state.day + CROSSING}.`
+            + `back about day ${state.day + CROSSING} with what she can carry `
+            + `and whoever will come.`
           : `${going.length} out, ${crew.length - going.length} left at the steading · ` +
             `${provisionsFor(going.length)} food provisioned.`,
     ]),
