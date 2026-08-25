@@ -1318,6 +1318,127 @@ cost of native performance and Blueprint ergonomics; C++ is the exact
 opposite. And **do not port the colony UI early**: it is the least visual
 mode and the most work per unit of payoff. Travel and battle first.
 
+## Phase 8 — The Wall and the Road (side-on conversion) → v0.10
+
+**PLANNED, NOT STARTED.** Proposed 2026-08-25 because the hex game was not
+capturing its own designer. Nothing here is committed until Phase 8.0 says so.
+
+Goal: the game stops being a hex game. Travel becomes a side-on painted road
+you walk; raiding a monastery or a camp drops into a Darkest Dungeon-style
+rank fight; settling places your hall on that road, and entering it opens a
+steading you build up. Same fiction, same rules, different projection.
+
+### Why this is affordable — measured 2026-08-25, before any of it was planned
+
+The instinct is that hexes are load-bearing. They are not. What is
+load-bearing is the TURN MODEL, and this conversion keeps it.
+
+| | lines | of those, geometry |
+|---|---|---|
+| `sim/travel.ts` | 313 | **2** |
+| `sim/colony.ts` | 540 | **3** |
+| `sim/battle.ts` | 556 | **10** |
+| `sim/wall.ts` | 88 | **1** |
+| all battle files | 1,441 | **~36** |
+| `src/hex/` itself | 321 | — |
+| `requestAnimationFrame` or timers in `sim/` | 0 | — |
+
+Winter, food, morale, jobs, injuries, events, the Thing, oaths, generations,
+the rival and the healer do not know what a hex is. `wallPairs` is already
+relational — who is anchored beside whom — rather than coordinate maths.
+
+Darkest Dungeon combat is turn-based ranks, and its exploration is a party
+moving node to node, not physics. So determinism survives, and so do the 44
+of 80 test files that are headless statistical sweeps. **The balance METHOD
+survives. The balance NUMBERS do not** — every sweep in `balance.test.ts`,
+`wall.test.ts` and `consequences.test.ts` is about hex combat and has to be
+re-run and re-tuned against ranks. Budget for that, not for the geometry.
+
+### Decided already
+
+- **Saves: a clean break, documented.** A hex world cannot migrate into a
+  route, and pretending otherwise would be a lie in the migration registry.
+  `SAVE_VERSION` bumps, pre-conversion sagas do not load, and the changelog
+  says so plainly. This is the one hard constraint in CLAUDE.md we retire on
+  purpose rather than by accident — it is recorded here so it never reads
+  later as an oversight.
+- **The prototype exists and the fight is a real decision.** 120 raids a
+  policy on the same 120 seeds: random play won 56/120 (47%) with 1.18 of 4
+  alive; a crude policy — hold when hurt, hit hardest, finish the weakest —
+  won 107/120 (89%) with 2.69 alive. A 42-point spread from almost no
+  thinking means there is skill headroom above it.
+
+### Open, and the answers change the work
+
+- **What replaces six directions?** Forks in the road, or one line where the
+  decision is how far you push before turning back. The second is the sharper
+  decision; the first keeps more of what exists.
+- **Does the chart survive** as a thing you consult — a painted strip map in
+  the pack — or go entirely?
+- **Foe count:** fixed 3–5 as the prototype has it, or scaled to the band?
+
+### The collision with Phase 7
+
+Phase 7 is porting the hex game to Unreal. If Phase 8 lands, that port is
+porting something that will not exist. These two cannot both be the future.
+The marker stays on Phase 7 until that is settled deliberately — this section
+is written so the choice is made with both arcs visible, not by drift.
+
+---
+
+- [ ] **8.0 Decide, on evidence** — Play `proto/shieldwall.html`.
+  Optionally extend it to a three-raid coast with wounds carrying between
+  fights, to test the LOOP rather than one battle, before any `src/` work.
+  *Done when: the answer to "does deciding who stands where beat the hex
+  grid" is yes or no, and it is written down here.*
+
+- [ ] **8.1 The wall replaces the grid** — `sim/ranks.ts` (position, close-up,
+  legal from-rank and target-rank) replaces hex geometry in battle. Rewrite
+  `battlefield.ts`; `wall.ts` becomes rank adjacency. Existing verbs map onto
+  rank restrictions: hew 1–2→1–2, spear 2–3→1–3, hurl 2–4→any, shove 1–2→1–2
+  with a push, hold 1–2→self and doubled when the rank behind holds too. Gear
+  belongs to the FIGHTER, not the rank. Add resolve: nerve breaks when
+  friends fall, and a broken fighter wavers or goes wood. Behind `?ranks`, so
+  the hex battle stays until the numbers are re-earned.
+  *Done when: `balance.test.ts`, `wall.test.ts` and `consequences.test.ts`
+  run against ranks and produce tuned numbers, formation play still beats
+  brawling, and losing a veteran still hurts.*
+
+- [ ] **8.2 The coast becomes a line** — Worldgen from 2D island to a 1D route
+  of places with distances between them. Skerries, landmarks, `places.ts` and
+  `neighbours.ts` are already derived from `(seed, position)` and port rather
+  than get rewritten. Answer the "six directions" question here, in the
+  design, before building it. Behind a flag.
+  *Done when: a saga can be walked end to end on the route, and the travel
+  decision is nameable in one sentence.*
+
+- [ ] **8.3 Travel becomes a procession** — The side-on painted view: the band
+  walking the route, country derived from the places they are between, monas-
+  teries and camps rising ahead as silhouettes. Reuses the oil brush and the
+  seen/unseen discipline. Raiding a place drops into 8.1.
+  *Done when: you can tell where you are and what is ahead without the chart.*
+
+- [ ] **8.4 The steading becomes an elevation** — Colony hex plots become
+  placed buildings on a side-on view; `plotsFor(job)` becomes
+  `buildingsFor(job)`. Your hall is placed on the route in 8.2/8.3, and
+  entering it opens this. The cheap one: `colony.ts` is 540 lines with three
+  geometry references.
+  *Done when: raising a building visibly changes the steading you walk into.*
+
+- [ ] **8.5 Retire the hexes** — Delete `src/hex/`, the old renderers and the
+  dead flags once every flag has flipped. Bump `SAVE_VERSION` and land the
+  documented break. Rewrite the browser bars that query hex selectors.
+  *Done when: `grep -r "hex" src/` returns nothing load-bearing, all bars
+  pass, and the changelog states which sagas stopped loading and why.*
+
+### What does NOT change
+
+`data/` entire (6,036 lines of events, traits, buildings, jobs, foes, names),
+the turn model, deterministic seeded RNG, the sim/render split, the mode
+stack, save discipline as a practice, zero external assets, the single-file
+build, mobile-first, and the oil renderer — whose natural projection is
+side-on, which is most of why this is worth doing at all.
+
 ## The next queue — audit of 2026-08-11
 
 Written from the far side of three days of port work, and it is a different
@@ -2005,6 +2126,54 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-25 — A shieldwall, and a plan to turn the game sideways** — the
+  hex game was not capturing its own designer, so the question became what it
+  would cost to stop being one.
+
+  `proto/shieldwall.html` is a playable Darkest Dungeon-style rank battle:
+  four of the band against a camp, five verbs gated by which rank you stand
+  in, and a line that closes up when somebody falls. Seeded, so a fight can be
+  run twice. It uses the game's own names, bynames and eight foe kinds, and
+  the same bristle-stroke brush the oil renderer ships, so what it looks like
+  is an honest preview rather than a mood board.
+
+  **The fight is a decision, not a coin flip.** 120 raids a policy on the same
+  120 seeds:
+
+  | | won | avg rounds | alive of 4 |
+  |---|---|---|---|
+  | random legal moves | 56/120 (47%) | 5.6 | 1.18 |
+  | hold when hurt, hit hardest, finish the weakest | 107/120 (89%) | 4.6 | 2.69 |
+
+  Forty-two points of win rate from almost no thinking, which means there is
+  headroom above it for a person who thinks about ranks.
+
+  Two things the prototype taught that the plan now carries. Gear has to
+  belong to the FIGHTER rather than the rank — the first cut drew the weapon
+  from the rank, so a man's axe turned into a spear when somebody shoved him.
+  And a figure cannot be painted the way country is: scattering strokes and
+  letting the shape emerge, which is what the world map does, produced a ball
+  on a scribble. The silhouette is a path now, and the paint is clipped inside
+  it.
+
+  **Phase 8 is written up and NOT started.** It measures the thing everybody
+  guesses wrong: the hexes are cheap and the turn model is expensive.
+  `sim/travel.ts` has two geometry references in 313 lines, `sim/colony.ts`
+  three in 540, the whole of battle about 36 in 1,441, and `src/hex/` is 321
+  lines. Darkest Dungeon combat is turn-based, so determinism survives and so
+  do the 44 of 80 test files that are headless sweeps — the balance METHOD
+  survives, the balance NUMBERS do not, and re-earning them is the real cost.
+
+  Recorded there deliberately, so it never reads later as an oversight: **the
+  save rule gets retired on purpose.** A hex world cannot migrate into a
+  route, and a migration pretending otherwise would be a lie in the registry.
+  `SAVE_VERSION` will bump and pre-conversion sagas will not load.
+
+  Also recorded: Phase 7 is porting the hex game to Unreal, and if Phase 8
+  lands that port is porting something that will not exist. The CURRENT
+  MILESTONE marker stays on Phase 7 until that is settled deliberately rather
+  than by drift.
 
 - **2026-08-25 — The steading in oil** — the painted renderer reaches colony,
   and a second person who was not there.

@@ -1,0 +1,1258 @@
+<title>Shieldwall</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cardo:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@400;500;600&display=swap">
+
+<style>
+/* One visual world on purpose: a night raid, lit by burning thatch. A light
+   theme would be a different game, so every colour is painted explicitly and
+   nothing is left to the host's ground. */
+:root {
+  --pitch:  #12100d;   /* warm near-black — the ground behind everything */
+  --soot:   #1c1813;   /* panels */
+  --ash:    #2a241c;   /* rules, inactive edges */
+  --tallow: #e8dcc0;   /* parchment cream — the band, and all reading text */
+  --dim:    #9a8f78;   /* secondary text */
+  --gold:   #d3a441;   /* the hall gold — accent, whose turn it is */
+  --blood:  #b23b2e;   /* wounds, danger */
+  --steel:  #8fa3ad;   /* the foes, cold against your warm */
+  --moss:   #6f8148;   /* health */
+  --wode:   #c8791f;   /* gone wood — berserk */
+
+  --display: 'Cardo', Georgia, 'Times New Roman', serif;
+  --ui: 'Barlow Condensed', 'Arial Narrow', Helvetica, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--pitch);
+  color: var(--tallow);
+  font-family: var(--display);
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+.game {
+  max-width: 520px;
+  margin: 0 auto;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: var(--pitch);
+}
+
+/* ---- the bar across the top ---- */
+.crown {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid var(--ash);
+}
+.crown h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.crown .where {
+  font-family: var(--ui); font-size: 13px; color: var(--dim);
+  letter-spacing: .06em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.crown .round { margin-left: auto; font-family: var(--ui); font-size: 13px; color: var(--dim); letter-spacing: .1em; }
+
+/* ---- the painted scene ---- */
+.field { position: relative; width: 100%; flex: 1 1 auto; min-height: 190px; background: var(--pitch); overflow: hidden; }
+.field canvas { display: block; width: 100%; height: 100%; }
+.taps { position: absolute; inset: 0; }
+.tap {
+  position: absolute; bottom: 0; top: 22%;
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tap:disabled { cursor: default; }
+.tap:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+/* the marks under each fighter: rank, health, resolve */
+.plate {
+  position: absolute; bottom: 4px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  pointer-events: none;
+  padding: 3px 2px 2px;
+  background: linear-gradient(to top, rgba(10,8,6,.88), rgba(10,8,6,.55) 70%, transparent);
+}
+.plate .rank {
+  font-family: var(--ui); font-size: 11px; letter-spacing: .08em;
+  color: var(--dim);
+}
+.bar { width: 100%; height: 5px; background: #000; border: 1px solid var(--ash); }
+.bar > i { display: block; height: 100%; background: var(--moss); }
+.bar.res > i { background: var(--steel); }
+.plate .who {
+  font-family: var(--ui); font-size: 11px; letter-spacing: .04em;
+  color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.plate.up .who { color: var(--gold); }
+.plate.aim { outline: 1px dashed var(--gold); outline-offset: 3px; }
+.plate.wood .who { color: var(--wode); }
+.plate.broke .who { color: var(--blood); }
+
+/* ---- the chronicle ---- */
+.chronicle {
+  border-top: 1px solid var(--ash);
+  border-bottom: 1px solid var(--ash);
+  background: var(--soot);
+  padding: 9px 14px;
+  height: 74px; overflow-y: auto;
+  font-size: 14.5px; line-height: 1.42;
+}
+.chronicle p { margin: 0 0 5px; color: var(--dim); }
+.chronicle p:last-child { margin-bottom: 0; color: var(--tallow); }
+.chronicle em { font-style: italic; color: var(--gold); }
+.chronicle strong { font-weight: 700; color: var(--tallow); }
+.chronicle .hurt { color: var(--blood); font-weight: 700; }
+
+/* ---- whose turn, and what they can do ---- */
+.hand { padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
+
+.standing {
+  display: flex; align-items: baseline; gap: 9px;
+  font-size: 17px;
+}
+.standing .name { font-weight: 700; }
+.standing .kind { font-family: var(--ui); font-size: 12.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--dim); }
+.standing .at { margin-left: auto; font-family: var(--ui); font-size: 12.5px; letter-spacing: .09em; color: var(--gold); }
+
+.verbs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.verbs .verb.wide { grid-column: 1 / -1; }
+.verb {
+  min-height: 46px;
+  display: flex; flex-direction: column; justify-content: center; gap: 1px;
+  padding: 6px 10px;
+  background: var(--soot);
+  border: 1px solid var(--ash);
+  color: var(--tallow);
+  font-family: var(--ui);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.verb b { font-size: 16px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.verb span { font-size: 11.5px; color: var(--dim); letter-spacing: .03em; }
+.verb:disabled { opacity: .34; cursor: default; }
+.verb[aria-pressed="true"] { border-color: var(--gold); background: #241d12; }
+.verb[aria-pressed="true"] b { color: var(--gold); }
+.verb:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.prompt {
+  font-family: var(--ui); font-size: 13px; letter-spacing: .05em;
+  color: var(--gold); min-height: 17px;
+}
+.prompt.quiet { color: var(--dim); }
+
+.tray { display: flex; gap: 7px; }
+.tray button {
+  flex: 1; min-height: 40px;
+  background: transparent; border: 1px solid var(--ash); color: var(--dim);
+  font-family: var(--ui); font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer;
+}
+.tray button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---- the end of it ---- */
+.veil {
+  position: fixed; inset: 0; background: rgba(10,8,6,.93);
+  display: flex; align-items: center; justify-content: center; padding: 26px;
+  z-index: 10;
+}
+.veil[hidden] { display: none; }
+.scroll {
+  max-width: 380px; width: 100%;
+  background: var(--soot); border: 1px solid var(--ash);
+  padding: 22px 20px;
+}
+.scroll h2 { margin: 0 0 4px; font-size: 26px; font-weight: 700; text-wrap: balance; }
+.scroll h2.won { color: var(--gold); }
+.scroll h2.lost { color: var(--blood); }
+.scroll .toll { font-family: var(--ui); font-size: 12.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--dim); margin-bottom: 13px; }
+.scroll ul { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.scroll li { font-size: 14.5px; color: var(--dim); }
+.scroll li b { color: var(--tallow); font-weight: 700; }
+.scroll li.fell b { color: var(--blood); }
+.scroll button {
+  width: 100%; min-height: 46px;
+  background: var(--gold); border: 0; color: #16120a;
+  font-family: var(--ui); font-size: 15px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  cursor: pointer;
+}
+.scroll button:focus-visible { outline: 2px solid var(--tallow); outline-offset: 2px; }
+
+/* ---- the rules, folded away ---- */
+.rules { border-top: 1px solid var(--ash); padding: 0 14px 20px; }
+.rules summary {
+  padding: 11px 0; cursor: pointer;
+  font-family: var(--ui); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim);
+}
+.rules summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.rules table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.rules th, .rules td { text-align: left; padding: 5px 7px 5px 0; border-bottom: 1px solid var(--ash); vertical-align: top; }
+.rules th { font-family: var(--ui); font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--dim); font-weight: 500; }
+.rules td.n { font-family: var(--ui); color: var(--gold); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rules p { font-size: 13.5px; line-height: 1.5; color: var(--dim); margin: 12px 0 0; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="game">
+  <div class="crown">
+    <h1 id="title">Shieldwall</h1>
+    <span class="where" id="where">the monastery</span>
+    <span class="round" id="round">ROUND 1</span>
+  </div>
+
+  <div class="field">
+    <canvas id="scene"></canvas>
+    <div class="taps" id="taps"></div>
+  </div>
+
+  <div class="chronicle" id="chronicle" aria-live="polite"></div>
+
+  <div class="hand">
+    <div class="standing">
+      <span class="name" id="upName">—</span>
+      <span class="kind" id="upKind"></span>
+      <span class="at" id="upAt"></span>
+    </div>
+    <div class="verbs" id="verbs"></div>
+    <div class="prompt" id="prompt"></div>
+    <div class="tray">
+      <button id="again" type="button">New raid</button>
+      <button id="reseed" type="button">Seed: —</button>
+    </div>
+  </div>
+
+</div>
+
+<details class="rules">
+    <summary>How the wall works</summary>
+    <table>
+      <thead><tr><th>Verb</th><th>From rank</th><th>Reaches</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Hew</td><td class="n">1–2</td><td class="n">1–2</td><td>Axe-work. The heaviest blow anyone has.</td></tr>
+        <tr><td>Spear</td><td class="n">2–3</td><td class="n">1–3</td><td>Thrust past the shoulder of the one in front.</td></tr>
+        <tr><td>Hurl</td><td class="n">2–4</td><td class="n">1–4</td><td>A hand-axe thrown. Reaches anyone; you carry three.</td></tr>
+        <tr><td>Shove</td><td class="n">1–2</td><td class="n">1–2</td><td>Drives them back a rank and spoils the rank behind.</td></tr>
+        <tr><td>Hold</td><td class="n">1–2</td><td class="n">self</td><td>Set the shield. Doubled if the one behind holds too.</td></tr>
+      </tbody>
+    </table>
+    <p>Rank 1 is the front — where the two lines meet. When somebody falls, the
+      line closes up, and whoever was behind them is suddenly in front. That is
+      the whole trap: a spearman shoved to the front has nothing to do there.</p>
+    <p>Resolve breaks when friends fall around you. A broken fighter either
+      <em>wavers</em> and gives ground, or <em>goes wood</em> — striking harder,
+      shielding nothing.</p>
+  </details>
+
+<div class="veil" id="veil" hidden>
+  <div class="scroll">
+    <h2 id="verdict"></h2>
+    <div class="toll" id="toll"></div>
+    <ul id="roll"></ul>
+    <button id="onward" type="button">Take another</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ------------------------------------------------------------------ *
+ * Seeded randomness. Math.random is banned in the real game so that a
+ * saga can be replayed; the prototype keeps the rule, which is why the
+ * seed is on screen and a fight can be run twice.
+ * ------------------------------------------------------------------ */
+function makeRng(seedText) {
+  let h = 1779033703 ^ seedText.length;
+  for (let i = 0; i < seedText.length; i++) {
+    h = Math.imul(h ^ seedText.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  let a = h >>> 0;
+  const next = () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return {
+    next,
+    f: (lo, hi) => lo + next() * (hi - lo),
+    i: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
+    c: (p) => next() < p,
+    pick: (xs) => xs[Math.floor(next() * xs.length)],
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * Content, lifted from the game's own data files so this reads as
+ * Landnam rather than as a combat demo.
+ * ------------------------------------------------------------------ */
+const MEN = ['Arnkel','Bersi','Bjarni','Egil','Eyvind','Finnbogi','Gizur','Grim','Gunnar','Halli','Hoskuld','Ketil','Kjartan','Leif','Njal','Odd','Orm','Ragnar','Snorri','Steinar','Sveinn','Thorgeir','Thorkel','Toki','Ulf','Vali','Vemund','Ozur'];
+const WOMEN = ['Aud','Asdis','Bergthora','Freydis','Groa','Gudrid','Gudrun','Halldora','Hervor','Ingibjorg','Jorunn','Sigrid','Steinunn','Thorbjorg','Thordis','Thurid','Unn','Yngvild'];
+const BYNAMES = ['the Quiet','the Bold','Ironhand','the Lucky','Longshanks','the Grim','Half-Troll','Crow-Eye','Seal-Bane','the Red','Wave-Tamer','Two-Axe','the Wise','Salt-Beard','Bear-Shirt','the Silent','Cold-Hands','the Steady','Oak-Knee'];
+
+/* The eight foe kinds the game already ships, with a rank preference —
+   which is the one thing the hex version had no way to express. */
+const FOES = [
+  { kind: 'Huscarl',    might: 5, wits: 3, spirit: 4, tough: 6, likes: 1, throws: 1, gear: 'axe',   shield: 'big',  head: 'helm' },
+  { kind: 'Wolf-coat',  might: 5, wits: 2, spirit: 5, tough: 4, likes: 1, throws: 0, gear: 'axe',   shield: null,   head: 'pelt' },
+  { kind: 'Raider',     might: 4, wits: 3, spirit: 3, tough: 3, likes: 1, throws: 2, gear: 'axe',   shield: 'round',head: 'helm' },
+  { kind: 'Spearman',   might: 3, wits: 4, spirit: 3, tough: 2, likes: 2, throws: 2, gear: 'spear', shield: 'round',head: 'helm' },
+  { kind: 'Skirmisher', might: 3, wits: 4, spirit: 3, tough: 2, likes: 3, throws: 3, gear: 'spear', shield: null,   head: 'bare' },
+  { kind: 'Scout',      might: 2, wits: 5, spirit: 2, tough: 1, likes: 4, throws: 3, gear: 'thrown',shield: null,   head: 'hood' },
+  { kind: 'Bondi',      might: 3, wits: 2, spirit: 2, tough: 2, likes: 2, throws: 1, gear: 'axe',   shield: null,   head: 'bare' },
+  { kind: 'Outlaw',     might: 3, wits: 4, spirit: 2, tough: 1, likes: 3, throws: 2, gear: 'thrown',shield: null,   head: 'hood' },
+];
+
+const PLACES = [
+  { where: 'the monastery', wall: 'stone',  glow: '#c8791f' },
+  { where: 'the fishing camp', wall: 'tent', glow: '#b8873a' },
+  { where: 'the steading at Kelpstrand', wall: 'hall', glow: '#c8791f' },
+  { where: 'the whalebone shore', wall: 'boat', glow: '#8f6a3a' },
+];
+
+const VERBS = {
+  hew:   { name: 'Hew',   from: [1,2],     at: [1,2],     dmg: [4,8], note: 'heaviest blow' },
+  spear: { name: 'Spear', from: [2,3],     at: [1,2,3],   dmg: [3,6], note: 'past the shoulder' },
+  hurl:  { name: 'Hurl',  from: [2,3,4],   at: [1,2,3,4], dmg: [2,5], note: 'reaches anyone' },
+  shove: { name: 'Shove', from: [1,2],     at: [1,2],     dmg: [1,3], note: 'drives them back' },
+  hold:  { name: 'Hold',  from: [1,2],     at: [],        dmg: [0,0], note: 'set the shield' },
+};
+
+/* ------------------------------------------------------------------ *
+ * State. One object, the way the real game does it.
+ * ------------------------------------------------------------------ */
+let S = null;
+let aiming = null;          // the verb chosen, waiting for a target
+let seedText = '';
+
+function rollBand(rng) {
+  const used = new Set();
+  const spread = [
+    { might: 5, wits: 2, spirit: 4, tough: 5, trait: 'Shield-bearer', gear: 'axe',    shield: 'big',   head: 'helm' },
+    { might: 4, wits: 3, spirit: 3, tough: 3, trait: 'Axe-hand',      gear: 'axe',    shield: 'round', head: 'helm' },
+    { might: 3, wits: 4, spirit: 3, tough: 2, trait: 'Spear-hand',    gear: 'spear',  shield: 'round', head: 'helm' },
+    { might: 2, wits: 5, spirit: 3, tough: 1, trait: 'Thrower',       gear: 'thrown', shield: null,    head: 'bare' },
+  ];
+  return spread.map((s, i) => {
+    let name;
+    do { name = rng.c(0.72) ? rng.pick(MEN) : rng.pick(WOMEN); } while (used.has(name));
+    used.add(name);
+    return make({
+      id: 'us' + i, side: 'us', rank: i + 1,
+      name, byname: rng.pick(BYNAMES), kind: s.trait,
+      might: s.might, wits: s.wits, spirit: s.spirit, tough: s.tough,
+      throws: s.trait === 'Thrower' ? 4 : 3,
+      gear: s.gear, shield: s.shield, head: s.head,
+    });
+  });
+}
+
+function rollFoes(rng, n) {
+  const pool = [...FOES];
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const a = rng.pick(pool);
+    out.push(make({
+      id: 'them' + i, side: 'them', rank: i + 1,
+      name: a.kind, byname: '', kind: a.kind,
+      might: a.might, wits: a.wits, spirit: a.spirit, tough: a.tough,
+      throws: a.throws, gear: a.gear, shield: a.shield, head: a.head,
+    }));
+  }
+  // Put whoever wants the front, in front.
+  out.sort((x, y) => (FOES.find((f) => f.kind === x.kind).likes) - (FOES.find((f) => f.kind === y.kind).likes));
+  out.forEach((c, i) => { c.rank = i + 1; });
+  return out;
+}
+
+function make(c) {
+  c.maxHealth = 8 + c.might * 2 + c.tough;
+  c.health = c.maxHealth;
+  c.maxResolve = 6 + c.spirit * 2;
+  c.resolve = c.maxResolve;
+  c.guard = 0;
+  c.holding = false;
+  c.state = 'steady';        // steady | wood | broken
+  c.alive = true;
+  return c;
+}
+
+function newRaid(text) {
+  seedText = text;
+  const rng = makeRng('shieldwall:' + text);
+  const place = rng.pick(PLACES);
+  const foes = rollFoes(rng, rng.i(3, 4));
+  S = {
+    rng,
+    place,
+    us: rollBand(rng),
+    them: foes,
+    round: 1,
+    order: [],
+    turn: 0,
+    log: [],
+    over: null,
+    backdrop: null,
+  };
+  say(`The band came on <strong>${place.where}</strong> before dawn. ${foes.length} stood to meet them.`);
+  newRound();
+  aiming = null;
+  drawAll();
+  step();
+}
+
+function living(side) { return S[side].filter((c) => c.alive); }
+function all() { return [...S.us, ...S.them].filter((c) => c.alive); }
+
+/** Ranks always close up. This is the whole tactical engine. */
+function closeUp(side) {
+  living(side).sort((a, b) => a.rank - b.rank).forEach((c, i) => { c.rank = i + 1; });
+}
+
+function newRound() {
+  S.order = all()
+    .map((c) => ({ c, roll: c.wits * 2 + S.rng.i(1, 8) + (c.state === 'wood' ? 3 : 0) }))
+    .sort((a, b) => b.roll - a.roll)
+    .map((x) => x.c.id);
+  S.turn = 0;
+}
+
+function up() {
+  while (S.turn < S.order.length) {
+    const c = all().find((x) => x.id === S.order[S.turn]);
+    if (c) return c;
+    S.turn += 1;
+  }
+  return null;
+}
+
+function advance() {
+  S.turn += 1;
+  if (!up()) { S.round += 1; newRound(); }
+}
+
+/* ------------------------------------------------------------------ *
+ * Doing things
+ * ------------------------------------------------------------------ */
+function canUse(c, verbId) {
+  const v = VERBS[verbId];
+  if (!v.from.includes(c.rank)) return false;
+  if (verbId === 'hurl' && c.throws <= 0) return false;
+  if (verbId === 'hold' && c.state === 'wood') return false;   // a wood man shields nothing
+  if (verbId === 'hold') return true;
+  return targetsFor(c, verbId).length > 0;
+}
+
+function targetsFor(c, verbId) {
+  const v = VERBS[verbId];
+  const foeSide = c.side === 'us' ? 'them' : 'us';
+  return living(foeSide).filter((t) => v.at.includes(t.rank));
+}
+
+function act(c, verbId, target) {
+  const v = VERBS[verbId];
+  c.holding = false;
+
+  if (verbId === 'hold') {
+    // The wall: doubled when the one behind sets their shield too.
+    const behind = living(c.side).find((x) => x.rank === c.rank + 1);
+    const paired = behind && behind.holding;
+    c.guard = paired ? 6 : 3;
+    c.holding = true;
+    if (behind && behind.holding) behind.guard = 6;
+    say(`<strong>${short(c)}</strong> set the shield${paired ? `, and <strong>${short(behind)}</strong> locked on it` : ''}.`);
+    return;
+  }
+
+  let dmg = S.rng.i(v.dmg[0], v.dmg[1]) + Math.floor(c.might / 2);
+  if (c.state === 'wood') dmg = Math.round(dmg * 1.5);
+  if (verbId === 'hurl') c.throws -= 1;
+
+  // A guard set this round eats the blow.
+  const stopped = Math.min(target.guard, dmg);
+  dmg -= stopped;
+  target.guard = Math.max(0, target.guard - (stopped || 1));
+
+  target.health -= dmg;
+  const verb = { hew: 'hewed', spear: 'set a spear into', hurl: 'threw an axe into', shove: 'shouldered' }[verbId];
+  let line = `<strong>${short(c)}</strong> ${verb} <strong>${short(target)}</strong>`;
+  if (stopped > 0) line += `, and the shield took ${stopped} of it`;
+  line += dmg > 0 ? ` — <span class="hurt">${dmg}</span>.` : `, and it did nothing.`;
+  say(line);
+
+  // Resolve goes with the wound.
+  bleedResolve(target, Math.ceil(dmg / 2));
+
+  if (verbId === 'shove' && target.alive) {
+    const back = living(target.side).find((x) => x.rank === target.rank + 1);
+    if (back) {
+      const r = target.rank; target.rank = back.rank; back.rank = r;
+      say(`<em>${short(target)} gave ground, and ${short(back)} was in front.</em>`);
+      bleedResolve(target, 1);
+    }
+  }
+
+  if (target.health <= 0) fall(target);
+}
+
+function fall(c) {
+  c.alive = false;
+  c.health = 0;
+  say(`<strong>${short(c)}</strong> went down and did not get up.`);
+  closeUp(c.side);
+  // Watching a friend fall is what breaks a line.
+  for (const mate of living(c.side)) bleedResolve(mate, 3);
+}
+
+function bleedResolve(c, n) {
+  if (!c.alive || n <= 0) return;
+  c.resolve -= n;
+  if (c.resolve > 0 || c.state !== 'steady') return;
+  c.resolve = 0;
+  if (S.rng.c(0.42)) {
+    c.state = 'wood';
+    say(`<em>${short(c)} went wood — no shield, and no sense left.</em>`);
+  } else {
+    c.state = 'broken';
+    say(`<em>${short(c)}'s nerve went out of him.</em>`);
+  }
+}
+
+function short(c) { return c.side === 'us' ? c.name : `the ${c.kind}`; }
+
+/** A broken fighter may lose the turn outright. */
+function flinches(c) {
+  if (c.state !== 'broken') return false;
+  if (!S.rng.c(0.38)) return false;
+  say(`<em>${short(c)} hung back and did nothing.</em>`);
+  const back = living(c.side).find((x) => x.rank === c.rank + 1);
+  if (back) { const r = c.rank; c.rank = back.rank; back.rank = r; }
+  return true;
+}
+
+/* ------------------------------------------------------------------ *
+ * The other side
+ * ------------------------------------------------------------------ */
+function foeTurn(c) {
+  if (flinches(c)) return;
+  const usable = Object.keys(VERBS).filter((v) => canUse(c, v));
+  if (usable.length === 0) {
+    say(`<em>The ${c.kind} could not reach and shuffled in the line.</em>`);
+    return;
+  }
+  // Hurt and in front? Set the shield. Otherwise hit the softest thing reachable.
+  const hurt = c.health < c.maxHealth * 0.4;
+  if (hurt && c.state === 'steady' && usable.includes('hold') && S.rng.c(0.5)) { act(c, 'hold'); return; }
+  if (usable.includes('shove') && S.rng.c(0.22)) {
+    const t = targetsFor(c, 'shove');
+    if (t.length) { act(c, 'shove', S.rng.pick(t)); return; }
+  }
+  const attacks = usable.filter((v) => v !== 'hold');
+  if (attacks.length === 0) { act(c, 'hold'); return; }
+  // Prefer the verb with the best top-end damage it can actually land.
+  attacks.sort((a, b) => VERBS[b].dmg[1] - VERBS[a].dmg[1]);
+  const verb = S.rng.c(0.75) ? attacks[0] : S.rng.pick(attacks);
+  const list = targetsFor(c, verb);
+  list.sort((a, b) => a.health - b.health);
+  act(c, verb, S.rng.c(0.7) ? list[0] : S.rng.pick(list));
+}
+
+/* ------------------------------------------------------------------ *
+ * The loop. Turn-based all the way down — nothing here runs on a clock.
+ * ------------------------------------------------------------------ */
+function step() {
+  if (finish()) return;
+  const c = up();
+  if (!c) { advance(); step(); return; }
+  if (c.side === 'them') {
+    // A beat of delay so the reader can follow the blow, not because
+    // anything is simulated in between.
+    render();
+    setTimeout(() => {
+      if (!S || S.over) return;
+      foeTurn(c);
+      // Guard fades at the top of your own next turn.
+      c.guard = c.holding ? c.guard : 0;
+      advance();
+      drawAll();
+      step();
+    }, 620);
+    return;
+  }
+  c.guard = c.holding ? c.guard : 0;
+  c.holding = false;
+  if (flinches(c)) { advance(); drawAll(); setTimeout(step, 500); return; }
+  render();
+}
+
+function playerAct(verbId, target) {
+  const c = up();
+  if (!c || c.side !== 'us') return;
+  act(c, verbId, target);
+  aiming = null;
+  advance();
+  drawAll();
+  step();
+}
+
+function finish() {
+  if (S.over) return true;
+  const usLeft = living('us').length;
+  const themLeft = living('them').length;
+  if (usLeft > 0 && themLeft > 0) return false;
+  S.over = usLeft > 0 ? 'won' : 'lost';
+  say(usLeft > 0
+    ? `<em>It was over. ${usLeft} of the band still stood.</em>`
+    : `<em>The band was broken on the shore, and the raid was ended.</em>`);
+  drawAll();
+  showScroll();
+  return true;
+}
+
+function say(html) {
+  S.log.push(html);
+  if (S.log.length > 40) S.log.shift();
+}
+
+/* ------------------------------------------------------------------ *
+ * The brush. Same technique as the shipped renderer: an ellipse of
+ * colour with bristle streaks cut from that colour, never a gradient.
+ * ------------------------------------------------------------------ */
+function mix(a, b, t) {
+  const p = (h) => [1,3,5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [r1,g1,b1] = p(a), [r2,g2,b2] = p(b);
+  const c = (x, y) => Math.round(x + (y - x) * t).toString(16).padStart(2, '0');
+  return `#${c(r1,r2)}${c(g1,g2)}${c(b1,b2)}`;
+}
+
+function stroke(ctx, rng, x, y, len, wid, colour, alpha) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rng.f(0, Math.PI));
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = colour;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, len / 2, wid / 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (let i = 0; i < 3; i++) {
+    ctx.globalAlpha = alpha * rng.f(0.1, 0.28);
+    ctx.fillStyle = rng.c(0.55) ? mix(colour, '#ffffff', 0.34) : mix(colour, '#000000', 0.44);
+    ctx.fillRect(-len / 2, rng.f(-0.4, 0.4) * wid, len * rng.f(0.4, 0.9), wid * 0.17);
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+/** A band of paint across the picture: sky, water, ground. */
+function band(ctx, rng, y0, y1, w, colour, n) {
+  for (let i = 0; i < n; i++) {
+    stroke(ctx, rng, rng.f(-24, w + 24), rng.f(y0 - 6, y1 + 6),
+      rng.f(w * 0.045, w * 0.11), rng.f(7, 15), colour, rng.f(0.5, 0.92));
+  }
+}
+
+function paintBackdrop(w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const rng = makeRng('backdrop:' + seedText);
+  const horizon = h * 0.60;
+  const glow = S.place.glow;
+
+  ctx.fillStyle = '#2b3549';
+  ctx.fillRect(0, 0, w, h);
+
+  // The sky is the BRIGHTEST thing in the picture. That is the whole trick of
+  // the reference: everything on the ground reads as a dark shape against a
+  // lit horizon, so a fighter is legible at phone size without an outline.
+  band(ctx, rng, -12, horizon * 0.34, w, '#33405c', Math.round(w * 0.85));
+  band(ctx, rng, horizon * 0.22, horizon * 0.62, w, '#6b6a72', Math.round(w * 0.78));
+  band(ctx, rng, horizon * 0.50, horizon * 0.88, w, '#b08a63', Math.round(w * 0.78));
+  band(ctx, rng, horizon * 0.76, horizon + 5, w, '#e2b478', Math.round(w * 0.66));
+
+  // Low sun, and the fire they set, both from the same side.
+  for (let i = 0; i < Math.round(w * 0.40); i++) {
+    stroke(ctx, rng, rng.f(w * 0.42, w * 1.06), rng.f(horizon * 0.62, horizon + 3),
+      rng.f(w * 0.03, w * 0.085), rng.f(4, 9),
+      rng.c(0.45) ? '#f0cf96' : glow, rng.f(0.3, 0.72));
+  }
+
+  // Far shore, pale with distance — the one thing between sky and land.
+  ctx.fillStyle = '#4c5163';
+  ctx.beginPath();
+  ctx.moveTo(0, horizon);
+  ctx.lineTo(w * 0.10, horizon - h * 0.055);
+  ctx.lineTo(w * 0.26, horizon - h * 0.018);
+  ctx.lineTo(w * 0.40, horizon - h * 0.075);
+  ctx.lineTo(w * 0.54, horizon - h * 0.010);
+  ctx.lineTo(w, horizon - h * 0.030);
+  ctx.lineTo(w, horizon + 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // What they came to take, black against the light.
+  const wall = '#171613';
+  if (S.place.wall === 'stone') {
+    ctx.fillStyle = wall;
+    ctx.fillRect(w * 0.58, horizon - h * 0.26, w * 0.34, h * 0.27);
+    ctx.beginPath();
+    ctx.moveTo(w * 0.63, horizon - h * 0.26);
+    ctx.lineTo(w * 0.75, horizon - h * 0.40);
+    ctx.lineTo(w * 0.87, horizon - h * 0.26);
+    ctx.closePath(); ctx.fill();
+    ctx.fillRect(w * 0.735, horizon - h * 0.50, w * 0.03, h * 0.10);
+    ctx.fillStyle = glow;
+    ctx.fillRect(w * 0.65, horizon - h * 0.17, w * 0.04, h * 0.07);
+    ctx.fillRect(w * 0.79, horizon - h * 0.17, w * 0.04, h * 0.07);
+  } else if (S.place.wall === 'tent') {
+    ctx.fillStyle = wall;
+    for (const cx of [0.60, 0.77, 0.92]) {
+      ctx.beginPath();
+      ctx.moveTo(w * cx, horizon - h * 0.17);
+      ctx.lineTo(w * (cx + 0.09), horizon + 1);
+      ctx.lineTo(w * (cx - 0.09), horizon + 1);
+      ctx.closePath(); ctx.fill();
+    }
+  } else if (S.place.wall === 'hall') {
+    ctx.fillStyle = wall;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.54, horizon + 1);
+    ctx.lineTo(w * 0.61, horizon - h * 0.22);
+    ctx.lineTo(w * 0.90, horizon - h * 0.22);
+    ctx.lineTo(w * 0.97, horizon + 1);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = glow;
+    ctx.fillRect(w * 0.72, horizon - h * 0.13, w * 0.05, h * 0.08);
+  } else {
+    ctx.fillStyle = wall;
+    ctx.beginPath();
+    ctx.moveTo(w * 0.55, horizon + 1);
+    ctx.quadraticCurveTo(w * 0.76, horizon - h * 0.17, w * 0.99, horizon - h * 0.01);
+    ctx.lineTo(w * 0.99, horizon + 1);
+    ctx.closePath(); ctx.fill();
+  }
+
+  // The ground they stand on: dark, and warmer as it comes toward you.
+  band(ctx, rng, horizon - 4, horizon + h * 0.14, w, '#2e2a20', Math.round(w * 0.95));
+  band(ctx, rng, horizon + h * 0.08, h + 16, w, '#1d1a14', Math.round(w * 1.05));
+  for (let i = 0; i < Math.round(w * 0.30); i++) {
+    stroke(ctx, rng, rng.f(w * 0.25, w * 1.05), rng.f(horizon, h),
+      rng.f(w * 0.03, w * 0.08), rng.f(4, 8), mix(glow, '#1d1a14', 0.5), rng.f(0.12, 0.34));
+  }
+  return c;
+}
+
+/**
+ * One fighter: a silhouette first, paint second.
+ *
+ * Scattering strokes and letting a shape emerge is what the world map does,
+ * and on a body it produced a ball on a scribble. So every part here is a
+ * real path — helm, beard, tunic, axe, shield — the paint is CLIPPED inside
+ * the body, and the light catches one edge.
+ *
+ * Gear belongs to the FIGHTER, not to the rank. An axe-man shoved to the back
+ * still has his axe; what changes is what he is allowed to do with it. The
+ * first cut drew the weapon from the rank, so a man's axe turned into a spear
+ * when somebody pushed him, which is nonsense and looked it.
+ */
+
+/** A helm with a nasal — the one silhouette that says Norse and not Roman. */
+function drawHead(ctx, c, x, headY, r, dark, lit, face) {
+  const line = mix(dark, lit, 0.72);
+  // Beard first, so the helm sits over it.
+  if (c.head !== 'hood') {
+    ctx.fillStyle = mix(dark, '#000000', 0.35);
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.78, headY + r * 0.15);
+    ctx.quadraticCurveTo(x, headY + r * 2.5, x + r * 0.78, headY + r * 0.15);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.arc(x, headY, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (c.head === 'helm') {
+    // Domed cap, brow band, and the nasal bar down the face.
+    ctx.fillStyle = mix(dark, lit, 0.30);
+    ctx.beginPath();
+    ctx.arc(x, headY - r * 0.10, r * 1.06, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = line;
+    ctx.lineWidth = Math.max(1.2, r * 0.20);
+    ctx.beginPath();
+    ctx.moveTo(x - r * 1.05, headY - r * 0.10);
+    ctx.lineTo(x + r * 1.05, headY - r * 0.10);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + face * r * 0.12, headY - r * 0.10);
+    ctx.lineTo(x + face * r * 0.12, headY + r * 0.62);
+    ctx.stroke();
+  } else if (c.head === 'pelt') {
+    // A wolf-coat wears the head of the thing he took it from.
+    ctx.fillStyle = mix(dark, lit, 0.22);
+    ctx.beginPath();
+    ctx.moveTo(x - r * 1.15, headY + r * 0.25);
+    ctx.lineTo(x - r * 0.95, headY - r * 1.35);
+    ctx.lineTo(x - r * 0.25, headY - r * 0.75);
+    ctx.lineTo(x + r * 0.25, headY - r * 0.75);
+    ctx.lineTo(x + r * 0.95, headY - r * 1.35);
+    ctx.lineTo(x + r * 1.15, headY + r * 0.25);
+    ctx.closePath();
+    ctx.fill();
+  } else if (c.head === 'hood') {
+    ctx.fillStyle = mix(dark, lit, 0.16);
+    ctx.beginPath();
+    ctx.moveTo(x - r * 1.2, headY + r * 1.1);
+    ctx.quadraticCurveTo(x - r * 1.1, headY - r * 1.5, x, headY - r * 1.3);
+    ctx.quadraticCurveTo(x + r * 1.1, headY - r * 1.5, x + r * 1.2, headY + r * 1.1);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+/** A bearded axe: the blade hangs below the haft in a hook. Unmistakable. */
+function drawAxe(ctx, x, y, len, face, dark, lit) {
+  const metal = mix(dark, lit, 0.66);
+  const lean = face * len * 0.16;
+  ctx.strokeStyle = mix(dark, lit, 0.34);
+  ctx.lineWidth = Math.max(2, len * 0.062);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + lean, y - len);
+  ctx.stroke();
+
+  const hy = y - len;
+  x = x + lean;
+  ctx.fillStyle = metal;
+  ctx.beginPath();
+  ctx.moveTo(x, hy + len * 0.02);
+  ctx.lineTo(x + face * len * 0.06, hy - len * 0.10);
+  ctx.quadraticCurveTo(x + face * len * 0.46, hy - len * 0.05, x + face * len * 0.40, hy + len * 0.20);
+  ctx.quadraticCurveTo(x + face * len * 0.30, hy + len * 0.34, x + face * len * 0.05, hy + len * 0.24);
+  ctx.closePath();
+  ctx.fill();
+  // The bright edge of the blade.
+  ctx.strokeStyle = mix(metal, '#ffffff', 0.45);
+  ctx.lineWidth = Math.max(1, len * 0.028);
+  ctx.beginPath();
+  ctx.moveTo(x + face * len * 0.07, hy - len * 0.09);
+  ctx.quadraticCurveTo(x + face * len * 0.45, hy - len * 0.04, x + face * len * 0.39, hy + len * 0.20);
+  ctx.stroke();
+}
+
+/** A leaf-bladed spear, not the flag the first cut drew. */
+function drawSpear(ctx, x0, y0, x1, y1, dark, lit, w) {
+  const metal = mix(dark, lit, 0.60);
+  ctx.strokeStyle = mix(dark, lit, 0.28);
+  ctx.lineWidth = Math.max(1.6, w);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.stroke();
+  const dx = x1 - x0, dy = y1 - y0;
+  const L = Math.hypot(dx, dy) || 1;
+  const ux = dx / L, uy = dy / L, px = -uy, py = ux;
+  const bl = L * 0.17, bw = w * 1.5;
+  ctx.fillStyle = metal;
+  ctx.beginPath();
+  ctx.moveTo(x1 + ux * bl, y1 + uy * bl);
+  ctx.quadraticCurveTo(x1 + px * bw, y1 + py * bw, x1 - ux * bl * 0.35, y1 - uy * bl * 0.35);
+  ctx.quadraticCurveTo(x1 - px * bw, y1 - py * bw, x1 + ux * bl, y1 + uy * bl);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/** A round shield: rim, boss, and a few staves of paint across the face. */
+function drawShield(ctx, x, y, r, held, dark, lit) {
+  ctx.fillStyle = held ? mix(dark, lit, 0.30) : mix(dark, '#000000', 0.18);
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  const edge = held ? '#d3a441' : mix(dark, lit, 0.46);
+  ctx.strokeStyle = edge;
+  ctx.lineWidth = Math.max(1.5, r * 0.16);
+  ctx.stroke();
+  // Staves.
+  ctx.save();
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip();
+  ctx.strokeStyle = mix(dark, lit, held ? 0.34 : 0.24);
+  ctx.lineWidth = Math.max(1, r * 0.10);
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(x - Math.cos(a) * r, y - Math.sin(a) * r);
+    ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // The boss.
+  ctx.fillStyle = mix(dark, lit, held ? 0.70 : 0.50);
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.26, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function paintFighter(ctx, c, x, groundY, H, isUp, later) {
+  const rng = makeRng('fig:' + seedText + ':' + c.id);
+  const face = c.side === 'us' ? 1 : -1;
+  const dark = c.side === 'us' ? '#241b12' : '#101d24';
+  const lit = c.side === 'us'
+    ? (c.state === 'wood' ? '#d08430' : '#d6b684')
+    : '#86b0c6';
+
+  const hem = H * 0.125, shoulder = H * 0.145;
+  const kneeY = groundY - H * 0.24;
+  const shY = groundY - H * 0.735, headY = groundY - H * 0.875, headR = H * 0.077;
+
+  ctx.save();
+
+  ctx.globalAlpha = c.alive ? 0.45 : 0.16;
+  ctx.fillStyle = '#0c0a07';
+  ctx.beginPath();
+  ctx.ellipse(x, groundY + 2, hem * 1.9, H * 0.045, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  if (!c.alive) {
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.ellipse(x, groundY - H * 0.035, hem * 2.1, H * 0.05, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - face * hem * 1.7, groundY - H * 0.07, headR * 0.95, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    return;
+  }
+
+  // The spear goes behind — a shaft reads fine crossing the body.
+  if (c.gear === 'spear') {
+    drawSpear(ctx, x + face * hem * 0.9, kneeY + H * 0.18,
+      x - face * H * 0.10, headY - H * 0.34, dark, lit, H * 0.022);
+  }
+
+  // Legs under the hem, so they stand rather than sit on the ground.
+  ctx.fillStyle = mix(dark, '#000000', 0.35);
+  ctx.fillRect(x - hem * 0.74, kneeY - H * 0.01, hem * 0.52, H * 0.25);
+  ctx.fillRect(x + hem * 0.22, kneeY - H * 0.01, hem * 0.52, H * 0.25);
+  // Leg wraps.
+  ctx.strokeStyle = mix(dark, lit, 0.22);
+  ctx.lineWidth = Math.max(1, H * 0.012);
+  for (const ly of [0.09, 0.15]) {
+    ctx.beginPath();
+    ctx.moveTo(x - hem * 0.78, kneeY + H * ly);
+    ctx.lineTo(x - hem * 0.20, kneeY + H * ly);
+    ctx.moveTo(x + hem * 0.20, kneeY + H * ly);
+    ctx.lineTo(x + hem * 0.78, kneeY + H * ly);
+    ctx.stroke();
+  }
+
+  // The tunic.
+  const body = new Path2D();
+  body.moveTo(x - shoulder, shY);
+  body.quadraticCurveTo(x - shoulder * 1.12, groundY - H * 0.44, x - hem, kneeY);
+  body.lineTo(x + hem, kneeY);
+  body.quadraticCurveTo(x + shoulder * 1.12, groundY - H * 0.44, x + shoulder, shY);
+  body.quadraticCurveTo(x, shY - H * 0.05, x - shoulder, shY);
+  body.closePath();
+  ctx.fillStyle = dark;
+  ctx.fill(body);
+
+  ctx.save();
+  ctx.clip(body);
+  for (let i = 0; i < 26; i++) {
+    const t = rng.next();
+    const yy = shY + t * (kneeY - shY);
+    const px = x + rng.f(-shoulder * 1.2, shoulder * 1.2);
+    const onLight = px > x + shoulder * 0.1;
+    stroke(ctx, rng, px, yy, rng.f(H * 0.05, H * 0.12), rng.f(3, 6),
+      onLight && rng.c(0.5) ? mix(dark, lit, rng.f(0.28, 0.62)) : mix(dark, '#000000', 0.3),
+      rng.f(0.55, 0.95));
+  }
+  ctx.restore();
+
+  // Belt, and the rim of light down the sunward edge.
+  ctx.strokeStyle = mix(dark, lit, 0.40);
+  ctx.lineWidth = Math.max(1.4, H * 0.020);
+  ctx.beginPath();
+  ctx.moveTo(x - shoulder * 0.92, groundY - H * 0.47);
+  ctx.lineTo(x + shoulder * 0.92, groundY - H * 0.47);
+  ctx.stroke();
+
+  ctx.strokeStyle = mix(dark, lit, 0.62);
+  ctx.lineWidth = Math.max(1.4, H * 0.017);
+  ctx.beginPath();
+  ctx.moveTo(x + shoulder * 0.96, shY + H * 0.01);
+  ctx.quadraticCurveTo(x + shoulder * 1.10, groundY - H * 0.44, x + hem * 0.96, kneeY);
+  ctx.stroke();
+
+  drawHead(ctx, c, x, headY, headR, dark, lit, face);
+
+
+  // The shield, on the arm facing the enemy, and visibly UP when held.
+  if (c.shield) {
+    const held = c.guard > 0;
+    const r = H * (c.shield === 'big' ? 0.165 : 0.140);
+    drawShield(ctx, x + face * shoulder * 0.80, groundY - H * (held ? 0.60 : 0.50), r, held, dark, lit);
+  }
+
+  // Axes are HANDED BACK rather than drawn. Every figure overlaps the one
+  // beside it, so an axe drawn here is covered by the next man along — which
+  // is exactly what happened, and the axe-men looked unarmed. The caller
+  // draws them all after every body is down.
+  if (c.gear === 'axe') {
+    later.push(() => drawAxe(ctx, x + face * shoulder * 0.62, shY + H * 0.06,
+      H * 0.40, face, dark, lit));
+  }
+  if (c.gear === 'thrown') {
+    later.push(() => {
+      drawAxe(ctx, x + face * shoulder * 0.55, shY - H * 0.02, H * 0.24, face, dark, lit);
+      for (let i = 0; i < Math.min(2, Math.max(0, c.throws - 1)); i++) {
+        drawAxe(ctx, x - face * (shoulder * 0.35 + i * H * 0.055), groundY - H * 0.36,
+          H * 0.13, -face, dark, lit);
+      }
+    });
+  }
+
+  if (isUp) {
+    ctx.strokeStyle = '#d3a441';
+    ctx.lineWidth = 2.2;
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.ellipse(x, groundY + 2, hem * 2.2, H * 0.055, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+/* ------------------------------------------------------------------ *
+ * Putting it on screen
+ * ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+const scene = $('scene');
+
+function layout() {
+  const box = scene.parentElement.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const w = Math.max(200, Math.round(box.width));
+  const h = Math.max(160, Math.round(box.height));
+  if (scene.width !== w * dpr || scene.height !== h * dpr) {
+    scene.width = w * dpr; scene.height = h * dpr;
+    S.backdrop = null;
+  }
+  return { w, h, dpr };
+}
+
+/** Where each rank stands. Rank 1 of both sides meets in the middle. */
+function spots(w) {
+  const mid = w / 2;
+  const gap = Math.min(w * 0.115, 52);
+  const out = {};
+  for (let r = 1; r <= 4; r++) {
+    out['us' + r] = mid - gap * 0.62 - (r - 1) * gap;
+    out['them' + r] = mid + gap * 0.62 + (r - 1) * gap;
+  }
+  return out;
+}
+
+function drawAll() { render(); }
+
+function render() {
+  if (!S) return;
+  const { w, h, dpr } = layout();
+  const ctx = scene.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!S.backdrop) S.backdrop = paintBackdrop(w, h);
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(S.backdrop, 0, 0, w, h);
+
+  const groundY = h * 0.80;
+  const cell = Math.min(w * 0.115, 52);
+  const H = Math.min(h * 0.52, cell * 3.1);
+  const at = spots(w);
+  const active = up();
+
+  // Back ranks first, so the front line overlaps them like a real line.
+  const order = [...S.us, ...S.them].sort((a, b) => b.rank - a.rank);
+  const axes = [];
+  for (const c of order) {
+    const x = at[c.side + c.rank];
+    if (x == null) continue;
+    paintFighter(ctx, c, x, groundY - (c.rank - 1) * 4, H, active && c.id === active.id, axes);
+  }
+  for (const draw of axes) draw();
+
+  paintPlates(w, h, at, groundY, active);
+  paintChronicle();
+  paintHand(active);
+}
+
+function paintPlates(w, h, at, groundY, active) {
+  const taps = $('taps');
+  taps.replaceChildren();
+  const cell = Math.min(w * 0.115, 52);
+  const aimable = new Set(
+    aiming && active && active.side === 'us' ? targetsFor(active, aiming).map((t) => t.id) : []
+  );
+
+  for (const c of [...S.us, ...S.them]) {
+    if (!c.alive) continue;
+    const x = at[c.side + c.rank];
+    if (x == null) continue;
+
+    const btn = document.createElement('button');
+    btn.className = 'tap';
+    btn.type = 'button';
+    btn.style.left = (x - cell / 2) + 'px';
+    btn.style.width = cell + 'px';
+    btn.disabled = !aimable.has(c.id);
+    btn.setAttribute('aria-label',
+      `${c.side === 'us' ? c.name + ' ' + c.byname : 'the ' + c.kind}, rank ${c.rank}, ${c.health} of ${c.maxHealth}`);
+    if (aimable.has(c.id)) btn.addEventListener('click', () => playerAct(aiming, c));
+
+    const plate = document.createElement('div');
+    plate.className = 'plate'
+      + (active && c.id === active.id ? ' up' : '')
+      + (aimable.has(c.id) ? ' aim' : '')
+      + (c.state === 'wood' ? ' wood' : '')
+      + (c.state === 'broken' ? ' broke' : '');
+    plate.style.left = (x - cell / 2) + 'px';
+    plate.style.width = cell + 'px';
+
+    const health = document.createElement('div');
+    health.className = 'bar';
+    health.innerHTML = `<i style="width:${Math.max(0, (c.health / c.maxHealth) * 100)}%"></i>`;
+
+    const res = document.createElement('div');
+    res.className = 'bar res';
+    res.innerHTML = `<i style="width:${Math.max(0, (c.resolve / c.maxResolve) * 100)}%"></i>`;
+
+    const who = document.createElement('div');
+    who.className = 'who';
+    who.textContent = c.side === 'us' ? c.name : c.kind;
+
+    const rank = document.createElement('div');
+    rank.className = 'rank';
+    rank.textContent = c.rank;
+
+    plate.append(health, res, who, rank);
+    taps.append(btn, plate);
+  }
+}
+
+function paintChronicle() {
+  const box = $('chronicle');
+  box.innerHTML = S.log.slice(-14).map((l) => `<p>${l}</p>`).join('');
+  box.scrollTop = box.scrollHeight;
+  $('round').textContent = 'ROUND ' + S.round;
+  $('where').textContent = S.place.where;
+}
+
+function paintHand(active) {
+  const verbs = $('verbs');
+  verbs.replaceChildren();
+  const mine = active && active.side === 'us' && !S.over;
+
+  $('upName').textContent = mine ? active.name : (S.over ? '—' : 'They move');
+  $('upKind').textContent = mine ? active.byname : '';
+  $('upAt').textContent = mine ? `RANK ${active.rank}` : '';
+
+  for (const id of Object.keys(VERBS)) {
+    const v = VERBS[id];
+    const b = document.createElement('button');
+    b.className = 'verb' + (id === 'hold' ? ' wide' : '');
+    b.type = 'button';
+    const ok = mine && canUse(active, id);
+    b.disabled = !ok;
+    b.setAttribute('aria-pressed', String(aiming === id));
+    const note = id === 'hurl' && mine ? `${active.throws} left` : v.note;
+    b.innerHTML = `<b>${v.name}</b><span>${v.from.join('–')} → ${v.at.length ? v.at.join('–') : 'self'} · ${note}</span>`;
+    if (ok) {
+      b.addEventListener('click', () => {
+        if (id === 'hold') { playerAct('hold', null); return; }
+        aiming = aiming === id ? null : id;
+        render();
+      });
+    }
+    verbs.append(b);
+  }
+
+  const prompt = $('prompt');
+  if (S.over) { prompt.className = 'prompt quiet'; prompt.textContent = 'The fight is finished.'; }
+  else if (!mine) { prompt.className = 'prompt quiet'; prompt.textContent = 'Their turn.'; }
+  else if (aiming) { prompt.className = 'prompt'; prompt.textContent = `Choose who takes it — tap them.`; }
+  else { prompt.className = 'prompt quiet'; prompt.textContent = 'Choose what to do.'; }
+
+  $('reseed').textContent = 'Seed: ' + seedText;
+}
+
+function showScroll() {
+  $('verdict').textContent = S.over === 'won' ? 'They took the place' : 'The band was broken';
+  $('verdict').className = S.over === 'won' ? 'won' : 'lost';
+  const fell = S.us.filter((c) => !c.alive).length;
+  $('toll').textContent = `Round ${S.round} · ${S.us.length - fell} of ${S.us.length} still standing`;
+  const roll = $('roll');
+  roll.replaceChildren();
+  for (const c of S.us) {
+    const li = document.createElement('li');
+    li.className = c.alive ? '' : 'fell';
+    li.innerHTML = c.alive
+      ? `<b>${c.name} ${c.byname}</b> — ${c.health} of ${c.maxHealth}${c.state !== 'steady' ? `, ${c.state === 'wood' ? 'gone wood' : 'nerve broken'}` : ''}`
+      : `<b>${c.name} ${c.byname}</b> — fell at ${S.place.where}`;
+    roll.append(li);
+  }
+  $('veil').hidden = false;
+}
+
+/* ------------------------------------------------------------------ *
+ * Getting in and out
+ * ------------------------------------------------------------------ */
+function freshSeed() {
+  const words = ['raven','skerry','frost','wolf','salt','ash','gull','rime','hail','kelp','thorn','elk'];
+  const r = makeRng('seedseed:' + Date.now() + ':' + performance.now());
+  return `${r.pick(words)}-${r.pick(words)}-${r.i(100, 999)}`;
+}
+
+function begin(seed) {
+  $('veil').hidden = true;
+  newRaid(seed || freshSeed());
+}
+
+$('again').addEventListener('click', () => begin(null));
+$('reseed').addEventListener('click', () => {
+  const s = prompt('Seed for this raid', seedText);
+  if (s) begin(s.trim());
+});
+$('onward').addEventListener('click', () => begin(null));
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { if (S) { S.backdrop = null; render(); } }, 140);
+});
+
+// Fonts change nothing on the canvas, but they change the plates.
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (S) render(); });
+
+begin(null);
+</script>
