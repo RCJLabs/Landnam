@@ -65,12 +65,24 @@ const BLEED = 1.16;
 const GROUND = 1.03;
 const GLAZE = 1.0;
 
+/**
+ * Three cuts of one colour: the light, the body and the shadow.
+ *
+ * A flat brush loaded with a single colour reads as plastic. Three cuts of
+ * the same colour is the smallest thing that reads as paint, and taking them
+ * from a fill and an edge the data already carries means the steading's plots
+ * and the world's terrain go through the same mixer.
+ */
+export function rampOf(fill: string, edge: string, dim = 0): [string, string, string] {
+  const body = dim > 0 ? mix(fill, '#000000', dim) : fill;
+  const shade = dim > 0 ? mix(edge, '#000000', dim) : edge;
+  return [mix(body, '#e8dcc0', 0.13), body, shade];
+}
+
 /** Three cuts of one terrain: the light, the body and the shadow. */
 function ramp(terrain: Terrain, deep: boolean): [string, string, string] {
   const def = terrainDef(terrain);
-  const body = deep ? mix(def.fill, '#000000', 0.22) : def.fill;
-  const edge = deep ? mix(def.edge, '#000000', 0.22) : def.edge;
-  return [mix(body, '#e8dcc0', 0.13), body, edge];
+  return rampOf(def.fill, def.edge, deep ? 0.22 : 0);
 }
 
 /** One hex's own stream. The same hex, the same marks, forever. */
@@ -117,6 +129,86 @@ function hexPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numbe
   ctx.closePath();
 }
 
+/** A patch of ground for the brush to cover: where, how big, in what colours. */
+export interface Patch {
+  /** Middle of the patch, in world units. */
+  x: number;
+  y: number;
+  /** A hex of this radius, in world units. Every mark sizes off it. */
+  radius: number;
+  /** Light, body and shadow — see rampOf. */
+  ramp: readonly [string, string, string];
+  /** This patch's own stream. The same patch, the same marks, forever. */
+  rng: Rng;
+  /**
+   * How far past its own edge the brush is allowed to run, as a multiple of
+   * the radius.
+   *
+   * On the world map generous bleed is the whole trick: it dissolves the
+   * lattice, and a hex's overspill lands on the country next to it. A
+   * steading has an OUTSIDE — beyond the last plot is the page — so the same
+   * bleed leaves the ground fringed with spikes against the dark, which reads
+   * as torn paper rather than as paint.
+   */
+  bleed?: number;
+  /**
+   * Mark size, as a multiple of the size the radius would imply. Below 1 the
+   * brush is finer AND busier: coverage is held by putting proportionally
+   * more marks down, so the patch does not go bald.
+   */
+  grain?: number;
+  /**
+   * Whether to open and close the clip, or leave it to the caller.
+   *
+   * paintGround has more to lay down inside the same clip — surf, a river —
+   * so it opens the clip once and closes it itself.
+   */
+  clip?: boolean;
+}
+
+/**
+ * A patch of ground, painted once. Everything sizes off `radius`, so this is
+ * the same brush on the world map at HEX 26 and in the steading at HEX 34.
+ *
+ * Stroke count goes with AREA rather than being fixed: a bigger patch needs
+ * proportionally more marks or the paint thins out and the flat ground colour
+ * shows through as a flat ground colour. At radius === HEX_SIZE it comes to
+ * exactly STROKES and draws exactly what the world map drew before this was
+ * pulled out of it.
+ */
+export function paintPatch(ctx: CanvasRenderingContext2D, patch: Patch): void {
+  const { x, y, radius, ramp: [light, body, shade], rng } = patch;
+  const scale = radius / HEX_SIZE;
+  const grain = patch.grain ?? 1;
+  const strokes = Math.round((STROKES * scale * scale) / (grain * grain));
+
+  if (patch.clip !== false) ctx.save();
+  hexPath(ctx, x, y, radius * (patch.bleed ?? BLEED));
+  ctx.clip();
+
+  // a ground colour under the strokes, so there are no holes for what is
+  // behind to show through where the brush happened not to land
+  ctx.fillStyle = body;
+  hexPath(ctx, x, y, radius * GROUND);
+  ctx.fill();
+
+  for (let i = 0; i < strokes; i += 1) {
+    const angle = rng.float(0, Math.PI * 2);
+    // sqrt so the strokes spread evenly over the area rather than crowding
+    // the middle, which is where a naive polar scatter puts them
+    const away = Math.sqrt(rng.next()) * radius * 1.25;
+    stroke(
+      ctx, rng,
+      x + Math.cos(angle) * away,
+      y + Math.sin(angle) * away,
+      rng.float(6.5, 14) * scale * grain, rng.float(2.6, 5.2) * scale * grain,
+      [light, body, shade][rng.int(0, 2)]!, rng.float(0.55, 0.95),
+    );
+  }
+
+  if (patch.clip !== false) ctx.restore();
+}
+
 /**
  * One hex of country, painted once.
  *
@@ -136,31 +228,11 @@ export function paintGround(
 ): void {
   const p = toPixel(at, HEX_SIZE);
   const rng = hexRng(seed, at, 'ground');
-  const [light, body, shade] = ramp(ground.terrain, ground.deep);
+  const cuts = ramp(ground.terrain, ground.deep);
+  const body = cuts[1];
 
   ctx.save();
-  hexPath(ctx, p.x, p.y, HEX_SIZE * BLEED);
-  ctx.clip();
-
-  // a ground colour under the strokes, so there are no holes for the sea to
-  // show through where the brush happened not to land
-  ctx.fillStyle = body;
-  hexPath(ctx, p.x, p.y, HEX_SIZE * GROUND);
-  ctx.fill();
-
-  for (let i = 0; i < STROKES; i += 1) {
-    const angle = rng.float(0, Math.PI * 2);
-    // sqrt so the strokes spread evenly over the area rather than crowding
-    // the middle, which is where a naive polar scatter puts them
-    const away = Math.sqrt(rng.next()) * HEX_SIZE * 1.25;
-    stroke(
-      ctx, rng,
-      p.x + Math.cos(angle) * away,
-      p.y + Math.sin(angle) * away,
-      rng.float(6.5, 14), rng.float(2.6, 5.2),
-      [light, body, shade][rng.int(0, 2)]!, rng.float(0.55, 0.95),
-    );
-  }
+  paintPatch(ctx, { x: p.x, y: p.y, radius: HEX_SIZE, rng, ramp: cuts, clip: false });
 
   // Surf, laid over the wet ground rather than beside it. The edges come
   // from the scene, which read them off the static tiles.

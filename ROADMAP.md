@@ -2006,6 +2006,94 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-25 — The steading in oil** — the painted renderer reaches colony,
+  and a second person who was not there.
+
+  The world map's backdrop is a careful thing: a canvas sized to the charted
+  bounding box, a ledger, and a proof that no hex is ever painted twice.
+  Almost none of it applies to a steading, which is a handful of plots you can
+  see all of at once. So the ground is painted whole — and what it is careful
+  about instead is WHEN.
+
+  `describeColony` rebuilds its whole description on every repaint, and almost
+  every repaint changes only where people are standing. So the painting is
+  kept until the GROUND changes: a new plot, a plot that became different
+  ground, a different world. Somebody taking a job, somebody dying, a
+  longhouse going up — none of those reload the brush, because a raised
+  building is drawn on top as SVG and people were never part of the paint.
+  Measured in the built page: six repaints in a row, six reuses, zero
+  repaints of the ground.
+
+  It mounts INSIDE the colony SVG, in a `<foreignObject>` at the scene's own
+  world bounds. The colony map has no camera — it sizes itself with a viewBox
+  and letterboxes into whatever box the panel gives it — so a sibling canvas
+  would have to reproduce that fit and stay in step through every resize. A
+  foreignObject is carried by the viewBox for free and cannot drift out of
+  register. The bar checks it lands within 0.001 world units of the ground it
+  paints.
+
+  **It holds the live canvas, and that is worth 320 ms.** The first cut put a
+  `canvas.toDataURL()` into an `<image>`, which works — and opening the
+  steading took 455 ms against the drawn one's 18 ms, which is a hitch you can
+  see and would be over a second on a phone. Split apart, the brush was not
+  the problem:
+
+  | | laying the paint | encoding the PNG |
+  |---|---|---|
+  | 2136x1909 | 47 ms | **268 ms** |
+  | 1246x1113 | 21 ms | 136 ms |
+
+  Nothing needed the PNG. The canvas is already something the page can draw,
+  and a foreignObject can hold it directly. Opening the steading went from
+  455 ms to 84 ms with the picture unchanged to the eye.
+
+  This is the second time on this arc that the obvious cost was not the real
+  one — the world map's was the canvas SIZE, not the strokes. Both times the
+  fix came from measuring the halves separately rather than tuning the part
+  that looked expensive.
+
+  **The brush is now one brush.** `paintPatch` came out of `paintGround`:
+  everything sizes off a radius, so the same code paints a world hex at 26 and
+  a plot at 34. Two knobs came out with it, because a steading is not country:
+
+  - *bleed* — on the map, generous bleed dissolves the lattice and a hex's
+    overspill lands on the country beside it. A steading has an OUTSIDE, so
+    the same bleed fringed the whole thing with spikes against the dark. 1.16
+    on the map, 1.02 here.
+  - *grain* — a plot is a third bigger than a world hex and seen at much the
+    same size, so marks that scaled with it read as scattered rice. Finer
+    marks, and proportionally more of them to hold the cover.
+
+  The extraction had to leave the map's painting untouched to the pixel, and
+  the check for that already existed: the repaint bar measures the glaze
+  lattice at a fixed seed. 10.2% before, 10.2% after.
+
+  **Six people with jobs drew four.**
+
+  Yesterday's fix counted the crowd on a plot per JOB. But the wood is worked
+  by the hunter AND the woodcutter, and each of them thought they were first
+  to arrive, so both stood dead centre — a hunter and a woodcutter on one
+  wood were one figure. Two counts now, answering different questions: `taken`
+  is per job and picks WHICH of that job's plots you walk to; `crowd` is per
+  plot and decides where you stand once you get there.
+
+  This was found by looking at the screen — the tests were green, the seam was
+  committed, and the picture had four people in it where the state had six.
+
+  `scripts/steading.mjs` is the browser witness, and it is on `npm run bars`
+  from the start this time. Three claims, none reachable from a unit test: the
+  paint lands on the ground it paints, everybody with a job is drawn and no
+  two in one place, and moving people does not reload the brush. It reads
+  pixels back off the canvas rather than trusting the brush was called — a
+  frame in the right place holding nothing would otherwise pass. It runs both
+  backends, because the middle claim is about the drawn steading too, and when
+  the per-job counting is put back both fail it. Twelve bars now.
+
+  `window.landnam.settle()` puts the steading up, because reaching the colony
+  screen honestly is a long walk for a test that only wants to look at it. It
+  fabricates the journey, not the rules: it marks the ground seen, then asks
+  `canFound` like anybody else.
+
 - **2026-08-25 — Where your people stand** — the colony seam, and a bug it
   found in its first hour.
 

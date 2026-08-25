@@ -12,7 +12,7 @@ import { spawnSync } from 'node:child_process';
 const BARS = [
   ['offline', []], ['sea', []], ['larder', []], ['pan', []],
   ['field', []], ['pinch', []], ['landscape', []], ['way-look', []],
-  ['repaint', []], ['reach', []], ['reach', ['320x568']],
+  ['repaint', []], ['steading', []], ['reach', []], ['reach', ['320x568']],
 ];
 
 let bad = 0;

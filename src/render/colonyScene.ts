@@ -14,7 +14,7 @@
 //
 // Nothing here knows what a colour is.
 
-import { toPixel, type Hex } from '../hex';
+import { key, toPixel, type Hex } from '../hex';
 import type { JobId } from '../data/jobs';
 import type { GameState, Plot } from '../state/types';
 import { jobOf, plotsFor } from '../sim/colony';
@@ -122,7 +122,16 @@ export function describeColony(state: GameState): ColonyScene {
   // spread across the plots that job has, and then round the middle of the one
   // they land on, so nobody is hidden underneath somebody else.
   const folk: WorkerPaint[] = [];
+  // Two counts, and they answer different questions. `taken` is per JOB and
+  // decides WHICH of that job's plots this person walks to. `crowd` is per
+  // PLOT and decides where they stand once they get there.
+  //
+  // They have to be separate. Counting only per job says a hunter and a
+  // woodcutter are each the first to arrive, and the wood they share is
+  // worked by both — so both stood dead centre, on top of each other. Six
+  // people with jobs drew four.
   const taken = new Map<string, number>();
+  const crowd = new Map<string, number>();
   for (const person of living(state.party.people)) {
     const job = jobOf(person);
     if (!job) continue;
@@ -131,12 +140,14 @@ export function describeColony(state: GameState): ColonyScene {
     taken.set(job.id, nth + 1);
     const spot = options.length > 0 ? options[nth % options.length] : undefined;
     if (!spot) continue;
-    // Which time round the plots this one is. The nudge has to come from the
-    // ROUND, not from the running count: `(nth / options.length) * 2pi` sends
+    // How many are already standing here. The nudge has to come from THIS
+    // count, not from the running one: `(nth / options.length) * 2pi` sends
     // the fourth farmer of three fields back to the first field AND back to
     // an angle of 2pi, which is the same place as the first farmer down to
-    // the pixel. Six farmers on three fields drew four people.
-    const round = Math.floor(nth / options.length);
+    // the pixel. Nine farmers on three fields drew three people.
+    const here = key(spot.at);
+    const round = crowd.get(here) ?? 0;
+    crowd.set(here, round + 1);
     // The golden angle, so no two rounds ever land on top of each other
     // however many people share a plot.
     const angle = round * 2.399963229728653;

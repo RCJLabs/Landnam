@@ -176,6 +176,34 @@ describe('the people', () => {
     }
   });
 
+  it('spreads people of DIFFERENT jobs who share a plot', () => {
+    // The wood is worked by the hunter AND the woodcutter. Counting the crowd
+    // per job says each of them is the first to arrive, so both stand dead
+    // centre — six people with jobs drew four, and the two that vanished were
+    // simply underneath the two that did not.
+    const state = settled('raven-skerry-317');
+    const alive = state.party.people.filter((p) => p.alive);
+    expect(alive.length, 'need a band to share ground').toBeGreaterThanOrEqual(4);
+    const shared = ['hunter', 'woodcutter'];
+    alive.forEach((p, i) => { p.job = shared[i % shared.length]; });
+
+    const scene = describeColony(state);
+    expect(scene.folk.length, 'everyone with a job stands somewhere').toBe(alive.length);
+    const spots = scene.folk.map((f) => `${key(f.at)}@${f.nudge[0].toFixed(3)},${f.nudge[1].toFixed(3)}`);
+    expect(new Set(spots).size, 'two people drawn in the same place').toBe(spots.length);
+
+    // And they are far enough apart to be two people rather than one smudge.
+    const byPlot = new Map<string, { nudge: readonly [number, number] }[]>();
+    for (const person of scene.folk) {
+      const at = key(person.at);
+      byPlot.set(at, [...(byPlot.get(at) ?? []), person]);
+    }
+    for (const [at, folk] of byPlot) {
+      if (folk.length < 2) continue;
+      expect(closest(folk), `${folk.length} sharing ${at}`).toBeGreaterThanOrEqual(HEAD);
+    }
+  });
+
   it('keeps a whole band on one plot from standing on each other', () => {
     // `warrior` is worked by the watchpost and nothing else, so every warrior
     // in the band lands on ONE hex and only the nudge separates them. A ring

@@ -31,6 +31,17 @@ import {
 
 let colonyView: ReturnType<typeof createColonyView> | null = null;
 
+/**
+ * What the steading's brush has done, for the debug read-out and the bars.
+ *
+ * The view is built lazily and kept, so this is the only handle on it from
+ * outside — and scripts/steading.mjs needs it to tell a painting that was
+ * KEPT from one that was made again, which no screenshot can show.
+ */
+export function steadingDrawn(): unknown {
+  return colonyView ? colonyView.drawn() : null;
+}
+
 export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
   if (!state.settlement) return;
   const { ui, dispatch, rerender } = h;

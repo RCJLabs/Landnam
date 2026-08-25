@@ -11,12 +11,14 @@
 // part with no business being in a boot router at all.
 
 import { cloneState } from './state/clone';
-import { key } from './hex';
+import { distance, fromKey, key } from './hex';
 import { currentMode } from './modes';
 import { wantPainting } from './render/oilFlag';
 import { travelDrawn, travelSample } from './render/travelScreen';
+import { steadingDrawn } from './render/colonyScreen';
 import type { GameState } from './state/types';
 import { startBattle, startRaid } from './sim/battleTurn';
+import { canFound, foundSettlement } from './sim/site';
 
 /**
  * What the debug levers need from the app: the current state, a way to
@@ -40,10 +42,12 @@ declare global {
       fight(difficulty?: number): void;
       raid(difficulty?: number): void;
       visit(id?: string): void;
+      settle(): boolean;
       stock(food?: number, firewood?: number): void;
       skip(days?: number): void;
       paint(on?: boolean | null): void;
       drawn(): unknown;
+      steading(): unknown;
       painted(points: readonly (readonly [number, number])[]): (number | null)[];
     };
   }
@@ -91,6 +95,40 @@ export function installDebug(hooks: DebugHooks): void {
       });
     },
 
+    /**
+     * Puts the steading up wherever the band can put one up.
+     *
+     * Reaching the colony screen honestly means wandering until the ground is
+     * right, which is a long walk for a test that only wants to look at the
+     * steading. Walks out to the nearest ground that will take a hall rather
+     * than forcing one where the rules say no, so what it settles is a
+     * settlement the game would have allowed.
+     */
+    settle() {
+      const state = hooks.get();
+      if (!state || currentMode(state) !== 'TRAVEL' || state.settlement) return false;
+      const next = cloneState(state);
+      if (!canFound(next, next.party.at)) {
+        // Nearest first, so the steading lands somewhere the band could
+        // plausibly have walked to rather than across the map.
+        const here = next.party.at;
+        const spot = Object.keys(next.world.tiles)
+          .map((k) => fromKey(k))
+          .sort((a, b) => distance(here, a) - distance(here, b))
+          .find((at) => {
+            // Standing on the ground is one of the rules, so the walk is
+            // fabricated rather than waived: mark it seen, then ask.
+            next.world.seen[key(at)] = 'seen';
+            next.party.at = at;
+            return canFound(next, at);
+          });
+        if (!spot) return false;
+      }
+      if (!foundSettlement(next)) return false;
+      hooks.commit(next);
+      return true;
+    },
+
     // Fills the store, so a playtest can spend its days on the thing being
     // tested rather than on not starving.
     stock(food = 200, firewood = 200) {
@@ -116,6 +154,13 @@ export function installDebug(hooks: DebugHooks): void {
     // same bar defends the painted map and the drawn one.
     drawn() {
       return travelDrawn();
+    },
+
+    // What the STEADING's brush has done: how many times it has been loaded,
+    // and how many repaints reused the painting instead. scripts/steading.mjs
+    // reads this — a kept painting and a remade one look identical.
+    steading() {
+      return steadingDrawn();
     },
 
     // Brightness of the PAINTED country at world points. scripts/repaint.mjs

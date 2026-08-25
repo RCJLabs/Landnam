@@ -12,12 +12,16 @@ import { buildingById } from '../data/buildings';
 import type { GameState, Plot } from '../state/types';
 import { svgEl } from './svg';
 import { HEX, describeColony } from './colonyScene';
+import { createSteadingPaint, type SteadingPaint } from './colonyOil';
+import { paintingWanted } from './oilFlag';
 
 export { HEX };
 
 export interface ColonyView {
   root: SVGSVGElement;
   update(state: GameState): void;
+  /** What the brush has done, for the debug read-out and the bars. */
+  drawn(): { backend: 'svg' | 'oil'; plots: number; painted: number; kept: number };
 }
 
 export function createColonyView(): ColonyView {
@@ -27,13 +31,23 @@ export function createColonyView(): ColonyView {
     preserveAspectRatio: 'xMidYMid meet',
   });
   const layers = { ground: svgEl('g'), marks: svgEl('g'), folk: svgEl('g') };
+  // The painting goes UNDER the drawn ground rather than instead of it. The
+  // plot glyphs, the raised buildings and the people stay SVG either way —
+  // they are the things you read rather than the thing you look at, and they
+  // stay crisp at any size for free.
+  const brush: SteadingPaint | null = paintingWanted() ? createSteadingPaint() : null;
+  if (brush) root.append(brush.node);
   root.append(layers.ground, layers.marks, layers.folk);
+
+  let plots = 0;
 
   function paint(state: GameState): void {
     const scene = describeColony(state);
     layers.ground.replaceChildren();
     layers.marks.replaceChildren();
     layers.folk.replaceChildren();
+    plots = scene.plots.length;
+    brush?.update(scene, state.seed);
     if (!scene.bounds) return;
     const b = scene.bounds;
     root.setAttribute('viewBox', `${b.x} ${b.y} ${b.w} ${b.h}`);
@@ -44,7 +58,10 @@ export function createColonyView(): ColonyView {
       layers.ground.append(
         svgEl('polygon', {
           points: cornerPoints(p.x, p.y, HEX),
-          fill: def.fill,
+          // Painted, the polygon stops being the ground and becomes the line
+          // round it — the plot's own edge, which is what tells one plot from
+          // the next once the fills are wet paint that runs across the seam.
+          fill: brush ? 'none' : def.fill,
           stroke: def.edge,
           'stroke-width': plot.hall ? 2.5 : 1,
         }),
@@ -75,6 +92,15 @@ export function createColonyView(): ColonyView {
   return {
     root,
     update: paint,
+    drawn: () => {
+      const s = brush?.stats();
+      return {
+        backend: brush ? ('oil' as const) : ('svg' as const),
+        plots,
+        painted: s?.painted ?? 0,
+        kept: s?.kept ?? 0,
+      };
+    },
   };
 }
 
