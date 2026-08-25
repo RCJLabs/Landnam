@@ -16,6 +16,7 @@ import { currentMode } from './modes';
 import { wantPainting } from './render/oilFlag';
 import { travelDrawn, travelSample } from './render/travelScreen';
 import { steadingDrawn } from './render/colonyScreen';
+import { fieldDrawn } from './render/battleScreen';
 import type { GameState } from './state/types';
 import { startBattle, startRaid } from './sim/battleTurn';
 import { canFound, foundSettlement } from './sim/site';
@@ -48,6 +49,7 @@ declare global {
       paint(on?: boolean | null): void;
       drawn(): unknown;
       steading(): unknown;
+      field(): unknown;
       painted(points: readonly (readonly [number, number])[]): (number | null)[];
     };
   }
@@ -161,6 +163,10 @@ export function installDebug(hooks: DebugHooks): void {
     // reads this — a kept painting and a remade one look identical.
     steading() {
       return steadingDrawn();
+    },
+
+    field() {
+      return fieldDrawn();
     },
 
     // Brightness of the PAINTED country at world points. scripts/repaint.mjs

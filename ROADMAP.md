@@ -1529,12 +1529,15 @@ is written so the choice is made with both arcs visible, not by drift.
     ground is a horizon with far country over it instead of a mosaic of
     tiles.
 
+    **The oil backdrop has landed too.** `render/fieldOil.ts`, same
+    live-canvas-in-`foreignObject` trick as the steading: a graded sky with
+    soft banks of cloud, two layers of hill, and brushed ground. 200ms once
+    per fight and kept for every turn after, from 2742ms in the first cut —
+    see the changelog for where that went, because none of it was where it
+    looked like it was.
+
     Still to do here:
 
-    - **The oil backdrop.** The sky and the far ridges are flat SVG for now,
-      good enough to compose against and not what this item promises. The
-      steading's live-canvas-in-`foreignObject` trick from the colony pass is
-      the shape it should take.
     - **`Combatant.at` and `battle.grid`.** Nothing in `render/` reads a hex
       any more, so the field is free of them; the sim still carries `at`
       frozen at deployment, and `beats.ts` still has hex `from`/`to` on the
@@ -2281,6 +2284,52 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-25 — The field is painted, and the brush is not what it looked
+  like** — `render/fieldOil.ts` gives the side-on battlefield a graded sky
+  with cloud banks, two layers of hill and brushed ground, on the same live
+  canvas in a `foreignObject` the steading uses.
+
+  It opened at **2742ms** to paint one fight — three seconds of a phone going
+  quiet, against the steading's 84ms — and finished at **200ms**, kept for
+  every turn of the fight after. Getting there was four wrong theories, and
+  the wrong ones are the useful part.
+
+  | thought | measured |
+  |---|---|
+  | the sky is most of the area, so most of the cost | sky 49ms, ridges 417ms |
+  | stroke count is what costs | cost goes with painted PIXELS — grain AND radius |
+  | bigger patches are cheaper (fewer clips) | bigger patches were *worse*: 417ms → 587ms |
+  | the far ridge is the expensive one | flattening it saved 10ms; the near one was 240ms |
+
+  What actually mattered was a **clip**. `paintPatch` intersects the live
+  region with its own hex for every patch, and intersecting a curvy ridge
+  silhouette runs about 3.6ms a patch against 0.6ms inside a rectangle. The
+  band below the lowest saddle is always inside the hills, so it can be
+  clipped with a rectangle and the flat fill carries the peaks. Same picture,
+  a quarter of the price.
+
+  And the look had the same shape of mistake. The sky kept reading as broken
+  glass however the strokes were tuned, because the marks were never the
+  problem: `paintPatch` lays an opaque hex of body colour UNDER its strokes,
+  which is right on a map where that hex is one tile of country and wrong at
+  86 units across in an empty sky. Lowering the opacity made it fainter
+  broken glass. A sky is a smooth thing with weather in it, so it gets the
+  gradient and five soft banks of cloud and costs nothing at all.
+
+  One real bug on the way in, worth writing down because the contract invites
+  it: `paintPatch`'s `clip: false` does NOT mean "no clip". It skips the
+  `save`/`restore` pair and still calls `ctx.clip()`, because its one existing
+  caller opens a clip and closes it itself. Passing it from a loop meant every
+  patch intersected the region and never gave it back, so the clip shrank to
+  nothing after two or three. The sky survived because its gradient goes down
+  first; the ground had nothing underneath and came out completely
+  transparent, which is how it was found.
+
+  Also: `test/fieldOil.test.ts` checks the canvas climb-down without a
+  browser, because a canvas past iOS Safari's 4096 limit does not throw — it
+  hands back a blank surface, and a blank surface under a shield wall looks
+  like a rendering bug rather than a memory limit.
 
 - **2026-08-25 — Two walls meeting** — the battle is drawn side-on, and the
   worst state this conversion could sit in is over.

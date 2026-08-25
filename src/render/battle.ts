@@ -23,7 +23,6 @@ import {
   fieldFill,
   fieldPatterns,
   lightDefs,
-  openBase,
   sunWash,
 } from './fieldArt';
 import {
@@ -31,6 +30,7 @@ import {
   extent, paintOrder, pick, standAt,
 } from './line';
 import { figure } from './figures';
+import { createFieldPaint, type FieldPaint } from './fieldOil';
 import { showBeat, type WallMemory } from './fx';
 import { seasonTint, skyNodes } from './fieldWeather';
 import { seasonOf } from '../sim/calendar';
@@ -76,6 +76,14 @@ function isLeaderHere(state: GameState, combatant: { personId: string; side: str
 export interface BattleView {
   root: SVGSVGElement;
   update(state: GameState, aim: Aim): void;
+  /**
+   * What the backdrop cost, for the debug read-out and the bars.
+   *
+   * The same shape the colony's `drawn()` reports, and for the same reason:
+   * a painted backdrop that quietly repaints every turn is a phone getting
+   * hot, and the only way to know is to count.
+   */
+  drawn(): ReturnType<FieldPaint['stats']>;
 }
 
 export function createBattleView(onTap: (personId: string | null) => void): BattleView {
@@ -90,6 +98,10 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
   defs.append(...fieldPatterns(), ...lightDefs());
   root.append(defs);
 
+  // The painted country, under everything. A live canvas in a foreignObject
+  // at the field's own world bounds — see fieldOil.ts for why that rather
+  // than a sibling canvas or a PNG.
+  const country = createFieldPaint();
   const layers = {
     ground: svgEl('g'),
     // The low sun: a wash between the ground and the men, and a vignette
@@ -304,25 +316,36 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
       layers.weather.append(...skyNodes(weatherOn(state.seed, state.day).id, bounds));
     }
 
-    // The ground, seen from the side: one band of country under one band of
-    // sky, rather than a mosaic of tiles seen from above. The country still
-    // decides what it looks like — the log has always said "they met us on
-    // wet sand", and the sand is still there to be met on.
+    // The ground, seen from the side: sky, the country behind, and the
+    // ground the men stand on. Painted with the oil brush rather than drawn
+    // — see fieldOil.ts.
+    //
+    // Flat fills go down FIRST and cover what is SHOWN, which can be larger
+    // than the painted box on a short, wide element. Cheap insurance against
+    // the one failure mode that looks like a broken page rather than a
+    // plain one: bare background where the country should be.
     const box = bounds ?? extent(deepest(battle));
     layers.ground.append(
       svgEl('rect', {
         x: box.x, y: box.y, width: box.w, height: GROUND_Y - box.y,
-        fill: 'var(--sky, #7d8ea0)',
+        fill: 'var(--sky, #8b9aa8)',
       }),
       svgEl('rect', {
         x: box.x, y: GROUND_Y, width: box.w, height: box.y + box.h - GROUND_Y,
         fill: fieldFill('open', battle.terrain),
       }),
     );
-    // Far country between the sky and the ground. Without it the sky is a
-    // flat rectangle and the horizon is a seam between two colours — which
-    // is what a side-on field looks like when nobody has drawn the distance.
-    layers.ground.append(farCountry(box, battle.terrain));
+    // The painting covers the FIELD, not the view: the field does not change
+    // while the player drags, so panning costs nothing and only a line that
+    // gained or lost a rank loads the brush again.
+    //
+    // Appended AFTER the flat fills and into the same layer, which is the
+    // whole of the ordering. Its first home was a layer of its own beneath
+    // this one, where the insurance fills sat on top and hid the painting
+    // completely — a canvas that is present, correct, and invisible.
+    // Re-appending the same node keeps the canvas and its contents.
+    country.update(extent(deepest(battle)), battle.terrain, state.seed);
+    layers.ground.append(country.node);
 
     // The palisade, if the raiders are climbing one. On the hex field it was
     // stakes drawn on whichever tiles were 'wall'; side-on it is the thing
@@ -573,57 +596,12 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     update(state, aim) {
       paint(state, aim);
     },
+    drawn: () => country.stats(),
   };
 }
 
 // --- Procedural marks ---
 
-/**
- * The country behind the fight: a low band of hills at the horizon, hazed
- * toward the sky.
- *
- * Deliberately dumb geometry — three overlapping humps, no seed. It exists
- * to stop the sky being a void and to give the horizon somewhere to sit; the
- * oil brush takes this over when the painted backdrop lands, and anything
- * more elaborate here would be work thrown away.
- */
-function farCountry(
-  box: { x: number; y: number; w: number; h: number },
-  terrain: Battle['terrain'],
-): SVGGElement {
-  const g = svgEl('g');
-  // DARKER and COOLER than the sky, not the ground's own colour. The first
-  // attempt filled the ridges with `openBase(terrain)` — a pale sand against
-  // a grey-blue sky — and drew two soft light smears that read as fog. Land
-  // at a distance is a silhouette: it is the thing the sky is behind.
-  const RIDGES = [
-    { ink: '#6b7a86', fade: 0.5, lift: 2.4, humps: 3, skew: 0 },
-    { ink: '#55625c', fade: 0.72, lift: 1.4, humps: 5, skew: 0.5 },
-  ];
-  for (const ridge of RIDGES) {
-    const step = box.w / ridge.humps;
-    const d = [`M ${box.x} ${GROUND_Y}`];
-    for (let n = 0; n < ridge.humps; n += 1) {
-      const x0 = box.x + step * n;
-      const x1 = x0 + step;
-      // A quadratic between two points on the horizon peaks at half its
-      // control height, so the control goes to twice the height wanted.
-      const h = RANK_GAP * ridge.lift * (n % 2 === 0 ? 1 : 0.6);
-      d.push(`Q ${x0 + step * (0.5 + ridge.skew * 0.2)} ${GROUND_Y - h * 2} ${x1} ${GROUND_Y}`);
-    }
-    d.push('Z');
-    g.append(svgEl('path', { d: d.join(' '), fill: ridge.ink, opacity: ridge.fade }));
-  }
-  // The horizon itself, so the ground reads as ground rather than as the
-  // bottom half of a two-tone rectangle.
-  g.append(
-    svgEl('line', {
-      x1: box.x, y1: GROUND_Y, x2: box.x + box.w, y2: GROUND_Y,
-      stroke: openBase(terrain), 'stroke-width': 3, opacity: 0.9,
-    }),
-  );
-  return g;
-}
 
 /**
  * The palisade, seen from the side: split trunks, sharpened, sunk deep,

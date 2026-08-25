@@ -52,6 +52,11 @@ function onFieldTap(personId: string | null): void {
   else dispatch({ type: 'B_STRIKE', targetId: personId });
 }
 
+/** What the painted field cost. See BattleView.drawn. */
+export function fieldDrawn(): unknown {
+  return battleView ? battleView.drawn() : null;
+}
+
 export function renderBattleScreen(state: GameState, h: ScreenHooks): void {
   if (!state.battle) return;
   hooks = h;
