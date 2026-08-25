@@ -1473,12 +1473,51 @@ is written so the choice is made with both arcs visible, not by drift.
     that reaches the third rank. All five caught.
   - [ ] **8.1b Combatant takes a rank** — `at: Hex` becomes `rank`, with the
     save migration above.
-  - [ ] **8.1c The verbs move onto the line** — `battleActions`, `battleAi`
-    and `wall.ts` off `distance(a, b) === 1`, which was doing nearly all the
-    spatial work and always meant "adjacent".
+  - [ ] **8.1c The verbs move onto the line, AND the numbers are re-earned**
+    — was two items, 8.1c and 8.1e. They are one, and finding that out is
+    what the 2026-08-25 attempt bought.
+
+    **The source half is done and parked**, in
+    `wip/8.1c-source-conversion.patch`: nine files, `tsc` clean across all of
+    `src/`. strike/reach/throw ask the rank table instead of hex distance,
+    the shield wall is adjacent RANKS, `doMove` is gone, shove drives a man
+    back a rank and names who came forward, and `dash` becomes a change of
+    rank. It was reverted rather than committed, for the reason below.
+
+    **Why the two items are one.** The conversion turned out to be surgical —
+    `strike.ts` is 289 lines and only SIX of them were hex, all reach checks;
+    everything else (to-hit, wall bonus, glancing blows, wounds, deaths, xp,
+    beats) is position-independent. The pleasant surprise underneath that:
+    the old design was already a line wearing a grid. `canReachAt` demanded
+    `distance === 2` PLUS a mate adjacent to both the thruster and the target
+    — which is a hex spelling of "you are in the second rank and your
+    shield-brother is in the first". Converting is faithful, not inventive.
+
+    But the tests are not surgical, and they cannot be. 23 errors remain
+    across seven files: ten are `B_MOVE` call sites exercising movement that
+    no longer exists, thirteen are `shoveDestination` expecting a hex. Each
+    needs a decision about what the test should now assert, not a patch. And
+    the ones that matter most assert TUNED NUMBERS — `wall.test.ts` holds
+    "formation play beats brawling" at specific win counts, `balance.test.ts`
+    holds survival rates. The instant the verbs move onto the line every one
+    of those moves too.
+
+    So there is no green state between "converted" and "re-tuned", and the
+    slice cannot be committed half-done. It needs a sitting long enough for
+    the balance sweep — 40 minutes a run — to go round several times.
+
+    *Done when: the sweeps run against ranks and produce tuned numbers,
+    formation play still beats brawling, losing a veteran still hurts, and
+    the whole suite is green in one commit.*
   - [ ] **8.1d The field is drawn side-on** — `render/battle.ts` as two walls
-    meeting, painted with the oil brush.
-  - [ ] **8.1e The numbers are re-earned** — re-run and re-tune the sweeps.
+    meeting, painted with the oil brush. Note that 8.1c already takes the
+    first bite: a tap on bare ground stops being a move, because there is no
+    ground to move across.
+
+    One thing 8.1c will leave for this: `Combatant.at` survives the
+    conversion frozen at wherever a fighter deployed, because the renderer
+    still draws hexes and `wall.ts` still reads the grid to know who is
+    astride a palisade. Both go here.
 
 - [ ] **8.2 The coast becomes a line** — Worldgen from 2D island to a 1D route
   of places with distances between them. Skerries, landmarks, `places.ts` and
@@ -2202,6 +2241,62 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-25 — The line is real, and 8.1c is one job not two** — ranks
+  arrive in the sim, the port hand-over is deliberately frozen, and an attempt
+  at the verbs found out what the next sitting actually costs.
+
+  `sim/ranks.ts` is the shape a shield wall has: a LINE with depth. Rank 1 is
+  the front where the two walls meet; the back rank is where the throwers
+  stand. It imports nothing at all and defines `Ranked` structurally, so it
+  was finished and checked before anything else in battle was touched —
+  25 claims, five mutations, all caught.
+
+  The best argument that the line is the right shape came out of the mapping
+  rather than being designed: **`dash` survives by changing meaning.** It was
+  a second helping of movement across open ground, and there is no open ground
+  any more. It becomes a change of RANK — which is the answer to being put
+  somewhere your weapon is no use, and worth an action in a way running never
+  quite was.
+
+  Combatant then gained `rank` (v45), assigned as fighters deploy. Nothing
+  reads it yet, so behaviour is unchanged — and that let the migration be
+  gentler than planned: a saga caught mid-swing keeps its battle instead of
+  losing it, because ranks are purely additive while the fight still resolves
+  on hexes.
+
+  **The port contract is frozen, and it is recorded as a bar being lowered.**
+  The save bump went red on `contract.test.ts`. The first reading — "the
+  conversion broke parity on day one" — was wrong, and checking beat saying
+  something dramatic and false: `canonical()` hashes every key including
+  `version`, so the run hash moves on EVERY save bump, and all twenty of the
+  last ones regenerated the same two files. The facets named it exactly: `run`
+  moved on all 44 checkpoints, `field` on 7, and `world`, `band`, `ship`,
+  `coast` and `steading` did not move at all. The freeze is not because ranks
+  broke anything; it is because the routine answer assumes the port is worth
+  keeping current, and Phase 8 is the reason to doubt that. It prints what has
+  drifted on every run, and a second test fails if ROADMAP stops explaining
+  why.
+
+  **Then 8.1c was attempted, and stopped on purpose.** The source half went
+  well — nine files, tsc clean, and a genuinely pleasant finding: the old
+  design was already a line wearing a grid. `canReachAt` demanded distance 2
+  PLUS a mate adjacent to both the thruster and the target, which is a hex
+  spelling of "you stand behind your shield-brother". `strike.ts` is 289 lines
+  and six of them were hex.
+
+  What stopped it was the tests, and it is worth writing down: **8.1c and
+  8.1e are the same job.** `wall.test.ts` holds "formation play beats
+  brawling" at particular win counts and `balance.test.ts` holds survival
+  rates, so the moment the verbs move onto the line every tuned number moves
+  with them. There is no green state in between, which means the slice cannot
+  land half-done and needs a sitting where the 40-minute sweep can go round
+  several times.
+
+  Reverted rather than committed red. The source conversion is parked in
+  `wip/8.1c-source-conversion.patch` with a README, because it is a head start
+  worth keeping and the scratchpad it was living in does not survive the
+  container.
 
 - **2026-08-25 — A shieldwall, and a plan to turn the game sideways** — the
   hex game was not capturing its own designer, so the question became what it
