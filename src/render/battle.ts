@@ -1,55 +1,72 @@
-// BATTLE renderer: the field as layered SVG. Pure view — reads state, emits
-// a hex tap. Fighters are drawn from their Person, same as anywhere else.
+// BATTLE renderer: two walls meeting, as layered SVG. Pure view — reads
+// state, emits a tap on a fighter. Fighters are drawn from their Person, the
+// same as anywhere else.
+//
+// Side-on since 8.1d. The sim has been a line since 8.1c and this was still
+// drawing a hex grid, which was the worst of both: every man was painted at
+// `Combatant.at`, frozen wherever he deployed, so the picture had stopped
+// describing where anybody stood. All the geometry now comes from
+// `render/line.ts`, which is pure and tested, so the paint, the effects and
+// the tap cannot drift apart about where a rank is.
 
-import { cornerPoints, fromKey, fromPixel, key, toPixel, type Hex } from '../hex';
-import type { Battle, GameState } from '../state/types';
+import type { Battle, Combatant, GameState } from '../state/types';
 import { activeCombatant, fighterPerson, strikeTargets } from '../sim/battle';
 import { reachTargets, throwTargets } from '../sim/strike';
 import { shoveDestination } from '../sim/footwork';
 import { isLeader } from '../sim/warcry';
 import { beatsSince } from '../sim/beats';
-import { wallPairs } from '../sim/wall';
+import { atThePalisade, wallPairs } from '../sim/wall';
 import type { Aim } from './battleUi';
 import { svgEl } from './svg';
 import {
-  FIELD_HEX,
   duskVignette,
   fieldFill,
   fieldPatterns,
   lightDefs,
+  openBase,
   sunWash,
 } from './fieldArt';
+import {
+  FIGURE_LIFT, FIGURE_R, FIGURE_W, GROUND_Y, RANK_GAP,
+  extent, paintOrder, pick, standAt,
+} from './line';
 import { figure } from './figures';
 import { showBeat, type WallMemory } from './fx';
 import { seasonTint, skyNodes } from './fieldWeather';
 import { seasonOf } from '../sim/calendar';
 import { weatherOn } from '../sim/weather';
 
-const HEX = FIELD_HEX;
-
 /**
- * The thumb rule, and the scale a hex needs to meet it.
+ * The thumb rule, and the scale a rank needs to meet it.
  *
- * A battle hex is a touch target — tap one to move, another to strike — so it
- * is bound by the 44px minimum the rest of the game holds. A pointy-top hex
- * of size `HEX` is `sqrt(3) * HEX` across the flats, which is its smallest
- * dimension and the one a thumb actually has to land on.
+ * A fighter is a touch target — tap the man you mean to hit — so he is bound
+ * by the 44px minimum the rest of the game holds. On the hex field this was
+ * measured across a hex's flats; on a line it is the gap between ranks,
+ * which `line.ts` keeps constant precisely so this number cannot drift with
+ * the size of the band.
  */
 const TAP_MIN = 44;
-
 /**
- * The size a tile is DRAWN at, which is not the size it is spaced at.
+ * Measured against the MAN, not the gap between ranks.
  *
- * `HEX` is the layout size — what `toPixel` steps by. The polygon is drawn a
- * half-unit inside it so the tiles have a hairline between them, and that
- * smaller shape is the one a thumb actually lands on. Deriving the rule from
- * `HEX` instead put the hex at 43.27px against a 44px bar and predicted 44.00
- * — a miss of less than a pixel, invisible in the code and caught only by
- * measuring the rendered polygon. They are one constant now so they cannot
- * drift apart again.
+ * The first draft used the gap, on the reasoning that a rank is a slot. What
+ * a thumb lands on is a drawn fighter, and he is a little narrower than his
+ * slot — so a view scaled to put 44px between ranks put 42px of man on a
+ * 320px screen. `scripts/field.mjs` measures the fighter and caught it.
  */
-const HEX_TILE = HEX - 0.5;
-const NEEDED_SCALE = TAP_MIN / (Math.sqrt(3) * HEX_TILE);
+const NEEDED_SCALE = TAP_MIN / FIGURE_W;
+
+/** Everyone still on their feet, which is everyone the field draws. */
+function upright(battle: Battle): Combatant[] {
+  return battle.combatants.filter((c) => !c.down && !c.fled);
+}
+
+/** How deep the deeper of the two walls is standing. Sizes the field. */
+function deepest(battle: Battle): number {
+  let deep = 1;
+  for (const c of upright(battle)) deep = Math.max(deep, c.rank);
+  return deep;
+}
 
 /** The leader, if they are standing on this field at all. */
 function isLeaderHere(state: GameState, combatant: { personId: string; side: string }): boolean {
@@ -61,7 +78,7 @@ export interface BattleView {
   update(state: GameState, aim: Aim): void;
 }
 
-export function createBattleView(onTap: (h: Hex) => void): BattleView {
+export function createBattleView(onTap: (personId: string | null) => void): BattleView {
   const root = svgEl('svg', {
     class: 'field',
     xmlns: 'http://www.w3.org/2000/svg',
@@ -194,53 +211,46 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
   }
 
   function fitViewBox(battle: Battle): void {
-    // Frame the whole field with a little breathing room.
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const k of Object.keys(battle.grid)) {
-      const p = toPixel(fromKey(k), HEX);
-      minX = Math.min(minX, p.x);
-      minY = Math.min(minY, p.y);
-      maxX = Math.max(maxX, p.x);
-      maxY = Math.max(maxY, p.y);
-    }
-    const pad = HEX * 0.85;
-    const box = {
-      x: minX - pad,
-      y: minY - pad,
-      w: maxX - minX + pad * 2,
-      h: maxY - minY + pad * 2,
-    };
-    bounds = box;
+    // The field is sized to the deeper wall — a fixed gap and a box that
+    // grows, rather than a fixed box and men who shrink. See line.ts for why
+    // that is the load-bearing decision and not a detail.
+    const box = extent(deepest(battle));
 
-    // How big a hex would be if the whole field were framed. `xMidYMid meet`
-    // scales by the tighter axis, and a pointy-top hex is narrower than it is
-    // tall, so its smallest on-screen dimension — the one a thumb has to hit,
-    // and the one scripts/field.mjs measures — is the flat-to-flat width.
+    // How big a rank would be if the whole field were framed. `xMidYMid meet`
+    // scales by the tighter axis, and a line is far wider than it is tall, so
+    // the width is what binds — which is the one a thumb has to hit, and the
+    // one scripts/field.mjs measures.
     const rect = root.getBoundingClientRect();
     const framed = rect.width > 0 && rect.height > 0
       ? Math.min(rect.width / box.w, rect.height / box.h)
       : NEEDED_SCALE;
 
     if (framed >= NEEDED_SCALE) {
-      // The field frames itself, exactly as it always has. Nothing below this
-      // line runs on a phone the game was designed for.
+      // The field frames itself. A small fight on a wide screen, which a
+      // shallow line manages far more often than a hex grid ever did.
       panAt = null;
       canPan = false;
+      bounds = box;
       root.setAttribute('viewBox', `${box.x} ${box.y} ${box.w} ${box.h}`);
       return;
     }
 
-    // It cannot. A 320px screen tops out at a 39px hex however much height it
-    // is given, because the whole grid always fits — so the choice is a hex
+    // It cannot: six sworn against six raiders is twelve ranks, and twelve
+    // ranks on a 320px screen is a 27px target. So the choice is a fighter
     // under the thumb rule or a field that moves. Zoom is NOT a user control:
     // it goes exactly as far as 44px demands and no further, so the field
     // still frames as much of itself as it possibly can.
     canPan = true;
-    const w = rect.width / NEEDED_SCALE;
-    const h = rect.height / NEEDED_SCALE;
+    // Fill the height with the FIELD, and take whatever width that leaves.
+    //
+    // Scaling by the thumb rule alone drew a view twice as tall as the field
+    // and left the men at 7% of it — a shield wall seen from the far end of
+    // a car park, with unpainted page showing above and below the country.
+    // The height is what a side-on scene is composed on, so it binds first,
+    // and the thumb rule is the floor underneath it rather than the target.
+    const scale = Math.max(rect.height / box.h, NEEDED_SCALE);
+    const w = rect.width / scale;
+    const h = rect.height / scale;
     const centre = panAt ?? focusOf(battle) ?? { x: box.x + box.w / 2, y: box.y + box.h / 2 };
     // Clamped to the field: panning must not sail off into empty space. An
     // axis that still fits whole is centred rather than clamped.
@@ -250,13 +260,19 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     const cy = h >= box.h
       ? box.y + box.h / 2
       : Math.min(Math.max(centre.y, box.y + h / 2), box.y + box.h - h / 2);
-    root.setAttribute('viewBox', `${cx - w / 2} ${cy - h / 2} ${w} ${h}`);
+    // The light, the vignette and the weather cover what is SHOWN, not what
+    // the line happens to span — otherwise a view wider or taller than the
+    // field paints sky onto part of it and bare page onto the rest.
+    bounds = { x: cx - w / 2, y: cy - h / 2, w, h };
+    root.setAttribute('viewBox', `${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`);
   }
 
   /** Where a zoomed field looks by default: whoever is taking their turn. */
   function focusOf(battle: Battle): { x: number; y: number } | undefined {
     const active = activeCombatant(battle);
-    return active ? toPixel(active.at, HEX) : undefined;
+    if (!active) return undefined;
+    const spot = standAt(active.side, active.rank);
+    return { x: spot.x, y: spot.y - FIGURE_LIFT };
   }
 
   function paint(state: GameState, aim: Aim): void {
@@ -288,25 +304,32 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       layers.weather.append(...skyNodes(weatherOn(state.seed, state.day).id, bounds));
     }
 
-    for (const [k, tile] of Object.entries(battle.grid)) {
-      const h = fromKey(k);
-      const p = toPixel(h, HEX);
-      // A palisade has to read as stakes, not as one more brown hex — it is
-      // the thing the player spent eight timber on.
-      if (tile.ground === 'wall') layers.overlay.append(stakes(p.x, p.y));
-      layers.ground.append(
-        svgEl('polygon', {
-          points: cornerPoints(p.x, p.y, HEX_TILE),
-          // The country the fight stands on decides what open ground looks
-          // like — the log has always said "they met us on wet sand", and
-          // now the sand is there to be met on.
-          fill: fieldFill(tile.ground, battle.terrain),
-          stroke: '#2b2a22',
-          'stroke-width': 1,
-        }),
-      );
-      if (tile.ground === 'block') layers.ground.append(boulder(p.x, p.y));
-    }
+    // The ground, seen from the side: one band of country under one band of
+    // sky, rather than a mosaic of tiles seen from above. The country still
+    // decides what it looks like — the log has always said "they met us on
+    // wet sand", and the sand is still there to be met on.
+    const box = bounds ?? extent(deepest(battle));
+    layers.ground.append(
+      svgEl('rect', {
+        x: box.x, y: box.y, width: box.w, height: GROUND_Y - box.y,
+        fill: 'var(--sky, #7d8ea0)',
+      }),
+      svgEl('rect', {
+        x: box.x, y: GROUND_Y, width: box.w, height: box.y + box.h - GROUND_Y,
+        fill: fieldFill('open', battle.terrain),
+      }),
+    );
+    // Far country between the sky and the ground. Without it the sky is a
+    // flat rectangle and the horizon is a seam between two colours — which
+    // is what a side-on field looks like when nobody has drawn the distance.
+    layers.ground.append(farCountry(box, battle.terrain));
+
+    // The palisade, if the raiders are climbing one. On the hex field it was
+    // stakes drawn on whichever tiles were 'wall'; side-on it is the thing
+    // the two walls are meeting ACROSS, which is what the player spent eight
+    // timber on and what `wall.ts` prices as the raiders' front rank being
+    // exposed.
+    if (atThePalisade(battle)) layers.overlay.append(stakes(0, GROUND_Y));
 
     const active = activeCombatant(battle);
 
@@ -324,30 +347,38 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
             ? reachTargets(state)
             : strikeTargets(state);
       for (const target of marked) {
-        const p = toPixel(target.at, HEX);
+        const p = standAt(target.side, target.rank);
+        const ink = aim === 'throw' ? '#d3a441' : aim === 'reach' ? '#cfd8dc' : '#b23b2e';
+        // A mark UNDER the man, not a ring around a tile. On a line the
+        // thing being aimed at is a person, and the ground he is standing on
+        // is the only part of him nobody else overlaps.
         layers.overlay.append(
-          svgEl('polygon', {
-            points: cornerPoints(p.x, p.y, HEX - 2),
+          svgEl('ellipse', {
+            // Classed so `scripts/pan.mjs` can find what the game says is in
+            // reach rather than sniffing for a stroke colour.
+            class: 'mark',
+            cx: p.x, cy: p.y, rx: RANK_GAP * 0.42, ry: RANK_GAP * 0.13,
             fill: 'none',
-            stroke: aim === 'throw' ? '#d3a441' : aim === 'reach' ? '#cfd8dc' : '#b23b2e',
+            stroke: ink,
             'stroke-width': 3,
             'stroke-dasharray': aim === 'throw' ? '6 4' : aim === 'reach' ? '3 3' : '',
           }),
         );
-        // Show who a shove would put in front instead.
+        // Show who a shove would put in front instead — the whole worth of
+        // the verb is which man ends up holding their line.
         if (aim === 'shove') {
           const came = shoveDestination(battle, target);
-          const to = came?.at;
-          const tile = to ? battle.grid[key(to)] : undefined;
-          if (to && tile) {
-            const q = toPixel(to, HEX);
+          if (came) {
+            const q = standAt(came.side, came.rank);
             layers.overlay.append(
-              svgEl('polygon', {
-                points: cornerPoints(q.x, q.y, HEX - 6),
-                fill: tile.ground === 'water' ? '#2e5468' : 'none',
-                stroke: '#d3a441',
-                'stroke-width': 2,
-                opacity: 0.9,
+              svgEl('path', {
+                d: `M ${q.x} ${q.y - FIGURE_LIFT} L ${p.x} ${p.y - FIGURE_LIFT}`,
+                stroke: '#d3a441', 'stroke-width': 2.5, fill: 'none',
+                'stroke-dasharray': '5 4', opacity: 0.9,
+              }),
+              svgEl('ellipse', {
+                cx: q.x, cy: q.y, rx: RANK_GAP * 0.34, ry: RANK_GAP * 0.1,
+                fill: 'none', stroke: '#d3a441', 'stroke-width': 2, opacity: 0.9,
               }),
             );
           }
@@ -364,8 +395,13 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     const linkCount = new Map<string, number>();
     const wallNow = new Map<string, WallMemory>();
     for (const [a, b] of pairs) {
-      const pa = toPixel(a.at, HEX);
-      const pb = toPixel(b.at, HEX);
+      // Shoulder to shoulder is adjacent RANKS, so the brace runs along the
+      // line rather than across the field. Drawn at chest height, which is
+      // where a shield is held.
+      const sa = standAt(a.side, a.rank);
+      const sb = standAt(b.side, b.rank);
+      const pa = { x: sa.x, y: sa.y - FIGURE_LIFT };
+      const pb = { x: sb.x, y: sb.y - FIGURE_LIFT };
       const friendly = a.side === 'warband';
       const ink = friendly ? '#e8dcc0' : '#9fb0c4';
       linkCount.set(a.personId, (linkCount.get(a.personId) ?? 0) + 1);
@@ -399,10 +435,10 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     }
     for (const combatant of battle.combatants) {
       if ((linkCount.get(combatant.personId) ?? 0) < 2) continue;
-      const p = toPixel(combatant.at, HEX);
+      const spot = standAt(combatant.side, combatant.rank);
       layers.overlay.append(
-        svgEl('circle', {
-          cx: p.x, cy: p.y, r: HEX * 0.42 + 4.5,
+        svgEl('ellipse', {
+          cx: spot.x, cy: spot.y, rx: FIGURE_R + 4.5, ry: RANK_GAP * 0.16,
           fill: 'none',
           stroke: combatant.side === 'warband' ? '#e8dcc0' : '#9fb0c4',
           'stroke-width': 4,
@@ -411,14 +447,17 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
       );
     }
 
-    for (const combatant of battle.combatants) {
-      if (combatant.down || combatant.fled) continue;
+    // Back ranks first, so the front of each wall overlaps the men behind it
+    // the way a real one does — and the two walls interleaved by depth, or
+    // one would sit wholly in front of the other where they meet.
+    for (const combatant of paintOrder(upright(battle))) {
       const person = fighterPerson(state, combatant.personId);
       if (!person) continue;
-      const p = toPixel(combatant.at, HEX);
+      const spot = standAt(combatant.side, combatant.rank);
+      const p = { x: spot.x, y: spot.y - FIGURE_LIFT };
       const isActive = active?.personId === combatant.personId;
       layers.fighters.append(
-        figure(p.x, p.y, HEX * 0.42, person, {
+        figure(p.x, p.y, FIGURE_R, person, {
           friendly: combatant.side === 'warband',
           health: person.health / person.maxHealth,
           active: isActive,
@@ -521,8 +560,12 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
     const wasDragged = dragged;
     endDrag(e);
     if (wasDragged || !latest?.battle) return;
-    const p = worldUnder(e);
-    onTap(fromPixel(p.x, p.y, HEX));
+    // Who was tapped, or nobody. `pick` is the tap half of `standAt` and
+    // lives beside it so the two cannot disagree; it answers undefined for
+    // bare ground rather than rounding to the nearest man, because since
+    // 8.1c bare ground is not an order and must not become one.
+    const hit = pick(upright(latest.battle), worldUnder(e));
+    onTap(hit ? hit.personId : null);
   });
 
   return {
@@ -535,40 +578,91 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
 
 // --- Procedural marks ---
 
-function boulder(cx: number, cy: number): SVGGElement {
-  const g = svgEl('g', { opacity: 0.9 });
+/**
+ * The country behind the fight: a low band of hills at the horizon, hazed
+ * toward the sky.
+ *
+ * Deliberately dumb geometry — three overlapping humps, no seed. It exists
+ * to stop the sky being a void and to give the horizon somewhere to sit; the
+ * oil brush takes this over when the painted backdrop lands, and anything
+ * more elaborate here would be work thrown away.
+ */
+function farCountry(
+  box: { x: number; y: number; w: number; h: number },
+  terrain: Battle['terrain'],
+): SVGGElement {
+  const g = svgEl('g');
+  // DARKER and COOLER than the sky, not the ground's own colour. The first
+  // attempt filled the ridges with `openBase(terrain)` — a pale sand against
+  // a grey-blue sky — and drew two soft light smears that read as fog. Land
+  // at a distance is a silhouette: it is the thing the sky is behind.
+  const RIDGES = [
+    { ink: '#6b7a86', fade: 0.5, lift: 2.4, humps: 3, skew: 0 },
+    { ink: '#55625c', fade: 0.72, lift: 1.4, humps: 5, skew: 0.5 },
+  ];
+  for (const ridge of RIDGES) {
+    const step = box.w / ridge.humps;
+    const d = [`M ${box.x} ${GROUND_Y}`];
+    for (let n = 0; n < ridge.humps; n += 1) {
+      const x0 = box.x + step * n;
+      const x1 = x0 + step;
+      // A quadratic between two points on the horizon peaks at half its
+      // control height, so the control goes to twice the height wanted.
+      const h = RANK_GAP * ridge.lift * (n % 2 === 0 ? 1 : 0.6);
+      d.push(`Q ${x0 + step * (0.5 + ridge.skew * 0.2)} ${GROUND_Y - h * 2} ${x1} ${GROUND_Y}`);
+    }
+    d.push('Z');
+    g.append(svgEl('path', { d: d.join(' '), fill: ridge.ink, opacity: ridge.fade }));
+  }
+  // The horizon itself, so the ground reads as ground rather than as the
+  // bottom half of a two-tone rectangle.
   g.append(
-    svgEl('path', {
-      d: `M ${cx - HEX * 0.42} ${cy + HEX * 0.2} q ${HEX * 0.16} ${-HEX * 0.5} ${HEX * 0.42} ${-HEX * 0.24} q ${HEX * 0.3} ${-HEX * 0.16} ${HEX * 0.42} ${HEX * 0.44} Z`,
-      fill: '#7b756b',
+    svgEl('line', {
+      x1: box.x, y1: GROUND_Y, x2: box.x + box.w, y2: GROUND_Y,
+      stroke: openBase(terrain), 'stroke-width': 3, opacity: 0.9,
     }),
   );
   return g;
 }
 
-/** Split trunks, sharpened, sunk deep. */
-function stakes(cx: number, cy: number): SVGGElement {
+/**
+ * The palisade, seen from the side: split trunks, sharpened, sunk deep,
+ * standing between the two walls.
+ *
+ * On the hex field this was a clump drawn on every tile whose ground was
+ * 'wall'. Side-on there is one palisade and the fight is happening ACROSS
+ * it — which is what `sim/wall.ts` prices when it makes the raiders' front
+ * rank hold no line and take `WALL_EXPOSED`. Drawn tall enough to be
+ * something a man has to get over rather than a decorative fence.
+ */
+function stakes(cx: number, groundY: number): SVGGElement {
   const g = svgEl('g', { class: 'stakes' });
-  for (const dx of [-0.42, -0.14, 0.14, 0.42]) {
-    const x = cx + dx * HEX;
+  const tall = RANK_GAP * 0.95;
+  const step = RANK_GAP * 0.13;
+  for (let i = -3; i <= 3; i += 1) {
+    const x = cx + i * step;
+    // Uneven heights: a palisade is trunks somebody cut, not a picket fence.
+    const h = tall * (0.86 + ((i * 7) % 5) * 0.035);
     g.append(
       svgEl('path', {
-        d: `M ${x} ${cy + HEX * 0.42} L ${x} ${cy - HEX * 0.3} L ${x + HEX * 0.06} ${cy - HEX * 0.44}`,
+        d: `M ${x} ${groundY + 4} L ${x} ${groundY - h} L ${x + step * 0.34} ${groundY - h - step * 0.55}`,
         stroke: '#c9a468',
-        'stroke-width': 2.4,
+        'stroke-width': 4,
         fill: 'none',
         'stroke-linecap': 'round',
       }),
     );
   }
+  // The rail they are lashed to, and the shadow they throw on the ground.
   g.append(
     svgEl('line', {
-      x1: cx - HEX * 0.5,
-      y1: cy + HEX * 0.05,
-      x2: cx + HEX * 0.5,
-      y2: cy + HEX * 0.05,
-      stroke: '#8a6f43',
-      'stroke-width': 1.6,
+      x1: cx - step * 3.4, y1: groundY - tall * 0.42,
+      x2: cx + step * 3.4, y2: groundY - tall * 0.42,
+      stroke: '#8a6f43', 'stroke-width': 3,
+    }),
+    svgEl('ellipse', {
+      cx, cy: groundY + 4, rx: step * 3.6, ry: RANK_GAP * 0.07,
+      fill: '#000', opacity: 0.22,
     }),
   );
   return g;

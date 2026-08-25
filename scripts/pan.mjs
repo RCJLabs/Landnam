@@ -165,17 +165,37 @@ for (const [w, h] of [[320, 568], [390, 844]]) {
   // turn while the drags were happening, which moves nobody of ours.
   const stoodAfter = await posOf(page, stood.id);
 
-  if (narrow) {
-    check(left !== right, 'the field pans when it cannot frame itself');
-  } else {
-    // The design rule, still held everywhere it can be: a screen that frames
-    // the whole grid at 44px does not move, and a drag on it does nothing.
-    check(left === right, 'a wide screen still frames itself and does not pan');
-  }
+  // BOTH widths pan now, and that is arithmetic rather than a regression:
+  // six sworn against six raiders is twelve ranks, twelve targets at the
+  // 44px minimum is 528px, and no phone this file tests is that wide. The
+  // hex grid framed itself at 390 because a grid is compact; a line is not.
+  //
+  // The claim that used to live here — "a screen that can frame the whole
+  // field does not move" — is still a rule, and it is checked exactly rather
+  // than approximately in `test/line.test.ts`, which knows the field's width
+  // in user units instead of guessing it from a screenshot.
+  check(left !== right, 'the field pans when it cannot frame itself');
   check(
     !!stoodAfter && stood.q === stoodAfter.q && stood.r === stoodAfter.r,
     'a drag does NOT order the fighter to walk there',
   );
+
+  // The hazard that comes WITH panning, and the one the old "a wide screen
+  // does not move" check was implicitly covering: a field you can drag is a
+  // field you can drag the fight out of. Shove it hard against each end and
+  // somebody must still be on screen.
+  for (const [fx, tx] of [[0.9, 0.05], [0.05, 0.9]]) {
+    for (let i = 0; i < 4; i += 1) await drag(fx, 0.5, tx, 0.5);
+    const onScreen = await page.evaluate(() => {
+      const svg = document.querySelector('svg.field');
+      const rect = svg.getBoundingClientRect();
+      return [...svg.querySelectorAll('g.fighter')].some((el) => {
+        const b = el.getBoundingClientRect();
+        return b.x + b.width > rect.x && b.x < rect.x + rect.width;
+      });
+    });
+    check(onScreen, `dragged ${tx < fx ? 'left' : 'right'} and the wall went with it`);
+  }
 
   // And the tap still works, which is the other half of the same handler.
   //
@@ -201,11 +221,13 @@ for (const [w, h] of [[320, 568], [390, 844]]) {
     page.evaluate(() => {
       const svg = document.querySelector('svg.field');
       const rect = svg.getBoundingClientRect();
-      for (const el of svg.querySelectorAll('polygon[stroke]')) {
-        if (el.getAttribute('fill') !== 'none') continue;
+      for (const el of svg.querySelectorAll('ellipse.mark')) {
         const b = el.getBoundingClientRect();
         const cx = b.x + b.width / 2;
-        const cy = b.y + b.height / 2;
+        // The mark is drawn at the man's FEET, so aim a little above it to
+        // land on the man himself — which is what `pick` in render/line.ts
+        // answers for, and what a player's thumb would do.
+        const cy = b.y + b.height / 2 - b.width * 0.5;
         if (cx < rect.x || cx > rect.x + rect.width) continue;
         if (cy < rect.y || cy > rect.y + rect.height) continue;
         return { x: cx, y: cy };
@@ -239,47 +261,35 @@ for (const [w, h] of [[320, 568], [390, 844]]) {
   check(acted, 'tapping a marked foe spends the turn');
 
   // THE NEW HAZARD, and the direct successor to the one at the top of this
-  // file: bare ground is not an order any more. A tap on an empty hex used to
-  // walk a man across the field, and it must now do nothing at all.
-  if (await ourTurn(page)) {
-    const before = await activeAt(page);
-    const empty = await page.evaluate(() => {
-      const svg = document.querySelector('svg.field');
-      const rect = svg.getBoundingClientRect();
-      const taken = [...svg.querySelectorAll('g[data-fighter], .fighter')].map((el) => {
-        const b = el.getBoundingClientRect();
-        return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-      });
-      for (const el of svg.querySelectorAll('polygon')) {
-        if (el.getAttribute('fill') === 'none') continue;
-        const b = el.getBoundingClientRect();
-        const cx = b.x + b.width / 2;
-        const cy = b.y + b.height / 2;
-        if (cx < rect.x + 8 || cx > rect.x + rect.width - 8) continue;
-        if (cy < rect.y + 8 || cy > rect.y + rect.height - 8) continue;
-        if (taken.some((t) => Math.abs(t.x - cx) < 18 && Math.abs(t.y - cy) < 18)) continue;
-        return { x: cx, y: cy };
-      }
-      return null;
-    });
-    if (empty && before) {
-      const wasTurn = await page.evaluate(() => {
-        const b = window.landnam.state()?.battle;
-        return `${b?.round}:${b?.turnIndex}`;
-      });
-      await page.mouse.click(empty.x, empty.y);
-      await page.waitForTimeout(300);
-      const after = await posOf(page, before.id);
-      const nowTurn = await page.evaluate(() => {
-        const b = window.landnam.state()?.battle;
-        return `${b?.round}:${b?.turnIndex}`;
-      });
-      check(
-        !!after && after.q === before.q && after.r === before.r && nowTurn === wasTurn,
-        'a tap on bare ground orders nothing',
-      );
-    }
-  }
+  // file: bare ground is not an order any more. A tap on an empty part of
+  // the field used to walk a man across it, and it must now do nothing.
+  //
+  // This check used to hunt for an unoccupied ground POLYGON, and when 8.1d
+  // took the tiles away it found none, skipped itself, and printed nothing
+  // at all — a check that quietly stops running looks exactly like a check
+  // that passes. The sky is bare ground that cannot stop existing.
+  check(await ourTurn(page), 'a warband fighter is up for the bare-ground tap');
+  const before = await activeAt(page);
+  const sky = await page.evaluate(() => {
+    const rect = document.querySelector('svg.field').getBoundingClientRect();
+    // Well above the wall, and clear of the two round buttons top-right.
+    return { x: rect.x + rect.width * 0.3, y: rect.y + rect.height * 0.18 };
+  });
+  const wasTurn = await page.evaluate(() => {
+    const b = window.landnam.state()?.battle;
+    return `${b?.round}:${b?.turnIndex}:${b?.combatants.filter((c) => c.down).length}`;
+  });
+  await page.mouse.click(sky.x, sky.y);
+  await page.waitForTimeout(300);
+  const nowTurn = await page.evaluate(() => {
+    const b = window.landnam.state()?.battle;
+    return `${b?.round}:${b?.turnIndex}:${b?.combatants.filter((c) => c.down).length}`;
+  });
+  check(
+    !!before && nowTurn === wasTurn,
+    `a tap on bare ground orders nothing (was ${wasTurn}, now ${nowTurn})`,
+  );
+
   check(errors.length === 0, `no page errors${errors.length ? `: ${errors[0]}` : ''}`);
 
   await page.close();
@@ -291,4 +301,4 @@ if (fail.length > 0) {
   console.error(`pan check FAILED: ${fail.length} of them.`);
   process.exit(1);
 }
-console.log('pan check passed — the narrow field moves, the wide one does not, and neither taps by accident.');
+console.log('pan check passed — the field moves, stays under the wall, and never taps by accident.');

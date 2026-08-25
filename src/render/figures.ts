@@ -139,7 +139,11 @@ export function figure(
   const motifKind = rng.int(0, 4);
   const motifTilt = rng.float(0, Math.PI * 2);
 
-  const g = svgEl('g', s.broken ? { opacity: '0.6' } : {});
+  // Marked so the browser bars can find a fighter and measure him. On the
+  // hex field they measured a ground polygon, because a fighter's touch
+  // target WAS his hex; side-on there is no tile under him and the man
+  // himself is the thing a thumb has to land on.
+  const g = svgEl('g', s.broken ? { class: 'fighter', opacity: '0.6' } : { class: 'fighter' });
 
   // Standing weight: the shadow is what makes a figure stand ON the ground
   // instead of floating over it.

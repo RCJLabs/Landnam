@@ -2,9 +2,8 @@
 // tap on the field means. The view itself stays in battle.ts and stays pure;
 // this file is the wiring between it and the shell.
 
-import type { Hex } from '../hex';
 import type { GameState } from '../state/types';
-import { combatantAt, isWarbandTurn } from '../sim/battle';
+import { isWarbandTurn } from '../sim/battle';
 import { createBattleView } from './battle';
 import {
   renderBattleActions,
@@ -29,27 +28,28 @@ import {
 let battleView: ReturnType<typeof createBattleView> | null = null;
 let hooks: ScreenHooks | null = null;
 
-/** On the field, a tap is either a step or the armed action on a foe. */
-function onFieldTap(target: Hex): void {
-  if (!hooks) return;
+/**
+ * On the field, a tap is the armed action on the foe who was tapped.
+ *
+ * `personId` rather than a hex since 8.1d: the view knows where every rank
+ * stands, so it resolves who was under the thumb and says so. Nothing here
+ * does geometry, which is the point — there is one place that knows where a
+ * man is drawn, and it is `render/line.ts`.
+ *
+ * `null` is a tap on bare ground. It used to be a move; there is nowhere to
+ * move, so it does nothing, and `scripts/pan.mjs` holds that as a bar.
+ */
+function onFieldTap(personId: string | null): void {
+  if (!hooks || personId === null) return;
   const { ui, dispatch } = hooks;
   const state = hooks.current();
   if (!state?.battle || state.battle.outcome || !isWarbandTurn(state)) return;
-  const occupant = combatantAt(state.battle, target);
-  if (occupant) {
-    if (occupant.side !== 'foe') return;
-    const id = occupant.personId;
-    if (ui.aim === 'throw') dispatch({ type: 'B_THROW', targetId: id });
-    else if (ui.aim === 'shove') dispatch({ type: 'B_SHOVE', targetId: id });
-    else if (ui.aim === 'reach') dispatch({ type: 'B_REACH', targetId: id });
-    else dispatch({ type: 'B_STRIKE', targetId: id });
-    return;
-  }
-  // Tapping bare ground used to be a move. There is no ground to move across
-  // any more — a fighter's place is their RANK, and changing it is `dash`,
-  // which is an action rather than a walk. The proper line-shaped controls
-  // arrive with the side-on field in 8.1d; until then a tap on nothing does
-  // nothing, which is at least honest.
+  const target = state.battle.combatants.find((c) => c.personId === personId);
+  if (!target || target.side !== 'foe' || target.down || target.fled) return;
+  if (ui.aim === 'throw') dispatch({ type: 'B_THROW', targetId: personId });
+  else if (ui.aim === 'shove') dispatch({ type: 'B_SHOVE', targetId: personId });
+  else if (ui.aim === 'reach') dispatch({ type: 'B_REACH', targetId: personId });
+  else dispatch({ type: 'B_STRIKE', targetId: personId });
 }
 
 export function renderBattleScreen(state: GameState, h: ScreenHooks): void {

@@ -104,9 +104,9 @@ export function renderBattleActions(
 }
 
 const AIM_HINT: Record<Aim, string> = {
-  strike: 'tap a ringed foe to strike',
+  strike: 'tap a marked foe to strike',
   throw: 'tap a marked foe to throw',
-  shove: 'tap a ringed foe to shove them back',
+  shove: 'tap a marked foe to shove them back',
   reach: 'tap a marked foe to thrust past your shield-brother',
 };
 
@@ -119,8 +119,12 @@ export function renderBattleHint(state: GameState, aim: Aim): HTMLElement {
   if (!person || !active) return el('div', { class: 'hint' }, ['Waiting']);
 
   const parts: string[] = [];
-  if (active.movesLeft > 0) parts.push('tap a dashed hex to move');
+  // "tap a dashed hex to move" stood here and had been a lie since 8.1c:
+  // there is no hex and there is no move. What a fighter can do about WHERE
+  // he is standing is change rank, which is the Run button, so the hint says
+  // that instead of naming a control that does not exist.
   if (!active.hasActed) parts.push(AIM_HINT[aim]);
+  if (!active.hasActed && active.rank > 1) parts.push('or push forward a rank');
   if (parts.length === 0) parts.push('nothing left this turn — end it');
   return el('div', { class: 'hint' }, [`${person.name}: ${parts.join(' · ')}`]);
 }

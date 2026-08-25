@@ -10,13 +10,19 @@
 // All decoration: spawned into the .fx layer, removed on timers, and never
 // spawned at all under stillness — the same contract the old effects had.
 
-import { toPixel } from '../hex';
 import type { Battle } from '../state/types';
 import type { Beat } from '../sim/beats';
-import { FIELD_HEX } from './fieldArt';
+import { FIGURE_LIFT, RANK_GAP, standAt } from './line';
 import { svgEl } from './svg';
 
-const HEX = FIELD_HEX;
+/**
+ * The scale effects are drawn at.
+ *
+ * Was the hex size. Since 8.1d a fighter's size comes from the rank gap, and
+ * this file has to agree with `render/battle.ts` about it or a blow lands
+ * somewhere near the man who threw it. One import rather than two constants.
+ */
+const HEX = RANK_GAP * 0.42;
 
 type Spawn = (node: SVGElement, life?: number) => void;
 
@@ -29,9 +35,19 @@ export interface WallMemory {
   friendly: boolean;
 }
 
+/**
+ * Where a fighter is on screen, for an effect to play on.
+ *
+ * Chest height rather than the ground he stands on: a blow lands on a man,
+ * not at his feet. Reads his RANK, so it is the same answer `battle.ts` is
+ * drawing him at — which is the whole reason `standAt` is one function in
+ * one file.
+ */
 function spotOf(battle: Battle, personId: string): { x: number; y: number } | undefined {
   const c = battle.combatants.find((f) => f.personId === personId);
-  return c ? toPixel(c.at, HEX) : undefined;
+  if (!c) return undefined;
+  const spot = standAt(c.side, c.rank);
+  return { x: spot.x, y: spot.y - FIGURE_LIFT };
 }
 
 /** The point on a fighter's rim facing another point — blows land on shields,
@@ -169,7 +185,11 @@ export function showBeat(
   }
 
   if (b.kind === 'shoved') {
-    const at = toPixel(b.from, HEX);
+    // The beat still carries the hexes it was shoved between; they describe a
+    // field that no longer exists, so the effect plays where the men now
+    // stand instead. The dead fields go with `Combatant.at`.
+    const at = spotOf(battle, b.target);
+    if (!at) return;
     if (b.result === 'held') {
       // Nobody moved: the brace flash where the shove was refused.
       spawn(burst(at.x, at.y - R * 0.4, '#cfd8dc', 7, 4), 380);
@@ -181,24 +201,30 @@ export function showBeat(
       spawn(svgEl('circle', { cx: at.x, cy: at.y, r: HEX * 0.5, class: 'hit-flash' }), 450);
       return;
     }
-    const to = b.to ? toPixel(b.to, HEX) : at;
+    // Pushed. `at` is where he is NOW, a rank further back; the ground he
+    // gave runs from one gap nearer the meeting to here. A shove always
+    // drives a man away from where the walls meet, so the direction falls
+    // out of which side of x = 0 he is on and needs nobody looked up.
+    const was = { x: at.x - (at.x < 0 ? -RANK_GAP : RANK_GAP), y: at.y };
     if (b.result === 'drowned') {
-      // The old trick: rings on the water where a fighter used to be.
-      spawn(svgEl('circle', { cx: to.x, cy: to.y, r: 6, class: 'fx-splash' }), 700);
-      spawn(svgEl('circle', { cx: to.x, cy: to.y, r: 6, class: 'fx-splash late' }), 900);
+      // Rings on the water where a fighter used to be. There is no water to
+      // shove a man into on a line, so `doShove` cannot produce this any
+      // more; it stays until the dead result goes with `Combatant.at`.
+      spawn(svgEl('circle', { cx: at.x, cy: at.y, r: 6, class: 'fx-splash' }), 700);
+      spawn(svgEl('circle', { cx: at.x, cy: at.y, r: 6, class: 'fx-splash late' }), 900);
       return;
     }
-    // Pushed: motion streaks along the yard of ground they gave.
-    const dx = to.x - at.x;
-    const dy = to.y - at.y;
+    // Motion streaks along the yard of ground they gave.
+    const dx = at.x - was.x;
+    const dy = at.y - was.y;
     const d = Math.hypot(dx, dy) || 1;
     for (const f of [0.25, 0.5, 0.75]) {
       spawn(
         svgEl('line', {
-          x1: at.x + dx * f - (dx / d) * 6,
-          y1: at.y + dy * f - (dy / d) * 6,
-          x2: at.x + dx * f + (dx / d) * 6,
-          y2: at.y + dy * f + (dy / d) * 6,
+          x1: was.x + dx * f - (dx / d) * 6,
+          y1: was.y + dy * f - (dy / d) * 6,
+          x2: was.x + dx * f + (dx / d) * 6,
+          y2: was.y + dy * f + (dy / d) * 6,
           class: 'fx-streak',
           stroke: '#cfd8dc',
         }),

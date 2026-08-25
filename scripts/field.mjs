@@ -70,14 +70,18 @@ const survey = () => {
     return el ? Math.round(el.getBoundingClientRect().height) : 0;
   };
   const field = document.querySelector('svg.field');
-  // Every ground hex is drawn at the same size, so the first one speaks for
+  // Every fighter is drawn at the same size, so the first one speaks for
   // all of them. Measured on SCREEN, after the SVG has scaled to fit.
-  const hex = field?.querySelector('polygon')?.getBoundingClientRect();
+  // A FIGHTER, not a ground tile. Since 8.1d there are no tiles: the field
+  // is two walls meeting and the thing a thumb has to land on is a man. His
+  // WIDTH is the binding dimension — a line packs men side by side, so what
+  // separates one target from the next is horizontal.
+  const man = field?.querySelector('g.fighter')?.getBoundingClientRect();
   return {
     vh: innerHeight,
     vw: innerWidth,
     field: field ? Math.round(field.getBoundingClientRect().height) : 0,
-    hex: hex ? Math.round(Math.min(hex.width, hex.height)) : 0,
+    hex: man ? Math.round(man.width) : 0,
     saga: h('.saga-slot'),
     lines: document.querySelectorAll('.saga-line').length,
     clipped: [...document.querySelectorAll('.shell button')]
@@ -120,7 +124,7 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
 
   console.log(
     `${w}x${h}: field ${opening.field}px (${share(opening)}%) -> ${late.field}px (${share(late)}%) ` +
-      `after 14 turns, hex ${opening.hex}px -> ${late.hex}px, log ${opening.saga} -> ${late.saga}px ` +
+      `after 14 turns, a fighter is ${opening.hex}px -> ${late.hex}px, log ${opening.saga} -> ${late.saga}px ` +
       `(${late.lines} lines)`,
   );
 
@@ -146,9 +150,9 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   // held at every width, including the one that cannot frame the whole grid
   // and now pans instead.
   check(opening.hex >= TAP,
-    `${w}x${h}: a battle hex is ${opening.hex}px, under the ${TAP}px touch target`);
+    `${w}x${h}: a fighter is ${opening.hex}px, under the ${TAP}px touch target`);
   check(late.hex >= TAP,
-    `${w}x${h}: by turn 14 a battle hex is ${late.hex}px, under the ${TAP}px touch target`);
+    `${w}x${h}: by turn 14 a fighter is ${late.hex}px, under the ${TAP}px touch target`);
 
   await page.close();
 }
@@ -159,4 +163,4 @@ if (fail.length > 0) {
   for (const said of fail) console.error(`field: ${said}`);
   process.exit(1);
 }
-console.log(`field OK — the fight keeps the screen, and a hex clears ${TAP}px at every width`);
+console.log(`field OK — the fight keeps the screen, and a fighter clears ${TAP}px at every width`);

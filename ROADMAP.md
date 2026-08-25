@@ -1518,9 +1518,28 @@ is written so the choice is made with both arcs visible, not by drift.
     formation play still beats brawling, losing a veteran still hurts, and
     the whole suite is green in one commit.* — **met.**
   - [ ] **8.1d The field is drawn side-on** — `render/battle.ts` as two walls
-    meeting, painted with the oil brush. 8.1c took the first bite: a tap on
-    bare ground is no longer a move, because there is no ground to move
-    across, and `scripts/pan.mjs` now holds that as a bar.
+    meeting, painted with the oil brush.
+
+    **The layout has landed**; the oil backdrop and `Combatant.at` have not.
+    What is in: `render/line.ts` — pure, 21 claims — is the only thing that
+    knows where a rank is on screen, and the renderer, the effects layer and
+    the tap all read it, so they cannot drift apart the way three separate
+    `toPixel` calls could. A tap is a `personId` rather than a hex. The
+    palisade is drawn as the thing the two walls are meeting across. The
+    ground is a horizon with far country over it instead of a mosaic of
+    tiles.
+
+    Still to do here:
+
+    - **The oil backdrop.** The sky and the far ridges are flat SVG for now,
+      good enough to compose against and not what this item promises. The
+      steading's live-canvas-in-`foreignObject` trick from the colony pass is
+      the shape it should take.
+    - **`Combatant.at` and `battle.grid`.** Nothing in `render/` reads a hex
+      any more, so the field is free of them; the sim still carries `at`
+      frozen at deployment, and `beats.ts` still has hex `from`/`to` on the
+      shoved beat and a `drowned` result that a line cannot produce. That is
+      a save bump and a migration of its own.
 
     Two things 8.1c left here on purpose:
 
@@ -2262,6 +2281,66 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-25 — Two walls meeting** — the battle is drawn side-on, and the
+  worst state this conversion could sit in is over.
+
+  Since 8.1c the game PLAYED as a shield wall and was DRAWN as a hex grid.
+  Every man was painted at `Combatant.at`, frozen wherever he deployed, so
+  the picture had stopped describing where anybody stood — the reach markers
+  landed on dead hexes, routinely off the panned view, which is why
+  `pan.mjs` had to go hunting for one that was on screen. Nobody could look
+  at the build and see the game.
+
+  `render/line.ts` is the whole geometry, pure and with 21 claims against it:
+  x = 0 is where the walls meet, our line runs left and theirs runs right,
+  rank 1 closest in both. The renderer, the effects layer and the tap all
+  read it, which is the point — the hex field had three files each doing
+  their own `toPixel`, and a hit test that drifts from the layout is a game
+  where tapping a man hits the one behind him.
+
+  **The load-bearing decision is that the rank gap is CONSTANT and the field
+  grows.** The obvious alternative — fit the line into a fixed width and
+  shrink the gap as the band deepens — fails the one rule this game does not
+  bend. Six sworn against six raiders is twelve ranks, and twelve targets at
+  44px is 528px, which no phone is. So a deep fight is a wide field the view
+  pans across, and that is arithmetic rather than a shortfall.
+
+  Three things measurement changed, none of which survived being reasoned
+  about:
+
+  | reasoned | measured |
+  |---|---|
+  | a 620-tall field | four of twelve ranks on screen; 900 shows six |
+  | scale so the GAP clears 44px | the MAN came out 42px — the shield is wider than twice his radius |
+  | hills from the ground's own colour | two pale smears that read as fog, not land |
+
+  The second is the one worth keeping: a fighter is the touch target, and
+  `figures.ts` draws his shield at `rx: radius * 1.04`, so a view scaled to
+  put 44px between ranks put 42px of man on a 320px screen. `field.mjs` — now
+  measuring `g.fighter` instead of a ground polygon, because there are no
+  ground polygons — caught a rule that had been reasoned about the wrong
+  object. It is 44px at 320 and 360 now, and derived from a stated constant.
+
+  Two bar findings, both about checks rather than code. `pan.mjs`'s "a wide
+  screen still frames itself and does not pan" was never a rule — it was a
+  fact about a hex grid being compact — so it moved to `line.test.ts`, where
+  the field's width is known in user units instead of guessed from a
+  screenshot, and a new claim took its place: you cannot drag the wall off
+  the screen. And "a tap on bare ground orders nothing" had started SKIPPING
+  itself, because it hunted for an unoccupied ground polygon and 8.1d took
+  the polygons away. A check that quietly stops running looks exactly like a
+  check that passes. It taps the sky now, which cannot stop existing.
+
+  One test of my own was worse: `line.test.ts` first asserted
+  `RANK_GAP * (44 / RANK_GAP) >= 44`, an identity that could never have
+  failed. Replaced with the property it was reaching for — that what a
+  fighter is worth on screen does not know how many ranks there are.
+
+  Not run: `balance.test.ts`. Nothing under `src/sim/` or `src/state/` is
+  touched by this, and the sweep is a headless harness that never builds a
+  DOM, so it cannot see a renderer change. Everything else is green — 1218
+  tests, all twelve browser bars.
 
 - **2026-08-25 — The battle is a line, and three "tuning failures" were holes**
   — 8.1c landed whole on the third attempt. The verbs ask the rank table, the
