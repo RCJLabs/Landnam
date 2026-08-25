@@ -59,14 +59,23 @@ export interface OpenedBeat extends BeatBase {
   champion?: string;
 }
 
-/** Somebody crossed ground. The only beat with no line in the log. */
+/**
+ * Somebody changed their place in the line. The only beat with no line in
+ * the log.
+ *
+ * `from` and `to` were hexes, and a step used to cost move points. There is
+ * no ground to cross since 8.1c: a fighter's place is their RANK, so this
+ * says which rank they left and which they took, and the cost is gone with
+ * the movement it paid for.
+ */
 export interface MovedBeat extends BeatBase {
   kind: 'moved';
   who: string;
-  from: Hex;
-  to: Hex;
-  cost: number;
-  /** Not a manoeuvre — a broken fighter running for their own edge. */
+  /** Rank they left. */
+  from: number;
+  /** Rank they took. */
+  to: number;
+  /** Not a manoeuvre — a broken fighter giving ground down the line. */
   flight?: true;
 }
 

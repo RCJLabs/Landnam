@@ -1,16 +1,15 @@
 // 2.2: the five actions, zone of control, and AI temperaments.
 
 import { describe, it, expect } from 'vitest';
-import { distance, key, neighbor, offsetToAxial, type Hex } from '../src/hex';
+import { distance, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { apply } from '../src/sim/actions';
-import { activeCombatant, fighterPerson, standing } from '../src/sim/battle';
+import { activeCombatant, fighterPerson, standing, strikeTargets } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
 import { DEFEND_BONUS, carrying, edge, evasion } from '../src/sim/swing';
-import { THROW_RANGE, doStrike, throwTargets } from '../src/sim/strike';
-import { shoveDestination } from '../src/sim/footwork';
-import { DISENGAGE_COST, isThreatened, reachWithZoc } from '../src/sim/zoc';
+import { canThrowAt, doStrike, throwTargets } from '../src/sim/strike';
+import { isThreatened, threatCount } from '../src/sim/zoc';
 import { FOE_ARCHETYPES } from '../src/data/foes';
 import { PATIENCE_ROUNDS } from '../src/sim/battleAi';
 import { BALANCED_HARDSHIP, HARDSHIPS } from '../src/data/hardship';
@@ -47,65 +46,52 @@ function duel(seed = 'duel'): {
   return { state, us, them };
 }
 
-describe('zone of control', () => {
-  it('a standing enemy threatens every hex around them', () => {
-    const { state, us, them } = duel('zoc-threat');
+describe('who is under threat', () => {
+  // This was zone of control: a standing fighter threatened all six hexes
+  // around them, stepping into one ended your move, and stepping out cost
+  // extra. Those clauses existed to make a line something you had to break
+  // rather than stroll around — and since 8.1c the line IS the world, so
+  // there is nothing left to enforce. What survives is the question they
+  // were really answering: can anybody actually reach me.
+
+  it('counts the men who could put something into you, and no others', () => {
+    const { state, us, them } = duel('threat-count');
     const battle = state.battle!;
-    for (let dir = 0; dir < 6; dir++) {
-      expect(isThreatened(battle, neighbor(them.at, dir), 'warband')).toBe(true);
-    }
-    expect(isThreatened(battle, offsetToAxial(0, 0), 'warband')).toBe(false);
-    void us;
+    us.rank = 1;
+    them.rank = 1;
+    expect(threatCount(battle, us)).toBe(1);
+    expect(isThreatened(battle, us)).toBe(true);
+
+    // Send him to the back of a line nobody's axe or spear reaches.
+    us.rank = 4;
+    expect(threatCount(battle, us)).toBe(0);
+    expect(isThreatened(battle, us)).toBe(false);
   });
 
-  it('stepping into a threatened hex ends the move there', () => {
-    const { state, us, them } = duel('zoc-stop');
+  it('does not count a thrown axe, which reaches everyone', () => {
+    // If throws counted, every fighter would be equally threatened in every
+    // rank and the number would stop meaning anything — which is the
+    // opposite of what its callers want it for.
+    const { state, us, them } = duel('threat-throw');
     const battle = state.battle!;
-    // Stand well clear so the reach has to pass by the foe.
-    us.at = offsetToAxial(3, 7);
-    us.movesLeft = 6;
-    const reach = reachWithZoc(battle, us);
-
-    // Everything reachable beyond a threatened hex must itself be reachable
-    // by a route that never passes through one.
-    for (const [k, cost] of reach) {
-      const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
-      if (distance(at, them.at) <= 1) continue;
-      // Any hex on the far side of the foe should cost more than walking
-      // straight through would, because you cannot walk straight through.
-      expect(cost).toBeGreaterThan(0);
-    }
-    // The hexes directly behind the foe are not reachable by tunnelling.
-    const behind = offsetToAxial(3, 2);
-    const straightLine = distance(us.at, behind);
-    expect(reach.get(key(behind)) ?? Infinity).toBeGreaterThan(straightLine - 1);
+    them.rank = 4;
+    them.throwsLeft = 3;
+    us.rank = 4;
+    expect(canThrowAt(state, them, us), 'a throw should still reach').toBe(true);
+    expect(threatCount(battle, us), 'but it should not count as pressure').toBe(0);
   });
 
-  it('leaving engagement costs extra', () => {
-    const { state, us, them } = duel('zoc-leave');
+  it('does not count the fallen or the fled', () => {
+    const { state, us, them } = duel('threat-down');
     const battle = state.battle!;
-    us.movesLeft = 6;
-
-    // Engaged: adjacent to the foe.
-    expect(isThreatened(battle, us.at, 'warband')).toBe(true);
-    const engagedReach = reachWithZoc(battle, us);
-    const retreat = offsetToAxial(3, 7); // two clear steps back
-    const engagedCost = engagedReach.get(key(retreat));
-
-    // Now disengage the foe entirely and measure the same walk.
-    them.at = offsetToAxial(0, 0);
-    const freeReach = reachWithZoc(battle, us);
-    const freeCost = freeReach.get(key(retreat));
-
-    expect(freeCost).toBeDefined();
-    expect(engagedCost).toBeDefined();
-    expect(engagedCost! - freeCost!).toBe(DISENGAGE_COST);
-  });
-
-  it('a fighter can never step onto another fighter', () => {
-    const { state, us, them } = duel('zoc-occupied');
-    const reach = reachWithZoc(state.battle!, us);
-    expect(reach.has(key(them.at))).toBe(false);
+    us.rank = 1;
+    them.rank = 1;
+    expect(threatCount(battle, us)).toBe(1);
+    them.down = true;
+    expect(threatCount(battle, us)).toBe(0);
+    them.down = false;
+    them.fled = true;
+    expect(threatCount(battle, us)).toBe(0);
   });
 });
 
@@ -266,50 +252,64 @@ describe('the country is worth a point on the dice', () => {
 });
 
 describe('dash', () => {
-  it('trades the action for more ground', () => {
-    const { state } = duel('dash');
-    const before = activeCombatant(state.battle!)!.movesLeft;
-    const after = apply(state, { type: 'B_DASH' });
+  it('trades the action for a place in the line', () => {
+    // It used to trade the action for MOVEMENT. There is no ground to buy
+    // since 8.1c, so what it buys is the rank — and it still costs the turn.
+    const { state, us: me } = duel('dash');
+    const battle = state.battle!;
+    battle.combatants.push({ ...me, personId: 'mate', rank: 1 });
+    me.rank = 2;
+    const after = apply(state, { type: 'B_DASH', by: -1 });
     const us = activeCombatant(after.battle!)!;
-    expect(us.movesLeft).toBeGreaterThan(before);
+    expect(us.rank).toBe(1);
     expect(us.hasActed).toBe(true);
     // Having run, there is no swing left in the turn.
     const them = after.battle!.combatants.find((c) => c.side === 'foe')!;
     expect(apply(after, { type: 'B_STRIKE', targetId: them.personId })).toBe(after);
   });
 
-  it('lets a fighter break away from a line they could not otherwise leave', () => {
+  it('lets a fighter buy their way out of a rank their weapon is no use in', () => {
+    // The old claim was about disengaging: a dash bought you out of a line
+    // you had no movement left to leave. On the line it buys the same thing
+    // in the only currency there is — the spearman driven to the front, or
+    // the thrower out of axes, walks himself somewhere he can fight again.
     const { state, us } = duel('dash-escape');
-    us.movesLeft = 1; // not enough to pay the disengage cost
-    const far = offsetToAxial(3, 7);
-    expect(reachWithZoc(state.battle!, us).has(key(far))).toBe(false);
-    const dashed = apply(state, { type: 'B_DASH' });
-    const after = activeCombatant(dashed.battle!)!;
-    expect(after.movesLeft).toBeGreaterThan(1);
+    const battle = state.battle!;
+    const mate = { ...us, personId: 'mate', rank: 1 };
+    battle.combatants.push(mate);
+    us.rank = 2;
+
+    const dashed = apply(state, { type: 'B_DASH', by: -1 });
+    expect(dashed, 'the dash was refused').not.toBe(state);
+    const after = dashed.battle!.combatants.find((c) => c.personId === us.personId)!;
+    const swapped = dashed.battle!.combatants.find((c) => c.personId === 'mate')!;
+    expect(after.rank).toBe(1);
+    expect(swapped.rank).toBe(2);
   });
 });
 
 describe('throw', () => {
-  it('reaches between two and three hexes, never adjacent', () => {
+  it('is thrown from the second rank back, and reaches anybody', () => {
+    // It used to be two or three hexes and never adjacent. On a line the
+    // rule is simpler and says the same thing: you cannot throw from the
+    // front — your hands are full — and from anywhere behind it, an axe
+    // reaches whoever you like.
     const { state, us, them } = duel('throw-range');
-    const battle = state.battle!;
-    us.at = offsetToAxial(3, 6);
-    them.at = offsetToAxial(3, 5); // adjacent
+    us.rank = 1;
     expect(throwTargets(state)).toHaveLength(0);
 
-    them.at = offsetToAxial(3, 4); // two away
+    us.rank = 2;
     expect(throwTargets(state).map((c) => c.personId)).toContain(them.personId);
 
-    them.at = offsetToAxial(3, 0); // well beyond range
-    expect(distance(us.at, them.at)).toBeGreaterThan(THROW_RANGE);
-    expect(throwTargets(state)).toHaveLength(0);
-    void battle;
+    us.rank = 4;
+    them.rank = 4;
+    expect(throwTargets(state).map((c) => c.personId)).toContain(them.personId);
   });
 
   it('spends a throwable, and runs out', () => {
     const { state, us, them } = duel('throw-ammo');
-    us.at = offsetToAxial(3, 6);
-    them.at = offsetToAxial(3, 4);
+    us.rank = 2;
+    them.rank = 1;
     expect(us.throwsLeft).toBe(1);
 
     const thrown = apply(state, { type: 'B_THROW', targetId: them.personId });
@@ -324,42 +324,56 @@ describe('throw', () => {
     expect(throwTargets(dry)).toHaveLength(0);
   });
 
-  it('will not throw through a blocked hex', () => {
+  it('is refused from the front rank, where your hands are full', () => {
+    // The old claim was line of sight: blocked ground stopped a thrown axe.
+    // A line has no ground between anybody, so what stops a throw is being
+    // in the press yourself — which is the same idea, honestly stated.
     const { state, us, them } = duel('throw-los');
-    const battle = state.battle!;
-    us.at = offsetToAxial(3, 6);
-    them.at = offsetToAxial(3, 4);
+    us.rank = 2;
+    them.rank = 1;
     expect(throwTargets(state).length).toBe(1);
-    battle.grid[key(offsetToAxial(3, 5))] = { ground: 'block' };
+    us.rank = 1;
     expect(throwTargets(state)).toHaveLength(0);
   });
 });
 
 describe('shove', () => {
-  it('drives a foe straight back, away from the shover', () => {
-    const { state, us, them } = duel('shove-direction');
-    const expected = shoveDestination(us, them);
-    expect(expected).not.toBeNull();
+  it('drives a foe back a rank, and puts the man behind him in front', () => {
+    const { state, us, them } = duel('shove-rank');
+    const battle = state.battle!;
+    // A foe line two deep, so there is somebody to come forward.
+    const second = { ...them, personId: 'foe-second', rank: 2 };
+    battle.combatants.push(second);
+    battle.foes.push({ ...battle.foes[0]!, id: 'foe-second', name: 'The Second' });
+    us.rank = 1;
+    them.rank = 1;
 
     // Make the shove certain: overwhelming might against none.
-    const shover = fighterPerson(state, us.personId)!;
-    const shoved = fighterPerson(state, them.personId)!;
-    shover.stats.might = 6;
-    shoved.stats.might = 1;
-
-    const after = apply(state, { type: 'B_SHOVE', targetId: them.personId });
-    const moved = after.battle!.combatants.find((c) => c.personId === them.personId)!;
-    // Either they were driven back, or they held — never dragged sideways.
-    expect([key(expected!), key(them.at)]).toContain(key(moved.at));
-  });
-
-  it('into water, the sea does the rest', () => {
-    const { state, us, them } = duel('shove-water');
-    const battle = state.battle!;
-    const behind = shoveDestination(us, them)!;
-    battle.grid[key(behind)] = { ground: 'water' };
     fighterPerson(state, us.personId)!.stats.might = 6;
     fighterPerson(state, them.personId)!.stats.might = 1;
+
+    const after = apply(state, { type: 'B_SHOVE', targetId: them.personId });
+    const shoved = after.battle!.combatants.find((c) => c.personId === them.personId)!;
+    const came = after.battle!.combatants.find((c) => c.personId === 'foe-second')!;
+    // Either he was driven back and they swapped, or he held. Never anything else.
+    if (shoved.rank === 1) {
+      expect(came.rank, 'he held, so nobody should have moved').toBe(2);
+    } else {
+      expect(shoved.rank).toBe(2);
+      expect(came.rank, 'somebody had to come forward').toBe(1);
+    }
+  });
+
+  it('with nowhere to give, a man is crushed against his own line', () => {
+    // The old test put him in the water and let the sea do it. There is no
+    // water on a line and no sideways to be driven — the equivalent is being
+    // the last of your rank with your own men at your back.
+    const { state, us, them } = duel('shove-crush');
+    us.rank = 1;
+    them.rank = 1;
+    fighterPerson(state, us.personId)!.stats.might = 6;
+    fighterPerson(state, them.personId)!.stats.might = 1;
+    fighterPerson(state, them.personId)!.health = 2;
 
     let after = state;
     for (let i = 0; i < 12; i++) {
@@ -368,7 +382,7 @@ describe('shove', () => {
       after = attempt;
       const target = after.battle!.combatants.find((c) => c.personId === them.personId)!;
       if (target.down) {
-        expect(after.battle!.log.some((l) => /water/i.test(l))).toBe(true);
+        expect(after.battle!.log.some((l) => /own line|own men/i.test(l))).toBe(true);
         return;
       }
       // Reset the turn and try again — the contest can be lost.
@@ -376,10 +390,10 @@ describe('shove', () => {
     }
   });
 
-  it('a shove is refused at range', () => {
+  it('a shove is refused from the back of the line', () => {
     const { state, us, them } = duel('shove-range');
-    us.at = offsetToAxial(3, 7);
-    them.at = offsetToAxial(3, 4);
+    us.rank = 3;
+    them.rank = 1;
     expect(apply(state, { type: 'B_SHOVE', targetId: them.personId })).toBe(state);
   });
 });
@@ -396,8 +410,13 @@ describe('foe temperaments', () => {
   });
 
   it('they play differently from one another', () => {
-    // Same field, same warband, different temperament: the resulting
-    // positions should not be identical, or the archetypes are cosmetic.
+    // Same field, same warband, different temperament: what they DO should
+    // not be identical, or the archetypes are cosmetic.
+    //
+    // It used to compare where they stood. On a line there is barely any
+    // standing to compare — everybody is in the wall — so the difference has
+    // to show in the turns they take, which is where it was always supposed
+    // to live anyway.
     const layouts = new Set<string>();
     for (const archetype of FOE_ARCHETYPES) {
       const state = fight(`temperament-${archetype.id}`, 1);
@@ -410,12 +429,7 @@ describe('foe temperaments', () => {
       for (let i = 0; i < 4 && !cur.battle?.outcome; i++) {
         cur = apply(cur, { type: 'B_END_TURN' });
       }
-      layouts.add(
-        standing(cur.battle!, 'foe')
-          .map((c) => key(c.at))
-          .sort()
-          .join('|'),
-      );
+      layouts.add(cur.battle!.log.join('|'));
     }
     expect(layouts.size).toBeGreaterThan(1);
   });
@@ -493,7 +507,7 @@ describe('fights are winnable and losable on purpose', () => {
         continue;
       }
       const person = fighterPerson(state, active.personId)!;
-      const adjacent = standing(battle, 'foe').filter((c) => distance(c.at, active.at) === 1);
+      const adjacent = strikeTargets(state);
 
       if (!active.hasActed && adjacent.length > 0) {
         // Badly hurt and outnumbered? Get the shield up instead of trading.
@@ -517,19 +531,10 @@ describe('fights are winnable and losable on purpose', () => {
         state = apply(state, { type: 'B_END_TURN' });
         continue;
       }
-      const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
-        q: Number(k.split(',')[0]),
-        r: Number(k.split(',')[1]),
-      })) as Hex[];
       const foes = standing(battle, 'foe');
-      if (reach.length > 0 && foes.length > 0) {
-        const best = [...reach].sort(
-          (a, b) =>
-            Math.min(...foes.map((f) => distance(a, f.at))) -
-            Math.min(...foes.map((f) => distance(b, f.at))),
-        )[0]!;
-        const moved = apply(state, { type: 'B_MOVE', to: best });
-        state = moved === state ? apply(state, { type: 'B_END_TURN' }) : moved;
+      if (foes.length > 0) {
+        const pushed = apply(state, { type: 'B_DASH', by: -1 });
+        state = pushed === state ? apply(state, { type: 'B_END_TURN' }) : pushed;
         continue;
       }
       state = apply(state, { type: 'B_END_TURN' });

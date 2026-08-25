@@ -4,8 +4,7 @@
 // Fighters are Person objects on both sides; a Combatant only says where
 // they stand and what they have left this turn.
 
-import { column, distance, equals, fromKey, key, type Hex } from '../hex';
-import { reachWithZoc } from './zoc';
+import { column, distance, equals, key, type Hex } from '../hex';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
 import {
@@ -19,6 +18,7 @@ import {
 import type { Battle, Champion, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
 import { beat } from './beats';
+import { canActFrom, canLandOn } from './ranks';
 import { effectiveStat, standAtHome, sworn } from './people';
 import { wintersStood } from './calendar';
 import { fieldCrew, homeCrew } from './expedition';
@@ -527,26 +527,18 @@ export function beginBattle(
 // --- Movement and reach ---
 
 /** Hexes the active fighter can still reach this turn, zone of control included. */
-export function reachableHexes(battle: Battle): Hex[] {
-  const active = activeCombatant(battle);
-  if (!active || battle.outcome || active.movesLeft <= 0) return [];
-  return [...reachWithZoc(battle, active).keys()].map(fromKey);
-}
-
-/** What reaching each hex would cost — used to preview a step. */
-export function reachCosts(battle: Battle): Map<string, number> {
-  const active = activeCombatant(battle);
-  if (!active || battle.outcome || active.movesLeft <= 0) return new Map();
-  return reachWithZoc(battle, active);
-}
-
+// `reachableHexes` and `reachCosts` stood here. They answered "where can this
+// fighter walk, and what does each step cost", and since 8.1c there is nowhere
+// to walk — a fighter's place is their rank, and changing it is `dash`.
+//
 /** Enemies the active fighter could strike right now. */
 export function strikeTargets(state: GameState): Combatant[] {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
   if (!battle || !active || active.hasActed || battle.outcome) return [];
+  if (!canActFrom('strike', active.rank)) return [];
   return battle.combatants.filter(
-    (c) => !c.down && c.side !== active.side && distance(c.at, active.at) === 1,
+    (c) => !c.down && !c.fled && c.side !== active.side && canLandOn('strike', c.rank),
   );
 }
 

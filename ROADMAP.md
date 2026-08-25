@@ -1418,6 +1418,16 @@ recorded as one rather than hidden:
 The generated files themselves ARE regenerated and committed here. This repo
 stays internally consistent; what is paused is only carrying them across.
 
+**Updated 2026-08-25, after 8.1c.** The drift is no longer cosmetic and that
+was always the point of printing it. The verbs moving onto the line changed
+what a fight resolves to, so `runs/*.json` were re-recorded and every facet
+that touches a battle moved with them — the `field` facet most of all, and the
+`run` hash on every checkpoint that has a fight behind it. This is the first
+drift that is genuinely about rules rather than about a version number, which
+is exactly the evidence the freeze was made on: the C++ sim is now behind a
+game it does not implement, and catching it up would mean porting a
+battlefield that Phase 8 is in the middle of deleting.
+
 ### The collision with Phase 7
 
 Phase 7 is porting the hex game to Unreal. If Phase 8 lands, that port is
@@ -1473,16 +1483,14 @@ is written so the choice is made with both arcs visible, not by drift.
     that reaches the third rank. All five caught.
   - [ ] **8.1b Combatant takes a rank** — `at: Hex` becomes `rank`, with the
     save migration above.
-  - [ ] **8.1c The verbs move onto the line, AND the numbers are re-earned**
+  - [x] **8.1c The verbs move onto the line, AND the numbers are re-earned**
     — was two items, 8.1c and 8.1e. They are one, and finding that out is
-    what the 2026-08-25 attempt bought.
-
-    **The source half is done and parked**, in
-    `wip/8.1c-source-conversion.patch`: nine files, `tsc` clean across all of
-    `src/`. strike/reach/throw ask the rank table instead of hex distance,
-    the shield wall is adjacent RANKS, `doMove` is gone, shove drives a man
-    back a rank and names who came forward, and `dash` becomes a change of
-    rank. It was reverted rather than committed, for the reason below.
+    what the 2026-08-25 attempt bought. Landed on the third attempt, whole:
+    strike/reach/throw ask the rank table instead of hex distance, the shield
+    wall is adjacent RANKS, `doMove` is gone, shove drives a man back a rank
+    and names who came forward, `dash` becomes a change of rank, and every
+    tuned number was re-measured rather than relaxed. See the changelog for
+    what the measurements said.
 
     **Why the two items are one.** The conversion turned out to be surgical —
     `strike.ts` is 289 lines and only SIX of them were hex, all reach checks;
@@ -1493,31 +1501,44 @@ is written so the choice is made with both arcs visible, not by drift.
     — which is a hex spelling of "you are in the second rank and your
     shield-brother is in the first". Converting is faithful, not inventive.
 
-    But the tests are not surgical, and they cannot be. 23 errors remain
-    across seven files: ten are `B_MOVE` call sites exercising movement that
-    no longer exists, thirteen are `shoveDestination` expecting a hex. Each
-    needs a decision about what the test should now assert, not a patch. And
-    the ones that matter most assert TUNED NUMBERS — `wall.test.ts` holds
-    "formation play beats brawling" at specific win counts, `balance.test.ts`
-    holds survival rates. The instant the verbs move onto the line every one
-    of those moves too.
+    But the tests are not surgical, and they cannot be. The ones that matter
+    most assert TUNED NUMBERS — `wall.test.ts` holds "formation play beats
+    brawling" at specific win counts, `balance.test.ts` holds survival rates.
+    The instant the verbs move onto the line every one of those moves too, so
+    there is no green state between "converted" and "re-tuned" and the slice
+    could not be committed half-done.
 
-    So there is no green state between "converted" and "re-tuned", and the
-    slice cannot be committed half-done. It needs a sitting long enough for
-    the balance sweep — 40 minutes a run — to go round several times.
+    **What the third attempt changed about the method**: structure first,
+    numbers last, and never touch a threshold while a structural failure is
+    still standing. Two of the three failures that looked like tuning turned
+    out to be mechanics the conversion had silently deleted — see the
+    changelog. A number relaxed on either of them would have hidden a hole.
 
     *Done when: the sweeps run against ranks and produce tuned numbers,
     formation play still beats brawling, losing a veteran still hurts, and
-    the whole suite is green in one commit.*
+    the whole suite is green in one commit.* — **met.**
   - [ ] **8.1d The field is drawn side-on** — `render/battle.ts` as two walls
-    meeting, painted with the oil brush. Note that 8.1c already takes the
-    first bite: a tap on bare ground stops being a move, because there is no
-    ground to move across.
+    meeting, painted with the oil brush. 8.1c took the first bite: a tap on
+    bare ground is no longer a move, because there is no ground to move
+    across, and `scripts/pan.mjs` now holds that as a bar.
 
-    One thing 8.1c will leave for this: `Combatant.at` survives the
-    conversion frozen at wherever a fighter deployed, because the renderer
-    still draws hexes and `wall.ts` still reads the grid to know who is
-    astride a palisade. Both go here.
+    Two things 8.1c left here on purpose:
+
+    - **`Combatant.at` survives frozen** at wherever a fighter deployed,
+      because the renderer still draws hexes. It goes here. Note what that
+      already costs: the reach markers are drawn on those dead hexes, so at
+      320px they are routinely off the panned view and `pan.mjs` has to hunt
+      for one that is on screen.
+    - **Shove and defend are very nearly inert on the line**, measured over
+      60 fights: turning either on changes the win count by nothing at all.
+      Defend fires NEVER, because only the front two may set a shield and the
+      front two always have something better to do with the action; shove
+      fires 20 times in 60 fights, and only ever to crush the last man of a
+      line against his own, since a shove that MOVES somebody deals no damage
+      and swaps two men an axe already reaches. Both are recorded as exact
+      ties in `wall.test.ts` so the day either stops being inert is a day
+      somebody finds out. Whether they earn a place on a side-on field, or
+      change, or go, is a decision for this item.
 
 - [ ] **8.2 The coast becomes a line** — Worldgen from 2D island to a 1D route
   of places with distances between them. Skerries, landmarks, `places.ts` and
@@ -2241,6 +2262,87 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-25 — The battle is a line, and three "tuning failures" were holes**
+  — 8.1c landed whole on the third attempt. The verbs ask the rank table, the
+  numbers were re-earned rather than relaxed, and the two items the roadmap
+  had already merged (8.1c and 8.1e) went green in one commit.
+
+  **The rule the whole mode rests on was written, tested, and never called.**
+  `closeUp` had 25 claims against it in `ranks.test.ts` and not one line in
+  `src/sim/` invoked it. Three seeds probed at random all ground to the round
+  limit — 51 rounds, survivors stranded at ranks 4, 5 and 6 and nobody at the
+  front, because a hole in a line is a front rank nobody stands in and a
+  fight where nobody can reach anybody. Wired into `drop()` and into the flee
+  branch of `takeBrokenTurn`, the same three seeds finish in four to seven
+  rounds. That is the whole difference between a line and a queue.
+
+  **Then the method, which is the part worth keeping.** Structure first,
+  numbers last, and never touch a threshold while a structural failure is
+  still standing. Three failures looked exactly like tuning drift and were
+  not:
+
+  | looked like | actually was |
+  |---|---|
+  | shove dropped 47 wins in 60 to 11 | the ported rule fired on the half of the verb that does nothing |
+  | the back rank got a free shield | `doDefend` never asked the reach table |
+  | the palisade stopped paying | the mechanic was pure hex terrain and had been deleted |
+
+  A shove that MOVES somebody deals no damage and swaps two men an axe
+  already reaches; the damage is in the other branch, where the last man of a
+  line is driven against his own for 2 that cannot miss. The hex rule
+  "somebody comes forward" ported across as *always shove* — measured, 11
+  wins in 60 and 80 men standing against 47 and 166 for a bot that never
+  shoves. The reach table says only the front two may set a shield and
+  `doDefend` had never been told, so a third-rank man collected `DEFEND_BONUS`
+  against spears and thrown axes for an action he had no other use for.
+
+  **The palisade was the worst of the three, because it failed silently.** A
+  walled steading and an open one came out of ten raids with byte-identical
+  tallies — 0 held, 36 alive, 24 dead, 720 stolen, both — because the whole
+  mechanic was "whoever is standing on a wall hex", and nobody stands
+  anywhere now. Eight timber and a week of somebody's hands for nothing. The
+  line spelling of *it does not stop them, it makes them climb where you are
+  waiting* is that the men climbing ARE the raiders' front rank: they hold no
+  wall with each other and they are `WALL_EXPOSED` easier to hit. Derived
+  from the field, so no save change. With it: **6 raids held against 0, 46
+  alive against 36, 14 dead against 24, 201 stolen against 720.**
+
+  **What the sweeps then said about the line itself.** The open worry about
+  this whole conversion was that a wall everybody stands in by default would
+  stop being worth anything. It is worth more: formation against brawl went
+  from 33/60 wins and 157 standing on hexes to **47/60 and 166**, against
+  30/60 and 109 — the gap roughly tripled.
+
+  **And dash stopped being a trap by becoming what its docstring always
+  claimed.** On hexes, spending the action to arrive sooner cost a third of
+  the wins and a third of the survivors: you arrived alone and having already
+  acted. There is no ground to sprint across now, so nobody can arrive alone
+  — what a dash does is walk the back-rank man who has thrown his last
+  hand-axe up into the wall. Over the same 60 fights it fires 361 times and
+  costs one win and nine men.
+
+  Shove and defend are the opposite finding and are recorded as such: both
+  are now so nearly inert that turning either on changes the win count by
+  exactly nothing. `wall.test.ts` asserts that as an exact tie rather than a
+  tolerance, so the day either stops being inert is a day somebody finds out,
+  and 8.1d carries the decision about whether they earn a place on a side-on
+  field.
+
+  Smaller things that had to be true first: `moved` beats carry RANKS rather
+  than hexes (v46, and the migration drops the old ones rather than inventing
+  ranks for a field that no longer exists); `runs/*.json` re-recorded and
+  `port/parity.json` regenerated; the champion fixture's "park them out of the
+  wall" premise has no line equivalent, so its bar is now what the
+  best-steadied man in a line feels; `scripts/pan.mjs` proves the new rule
+  that a tap on bare ground orders nothing, and all twelve browser bars pass.
+
+  One correction to the record: `runs/example.json` had already gone stale on
+  `main` before any of this — recorded against a clean checkout it produces
+  the same degenerate 23-forage run — so it was re-cut on `grim-fjord-100`,
+  where 140 actions cover travel, a founding, six events and a fight. And the
+  parked `wip/8.1c-source-conversion.patch` is deleted, because the work it
+  was a head start on is now in the tree.
 
 - **2026-08-25 — The line is real, and 8.1c is one job not two** — ranks
   arrive in the sim, the port hand-over is deliberately frozen, and an attempt

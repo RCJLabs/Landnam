@@ -95,7 +95,14 @@
 //               A save from before this has combatants with no rank, and the
 //               migration ranks them in the order they are stored, which is
 //               the order they took the field.
-export const SAVE_VERSION = 45;
+// v46 (the line): `moved` beats carry RANKS, not hexes. The battlefield is a
+//                  line now, so a step is a change of rank and the move-point
+//                  cost it used to carry paid for movement that no longer
+//                  exists. Beats are a presentation stream — capped, drained
+//                  and disposable — so the migration drops the `moved` beats
+//                  a pre-line save is holding rather than inventing ranks for
+//                  hexes. Nothing else in the stream changes.
+export const SAVE_VERSION = 46;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

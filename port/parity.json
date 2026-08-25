@@ -223,7 +223,7 @@
        }
       },
       "run": {
-       "hash": "4faa4f89a0c16c7e",
+       "hash": "4fa67df2a0c3ab15",
        "size": 253,
        "samples": {
         "day": 1,
@@ -318,7 +318,7 @@
        }
       },
       "run": {
-       "hash": "d70bf04d8d647c7e",
+       "hash": "d709b1b68d66bb15",
        "size": 251,
        "samples": {
         "day": 1,
@@ -413,7 +413,7 @@
        }
       },
       "run": {
-       "hash": "6345bad5156a3b88",
+       "hash": "6341e93e1561ecc3",
        "size": 244,
        "samples": {
         "day": 1,
@@ -508,7 +508,7 @@
        }
       },
       "run": {
-       "hash": "7b8ed07083dd7441",
+       "hash": "7b8681ab83db35aa",
        "size": 244,
        "samples": {
         "day": 1,
@@ -603,7 +603,7 @@
        }
       },
       "run": {
-       "hash": "a942aca00567eb47",
+       "hash": "a93a5ddb056ea70c",
        "size": 245,
        "samples": {
         "day": 1,
@@ -619,17 +619,22 @@
   },
   {
    "name": "runs/example.json, replayed",
-   "seed": "raven-skerry-317",
-   "hardship": null,
+   "seed": "grim-fjord-100",
+   "hardship": "fair",
    "script": "runs/example.json",
-   "worldHash": "688411ba38a7cea1",
+   "worldHash": "c2c3889d91cbd0a4",
    "actionCounts": {
-    "B_END_TURN": 49,
-    "FORAGE": 10,
-    "MOVE": 4,
-    "CHOOSE": 1,
-    "DISMISS_EVENT": 1,
-    "B_LEAVE": 1
+    "ENTER_COLONY": 27,
+    "LEAVE_COLONY": 27,
+    "CAMP": 27,
+    "B_END_TURN": 26,
+    "MOVE": 13,
+    "CHOOSE": 6,
+    "DISMISS_EVENT": 6,
+    "ASSIGN": 3,
+    "B_LEAVE": 2,
+    "DISMISS_AFTERMATH": 2,
+    "FOUND": 1
    },
    "checkpoints": [
     {
@@ -639,44 +644,44 @@
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "688411ba38a7cea1",
-       "size": 79963,
+       "hash": "c2c3889d91cbd0a4",
+       "size": 80382,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 35
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 37
        }
       },
       "band": {
-       "hash": "f21ce5305b2d022f",
-       "size": 1503,
+       "hash": "2445b29cf61539dd",
+       "size": 1506,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 24,
-        "firewood": 8,
+        "food": 60,
+        "firewood": 20,
         "morale": 70,
-        "atQ": 3,
-        "atR": 15
+        "atQ": 1,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "1017e3502a9b5e89",
+       "hash": "0b5947799afb5734",
        "size": 606,
        "samples": {
         "neighbours": 4,
         "found": 0,
-        "standing": 3,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -705,8 +710,8 @@
        }
       },
       "run": {
-       "hash": "293e7397641deebc",
-       "size": 253,
+       "hash": "ca2a30289a71fb7f",
+       "size": 251,
        "samples": {
         "day": 1,
         "ended": "-",
@@ -719,50 +724,50 @@
     },
     {
      "afterActions": 1,
-     "action": "FORAGE",
+     "action": "MOVE",
      "firstOf": true,
      "day": 2,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "04c7d19f1538949e",
-       "size": 80004,
+       "hash": "5844e8a812565a07",
+       "size": 80489,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 35
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 44
        }
       },
       "band": {
-       "hash": "cb5fdc12df453851",
-       "size": 1587,
+       "hash": "5a9e80719b663120",
+       "size": 1590,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 25,
-        "firewood": 7,
+        "food": 57,
+        "firewood": 19,
         "morale": 71,
-        "atQ": 3,
-        "atR": 15
+        "atQ": 2,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "22f202b81a606b31",
-       "size": 664,
+       "hash": "c64c9df8d17eec9b",
+       "size": 663,
        "samples": {
         "neighbours": 4,
         "found": 0,
-        "standing": 3,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -791,8 +796,8 @@
        }
       },
       "run": {
-       "hash": "5ee09750bc78fce3",
-       "size": 283,
+       "hash": "a1e8cb2ba9588c6c",
+       "size": 281,
        "samples": {
         "day": 2,
         "ended": "-",
@@ -805,49 +810,49 @@
     },
     {
      "afterActions": 2,
-     "action": "FORAGE",
+     "action": "MOVE",
      "day": 3,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "a5b80eb2b3d68f11",
-       "size": 80019,
+       "hash": "87e8772a733bd7f1",
+       "size": 80545,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 35
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 48
        }
       },
       "band": {
-       "hash": "c9f4665d386350c2",
-       "size": 1587,
+       "hash": "33f5b473ed8105d2",
+       "size": 1590,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 26,
-        "firewood": 6,
+        "food": 54,
+        "firewood": 18,
         "morale": 72,
         "atQ": 3,
-        "atR": 15
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "b490906a4e6f5b57",
-       "size": 664,
+       "hash": "f937d46206074d29",
+       "size": 663,
        "samples": {
         "neighbours": 4,
         "found": 0,
-        "standing": 3,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -876,8 +881,8 @@
        }
       },
       "run": {
-       "hash": "fd29fb690a4531ca",
-       "size": 283,
+       "hash": "e3558d4fac7328e8",
+       "size": 281,
        "samples": {
         "day": 3,
         "ended": "-",
@@ -890,49 +895,49 @@
     },
     {
      "afterActions": 3,
-     "action": "FORAGE",
+     "action": "MOVE",
      "day": 4,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "83cd90495504423e",
-       "size": 80019,
+       "hash": "c29aaed39b463c20",
+       "size": 80527,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 35
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 48
        }
       },
       "band": {
-       "hash": "57ab420ad3122489",
-       "size": 1587,
+       "hash": "92411f7b9f2071e2",
+       "size": 1590,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 27,
-        "firewood": 5,
+        "food": 51,
+        "firewood": 17,
         "morale": 73,
-        "atQ": 3,
-        "atR": 15
+        "atQ": 4,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "831261cc8953a3b1",
-       "size": 664,
+       "hash": "0fb0f80ca457a833",
+       "size": 663,
        "samples": {
         "neighbours": 4,
         "found": 0,
-        "standing": 3,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -961,8 +966,8 @@
        }
       },
       "run": {
-       "hash": "94eabf6a9b93ec49",
-       "size": 283,
+       "hash": "272aaa882ec2b0af",
+       "size": 281,
        "samples": {
         "day": 4,
         "ended": "-",
@@ -975,49 +980,50 @@
     },
     {
      "afterActions": 5,
-     "action": "FORAGE",
-     "day": 6,
+     "action": "CHOOSE",
+     "firstOf": true,
+     "day": 5,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "b7994deae0583a0d",
-       "size": 80019,
+       "hash": "db28c1a617f107ef",
+       "size": 80602,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 35
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 54
        }
       },
       "band": {
-       "hash": "419d5b9c28eb13c7",
-       "size": 1587,
+       "hash": "d1298ef837114bc9",
+       "size": 1590,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 25,
-        "firewood": 3,
-        "morale": 75,
-        "atQ": 3,
-        "atR": 15
+        "food": 48,
+        "firewood": 13,
+        "morale": 74,
+        "atQ": 5,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "c934bfe07eb88c89",
-       "size": 664,
+       "hash": "8c3b1552c98e6b75",
+       "size": 663,
        "samples": {
         "neighbours": 4,
         "found": 0,
-        "standing": 3,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -1046,13 +1052,13 @@
        }
       },
       "run": {
-       "hash": "fb3576c47e72c09f",
-       "size": 283,
+       "hash": "b8d07d87a11d09f2",
+       "size": 820,
        "samples": {
-        "day": 6,
+        "day": 5,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -1060,49 +1066,50 @@
     },
     {
      "afterActions": 6,
-     "action": "FORAGE",
-     "day": 7,
+     "action": "DISMISS_EVENT",
+     "firstOf": true,
+     "day": 5,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "40851a669198e529",
-       "size": 79971,
+       "hash": "db28c1a617f107ef",
+       "size": 80602,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 35
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 54
        }
       },
       "band": {
-       "hash": "1651fb849be7472f",
-       "size": 1587,
+       "hash": "d1298ef837114bc9",
+       "size": 1590,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 24,
-        "firewood": 2,
-        "morale": 76,
-        "atQ": 3,
-        "atR": 15
+        "food": 48,
+        "firewood": 13,
+        "morale": 74,
+        "atQ": 5,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "8efcb8346b8ef9d9",
-       "size": 664,
+       "hash": "8c3b1552c98e6b75",
+       "size": 663,
        "samples": {
         "neighbours": 4,
         "found": 0,
-        "standing": 3,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -1131,13 +1138,13 @@
        }
       },
       "run": {
-       "hash": "0405488dd6b84166",
-       "size": 283,
+       "hash": "bb8f666689db791d",
+       "size": 303,
        "samples": {
-        "day": 7,
+        "day": 5,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -1145,135 +1152,49 @@
     },
     {
      "afterActions": 8,
-     "action": "FORAGE",
-     "day": 9,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "43041f0fddbd0690",
-       "size": 80019,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 35
-       }
-      },
-      "band": {
-       "hash": "309ac45d11096c76",
-       "size": 1587,
-       "samples": {
-        "people": 6,
-        "alive": 6,
-        "food": 20,
-        "firewood": 0,
-        "morale": 78,
-        "atQ": 3,
-        "atR": 15
-       }
-      },
-      "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
-       "samples": {
-        "name": "Vindkápa",
-        "strakes": 3
-       }
-      },
-      "coast": {
-       "hash": "2e8bb0b14f1beae2",
-       "size": 663,
-       "samples": {
-        "neighbours": 4,
-        "found": 0,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0,
-        "claims": 1,
-        "outlaws": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "fighting": 0,
-        "round": -1,
-        "combatants": 0,
-        "standing": 0
-       }
-      },
-      "run": {
-       "hash": "4c59058718387c0c",
-       "size": 283,
-       "samples": {
-        "day": 9,
-        "ended": "-",
-        "mode": "TRAVEL",
-        "flags": 3,
-        "battles": 0
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 9,
      "action": "MOVE",
-     "firstOf": true,
-     "day": 10,
+     "day": 7,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "edefbcf2b2760ca7",
-       "size": 80086,
+       "hash": "dca06d10ef7759b5",
+       "size": 80910,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 40
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 73
        }
       },
       "band": {
-       "hash": "254043ef8742c88c",
-       "size": 1587,
+       "hash": "439c1e3ad89d341f",
+       "size": 1590,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 17,
-        "firewood": 0,
-        "morale": 75,
-        "atQ": 4,
-        "atR": 15
+        "food": 42,
+        "firewood": 11,
+        "morale": 76,
+        "atQ": 7,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "801b008716daba48",
+       "hash": "1546e53c03ba9353",
        "size": 663,
        "samples": {
         "neighbours": 4,
         "found": 0,
-        "standing": 3,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -1302,13 +1223,13 @@
        }
       },
       "run": {
-       "hash": "bdb807c9a9ea3984",
-       "size": 284,
+       "hash": "f6ba807c8830432f",
+       "size": 303,
        "samples": {
-        "day": 10,
+        "day": 7,
         "ended": "-",
         "mode": "TRAVEL",
-        "flags": 3,
+        "flags": 4,
         "battles": 0
        }
       }
@@ -1316,49 +1237,50 @@
     },
     {
      "afterActions": 13,
-     "action": "MOVE",
-     "day": 14,
+     "action": "B_END_TURN",
+     "firstOf": true,
+     "day": 9,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "46bb69d60b01ca1f",
-       "size": 80238,
+       "hash": "c69832ee35498e05",
+       "size": 81029,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 48
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 80
        }
       },
       "band": {
-       "hash": "789649f65d3e3a79",
-       "size": 1587,
+       "hash": "94bf14e36a023758",
+       "size": 1589,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 24,
-        "firewood": 0,
-        "morale": 63,
-        "atQ": 6,
-        "atR": 15
+        "food": 36,
+        "firewood": 9,
+        "morale": 78,
+        "atQ": 9,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "52420b311d8c660a",
-       "size": 663,
+       "hash": "2dc38acb343d15da",
+       "size": 662,
        "samples": {
         "neighbours": 4,
         "found": 0,
-        "standing": 3,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -1377,246 +1299,73 @@
        }
       },
       "field": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "fighting": 0,
-        "round": -1,
-        "combatants": 0,
-        "standing": 0
-       }
-      },
-      "run": {
-       "hash": "cfc26b6db8b03410",
-       "size": 284,
-       "samples": {
-        "day": 14,
-        "ended": "-",
-        "mode": "TRAVEL",
-        "flags": 3,
-        "battles": 0
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 15,
-     "action": "CHOOSE",
-     "firstOf": true,
-     "day": 15,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "bcb32d21d0e1340c",
-       "size": 80324,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 53
-       }
-      },
-      "band": {
-       "hash": "63ca9900e71aaaa3",
-       "size": 1587,
-       "samples": {
-        "people": 6,
-        "alive": 6,
-        "food": 21,
-        "firewood": 0,
-        "morale": 60,
-        "atQ": 7,
-        "atR": 15
-       }
-      },
-      "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
-       "samples": {
-        "name": "Vindkápa",
-        "strakes": 3
-       }
-      },
-      "coast": {
-       "hash": "3d2dd8055f0e1f08",
-       "size": 676,
-       "samples": {
-        "neighbours": 4,
-        "found": 1,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0,
-        "claims": 1,
-        "outlaws": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "fighting": 0,
-        "round": -1,
-        "combatants": 0,
-        "standing": 0
-       }
-      },
-      "run": {
-       "hash": "d3ea2ab88e003981",
-       "size": 832,
-       "samples": {
-        "day": 15,
-        "ended": "-",
-        "mode": "TRAVEL",
-        "flags": 6,
-        "battles": 0
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 16,
-     "action": "DISMISS_EVENT",
-     "firstOf": true,
-     "day": 15,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "bcb32d21d0e1340c",
-       "size": 80324,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 53
-       }
-      },
-      "band": {
-       "hash": "63ca9900e71aaaa3",
-       "size": 1587,
-       "samples": {
-        "people": 6,
-        "alive": 6,
-        "food": 21,
-        "firewood": 0,
-        "morale": 60,
-        "atQ": 7,
-        "atR": 15
-       }
-      },
-      "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
-       "samples": {
-        "name": "Vindkápa",
-        "strakes": 3
-       }
-      },
-      "coast": {
-       "hash": "3d2dd8055f0e1f08",
-       "size": 676,
-       "samples": {
-        "neighbours": 4,
-        "found": 1,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0,
-        "claims": 1,
-        "outlaws": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "8abedf07b7fcf43e",
-       "size": 5284,
+       "hash": "986f139cb472dfed",
+       "size": 4856,
        "samples": {
         "fighting": 1,
         "round": 1,
-        "combatants": 11,
-        "standing": 11
+        "combatants": 10,
+        "standing": 10
        }
       },
       "run": {
-       "hash": "d0a1ccc8aef11495",
-       "size": 316,
+       "hash": "c3015dc61c01fe57",
+       "size": 334,
        "samples": {
-        "day": 15,
+        "day": 9,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 4,
+        "flags": 5,
         "battles": 1
        }
       }
      }
     },
     {
-     "afterActions": 17,
+     "afterActions": 14,
      "action": "B_END_TURN",
-     "firstOf": true,
-     "day": 15,
+     "day": 9,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "bcb32d21d0e1340c",
-       "size": 80324,
+       "hash": "c69832ee35498e05",
+       "size": 81029,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 53
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 80
        }
       },
       "band": {
-       "hash": "63ca9900e71aaaa3",
-       "size": 1587,
+       "hash": "94bf14e36a023758",
+       "size": 1589,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 21,
-        "firewood": 0,
-        "morale": 60,
-        "atQ": 7,
-        "atR": 15
+        "food": 36,
+        "firewood": 9,
+        "morale": 78,
+        "atQ": 9,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "3d2dd8055f0e1f08",
-       "size": 676,
+       "hash": "2dc38acb343d15da",
+       "size": 662,
        "samples": {
         "neighbours": 4,
-        "found": 1,
-        "standing": 3,
+        "found": 0,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -1635,23 +1384,23 @@
        }
       },
       "field": {
-       "hash": "965c3f2bbdfa13d6",
-       "size": 5380,
+       "hash": "b6e20ceef3d9640d",
+       "size": 5009,
        "samples": {
         "fighting": 1,
         "round": 1,
-        "combatants": 11,
-        "standing": 11
+        "combatants": 10,
+        "standing": 10
        }
       },
       "run": {
-       "hash": "d0a1ccc8aef11495",
-       "size": 316,
+       "hash": "c3015dc61c01fe57",
+       "size": 334,
        "samples": {
-        "day": 15,
+        "day": 9,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 4,
+        "flags": 5,
         "battles": 1
        }
       }
@@ -1660,48 +1409,48 @@
     {
      "afterActions": 21,
      "action": "B_END_TURN",
-     "day": 15,
+     "day": 9,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "bcb32d21d0e1340c",
-       "size": 80324,
+       "hash": "c69832ee35498e05",
+       "size": 81029,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 53
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 80
        }
       },
       "band": {
-       "hash": "63ca9900e71aaaa3",
+       "hash": "ce674cf7c6db3d8c",
        "size": 1587,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 21,
-        "firewood": 0,
-        "morale": 60,
-        "atQ": 7,
-        "atR": 15
+        "food": 36,
+        "firewood": 9,
+        "morale": 78,
+        "atQ": 9,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "3d2dd8055f0e1f08",
-       "size": 676,
+       "hash": "2dc38acb343d15da",
+       "size": 662,
        "samples": {
         "neighbours": 4,
-        "found": 1,
-        "standing": 3,
+        "found": 0,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -1720,108 +1469,23 @@
        }
       },
       "field": {
-       "hash": "be3df607f8b193fa",
-       "size": 5888,
+       "hash": "2232b4d5f8461ddc",
+       "size": 5814,
        "samples": {
         "fighting": 1,
-        "round": 1,
-        "combatants": 11,
-        "standing": 11
+        "round": 2,
+        "combatants": 10,
+        "standing": 9
        }
       },
       "run": {
-       "hash": "d0a1ccc8aef11495",
-       "size": 316,
+       "hash": "c3015dc61c01fe57",
+       "size": 334,
        "samples": {
-        "day": 15,
+        "day": 9,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 4,
-        "battles": 1
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 33,
-     "action": "B_END_TURN",
-     "day": 15,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "bcb32d21d0e1340c",
-       "size": 80324,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 53
-       }
-      },
-      "band": {
-       "hash": "63ca9900e71aaaa3",
-       "size": 1587,
-       "samples": {
-        "people": 6,
-        "alive": 6,
-        "food": 21,
-        "firewood": 0,
-        "morale": 60,
-        "atQ": 7,
-        "atR": 15
-       }
-      },
-      "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
-       "samples": {
-        "name": "Vindkápa",
-        "strakes": 3
-       }
-      },
-      "coast": {
-       "hash": "3d2dd8055f0e1f08",
-       "size": 676,
-       "samples": {
-        "neighbours": 4,
-        "found": 1,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0,
-        "claims": 1,
-        "outlaws": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "0e1015c841db4201",
-       "size": 7712,
-       "samples": {
-        "fighting": 1,
-        "round": 3,
-        "combatants": 11,
-        "standing": 11
-       }
-      },
-      "run": {
-       "hash": "d0a1ccc8aef11495",
-       "size": 316,
-       "samples": {
-        "day": 15,
-        "ended": "-",
-        "mode": "BATTLE",
-        "flags": 4,
+        "flags": 5,
         "battles": 1
        }
       }
@@ -1830,48 +1494,48 @@
     {
      "afterActions": 34,
      "action": "B_END_TURN",
-     "day": 15,
+     "day": 9,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "bcb32d21d0e1340c",
-       "size": 80324,
+       "hash": "c69832ee35498e05",
+       "size": 81029,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 53
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 80
        }
       },
       "band": {
-       "hash": "63ca9900e71aaaa3",
-       "size": 1587,
+       "hash": "aa8b034037dcba89",
+       "size": 1584,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 21,
-        "firewood": 0,
-        "morale": 60,
-        "atQ": 7,
-        "atR": 15
+        "food": 36,
+        "firewood": 9,
+        "morale": 78,
+        "atQ": 9,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "3d2dd8055f0e1f08",
-       "size": 676,
+       "hash": "2dc38acb343d15da",
+       "size": 662,
        "samples": {
         "neighbours": 4,
-        "found": 1,
-        "standing": 3,
+        "found": 0,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -1890,159 +1554,74 @@
        }
       },
       "field": {
-       "hash": "1be961deb4f4da11",
-       "size": 7711,
+       "hash": "01743fba84bf1803",
+       "size": 8678,
        "samples": {
         "fighting": 1,
-        "round": 4,
-        "combatants": 11,
-        "standing": 11
+        "round": 7,
+        "combatants": 10,
+        "standing": 5
        }
       },
       "run": {
-       "hash": "d0a1ccc8aef11495",
-       "size": 316,
+       "hash": "c3015dc61c01fe57",
+       "size": 334,
        "samples": {
-        "day": 15,
+        "day": 9,
         "ended": "-",
         "mode": "BATTLE",
-        "flags": 4,
+        "flags": 5,
         "battles": 1
        }
       }
      }
     },
     {
-     "afterActions": 55,
-     "action": "B_END_TURN",
-     "day": 15,
-     "refusedSoFar": 0,
-     "facets": {
-      "world": {
-       "hash": "bcb32d21d0e1340c",
-       "size": 80324,
-       "samples": {
-        "tiles": 1872,
-        "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 53
-       }
-      },
-      "band": {
-       "hash": "447404d1758ab82e",
-       "size": 1585,
-       "samples": {
-        "people": 6,
-        "alive": 6,
-        "food": 21,
-        "firewood": 0,
-        "morale": 60,
-        "atQ": 7,
-        "atR": 15
-       }
-      },
-      "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
-       "samples": {
-        "name": "Vindkápa",
-        "strakes": 3
-       }
-      },
-      "coast": {
-       "hash": "3d2dd8055f0e1f08",
-       "size": 676,
-       "samples": {
-        "neighbours": 4,
-        "found": 1,
-        "standing": 3,
-        "grudges": 0,
-        "lore": 0,
-        "claims": 1,
-        "outlaws": 0
-       }
-      },
-      "steading": {
-       "hash": "5465b8256cf8f0c4",
-       "size": 2,
-       "samples": {
-        "settled": 0,
-        "foundedOn": -1,
-        "built": 0,
-        "queued": 0,
-        "out": 0
-       }
-      },
-      "field": {
-       "hash": "7c7f009ce5d5602b",
-       "size": 10611,
-       "samples": {
-        "fighting": 1,
-        "round": 8,
-        "combatants": 11,
-        "standing": 9
-       }
-      },
-      "run": {
-       "hash": "d0a1ccc8aef11495",
-       "size": 316,
-       "samples": {
-        "day": 15,
-        "ended": "-",
-        "mode": "BATTLE",
-        "flags": 4,
-        "battles": 1
-       }
-      }
-     }
-    },
-    {
-     "afterActions": 66,
+     "afterActions": 36,
      "action": "B_LEAVE",
      "firstOf": true,
-     "day": 15,
+     "day": 9,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "bcb32d21d0e1340c",
-       "size": 80324,
+       "hash": "c69832ee35498e05",
+       "size": 81029,
        "samples": {
         "tiles": 1872,
         "places": 4,
-        "landingQ": 3,
-        "landingR": 15,
-        "seen": 53
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 80
        }
       },
       "band": {
-       "hash": "dc441fcb307c590c",
-       "size": 1901,
+       "hash": "4857f9b4747c2d09",
+       "size": 1788,
        "samples": {
         "people": 6,
-        "alive": 0,
-        "food": 21,
-        "firewood": 0,
-        "morale": 0,
-        "atQ": 7,
-        "atR": 15
+        "alive": 2,
+        "food": 36,
+        "firewood": 9,
+        "morale": 7,
+        "atQ": 9,
+        "atR": 16
        }
       },
       "ship": {
-       "hash": "fe45944c4e5c0f89",
-       "size": 40,
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
        "samples": {
-        "name": "Vindkápa",
+        "name": "Bylgjuhestr",
         "strakes": 3
        }
       },
       "coast": {
-       "hash": "3d2dd8055f0e1f08",
-       "size": 676,
+       "hash": "2dc38acb343d15da",
+       "size": 662,
        "samples": {
         "neighbours": 4,
-        "found": 1,
-        "standing": 3,
+        "found": 0,
+        "standing": -3,
         "grudges": 0,
         "lore": 0,
         "claims": 1,
@@ -2061,8 +1640,8 @@
        }
       },
       "field": {
-       "hash": "e0fb3618e904da65",
-       "size": 154,
+       "hash": "d662dedeceac92b5",
+       "size": 143,
        "samples": {
         "fighting": 0,
         "round": -1,
@@ -2071,14 +1650,785 @@
        }
       },
       "run": {
-       "hash": "81104c4eeac4ba35",
-       "size": 449,
+       "hash": "634aa48ae3c3d371",
+       "size": 325,
+       "samples": {
+        "day": 9,
+        "ended": "-",
+        "mode": "TRAVEL",
+        "flags": 5,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 37,
+     "action": "DISMISS_AFTERMATH",
+     "firstOf": true,
+     "day": 9,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "c69832ee35498e05",
+       "size": 81029,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 80
+       }
+      },
+      "band": {
+       "hash": "4857f9b4747c2d09",
+       "size": 1788,
+       "samples": {
+        "people": 6,
+        "alive": 2,
+        "food": 36,
+        "firewood": 9,
+        "morale": 7,
+        "atQ": 9,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "2dc38acb343d15da",
+       "size": 662,
+       "samples": {
+        "neighbours": 4,
+        "found": 0,
+        "standing": -3,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 1,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "settled": 0,
+        "foundedOn": -1,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "634aa48ae3c3d371",
+       "size": 325,
+       "samples": {
+        "day": 9,
+        "ended": "-",
+        "mode": "TRAVEL",
+        "flags": 5,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 47,
+     "action": "FOUND",
+     "firstOf": true,
+     "day": 15,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "194d1eeb6f2c8638",
+       "size": 81533,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 110
+       }
+      },
+      "band": {
+       "hash": "2b179b405e1fe265",
+       "size": 1804,
+       "samples": {
+        "people": 6,
+        "alive": 2,
+        "food": 30,
+        "firewood": 3,
+        "morale": 26,
+        "atQ": 14,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "b1679c2533625cf4",
+       "size": 662,
+       "samples": {
+        "neighbours": 4,
+        "found": 0,
+        "standing": -3.0000000000000053,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 1,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "3c0bba26a6a0691b",
+       "size": 948,
+       "samples": {
+        "settled": 1,
+        "foundedOn": 14,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "c6f8f15ec4db9b99",
+       "size": 343,
        "samples": {
         "day": 15,
-        "ended": "slain",
+        "ended": "-",
         "mode": "TRAVEL",
-        "flags": 4,
+        "flags": 6,
         "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 48,
+     "action": "ENTER_COLONY",
+     "firstOf": true,
+     "day": 15,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "194d1eeb6f2c8638",
+       "size": 81533,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 110
+       }
+      },
+      "band": {
+       "hash": "2b179b405e1fe265",
+       "size": 1804,
+       "samples": {
+        "people": 6,
+        "alive": 2,
+        "food": 30,
+        "firewood": 3,
+        "morale": 26,
+        "atQ": 14,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "b1679c2533625cf4",
+       "size": 662,
+       "samples": {
+        "neighbours": 4,
+        "found": 0,
+        "standing": -3.0000000000000053,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 1,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "3c0bba26a6a0691b",
+       "size": 948,
+       "samples": {
+        "settled": 1,
+        "foundedOn": 14,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "509f5f26713c390b",
+       "size": 352,
+       "samples": {
+        "day": 15,
+        "ended": "-",
+        "mode": "COLONY",
+        "flags": 6,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 49,
+     "action": "ASSIGN",
+     "firstOf": true,
+     "day": 15,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "194d1eeb6f2c8638",
+       "size": 81533,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 110
+       }
+      },
+      "band": {
+       "hash": "08b3979746a6c784",
+       "size": 1823,
+       "samples": {
+        "people": 6,
+        "alive": 2,
+        "food": 30,
+        "firewood": 3,
+        "morale": 26,
+        "atQ": 14,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "b1679c2533625cf4",
+       "size": 662,
+       "samples": {
+        "neighbours": 4,
+        "found": 0,
+        "standing": -3.0000000000000053,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 1,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "3c0bba26a6a0691b",
+       "size": 948,
+       "samples": {
+        "settled": 1,
+        "foundedOn": 14,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "509f5f26713c390b",
+       "size": 352,
+       "samples": {
+        "day": 15,
+        "ended": "-",
+        "mode": "COLONY",
+        "flags": 6,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 51,
+     "action": "LEAVE_COLONY",
+     "firstOf": true,
+     "day": 15,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "194d1eeb6f2c8638",
+       "size": 81533,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 110
+       }
+      },
+      "band": {
+       "hash": "183ef84eb4aa11e1",
+       "size": 1839,
+       "samples": {
+        "people": 6,
+        "alive": 2,
+        "food": 30,
+        "firewood": 3,
+        "morale": 26,
+        "atQ": 14,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "b1679c2533625cf4",
+       "size": 662,
+       "samples": {
+        "neighbours": 4,
+        "found": 0,
+        "standing": -3.0000000000000053,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 1,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "3c0bba26a6a0691b",
+       "size": 948,
+       "samples": {
+        "settled": 1,
+        "foundedOn": 14,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "c6f8f15ec4db9b99",
+       "size": 343,
+       "samples": {
+        "day": 15,
+        "ended": "-",
+        "mode": "TRAVEL",
+        "flags": 6,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 52,
+     "action": "CAMP",
+     "firstOf": true,
+     "day": 16,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "194d1eeb6f2c8638",
+       "size": 81533,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 110
+       }
+      },
+      "band": {
+       "hash": "92eb3291cb4c147e",
+       "size": 1853,
+       "samples": {
+        "people": 6,
+        "alive": 2,
+        "food": 29,
+        "firewood": 3,
+        "morale": 35,
+        "atQ": 14,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "c4db9bd3490bcac2",
+       "size": 662,
+       "samples": {
+        "neighbours": 4,
+        "found": 0,
+        "standing": -3.000000000000006,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 1,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "f19da38a925a7f83",
+       "size": 966,
+       "samples": {
+        "settled": 1,
+        "foundedOn": 14,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "121c28178521cb92",
+       "size": 358,
+       "samples": {
+        "day": 16,
+        "ended": "-",
+        "mode": "TRAVEL",
+        "flags": 7,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 55,
+     "action": "CAMP",
+     "day": 17,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "194d1eeb6f2c8638",
+       "size": 81533,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 110
+       }
+      },
+      "band": {
+       "hash": "bb01ed541bf19a25",
+       "size": 1854,
+       "samples": {
+        "people": 6,
+        "alive": 2,
+        "food": 28,
+        "firewood": 2,
+        "morale": 44,
+        "atQ": 14,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "857e75c35d0f1536",
+       "size": 662,
+       "samples": {
+        "neighbours": 4,
+        "found": 0,
+        "standing": -3.000000000000007,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 1,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "821d6fabe357261c",
+       "size": 965,
+       "samples": {
+        "settled": 1,
+        "foundedOn": 14,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "eae4ffbe0b08510b",
+       "size": 358,
+       "samples": {
+        "day": 17,
+        "ended": "-",
+        "mode": "TRAVEL",
+        "flags": 7,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 70,
+     "action": "CAMP",
+     "day": 22,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "194d1eeb6f2c8638",
+       "size": 81533,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 110
+       }
+      },
+      "band": {
+       "hash": "f45d527a5cd0c82f",
+       "size": 1856,
+       "samples": {
+        "people": 6,
+        "alive": 2,
+        "food": 23,
+        "firewood": 1,
+        "morale": 89,
+        "atQ": 14,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "69509b88aafb9989",
+       "size": 670,
+       "samples": {
+        "neighbours": 4,
+        "found": 0,
+        "standing": -3.000000000000007,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 2,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "1be00849dce11a16",
+       "size": 965,
+       "samples": {
+        "settled": 1,
+        "foundedOn": 14,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "d462f4fa36d8240f",
+       "size": 358,
+       "samples": {
+        "day": 22,
+        "ended": "-",
+        "mode": "TRAVEL",
+        "flags": 7,
+        "battles": 1
+       }
+      }
+     }
+    },
+    {
+     "afterActions": 140,
+     "action": "CAMP",
+     "day": 42,
+     "refusedSoFar": 0,
+     "facets": {
+      "world": {
+       "hash": "fd6c8f5ea4ce140d",
+       "size": 81521,
+       "samples": {
+        "tiles": 1872,
+        "places": 4,
+        "landingQ": 1,
+        "landingR": 16,
+        "seen": 111
+       }
+      },
+      "band": {
+       "hash": "381ff8b1702a190c",
+       "size": 2066,
+       "samples": {
+        "people": 6,
+        "alive": 1,
+        "food": 1,
+        "firewood": 0,
+        "morale": 96,
+        "atQ": 14,
+        "atR": 16
+       }
+      },
+      "ship": {
+       "hash": "aec2e05fbf9e9dc8",
+       "size": 43,
+       "samples": {
+        "name": "Bylgjuhestr",
+        "strakes": 3
+       }
+      },
+      "coast": {
+       "hash": "d5505a83f8458b7c",
+       "size": 773,
+       "samples": {
+        "neighbours": 4,
+        "found": 1,
+        "standing": -3.000000000000007,
+        "grudges": 0,
+        "lore": 0,
+        "claims": 4,
+        "outlaws": 0
+       }
+      },
+      "steading": {
+       "hash": "3c0bba26a6a0691b",
+       "size": 948,
+       "samples": {
+        "settled": 1,
+        "foundedOn": 14,
+        "built": 0,
+        "queued": 0,
+        "out": 0
+       }
+      },
+      "field": {
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
+       "samples": {
+        "fighting": 0,
+        "round": -1,
+        "combatants": 0,
+        "standing": 0
+       }
+      },
+      "run": {
+       "hash": "b911970df9a4b05a",
+       "size": 449,
+       "samples": {
+        "day": 42,
+        "ended": "-",
+        "mode": "TRAVEL",
+        "flags": 11,
+        "battles": 2
        }
       }
      }
@@ -2092,17 +2442,17 @@
    "script": "runs/long.json",
    "worldHash": "688411ba38a7cea1",
    "actionCounts": {
-    "CAMP": 521,
-    "ENTER_COLONY": 374,
-    "LEAVE_COLONY": 374,
-    "B_END_TURN": 217,
-    "ASSIGN": 37,
+    "CAMP": 397,
+    "ENTER_COLONY": 303,
+    "LEAVE_COLONY": 303,
+    "B_END_TURN": 59,
+    "ASSIGN": 24,
     "CHOOSE": 15,
     "DISMISS_EVENT": 15,
-    "QUEUE_BUILD": 12,
+    "QUEUE_BUILD": 11,
     "MOVE": 8,
-    "B_LEAVE": 6,
-    "DISMISS_AFTERMATH": 5,
+    "B_LEAVE": 3,
+    "DISMISS_AFTERMATH": 3,
     "FOUND": 1
    },
    "checkpoints": [
@@ -2179,7 +2529,7 @@
        }
       },
       "run": {
-       "hash": "4faa4f89a0c16c7e",
+       "hash": "4fa67df2a0c3ab15",
        "size": 253,
        "samples": {
         "day": 1,
@@ -2265,7 +2615,7 @@
        }
       },
       "run": {
-       "hash": "b55c73ea99e55b3d",
+       "hash": "b55eb28199e189a6",
        "size": 283,
        "samples": {
         "day": 2,
@@ -2350,7 +2700,7 @@
        }
       },
       "run": {
-       "hash": "a7cefd2348891414",
+       "hash": "a7d74be84882584f",
        "size": 283,
        "samples": {
         "day": 3,
@@ -2435,7 +2785,7 @@
        }
       },
       "run": {
-       "hash": "e09058b4e008b483",
+       "hash": "e08809efe00f7048",
        "size": 283,
        "samples": {
         "day": 4,
@@ -2520,7 +2870,7 @@
        }
       },
       "run": {
-       "hash": "129a66265a7dfc11",
+       "hash": "129e37bd5a7bbd7a",
        "size": 283,
        "samples": {
         "day": 6,
@@ -2605,7 +2955,7 @@
        }
       },
       "run": {
-       "hash": "47addefd6d93f3a6",
+       "hash": "47aba0666d97c53d",
        "size": 607,
        "samples": {
         "day": 9,
@@ -2691,7 +3041,7 @@
        }
       },
       "run": {
-       "hash": "f9ebb39d4b8ea544",
+       "hash": "f9e975064b87e97f",
        "size": 772,
        "samples": {
         "day": 9,
@@ -2777,7 +3127,7 @@
        }
       },
       "run": {
-       "hash": "4d681f1acefaefe5",
+       "hash": "4d6a5db1cef8b14e",
        "size": 305,
        "samples": {
         "day": 9,
@@ -2863,7 +3213,7 @@
        }
       },
       "run": {
-       "hash": "08b2bf684e8938dd",
+       "hash": "08aa70a34e86fa46",
        "size": 306,
        "samples": {
         "day": 10,
@@ -2949,7 +3299,7 @@
        }
       },
       "run": {
-       "hash": "6d25cb1e8c8748f5",
+       "hash": "6d2809b58c850a5e",
        "size": 315,
        "samples": {
         "day": 10,
@@ -3035,7 +3385,7 @@
        }
       },
       "run": {
-       "hash": "6d25cb1e8c8748f5",
+       "hash": "6d2809b58c850a5e",
        "size": 315,
        "samples": {
         "day": 10,
@@ -3121,7 +3471,7 @@
        }
       },
       "run": {
-       "hash": "6d25cb1e8c8748f5",
+       "hash": "6d2809b58c850a5e",
        "size": 315,
        "samples": {
         "day": 10,
@@ -3207,7 +3557,7 @@
        }
       },
       "run": {
-       "hash": "08b2bf684e8938dd",
+       "hash": "08aa70a34e86fa46",
        "size": 306,
        "samples": {
         "day": 10,
@@ -3293,7 +3643,7 @@
        }
       },
       "run": {
-       "hash": "80ecce839b49cad4",
+       "hash": "80f38a489b417c0f",
        "size": 321,
        "samples": {
         "day": 11,
@@ -3378,7 +3728,7 @@
        }
       },
       "run": {
-       "hash": "383f3abefd369a3b",
+       "hash": "38430c55fd3d5600",
        "size": 330,
        "samples": {
         "day": 21,
@@ -3463,7 +3813,7 @@
        }
       },
       "run": {
-       "hash": "d5058da8bcef00f3",
+       "hash": "d4fed1e3bcf74fb8",
        "size": 389,
        "samples": {
         "day": 32,
@@ -3476,14 +3826,14 @@
      }
     },
     {
-     "afterActions": 158,
-     "action": "CAMP",
-     "day": 85,
+     "afterActions": 114,
+     "action": "ENTER_COLONY",
+     "day": 70,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "abb0ccd618f8e899",
-       "size": 80587,
+       "hash": "a86276fec5b2eff1",
+       "size": 80575,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3493,13 +3843,13 @@
        }
       },
       "band": {
-       "hash": "483f12133e344da2",
+       "hash": "aaee3bfb18d12546",
        "size": 1714,
        "samples": {
         "people": 6,
         "alive": 6,
-        "food": 5,
-        "firewood": 28,
+        "food": 9,
+        "firewood": 10,
         "morale": 100,
         "atQ": 11,
         "atR": 15
@@ -3514,15 +3864,15 @@
        }
       },
       "coast": {
-       "hash": "e8ab460c4e61535b",
-       "size": 733,
+       "hash": "8344096587ea0472",
+       "size": 725,
        "samples": {
         "neighbours": 4,
         "found": 4,
         "standing": 0,
         "grudges": 0,
         "lore": 0,
-        "claims": 7,
+        "claims": 6,
         "outlaws": 0
        }
       },
@@ -3548,12 +3898,12 @@
        }
       },
       "run": {
-       "hash": "1ffd493146fae640",
-       "size": 428,
+       "hash": "eff88a7e20d70619",
+       "size": 437,
        "samples": {
-        "day": 85,
+        "day": 70,
         "ended": "-",
-        "mode": "TRAVEL",
+        "mode": "COLONY",
         "flags": 10,
         "battles": 0
        }
@@ -3561,14 +3911,14 @@
      }
     },
     {
-     "afterActions": 792,
-     "action": "CAMP",
-     "day": 291,
+     "afterActions": 571,
+     "action": "ENTER_COLONY",
+     "day": 220,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "0c00d024bd9589af",
-       "size": 80599,
+       "hash": "abb0ccd618f8e899",
+       "size": 80587,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3578,14 +3928,14 @@
        }
       },
       "band": {
-       "hash": "9d7f8521fc63e872",
-       "size": 4219,
+       "hash": "0005a996c0b03b6b",
+       "size": 2750,
        "samples": {
-        "people": 15,
-        "alive": 15,
-        "food": 127,
-        "firewood": 184,
-        "morale": 99,
+        "people": 10,
+        "alive": 10,
+        "food": 190,
+        "firewood": 107,
+        "morale": 100,
         "atQ": 11,
         "atR": 15
        }
@@ -3599,15 +3949,15 @@
        }
       },
       "coast": {
-       "hash": "ce639a7d21407100",
-       "size": 994,
+       "hash": "47f6916394219d22",
+       "size": 804,
        "samples": {
         "neighbours": 4,
         "found": 4,
         "standing": 0,
-        "grudges": 1,
+        "grudges": 0,
         "lore": 0,
-        "claims": 26,
+        "claims": 20,
         "outlaws": 0
        }
       },
@@ -3633,13 +3983,13 @@
        }
       },
       "run": {
-       "hash": "8c0c2f2acbb47c61",
-       "size": 475,
+       "hash": "f95c1b6820560369",
+       "size": 454,
        "samples": {
-        "day": 291,
+        "day": 220,
         "ended": "-",
-        "mode": "TRAVEL",
-        "flags": 12,
+        "mode": "COLONY",
+        "flags": 11,
         "battles": 0
        }
       }
@@ -3664,8 +4014,8 @@
        }
       },
       "band": {
-       "hash": "c71ceda9b9f0610e",
-       "size": 4389,
+       "hash": "4e7aefa2775e3d6b",
+       "size": 4388,
        "samples": {
         "people": 16,
         "alive": 16,
@@ -3709,17 +4059,17 @@
        }
       },
       "field": {
-       "hash": "f895c51a8ff35677",
-       "size": 6610,
+       "hash": "f4780ac0599d9f7f",
+       "size": 6933,
        "samples": {
         "fighting": 1,
         "round": 1,
         "combatants": 13,
-        "standing": 13
+        "standing": 12
        }
       },
       "run": {
-       "hash": "75fa5f06bb9b1c21",
+       "hash": "75fc9d9dbb974a8a",
        "size": 501,
        "samples": {
         "day": 312,
@@ -3732,7 +4082,7 @@
      }
     },
     {
-     "afterActions": 886,
+     "afterActions": 871,
      "action": "B_LEAVE",
      "firstOf": true,
      "day": 312,
@@ -3750,14 +4100,14 @@
        }
       },
       "band": {
-       "hash": "e30e340ad8110d65",
-       "size": 4913,
+       "hash": "74431949ae9d1e70",
+       "size": 4862,
        "samples": {
         "people": 16,
-        "alive": 10,
+        "alive": 12,
         "food": 129,
         "firewood": 258,
-        "morale": 23,
+        "morale": 47,
         "atQ": 11,
         "atR": 15
        }
@@ -3795,8 +4145,8 @@
        }
       },
       "field": {
-       "hash": "af4632640c715567",
-       "size": 153,
+       "hash": "06cdda5168f1cf1e",
+       "size": 141,
        "samples": {
         "fighting": 0,
         "round": -1,
@@ -3805,7 +4155,7 @@
        }
       },
       "run": {
-       "hash": "5aee994a2e5f3b77",
+       "hash": "5af0d7e12e678a3c",
        "size": 492,
        "samples": {
         "day": 312,
@@ -3818,7 +4168,7 @@
      }
     },
     {
-     "afterActions": 887,
+     "afterActions": 872,
      "action": "DISMISS_AFTERMATH",
      "firstOf": true,
      "day": 312,
@@ -3836,14 +4186,14 @@
        }
       },
       "band": {
-       "hash": "e30e340ad8110d65",
-       "size": 4913,
+       "hash": "74431949ae9d1e70",
+       "size": 4862,
        "samples": {
         "people": 16,
-        "alive": 10,
+        "alive": 12,
         "food": 129,
         "firewood": 258,
-        "morale": 23,
+        "morale": 47,
         "atQ": 11,
         "atR": 15
        }
@@ -3891,7 +4241,7 @@
        }
       },
       "run": {
-       "hash": "5aee994a2e5f3b77",
+       "hash": "5af0d7e12e678a3c",
        "size": 492,
        "samples": {
         "day": 312,
@@ -3904,14 +4254,14 @@
      }
     },
     {
-     "afterActions": 1585,
-     "action": "B_LEAVE",
-     "day": 531,
+     "afterActions": 1142,
+     "action": "CAMP",
+     "day": 407,
      "refusedSoFar": 0,
      "facets": {
       "world": {
-       "hash": "a86276fec5b2eff1",
-       "size": 80575,
+       "hash": "0c00d024bd9589af",
+       "size": 80599,
        "samples": {
         "tiles": 1872,
         "places": 4,
@@ -3921,14 +4271,14 @@
        }
       },
       "band": {
-       "hash": "2b6b9a9dffa71808",
-       "size": 8610,
+       "hash": "50678fb197d7ea1e",
+       "size": 6205,
        "samples": {
-        "people": 25,
+        "people": 19,
         "alive": 0,
         "food": 0,
-        "firewood": 0,
-        "morale": 52,
+        "firewood": 197,
+        "morale": 16,
         "atQ": 11,
         "atR": 15
        }
@@ -3942,32 +4292,32 @@
        }
       },
       "coast": {
-       "hash": "38b314095711b082",
-       "size": 1169,
+       "hash": "a04dfd8293383355",
+       "size": 1245,
        "samples": {
         "neighbours": 4,
         "found": 4,
         "standing": 0,
-        "grudges": 1,
+        "grudges": 2,
         "lore": 0,
-        "claims": 48,
+        "claims": 37,
         "outlaws": 0
        }
       },
       "steading": {
-       "hash": "8e4138c7bd9c6e6a",
-       "size": 1174,
+       "hash": "08ba39edb1e7f07c",
+       "size": 1116,
        "samples": {
         "settled": 1,
         "foundedOn": 9,
-        "built": 6,
+        "built": 7,
         "queued": 1,
         "out": 0
        }
       },
       "field": {
-       "hash": "6c018882d8470e81",
-       "size": 105,
+       "hash": "5465b8256cf8f0c4",
+       "size": 2,
        "samples": {
         "fighting": 0,
         "round": -1,
@@ -3976,14 +4326,14 @@
        }
       },
       "run": {
-       "hash": "71f37588a288b879",
-       "size": 940,
+       "hash": "11ec4c70c1713f25",
+       "size": 776,
        "samples": {
-        "day": 531,
-        "ended": "slain",
+        "day": 407,
+        "ended": "starved",
         "mode": "TRAVEL",
-        "flags": 23,
-        "battles": 6
+        "flags": 15,
+        "battles": 3
        }
       }
      }

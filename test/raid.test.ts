@@ -3,7 +3,7 @@
 // against without one, and weighs the difference against what it cost.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, key, offsetToAxial } from '../src/hex';
+import { fromKey, key, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -14,10 +14,9 @@ import { apply } from '../src/sim/actions';
 import { isEligible } from '../src/sim/events';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, standing as builtIn } from '../src/sim/colony';
-import { activeCombatant, standing } from '../src/sim/battle';
+import { activeCombatant, standing, strikeTargets } from '../src/sim/battle';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { throwTargets } from '../src/sim/strike';
-import { reachWithZoc } from '../src/sim/zoc';
 import { fighterPerson } from '../src/sim/battle';
 import {
   FIELD_HEIGHT,
@@ -43,9 +42,6 @@ import type { JobId } from '../src/data/jobs';
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
 /** Offset row of an axial hex, matching offsetToAxial in the hex library. */
-function offsetRow(at: { q: number; r: number }): number {
-  return at.r;
-}
 
 function settled(seed: string, radius = 14): GameState {
   const state = structuredClone(newGame(seed));
@@ -109,7 +105,7 @@ function defend(state: GameState): GameState {
       continue;
     }
     const foes = standing(battle, 'foe');
-    const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+    const adjacent = strikeTargets(cur);
     if (!active.hasActed && adjacent.length > 0) {
       const weakest = [...adjacent].sort(
         (a, b) =>
@@ -127,22 +123,14 @@ function defend(state: GameState): GameState {
     }
     // Hold: keep shoulder to shoulder in the yard rather than charging out
     // past the wall, which is the whole point of having one.
-    const reach = [...reachWithZoc(battle, active).keys()].map((k) => fromKey(k));
-    if (reach.length > 0 && foes.length > 0) {
-      const score = (at: { q: number; r: number }) => {
-        const mates = standing(battle, 'warband').filter(
-          (c) => c.personId !== active.personId && distance(c.at, at) === 1,
-        ).length;
-        const gap = Math.min(...foes.map((f) => distance(at, f.at)));
-        // Hold the yard. Climbing out over your own palisade to meet them in
-        // the open throws away the only thing it was built for, so the bot
-        // will not do it — and neither should a player.
-        const outside = battle.raid && offsetRow(at) < WALL_ROW + 1 ? 40 : 0;
-        return -Math.max(gap, 2) * 3 + Math.min(mates, 2) * 4 - outside;
-      };
-      const best = [...reach].sort((a, b) => score(b) - score(a))[0]!;
-      const moved = apply(cur, { type: 'B_MOVE', to: best });
-      cur = moved === cur ? apply(cur, { type: 'B_END_TURN' }) : moved;
+    if (foes.length > 0) {
+      // The bot used to score ground: stay near your mates, keep a gap, and
+      // above all do not climb out over your own palisade. On a line none of
+      // that is a choice about WHERE to stand — the only place to go is up
+      // the ranks — so it pushes forward and the palisade rule is carried by
+      // the line itself rather than by refusing to leave a row.
+      const pushed = apply(cur, { type: 'B_DASH', by: -1 });
+      cur = pushed === cur ? apply(cur, { type: 'B_END_TURN' }) : pushed;
       continue;
     }
     cur = apply(cur, { type: 'B_END_TURN' });

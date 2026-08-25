@@ -1,62 +1,68 @@
 {
- "seed": "raven-skerry-317",
+ "seed": "grim-fjord-100",
+ "hardship": "fair",
  "actions": [
   {
-   "type": "FORAGE"
+   "type": "MOVE",
+   "to": {
+    "q": 2,
+    "r": 16
+   }
   },
   {
-   "type": "FORAGE"
-  },
-  {
-   "type": "FORAGE"
-  },
-  {
-   "type": "FORAGE"
-  },
-  {
-   "type": "FORAGE"
-  },
-  {
-   "type": "FORAGE"
-  },
-  {
-   "type": "FORAGE"
-  },
-  {
-   "type": "FORAGE"
+   "type": "MOVE",
+   "to": {
+    "q": 3,
+    "r": 16
+   }
   },
   {
    "type": "MOVE",
    "to": {
     "q": 4,
-    "r": 15
+    "r": 16
    }
-  },
-  {
-   "type": "FORAGE"
   },
   {
    "type": "MOVE",
    "to": {
     "q": 5,
-    "r": 15
+    "r": 16
    }
   },
   {
-   "type": "FORAGE"
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
   },
   {
    "type": "MOVE",
    "to": {
     "q": 6,
-    "r": 15
+    "r": 16
    }
   },
   {
    "type": "MOVE",
    "to": {
     "q": 7,
-    "r": 15
+    "r": 16
+   }
+  },
+  {
+   "type": "MOVE",
+   "to": {
+    "q": 8,
+    "r": 16
+   }
+  },
+  {
+   "type": "MOVE",
+   "to": {
+    "q": 9,
+    "r": 16
    }
   },
   {
@@ -136,73 +142,199 @@
    "type": "B_END_TURN"
   },
   {
-   "type": "B_END_TURN"
+   "type": "B_LEAVE"
   },
   {
-   "type": "B_END_TURN"
+   "type": "DISMISS_AFTERMATH"
   },
   {
-   "type": "B_END_TURN"
+   "type": "MOVE",
+   "to": {
+    "q": 10,
+    "r": 16
+   }
   },
   {
-   "type": "B_END_TURN"
+   "type": "MOVE",
+   "to": {
+    "q": 11,
+    "r": 16
+   }
   },
   {
-   "type": "B_END_TURN"
+   "type": "MOVE",
+   "to": {
+    "q": 12,
+    "r": 16
+   }
   },
   {
-   "type": "B_END_TURN"
+   "type": "MOVE",
+   "to": {
+    "q": 13,
+    "r": 16
+   }
   },
   {
-   "type": "B_END_TURN"
+   "type": "CHOOSE",
+   "index": 0
   },
   {
-   "type": "B_END_TURN"
+   "type": "DISMISS_EVENT"
   },
   {
-   "type": "B_END_TURN"
+   "type": "MOVE",
+   "to": {
+    "q": 14,
+    "r": 16
+   }
   },
   {
-   "type": "B_END_TURN"
+   "type": "CHOOSE",
+   "index": 0
   },
   {
-   "type": "B_END_TURN"
+   "type": "DISMISS_EVENT"
   },
   {
-   "type": "B_END_TURN"
+   "type": "FOUND"
   },
   {
-   "type": "B_END_TURN"
+   "type": "ENTER_COLONY"
   },
   {
-   "type": "B_END_TURN"
+   "type": "ASSIGN",
+   "personId": "p3",
+   "job": "woodcutter"
   },
   {
-   "type": "B_END_TURN"
+   "type": "ASSIGN",
+   "personId": "p6",
+   "job": "warrior"
   },
   {
-   "type": "B_END_TURN"
+   "type": "LEAVE_COLONY"
   },
   {
-   "type": "B_END_TURN"
+   "type": "CAMP"
   },
   {
-   "type": "B_END_TURN"
+   "type": "ENTER_COLONY"
   },
   {
-   "type": "B_END_TURN"
+   "type": "LEAVE_COLONY"
   },
   {
-   "type": "B_END_TURN"
+   "type": "CAMP"
   },
   {
-   "type": "B_END_TURN"
+   "type": "ENTER_COLONY"
   },
   {
-   "type": "B_END_TURN"
+   "type": "LEAVE_COLONY"
   },
   {
-   "type": "B_END_TURN"
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p6",
+   "job": "woodcutter"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
   },
   {
    "type": "B_END_TURN"
@@ -215,6 +347,144 @@
   },
   {
    "type": "B_LEAVE"
+  },
+  {
+   "type": "DISMISS_AFTERMATH"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
+  },
+  {
+   "type": "ENTER_COLONY"
+  },
+  {
+   "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
   }
  ]
 }

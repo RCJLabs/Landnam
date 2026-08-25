@@ -246,7 +246,6 @@ namespace Tables
 	constexpr int32_t WallBonusOne = 2;
 	constexpr int32_t WallBonusFull = 3;
 	constexpr int32_t ShieldInWall = 1;
-	constexpr int32_t DisengageCost = 2;
 	constexpr int32_t PatienceRounds = 12;
 	constexpr int32_t RoundLimit = 50;
 

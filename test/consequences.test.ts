@@ -3,14 +3,12 @@
 // measurably hurts, so most of this file measures rather than asserts.
 
 import { describe, it, expect } from 'vitest';
-import { distance } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
-import { activeCombatant, standing } from '../src/sim/battle';
+import { activeCombatant, standing, strikeTargets } from '../src/sim/battle';
 import { leaveBattle, startBattle } from '../src/sim/battleTurn';
-import { reachWithZoc } from '../src/sim/zoc';
 import { bestStat, effectiveStat, living } from '../src/sim/people';
 import { passDay } from '../src/sim/upkeep';
 import { LASTING } from '../src/data/injuries';
@@ -41,24 +39,15 @@ function fightAndLeave(state: GameState): GameState {
       continue;
     }
     const foes = standing(battle, 'foe');
-    const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+    const adjacent = strikeTargets(cur);
     if (!active.hasActed && adjacent.length > 0) {
       cur = apply(cur, { type: 'B_STRIKE', targetId: adjacent[0]!.personId });
       cur = apply(cur, { type: 'B_END_TURN' });
       continue;
     }
-    const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
-      q: Number(k.split(',')[0]),
-      r: Number(k.split(',')[1]),
-    }));
-    if (reach.length > 0 && foes.length > 0) {
-      const best = [...reach].sort(
-        (a, b) =>
-          Math.min(...foes.map((f) => distance(a, f.at))) -
-          Math.min(...foes.map((f) => distance(b, f.at))),
-      )[0]!;
-      const moved = apply(cur, { type: 'B_MOVE', to: best });
-      cur = moved === cur ? apply(cur, { type: 'B_END_TURN' }) : moved;
+    if (foes.length > 0) {
+      const pushed = apply(cur, { type: 'B_DASH', by: -1 });
+      cur = pushed === cur ? apply(cur, { type: 'B_END_TURN' }) : pushed;
       continue;
     }
     cur = apply(cur, { type: 'B_END_TURN' });

@@ -65,7 +65,7 @@ import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
 import { OVER_ROOF, handsLeave, roomLeft, SETTLED_IN, takeIn, willAdmit } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
-import { BASE_MOVES, MAX_RAIDERS, MAX_RAIDERS_FAMED, fighterPerson, raiderCap } from '../src/sim/battle';
+import { MAX_RAIDERS, MAX_RAIDERS_FAMED, fighterPerson, raiderCap } from '../src/sim/battle';
 import { RAID_CHANCE_MAX, SACK_TAKES, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
 import { capacity, crowding } from '../src/sim/colony';
@@ -73,9 +73,11 @@ import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
 import { distance, key, fromKey, neighbors, type Hex } from '../src/hex';
 import { isWarbandTurn } from '../src/sim/battle';
-import { reachWithZoc } from '../src/sim/zoc';
 import { reachTargets, throwTargets } from '../src/sim/strike';
 import { shoveDestination } from '../src/sim/footwork';
+import { REACH, canActFrom } from '../src/sim/ranks';
+import { WARCRY_RANGE } from '../src/sim/warcry';
+import { strikeTargets } from '../src/sim/battle';
 import { offersAt, placeHere, tradeBlocker } from '../src/sim/places';
 import { campStores } from '../src/sim/plunder';
 import { strandTarget } from '../src/sim/sea';
@@ -604,13 +606,15 @@ function step(state: GameState): Action {
     if (!me) return { type:'B_END_TURN' };
     const foes = b.combatants.filter(c => c.side === 'foe' && !c.down && !c.fled);
     if (foes.length === 0) return { type:'B_END_TURN' };
-    const near = foes.reduce((a,c)=>distance(c.at,me.at)<distance(a.at,me.at)?a=c:a, foes[0]!);
+    // Nearest is no longer a distance. The man you meet first is the one
+    // furthest up his own line, which on a line that closes up is rank 1.
+    const near = foes.reduce((a, c) => (c.rank < a.rank ? c : a), foes[0]!);
     // The game gained the war-cry, so the bot cries it in the same commit.
     // The average player spends the leader's action on it when the press is
     // real — two or more foes in earshot — and never on a stray skirmisher.
     if (!me.hasActed && !b.warCried && !me.broken
       && me.personId === leaderOf(state.party.people)?.id
-      && foes.filter(f => distance(f.at, me.at) <= 2).length >= 2) {
+      && foes.filter(f => Math.abs(f.rank - me.rank) <= WARCRY_RANGE).length >= 2) {
       return { type:'B_WARCRY' };
     }
     // --- Audit item 2: the four verbs this harness had never issued. ---
@@ -628,30 +632,43 @@ function step(state: GameState): Action {
     // the water, where the sea finishes him for nothing. Checked BEFORE the
     // strike because both spend the turn's action, and a drowning is worth
     // more than a hit.
-    if (VERBS.shove && !me.hasActed && distance(near.at, me.at) === 1) {
+    if (VERBS.shove && !me.hasActed && strikeTargets(state).length > 0) {
+      // Same correction as test/wall.test.ts, and for the same reason. A
+      // shove that moves somebody deals NO damage on a line, and moves them
+      // between two ranks an axe already reaches — the whole worth of the
+      // verb is the other branch, where the last man of a line is driven
+      // against his own for 2 that cannot miss. The ported rule fired on
+      // exactly the half that does nothing.
+      const health = (id: string): number => fighterPerson(state, id)?.health ?? 99;
       const shoveWorth = (f: typeof foes[number]): boolean => {
-        if (distance(f.at, me.at) !== 1) return false;
-        const dest = shoveDestination(me, f);
-        if (!dest) return false;
-        const tile = b.grid[key(dest)];
-        const occupied = b.combatants.some(
-          c => !c.down && c.at.q === dest.q && c.at.r === dest.r);
-        // Into the water: the sea finishes him for nothing.
-        if (tile?.ground === 'water' && !occupied) return true;
-        // Nowhere to go: a shove against what is behind them is 2 damage
-        // that cannot miss, so it finishes a man a swing might not.
-        const hurt = fighterPerson(state, f.personId);
-        return (!tile || occupied) && !!hurt && hurt.health <= 2;
+        if (!REACH.shove.at.includes(f.rank) || !canActFrom('shove', me.rank)) return false;
+        return !shoveDestination(b, f) && health(f.personId) <= 2;
       };
       const shoved = foes.find(shoveWorth);
       if (shoved) return { type:'B_SHOVE', targetId: shoved.personId };
     }
 
+    // Everything below used to be gated on `distance(near.at, me.at)`, and
+    // since 8.1c that number means nothing: `Combatant.at` is frozen at
+    // wherever a fighter deployed and never moves again, so the gates were
+    // reading a hex that no longer describes where anybody is. The verbs
+    // themselves had already been converted, which made this worse rather
+    // than better — a rank-aware `reachTargets` behind a gate measuring
+    // stale geometry is a harness that measures noise and reports it as
+    // balance. So the gates ask the same question the game asks now: what
+    // can I actually touch from where I am standing?
+    //
+    // The priority ORDER is deliberately unchanged, so the numbers this file
+    // holds move because the battlefield moved and not because the bot
+    // started playing a different game. "At arm's length" was the old gate's
+    // real meaning, and its rank spelling is simply `strikeTargets`.
+    const inReach = strikeTargets(state);
+
     // The game gained the second rank, so the bot fights from it in the same
     // commit. Nothing at arm's length and a mate in front of a foe: thrust.
     // A harness that cannot use a formation reports the formation as
     // worthless, which is the oldest lesson in this file.
-    if (!me.hasActed && distance(near.at, me.at) > 1) {
+    if (!me.hasActed && inReach.length === 0) {
       const spear = reachTargets(state);
       if (spear.length > 0) {
         const marked = spear.find(f => f.personId === b.champion) ?? spear[0]!;
@@ -664,85 +681,59 @@ function step(state: GameState): Action {
     // carried once and thrown once goes now. Strictly free on an approach
     // turn, which is exactly why never issuing it was a measurement bug
     // rather than a strategy.
-    if (VERBS.throw && !me.hasActed && distance(near.at, me.at) > 1) {
+    if (VERBS.throw && !me.hasActed && inReach.length === 0) {
       const shots = throwTargets(state);
       if (shots.length > 0) {
         const marked = shots.find(f => f.personId === b.champion) ?? shots[0]!;
         return { type:'B_THROW', targetId: marked.personId };
       }
     }
-    if (!me.hasActed && distance(near.at, me.at) === 1) {
+    if (!me.hasActed && inReach.length > 0) {
       // The game gained named leaders, so the bot hunts them in the same
       // commit: dropping the champion shakes his whole band, and now that he
       // SURVIVES a field he did not die on, killing him is the only way he
       // stops coming back. An average player goes for the man with the
       // pennant when he is in reach.
-      const marked = foes.find(
-        f => f.personId === b.champion && distance(f.at, me.at) === 1);
-      return { type:'B_STRIKE', targetId: (marked ?? near).personId };
-    }
-    // DASH — and this is the one the measurement changed my mind about,
-    // twice. See the note below the move scorer.
-    if (VERBS.dash && !me.hasActed && distance(near.at, me.at) > BASE_MOVES + 2) {
-      return { type:'B_DASH' };
+      const marked = inReach.find(f => f.personId === b.champion);
+      return { type:'B_STRIKE', targetId: (marked ?? inReach[0] ?? near).personId };
     }
 
-    if (me.movesLeft > 0) {
-      // The wall, formed on the way in rather than instead of it. This is the
-      // exact rule test/wall.test.ts measures as beating the charge: closing
-      // at 4 a hex outweighs shoulders at 3 a mate, two mates at most, so
-      // shoulders decide BETWEEN approaches and can never argue anyone into
-      // standing still. The first attempt here weighted shoulders above
-      // ground and the band huddled: raids held rose and the open-field curve
-      // collapsed — a bot that plays worse overall measures nothing.
-      const score = (at: {q:number;r:number}) => {
-        const mates = b.combatants.filter(c =>
-          c.side === 'warband' && c.personId !== me.personId
-          && !c.down && !c.fled && distance(c.at, at) === 1).length;
-        const gap = Math.min(...foes.map(f => distance(at, f.at)));
-        // Never stand ON your own palisade. A man on the stakes has one hand
-        // on the wood and no footing, and is WALL_EXPOSED easier to hit —
-        // that is the whole reason the thing is worth building, and the
-        // scorer knew nothing about it, so a defending band cheerfully
-        // climbed its own wall to close a hex faster and fought the raid
-        // from the worst tile on the field.
-        const stakes = b.grid[key(at)]?.ground === 'wall' ? 12 : 0;
-        return -gap * 4 + Math.min(mates, 2) * 3 - stakes;
-      };
-      // reachWithZoc only offers legal moves, so a chosen B_MOVE cannot be
-      // refused — and a refused action is how this harness ends a run.
-      const reach = [...reachWithZoc(b, me).keys()].map(fromKey);
-      if (reach.length) {
-        const to = reach.reduce((a,h)=>score(h)>score(a)?h:a);
-        if (score(to) > score(me.at)) return { type:'B_MOVE', to };
-      }
-    }
-
-    // On DASH, which the measurement changed my mind about twice.
+    // On DASH, which the measurement changed my mind about twice on hexes
+    // and once more on the line.
     //
-    // The obvious rule — "out of the fight, action unspent, so run" — was
-    // written first and it is a TRAP. Over forty seeds it took the balanced
-    // country from 11 bands seeing spring to 8, and turning the other three
-    // verbs off moved nothing at all: dash was the whole effect. The reason
-    // is the game's own central rule. Spending the action to arrive sooner
+    // The obvious hex rule — "out of the fight, action unspent, so run" —
+    // was a TRAP: over forty seeds it took the balanced country from 11
+    // bands seeing spring to 8, because spending the action to arrive sooner
     // means the fastest man arrives ALONE and having already acted, which is
     // exactly the charge `test/wall.test.ts` measures as losing. A shield
     // wall does not sprint.
     //
-    // Narrowed to "only while contact is still more than a full move away",
-    // the harm went away — and so did the verb: sitting BELOW the move
-    // branch it never fired at all, because while closing, moving always
-    // improves the score. A rule that cannot fire measures nothing, which is
-    // the failure this whole item is about. So it sits above the move now,
-    // where a straggler spends the action on ground and still arrives with
-    // the line rather than ahead of it.
+    // On a line there is nowhere to sprint TO, and the trap inverts: a band
+    // that shuffles ranks never closes with anybody at all. So the rule is
+    // the narrow honest one — a man who can reach nothing with any verb has
+    // an unspent action and one place to spend it, which is forward.
+    if (VERBS.dash && !me.hasActed && inReach.length === 0
+      && reachTargets(state).length === 0 && throwTargets(state).length === 0) {
+      return { type:'B_DASH', by: -1 };
+    }
+
+    // The move scorer stood here. It weighed ground — closing at 4 a hex
+    // against shoulders at 3 a mate, and never standing on your own
+    // palisade — and there is no ground left to weigh: a fighter's only
+    // choice about where to be is which rank, and changing it is the dash
+    // above. What the scorer was really buying, a band that arrives
+    // together rather than one man at a time, the line now gives for free.
 
     // DEFEND. In position, nothing left to do, and they are coming — which
     // is the whole case for a shield. The bot used to end this turn having
     // done nothing at all, and "nothing" is strictly worse than "set the
     // shield", so this rule cannot cost anything and can only have been
-    // missing because nobody looked.
-    if (VERBS.defend && !me.hasActed && distance(near.at, me.at) <= 3) return { type:'B_DEFEND' };
+    // missing because nobody looked. On the line "they are coming" is not a
+    // distance: it is standing where there is something to set a shield
+    // against, which is the front two and nowhere else.
+    if (VERBS.defend && !me.hasActed && canActFrom('defend', me.rank)) {
+      return { type:'B_DEFEND' };
+    }
 
     return { type:'B_END_TURN' };
   }
@@ -4201,12 +4192,32 @@ describe('the whole of a fight is played', () => {
     // Every verb the bot is meant to use must actually appear. Each of these
     // read ZERO before item 2, and a zero here means the thing it measures
     // has gone back to being unmeasured content.
-    for (const verb of ['B_STRIKE', 'B_MOVE', 'B_REACH', 'B_WARCRY', 'B_THROW', 'B_DEFEND', 'B_SHOVE']) {
+    //
+    // `B_MOVE` was on this list and is not a verb any more: 8.1c took the
+    // ground away, so there is nowhere to walk and the action is gone from
+    // `actions.ts` entirely. Measured after the conversion, over 30 sagas and
+    // 65 fights: B_STRIKE 386, B_REACH 207, B_THROW 124, B_WARCRY 45,
+    // B_SHOVE 6.
+    for (const verb of ['B_STRIKE', 'B_REACH', 'B_WARCRY', 'B_THROW', 'B_SHOVE']) {
       expect(used[verb] ?? 0, `${verb} never issued in thirty sagas`).toBeGreaterThan(0);
     }
-    // Dash is deliberately absent — priced at a third of the wins in
-    // test/wall.test.ts. If it starts appearing, that decision was undone
-    // without anyone re-reading the price.
+
+    // The two the bot no longer issues, and WHY, kept as assertions so that
+    // neither can quietly come back or quietly stay gone.
+    //
+    // DEFEND is unreachable rather than unwanted. Only the front two may set
+    // a shield, and the front two always have an axe-blow worth more — so
+    // the branch exists and can never be entered. test/wall.test.ts measures
+    // the same hole from the other side: turning defend on changes the win
+    // count by exactly nothing.
+    expect(
+      used['B_DEFEND'] ?? 0,
+      'defend became reachable — good news, and this record is now stale',
+    ).toBe(0);
+    // Dash was deliberately absent because it was priced at a third of the
+    // wins. It is NOT priced there any more — on a line it costs one win in
+    // sixty (see wall.test.ts) — but the bot still does not spend an action
+    // shuffling ranks, so this stays a zero until somebody makes the case.
     expect(used['B_DASH'] ?? 0, 'the bot dashed — see the price in wall.test.ts').toBe(0);
   });
 });

@@ -179,43 +179,107 @@ for (const [w, h] of [[320, 568], [390, 844]]) {
 
   // And the tap still works, which is the other half of the same handler.
   //
-  // The hex tapped is one the game itself drew as reachable — the dashed
-  // marker a player aims at — rather than a neighbour guessed at from the
-  // fighter's position. Guessing failed about one run in four: at 320 the
-  // view is panned, so some neighbours are off screen, and the rest can be
-  // water, a wall, occupied, or beyond the fighter's remaining steps. That
-  // read as "tapping is broken" when every tap had been perfectly legal.
+  // It used to tap a dashed marker and expect the fighter to WALK there. That
+  // hex is gone: since 8.1c a fighter's place is their rank, and the only
+  // thing a tap can mean is the armed action on somebody the game has marked
+  // as in reach. Two things changed with it, and both had to be handled here
+  // rather than worked around:
+  //
+  //   - Marks appear only when the ACTIVE fighter can reach somebody, and a
+  //     man in the third rank cannot swing an axe at all. Turn order is
+  //     initiative, not rank, so the first of ours to act is often somebody
+  //     with nothing marked — which is correct, and read as a broken field.
+  //     So this ends turns until it finds one who has a target.
+  //   - The marks are drawn on `Combatant.at`, frozen where the fighter
+  //     deployed, so at 320px they are routinely off the panned view. The
+  //     search takes the first mark actually ON SCREEN, as before.
+  //
+  // Both of those go away in 8.1d when the field is drawn side-on and a rank
+  // is a place on the screen rather than a leftover hex.
   check(await ourTurn(page), 'a warband fighter is up for the tap');
+  const findMark = () =>
+    page.evaluate(() => {
+      const svg = document.querySelector('svg.field');
+      const rect = svg.getBoundingClientRect();
+      for (const el of svg.querySelectorAll('polygon[stroke]')) {
+        if (el.getAttribute('fill') !== 'none') continue;
+        const b = el.getBoundingClientRect();
+        const cx = b.x + b.width / 2;
+        const cy = b.y + b.height / 2;
+        if (cx < rect.x || cx > rect.x + rect.width) continue;
+        if (cy < rect.y || cy > rect.y + rect.height) continue;
+        return { x: cx, y: cy };
+      }
+      return null;
+    });
+  let mark = await findMark();
+  for (let i = 0; i < 12 && !mark; i += 1) {
+    const end = page.locator('button', { hasText: /^End turn$/ }).first();
+    if (!(await end.count())) break;
+    await end.click().catch(() => {});
+    await page.waitForTimeout(250);
+    if (!(await ourTurn(page))) break;
+    mark = await findMark();
+  }
+  check(!!mark, 'the field marks somebody the active fighter can reach');
   const now = await activeAt(page);
-  const mark = await page.evaluate(() => {
-    const svg = document.querySelector('svg.field');
-    const rect = svg.getBoundingClientRect();
-    for (const el of svg.querySelectorAll('polygon[stroke-dasharray]')) {
-      const b = el.getBoundingClientRect();
-      const cx = b.x + b.width / 2;
-      const cy = b.y + b.height / 2;
-      if (cx < rect.x || cx > rect.x + rect.width) continue;
-      if (cy < rect.y || cy > rect.y + rect.height) continue;
-      return { x: cx, y: cy };
-    }
-    return null;
-  });
-  check(!!mark, 'the field offers somewhere to step');
-  let moved = false;
-  if (mark) {
+  let acted = false;
+  if (mark && now) {
     await page.mouse.click(mark.x, mark.y);
     await page.waitForTimeout(300);
-    const where = await posOf(page, now.id);
-    // Either this fighter moved, or the tap spent their turn and it passed.
-    if (!where || where.q !== now.q || where.r !== now.r) moved = true;
-    else {
-      moved = await page.evaluate((id) => {
+    // A blow spends the turn, so either it has passed on or this fighter has
+    // acted. Nobody walks anywhere any more, which is the whole point.
+    acted = await page.evaluate((id) => {
+      const b = window.landnam.state()?.battle;
+      if (!b) return true;
+      if (b.order[b.turnIndex] !== id) return true;
+      return !!b.combatants.find((c) => c.personId === id)?.hasActed;
+    }, now.id);
+  }
+  check(acted, 'tapping a marked foe spends the turn');
+
+  // THE NEW HAZARD, and the direct successor to the one at the top of this
+  // file: bare ground is not an order any more. A tap on an empty hex used to
+  // walk a man across the field, and it must now do nothing at all.
+  if (await ourTurn(page)) {
+    const before = await activeAt(page);
+    const empty = await page.evaluate(() => {
+      const svg = document.querySelector('svg.field');
+      const rect = svg.getBoundingClientRect();
+      const taken = [...svg.querySelectorAll('g[data-fighter], .fighter')].map((el) => {
+        const b = el.getBoundingClientRect();
+        return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+      });
+      for (const el of svg.querySelectorAll('polygon')) {
+        if (el.getAttribute('fill') === 'none') continue;
+        const b = el.getBoundingClientRect();
+        const cx = b.x + b.width / 2;
+        const cy = b.y + b.height / 2;
+        if (cx < rect.x + 8 || cx > rect.x + rect.width - 8) continue;
+        if (cy < rect.y + 8 || cy > rect.y + rect.height - 8) continue;
+        if (taken.some((t) => Math.abs(t.x - cx) < 18 && Math.abs(t.y - cy) < 18)) continue;
+        return { x: cx, y: cy };
+      }
+      return null;
+    });
+    if (empty && before) {
+      const wasTurn = await page.evaluate(() => {
         const b = window.landnam.state()?.battle;
-        return !b || b.order[b.turnIndex] !== id;
-      }, now.id);
+        return `${b?.round}:${b?.turnIndex}`;
+      });
+      await page.mouse.click(empty.x, empty.y);
+      await page.waitForTimeout(300);
+      const after = await posOf(page, before.id);
+      const nowTurn = await page.evaluate(() => {
+        const b = window.landnam.state()?.battle;
+        return `${b?.round}:${b?.turnIndex}`;
+      });
+      check(
+        !!after && after.q === before.q && after.r === before.r && nowTurn === wasTurn,
+        'a tap on bare ground orders nothing',
+      );
     }
   }
-  check(moved, 'tapping the field still moves a fighter');
   check(errors.length === 0, `no page errors${errors.length ? `: ${errors[0]}` : ''}`);
 
   await page.close();

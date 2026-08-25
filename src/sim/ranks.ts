@@ -21,7 +21,15 @@
 // Pure, and deliberately structural: nothing here imports Combatant, so it
 // can be tested without a battle, a person, or a GameState.
 
-/** How deep a line stands. Four is the band; a bigger warband still forms four deep. */
+/**
+ * The deepest rank the tables name explicitly.
+ *
+ * NOT a cap on how deep a line can stand. A warband is six sworn and a foe
+ * band can be more, so a real line runs past this — which is a bug this file
+ * shipped with for exactly one afternoon: the tables listed ranks 1 to 4, so
+ * the fifth and sixth men could not strike, throw, defend OR dash. They stood
+ * in the wall with nothing they were allowed to do. See `deep` below.
+ */
 export const RANKS = 4;
 
 /** The verbs that care where you are standing. `warcry` does not, so it is absent. */
@@ -32,6 +40,16 @@ export interface Reach {
   readonly from: readonly number[];
   /** Enemy ranks it lands on. Empty means it is done to yourself. */
   readonly at: readonly number[];
+  /**
+   * Whether it also works from — and against — every rank behind the last
+   * one listed.
+   *
+   * An axe and a spear have a length, so they stop where the list stops. A
+   * thrown axe and a man changing his place in the line do not: the tenth
+   * rank can still throw, and can still shoulder forward. Without this a line
+   * deeper than the table is a line with men in it who may do nothing at all.
+   */
+  readonly deep?: boolean;
 }
 
 /**
@@ -58,11 +76,23 @@ export interface Reach {
 export const REACH: Record<RankVerb, Reach> = {
   strike: { from: [1, 2], at: [1, 2] },
   reach: { from: [2, 3], at: [1, 2, 3] },
-  throw: { from: [2, 3, 4], at: [1, 2, 3, 4] },
+  throw: { from: [2, 3, 4], at: [1, 2, 3, 4], deep: true },
   shove: { from: [1, 2], at: [1, 2] },
   defend: { from: [1, 2], at: [] },
-  dash: { from: [1, 2, 3, 4], at: [] },
+  dash: { from: [1, 2, 3, 4], at: [], deep: true },
 };
+
+/**
+ * Does this verb's list cover the rank, counting an open-ended back?
+ *
+ * A real line runs deeper than the tables name — six sworn, and foe bands
+ * that can be larger still. An axe and a spear have a length and stop where
+ * the list stops; a thrown axe and a man shouldering forward do not.
+ */
+function covers(ranks: readonly number[], rank: number, deep: boolean | undefined): boolean {
+  if (ranks.includes(rank)) return true;
+  return deep === true && ranks.length > 0 && rank > Math.max(...ranks);
+}
 
 /**
  * The least a fighter needs to have a place in the line.
@@ -113,7 +143,14 @@ export function closeUp<T extends Ranked>(line: readonly T[], side: string): voi
 
 /** Can this verb be used from where this fighter is standing? */
 export function canActFrom(verb: RankVerb, rank: number): boolean {
-  return REACH[verb].from.includes(rank);
+  return covers(REACH[verb].from, rank, REACH[verb].deep);
+}
+
+/** Does this verb land on somebody standing in that rank? */
+export function canLandOn(verb: RankVerb, rank: number): boolean {
+  const reach = REACH[verb];
+  if (reach.at.length === 0) return false;
+  return covers(reach.at, rank, reach.deep);
 }
 
 /**
@@ -129,9 +166,8 @@ export function targetsFor<T extends Ranked>(
   foeSide: string,
 ): T[] {
   if (!canActFrom(verb, actor.rank)) return [];
-  const reach = REACH[verb].at;
-  if (reach.length === 0) return [];
-  return standing(line, foeSide).filter((c) => reach.includes(c.rank));
+  if (REACH[verb].at.length === 0) return [];
+  return standing(line, foeSide).filter((c) => canLandOn(verb, c.rank));
 }
 
 /**
@@ -181,6 +217,18 @@ export function linked(a: Ranked, b: Ranked): boolean {
   if (a.side !== b.side) return false;
   if (a.down || a.fled || b.down || b.fled) return false;
   return Math.abs(a.rank - b.rank) === 1;
+}
+
+/**
+ * The ally standing directly in front of this fighter.
+ *
+ * This is what a spear needs: the old hex rule asked for a mate adjacent to
+ * BOTH the thruster and the target, which was already describing a rank — you
+ * are behind somebody, and you put the point past their shoulder. On a line it
+ * is simply the man at rank - 1.
+ */
+export function screen<T extends Ranked>(line: readonly T[], of: Ranked): T | undefined {
+  return atRank(line, of.side, of.rank - 1);
 }
 
 /** Whoever this fighter is engaged with: the enemy front rank meets yours. */

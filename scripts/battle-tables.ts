@@ -92,7 +92,6 @@ import {
 import { WARCRY_RANGE, WARCRY_HEART, WARCRY_DREAD } from '../src/sim/warcry';
 import { PATIENCE_ROUNDS } from '../src/sim/battleAi';
 import { ROUND_LIMIT } from '../src/sim/battleTurn';
-import { DISENGAGE_COST } from '../src/sim/zoc';
 import { WALL_BONUS_ONE, WALL_BONUS_FULL, SHIELD_IN_WALL } from '../src/sim/wall';
 import { NERVE_KIN_FELL } from '../src/data/kin';
 import { JARL_WORD } from '../src/sim/word';
@@ -376,7 +375,6 @@ ${lasting}
 	constexpr int32_t WallBonusOne = ${num(WALL_BONUS_ONE)};
 	constexpr int32_t WallBonusFull = ${num(WALL_BONUS_FULL)};
 	constexpr int32_t ShieldInWall = ${num(SHIELD_IN_WALL)};
-	constexpr int32_t DisengageCost = ${num(DISENGAGE_COST)};
 	constexpr int32_t PatienceRounds = ${num(PATIENCE_ROUNDS)};
 	constexpr int32_t RoundLimit = ${num(ROUND_LIMIT)};
 

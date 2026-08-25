@@ -2,15 +2,15 @@
 // the same reckoning of how hard a fighter is to hit, what the country and
 // the wall add, what a wound explains — and the same fall when one goes down.
 
-import { key } from '../hex';
 import { stream, type Rng } from '../rng';
 import type { Combatant, GameState, Injury, Person } from '../state/types';
 import { fighterPerson } from './battle';
 import { beat } from './beats';
-import { defenceBonus, wallLinks } from './wall';
+import { atThePalisade, defenceBonus, wallLinks } from './wall';
 import { threatCount } from './zoc';
 import { bonus } from './lore';
 import { leaderFell, witnessFall } from './morale';
+import { closeUp } from './ranks';
 import { effectiveStat } from './people';
 import { hardshipById } from '../data/hardship';
 
@@ -138,9 +138,12 @@ export function evasion(state: GameState, target: Combatant): number {
   const shelter = target.broken ? 0 : defenceBonus(battle, target, DEFEND_BONUS, drill);
   const surrounded = Math.min(
     MAX_OUTNUMBERED,
-    Math.max(0, threatCount(battle, target.at, target.side) - 1),
+    Math.max(0, threatCount(battle, target) - 1),
   );
-  const onTheStakes = battle.grid[key(target.at)]?.ground === 'wall' ? WALL_EXPOSED : 0;
+  // Astride the stakes: since 8.1c that is the raiders' front rank, the men
+  // actually climbing, rather than whoever stood on a wall hex.
+  const onTheStakes =
+    target.side === 'foe' && target.rank === 1 && atThePalisade(battle) ? WALL_EXPOSED : 0;
   return 7 + wits + shelter - surrounded * OUTNUMBERED_PENALTY - onTheStakes;
 }
 
@@ -165,6 +168,13 @@ export function drop(
   witnessFall(state, target);
   target.down = true;
   target.defending = false;
+  // The line closes over him. This is the rule the whole mode rests on, and
+  // it belongs HERE rather than in each verb: a hole left in a wall is a wall
+  // whose front rank is empty, and a fight where nobody stands at the front
+  // is a fight where nobody can reach anybody — which is exactly what
+  // happened when this was missing, three seeds running to the round limit
+  // with the survivors stranded at ranks four, five and six.
+  closeUp(battle.combatants, target.side);
   person.health = 0;
   if (target.side === 'foe') person.alive = false;
   battle.log.push(cause);

@@ -2,38 +2,28 @@
 // back a pace. Nothing here rolls to wound — a shove can kill, but only by
 // where it puts you.
 
-import { directionTo, key, neighbor, distance, type Hex } from '../hex';
-import type { GameState, Combatant } from '../state/types';
-import { activeCombatant, fighterPerson, BASE_MOVES } from './battle';
+import type { Battle, Combatant, GameState } from '../state/types';
+import { activeCombatant, fighterPerson } from './battle';
 import { beat } from './beats';
-import { reachWithZoc } from './zoc';
+import { canActFrom, canLandOn, shift, shoveBack } from './ranks';
 import { effectiveStat } from './people';
 import { actionRng, drop } from './swing';
 
-// --- Move ---
-
-export function doMove(state: GameState, to: Hex): boolean {
-  const battle = state.battle;
-  const active = battle ? activeCombatant(battle) : undefined;
-  if (!battle || !active || battle.outcome || active.broken) return false;
-
-  const reach = reachWithZoc(battle, active);
-  const cost = reach.get(key(to));
-  if (cost === undefined) return false;
-
-  const from = active.at;
-  active.at = to;
-  active.movesLeft -= cost;
-  beat(battle, { kind: 'moved', who: active.personId, from, to, cost });
-  return true;
-}
-
 // --- Shove ---
 
-/** Where a shove would send them: straight back, away from the shover. */
-export function shoveDestination(active: Combatant, target: Combatant): Hex | null {
-  const dir = directionTo(active.at, target.at);
-  return dir < 0 ? null : neighbor(target.at, dir);
+/**
+ * Who would come forward if this one were driven back, or undefined when he
+ * is the last of his line and has nowhere to go.
+ *
+ * On the hex field this answered with a HEX — the square behind them, which
+ * might be water, or rock, or another man. On a line the interesting answer
+ * is not where the shoved man lands but WHO ends up in front instead, which
+ * is the whole reason to spend an action on it.
+ */
+export function shoveDestination(battle: Battle, target: Combatant): Combatant | undefined {
+  return battle.combatants.find(
+    (c) => c.side === target.side && !c.down && !c.fled && c.rank === target.rank + 1,
+  );
 }
 
 export function doShove(state: GameState, targetPersonId: string): boolean {
@@ -43,7 +33,8 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
 
   const target = battle.combatants.find((c) => c.personId === targetPersonId && !c.down);
   if (!target || target.side === active.side) return false;
-  if (distance(active.at, target.at) !== 1) return false;
+  if (!canActFrom('shove', active.rank)) return false;
+  if (!canLandOn('shove', target.rank)) return false;
 
   const shover = fighterPerson(state, active.personId);
   const shoved = fighterPerson(state, target.personId);
@@ -68,15 +59,13 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
     return true;
   }
 
-  const destination = shoveDestination(active, target);
-  const tile = destination ? battle.grid[key(destination)] : undefined;
-  const blocked =
-    !destination ||
-    !tile ||
-    battle.combatants.some((c) => !c.down && c.at.q === destination.q && c.at.r === destination.r);
+  // Back a rank, swapping with whoever was behind him. The man who comes
+  // forward is the point of the whole verb: shove the huscarl off the front
+  // and his spearman is suddenly holding the line with the wrong weapon.
+  const came = shoveBack(battle.combatants, target);
 
-  if (blocked) {
-    // Nowhere to go: they are driven against whatever is behind them.
+  if (!came) {
+    // Nowhere to go: he was the last rank, and is driven against his own.
     shoved.health = Math.max(0, shoved.health - 2);
     beat(battle, {
       kind: 'shoved',
@@ -87,28 +76,13 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
       damage: 2,
     });
     if (shoved.health > 0) {
-      battle.log.push(`${shover.name} slammed ${shoved.name} into what was behind them (2).`);
+      battle.log.push(`${shover.name} drove ${shoved.name} back into his own men (2).`);
     } else {
-      drop(state, target, shoved, `${shoved.name} was crushed against the rocks.`, active);
+      drop(state, target, shoved, `${shoved.name} was crushed against his own line.`, active);
     }
     return true;
   }
 
-  if (tile.ground === 'water') {
-    // The old trick: put them in the water and let it do the work.
-    beat(battle, {
-      kind: 'shoved',
-      who: active.personId,
-      target: target.personId,
-      result: 'drowned',
-      from: stood,
-      to: destination,
-    });
-    drop(state, target, shoved, `${shover.name} put ${shoved.name} into the water.`, active);
-    return true;
-  }
-
-  target.at = destination;
   target.defending = false;
   beat(battle, {
     kind: 'shoved',
@@ -116,9 +90,13 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
     target: target.personId,
     result: 'pushed',
     from: stood,
-    to: destination,
+    to: target.at,
   });
-  battle.log.push(`${shover.name} drove ${shoved.name} back a step.`);
+  const forward = fighterPerson(state, came.personId);
+  battle.log.push(
+    `${shover.name} drove ${shoved.name} back a rank`
+      + (forward ? `, and ${forward.name} was in front.` : '.'),
+  );
   return true;
 }
 
@@ -128,6 +106,13 @@ export function doDefend(state: GameState): boolean {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
   if (!battle || !active || active.hasActed || battle.outcome || active.broken) return false;
+  // The table says only the front two have anything to set a shield against,
+  // and until this line it said so to nobody: `doDefend` never asked, so a
+  // man in the third rank could raise his shield and collect DEFEND_BONUS
+  // against spears and thrown axes for an action he had no other use for.
+  // That is the back rank being strictly safer for free, which is the
+  // opposite of what depth is supposed to cost.
+  if (!canActFrom('defend', active.rank)) return false;
   const person = fighterPerson(state, active.personId);
   active.hasActed = true;
   active.defending = true;
@@ -137,14 +122,28 @@ export function doDefend(state: GameState): boolean {
   return true;
 }
 
-export function doDash(state: GameState): boolean {
+/**
+ * Change rank.
+ *
+ * Dash was a second helping of movement across open ground, and there is no
+ * open ground any more. It survives the conversion by becoming the answer to
+ * being put somewhere your weapon is no use: the spearman shoved to the front
+ * buys his way back, and the thrower out of hand-axes walks up into the wall.
+ * That is worth an action in a way that running never quite was.
+ */
+export function doDash(state: GameState, by: -1 | 1 = -1): boolean {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
   if (!battle || !active || active.hasActed || battle.outcome || active.broken) return false;
+  if (!canActFrom('dash', active.rank)) return false;
+  const swapped = shift(battle.combatants, active, by);
+  if (!swapped) return false;
   active.hasActed = true;
-  active.movesLeft += BASE_MOVES;
+  active.defending = false;
   const person = fighterPerson(state, active.personId);
   beat(battle, { kind: 'dashed', who: active.personId });
-  battle.log.push(`${person?.name ?? 'Someone'} broke into a run.`);
+  battle.log.push(
+    `${person?.name ?? 'Someone'} ${by < 0 ? 'pushed up into the line' : 'gave ground'}.`,
+  );
   return true;
 }

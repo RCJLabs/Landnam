@@ -45,7 +45,11 @@ function onFieldTap(target: Hex): void {
     else dispatch({ type: 'B_STRIKE', targetId: id });
     return;
   }
-  dispatch({ type: 'B_MOVE', to: target });
+  // Tapping bare ground used to be a move. There is no ground to move across
+  // any more — a fighter's place is their RANK, and changing it is `dash`,
+  // which is an action rather than a walk. The proper line-shaped controls
+  // arrive with the side-on field in 8.1d; until then a tap on nothing does
+  // nothing, which is at least honest.
 }
 
 export function renderBattleScreen(state: GameState, h: ScreenHooks): void {

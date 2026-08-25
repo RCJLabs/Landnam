@@ -383,6 +383,19 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 45 };
   },
+  // v45 -> v46: a `moved` beat says which RANK a fighter left and which they
+  // took. An old one names two hexes on a field that no longer exists, and
+  // there is no honest rank to translate them into. Beats are a capped,
+  // drainable presentation stream, so the old ones are dropped rather than
+  // guessed at — the worst that costs is one un-animated step in a fight
+  // that was saved mid-swing.
+  45: (save) => {
+    const battle = save['battle'] as { beats?: Record<string, unknown>[] } | undefined;
+    if (battle?.beats) {
+      battle.beats = battle.beats.filter((b) => b['kind'] !== 'moved');
+    }
+    return { ...save, version: 46 };
+  },
 
 };
 

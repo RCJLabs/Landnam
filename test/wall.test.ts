@@ -18,6 +18,7 @@ import { startBattle } from '../src/sim/battleTurn';
 import { DEFEND_BONUS, evasion } from '../src/sim/swing';
 import { reachTargets, throwTargets } from '../src/sim/strike';
 import { shoveDestination } from '../src/sim/footwork';
+import { strikeTargets } from '../src/sim/battle';
 import {
   SHIELD_IN_WALL,
   WALL_BONUS_FULL,
@@ -34,7 +35,6 @@ import {
   startingNerve,
   witnessFall,
 } from '../src/sim/morale';
-import { reachWithZoc } from '../src/sim/zoc';
 import { FIELD_HEIGHT } from '../src/sim/battlefield';
 import type { Combatant, GameState } from '../src/state/types';
 
@@ -45,7 +45,15 @@ function fight(seed: string, difficulty = 0): GameState {
 }
 
 /** A clear field with the given warband positions, one foe well away. */
-function lineUp(seed: string, positions: [number, number][]): GameState {
+/**
+ * A wall of exactly these RANKS, in this order.
+ *
+ * It used to take offset hex coordinates and stand people on them. Since
+ * 8.1c a fighter's place is their rank, so the fixture says the thing it
+ * means: `lineUp('x', [2, 1, 3])` is a man in the second rank with one ahead
+ * of him and one behind.
+ */
+function lineUp(seed: string, ranks: number[]): GameState {
   const state = fight(seed, 1);
   const battle = state.battle!;
   // Strangers, on purpose. Kin take an extra shock when one of them falls
@@ -56,20 +64,19 @@ function lineUp(seed: string, positions: [number, number][]): GameState {
   for (const person of state.party.people) delete person.kin;
   for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
 
-  const ours = battle.combatants.filter((c) => c.side === 'warband').slice(0, positions.length);
+  const ours = battle.combatants.filter((c) => c.side === 'warband').slice(0, ranks.length);
   ours.forEach((c, i) => {
-    const [col, row] = positions[i]!;
-    c.at = offsetToAxial(col, row);
+    c.rank = ranks[i]!;
     c.broken = false;
     c.down = false;
     c.fled = false;
     c.defending = false;
   });
-  // Park every foe out of the way.
+  // Park every foe far down their own line, so nothing they do reaches.
   battle.combatants
     .filter((c) => c.side === 'foe')
     .forEach((c, i) => {
-      c.at = offsetToAxial(i % 7, 0);
+      c.rank = i + 1;
     });
   battle.combatants = [...ours, ...battle.combatants.filter((c) => c.side === 'foe')];
   return state;
@@ -77,7 +84,9 @@ function lineUp(seed: string, positions: [number, number][]): GameState {
 
 describe('the shield wall', () => {
   it('one shoulder-mate is worth something, two are worth more', () => {
-    const state = lineUp('wall-size', [[3, 5], [4, 5], [2, 5]]);
+    // Second rank: a man ahead of him and a man behind. The first and third
+    // have only one shoulder-mate each, because the line has ends.
+    const state = lineUp('wall-size', [2, 1, 3]);
     const battle = state.battle!;
     const [middle, right, left] = battle.combatants as [Combatant, Combatant, Combatant];
 
@@ -89,27 +98,30 @@ describe('the shield wall', () => {
   });
 
   it('a lone fighter has no wall at all', () => {
-    const state = lineUp('wall-alone', [[3, 5], [0, 8]]);
+    // Rank 1 and rank 4 of a two-man line: nobody adjacent to either.
+    const state = lineUp('wall-alone', [1, 4]);
     const battle = state.battle!;
     expect(wallBonus(battle, battle.combatants[1]!)).toBe(0);
+    expect(wallBonus(battle, battle.combatants[0]!)).toBe(0);
   });
 
   it('standing in the line makes you harder to hit', () => {
-    const state = lineUp('wall-evasion', [[3, 5], [4, 5]]);
+    const state = lineUp('wall-evasion', [1, 2]);
     const battle = state.battle!;
     const held = battle.combatants[0]!;
     const alone = evasion(state, battle.combatants[1]!);
 
-    // Break the link and the same fighter is easier to reach.
+    // Break the link and the same fighter is easier to reach. On a line you
+    // break it by taking the man out, not by walking him away.
     const withWall = evasion(state, held);
-    battle.combatants[1]!.at = offsetToAxial(0, 8);
+    battle.combatants[1]!.rank = 4;
     const withoutWall = evasion(state, held);
     expect(withWall).toBeGreaterThan(withoutWall);
     void alone;
   });
 
   it('the wall shatters when a link falls', () => {
-    const state = lineUp('wall-shatter', [[3, 5], [4, 5], [2, 5]]);
+    const state = lineUp('wall-shatter', [2, 1, 3]);
     const battle = state.battle!;
     const [middle, right] = battle.combatants as [Combatant, Combatant];
     expect(wallBonus(battle, middle)).toBe(WALL_BONUS_FULL);
@@ -119,7 +131,7 @@ describe('the shield wall', () => {
   });
 
   it('a broken fighter is no use as a link', () => {
-    const state = lineUp('wall-broken-link', [[3, 5], [4, 5]]);
+    const state = lineUp('wall-broken-link', [1, 2]);
     const battle = state.battle!;
     expect(wallBonus(battle, battle.combatants[0]!)).toBe(WALL_BONUS_ONE);
     battle.combatants[1]!.broken = true;
@@ -127,7 +139,8 @@ describe('the shield wall', () => {
   });
 
   it('a shield adds little inside a wall and a lot outside one', () => {
-    const state = lineUp('wall-shield', [[3, 5], [4, 5], [0, 8]]);
+    // Two locked together at the front, and one away at the back of the line.
+    const state = lineUp('wall-shield', [1, 2, 4]);
     const battle = state.battle!;
     const inLine = battle.combatants[0]!;
     const lone = battle.combatants[2]!;
@@ -144,7 +157,7 @@ describe('the shield wall', () => {
   it('no fighter is ever beyond reach of the best possible blow', () => {
     // Wall plus shield plus high wits must not exceed what 2d6 + might can
     // roll, or the fight stalls on an untouchable man.
-    const state = lineUp('wall-cap', [[3, 5], [4, 5], [2, 5]]);
+    const state = lineUp('wall-cap', [2, 1, 3]);
     const battle = state.battle!;
     const middle = battle.combatants[0]!;
     middle.defending = true;
@@ -155,7 +168,7 @@ describe('the shield wall', () => {
   });
 
   it('reports its links as pairs for the renderer, without duplicates', () => {
-    const state = lineUp('wall-pairs', [[3, 5], [4, 5], [2, 5]]);
+    const state = lineUp('wall-pairs', [2, 1, 3]);
     const all = wallPairs(state.battle!);
     // Both sides form walls; this test is about ours.
     const ours = all.filter(([a]) => a.side === 'warband');
@@ -184,7 +197,7 @@ describe('nerve', () => {
   });
 
   it('runs out and the fighter breaks', () => {
-    const state = lineUp('nerve-break', [[3, 5]]);
+    const state = lineUp('nerve-break', [1]);
     const target = state.battle!.combatants[0]!;
     shakeNerve(state, target, 999);
     expect(target.nerve).toBe(0);
@@ -193,16 +206,19 @@ describe('nerve', () => {
   });
 
   it('a falling shoulder-mate costs more nerve than a falling stranger', () => {
-    const walled = lineUp('nerve-wall-fall', [[3, 5], [4, 5]]);
+    const walled = lineUp('nerve-wall-fall', [1, 2]);
     const wb = walled.battle!;
     const survivor = wb.combatants[0]!;
     const beside = wb.combatants[1]!;
     const before = survivor.nerve;
     witnessFall(walled, beside);
     const walledLoss = before - survivor.nerve;
+    console.log('DBG walled', { n: wb.combatants.length, before, after: survivor.nerve,
+      sRank: survivor.rank, bRank: beside.rank, bDown: beside.down });
 
-    // Same fall, but the survivor was not in a wall with anyone else.
-    const loose = lineUp('nerve-loose-fall', [[3, 5], [4, 5]]);
+    // Same fall, but the survivor was not in a wall with the faller. On a
+    // line that means ranks that do not touch, rather than a man walked away.
+    const loose = lineUp('nerve-loose-fall', [1, 3]);
     const lb = loose.battle!;
     // Only the pair exist, so break the survivor's other links by moving
     // the faller adjacent but leaving the survivor otherwise alone.
@@ -222,7 +238,7 @@ describe('nerve', () => {
   });
 
   it('a broken fighter defends themselves worse', () => {
-    const state = lineUp('nerve-evasion', [[3, 5], [4, 5]]);
+    const state = lineUp('nerve-evasion', [1, 2]);
     const c = state.battle!.combatants[0]!;
     c.defending = true;
     const steady = evasion(state, c);
@@ -288,7 +304,7 @@ describe('nerve', () => {
 
   it('rallying brings a fighter back with something in reserve', () => {
     // Rally odds improve with steady shoulder-mates, so give them plenty.
-    let state = lineUp('nerve-rally', [[3, 5], [4, 5], [2, 5]]);
+    let state = lineUp('nerve-rally', [2, 1, 3]);
     const battle = state.battle!;
     const runner = battle.combatants[0]!;
     runner.broken = true;
@@ -327,7 +343,7 @@ describe('formation play beats brawling', () => {
         continue;
       }
       const foes = standing(battle, 'foe');
-      const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+      const adjacent = strikeTargets(state);
       if (!active.hasActed && adjacent.length > 0) {
         state = apply(state, { type: 'B_STRIKE', targetId: adjacent[0]!.personId });
         state = apply(state, { type: 'B_END_TURN' });
@@ -341,19 +357,13 @@ describe('formation play beats brawling', () => {
         state = apply(state, { type: 'B_END_TURN' });
         continue;
       }
-      const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
-        q: Number(k.split(',')[0]),
-        r: Number(k.split(',')[1]),
-      }));
-      if (reach.length > 0 && foes.length > 0) {
-        // Straight at the nearest foe, heedless of who is beside you.
-        const best = [...reach].sort(
-          (a, b) =>
-            Math.min(...foes.map((f) => distance(a, f.at))) -
-            Math.min(...foes.map((f) => distance(b, f.at))),
-        )[0]!;
-        const moved = apply(state, { type: 'B_MOVE', to: best });
-        state = moved === state ? apply(state, { type: 'B_END_TURN' }) : moved;
+      // Straight at them, heedless. On a line "heedless" is not a direction
+      // any more, it is a USE OF THE TURN: the brawler shoulders up the ranks
+      // looking for someone to hit and never sets a shield, which is the
+      // thing that makes a wall worth standing in.
+      if (foes.length > 0) {
+        const pushed = apply(state, { type: 'B_DASH', by: -1 });
+        state = pushed === state ? apply(state, { type: 'B_END_TURN' }) : pushed;
         continue;
       }
       state = apply(state, { type: 'B_END_TURN' });
@@ -383,19 +393,27 @@ describe('formation play beats brawling', () => {
         continue;
       }
       const foes = standing(battle, 'foe');
-      const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
-      // A shove is worth the action for the two things a blow cannot do:
-      // put a man in the water, and finish one who has nowhere to give.
+      const adjacent = strikeTargets(state);
+      // A shove is worth the action for what a blow cannot do, and the hex
+      // rule ported straight across says the exact OPPOSITE of the truth on
+      // a line. Read `doShove`: a shove that MOVES somebody deals no damage
+      // at all — it swaps two men who, since an axe reaches the enemy's
+      // front two, were both already in reach. Damage lands only in the
+      // other branch, when the target has nobody behind him and is driven
+      // against his own line for 2 that cannot miss.
+      //
+      // So "somebody comes forward" was not just a rule that fires too often
+      // on a line (somebody is always behind him) — it is the wrong half of
+      // the verb. Measured with it: 11 wins in 60 and 80 men standing,
+      // against 47 and 166 for a bot that never shoves at all. Kept to the
+      // branch that actually does something: the last man of a line, hurt
+      // enough that two guaranteed damage finishes what a swing might miss.
       if (USE.shove && !active.hasActed && adjacent.length > 0) {
-        const pushed = adjacent.find((f) => {
-          const dest = shoveDestination(active, f);
-          if (!dest) return false;
-          const tile = battle.grid[`${dest.q},${dest.r}`];
-          const blocked =
-            !tile || battle.combatants.some((c) => !c.down && c.at.q === dest.q && c.at.r === dest.r);
-          if (tile?.ground === 'water' && !blocked) return true;
-          return blocked && (fighterPerson(state, f.personId)?.health ?? 99) <= 2;
-        });
+        const hurt = (c: { personId: string }): number =>
+          fighterPerson(state, c.personId)?.health ?? 99;
+        const pushed = adjacent.find(
+          (f) => !shoveDestination(battle, f) && hurt(f) <= 2,
+        );
         if (pushed) {
           state = apply(state, { type: 'B_SHOVE', targetId: pushed.personId });
           state = apply(state, { type: 'B_END_TURN' });
@@ -435,28 +453,13 @@ describe('formation play beats brawling', () => {
         state = apply(state, { type: 'B_DASH' });
         continue;
       }
-      const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
-        q: Number(k.split(',')[0]),
-        r: Number(k.split(',')[1]),
-      }));
-      if (reach.length > 0 && foes.length > 0) {
-        // Advance like the brawler does, but prefer the approach that keeps
-        // a shoulder-mate. Closing still dominates, or the line would simply
-        // stand there and let itself be shot at.
-        const score = (at: { q: number; r: number }) => {
-          const mates = standing(battle, 'warband').filter(
-            (c) => c.personId !== active.personId && distance(c.at, at) === 1,
-          ).length;
-          const gap = Math.min(...foes.map((f) => distance(at, f.at)));
-          return -gap * 4 + Math.min(mates, 2) * 3;
-        };
-        const best = [...reach].sort((a, b) => score(b) - score(a))[0]!;
-        const moved = apply(state, { type: 'B_MOVE', to: best });
-        state = moved === state ? apply(state, { type: 'B_END_TURN' }) : moved;
-        continue;
-      }
-      // Nothing else to do and they are coming: a set shield beats an empty
-      // turn, which is what this used to be.
+      // The formation bot HOLDS. On a hex field the difference between these
+      // two was where they walked — the line preferred ground that kept a
+      // shoulder-mate. On a line everybody has shoulder-mates by definition,
+      // so the difference has to be what they SPEND THE TURN ON: this one
+      // sets its shield rather than shouldering up the ranks looking for a
+      // swing, and a set shield in a wall is worth more than a swing that
+      // was never on.
       if (USE.defend && !active.hasActed) {
         state = apply(state, { type: 'B_DEFEND' });
         state = apply(state, { type: 'B_END_TURN' });
@@ -472,11 +475,16 @@ describe('formation play beats brawling', () => {
   // Sixty, not twenty-four. A proposed worldgen change moved every seed's
   // world and this comparison went to a dead heat — 32 wins against 33, 158
   // survivors against 158. Widening the sample is what proved that was a real
-  // effect and not noise: on the worlds we actually ship, sixty seeds give
-  // the line 33 wins and 157 standing against 30 and 142, which is an
+  // effect and not noise: on the worlds we actually ship, sixty seeds gave
+  // the hex line 33 wins and 157 standing against 30 and 142, which is an
   // advantage worth asserting. The bar is unchanged; the evidence for it is
   // bigger, and it is now sensitive enough to catch a change that quietly
   // takes the shield wall's advantage away.
+  //
+  // On the line the same comparison is 47 wins and 166 standing against 30
+  // and 109 — the gap roughly TRIPLED. That was the open worry about this
+  // whole conversion: that a wall everybody stands in by default would stop
+  // being worth anything. It is worth more.
   const SEEDS = Array.from({ length: 60 }, (_, i) => `formation-${i}`);
 
   /** Warband members left standing and unbroken when the field settles. */
@@ -501,24 +509,49 @@ describe('formation play beats brawling', () => {
    *
    * Measured first on the survival curve, which was the wrong instrument —
    * only about one run in six ends on steel, so a verb worth a win a fight
-   * disappears into starvation and despair. This arena is the right one, and
-   * on it the answer is unambiguous:
+   * disappears into starvation and despair. This arena is the right one.
+   *
+   * On the hex field the answer was unambiguous, and it was about dash:
    *
    *   none          33/60 wins, 162 standing
    *   shove only    32/60 wins, 158 standing
    *   defend only   33/60 wins, 162 standing
-   *   dash only     22/60 wins, 108 standing
+   *   dash only     22/60 wins, 108 standing     <- a third of everything
    *   all three     24/60 wins, 110 standing
    *
-   * Shove and defend are neutral — both are narrow tools that fire rarely
-   * and correctly. DASH IS A TRAP, and a large one: a third of the wins and
-   * a third of the survivors. It is not a bug. Spending the turn's action to
-   * arrive sooner means arriving ALONE and arriving having already acted,
-   * which is precisely the charge this file exists to measure as losing. A
-   * shield wall does not sprint, and the game is right to punish one that
-   * does — so the bot does not dash, and this test is the standing record of
-   * why, kept executable so the day dash stops being a trap is a day
-   * somebody finds out.
+   * Spending the turn's action to arrive sooner meant arriving ALONE and
+   * having already acted, which is precisely the charge this file measures
+   * as losing. A shield wall does not sprint.
+   *
+   * On the line (8.1c) every one of those numbers moved, and the headline
+   * finding reversed:
+   *
+   *   none          47/60 wins, 166 standing
+   *   shove only    47/60 wins, 166 standing
+   *   defend only   47/60 wins, 166 standing
+   *   dash only     46/60 wins, 157 standing     <- no longer a trap
+   *   as we play    47/60 wins, 166 standing
+   *
+   * DASH STOPPED BEING A TRAP by becoming the verb its own docstring always
+   * claimed it was. There is no ground to sprint across, so nobody can
+   * arrive alone; what a dash does now is walk the back-rank man who has
+   * thrown his last hand-axe up into the wall. Counted over these same 60
+   * fights it fires 361 times, and costs one win and nine men — near enough
+   * free, and it is doing something real rather than nothing.
+   *
+   * The other two are inert, and that is worth stating rather than reading
+   * as "neutral, therefore fine":
+   *
+   *   - SHOVE fires 20 times in 60 fights and changes nothing measurable. A
+   *     shove that moves somebody deals no damage and swaps two men an axe
+   *     already reaches, so the only branch worth an action is crushing the
+   *     last man of a line against his own. That is a real move and a rare
+   *     one.
+   *   - DEFEND fires NEVER. The reach table lets only the front two set a
+   *     shield, and the front two always have something better to do with
+   *     the action — so the verb is currently unreachable in play. Asserted
+   *     below as an exact tie rather than a tolerance, so the day it stops
+   *     being unreachable is a day somebody finds out.
    */
   it('names what each verb is worth, and dash is a trap', { timeout: 900_000 }, async () => {
     const combos: [string, typeof USE][] = [
@@ -552,10 +585,29 @@ describe('formation play beats brawling', () => {
     expect(score['shove only']!.wins).toBeGreaterThanOrEqual(none.wins - 2);
     expect(score['defend only']!.wins).toBeGreaterThanOrEqual(none.wins - 2);
 
-    // And the finding itself, asserted so it cannot rot: closing on the dash
-    // is plainly worse than closing in the line. Well outside the dice.
-    expect(score['dash only']!.wins).toBeLessThan(none.wins - 5);
-    expect(score['dash only']!.alive).toBeLessThan(none.alive - 20);
+    // Defend is unreachable in play, so turning it on must change NOTHING.
+    // An exact tie rather than a tolerance: a verb nobody can use is a hole
+    // in the design, and the point of writing it down here is that the hole
+    // announces itself the moment it closes.
+    expect(
+      score['defend only'],
+      'defend became reachable — good news, and this record is now stale',
+    ).toEqual(none);
+
+    // And the finding itself, asserted so it cannot rot. Dash was a trap on
+    // hexes and is not one on a line: it must stay a hair behind never
+    // dashing at all — close enough to be free, never ahead, because a verb
+    // that beat doing nothing would mean the line is not costing anything to
+    // leave.
+    expect(score['dash only']!.wins).toBeLessThanOrEqual(none.wins);
+    expect(
+      score['dash only']!.wins,
+      'dash has gone back to being a trap',
+    ).toBeGreaterThanOrEqual(none.wins - 5);
+    expect(
+      score['dash only']!.alive,
+      'walking up into the wall should still cost a few men',
+    ).toBeLessThanOrEqual(none.alive);
   });
 
   it('holding the line beats charging in', { timeout: 180_000 }, async () => {

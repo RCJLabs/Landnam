@@ -3,12 +3,11 @@
 
 import { cornerPoints, fromKey, fromPixel, key, toPixel, type Hex } from '../hex';
 import type { Battle, GameState } from '../state/types';
-import { activeCombatant, fighterPerson, reachableHexes, strikeTargets } from '../sim/battle';
+import { activeCombatant, fighterPerson, strikeTargets } from '../sim/battle';
 import { reachTargets, throwTargets } from '../sim/strike';
 import { shoveDestination } from '../sim/footwork';
 import { isLeader } from '../sim/warcry';
 import { beatsSince } from '../sim/beats';
-import { isThreatened } from '../sim/zoc';
 import { wallPairs } from '../sim/wall';
 import type { Aim } from './battleUi';
 import { svgEl } from './svg';
@@ -313,32 +312,9 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
 
     if (active?.side === 'warband' && !battle.outcome) {
       // Ground the enemy threatens: step in here and your move stops.
-      for (const k of Object.keys(battle.grid)) {
-        const h = fromKey(k);
-        if (!isThreatened(battle, h, 'warband')) continue;
-        const p = toPixel(h, HEX);
-        layers.overlay.append(
-          svgEl('polygon', {
-            points: cornerPoints(p.x, p.y, HEX_TILE),
-            fill: '#b23b2e',
-            opacity: 0.13,
-          }),
-        );
-      }
-
-      for (const h of reachableHexes(battle)) {
-        const p = toPixel(h, HEX);
-        layers.overlay.append(
-          svgEl('polygon', {
-            points: cornerPoints(p.x, p.y, HEX - 4),
-            fill: 'none',
-            stroke: '#e8dcc0',
-            'stroke-width': 2,
-            'stroke-dasharray': '5 5',
-            opacity: 0.7,
-          }),
-        );
-      }
+      // The threatened-ground shading and the move-target ring stood here.
+      // Both drew answers to "where could this fighter go", and since 8.1c
+      // there is nowhere to go — the line-shaped controls arrive with 8.1d.
 
       // Whoever the armed action can actually reach.
       const marked =
@@ -358,9 +334,10 @@ export function createBattleView(onTap: (h: Hex) => void): BattleView {
             'stroke-dasharray': aim === 'throw' ? '6 4' : aim === 'reach' ? '3 3' : '',
           }),
         );
-        // Show where a shove would send them.
+        // Show who a shove would put in front instead.
         if (aim === 'shove') {
-          const to = shoveDestination(active, target);
+          const came = shoveDestination(battle, target);
+          const to = came?.at;
           const tile = to ? battle.grid[key(to)] : undefined;
           if (to && tile) {
             const q = toPixel(to, HEX);

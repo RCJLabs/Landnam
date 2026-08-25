@@ -24,7 +24,13 @@ function field(us = 4, them = 4): Ranked[] {
 
 describe('the reach table', () => {
   it('lets somebody act from every rank a line can hold', () => {
-    for (let r = 1; r <= RANKS; r++) {
+    // PAST `RANKS`, deliberately. A warband is six sworn and a foe band can
+    // be larger, so a real line runs deeper than the tables name — and when
+    // this only checked as far as RANKS it missed exactly that: the fifth and
+    // sixth men could not strike, throw, defend or dash. They stood in the
+    // wall with nothing they were allowed to do, and a played battle found
+    // it rather than this did.
+    for (let r = 1; r <= RANKS + 4; r++) {
       const verbs = (Object.keys(REACH) as (keyof typeof REACH)[]).filter((v) => canActFrom(v, r));
       expect(verbs.length, `rank ${r} can do nothing at all`).toBeGreaterThan(0);
     }
@@ -33,7 +39,7 @@ describe('the reach table', () => {
   it('gives every rank something to do that reaches an enemy', () => {
     // A rank you can stand in but never fight from is a hole in the design,
     // not a tactic — the back rank has to have the throw.
-    for (let r = 1; r <= RANKS; r++) {
+    for (let r = 1; r <= RANKS + 4; r++) {
       const offensive = (Object.keys(REACH) as (keyof typeof REACH)[])
         .filter((v) => canActFrom(v, r) && REACH[v].at.length > 0);
       expect(offensive.length, `rank ${r} can reach nobody`).toBeGreaterThan(0);
@@ -47,13 +53,19 @@ describe('the reach table', () => {
     expect(REACH.strike.from.length).toBeLessThan(REACH.throw.from.length);
   });
 
-  it('never reaches a rank deeper than a line can stand', () => {
+  it('names only real ranks, and says which verbs carry past them', () => {
     for (const v of Object.keys(REACH) as (keyof typeof REACH)[]) {
       for (const r of [...REACH[v].from, ...REACH[v].at]) {
         expect(r, `${v} refers to rank ${r}`).toBeGreaterThanOrEqual(1);
         expect(r, `${v} refers to rank ${r}`).toBeLessThanOrEqual(RANKS);
       }
     }
+    // An axe and a spear have a length and stop where the list stops. A
+    // thrown axe and a man shouldering forward do not.
+    expect(canActFrom('strike', RANKS + 2), 'an axe grew longer').toBe(false);
+    expect(canActFrom('reach', RANKS + 2), 'a spear grew longer').toBe(false);
+    expect(canActFrom('throw', RANKS + 2), 'the back rank cannot throw').toBe(true);
+    expect(canActFrom('dash', RANKS + 2), 'the back rank is stuck').toBe(true);
   });
 });
 

@@ -14,13 +14,12 @@
 // real fights with a bot that uses every verb, and names the kinds it saw.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, key, offsetToAxial, range, type Hex } from '../src/hex';
+import { fromKey, key, range } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { activeCombatant, fighterPerson, standing } from '../src/sim/battle';
+import { activeCombatant, fighterPerson, standing, strikeTargets } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
 import { reachTargets, throwTargets } from '../src/sim/strike';
-import { reachWithZoc } from '../src/sim/zoc';
 import { takeBrokenTurn } from '../src/sim/morale';
 import {
   BEATS_MAX,
@@ -120,7 +119,7 @@ function brawl(state: GameState, cap = 3000): GameState {
       cur = apply(cur, { type: 'B_END_TURN' });
       continue;
     }
-    const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+    const adjacent = strikeTargets(cur);
     const turn = battle.round + i;
 
     if (!active.hasActed) {
@@ -169,12 +168,9 @@ function brawl(state: GameState, cap = 3000): GameState {
         continue;
       }
     }
-    const reach = [...reachWithZoc(battle, active).keys()].map((k) => fromKey(k));
-    if (reach.length > 0) {
-      const gap = (at: Hex) => Math.min(...foes.map((f) => distance(at, f.at)));
-      const best = [...reach].sort((a, b) => gap(a) - gap(b))[0]!;
-      const moved = apply(cur, { type: 'B_MOVE', to: best });
-      cur = moved === cur ? apply(cur, { type: 'B_END_TURN' }) : moved;
+    if (foes.length > 0) {
+      const pushed = apply(cur, { type: 'B_DASH', by: -1 });
+      cur = pushed === cur ? apply(cur, { type: 'B_END_TURN' }) : pushed;
       continue;
     }
     cur = apply(cur, { type: 'B_END_TURN' });
@@ -253,11 +249,17 @@ describe('the stream reaches the field', () => {
       const battle = state.battle!;
       battle.round = round;
       battle.beats = [];
-      const foe = battle.combatants.find((c) => c.side === 'foe' && !c.down && !c.fled);
+      // The LAST man in their line, because that is now what "already on
+      // their own edge" means. A broken fighter gives ground down the ranks
+      // one at a time and only runs off the field when there is nobody left
+      // behind him to give ground to — so taken from anywhere else in the
+      // line this fixture can only ever produce the swap, never the flight.
+      const foes = battle.combatants.filter((c) => c.side === 'foe' && !c.down && !c.fled);
+      const foe = foes.reduce<typeof foes[number] | undefined>(
+        (deepest, c) => (deepest && deepest.rank >= c.rank ? deepest : c),
+        undefined,
+      );
       if (!foe) continue;
-      // Standing on their own edge already, so the run is one step and the
-      // only question is whether they find their nerve first.
-      foe.at = offsetToAxial(3, 0);
       foe.broken = true;
       foe.nerve = 0;
       takeBrokenTurn(state, foe);
@@ -297,18 +299,39 @@ describe('the stream reaches the field', () => {
     }
   });
 
-  it('says where a step began as well as where it ended', () => {
+  it('says which rank a step began in as well as where it ended', () => {
     // The field a diff cannot recover, and the reason `moved` exists at all:
-    // by the time a renderer sees the new state, the old hex is gone.
+    // by the time a renderer sees the new state, the old place is gone. It
+    // used to be a hex; since 8.1c a place is a rank, and the beat says
+    // which one was left and which was taken.
+    //
+    // A brawl does not reliably produce one — the only step left in the game
+    // is a broken fighter giving ground — so this drives the one path that
+    // emits it rather than hoping a played fight wanders into it.
     const state = structuredClone(newGame('beats-move'));
     startBattle(state, 'meadow', 1);
-    const done = brawl(state);
-    const moves = done.battle!.beats!.filter(
+    const battle = state.battle!;
+    const line = battle.combatants.filter((c) => c.side === 'foe' && !c.down && !c.fled);
+    const front = line.reduce((a, c) => (c.rank < a.rank ? c : a), line[0]!);
+    expect(front.rank, 'nobody behind him to give ground to').toBeLessThan(line.length);
+    battle.beats = [];
+    front.broken = true;
+    front.nerve = 0;
+    // Rolled until he fails to rally, which is the branch that steps.
+    for (let round = 1; round <= 40 && battle.beats.length === 0; round += 1) {
+      battle.round = round;
+      front.broken = true;
+      front.nerve = 0;
+      takeBrokenTurn(state, front);
+      battle.beats = battle.beats.filter((b) => b.kind === 'moved');
+    }
+    const moves = battle.beats.filter(
       (b): b is Extract<Beat, { kind: 'moved' }> => b.kind === 'moved',
     );
     expect(moves.length).toBeGreaterThan(0);
     for (const m of moves) {
-      expect(distance(m.from, m.to)).toBeGreaterThan(0);
+      expect(m.to, 'a step that went nowhere').not.toBe(m.from);
+      expect(Math.abs(m.to - m.from), 'a step of more than one rank').toBe(1);
     }
   });
 

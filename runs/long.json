@@ -2698,51 +2698,6 @@
    "type": "B_END_TURN"
   },
   {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
    "type": "B_LEAVE"
   },
   {
@@ -2974,6 +2929,11 @@
    "type": "ASSIGN",
    "personId": "p18",
    "job": "warrior"
+  },
+  {
+   "type": "ASSIGN",
+   "personId": "p10",
+   "job": "hunter"
   },
   {
    "type": "LEAVE_COLONY"
@@ -3210,225 +3170,6 @@
    "type": "B_END_TURN"
   },
   {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
    "type": "B_LEAVE"
   },
   {
@@ -3439,10 +3180,13 @@
   },
   {
    "type": "QUEUE_BUILD",
-   "building": "palisade"
+   "building": "bud"
   },
   {
    "type": "LEAVE_COLONY"
+  },
+  {
+   "type": "CAMP"
   },
   {
    "type": "CAMP"
@@ -3506,25 +3250,6 @@
   },
   {
    "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p20",
-   "job": "hunter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p21",
-   "job": "woodcutter"
   },
   {
    "type": "LEAVE_COLONY"
@@ -3547,72 +3272,6 @@
   },
   {
    "type": "DISMISS_EVENT"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
   },
   {
    "type": "B_END_TURN"
@@ -3709,501 +3368,46 @@
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "CAMP"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "CAMP"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "CAMP"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "CAMP"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "CAMP"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "CAMP"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p22",
-   "job": "builder"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
    "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p23",
-   "job": "warrior"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p10",
-   "job": "woodcutter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p18",
-   "job": "woodcutter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p20",
-   "job": "woodcutter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p22",
-   "job": "hunter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p23",
-   "job": "hunter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p10",
-   "job": "hunter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p22",
-   "job": "woodcutter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p18",
-   "job": "hunter"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
   },
   {
    "type": "CAMP"
@@ -4216,345 +3420,64 @@
    "type": "DISMISS_EVENT"
   },
   {
-   "type": "ENTER_COLONY"
+   "type": "CAMP"
   },
   {
-   "type": "LEAVE_COLONY"
+   "type": "CHOOSE",
+   "index": 0
+  },
+  {
+   "type": "DISMISS_EVENT"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
+   "type": "CHOOSE",
+   "index": 0
   },
   {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "DISMISS_EVENT"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
+   "type": "CHOOSE",
+   "index": 0
   },
   {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "DISMISS_EVENT"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
+   "type": "CHOOSE",
+   "index": 0
   },
   {
-   "type": "ASSIGN",
-   "personId": "p24",
-   "job": "warrior"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "DISMISS_EVENT"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
+   "type": "CHOOSE",
+   "index": 0
   },
   {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
+   "type": "DISMISS_EVENT"
   },
   {
    "type": "CAMP"
   },
   {
-   "type": "ENTER_COLONY"
+   "type": "CHOOSE",
+   "index": 0
   },
   {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "ASSIGN",
-   "personId": "p25",
-   "job": "farmer"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_LEAVE"
-  },
-  {
-   "type": "DISMISS_AFTERMATH"
-  },
-  {
-   "type": "ENTER_COLONY"
-  },
-  {
-   "type": "QUEUE_BUILD",
-   "building": "watchtower"
-  },
-  {
-   "type": "LEAVE_COLONY"
-  },
-  {
-   "type": "CAMP"
+   "type": "DISMISS_EVENT"
   },
   {
    "type": "CAMP"
@@ -4610,285 +3533,6 @@
   },
   {
    "type": "CAMP"
-  },
-  {
-   "type": "CHOOSE",
-   "index": 0
-  },
-  {
-   "type": "DISMISS_EVENT"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CHOOSE",
-   "index": 0
-  },
-  {
-   "type": "DISMISS_EVENT"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CHOOSE",
-   "index": 0
-  },
-  {
-   "type": "DISMISS_EVENT"
-  },
-  {
-   "type": "B_LEAVE"
-  },
-  {
-   "type": "DISMISS_AFTERMATH"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CHOOSE",
-   "index": 0
-  },
-  {
-   "type": "DISMISS_EVENT"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CHOOSE",
-   "index": 0
-  },
-  {
-   "type": "DISMISS_EVENT"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CAMP"
-  },
-  {
-   "type": "CHOOSE",
-   "index": 0
-  },
-  {
-   "type": "DISMISS_EVENT"
-  },
-  {
-   "type": "B_END_TURN"
-  },
-  {
-   "type": "B_LEAVE"
   }
  ]
 }

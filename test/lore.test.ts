@@ -378,12 +378,16 @@ describe('THE BAR — knowing a thing changes the run', () => {
   });
 
   it('wall-drill: a line is worth more, and standing alone still is not', () => {
+    // Two shoulder to shoulder and one out on his own. On the hex field that
+    // was a hex apart and a hex nine away; on a line it is adjacent ranks
+    // and a rank with nothing beside it — which a line only allows because
+    // this is a fixture rather than a fight, since a real line closes up.
     const battle = {
       grid: {},
       combatants: [
-        { personId: 'a', side: 'warband', at: { q: 0, r: 0 } },
-        { personId: 'b', side: 'warband', at: { q: 1, r: 0 } },
-        { personId: 'c', side: 'warband', at: { q: 9, r: 9 } },
+        { personId: 'a', side: 'warband', at: { q: 0, r: 0 }, rank: 1 },
+        { personId: 'b', side: 'warband', at: { q: 1, r: 0 }, rank: 2 },
+        { personId: 'c', side: 'warband', at: { q: 9, r: 9 }, rank: 9 },
       ].map((c) => ({
         ...c,
         initiative: 0, movesLeft: 3, hasActed: false, throwsLeft: 1, defending: false,
