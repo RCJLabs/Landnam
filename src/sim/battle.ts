@@ -432,6 +432,11 @@ export function beginBattle(
       personId: person.id,
       side: 'warband',
       at,
+      // Rank comes off the order they were deployed in. Placement is still
+      // a hex problem at this step, so there is no better answer available
+      // than "the order they took the field"; 8.1c makes rank the thing
+      // that decides where somebody stands rather than a note about it.
+      rank: battle.combatants.filter((c) => c.side === 'warband').length + 1,
       initiative: 0,
       movesLeft: BASE_MOVES,
       hasActed: false,
@@ -454,6 +459,7 @@ export function beginBattle(
       personId: foe.id,
       side: 'foe',
       at,
+      rank: battle.combatants.filter((c) => c.side === 'foe').length + 1,
       initiative: 0,
       movesLeft: BASE_MOVES,
       hasActed: false,

@@ -1377,6 +1377,47 @@ re-run and re-tuned against ranks. Budget for that, not for the geometry.
   the pack — or go entirely?
 - **Foe count:** fixed 3–5 as the prototype has it, or scaled to the band?
 
+### The port contract is frozen
+
+**DECIDED 2026-08-25, on the first shape change of the conversion.**
+
+8.1b added `rank` to Combatant and bumped `SAVE_VERSION` to 45, and that
+immediately went red on `test/contract.test.ts` — the bar that exists because
+an audit on 2026-08-19 caught the C++ port verifying against a `parity.json`
+five regenerations behind. Two contract files had moved:
+`port/parity.json` and `port/LandnamPartyTables.gen.h`.
+
+Worth being accurate about what moved and why, because the first reading was
+wrong. It was NOT that ranks broke the port. `canonical()` hashes every key of
+the state including `version`, so the run hash moves on EVERY save bump — and
+every one of the last twenty bumps regenerated these same files. The facets
+name it exactly: `run` moved on all 44 checkpoints (the version), `field` on
+7 (combatants gained a rank), and `world`, `band`, `ship`, `coast` and
+`steading` did not move at all. Worldgen is bit-identical.
+
+So the routine answer was available: regenerate, `npm run port:sync`, carry
+on. That was not taken, because the routine answer assumes the port is worth
+keeping current, and Phase 8 is the reason to doubt it — the port is a port
+of a game being replaced, and every step of this conversion would drag
+generated contracts across to a C++ sim that will have to be rewritten
+wholesale anyway.
+
+**The hand-over is therefore paused, and this is a bar being lowered.** It is
+recorded as one rather than hidden:
+
+- `test/contract.test.ts` carries a `FROZEN` constant with a date and a
+  reason. The hash bar skips while it is set.
+- The drift is PRINTED on every run, naming each file and both hashes, so the
+  cost of the pause is in the log rather than waiting to be found by another
+  audit. The freeze is never the quiet kind.
+- A second test keeps the freeze honest: it fails if the reason is missing, or
+  if this section stops recording why, so the freeze cannot outlive the
+  decision behind it.
+- Lifting it is one line — clear `FROZEN`, run `npm run port:sync`.
+
+The generated files themselves ARE regenerated and committed here. This repo
+stays internally consistent; what is paused is only carrying them across.
+
 ### The collision with Phase 7
 
 Phase 7 is porting the hex game to Unreal. If Phase 8 lands, that port is

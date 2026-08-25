@@ -339,6 +339,17 @@ export interface Combatant {
   personId: string;
   side: Side;
   at: Hex;
+  /**
+   * Where in the line this fighter stands. 1 is the front, where the two
+   * walls meet; the back rank is where the throwers are.
+   *
+   * This is what replaces the hex battlefield — see sim/ranks.ts for why a
+   * wall is a line with depth rather than a plane. `at` is still what the
+   * fight is actually resolved on for now; ranks are assigned and carried
+   * but nothing reads them yet, so this step changes no behaviour. 8.1c
+   * moves the verbs across and `at` goes.
+   */
+  rank: number;
   initiative: number;
   /** Movement left this turn. */
   movesLeft: number;

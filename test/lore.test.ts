@@ -78,6 +78,7 @@ function duel(base: GameState, side: 'warband' | 'foe'): GameState {
     personId,
     side: from,
     at,
+    rank: 1,
     initiative: 0,
     movesLeft: 3,
     hasActed: false,

@@ -367,6 +367,23 @@ export const MIGRATIONS: Record<number, Migration> = {
   // fishing. An old expedition keeps whatever purpose it launched under; the
   // new one is only ever chosen going forward.
   43: (save) => ({ ...save, version: 44 }),
+  // v44 -> v45: a fighter has a place in the LINE now, not just a hex. Rank 1
+  // is the front. Nothing reads it yet, so a fight saved mid-swing carries on
+  // untouched — the ranks just have to exist and be sane. Ranked per side, in
+  // the order the combatants are stored, which is the order they deployed.
+  44: (save) => {
+    const battle = save['battle'] as { combatants?: Record<string, unknown>[] } | undefined;
+    if (battle?.combatants) {
+      const seen: Record<string, number> = {};
+      battle.combatants = battle.combatants.map((c) => {
+        const side = typeof c['side'] === 'string' ? (c['side'] as string) : 'warband';
+        seen[side] = (seen[side] ?? 0) + 1;
+        return { ...c, rank: seen[side] };
+      });
+    }
+    return { ...save, version: 45 };
+  },
+
 };
 
 export interface MigrationResult {

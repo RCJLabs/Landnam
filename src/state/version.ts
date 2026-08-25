@@ -87,7 +87,15 @@
 //                   and which ones the band knows needs no field either: a
 //                   ground sits on a hex, and the fog already remembers which
 //                   hexes have been seen. Only the errand is new shape.
-export const SAVE_VERSION = 44;
+// v45 (ranks): Combatant gained `rank` — where in the line a fighter stands,
+//               1 at the front. The hex battlefield is being replaced by a
+//               line with depth (sim/ranks.ts), and this is the first step:
+//               ranks are assigned and carried, and nothing reads them yet,
+//               so a fight saved mid-swing keeps going exactly as it was.
+//               A save from before this has combatants with no rank, and the
+//               migration ranks them in the order they are stored, which is
+//               the order they took the field.
+export const SAVE_VERSION = 45;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';
