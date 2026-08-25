@@ -1,24 +1,35 @@
-// TRAVEL renderer: the world map as layered SVG. Pure view — it reads state
-// and emits a hex click; it never mutates anything.
+// TRAVEL renderer: the world map as layered SVG.
+//
+// A BACKEND, not a decision-maker. What the map shows is decided in
+// render/travelScene.ts as plain data in world coordinates; this turns that
+// into nodes and nothing else. The split is what makes a second backend
+// possible without two copies of the rules, and it is what lets the rules be
+// tested without a document — see the head of travelScene.ts.
+//
+// Pure view either way: it reads state and emits a hex click; it never
+// mutates anything.
 
-import { cornerPoints, corners, fromKey, fromPixel, key, neighbors, toPixel, type Hex } from '../hex';
+import { cornerPoints, corners, fromKey, fromPixel, toPixel, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
-import type { GameState, Neighbour, Place, Tile } from '../state/types';
+import type { GameState, Neighbour, Place } from '../state/types';
 import { clanKind, standingFor } from '../data/clans';
-import { atSea, deepOcean, moveOptions } from '../sim/road';
-import { rivalSettled } from '../sim/rival';
-import { charted, crossed } from '../sim/skerry';
-import { knownGrounds } from '../sim/fishery';
-import { landmarkAt } from '../sim/landmark';
 import { mapDefs, svgEl } from './svg';
 import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
 import { deepOceanFill, reliefDef, terrainFill, terrainPatterns } from './terrainArt';
 import { seasonTint } from './fieldWeather';
-import { seasonOf } from '../sim/calendar';
-import { makeRng } from '../rng';
+import {
+  HEX_SIZE,
+  describeGround,
+  describeLight,
+  describeOverlay,
+  describeSeason,
+  describeToken,
+  type HexGround,
+  type Mark,
+} from './travelScene';
 
-export const HEX_SIZE = 26;
+export { HEX_SIZE };
 
 export interface TravelView {
   root: SVGSVGElement;
@@ -28,43 +39,19 @@ export interface TravelView {
   centreOn(h: Hex): void;
 }
 
-function tileFill(tile: Tile, visible: boolean, deep: boolean): string {
-  if (deep) return deepOceanFill(visible);
-  return terrainFill(tile.terrain, visible);
+function tileFill(ground: HexGround, lit: boolean): string {
+  if (ground.deep) return deepOceanFill(lit);
+  return terrainFill(ground.terrain, lit);
 }
 
-/**
- * Open water, asked of the sim rather than decided here: `deepOcean` is the
- * same predicate that refuses the crossing, so the map cannot promise water
- * the knarr will not row. Read off the STATIC tiles like the sim's is, so a
- * hex's depth never changes once drawn — which is what lets it live in the
- * fill and ride the build-once/relight-only repaint path untouched.
- */
-function isDeep(state: GameState, k: string): boolean {
-  return deepOcean(state, fromKey(k));
-}
-
-/**
- * The surf line: this ocean hex's edges that face land, as one path.
- *
- * Built from the static tiles like the depth is. A foam edge can face land
- * the fog has not lifted from, which is technically a whisper about the
- * coastline — accepted, because sight always reaches further than one hex,
- * so by the time a player can SEE the foam they can see the shore it breaks
- * on.
- */
-function foamPath(state: GameState, p: { x: number; y: number }): string {
+/** The surf line, from the edges the scene says face land. */
+function foamPath(p: { x: number; y: number }, edges: number[]): string {
+  if (edges.length === 0) return '';
   const ring = corners(p.x, p.y, HEX_SIZE - 1.5);
   let d = '';
-  for (let i = 0; i < 6; i++) {
+  for (const i of edges) {
     const a = ring[i]!;
     const b = ring[(i + 1) % 6]!;
-    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    // The hex on the far side of this edge, found by stepping through it —
-    // no corner-to-direction table to get quietly wrong.
-    const across = fromPixel(p.x + (mid.x - p.x) * 2, p.y + (mid.y - p.y) * 2, HEX_SIZE);
-    const there = state.world.tiles[key(across)];
-    if (!there || there.terrain === 'ocean') continue;
     d += `M ${a.x.toFixed(1)} ${a.y.toFixed(1)} L ${b.x.toFixed(1)} ${b.y.toFixed(1)} `;
   }
   return d;
@@ -129,6 +116,8 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       river: SVGCircleElement | null;
       foam: SVGPathElement | null;
       mark: SVGGElement | null;
+      /** What it was built from. Held so a relight never has to ask again. */
+      ground: HexGround;
     }
   >();
   const lit = new Map<string, Lit>();
@@ -151,7 +140,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
 
     chartCountry(state);
 
-    const season = seasonOf(state.day);
+    const season = describeSeason(state);
     if (season !== litSeason) {
       litSeason = season;
       layerLight.replaceChildren();
@@ -161,171 +150,83 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       if (tint) layerLight.append(tint);
     }
 
-    // Where we could step next — and which of those crossings the band knows
-    // has rock in it. A three-hex row passes over water the player is not
-    // looking at, so the marker itself has to carry the warning: seeing the
-    // skerry on the map is no use if the route to somewhere else runs over
-    // it.
-    for (const option of travelOptions(state)) {
-      const p = toPixel(option, HEX_SIZE);
-      const overRock = crossed(state.party.at, option).some(
-        (h) => state.world.seen[key(h)] && charted(state, h),
-      );
-      layerOverlay.append(
-        svgEl('polygon', {
+    for (const mark of describeOverlay(state)) layerOverlay.append(...drawMark(mark));
+
+    placeToken(state);
+  }
+
+  /**
+   * One mark, as nodes. Every branch here is presentation and nothing else —
+   * whether the ground is claimed, whether a crossing has rock in it, whether
+   * there are birds today, are all settled before this is called.
+   */
+  function drawMark(mark: Mark): (SVGElement)[] {
+    const p = toPixel(mark.at, HEX_SIZE);
+    switch (mark.kind) {
+      case 'move':
+        return [svgEl('polygon', {
           points: cornerPoints(p.x, p.y, HEX_SIZE - 3),
           fill: 'none',
-          stroke: overRock ? '#d3a441' : '#e8dcc0',
+          stroke: mark.overRock ? '#d3a441' : '#e8dcc0',
           'stroke-width': 2,
-          'stroke-dasharray': overRock ? '2 4' : '5 5',
-          opacity: overRock ? 0.9 : 0.75,
-        }),
-      );
-    }
+          'stroke-dasharray': mark.overRock ? '2 4' : '5 5',
+          opacity: mark.overRock ? 0.9 : 0.75,
+        })];
 
-    // Ways the band has cut. In the OVERLAY, not on the build-once path —
-    // a hex is built the first time it is SEEN, and ground is usually broken
-    // long after that, so a track built with its hex would never appear on
-    // the hex that most needs it. A handful of hexes a run: cheap to redraw.
-    for (const k of Object.keys(state.world.made ?? {})) {
-      if (!state.world.seen[k]) continue;
-      const p = toPixel(fromKey(k), HEX_SIZE);
-      // Two strokes, dark under light. A single pale track vanished on sand
-      // and a single dark one would vanish on forest; the pair reads on both,
-      // which is the same trick the tokens use to stay legible over any
-      // ground.
-      const d = `M ${p.x - HEX_SIZE * 0.8} ${p.y + HEX_SIZE * 0.2} `
-        + `Q ${p.x} ${p.y - HEX_SIZE * 0.25} ${p.x + HEX_SIZE * 0.8} ${p.y + HEX_SIZE * 0.2}`;
-      layerOverlay.append(
-        svgEl('path', {
-          d,
-          class: 'made-way',
-          fill: 'none',
-          stroke: '#2b2118',
-          'stroke-width': 4.5,
-          'stroke-linecap': 'round',
-          opacity: 0.55,
-        }),
-        svgEl('path', {
-          d,
-          fill: 'none',
-          stroke: '#e0cfa4',
-          'stroke-width': 2,
-          'stroke-linecap': 'round',
-          'stroke-dasharray': '3 4',
-          opacity: 0.95,
-        }),
-      );
-    }
+      case 'way': {
+        // Two strokes, dark under light. A single pale track vanished on sand
+        // and a single dark one would vanish on forest; the pair reads on
+        // both, which is the same trick the tokens use to stay legible over
+        // any ground.
+        const d = `M ${p.x - HEX_SIZE * 0.8} ${p.y + HEX_SIZE * 0.2} `
+          + `Q ${p.x} ${p.y - HEX_SIZE * 0.25} ${p.x + HEX_SIZE * 0.8} ${p.y + HEX_SIZE * 0.2}`;
+        return [
+          svgEl('path', {
+            d, class: 'made-way', fill: 'none', stroke: '#2b2118',
+            'stroke-width': 4.5, 'stroke-linecap': 'round', opacity: 0.55,
+          }),
+          svgEl('path', {
+            d, fill: 'none', stroke: '#e0cfa4', 'stroke-width': 2,
+            'stroke-linecap': 'round', 'stroke-dasharray': '3 4', opacity: 0.95,
+          }),
+        ];
+      }
 
-    // Rocks the band has learnt about. Only charted ones: the sea keeps what
-    // nobody has read yet, and a chart that showed rocks before they were
-    // found would make the learning worthless.
-    for (const k of state.world.charted ?? []) {
-      if (!state.world.seen[k]) continue;
-      const p = toPixel(fromKey(k), HEX_SIZE);
-      layerOverlay.append(skerryMark(p.x, p.y));
-    }
+      case 'skerry':    return [skerryMark(p.x, p.y)];
+      case 'fishing':   return [fishingMark(p.x, p.y)];
+      case 'neighbour': return [neighbourMark(mark.neighbour)];
+      case 'place':     return [placeMark(mark.place)];
+      case 'landfall':  return [landfallMark(mark.at)];
+      case 'steading':  return [steading(mark.at)];
+      case 'rivalHall': return [rivalHall(mark.at)];
 
-    // Fishing grounds, once the band has laid eyes on the water.
-    //
-    // Birds rather than a marker: what tells a crew a ground is under them
-    // is a cloud of gulls working it, and the map says the same thing the
-    // sea does. No chart of its own — the ground is derived from the seed
-    // and the fog already remembers which water has been looked at.
-    for (const at of knownGrounds(state)) {
-      const p = toPixel(at, HEX_SIZE);
-      layerOverlay.append(fishingMark(p.x, p.y));
-    }
-
-    // Other people's places, once somebody has laid eyes on them.
-    for (const n of state.neighbours) {
-      if (!n.found) continue;
-      layerOverlay.append(neighbourMark(n));
-    }
-
-    // The fixed points of the country, once the fog has come off them.
-    for (const p of state.world.places) {
-      if (!state.world.seen[key(p.at)]) continue;
-      layerOverlay.append(placeMark(p));
-    }
-
-    // Where the keel first touched sand. Kept on the map because it is the
-    // one fixed point on a coast you are otherwise reading for the first time.
-    if (state.world.seen[key(state.world.landing)]) {
-      layerOverlay.append(landfallMark(state.world.landing));
-    }
-
-    if (state.settlement) {
-      layerOverlay.append(steading(state.settlement.at));
-    }
-
-    // The other landnam. Only what the band has actually laid eyes on: a
-    // fence on ground nobody has walked is not something they could know.
-    if (state.rival && rivalSettled(state)) {
-      for (const k of state.rival.claims) {
-        if (!state.world.seen[k]) continue;
-        const at = fromKey(k);
-        const p = toPixel(at, HEX_SIZE);
+      case 'claim':
         // A WASH, not another outline. The first cut drew a dashed border in
         // his colour and it read as one more move marker at phone size —
         // claimed ground is an area, and an area is said with a fill.
-        layerOverlay.append(
-          svgEl('polygon', {
-            points: cornerPoints(p.x, p.y, HEX_SIZE - 1),
-            fill: '#8a2f24',
-            'fill-opacity': 0.22,
-            stroke: '#b23b2e',
-            'stroke-width': 1.4,
-            opacity: 0.9,
-          }),
-        );
-      }
-      if (state.world.seen[key(state.rival.at)]) {
-        layerOverlay.append(rivalHall(state.rival.at));
-      }
-    }
+        return [svgEl('polygon', {
+          points: cornerPoints(p.x, p.y, HEX_SIZE - 1),
+          fill: '#8a2f24',
+          'fill-opacity': 0.22,
+          stroke: '#b23b2e',
+          'stroke-width': 1.4,
+          opacity: 0.9,
+        })];
 
-    // A camped band has a fire going: the glow is the mark of a night's rest,
-    // gone the moment they move on.
-    if (state.party.hasCamped && !atSea(state)) {
-      const p = toPixel(state.party.at, HEX_SIZE);
-      layerOverlay.append(
-        svgEl('circle', {
+      case 'camp':
+        return [svgEl('circle', {
           cx: p.x, cy: p.y + HEX_SIZE * 0.2, r: HEX_SIZE * 0.55,
           class: 'campglow', fill: '#d3a441',
-        }),
-      );
-    }
+        })];
 
-    // Some days there are birds over the water. Seeded from the day, so a
-    // replay has the same sky; near the band, so they are actually seen.
-    const birdRng = makeRng(`landnam-birds:${state.seed}:${state.day}`);
-    if (birdRng.next() < 0.35) {
-      const water = neighbors(state.party.at)
-        .concat(neighbors(state.party.at).flatMap((n) => neighbors(n)))
-        .filter((h) => {
-          const k = key(h);
-          return state.world.seen[k] && state.world.tiles[k]?.terrain === 'ocean';
-        });
-      if (water.length > 0) {
-        const at = toPixel(birdRng.pick(water), HEX_SIZE);
-        for (const [dx, dy] of [[0, 0], [7, -4], [-6, -7]] as const) {
-          layerOverlay.append(
-            svgEl('path', {
-              d: `M ${at.x + dx - 3} ${at.y + dy} q 3 -2.6 3 0 q 0 -2.6 3 0`,
-              class: 'bird',
-              fill: 'none',
-              stroke: '#dfe6ea',
-              'stroke-width': 1.1,
-              opacity: 0.8,
-            }),
-          );
-        }
-      }
+      case 'birds':
+        return ([[0, 0], [7, -4], [-6, -7]] as const).map(([dx, dy]) =>
+          svgEl('path', {
+            d: `M ${p.x + dx - 3} ${p.y + dy} q 3 -2.6 3 0 q 0 -2.6 3 0`,
+            class: 'bird', fill: 'none', stroke: '#dfe6ea',
+            'stroke-width': 1.1, opacity: 0.8,
+          }));
     }
-
-    placeToken(state);
   }
 
   /**
@@ -350,17 +251,15 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     if (isIdle(work)) return;
 
     for (const k of work.added) {
-      const tile = state.world.tiles[k];
-      const now = seen[k];
-      if (!tile || now === undefined) continue;
+      const ground = describeGround(state, k);
+      const visible = describeLight(state, k);
+      if (!ground || visible === null) continue;
       const p = toPixel(fromKey(k), HEX_SIZE);
-      const visible = now === 'visible';
 
-      const deep = isDeep(state, k);
       const poly = svgEl('polygon', {
         points: cornerPoints(p.x, p.y, HEX_SIZE),
-        fill: tileFill(tile, visible, deep),
-        stroke: terrainDef(tile.terrain).edge,
+        fill: tileFill(ground, visible),
+        stroke: terrainDef(ground.terrain).edge,
         'stroke-width': 1,
         opacity: visible ? 1 : 0.55,
       });
@@ -369,19 +268,17 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       // Surf where the sea meets the land — built once with the hex, lit
       // with it, and costing the repaint nothing after that.
       let foam: SVGPathElement | null = null;
-      if (tile.terrain === 'ocean' && !deep) {
-        const d = foamPath(state, p);
-        if (d) {
-          foam = svgEl('path', {
-            d,
-            fill: 'none',
-            stroke: '#e8f0f2',
-            'stroke-width': 1.6,
-            'stroke-linecap': 'round',
-            opacity: visible ? 0.45 : 0.22,
-          });
-          layerRivers.append(foam);
-        }
+      const d = foamPath(p, ground.foam);
+      if (d) {
+        foam = svgEl('path', {
+          d,
+          fill: 'none',
+          stroke: '#e8f0f2',
+          'stroke-width': 1.6,
+          'stroke-linecap': 'round',
+          opacity: visible ? 0.45 : 0.22,
+        });
+        layerRivers.append(foam);
       }
 
       // Mountains, forest and hills used to get a group of paths each here.
@@ -389,7 +286,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       // all eight terrains have texture and none of them costs a node.
 
       let river: SVGCircleElement | null = null;
-      if (tile.river) {
+      if (ground.river) {
         river = svgEl('circle', {
           cx: p.x,
           cy: p.y,
@@ -404,29 +301,28 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       // the same build-once path everything else on this layer rides, so the
       // repaint bar does not move for them.
       let mark: SVGGElement | null = null;
-      const landmark = landmarkAt(state.world, state.seed, fromKey(k));
-      if (landmark) {
-        const glyph = landmarkMark(p.x, p.y, landmark, visible);
+      if (ground.landmark) {
+        const glyph = landmarkMark(p.x, p.y, ground.landmark, visible);
         layerRivers.append(glyph);
         mark = glyph;
       }
 
-      drawn.set(k, { poly, river, foam, mark });
-      lit.set(k, now);
+      drawn.set(k, { poly, river, foam, mark, ground });
+      lit.set(k, seen[k]!);
     }
 
+    // A relight asks ONE question, because the ground under a charted hex
+    // cannot have moved — the node is holding what it was built from.
     for (const k of work.relit) {
       const held = drawn.get(k);
-      const tile = state.world.tiles[k];
-      const now = seen[k];
-      if (!held || !tile || now === undefined) continue;
-      const visible = now === 'visible';
-      held.poly.setAttribute('fill', tileFill(tile, visible, isDeep(state, k)));
-      held.poly.setAttribute('opacity', visible ? '1' : '0.55');
-      held.river?.setAttribute('opacity', visible ? '0.85' : '0.4');
-      held.foam?.setAttribute('opacity', visible ? '0.45' : '0.22');
-      held.mark?.setAttribute('opacity', visible ? '0.95' : '0.5');
-      lit.set(k, now);
+      const now = describeLight(state, k);
+      if (!held || now === null) continue;
+      held.poly.setAttribute('fill', tileFill(held.ground, now));
+      held.poly.setAttribute('opacity', now ? '1' : '0.55');
+      held.river?.setAttribute('opacity', now ? '0.85' : '0.4');
+      held.foam?.setAttribute('opacity', now ? '0.45' : '0.22');
+      held.mark?.setAttribute('opacity', now ? '0.95' : '0.5');
+      lit.set(k, seen[k]!);
     }
 
     for (const k of work.dropped) {
@@ -451,8 +347,8 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
    * cut it actually is.
    */
   function placeToken(state: GameState): void {
-    const afloat = atSea(state);
-    const p = toPixel(state.party.at, HEX_SIZE);
+    const { at, afloat } = describeToken(state);
+    const p = toPixel(at, HEX_SIZE);
     if (!token || tokenAfloat !== afloat) {
       token = afloat ? shipToken() : partyToken();
       tokenAfloat = afloat;
@@ -465,21 +361,6 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       return;
     }
     token.setAttribute('transform', `translate(${p.x} ${p.y})`);
-  }
-
-  /**
-   * What the map offers — the sim's own list, not a second one kept here.
-   *
-   * This used to be `neighbors` filtered by `moveEffort`, which knew nothing
-   * about the leash on a returning expedition, nothing about a settled band,
-   * and — the one that was actually costing the player moves — nothing about
-   * the knarr's day of rowing. `moveOptions` has computed all of it since the
-   * rowing work and had NO caller in src/: 60 legal moves over 15 afloat
-   * turns were never drawn, so the sea read as a wall three hexes thick.
-   */
-  function travelOptions(state: GameState): Hex[] {
-    if (state.event || state.end) return [];
-    return moveOptions(state);
   }
 
   // Pointer handling: drag to pan, pinch to zoom, tap to move.
