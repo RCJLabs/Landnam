@@ -4,7 +4,7 @@
 // Fighters are Person objects on both sides; a Combatant only says where
 // they stand and what they have left this turn.
 
-import { column, distance, equals, key, type Hex } from '../hex';
+import { key } from '../hex';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
 import {
@@ -33,7 +33,6 @@ import {
   FIELD_WIDTH,
   generateBattlefield,
   groundName,
-  isPassable,
   pickRaidField,
   pickSeaField,
   seaFieldFrom,
@@ -58,10 +57,6 @@ export function fighterPerson(state: GameState, personId: string): Person | unde
     state.party.people.find((p) => p.id === personId) ??
     state.battle?.foes.find((p) => p.id === personId)
   );
-}
-
-export function combatantAt(battle: Battle, h: Hex): Combatant | undefined {
-  return battle.combatants.find((c) => !c.down && !c.fled && equals(c.at, h));
 }
 
 /** Still on the field: not dropped, not run off. Broken fighters still count. */
@@ -309,7 +304,7 @@ export function beginBattle(
   const home = state.settlement;
   const raidField = raid && home ? pickRaidField(home.plots.map((p) => p.kind), rng.derive('ground')) : undefined;
   const seaField = !raid && terrain === 'ocean' ? pickSeaField(rng.derive('ground')) : undefined;
-  const { grid, warbandSpots, foeSpots } =
+  const { grid } =
     raidField && home
       ? steadingFieldFrom(raidField, standsFor(state, 'palisade'))
       : seaField
@@ -392,50 +387,24 @@ export function beginBattle(
     beats: [],
   };
 
-  const taken = new Set<string>();
-  const midColumn = (FIELD_WIDTH - 1) / 2;
+  // Deployment used to be a placement problem: find a free, passable spot on
+  // the authored grid, prefer elbow room, and if there was nowhere left the
+  // fighter simply did not stand. Since 8.1d a fighter's place is his RANK
+  // and there is no ground to place him on, so the whole search is gone and
+  // everyone who turned up stands, in the order they turned up.
+  //
+  // Measured before cutting, because "and then nobody deploys" is exactly the
+  // kind of rule that turns out to be load-bearing: across 40 open fights and
+  // 20 raids the spot search refused NOBODY. It was capping a number the band
+  // rules had already capped.
 
-  /**
-   * Deploys toward the middle of the band but leaves air between fighters.
-   * Packing a line shoulder to shoulder looks tidy and plays terribly: the
-   * warriors in the middle open the fight with every neighbour occupied and
-   * nowhere legal to step.
-   */
-  const place = (spots: Hex[], placed: Hex[]): Hex | undefined => {
-    const free = spots.filter(
-      (s) => !taken.has(key(s)) && isPassable(battle.grid[key(s)]?.ground ?? 'block'),
-    );
-    if (free.length === 0) return undefined;
-
-    let best = free[0]!;
-    let bestScore = -Infinity;
-    for (const spot of free) {
-      const nearest =
-        placed.length === 0 ? 99 : Math.min(...placed.map((p) => distance(p, spot)));
-      // Elbow room counts for a lot, up to two hexes; after that, centre up.
-      const score = Math.min(nearest, 2) * 10 - Math.abs(column(spot) - midColumn);
-      if (score > bestScore) {
-        bestScore = score;
-        best = spot;
-      }
-    }
-    taken.add(key(best));
-    placed.push(best);
-    return best;
-  };
-
-  const ourLine: Hex[] = [];
   for (const person of ourSide) {
-    const at = place(warbandSpots, ourLine);
-    if (!at) continue;
     battle.combatants.push({
       personId: person.id,
       side: 'warband',
-      at,
-      // Rank comes off the order they were deployed in. Placement is still
-      // a hex problem at this step, so there is no better answer available
-      // than "the order they took the field"; 8.1c makes rank the thing
-      // that decides where somebody stands rather than a note about it.
+      // The order they took the field is the order they stand in, front
+      // first. This was a note ABOUT a hex once; it is the whole of where
+      // somebody is now.
       rank: battle.combatants.filter((c) => c.side === 'warband').length + 1,
       initiative: 0,
       movesLeft: BASE_MOVES,
@@ -451,14 +420,10 @@ export function beginBattle(
     });
   }
 
-  const theirLine: Hex[] = [];
   for (const foe of foes) {
-    const at = place(foeSpots, theirLine);
-    if (!at) continue;
     battle.combatants.push({
       personId: foe.id,
       side: 'foe',
-      at,
       rank: battle.combatants.filter((c) => c.side === 'foe').length + 1,
       initiative: 0,
       movesLeft: BASE_MOVES,

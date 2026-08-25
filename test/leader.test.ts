@@ -5,7 +5,6 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { startBattle } from '../src/sim/battleTurn';
 import { apply } from '../src/sim/actions';
-import { offsetToAxial } from '../src/hex';
 import { leaderOf } from '../src/sim/people';
 import { startingNerve } from '../src/sim/morale';
 import { WALL_PUSH_MAX, wallPush } from '../src/sim/swing';
@@ -50,7 +49,6 @@ function arrange(state: GameState, who: Combatant): void {
   who.broken = false;
 }
 
-/** Park a list of combatants far from the action, spread out. */
 /**
  * Get these out of the way.
  *
@@ -59,11 +57,8 @@ function arrange(state: GameState, who: Combatant): void {
  * shoulder if his rank touches yours — so they go to ranks deep enough that
  * nothing in a fixture reaches them.
  */
-function park(list: Combatant[], row: number): void {
-  list.forEach((c, i) => {
-    c.at = offsetToAxial(i % 7, row);
-    c.rank = 20 + i;
-  });
+function park(list: Combatant[]): void {
+  list.forEach((c, i) => { c.rank = 20 + i; });
 }
 
 describe('who leads', () => {
@@ -95,8 +90,8 @@ describe('the wall pushes', () => {
   it('no mates, one mate, two mates — and two is the cap', () => {
     const state = fight('push-count');
     const [a, b, c, d] = ours(state) as [Combatant, Combatant, Combatant, Combatant];
-    park(foes(state), 0);
-    park(ours(state).slice(4), 8);
+    park(foes(state));
+    park(ours(state).slice(4));
     // `a` is the middle of the line and has both — `b` and `c` flank him with
     // one each, and `d` stands where nothing touches him.
     a.rank = 2;
@@ -126,8 +121,8 @@ describe('the glancing blow', () => {
     const state = fight(seed);
     const attacker = ours(state)[0]!;
     const target = foes(state)[0]!;
-    park(ours(state).slice(1), 8);
-    park(foes(state).slice(1), 0);
+    park(ours(state).slice(1));
+    park(foes(state).slice(1));
     attacker.rank = 1;
     target.rank = 2;
     arrange(state, attacker);
@@ -213,8 +208,8 @@ describe('the war-cry', () => {
     const others = ours(state).filter((c) => c !== leader);
     const [nearAlly, farAlly] = others as [Combatant, Combatant];
     const [nearFoe, farFoe] = foes(state) as [Combatant, Combatant];
-    park(ours(state).slice(3), 8);
-    park(foes(state).slice(2), 0);
+    park(ours(state).slice(3));
+    park(foes(state).slice(2));
     leader.rank = 1;
     nearAlly.rank = 2;
     farAlly.rank = 6;

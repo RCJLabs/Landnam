@@ -46,14 +46,12 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
   const resist =
     rng.roll(2, 6) + effectiveStat(shoved, 'might') + (target.defending ? 2 : 0);
 
-  const stood = target.at;
   if (attack <= resist) {
     beat(battle, {
       kind: 'shoved',
       who: active.personId,
       target: target.personId,
       result: 'held',
-      from: stood,
     });
     battle.log.push(`${shoved.name} did not give ground to ${shover.name}.`);
     return true;
@@ -72,7 +70,6 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
       who: active.personId,
       target: target.personId,
       result: 'crushed',
-      from: stood,
       damage: 2,
     });
     if (shoved.health > 0) {
@@ -89,8 +86,6 @@ export function doShove(state: GameState, targetPersonId: string): boolean {
     who: active.personId,
     target: target.personId,
     result: 'pushed',
-    from: stood,
-    to: target.at,
   });
   const forward = fighterPerson(state, came.personId);
   battle.log.push(

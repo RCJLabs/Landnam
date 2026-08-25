@@ -1,10 +1,16 @@
 // The first step of the conversion: a fighter has a place in the LINE.
 //
-// Nothing reads rank yet — the fight is still resolved on hexes — so the only
-// claims available are that ranks exist, that they are a sane line, and that
-// an old save comes forward without losing the fight it was in the middle of.
-// That last one is the whole reason this step is separate from 8.1c: it can
-// be true, and it stops being true once the verbs move across.
+// Written at 8.1b, when rank was a field nothing read and the fight was still
+// resolved on hexes — so the only claims available were that ranks exist,
+// that they form a sane line, and that an old save comes forward without
+// losing the fight it was in the middle of.
+//
+// All three still hold and the ground under them has moved twice: 8.1c gave
+// the verbs to the ranks, 8.1d gave them to the renderer and deleted the hex.
+// What this file guards now is the SEAM — a saga saved before any of it walks
+// v44 to v47 and comes out with its fight intact. The header is kept honest
+// rather than rewritten, because the dates are the point: this was the step
+// that made the rest survivable.
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
@@ -83,19 +89,46 @@ describe('a saga saved mid-swing', () => {
     }
   });
 
-  it('is untouched otherwise — this step changes no behaviour', () => {
+  it('carries the fight all the way to the line, and leaves the hex behind', () => {
+    // This said "is untouched otherwise — this step changes no behaviour",
+    // and asserted every combatant still had an `at`, because when it was
+    // written v45 only ADDED a rank and the hex was still what fights ran
+    // on. Two milestones later the hex is what nothing runs on, so the claim
+    // has to be the one that outlived it: a saga saved mid-swing under the
+    // old rules walks the whole chain — 44 to 45 to 46 to 47 — and comes out
+    // with its fight intact and no coordinate in it.
     const state = fought('grim-fjord-100');
     const old = JSON.parse(JSON.stringify(state)) as Record<string, unknown>;
     old['version'] = 44;
     const battle = old['battle'] as { combatants: Record<string, unknown>[] };
-    for (const c of battle.combatants) delete c['rank'];
+    // As a v44 save was: a hex apiece and no rank at all.
+    for (const [i, c] of battle.combatants.entries()) {
+      delete c['rank'];
+      c['at'] = { q: i, r: 0 };
+    }
 
     const { save } = migrate(old);
-    const now = save['battle'] as { round: number; turnIndex: number; combatants: { at: unknown }[] };
+    expect(save['version']).toBe(SAVE_VERSION);
+    const now = save['battle'] as {
+      round: number;
+      turnIndex: number;
+      combatants: { at?: unknown; rank: number; personId: string; nerve: number }[];
+    };
+    // The fight itself is where it was.
     expect(now.round).toBe(state.battle!.round);
     expect(now.turnIndex).toBe(state.battle!.turnIndex);
-    // The hex is still what the fight runs on until 8.1c.
-    expect(now.combatants.every((c) => c.at !== undefined)).toBe(true);
+    expect(now.combatants.length).toBe(state.battle!.combatants.length);
+    // Every man kept who he is and how he was doing...
+    for (const [i, c] of now.combatants.entries()) {
+      expect(c.personId).toBe(state.battle!.combatants[i]!.personId);
+      expect(c.nerve).toBe(state.battle!.combatants[i]!.nerve);
+      expect(Number.isInteger(c.rank)).toBe(true);
+    }
+    // ...and nobody is carrying a hex any more.
+    expect(
+      now.combatants.some((c) => c.at !== undefined),
+      'a coordinate survived the migration that deletes it',
+    ).toBe(false);
   });
 
   it('a save with no fight in progress migrates without inventing one', () => {

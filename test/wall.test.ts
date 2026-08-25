@@ -8,12 +8,12 @@ import {
   widestStand,
 } from '../src/sim/battlefield';
 import { makeRng } from '../src/rng';
-import { distance, key, offsetToAxial } from '../src/hex';
+import { key, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
 import type { Terrain } from '../src/state/types';
 import { encode } from '../src/state/save';
 import { apply } from '../src/sim/actions';
-import { BASE_MOVES, activeCombatant, effective, fighterPerson, standing } from '../src/sim/battle';
+import { activeCombatant, effective, fighterPerson, standing } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
 import { DEFEND_BONUS, evasion } from '../src/sim/swing';
 import { reachTargets, throwTargets } from '../src/sim/strike';
@@ -35,7 +35,6 @@ import {
   startingNerve,
   witnessFall,
 } from '../src/sim/morale';
-import { FIELD_HEIGHT } from '../src/sim/battlefield';
 import type { Combatant, GameState } from '../src/state/types';
 
 function fight(seed: string, difficulty = 0): GameState {
@@ -269,11 +268,15 @@ describe('nerve', () => {
     let state = fight('nerve-flee', 1);
     const battle = state.battle!;
     for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
-    // One warrior, already broken, right beside their own edge.
+    // One warrior, already broken, with nobody behind him to give ground to
+    // — which is what "beside their own edge" means on a line. A broken man
+    // swaps back one rank at a time and only runs off the field when he is
+    // the last of his line, so taken from anywhere else this fixture can
+    // only ever produce the swap.
     const runner = battle.combatants.find((c) => c.side === 'warband')!;
     runner.broken = true;
     runner.nerve = 0;
-    runner.at = offsetToAxial(3, FIELD_HEIGHT - 2);
+    runner.rank = battle.combatants.filter((c) => c.side === 'warband').length + 5;
     battle.order = [runner.personId, ...battle.order.filter((id) => id !== runner.personId)];
     battle.turnIndex = 0;
 
@@ -444,11 +447,18 @@ describe('formation play beats brawling', () => {
       }
       // Dash: spend the action on ground, but only while contact is more
       // than a full move off — a wall that sprints arrives in pieces.
+      // Dash: spend the action on your place in the line, but only when
+      // there is nothing to reach from where you are. The gate was hex
+      // distance to the nearest foe, which since 8.1d is not a number that
+      // exists — and a wall that shuffles instead of swinging arrives in
+      // pieces just the same.
       if (
         USE.dash &&
         !active.hasActed &&
         foes.length > 0 &&
-        Math.min(...foes.map((f) => distance(f.at, active.at))) > BASE_MOVES + 2
+        adjacent.length === 0 &&
+        reachTargets(state).length === 0 &&
+        throwTargets(state).length === 0
       ) {
         state = apply(state, { type: 'B_DASH' });
         continue;

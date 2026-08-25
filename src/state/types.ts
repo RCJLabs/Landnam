@@ -338,16 +338,16 @@ export type Side = 'warband' | 'foe';
 export interface Combatant {
   personId: string;
   side: Side;
-  at: Hex;
   /**
    * Where in the line this fighter stands. 1 is the front, where the two
    * walls meet; the back rank is where the throwers are.
    *
-   * This is what replaces the hex battlefield — see sim/ranks.ts for why a
-   * wall is a line with depth rather than a plane. `at` is still what the
-   * fight is actually resolved on for now; ranks are assigned and carried
-   * but nothing reads them yet, so this step changes no behaviour. 8.1c
-   * moves the verbs across and `at` goes.
+   * This is the WHOLE of where somebody is. `at: Hex` stood above it until
+   * 8.1d — first as the thing fights were resolved on, then frozen at
+   * wherever a man deployed while the sim had already moved onto ranks, and
+   * finally as a field the renderer was still drawing people at. A position
+   * nothing agrees about is worse than no position, so it is gone. See
+   * sim/ranks.ts for why a wall is a line with depth rather than a plane.
    */
   rank: number;
   initiative: number;

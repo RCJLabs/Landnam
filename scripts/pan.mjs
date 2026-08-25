@@ -88,13 +88,19 @@ async function openFight(page) {
 const viewBoxOf = (page) =>
   page.evaluate(() => document.querySelector('svg.field').getAttribute('viewBox'));
 
-/** Where the fighter whose turn it is stands, straight off the state. */
+/**
+ * Where the fighter whose turn it is stands, straight off the state.
+ *
+ * A RANK since 8.1d. This used to read `c.at.q` and `c.at.r`, and the field
+ * it read them from is gone — a fighter's place is his rank and nothing
+ * else.
+ */
 const activeAt = (page) =>
   page.evaluate(() => {
     const battle = window.landnam.state()?.battle;
     if (!battle) return null;
     const a = battle.combatants.find((c) => c.personId === battle.order[battle.turnIndex]);
-    return a ? { q: a.at.q, r: a.at.r, id: a.personId } : null;
+    return a ? { rank: a.rank, id: a.personId } : null;
   });
 
 /** Where one NAMED fighter stands, whoever's turn it happens to be. */
@@ -102,7 +108,7 @@ const posOf = (page, id) =>
   page.evaluate((id) => {
     const battle = window.landnam.state()?.battle;
     const c = battle?.combatants.find((f) => f.personId === id);
-    return c ? { q: c.at.q, r: c.at.r } : null;
+    return c ? { rank: c.rank } : null;
   }, id);
 
 /**
@@ -176,8 +182,8 @@ for (const [w, h] of [[320, 568], [390, 844]]) {
   // in user units instead of guessing it from a screenshot.
   check(left !== right, 'the field pans when it cannot frame itself');
   check(
-    !!stoodAfter && stood.q === stoodAfter.q && stood.r === stoodAfter.r,
-    'a drag does NOT order the fighter to walk there',
+    !!stoodAfter && stood.rank === stoodAfter.rank,
+    'a drag does NOT move the fighter in the line',
   );
 
   // The hazard that comes WITH panning, and the one the old "a wide screen

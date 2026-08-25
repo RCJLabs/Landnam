@@ -102,7 +102,17 @@
 //                  and disposable — so the migration drops the `moved` beats
 //                  a pre-line save is holding rather than inventing ranks for
 //                  hexes. Nothing else in the stream changes.
-export const SAVE_VERSION = 46;
+// v47 (the hexes leave the fight): `Combatant.at` is gone, and with it the
+//                  `from`/`to` hexes on a `shoved` beat and the `drowned`
+//                  shove result. A fighter's place has been his RANK since
+//                  8.1c and the renderer stopped reading `at` in 8.1d, so
+//                  what was left was a coordinate three parts of the game
+//                  disagreed about — the sim ignored it, the view drew
+//                  people at it, and it had not moved since deployment.
+//                  Dropping a field cannot orphan a saga: a fight caught
+//                  mid-swing keeps every man, his rank, his wounds and his
+//                  nerve, and simply stops carrying a hex nobody read.
+export const SAVE_VERSION = 47;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

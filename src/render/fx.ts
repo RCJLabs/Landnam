@@ -206,14 +206,6 @@ export function showBeat(
     // drives a man away from where the walls meet, so the direction falls
     // out of which side of x = 0 he is on and needs nobody looked up.
     const was = { x: at.x - (at.x < 0 ? -RANK_GAP : RANK_GAP), y: at.y };
-    if (b.result === 'drowned') {
-      // Rings on the water where a fighter used to be. There is no water to
-      // shove a man into on a line, so `doShove` cannot produce this any
-      // more; it stays until the dead result goes with `Combatant.at`.
-      spawn(svgEl('circle', { cx: at.x, cy: at.y, r: 6, class: 'fx-splash' }), 700);
-      spawn(svgEl('circle', { cx: at.x, cy: at.y, r: 6, class: 'fx-splash late' }), 900);
-      return;
-    }
     // Motion streaks along the yard of ground they gave.
     const dx = at.x - was.x;
     const dy = at.y - was.y;

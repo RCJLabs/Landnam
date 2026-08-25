@@ -10,7 +10,6 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { startBattle } from '../src/sim/battleTurn';
 import { apply } from '../src/sim/actions';
-import { offsetToAxial } from '../src/hex';
 import {
   REACH_DAMAGE_OFF,
   REACH_PENALTY,
@@ -27,8 +26,7 @@ function field(seed: string): GameState {
   startBattle(state, 'meadow', 2);
   const battle = state.battle!;
   for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
-  battle.combatants.forEach((c, i) => {
-    c.at = offsetToAxial(i % 7, c.side === 'warband' ? 8 : 0);
+  battle.combatants.forEach((c) => {
     c.broken = false;
     c.down = false;
     c.fled = false;

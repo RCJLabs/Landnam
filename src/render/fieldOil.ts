@@ -135,28 +135,28 @@ function ridgePath(ctx: CanvasRenderingContext2D, box: Box, heights: number[]): 
  *
  * The first cut passed `clip: false`, reading it as "no clip". It is not:
  * `paintPatch` skips the `save`/`restore` PAIR but still calls `ctx.clip()`,
- * because its one existing caller opens a clip, lays several things inside
- * it and closes it itself. So every patch intersected the clip with its own
- * hex and never gave it back, and the region shrank to nothing after two or
- * three of them. The sky survived only because its gradient goes down before
- * the brush; the ground had nothing underneath and came out completely
+ * because its one existing caller opens a clip, lays several things inside it
+ * and closes it itself. So every patch intersected the clip with its own hex
+ * and never gave it back, and the region shrank to nothing after two or three
+ * of them. The sky survived only because its gradient goes down before the
+ * brush; the ground had nothing underneath and came out completely
  * transparent, which is how this was found.
- */
-/**
- * ...and what it COSTS, which is the thing to understand before touching the
- * numbers here.
  *
- * Total strokes come to roughly `area * STROKES / (1.32 * HEX_SIZE^2 *
- * grain^2)` — and note what is absent: the radius. Bigger patches hold
- * proportionally more strokes, so making them bigger or smaller moves
- * nothing. The only levers are how much AREA is painted and how coarse the
- * grain is.
+ * ## What it costs
  *
- * That was worth working out rather than guessing at. The first cut painted
- * the sky at grain 0.85 over 70% of the field and took 2742ms to open a
- * fight — three seconds of a phone going quiet, against the steading's 84ms.
- * Grain 3.2 on the sky is a tenth of the strokes for a band nobody looks at
- * closely.
+ * Both arguments matter, and an earlier draft of this comment said otherwise.
+ * It reasoned that total strokes come to `area * STROKES / (1.32 *
+ * HEX_SIZE^2 * grain^2)`, concluded the radius cancels out, and told the next
+ * reader that patch size is free. The arithmetic is right and the conclusion
+ * is wrong: a bigger patch holds proportionally fewer, BIGGER strokes, and
+ * what a canvas charges for is painted PIXELS. Measured, raising the ridge
+ * radius while holding grain took it from 417ms to 587ms.
+ *
+ * So: `area` and `grain` set how many marks, `radius * grain` sets how big
+ * each one is, and the bill is roughly the product. Tuning one at a time
+ * oscillates — this file went 2742 → 604 → 1253 → 815 → 465ms before the
+ * real lever turned out to be the CLIP, not either number. See the ridge
+ * block in `update` for that.
  */
 function brushBand(
   ctx: CanvasRenderingContext2D,

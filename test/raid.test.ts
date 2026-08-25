@@ -149,14 +149,18 @@ describe('the steading under attack', () => {
     expect(battle.width).toBe(FIELD_WIDTH);
     expect(battle.height).toBe(FIELD_HEIGHT);
 
-    // The hall stands in the yard and cannot be walked through. Authored
-    // fields place it where they like along the yard row; there is exactly
-    // one, and nobody deploys inside it.
+    // The hall stands in the yard. Authored fields place it where they like
+    // along the yard row and there is exactly one of it.
+    //
+    // "...and nobody deploys inside it" used to be checked here and cannot
+    // be any more: since 8.1d nobody deploys anywhere, because a fighter's
+    // place is his rank. The grid survives only to say whether the stakes
+    // were up (see `atThePalisade`), and it goes with the rest of the hexes
+    // in 8.5.
     const yardBlocks = Array.from({ length: FIELD_WIDTH }, (_, col) =>
       offsetToAxial(col, FIELD_HEIGHT - 1),
     ).filter((h) => battle.grid[key(h)]!.ground === 'block');
     expect(yardBlocks).toHaveLength(1);
-    expect(battle.combatants.some((c) => key(c.at) === key(yardBlocks[0]!))).toBe(false);
   });
 
   it('raises the palisade only if one was built, with a gate in it', () => {

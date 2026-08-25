@@ -396,6 +396,36 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 46 };
   },
+  // v46 -> v47: a fighter has no hex. Strip `at` from the combatants, and the
+  // `from`/`to` hexes from any `shoved` beat still in the stream.
+  //
+  // A `drowned` shove goes with them. It was the best thing the verb did —
+  // put a man in the water and the sea finished him for nothing — and a line
+  // has no water, so it has been unreachable since 8.1c. The beats it left
+  // behind name a result the type no longer has, so they are dropped rather
+  // than left to be rendered by a branch that is also gone.
+  46: (save) => {
+    const battle = save['battle'] as {
+      combatants?: Record<string, unknown>[];
+      beats?: Record<string, unknown>[];
+    } | undefined;
+    if (battle?.combatants) {
+      battle.combatants = battle.combatants.map((c) => {
+        const { at: _at, ...rest } = c as { at?: unknown };
+        return rest as Record<string, unknown>;
+      });
+    }
+    if (battle?.beats) {
+      battle.beats = battle.beats
+        .filter((b) => !(b['kind'] === 'shoved' && b['result'] === 'drowned'))
+        .map((b) => {
+          if (b['kind'] !== 'shoved') return b;
+          const { from: _from, to: _to, ...rest } = b as { from?: unknown; to?: unknown };
+          return rest as Record<string, unknown>;
+        });
+    }
+    return { ...save, version: 47 };
+  },
 
 };
 

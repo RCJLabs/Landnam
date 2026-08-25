@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { distance, key, offsetToAxial } from '../src/hex';
+import { key, offsetToAxial } from '../src/hex';
 import { makeRng } from '../src/rng';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -110,15 +110,22 @@ describe('starting a battle', () => {
     expect(standing(state.battle!, 'foe').length).toBeGreaterThan(0);
   });
 
-  it('gives every fighter a distinct hex on passable ground', () => {
+  it('gives every fighter a distinct rank in his own wall', () => {
+    // Was "a distinct hex on passable ground", which is the same claim about
+    // a field that no longer exists — and the same bug it was guarding
+    // against. Two men on one rank is a wall with a man inside another man:
+    // `closeUp` would not fix it, `pick` would hand a tap to whichever came
+    // first in the array, and the renderer would draw one on top of the
+    // other. It has been shipped once already, in this suite's own champion
+    // fixture, which numbered from 1 per side and collided with the two it
+    // had placed by hand.
     const state = battleState('placement', 'forest');
     const battle = state.battle!;
-    const seen = new Set<string>();
-    for (const combatant of battle.combatants) {
-      const k = key(combatant.at);
-      expect(seen.has(k)).toBe(false);
-      seen.add(k);
-      expect(isPassable(battle.grid[k]!.ground)).toBe(true);
+    for (const side of ['warband', 'foe'] as const) {
+      const ranks = battle.combatants.filter((c) => c.side === side).map((c) => c.rank);
+      expect(new Set(ranks).size, `${side} has two men on one rank`).toBe(ranks.length);
+      // And no gaps, front first: a line deploys closed up.
+      expect([...ranks].sort((a, b) => a - b)).toEqual(ranks.map((_, i) => i + 1));
     }
   });
 
@@ -426,23 +433,28 @@ describe('foes fight back', () => {
     expect(lost, 'standing still should sometimes get you killed').toBeGreaterThan(0);
   });
 
-  it('foes close the distance rather than idling', () => {
+  it('foes fight rather than idling', () => {
+    // Was "foes close the distance", measured as the hexes between the
+    // nearest pair shrinking. There is no distance to close on a line — the
+    // two walls start in contact, which is the point of the shape — so the
+    // claim underneath it is what survives: hand the foes six turns and they
+    // must have DONE something to us.
+    //
+    // Worth keeping rather than deleting with the geometry. An AI that
+    // stands there is the failure this was written for, and it stayed
+    // possible right through the conversion: `takeBrokenTurn`, the reach
+    // gates and `battleAi` all changed under it.
     const state = battleState('approach', 'meadow');
-    const battle = state.battle!;
-    const foe = standing(battle, 'foe')[0]!;
-    const startGap = Math.min(
-      ...standing(battle, 'warband').map((w) => distance(foe.at, w.at)),
-    );
+    const before = state.party.people.reduce((n, p) => n + p.health, 0);
     let cur = state;
     for (let i = 0; i < 6 && !cur.battle?.outcome; i++) {
       cur = apply(cur, { type: 'B_END_TURN' });
     }
-    if (cur.battle?.outcome) return;
-    const sameFoe = cur.battle!.combatants.find((c) => c.personId === foe.personId);
-    if (!sameFoe || sameFoe.down) return;
-    const endGap = Math.min(
-      ...standing(cur.battle!, 'warband').map((w) => distance(sameFoe.at, w.at)),
-    );
-    expect(endGap).toBeLessThanOrEqual(startGap);
+    const after = cur.party.people.reduce((n, p) => n + p.health, 0);
+    const shaken = cur.battle!.combatants.some((c) => c.side === 'warband' && c.nerve < 100);
+    expect(
+      after < before || shaken || !!cur.battle?.outcome,
+      'six turns of foes and not a scratch on us',
+    ).toBe(true);
   });
 });

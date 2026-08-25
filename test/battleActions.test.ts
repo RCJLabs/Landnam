@@ -1,12 +1,12 @@
 // 2.2: the five actions, zone of control, and AI temperaments.
 
 import { describe, it, expect } from 'vitest';
-import { distance, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { apply } from '../src/sim/actions';
 import { activeCombatant, fighterPerson, standing, strikeTargets } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
+import { RANKS } from '../src/sim/ranks';
 import { DEFEND_BONUS, carrying, edge, evasion } from '../src/sim/swing';
 import { canThrowAt, doStrike, throwTargets } from '../src/sim/strike';
 import { isThreatened, threatCount } from '../src/sim/zoc';
@@ -36,9 +36,11 @@ function duel(seed = 'duel'): {
   battle.combatants = [us, them];
   battle.order = [us.personId, them.personId];
   battle.turnIndex = 0;
-  us.at = offsetToAxial(3, 5);
-  them.at = offsetToAxial(3, 4);
-  for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+  // Face to face: rank 1 against rank 1, which is where the two walls meet.
+  // This used to stand them on neighbouring hexes and clear the ground under
+  // them; a line has no ground and adjacency is not a place any more.
+  us.rank = 1;
+  them.rank = 1;
   us.movesLeft = 3;
   us.hasActed = false;
   us.defending = false;
@@ -439,9 +441,11 @@ describe('foe temperaments', () => {
     // staring contest that runs out the round limit.
     const state = fight('no-shield-spam', 1);
     const battle = state.battle!;
-    // Push the warband far away so no foe is threatened by anyone.
-    for (const ours of standing(battle, 'warband')) ours.at = offsetToAxial(0, 8);
-    standing(battle, 'warband')[0]!.at = offsetToAxial(6, 8);
+    // Nobody in reach of anybody: put our whole line back past the ranks any
+    // foe verb can touch. On the hex field this walked them to the far
+    // corner; on a line "out of reach" is a rank number, which is the same
+    // idea said in the coordinates the game actually has.
+    standing(battle, 'warband').forEach((ours, i) => { ours.rank = RANKS + 3 + i; });
 
     let cur = state;
     for (let i = 0; i < 6 && !cur.battle?.outcome; i++) {
@@ -451,25 +455,25 @@ describe('foe temperaments', () => {
     expect(shields.length).toBeLessThanOrEqual(1);
   });
 
-  it('patience runs out, so careful sides cannot circle forever', () => {
+  it('patience runs out, so careful sides cannot hang back forever', () => {
+    // Was measured as a scout closing the hexes between him and us. A line
+    // has no hexes to close, so what impatience means now is that he stops
+    // hanging back in the throwing ranks and comes forward into the wall —
+    // which is the same behaviour, said in ranks.
     const state = fight('patience', 1);
     state.battle!.round = PATIENCE_ROUNDS + 1;
-    // Past the limit, even a scout presses in like a raider.
     const foe = standing(state.battle!, 'foe')[0]!;
     fighterPerson(state, foe.personId)!.trait = 'foe:scout';
-    const before = Math.min(
-      ...standing(state.battle!, 'warband').map((w) => distance(foe.at, w.at)),
-    );
+    // Send him to the back, where a careful man would happily stay.
+    foe.rank = Math.max(3, standing(state.battle!, 'foe').length);
+    const before = foe.rank;
     let cur = state;
     for (let i = 0; i < 4 && !cur.battle?.outcome; i++) {
       cur = apply(cur, { type: 'B_END_TURN' });
     }
     const same = cur.battle?.combatants.find((c) => c.personId === foe.personId);
     if (!same || same.down || cur.battle?.outcome) return;
-    const after = Math.min(
-      ...standing(cur.battle!, 'warband').map((w) => distance(same.at, w.at)),
-    );
-    expect(after).toBeLessThanOrEqual(before);
+    expect(same.rank, 'a scout past his patience still hung back').toBeLessThanOrEqual(before);
   });
 
   it('foes still close and finish fights against a passive warband', () => {

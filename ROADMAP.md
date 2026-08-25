@@ -1536,13 +1536,19 @@ is written so the choice is made with both arcs visible, not by drift.
     see the changelog for where that went, because none of it was where it
     looked like it was.
 
-    Still to do here:
+    **`Combatant.at` is gone** (save v47). With it: the `from`/`to` hexes on
+    a `shoved` beat, the `drowned` shove result a line cannot produce, and
+    the whole deployment search — `place()` looked for a free passable spot
+    and, finding none, simply did not stand the man. Measured before cutting:
+    across 40 open fights and 20 raids it refused nobody, so it was capping a
+    number the band rules had already capped.
 
-    - **`Combatant.at` and `battle.grid`.** Nothing in `render/` reads a hex
-      any more, so the field is free of them; the sim still carries `at`
-      frozen at deployment, and `beats.ts` still has hex `from`/`to` on the
-      shoved beat and a `drowned` result that a line cannot produce. That is
-      a save bump and a migration of its own.
+    What is left for 8.5, and it is only bookkeeping now: `battle.grid` still
+    exists so `atThePalisade` can ask whether the stakes were up, and
+    `generateBattlefield`/`steadingFieldFrom`/`seaFieldFrom` still compute
+    `warbandSpots` and `foeSpots` that nothing reads. `battle.width` and
+    `battle.height` likewise. None of it is load-bearing; all of it goes when
+    `src/hex/` does.
 
     Two things 8.1c left here on purpose:
 
@@ -2284,6 +2290,52 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-25 — A fighter has no hex** — `Combatant.at` is deleted (save
+  v47), and 8.1d is finished.
+
+  It had become the worst kind of field: one that three parts of the game
+  disagreed about. The sim stopped reading it at 8.1c, the renderer stopped
+  drawing at it in 8.1d, and it had not moved since the man deployed — so it
+  was a coordinate that was authoritative about nothing and still had to be
+  migrated, hashed, and carried in every save.
+
+  The deletion took the deployment search with it. `place()` hunted the
+  authored grid for a free passable spot, preferred elbow room, and if there
+  was nowhere left the fighter **did not stand**. That is the kind of rule
+  that turns out to be load-bearing, so it was measured before it was cut:
+  across 40 open fights and 20 raids it refused NOBODY. It had been capping a
+  number `standAtHome` and `raiderCap` already capped.
+
+  Two things the conversion COST, recorded as costs rather than tidying:
+
+  - **`drowned` is gone.** A shove could put a man in the water and the sea
+    finished him for nothing — the best thing the verb did. There is no water
+    on a line. Whether a line gets its own version of "the ground itself
+    kills him" is an open question for the design notes, and it is now the
+    second entry on the list of things shove used to be worth.
+  - **"nobody deploys inside the hall"** was a real claim in
+    `test/raid.test.ts` and cannot be made any more, because nobody deploys
+    anywhere. The hall is still there in the grid; it just has nothing to
+    exclude.
+
+  Three tests had claims that had quietly expired and needed re-earning
+  rather than deleting:
+
+  | claim | what outlived it |
+  |---|---|
+  | every fighter gets a distinct HEX | every fighter gets a distinct RANK — and no gaps |
+  | foes close the distance | foes FIGHT: six turns and there must be a scratch on us |
+  | a v44 save keeps its `at` | a v44 save walks 44→47 with its fight intact and no coordinate in it |
+
+  The middle one is the one worth having. "Close the distance" was a fact
+  about geometry; "an AI that stands there doing nothing" is the failure it
+  was written against, and that stayed possible right through a conversion
+  that rewrote `takeBrokenTurn`, the reach gates and `battleAi` underneath it.
+
+  `scripts/pan.mjs` read `c.at.q` to check that a drag never becomes an
+  order; it reads the rank now, which is the same claim about the coordinate
+  the game actually has.
 
 - **2026-08-25 — The field is painted, and the brush is not what it looked
   like** — `render/fieldOil.ts` gives the side-on battlefield a graded sky
