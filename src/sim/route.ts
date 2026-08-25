@@ -1,0 +1,210 @@
+// The coast, as a line.
+//
+// This is to 8.2 what `sim/ranks.ts` was to 8.1: the shape, written and
+// proved before anything depends on it. Nothing imports it yet.
+//
+// A route is STOPS, numbered from the landing outward. Stop 0 is the sand the
+// knarr came onto; every stop after it is another stretch of coast, a walk of
+// two to four days from the last. Places hang on some of them.
+//
+// ## Why a line at all
+//
+// Measured, not assumed. A played 407-day saga (`runs/long.json`) issues
+// EIGHT move actions, stands on eight distinct hexes, never revisits one, and
+// charts 78 of the world's 1872. Every one of those eight moves offered
+// exactly six directions. Eighteen hundred hexes of country exist so that
+// eight of them can be stood on, and `data/places.ts` already carries a note
+// about the same disease from the other end: the four places were seeded a
+// median of 30 hexes out on a map a band sees 2-7% of.
+//
+// So the problem was never that six directions is too few. It is that travel
+// was not a DECISION — 0.7% of a saga's actions against the colony's 53%.
+// A line does not fix that by itself. What fixes it is that on a line the
+// only question is HOW FAR, and how far costs you twice: once going out and
+// once coming home, with winter running the whole time.
+//
+// ## Derived, never stored
+//
+// Every answer here is a pure function of `(seed, index)`, the same
+// discipline skerries, landmarks and fishing grounds already keep. That buys
+// three things: no save change for any of it, a port that gets the coast for
+// free, and a strip map that can draw country the band has never walked
+// without the world having to remember it.
+
+import { makeRng, type Rng } from '../rng';
+import { PLACE_KINDS, type PlaceKind } from '../data/places';
+import type { Terrain } from '../state/types';
+
+/**
+ * How many stops a coast runs before the land gives out.
+ *
+ * Finite on purpose, and this item's own bar is that a saga can be walked
+ * end to end — an endless coast is a coast with no far end to have reached,
+ * which is a worse story and an untestable one.
+ *
+ * Chosen against the CLOCK rather than the map, and the numbers are the
+ * argument. A first winter arrives around day 90, so the whole coast there
+ * and back has to be more than that or depth is free — and it has to be less
+ * than about 240 or the far headland is scenery nobody will ever stand on.
+ *
+ * The first draft picked 24 stops and legs of one to three days, reasoning
+ * from the MEAN: two days a leg, 23 legs, 46 out and 92 back — comfortably
+ * past 90. `test/route.test.ts` failed it on the first seed tried, at
+ * exactly 90, because the mean was sitting on the bar and half the worlds
+ * fall below it. Worse, a coast that rolled short legs the whole way came to
+ * 46 days there and back, which a band could walk twice before its first
+ * autumn.
+ *
+ * So the bound is arithmetic on the WORST case rather than the average:
+ * `2 * (ROUTE_STOPS - 1) * LEG_MIN > 90` and `2 * (ROUTE_STOPS - 1) *
+ * LEG_MAX < 240`. At 26 stops and legs of two to four days that is 100 to
+ * 200 days for the whole coast, whatever the dice do — a summer's voyage for
+ * a band with a hall to come home to, and out of reach for one still looking
+ * for somewhere to put it.
+ */
+export const ROUTE_STOPS = 26;
+
+/**
+ * Shortest and longest a single leg can be, in days.
+ *
+ * `LEG_MIN` is 2 rather than 1 for the reason above: it is half of what
+ * guarantees the coast is longer than a first winter. A one-day hop is
+ * pleasant texture and it cost the design its floor.
+ */
+export const LEG_MIN = 2;
+export const LEG_MAX = 4;
+
+/** The country a stretch of coast can be. Never ocean — this is the shore. */
+const COUNTRY: readonly Terrain[] = ['shore', 'meadow', 'forest', 'hills', 'bog', 'valley'];
+
+export interface Stop {
+  /** 0 is the landing. */
+  index: number;
+  /** What the country is here. */
+  country: Terrain;
+  /** Days to walk here from the stop before it. Zero at the landing. */
+  leg: number;
+}
+
+/** One stop's own stream. The same coast, the same country, forever. */
+function stopRng(seed: string, index: number, salt: string): Rng {
+  return makeRng(`landnam-route:${seed}:${index}:${salt}`);
+}
+
+/** Is this a stop on the coast at all? */
+export function onRoute(index: number): boolean {
+  return Number.isInteger(index) && index >= 0 && index < ROUTE_STOPS;
+}
+
+/**
+ * What is at this stop.
+ *
+ * The landing is always shore, because it is where a knarr was beached and
+ * the saga's first line says so.
+ */
+export function stopAt(seed: string, index: number): Stop {
+  const country = index === 0
+    ? 'shore'
+    : COUNTRY[stopRng(seed, index, 'country').int(0, COUNTRY.length - 1)]!;
+  const leg = index === 0
+    ? 0
+    : stopRng(seed, index, 'leg').int(LEG_MIN, LEG_MAX);
+  return { index, country, leg };
+}
+
+/**
+ * Days of walking between two stops.
+ *
+ * Symmetric, because the coast does not care which way you are facing — and
+ * that symmetry IS the decision this whole milestone rests on: every day
+ * spent walking out is a day that has to be spent again walking back.
+ */
+export function daysBetween(seed: string, from: number, to: number): number {
+  const lo = Math.min(from, to);
+  const hi = Math.max(from, to);
+  let days = 0;
+  for (let i = lo + 1; i <= hi; i += 1) days += stopAt(seed, i).leg;
+  return days;
+}
+
+/**
+ * How far out you could get from here on this many days of walking.
+ *
+ * The answer a player actually wants when looking at the strip: not "how far
+ * is the monastery" but "can I be there and back before the food runs out".
+ * Returns the furthest stop reachable, which is `from` itself when even the
+ * next leg is too long.
+ */
+export function reachable(seed: string, from: number, days: number, out = true): number {
+  let at = from;
+  let left = days;
+  for (;;) {
+    const next = out ? at + 1 : at - 1;
+    if (!onRoute(next)) return at;
+    const leg = stopAt(seed, out ? next : at).leg;
+    if (leg > left) return at;
+    left -= leg;
+    at = next;
+  }
+}
+
+/**
+ * How rich the coast is this far out, from 0 at the landing to 1 at the far
+ * headland.
+ *
+ * The spine of the design. Depth has to BUY something or "how far do I push"
+ * is a question with one sensible answer, and the game already believes this
+ * — `PLACE_MAX_FROM_LANDING` exists because the rich places had been seeded
+ * where nobody would ever look at them, and the fix was to pull them in, not
+ * to make distance worthless.
+ *
+ * Deliberately not linear. The first few stops are nearly as poor as the
+ * landing, so a band cannot nibble at the coast and call it a voyage; the
+ * curve then climbs steadily, so every further day is worth a little more
+ * than the last one was.
+ */
+export function richness(index: number): number {
+  if (index <= 0) return 0;
+  const far = Math.min(1, index / (ROUTE_STOPS - 1));
+  return far * far;
+}
+
+/**
+ * The place at this stop, if there is one.
+ *
+ * Each kind keeps its own `minFromLanding` from `data/places.ts`, read as
+ * STOPS rather than hexes — it already means "how far out before this is
+ * allowed", which is the one thing that survives the change of coordinate
+ * unaltered.
+ *
+ * At most one place to a stop. A coast where two things sit in the same
+ * place is a coast where one of them can never be gone to.
+ */
+export function placeAt(seed: string, index: number): PlaceKind | undefined {
+  if (!onRoute(index) || index === 0) return undefined;
+  const kinds = PLACE_KINDS.filter(
+    (k) => k.seeded !== false && index >= k.minFromLanding,
+  );
+  if (kinds.length === 0) return undefined;
+  const rng = stopRng(seed, index, 'place');
+  // Rarer near the landing and commoner far out, which is the richness curve
+  // showing up as "is there anything here at all" rather than only as what
+  // is in the store when you get there.
+  if (rng.next() > 0.18 + richness(index) * 0.34) return undefined;
+  return kinds[rng.int(0, kinds.length - 1)]!.id;
+}
+
+/** Every stop that has something on it, nearest first. */
+export function placesOn(seed: string): { index: number; kind: PlaceKind }[] {
+  const out: { index: number; kind: PlaceKind }[] = [];
+  for (let i = 1; i < ROUTE_STOPS; i += 1) {
+    const kind = placeAt(seed, i);
+    if (kind) out.push({ index: i, kind });
+  }
+  return out;
+}
+
+/** The whole coast, landing first. For the strip map and for the tests. */
+export function route(seed: string): Stop[] {
+  return Array.from({ length: ROUTE_STOPS }, (_, i) => stopAt(seed, i));
+}

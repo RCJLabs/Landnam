@@ -1647,11 +1647,20 @@ is written so the choice is made with both arcs visible, not by drift.
 
   Four slices, each green on its own:
 
-  - **8.2a The route exists.** `sim/route.ts`, pure and tested: stops,
-    distances, what is at each. Derived from the seed, additive to `World`,
-    read by nothing. Same shape as `sim/ranks.ts` was for the battle, and for
-    the same reason — it can be finished and proved before anything depends
-    on it.
+  - [x] **8.2a The route exists.** `sim/route.ts`, pure, 27 claims, imported
+    by nothing. Stops numbered from the landing, legs of two to four days,
+    country and places derived from `(seed, index)` — so no save change, and
+    the port gets the coast for free.
+
+    The bar caught the design's own number on the first seed it tried. 24
+    stops and one-to-three-day legs was reasoned from the MEAN — 92 days for
+    the whole coast there and back, comfortably past a first winter at 90 —
+    and `raven-skerry-317` came out at exactly 90, because the mean was
+    sitting on the bar. A coast that rolled short legs the whole way came to
+    46, which a band could walk twice before its first autumn. The bound is
+    arithmetic on the worst case now: `2 * (ROUTE_STOPS - 1) * LEG_MIN > 90`,
+    which at 26 stops and two-to-four-day legs is 100 to 200 days whatever
+    the dice do.
   - **8.2b Travel moves on it.** `MOVE` takes an index; `moveOptions` offers
     forward, back and the ship. Behind the flag, with the hex path still
     live.
