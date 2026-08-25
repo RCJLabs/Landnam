@@ -2006,6 +2006,77 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-25 — Where your people stand** — the colony seam, and a bug it
+  found in its first hour.
+
+  `render/colony.ts` decided and drew in one pass, like travel did. The
+  decision moves to `render/colonyScene.ts`. It matters more here than the
+  file size suggests: the whole point of drawing the steading is that
+  assignment is a thing you SEE — put someone on the fields and a figure
+  appears in the fields — and that promise could only be checked by reading
+  SVG attributes out of a browser, so it never was.
+
+  **Nine workers on three plots drew three people. Every warrior in the band
+  drew one.**
+
+  The nudge that spreads a crowd within a plot came from the running count:
+  `(nth / plots) * 2pi`. The fourth farmer of three fields goes back to the
+  first field AND back to an angle of 2pi, which is the first farmer's place
+  down to the pixel. The steading could never show more figures than it had
+  plots for that job, however big the band grew:
+
+  | workers · plots | drawn, as shipped | drawn now |
+  |---|---|---|
+  | 4 · 2 | 2 | 4 |
+  | 6 · 3 | 3 | 6 |
+  | 9 · 3 | **3** | 9 |
+  | 12 · 4 | **4** | 12 |
+
+  It is worst where the divisor is 1. `warrior` is worked by the watchpost and
+  `builder` by the hall, and there is one of each: `nth / 1` is a whole number
+  of turns for every single person, so all of them landed on the same point to
+  fifteen decimal places. The watch drew **one figure** whether two stood there
+  or twenty-five.
+
+  | warriors | drawn, as shipped | drawn now |
+  |---|---|---|
+  | 2 | 1 | 2 |
+  | 12 | **1** | 12 |
+  | 25 | **1** | 25 |
+
+  The nudge comes from the ROUND now, stepped by the golden angle so no two
+  rounds can ever coincide, and the first person on a plot stands in the
+  middle of it rather than off to one side.
+
+  Fixing that exposed a softer version of the same thing. A ring puts every
+  round at one radius, and a head is 7.5px across at HEX 34: the eighth
+  person to reach a plot lands 5.7px from a neighbour, which is hiding again
+  under another name. No job has a headcount cap, so with one watchpost that
+  is eight warriors — an ordinary band, not an extreme.
+
+  So the nudge spirals rather than circles, widening by the square root of
+  the round. Every head stays clear up to twenty-one on one plot instead of
+  seven, and a clamp keeps the last of them on the plot rather than out on
+  the grass. Past twenty-one they touch — twenty-five figures this size do
+  not fit in one plot without drawing them smaller, which is a different
+  change — but they never coincide, so nobody vanishes.
+
+  This is a shipped bug, not one the refactor introduced — the old formula is
+  above and it is the one that was live. It was invisible in exactly the way
+  the repaint duplicate check is invisible: the second figure is drawn, it is
+  simply drawn underneath the first.
+
+  `test/colonyScene.test.ts` pins fifteen claims that nothing could reach
+  before — a worker stands on ground their job is worked on, nobody with no
+  job stands anywhere, the dead stand nowhere, a crowd spreads across the
+  plots it has, nothing is hidden under anything, a raised building never
+  lands on the hall and is drawn over the ground rather than under it, and the
+  frame never clips a plot, and a whole band on one plot neither overlaps nor
+  spills off it. Eight mutations run against it, all caught — including the
+  ring this change replaced, which the new bar catches at 5.7px, and the
+  spiral with its clamp removed, which walks a figure 25.8px off centre onto
+  ground it does not belong to.
+
 - **2026-08-25 — The glaze tiles instead of stacking** — remembered country
   had a dark grid along every hex seam, and it was the flat glaze overlapping
   itself: a translucent layer drawn at an eighth of a hex past its own edge

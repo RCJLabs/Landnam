@@ -1,18 +1,19 @@
 // COLONY renderer: the steading's own ground, drawn as a small hex patch with
-// your people standing on the plots they work. Pure view.
+// your people standing on the plots they work.
 //
-// The point of drawing it at all is that assignment should be a thing you SEE:
-// put someone on the fields and a figure appears in the fields.
+// A BACKEND. What the steading shows is decided in render/colonyScene.ts;
+// this turns that into nodes and nothing else. See the head of that file for
+// why — the short version is that where a worker STANDS is a claim the game
+// makes, and it could only be checked by reading SVG out of a browser.
 
 import { cornerPoints, key, toPixel, type Hex } from '../hex';
-import { PLOTS, type JobId } from '../data/jobs';
+import { PLOTS } from '../data/jobs';
 import { buildingById } from '../data/buildings';
 import type { GameState, Plot } from '../state/types';
-import { jobOf, plotsFor } from '../sim/colony';
-import { living } from '../sim/people';
 import { svgEl } from './svg';
+import { HEX, describeColony } from './colonyScene';
 
-const HEX = 34;
+export { HEX };
 
 export interface ColonyView {
   root: SVGSVGElement;
@@ -28,76 +29,45 @@ export function createColonyView(): ColonyView {
   const layers = { ground: svgEl('g'), marks: svgEl('g'), folk: svgEl('g') };
   root.append(layers.ground, layers.marks, layers.folk);
 
-  function fit(plots: Plot[]): void {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const plot of plots) {
-      const p = toPixel(plot.at, HEX);
-      minX = Math.min(minX, p.x);
-      minY = Math.min(minY, p.y);
-      maxX = Math.max(maxX, p.x);
-      maxY = Math.max(maxY, p.y);
-    }
-    const pad = HEX * 0.9;
-    root.setAttribute(
-      'viewBox',
-      `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`,
-    );
-  }
-
   function paint(state: GameState): void {
-    const home = state.settlement;
+    const scene = describeColony(state);
     layers.ground.replaceChildren();
     layers.marks.replaceChildren();
     layers.folk.replaceChildren();
-    if (!home || home.plots.length === 0) return;
-    fit(home.plots);
+    if (!scene.bounds) return;
+    const b = scene.bounds;
+    root.setAttribute('viewBox', `${b.x} ${b.y} ${b.w} ${b.h}`);
 
-    for (const plot of home.plots) {
-      const def = PLOTS[plot.kind];
+    for (const plot of scene.plots) {
+      const def = PLOTS[plot.kind as keyof typeof PLOTS];
       const p = toPixel(plot.at, HEX);
       layers.ground.append(
         svgEl('polygon', {
           points: cornerPoints(p.x, p.y, HEX),
           fill: def.fill,
           stroke: def.edge,
-          'stroke-width': plot.kind === 'hall' ? 2.5 : 1,
+          'stroke-width': plot.hall ? 2.5 : 1,
         }),
       );
-      const mark = plotMark(plot, p.x, p.y);
-      if (mark) layers.marks.append(mark);
     }
 
-    // What has been raised, standing on the plots it belongs on. Drawn over
-    // the ground so a finished building visibly changes the steading.
-    const spots = home.plots.filter((p) => p.kind !== 'hall');
-    home.built.forEach((id, i) => {
-      const building = buildingById(id);
-      if (!building) return;
-      const spot = spots[i % Math.max(1, spots.length)];
-      if (!spot) return;
-      const p = toPixel(spot.at, HEX);
-      layers.marks.append(raised(building.id, p.x, p.y));
-    });
+    for (const mark of scene.marks) {
+      const p = toPixel(mark.at, HEX);
+      if (mark.kind === 'plot') {
+        const glyph = plotMark(mark.plot, p.x, p.y);
+        if (glyph) layers.marks.append(glyph);
+      } else {
+        // Drawn over the ground, so a finished building visibly changes the
+        // steading rather than hiding under it.
+        const building = buildingById(mark.building);
+        if (building) layers.marks.append(raised(building.id, p.x, p.y));
+      }
+    }
 
-    // Workers stand on the ground they work. Where several share a plot kind,
-    // they are spread across the available plots so nobody is hidden.
-    const used = new Map<string, number>();
-    for (const person of living(state.party.people)) {
-      const job = jobOf(person);
-      if (!job) continue;
-      const options = plotsFor(home, job.id as JobId);
-      const spot = options.length > 0 ? options[(used.get(job.id) ?? 0) % options.length]! : undefined;
-      used.set(job.id, (used.get(job.id) ?? 0) + 1);
-      if (!spot) continue;
-      const p = toPixel(spot.at, HEX);
-      // Jitter within the plot so two workers on one plot do not overlap.
-      const nth = (used.get(job.id) ?? 1) - 1;
-      const angle = (nth / Math.max(1, options.length)) * Math.PI * 2;
+    for (const person of scene.folk) {
+      const p = toPixel(person.at, HEX);
       layers.folk.append(
-        worker(p.x + Math.cos(angle) * HEX * 0.3, p.y + Math.sin(angle) * HEX * 0.3, person.name),
+        worker(p.x + person.nudge[0], p.y + person.nudge[1], person.name),
       );
     }
   }
@@ -109,8 +79,8 @@ export function createColonyView(): ColonyView {
 }
 
 /** A small procedural glyph telling you what a plot is at a glance. */
-function plotMark(plot: Plot, cx: number, cy: number): SVGElement | null {
-  switch (plot.kind) {
+function plotMark(kind: string, cx: number, cy: number): SVGElement | null {
+  switch (kind) {
     case 'hall':
       return svgEl('path', {
         d:
