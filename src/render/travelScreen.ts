@@ -73,6 +73,11 @@ export function travelMounted(): boolean {
   return travelView !== null;
 }
 
+/** What the map renderer is holding, whichever one is mounted. */
+export function travelDrawn(): unknown {
+  return travelView ? travelView.drawn() : null;
+}
+
 /** The world map's name for a listener, kept fresh whichever mode is up. */
 export function labelTravelMap(state: GameState): void {
   travelView?.root.setAttribute('aria-label', mapLabel(state));

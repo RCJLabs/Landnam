@@ -32,10 +32,38 @@ import {
 
 export { HEX_SIZE };
 
+/**
+ * What the renderer is holding, in terms that are true of any backend.
+ *
+ * The repaint bar used to ask the DOM this, which meant it could only ever
+ * defend the SVG map — the painted one hides those layers, so the bar went
+ * quiet on it exactly when a second renderer made the claim worth checking.
+ * The claim was never about nodes: it is that a hex is built ONCE, that the
+ * chart never loses country, that country left behind goes dim, and that a
+ * repaint charting nothing costs nothing.
+ */
+export interface DrawnReport {
+  backend: 'svg' | 'oil';
+  /** Hexes the renderer is holding. */
+  charted: number;
+  /** Of those, the ones it is showing as lit rather than remembered. */
+  lit: number;
+  /** Hexes it has built or painted more often than it was owed. */
+  duplicates: number;
+  /**
+   * Every expensive thing done since mount — nodes built, or brush passes
+   * laid down. Monotonic, and the cost meter the bar actually reads: a still
+   * map must not move it, however many repaints go past.
+   */
+  work: number;
+}
+
 export interface TravelView {
   root: SVGSVGElement;
   /** What the slot mounts, in order: the painting, if any, then the map. */
   nodes: Node[];
+  /** What it is holding, asked of the renderer rather than of the document. */
+  drawn(): DrawnReport;
   /** Re-paints from current state, preserving the camera. */
   update(state: GameState): void;
   /** Centres the camera on a hex. */
@@ -156,6 +184,8 @@ export function createTravelView(
     }
   >();
   const lit = new Map<string, Lit>();
+  /** Nodes built on the SVG path. The painted path keeps its own ledger. */
+  let built = 0;
 
   function centreOn(h: Hex): void {
     const p = toPixel(h, HEX_SIZE);
@@ -344,6 +374,7 @@ export function createTravelView(
       }
 
       drawn.set(k, { poly, river, foam, mark, ground });
+      built += 1;
       lit.set(k, seen[k]!);
     }
 
@@ -504,6 +535,26 @@ export function createTravelView(
   return {
     root,
     nodes: backdrop ? [backdrop.canvas, root] : [root],
+    drawn(): DrawnReport {
+      let alight = 0;
+      for (const value of lit.values()) if (value === 'visible') alight += 1;
+      const ledger = backdrop?.ledger();
+      return {
+        backend: backdrop ? 'oil' : 'svg',
+        charted: lit.size,
+        // The painted map answers this from the BRUSH — how many hexes are
+        // actually carrying the glaze — not from the chart. Taken from the
+        // chart it would only prove the sim knows the band walked away,
+        // which was never in doubt, and the bar would pass with the scumble
+        // deleted outright.
+        lit: ledger ? lit.size - ledger.glazed : alight,
+        // The SVG path is keyed by hex, so it cannot hold two of anything;
+        // what it CAN do is leave a node behind that nothing is holding, and
+        // only the document can witness that. The bar checks it there.
+        duplicates: ledger ? ledger.duplicates + ledger.missed : drawn.size - lit.size,
+        work: ledger ? ledger.work : built,
+      };
+    },
     update(state) {
       paint(state);
       applyCamera();

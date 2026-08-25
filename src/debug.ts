@@ -14,6 +14,7 @@ import { cloneState } from './state/clone';
 import { key } from './hex';
 import { currentMode } from './modes';
 import { wantPainting } from './render/oilFlag';
+import { travelDrawn } from './render/travelScreen';
 import type { GameState } from './state/types';
 import { startBattle, startRaid } from './sim/battleTurn';
 
@@ -42,6 +43,7 @@ declare global {
       stock(food?: number, firewood?: number): void;
       skip(days?: number): void;
       paint(on?: boolean | null): void;
+      drawn(): unknown;
     };
   }
 }
@@ -106,6 +108,13 @@ export function installDebug(hooks: DebugHooks): void {
     paint(on: boolean | null = true) {
       wantPainting(on);
       hooks.remount();
+    },
+
+    // What the map renderer is holding, in terms both backends can answer.
+    // scripts/repaint.mjs reads this rather than counting SVG nodes, so the
+    // same bar defends the painted map and the drawn one.
+    drawn() {
+      return travelDrawn();
     },
 
     // Winds the calendar on. Reaching the endgame honestly is two years of

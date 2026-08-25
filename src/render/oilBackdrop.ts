@@ -20,7 +20,7 @@ import { fromKey, toPixel, type Hex } from '../hex';
 import type { GameState } from '../state/types';
 import type { Camera } from './camera';
 import { isIdle, repaintWork, type Lit } from './repaint';
-import { HEX_SIZE, describeGround, describeLight } from './travelScene';
+import { HEX_SIZE, describeGround, describeLight, type HexGround } from './travelScene';
 import { OIL_SCALE, paintGround, scumble } from './oil';
 
 /** iOS Safari will not allocate a canvas past this on either axis. */
@@ -39,6 +39,17 @@ export interface OilBackdrop {
   reset(): void;
   /** What it is holding, for the debug read-out and the bars. */
   stats(): { painted: number; canvas: string; megabytes: number; scale: number };
+  /**
+   * Every expensive thing done since mount, and every hex done more often
+   * than it should have been.
+   *
+   * `work` is the cost meter the repaint bar reads: a still map must not move
+   * it, however many repaints go past. `duplicates` is the canvas answer to
+   * "two nodes on one hex" — invisible in a screenshot either way, because
+   * the second painting lands exactly on the first. `missed` is the other
+   * side of it: a pass the repaint decided was owed and the brush never made.
+   */
+  ledger(): { work: number; duplicates: number; missed: number; glazed: number };
 }
 
 interface Rect { x: number; y: number; w: number; h: number }
@@ -72,6 +83,43 @@ export function createOilBackdrop(): OilBackdrop {
   let ppu = 0;                       // device pixels per world unit
   let seed = '';
   const lit = new Map<string, Lit>();
+  /** Brush passes over each hex, and how many it was owed. */
+  const passes = new Map<string, number>();
+  const owed = new Map<string, number>();
+  /**
+   * Hexes whose last pass was the glaze.
+   *
+   * Kept by the BRUSH rather than read off the chart, because the claim the
+   * bar makes is that country left behind actually goes dim — and taking
+   * that from `world.seen` would only prove the sim knows it, which is not
+   * in doubt. Delete the scumble call and this goes to zero.
+   */
+  const glazed = new Set<string>();
+  let work = 0;
+
+  /**
+   * What the repaint DECIDED this hex is owed. Set from the diff.
+   *
+   * Counted apart from what the brush actually did, and that separation is
+   * the whole value of it: the first cut incremented both in one call, so
+   * they could never disagree and the duplicate check was vacuous by
+   * construction — a backdrop that painted every hex twice passed it.
+   */
+  const owe = (k: string, n: number): void => { owed.set(k, (owed.get(k) ?? 0) + n); };
+
+  /**
+   * What the BRUSH actually did. Every real pass goes through here, so an
+   * extra call to the brush is counted whether or not the caller meant it.
+   */
+  const laid = (k: string, dim: boolean): void => {
+    passes.set(k, (passes.get(k) ?? 0) + 1);
+    if (dim) glazed.add(k); else glazed.delete(k);
+    work += 1;
+  };
+  const lay = (g: CanvasRenderingContext2D, at: Hex, k: string, ground: HexGround, dim: boolean): void => {
+    if (dim) scumble(g, seed, at); else paintGround(g, seed, at, ground);
+    laid(k, dim);
+  };
 
   /** How many pixels per world unit we can afford for a rectangle this big. */
   function scaleFor(r: Rect): number {
@@ -119,7 +167,10 @@ export function createOilBackdrop(): OilBackdrop {
   }
 
   function chart(state: GameState): void {
-    if (state.seed !== seed) { seed = state.seed; paint = null; rect = null; lit.clear(); }
+    if (state.seed !== seed) {
+      seed = state.seed; paint = null; rect = null;
+      lit.clear(); passes.clear(); owed.clear(); glazed.clear(); work = 0;
+    }
     const want = chartedRect(state);
     if (!want) return;
     if (!paint || !rect || !covers(rect, want)) resize(want);
@@ -127,36 +178,38 @@ export function createOilBackdrop(): OilBackdrop {
     if (!g) return;
 
     const seen = state.world.seen as Record<string, Lit>;
-    const work = repaintWork(lit, seen);
-    if (isIdle(work)) return;
+    const todo = repaintWork(lit, seen);
+    if (isIdle(todo)) return;
 
     inWorld(g);
-    for (const k of work.added) {
+    for (const k of todo.added) {
       const ground = describeGround(state, k);
       const visible = describeLight(state, k);
       if (!ground || visible === null) continue;
       const at: Hex = fromKey(k);
-      paintGround(g, state.seed, at, ground);
-      if (!visible) scumble(g, state.seed, at);
+      owe(k, visible ? 1 : 2);
+      lay(g, at, k, ground, false);
+      if (!visible) lay(g, at, k, ground, true);
       lit.set(k, seen[k]!);
     }
     // A hex going dark takes the glaze. A hex coming BACK into the light has
     // to be painted again from the ground up, because paint does not come
     // off — and it is the same painting, mark for mark, because the stream is
     // derived from the seed and the coordinate rather than rolled.
-    for (const k of work.relit) {
+    for (const k of todo.relit) {
       const visible = describeLight(state, k);
       if (visible === null) continue;
       const at: Hex = fromKey(k);
+      owe(k, 1);
       if (visible) {
         const ground = describeGround(state, k);
-        if (ground) paintGround(g, state.seed, at, ground);
+        if (ground) lay(g, at, k, ground, false);
       } else {
-        scumble(g, state.seed, at);
+        lay(g, at, k, {} as HexGround, true);
       }
       lit.set(k, seen[k]!);
     }
-    for (const k of work.dropped) lit.delete(k);
+    for (const k of todo.dropped) { lit.delete(k); glazed.delete(k); }
     g.setTransform(1, 0, 0, 1, 0, 0);
   }
 
@@ -184,6 +237,7 @@ export function createOilBackdrop(): OilBackdrop {
 
   function reset(): void {
     paint = null; rect = null; ppu = 0; seed = ''; lit.clear();
+    passes.clear(); owed.clear(); glazed.clear(); work = 0;
   }
 
   function stats() {
@@ -195,5 +249,16 @@ export function createOilBackdrop(): OilBackdrop {
     };
   }
 
-  return { canvas, chart, redraw, reset, stats };
+  function ledger() {
+    let duplicates = 0;
+    let missed = 0;
+    for (const [k, n] of owed) {
+      const done = passes.get(k) ?? 0;
+      if (done > n) duplicates += 1;
+      if (done < n) missed += 1;
+    }
+    return { work, duplicates, missed, glazed: glazed.size };
+  }
+
+  return { canvas, chart, redraw, reset, stats, ledger };
 }

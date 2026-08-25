@@ -2006,6 +2006,48 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-25 — A bar that can see both renderers** — `scripts/repaint.mjs`
+  guarded the SVG map by counting children of the terrain layer. The painted
+  map hides those layers, so the bar went silent on the new renderer at
+  exactly the moment a second renderer made the claim worth checking: it
+  would have passed a backdrop that painted every hex twice, or grew without
+  bound, or never dimmed anything.
+
+  The claim was never about nodes. It is that a hex is built ONCE, that the
+  chart never loses country, that country left behind goes dim, and that a
+  repaint charting nothing costs nothing. So the renderer answers for itself
+  through `window.landnam.drawn()`, and the same four claims are made of both
+  backends. The DOM is still read where it is an INDEPENDENT witness — the SVG
+  path can leave a node behind that its own bookkeeping has forgotten, and
+  only the document knows that.
+
+  **Three holes were found by trying to break it, and every one of them was in
+  the bar rather than the renderer.**
+
+  *The duplicate count was vacuous by construction.* One call incremented both
+  "passes the brush made" and "passes the repaint owed", so they could never
+  disagree. A backdrop mutated to paint every hex twice sailed through. Owed
+  is now set from the diff and passes are counted inside the brush, so an
+  extra call to the brush is counted whether or not the caller meant it.
+
+  *The still-map check tapped dead space.* Six clicks on an empty corner,
+  which the app is entitled to ignore entirely — so a backdrop that threw its
+  cache away and repainted the whole chart every turn was never asked to paint
+  at all. It commits a state through `stock` now, which re-renders exactly as
+  a dispatch does and charts nothing. That mutation now costs 402 extra hexes
+  and is caught.
+
+  *Nothing was ever revealed in the dark.* Country is always first charted from
+  close enough to be lit, so the glaze-on-reveal branch never ran on the
+  itinerary and deleting it changed nothing. A remount does chart a pile of
+  remembered hexes in one go — the same path a loaded save takes — so the bar
+  rebuilds the view over charted country and checks the ledger again. That
+  mutation now trips two separate checks, one of them the user-visible one:
+  *a remount lit every hex — remembered country came back to life.*
+
+  Seven mutations, six of them in the painted renderer, all caught. A bar that
+  cannot see the thing it is guarding is not a bar.
+
 - **2026-08-25 — The country, painted** — the oil renderer, behind `?paint`.
 
   Ten art directions were mocked up and three shortlisted; oil on canvas won.
