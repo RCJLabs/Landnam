@@ -1386,23 +1386,58 @@ is written so the choice is made with both arcs visible, not by drift.
 
 ---
 
-- [ ] **8.0 Decide, on evidence** — Play `proto/shieldwall.html`.
-  Optionally extend it to a three-raid coast with wounds carrying between
-  fights, to test the LOOP rather than one battle, before any `src/` work.
-  *Done when: the answer to "does deciding who stands where beat the hex
-  grid" is yes or no, and it is written down here.*
+- [x] **8.0 Decide, on evidence** — DECIDED 2026-08-25: **yes, convert.**
+  The prototype was played and the direction was taken; the notes asked for
+  were about the FIGURES (Vikings should look like Vikings, axes obvious),
+  not about the fight. The loop was not prototyped first — that option was
+  offered and passed over in favour of writing the phases down and starting.
 
-- [ ] **8.1 The wall replaces the grid** — `sim/ranks.ts` (position, close-up,
+- [~] **8.1 The wall replaces the grid** — `sim/ranks.ts` (position, close-up,
   legal from-rank and target-rank) replaces hex geometry in battle. Rewrite
   `battlefield.ts`; `wall.ts` becomes rank adjacency. Existing verbs map onto
-  rank restrictions: hew 1–2→1–2, spear 2–3→1–3, hurl 2–4→any, shove 1–2→1–2
-  with a push, hold 1–2→self and doubled when the rank behind holds too. Gear
-  belongs to the FIGHTER, not the rank. Add resolve: nerve breaks when
-  friends fall, and a broken fighter wavers or goes wood. Behind `?ranks`, so
-  the hex battle stays until the numbers are re-earned.
+  rank restrictions — and they map almost one for one onto the verbs that
+  already exist: `strike` 1–2→1–2, `reach` 2–3→1–3, `throw` 2–4→any, `shove`
+  1–2→1–2 with a push, `defend` 1–2→self. `dash` survives the conversion by
+  changing meaning: it is no longer movement across ground but a change of
+  RANK, which is how a spearman shoved to the front buys his way back.
+  `doMove` has no equivalent and goes. Gear belongs to the FIGHTER, not the
+  rank. Nerve, broken and fled already exist on Combatant, so the resolve
+  system ports rather than gets invented.
+
+  **Deviation from this plan as first written, 2026-08-25: NO `?ranks` flag.**
+  It said the hex battle would stay behind a flag until the numbers were
+  re-earned. That reasoning came from `?paint`, where two RENDERERS read one
+  state and the second is nearly free. Two SIMS are not: `Combatant` would
+  carry both `at: Hex` and `rank`, and every verb, the AI, the wall and the
+  tests would each grow a branch. The revert path is git, and the real gate
+  is the balance suite, which a flag does not help with. The old battlefield
+  files stay in the tree unreferenced until 8.5 rather than being deleted, so
+  going back is a revert and not an archaeology exercise.
+
+  Saves: `battle` is on the root and its shape changes here, so this bumps
+  `SAVE_VERSION` and ships a migration that ENDS any in-progress fight and
+  returns the band to travel. A saga caught mid-battle loses that battle and
+  nothing else. This is NOT the documented break — that is 8.5, and it is
+  about the world, not the fight.
   *Done when: `balance.test.ts`, `wall.test.ts` and `consequences.test.ts`
   run against ranks and produce tuned numbers, formation play still beats
   brawling, and losing a veteran still hurts.*
+
+  - [x] **8.1a The line itself** — `sim/ranks.ts`: the reach table, closing
+    up, shove, dash-as-rank-change, and wall linkage. Pure and structural —
+    it imports no Combatant, so it is tested without a battle at all.
+    25 claims in `test/ranks.test.ts`, five mutations run against them: a
+    line that does not close, one that closes by reshuffling, a shove that
+    damages without moving, a wall that links anyone on the side, and an axe
+    that reaches the third rank. All five caught.
+  - [ ] **8.1b Combatant takes a rank** — `at: Hex` becomes `rank`, with the
+    save migration above.
+  - [ ] **8.1c The verbs move onto the line** — `battleActions`, `battleAi`
+    and `wall.ts` off `distance(a, b) === 1`, which was doing nearly all the
+    spatial work and always meant "adjacent".
+  - [ ] **8.1d The field is drawn side-on** — `render/battle.ts` as two walls
+    meeting, painted with the oil brush.
+  - [ ] **8.1e The numbers are re-earned** — re-run and re-tune the sweeps.
 
 - [ ] **8.2 The coast becomes a line** — Worldgen from 2D island to a 1D route
   of places with distances between them. Skerries, landmarks, `places.ts` and
