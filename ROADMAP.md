@@ -1569,10 +1569,97 @@ is written so the choice is made with both arcs visible, not by drift.
       change, or go, is a decision for this item.
 
 - [ ] **8.2 The coast becomes a line** — Worldgen from 2D island to a 1D route
-  of places with distances between them. Skerries, landmarks, `places.ts` and
-  `neighbours.ts` are already derived from `(seed, position)` and port rather
-  than get rewritten. Answer the "six directions" question here, in the
-  design, before building it. Behind a flag.
+  of places with distances between them. Behind a flag.
+
+  **DESIGNED 2026-08-25.** The roadmap said answer the "six directions"
+  question before building, so it was answered — and the measurement that
+  answered it is worth more than the answer.
+
+  ### What travel actually is today
+
+  A played saga, `runs/long.json`, replayed and instrumented:
+
+  | | |
+  |---|---|
+  | days | 407 |
+  | MOVE actions | **8** |
+  | distinct hexes stood on | 8, with zero revisits |
+  | island charted | 78 of 1872 hexes — **4%** |
+  | move options offered | exactly 6, every single time |
+  | places in the world | 4 |
+
+  Across twenty worlds: 1,139 land hexes each, an island 49 hexes across, and
+  four places a median of 12 apart. Travel is **0.7% of a saga's actions** —
+  CAMP is 35%, the colony 53%.
+
+  So the 2D island is already, in play, a short walk. The band lands, walks
+  about eight hexes, settles, and never moves again. Eighteen hundred hexes
+  of country exist so that eight of them can be stood on. That is not an
+  argument for making travel one-dimensional; it is an argument that travel
+  is not currently a DECISION at all, and that whatever replaces it has to be
+  one.
+
+  ### The answer: how far before you turn back
+
+  **One coast, and the decision is depth.** Not forks — a fork is a direction
+  choice, and the band makes eight of those in four hundred days, so
+  rebuilding branching would rebuild a decision nobody is making. Four things
+  make depth a real choice where six directions was not:
+
+  1. **Richness rises with distance.** The monastery four days up the coast
+     is worth more than the camp next door. Reaching it is the only way to
+     get it.
+  2. **You carry what you eat.** Food and firewood burn per day and the walk
+     home is exactly as long as the walk out, so every step outward is two
+     steps of supply.
+  3. **Winter is the clock.** Being far up the coast when the season turns is
+     how a band dies, and it is the same clock the colony already runs on.
+  4. **After settling it does not go away.** The hall sits at a position on
+     the route and raids are out-and-back from it — the same decision at a
+     smaller scale, which is what gives a settled saga something to do with a
+     warband.
+
+  In one sentence, which is this item's own bar: **how far up the coast do I
+  push before the season turns me back?**
+
+  ### The chart survives, as a strip
+
+  A painted strip map in the pack: what you have walked, and what you have
+  been told is ahead. The seen/unseen discipline keeps its meaning — fog on a
+  line is "how far my knowledge runs" — and the map stays the artifact the
+  oil pass made it, rather than the game losing the object it is partly
+  about.
+
+  ### Shape of the work
+
+  `World` gains a `route`: stops indexed 0..N, each with its country, and
+  places hung on some of them. The party's position becomes an index. Nothing
+  that derives from `(seed, position)` needs rewriting so much as
+  re-addressing — skerries, landmarks, `places.ts`, `neighbours.ts` and
+  `fishery.ts` all ask a coordinate for a number and will ask an index
+  instead.
+
+  Honest cost, counted rather than guessed — hex references per file:
+  `road.ts` 18, `places.ts` 15, `neighbours.ts` 10, `worldgen.ts` 7,
+  `fishery.ts` 5, `sea.ts` 2. The sim side is about 57 call sites across
+  1,600 lines. `render/travel.ts` is 1,013 lines and is replaced rather than
+  converted, in 8.3.
+
+  Four slices, each green on its own:
+
+  - **8.2a The route exists.** `sim/route.ts`, pure and tested: stops,
+    distances, what is at each. Derived from the seed, additive to `World`,
+    read by nothing. Same shape as `sim/ranks.ts` was for the battle, and for
+    the same reason — it can be finished and proved before anything depends
+    on it.
+  - **8.2b Travel moves on it.** `MOVE` takes an index; `moveOptions` offers
+    forward, back and the ship. Behind the flag, with the hex path still
+    live.
+  - **8.2c The derived world follows.** Places, neighbours, fisheries,
+    landmarks and the sea re-addressed to an index.
+  - **8.2d The strip map.** The chart as a painted strip, replacing the hex
+    map behind the flag.
+
   *Done when: a saga can be walked end to end on the route, and the travel
   decision is nameable in one sentence.*
 
@@ -2290,6 +2377,37 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-25 — Travel is 0.7% of a saga, and that decided 8.2** — the
+  roadmap said to answer the "six directions" question in design before
+  building, so a played saga was instrumented rather than argued about.
+
+  `runs/long.json` replayed: 407 days, **8 MOVE actions**, eight distinct
+  hexes with no revisits, 78 of 1872 hexes charted, and every one of those
+  eight moves offered exactly six options. Across twenty worlds each island
+  is 1,139 land hexes and 49 across, holding four places a median of twelve
+  apart. Against 397 CAMPs and 606 colony actions, travel is 0.7% of what a
+  saga does.
+
+  Eighteen hundred hexes of country exist so that eight of them can be stood
+  on. The finding is not "the island is too big" — it is that **travel is not
+  currently a decision**, and the question stopped being "what replaces six
+  directions" and became "what makes depth worth choosing".
+
+  Forks were the option that kept more of what exists, and that is exactly
+  why they lose: a fork is a direction choice, and the band makes eight
+  direction choices in four hundred days. The answer is one coast where the
+  decision is HOW FAR — richness rising with distance, supplies burning both
+  ways, winter as the clock, and after settling the same decision at raid
+  scale out of the hall. One sentence, which is the item's own bar: how far
+  up the coast do I push before the season turns me back?
+
+  The chart survives as a painted strip in the pack. Fog on a line means "how
+  far my knowledge runs", which is the same thing it meant on a plane, and
+  the map stays an object the game is partly about.
+
+  Written into 8.2 as four slices with the hex-reference count per file, so
+  the next sitting starts from a number rather than a guess.
 
 - **2026-08-25 — A fighter has no hex** — `Combatant.at` is deleted (save
   v47), and 8.1d is finished.
