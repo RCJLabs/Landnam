@@ -18,6 +18,7 @@ import { isIdle, repaintWork, type Lit } from './repaint';
 import { anchored, midpoint, spread, worldAt, type Camera } from './camera';
 import { deepOceanFill, reliefDef, terrainFill, terrainPatterns } from './terrainArt';
 import { seasonTint } from './fieldWeather';
+import { createOilBackdrop, type OilBackdrop } from './oilBackdrop';
 import {
   HEX_SIZE,
   describeGround,
@@ -33,6 +34,8 @@ export { HEX_SIZE };
 
 export interface TravelView {
   root: SVGSVGElement;
+  /** What the slot mounts, in order: the painting, if any, then the map. */
+  nodes: Node[];
   /** Re-paints from current state, preserving the camera. */
   update(state: GameState): void;
   /** Centres the camera on a hex. */
@@ -57,7 +60,23 @@ function foamPath(p: { x: number; y: number }, edges: number[]): string {
   return d;
 }
 
-export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
+export interface TravelOptions {
+  /**
+   * Paint the country instead of drawing it.
+   *
+   * A FLAG, and deliberately one that cannot break the shipped renderer: the
+   * SVG picture layers are still built exactly as they were and are only
+   * hidden, so the painted path shares no code with them and a bug in the
+   * brush cannot take the map down. It costs nodes nobody looks at, which is
+   * the right trade for something whose whole job is being compared.
+   */
+  paint?: boolean;
+}
+
+export function createTravelView(
+  onHexTap: (h: Hex) => void,
+  options: TravelOptions = {},
+): TravelView {
   const root = svgEl('svg', {
     class: 'map',
     xmlns: 'http://www.w3.org/2000/svg',
@@ -77,13 +96,28 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
   const sea = svgEl('rect', { class: 'sea', x: -4000, y: -4000, width: 12000, height: 12000 });
   const layerTerrain = svgEl('g');
   const layerRivers = svgEl('g');
+  // Landmarks used to share the river layer. They are information — the
+  // whole point of them is wayfinding — so they get a layer of their own,
+  // and hiding the PICTURE never hides them. Appended after layerRivers, so
+  // the two indices scripts/repaint.mjs reads are untouched.
+  const layerMarks = svgEl('g');
   // The season's light over the country (art queue item 10): one tinted
   // rect, swapped only when the season turns. Under the overlay so every
   // gameplay mark stays full-strength.
   const layerLight = svgEl('g');
   const layerOverlay = svgEl('g');
   const layerParty = svgEl('g');
-  root.append(sea, layerTerrain, layerRivers, layerLight, layerOverlay, layerParty);
+  root.append(sea, layerTerrain, layerRivers, layerMarks, layerLight, layerOverlay, layerParty);
+
+  // The painting, when it is on. Both fill the slot and both are driven by
+  // the same camera, so the SVG simply floats over the canvas.
+  const backdrop: OilBackdrop | null = options.paint ? createOilBackdrop() : null;
+  if (backdrop) {
+    for (const hide of [sea, layerTerrain, layerRivers, layerLight]) {
+      hide.setAttribute('display', 'none');
+    }
+    root.style.background = 'transparent';
+  }
   let litSeason = '';
 
   // Start zoomed in enough that a hex clears the 44px touch target.
@@ -97,6 +131,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       'viewBox',
       `${camera.x - width / 2} ${camera.y - height / 2} ${width} ${height}`,
     );
+    backdrop?.redraw(camera);
   }
 
   /** The band's token, kept between repaints so it can be moved rather than remade. */
@@ -139,6 +174,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
     // the next rather than being destroyed and rebuilt somewhere else.
 
     chartCountry(state);
+    if (backdrop) { backdrop.chart(state); backdrop.redraw(camera); }
 
     const season = describeSeason(state);
     if (season !== litSeason) {
@@ -303,7 +339,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
       let mark: SVGGElement | null = null;
       if (ground.landmark) {
         const glyph = landmarkMark(p.x, p.y, ground.landmark, visible);
-        layerRivers.append(glyph);
+        layerMarks.append(glyph);
         mark = glyph;
       }
 
@@ -467,6 +503,7 @@ export function createTravelView(onHexTap: (h: Hex) => void): TravelView {
 
   return {
     root,
+    nodes: backdrop ? [backdrop.canvas, root] : [root],
     update(state) {
       paint(state);
       applyCamera();

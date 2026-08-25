@@ -8,6 +8,7 @@ import { equals, type Hex } from '../hex';
 import type { GameState } from '../state/types';
 import { currentMode } from '../modes';
 import { createTravelView } from './travel';
+import { paintingWanted } from './oilFlag';
 import { travelOverlay } from './overlays';
 import { deedsFor } from './deeds';
 import {
@@ -56,8 +57,8 @@ function onHexTap(target: Hex): void {
 /** A new run: build the map view fresh and put the party in the frame. */
 export function mountTravel(h: ScreenHooks): void {
   hooks = h;
-  travelView = createTravelView(onHexTap);
-  mapSlot.replaceChildren(travelView.root);
+  travelView = createTravelView(onHexTap, { paint: paintingWanted() });
+  mapSlot.replaceChildren(...travelView.nodes);
   const state = h.current();
   if (state) travelView.centreOn(state.party.at);
 }
@@ -83,8 +84,10 @@ export function renderTravelScreen(state: GameState, h: ScreenHooks): void {
   const { ui, dispatch, rerender } = h;
 
   // Back on the road: make sure the map is the thing on screen.
-  if (mapSlot.firstChild !== travelView.root) {
-    mapSlot.replaceChildren(travelView.root);
+  // lastChild, not firstChild: with the painting on, the canvas is mounted
+  // under the map and the SVG is the one at the end.
+  if (mapSlot.lastChild !== travelView.root) {
+    mapSlot.replaceChildren(...travelView.nodes);
     travelView.centreOn(state.party.at);
   }
 

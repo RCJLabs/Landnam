@@ -192,6 +192,14 @@ installDebug({
     save(state);
     render();
   },
+  // The travel view is a singleton so it can keep its camera across battles
+  // and seasons; swapping the renderer under it means building a new one.
+  remount: () => {
+    if (!state) return;
+    unmountTravel();
+    mountTravel(hooks);
+    render();
+  },
 });
 
 showTitle();

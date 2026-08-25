@@ -2006,6 +2006,94 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-25 — The country, painted** — the oil renderer, behind `?paint`.
+
+  Ten art directions were mocked up and three shortlisted; oil on canvas won.
+  The objection to it was never taste, it was arithmetic: a painting sounds
+  impossible because you picture repainting one whenever anything happens.
+  You never do. **The game is turn-based — no `requestAnimationFrame`, by
+  rule — so a hex is painted ONCE, on the turn it is first charted, and never
+  again.** Measured here: 2.85 ms to paint a revealed hex, 1.03 ms to blit
+  the viewport, and the cost per turn does not grow as the painting does.
+
+  **Two experiments gated it and both passed.**
+
+  *Zoom.* A canvas painted at the opening zoom keeps 85% of its sharpness at
+  0.55x — visually identical — and **46%** at full pinch, measured as mean
+  |Laplacian| against the same patch painted natively there. Soft, not broken;
+  it reads as a canvas you have moved closer to. Painting at 2.0x instead
+  would fix it and comes to 4864 px on the long axis, which iOS Safari
+  refuses. So 1.35x is a ceiling, not a preference.
+
+  *Fog.* The one expected to fail. Opacity greys an oil painting and kills
+  it; a **scumble** — a cold, thin, dry glaze dragged over the marks already
+  there — does not. Remembered country measures **39% darker** than the same
+  terrain lit, and is still recognisably the ground the band walked on. That
+  is what `terrainPatterns()` already guarantees for the SVG map — the light
+  goes out of it, the trees do not move — carried over to paint.
+
+  **A published figure was wrong and is corrected.** "17.8 MB for the world
+  canvas" assumed 60 *device* pixels per hex; at dpr 3 a hex is 182, so the
+  whole world is 9667x5845 and 215 MB. The canvas is sized to the SEEN
+  BOUNDING BOX instead, which is the only thing that works — replaying
+  `runs/long.json`, a saga that runs 531 days to its end charts **78 hexes in
+  a 17x11 box**, 3283x1896, 24 MB.
+
+  **Nothing is stored.** Every stroke comes from a stream derived per hex from
+  the seed and the coordinate, the same derived-not-stored trick skerries and
+  landmarks use. No save change, no `SAVE_VERSION` bump, no migration — and a
+  hex paints the same marks at any scale, so a sharper repaint would be the
+  same painting rather than a second one.
+
+  **The flag cannot break the shipped renderer.** The SVG picture layers are
+  still built exactly as they were and are only hidden, so the two paths share
+  no code. Landmarks moved to a layer of their own first, because they are
+  wayfinding rather than picture and hiding one must never hide the other.
+  With the flag off the map draws byte-identically: 614 node signatures across
+  11 frames, unchanged.
+
+  **What the first real screen exposed, which no mockup had.** The paint was
+  handsome and the map was unreadable — a whole screen of bog, meadow and
+  valley came out as one khaki, because strokes nearly a hex long and a
+  generous bleed had dissolved every terrain boundary, and a shared warm
+  highlight had dragged every hue together. Bleed 1.34 to 1.16, strokes to
+  half their length, bristles cut from each stroke's own colour. Legibility
+  first: a map is read before it is admired.
+
+- **2026-08-25 — What the map shows, and how it is drawn** — `render/travel.ts`
+  did both jobs in one pass, which is fine with one renderer and untestable
+  with one renderer. The decision moves to `render/travelScene.ts` as plain
+  data in world coordinates.
+
+  Split deliberately into `describeGround` — the half of a hex that NEVER
+  changes — and `describeLight` — the only half that can, because that is the
+  invariant the build-once repaint path rests on, and putting it in the type
+  is how the next renderer inherits it instead of rediscovering it. The first
+  cut answered both in one call and quietly put six tile lookups per relit hex
+  back into every turn.
+
+  Verified as a pure restructure by fingerprinting `svg.map` on a fixed seed
+  over a ten-step walk: identical before and after. `test/travelScene.test.ts`
+  pins thirteen claims no test could reach before, and six mutations of the
+  source were run against it to check it can fail. Three of those tests were
+  vacuous when written and are now built rather than replayed, because
+  `runs/long.json` flags a rocky crossing zero times in 1,585 actions,
+  relights no river hex in 900, and puts the band within sight of seen water
+  on exactly one turn.
+
+- **2026-08-25 — Pin what the terrain patterns are for, not how many there
+  are** — `npm run repaint` was red and had been since the deep got its own
+  lit/dim pair: eight terrains became eight terrains and a deep, 16 became 18,
+  and the bar still asserted 16. It went unnoticed because `repaint` was not
+  in `scripts/bars.mjs`, so `npm run bars` never ran it.
+
+  18 is correct, so the count was not the thing to restate — a count has to be
+  restated every time art is added and nobody remembers to, which is exactly
+  how it drifted. The bar now pins the invariant the patterns are *for*: every
+  terrain fill is stamped twice from the same marks, bright and dim. It
+  catches a fill with no dim twin, a dim with no light, and a pattern that is
+  not a terrain fill, and it stays quiet when a ninth terrain arrives.
+
 - **2026-08-24 — The hall will take one more** — item 30. `crowding` was
   unreachable, and the reason was not that roofs are generous.
 
