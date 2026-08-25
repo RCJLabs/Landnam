@@ -64,6 +64,8 @@ export interface TravelView {
   nodes: Node[];
   /** What it is holding, asked of the renderer rather than of the document. */
   drawn(): DrawnReport;
+  /** Brightness of the painting at world points. Empty unless it is painted. */
+  sample(points: readonly (readonly [number, number])[]): (number | null)[];
   /** Re-paints from current state, preserving the camera. */
   update(state: GameState): void;
   /** Centres the camera on a hex. */
@@ -535,6 +537,9 @@ export function createTravelView(
   return {
     root,
     nodes: backdrop ? [backdrop.canvas, root] : [root],
+    sample(points) {
+      return backdrop ? backdrop.sample(points) : points.map(() => null);
+    },
     drawn(): DrawnReport {
       let alight = 0;
       for (const value of lit.values()) if (value === 'visible') alight += 1;

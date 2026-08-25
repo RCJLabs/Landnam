@@ -14,7 +14,7 @@ import { cloneState } from './state/clone';
 import { key } from './hex';
 import { currentMode } from './modes';
 import { wantPainting } from './render/oilFlag';
-import { travelDrawn } from './render/travelScreen';
+import { travelDrawn, travelSample } from './render/travelScreen';
 import type { GameState } from './state/types';
 import { startBattle, startRaid } from './sim/battleTurn';
 
@@ -44,6 +44,7 @@ declare global {
       skip(days?: number): void;
       paint(on?: boolean | null): void;
       drawn(): unknown;
+      painted(points: readonly (readonly [number, number])[]): (number | null)[];
     };
   }
 }
@@ -115,6 +116,14 @@ export function installDebug(hooks: DebugHooks): void {
     // same bar defends the painted map and the drawn one.
     drawn() {
       return travelDrawn();
+    },
+
+    // Brightness of the PAINTED country at world points. scripts/repaint.mjs
+    // uses it to check the glaze tiles rather than stacks, which cannot be
+    // asked of the screen: seeing a field big enough to measure means zooming
+    // out, and zooming out is what blurs the seam away.
+    painted(points) {
+      return travelSample(points);
     },
 
     // Winds the calendar on. Reaching the endgame honestly is two years of

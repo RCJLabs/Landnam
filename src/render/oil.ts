@@ -47,6 +47,23 @@ const STROKES = 44;
  * bleed is a suggestion of a soft edge and no more.
  */
 const BLEED = 1.16;
+/**
+ * How far the FLAT layers reach — the opaque ground under a hex, and the
+ * translucent glaze over it.
+ *
+ * Pointy-top hexes tile exactly at their circumradius, so at 1.0 two
+ * neighbours meet and never overlap. That matters only for the glaze, and it
+ * matters a lot: at 1.12 two remembered hexes stacked two half-dark plates in
+ * the band they shared, and the map grew a dark grid along every seam —
+ * measured at 24% darker on the edges than in the middles, which is a lattice
+ * you can see from across a room.
+ *
+ * So flat layers tile, and only the STROKES cross the seam. The ground gets a
+ * hair of overlap because it is opaque, where overlap costs nothing and hides
+ * the anti-aliased hairline between two fills.
+ */
+const GROUND = 1.03;
+const GLAZE = 1.0;
 
 /** Three cuts of one terrain: the light, the body and the shadow. */
 function ramp(terrain: Terrain, deep: boolean): [string, string, string] {
@@ -128,7 +145,7 @@ export function paintGround(
   // a ground colour under the strokes, so there are no holes for the sea to
   // show through where the brush happened not to land
   ctx.fillStyle = body;
-  hexPath(ctx, p.x, p.y, HEX_SIZE * 1.12);
+  hexPath(ctx, p.x, p.y, HEX_SIZE * GROUND);
   ctx.fill();
 
   for (let i = 0; i < STROKES; i += 1) {
@@ -204,7 +221,7 @@ export function scumble(ctx: CanvasRenderingContext2D, seed: string, at: Hex): v
 
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#141c2c';
-  hexPath(ctx, p.x, p.y, HEX_SIZE * 1.12);
+  hexPath(ctx, p.x, p.y, HEX_SIZE * GLAZE);
   ctx.fill();
   ctx.globalAlpha = 1;
 

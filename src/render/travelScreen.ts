@@ -78,6 +78,13 @@ export function travelDrawn(): unknown {
   return travelView ? travelView.drawn() : null;
 }
 
+/** Brightness of the painted country at world points, for the repaint bar. */
+export function travelSample(
+  points: readonly (readonly [number, number])[],
+): (number | null)[] {
+  return travelView ? travelView.sample(points) : points.map(() => null);
+}
+
 /** The world map's name for a listener, kept fresh whichever mode is up. */
 export function labelTravelMap(state: GameState): void {
   travelView?.root.setAttribute('aria-label', mapLabel(state));

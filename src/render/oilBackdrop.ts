@@ -37,6 +37,17 @@ export interface OilBackdrop {
   redraw(camera: Camera): void;
   /** A different world: forget the painting. */
   reset(): void;
+  /**
+   * Brightness of the painting at world points, or null off the canvas.
+   *
+   * For the repaint bar, which has to check that the glaze TILES rather than
+   * stacks — two translucent layers overlapping put a dark grid along every
+   * seam. Sampling what is on screen cannot answer it: the camera would have
+   * to be zoomed out to see a field big enough to measure, and zooming out is
+   * exactly what blurs the seam away. So the question is asked of the
+   * painting, in world units, where it is crisp.
+   */
+  sample(points: readonly (readonly [number, number])[]): (number | null)[];
   /** What it is holding, for the debug read-out and the bars. */
   stats(): { painted: number; canvas: string; megabytes: number; scale: number };
   /**
@@ -249,6 +260,22 @@ export function createOilBackdrop(): OilBackdrop {
     };
   }
 
+  function sample(points: readonly (readonly [number, number])[]): (number | null)[] {
+    const g = context();
+    if (!g || !rect || ppu <= 0) return points.map(() => null);
+    return points.map(([wx, wy]) => {
+      const x = Math.round((wx - rect!.x) * ppu);
+      const y = Math.round((wy - rect!.y) * ppu);
+      if (x < 3 || y < 3 || x > paint!.width - 3 || y > paint!.height - 3) return null;
+      const d = g.getImageData(x - 2, y - 2, 5, 5).data;
+      let total = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        total += 0.2126 * d[i]! + 0.7152 * d[i + 1]! + 0.0722 * d[i + 2]!;
+      }
+      return total / (d.length / 4);
+    });
+  }
+
   function ledger() {
     let duplicates = 0;
     let missed = 0;
@@ -260,5 +287,5 @@ export function createOilBackdrop(): OilBackdrop {
     return { work, duplicates, missed, glazed: glazed.size };
   }
 
-  return { canvas, chart, redraw, reset, stats, ledger };
+  return { canvas, chart, redraw, reset, stats, ledger, sample };
 }

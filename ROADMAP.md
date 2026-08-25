@@ -2006,6 +2006,46 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-25 — The glaze tiles instead of stacking** — remembered country
+  had a dark grid along every hex seam, and it was the flat glaze overlapping
+  itself: a translucent layer drawn at an eighth of a hex past its own edge
+  puts TWO half-dark plates in the band two neighbours share.
+
+  Pointy-top hexes tile exactly at their circumradius, so the flat layers are
+  drawn at 1.0 now and only the strokes cross the seam. The opaque ground
+  keeps a hair of overlap at 1.03, where overlap costs nothing and hides the
+  anti-aliased hairline between two fills.
+
+  | | seams vs middles |
+  |---|---|
+  | glaze at 1.12 — overlapping | **28.3% darker** |
+  | glaze at 1.0 — tiling | **10.2% darker** |
+
+  The 10.2 that remains is not stacking. It is the anti-aliased line where two
+  fills meet, one pixel wide, and unavoidable for any two translucent shapes
+  that share an edge. Said out loud rather than rounded to nothing.
+
+  The fog did not pay for it: remembered country still reads 35–46% darker
+  than the same terrain in the light, across three terrains.
+
+  **Three things about the measurement were wrong before it was worth
+  keeping**, and every one of them would have shipped a bar that lied.
+
+  *The metric was confounded by terrain.* The midpoint of a seam between a
+  meadow and a forest is a blend of the two, so with the lattice gone the
+  number was measuring terrain variance. Only same-terrain seams are sampled.
+
+  *Sampling the screen destroyed the thing being sampled.* Seeing a field big
+  enough to measure means zooming out, and zooming out is exactly what blurs a
+  one-pixel seam away. The bar asks the PAINTING now, in world units, through
+  `window.landnam.painted()` — the renderer answering for itself, as
+  `drawn()` already does.
+
+  *The bar never fixed a seed.* Every run was a different country, and the
+  same unchanged code measured 9%, then 16%, then 10%. A threshold on an input
+  that varies run to run is not a threshold, it is a coin flip, and it would
+  have flapped in CI forever. With a seed it reads 10.2% twice.
+
 - **2026-08-25 — A bar that can see both renderers** — `scripts/repaint.mjs`
   guarded the SVG map by counting children of the terrain layer. The painted
   map hides those layers, so the bar went silent on the new renderer at

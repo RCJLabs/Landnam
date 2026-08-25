@@ -56,8 +56,19 @@ if (!existsSync(PAGE)) {
 // Six neighbours of a pointy-top hex at HEX_SIZE 26 and the opening zoom of
 // 1.35, in screen pixels from the middle of the map. A fixed itinerary, so
 // two runs of this script walk the same country.
+/** One country, so a number measured on it means the same thing twice. */
+const SEED = 'raven-skerry-317';
+
 const STEPS = [[0, -53], [61, -26], [61, 26], [0, 53], [-61, 26], [-61, -26],
-               [0, -53], [61, -26], [0, 53], [-61, 26], [61, 26], [0, -53]];
+               [0, -53], [61, -26], [0, 53], [-61, 26], [61, 26], [0, -53],
+               // ...then out east and back west, so the band ends standing in
+               // the middle of country it has already walked. The glaze check
+               // needs hexes ringed by remembered ones AND on screen, and the
+               // camera follows the band — a straight run leaves everything it
+               // remembers behind the edge of the view.
+               [61, 26], [61, -26], [61, 26], [61, -26], [61, 26],
+               [-61, -26], [-61, 26], [-61, -26], [-61, 26]];
+
 
 const browser = await chromium.launch({ executablePath: CHROME });
 const fail = [];
@@ -73,6 +84,11 @@ async function audit(backend) {
 
   await page.goto(`file://${process.cwd()}/${PAGE}${backend === 'oil' ? '?paint' : ''}`);
   await page.waitForTimeout(600);
+  // A FIXED seed. Without one every run is a different country, and the
+  // glaze measurement below swung from 9% to 16% on unchanged code — a
+  // threshold on an input that varies run to run is not a threshold, it is a
+  // coin flip, and it would have flapped in CI forever.
+  await page.fill('.seed-input', SEED);
   await page.locator('button', { hasText: /Take the land/i }).first().click();
   await page.waitForTimeout(700);
 
@@ -165,6 +181,62 @@ async function audit(backend) {
     `the chart grew from ${walked.charted} to ${after.charted} on repaints that charted nothing`);
   check(after.work === spent,
     `${after.work - spent} more hexes were built on repaints that charted nothing`);
+
+  // The glaze has to tile, not stack.
+  //
+  // Flat translucent layers that overlap put two half-dark plates in the band
+  // two remembered hexes share, and the map grows a dark grid along every
+  // seam. Measured before the fix: the edges of a remembered field were 24%
+  // darker than its middles, which is a lattice you can see from across a
+  // room and which no amount of "the fog works" would have caught.
+  if (backend === 'oil') {
+    const grid = await page.evaluate(() => {
+      const HEX = 26;
+      const s = window.landnam.state();
+      const at = (q, r) => [HEX * Math.sqrt(3) * (q + r / 2), HEX * 1.5 * r];
+      const dim = (k) => s.world.seen[k] === 'seen';
+      const soil = (k) => s.world.tiles[k]?.terrain;
+      const RING = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+
+      const middles = [], seams = [];
+      for (const k of Object.keys(s.world.seen)) {
+        if (!dim(k)) continue;
+        const [q, r] = k.split(',').map(Number);
+        // Same terrain BOTH sides, because the midpoint of a seam between two
+        // different grounds is a blend of them, and with the lattice gone that
+        // difference is all the metric would be measuring.
+        const here = soil(k);
+        const near = RING.map(([dq, dr]) => [q + dq, r + dr])
+          .filter(([nq, nr]) => dim(`${nq},${nr}`) && soil(`${nq},${nr}`) === here);
+        if (near.length < 1) continue;
+        const c = at(q, r);
+        middles.push(c);
+        for (const [nq, nr] of near) {
+          const n = at(nq, nr);
+          seams.push([(c[0] + n[0]) / 2, (c[1] + n[1]) / 2]);
+        }
+      }
+      // Asked of the PAINTING, in world units, so the camera is irrelevant and
+      // the seam is at full resolution rather than blurred by a zoom-out.
+      const lit = window.landnam.painted(middles).filter((v) => v !== null);
+      const edge = window.landnam.painted(seams).filter((v) => v !== null);
+      const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+      if (lit.length < 12 || edge.length < 24) return null;
+      return { hexes: lit.length, seams: edge.length, darker: 100 * (1 - mean(edge) / mean(lit)) };
+    });
+    check(grid !== null, 'no remembered field big enough to check the glaze for a lattice');
+    if (grid) {
+      // Measured on this seed at paint resolution: a glaze that tiles reads
+      // 10.2%, and it reads 10.2% again on a second run. A glaze that
+      // overlaps by an eighth of a hex reads 28.3%. The 10.2 is not stacking
+      // — it is the anti-aliased line where two fills meet, one pixel wide
+      // and unavoidable for any two translucent shapes sharing an edge.
+      check(grid.darker < 15,
+        `the glaze stacks: seams are ${grid.darker.toFixed(1)}% darker than the middles`);
+      said.push(`oil: glaze tiles to ${grid.darker.toFixed(1)}% over ${grid.seams} seams `
+        + `on ${grid.hexes} remembered hexes`);
+    }
+  }
 
   // Rebuild the view from scratch over country that is already charted.
   //
