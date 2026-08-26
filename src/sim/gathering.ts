@@ -16,9 +16,16 @@ import { actionRng, advance, atSea, reveal } from './road';
 import { landmarkHere } from './landmark';
 import { abundance, noteTake, type Larder } from './abundance';
 import { fisheryYield } from './fishery';
+import { COAST_IS_A_LINE } from './flags';
+import { countryHere } from './coast';
 
 /** Water worth putting a net in, from where we are standing (or floating). */
 function fishableWater(state: GameState): boolean {
+  // Every stop on a COAST has the sea off it — that is what makes it a coast
+  // — so the question is not whether there is water but whether it is worth
+  // a net, which `fisheryYield` answers. On the hex map it was a real
+  // question, because most of the island is inland.
+  if (COAST_IS_A_LINE) return true;
   const here = state.world.tiles[key(state.party.at)];
   if (!here) return false;
   if (here.river || here.terrain === 'shore' || here.terrain === 'ocean') return true;
@@ -76,8 +83,7 @@ function gather(
 
 export function doCamp(state: GameState): GameState {
   const party = state.party;
-  const here = state.world.tiles[key(party.at)]!;
-  const def = terrainDef(here.terrain);
+  const def = terrainDef(countryHere(state));
   const rng = actionRng(state, 'camp');
   const hands = fieldCrew(state).length;
   const home = atHome(state);
@@ -135,8 +141,7 @@ export function doCamp(state: GameState): GameState {
 export function doForage(prev: GameState, state: GameState): GameState {
   if (!canGather(state)) return prev;
   const party = state.party;
-  const here = state.world.tiles[key(party.at)]!;
-  const def = terrainDef(here.terrain);
+  const def = terrainDef(countryHere(state));
   const { amount, scout, left } = gather(state, def.forage, 'wits', 'forage');
   party.food += amount;
   worldBeat(state, {
@@ -163,8 +168,7 @@ export function doForage(prev: GameState, state: GameState): GameState {
 export function doHunt(prev: GameState, state: GameState): GameState {
   if (!canGather(state)) return prev;
   const party = state.party;
-  const here = state.world.tiles[key(party.at)]!;
-  const def = terrainDef(here.terrain);
+  const def = terrainDef(countryHere(state));
   const { amount, scout, left } = gather(state, def.hunt, 'wits', 'hunt');
   party.food += amount;
   worldBeat(state, {
@@ -192,15 +196,15 @@ export function doFish(prev: GameState, state: GameState): GameState {
   // Deliberately not gated on canGather: the sea is where the fish are.
   if (!canFish(state)) return prev;
   const party = state.party;
-  const here = state.world.tiles[key(party.at)]!;
-  const def = terrainDef(here.terrain);
+  const def = terrainDef(countryHere(state));
+  const river = !COAST_IS_A_LINE && state.world.tiles[key(party.at)]?.river === true;
   // A ground pays a multiple, and only to a crew floating on it — see
   // sim/fishery.ts. Folded into the BASE rather than into the take, so the
   // larder still thins with the same rule as any other worked hex: a ground
   // fished four days running is a ground that has been fished four days
   // running, and the boat has to move.
   const ground = fisheryYield(state, party.at);
-  const base = Math.max(def.fish, here.river ? 3 : 0, 2) * ground;
+  const base = Math.max(def.fish, river ? 3 : 0, 2) * ground;
   const { amount, left } = gather(state, base, 'wits', 'fish');
   party.food += amount;
   worldBeat(state, { kind: 'gathered', how: 'fish', got: amount });

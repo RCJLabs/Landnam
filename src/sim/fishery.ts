@@ -29,6 +29,8 @@ import { fromKey, key, neighbors, type Hex } from '../hex';
 import { stream } from '../rng';
 import type { GameState } from '../state/types';
 import { isCoastalWater } from './road';
+import { COAST_IS_A_LINE } from './flags';
+import { standingAt } from './coast';
 
 /**
  * Share of coastal water holding a ground.
@@ -96,6 +98,13 @@ export function knownGround(state: GameState, at: Hex): boolean {
  * refusal is the entire reason the ship gets used.
  */
 export function fisheryYield(state: GameState, at: Hex): number {
+  // On the coast the band is never "at sea" — rowing is a step, not a state
+  // — so the `atSea` refusal that makes the hex ship worth using has no
+  // equivalent, and what pays the multiple is simply standing at a stop with
+  // a ground off it.
+  if (COAST_IS_A_LINE) {
+    return groundAtStop(state.seed, standingAt(state)) ? GROUND_YIELD : 1;
+  }
   if (state.world.tiles[key(at)]?.terrain !== 'ocean') return 1;
   return groundAt(state, at) ? GROUND_YIELD : 1;
 }
@@ -119,4 +128,20 @@ export function groundInSight(state: GameState, from: Hex): Hex | null {
     if (knownGround(state, n)) return n;
   }
   return null;
+}
+
+/**
+ * Is there a fishing ground off this stop of the coast?
+ *
+ * The same one-in-seven share the hex water pays, asked of a stop — so a
+ * coast is neither wall-to-wall fish nor a dead line with a larder at one
+ * end. Derived from `(seed, stop)` like everything else on the route, so it
+ * needs no state and the port gets it for free.
+ *
+ * A separate stream from the hex fishery on purpose. Sharing one would make
+ * a stop's water a function of a hex key it has nothing to do with, and the
+ * two would drift apart the day either coordinate changed.
+ */
+export function groundAtStop(seed: string, stop: number): boolean {
+  return stream(seed, 'worldgen').derive(`fishery:stop:${stop}`).next() < GROUND_SHARE;
 }

@@ -14,6 +14,8 @@
 
 import { key, type Hex } from '../hex';
 import type { GameState, Worked } from '../state/types';
+import { COAST_IS_A_LINE } from './flags';
+import { standingAt } from './coast';
 
 /** The three ways a day on the road puts food in the packs. */
 export type Larder = 'forage' | 'hunt' | 'fish';
@@ -52,14 +54,31 @@ export const PRESSURE_STEP = 0.25;
  */
 export const THIN_FLOOR = 0.3;
 
-const slot = (kind: Larder, at: Hex): string => `${kind}:${key(at)}`;
+/**
+ * Where a worked larder is filed.
+ *
+ * A hex while the hex map is the game; a STOP on the coast, because that is
+ * what a place is on a line. The record is sparse either way — only ground
+ * somebody has actually worked appears in it — so the two addressings can
+ * sit in one save without either inventing entries for the other.
+ *
+ * Known limit while the flag is scaffolding: on the coast this files
+ * everything under the band's OWN stop, so a fishing ground worked from
+ * somewhere else is not told apart from one worked from here. Nothing does
+ * that yet — the colony's fishers are 8.4's problem and the coast has no
+ * distant working — but it is a real narrowing and not an oversight.
+ */
+function slot(state: GameState, kind: Larder, at: Hex): string {
+  if (COAST_IS_A_LINE) return `${kind}:s${standingAt(state)}`;
+  return `${kind}:${key(at)}`;
+}
 
 /**
  * How hard this hex is being worked right now, in days' take, with the
  * recovery since the last one already subtracted.
  */
 export function pressureAt(state: GameState, kind: Larder, at: Hex): number {
-  const t: Worked | undefined = state.world.worked?.[slot(kind, at)];
+  const t: Worked | undefined = state.world.worked?.[slot(state, kind, at)];
   if (!t) return 0;
   return Math.max(0, t.n - (state.day - t.day) / REGROW_DAYS);
 }
@@ -76,7 +95,7 @@ export function abundance(state: GameState, kind: Larder, at: Hex): number {
 /** Mutates: records a day's take, carrying the recovery into the new figure. */
 export function noteTake(state: GameState, kind: Larder, at: Hex): void {
   if (!state.world.worked) state.world.worked = {};
-  state.world.worked[slot(kind, at)] = {
+  state.world.worked[slot(state, kind, at)] = {
     n: pressureAt(state, kind, at) + 1,
     day: state.day,
   };

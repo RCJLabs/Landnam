@@ -27,6 +27,9 @@ import { ROUTE_STOPS, daysBetween, placeAt, stopAt } from '../src/sim/route';
 import { placeKind } from '../src/data/places';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { placeHere, sackBlocker } from '../src/sim/places';
+import { abundance, noteTake, thinness } from '../src/sim/abundance';
+import { GROUND_YIELD, fisheryYield, groundAtStop } from '../src/sim/fishery';
+import { canFish } from '../src/sim/gathering';
 import { countryHere } from '../src/sim/coast';
 import { fromKey } from '../src/hex';
 import type { Action } from '../src/sim/actions';
@@ -284,5 +287,69 @@ describe('the country underfoot', () => {
     const seen = new Set<string>();
     for (let at = 0; at < ROUTE_STOPS; at += 1) seen.add(countryHere(band(at)));
     expect(seen.size, 'the whole coast is one country').toBeGreaterThan(2);
+  });
+});
+
+describe('the larder is a place on the coast', () => {
+  it('thins the stop that was worked, and leaves the next one alone', () => {
+    // The whole reason depletion exists, re-addressed: working one stretch
+    // of coast hard has to be a reason to move on, not a global tax.
+    const state = band(6);
+    expect(abundance(state, 'forage', state.party.at)).toBe(1);
+    for (let i = 0; i < 5; i += 1) noteTake(state, 'forage', state.party.at);
+    const worn = abundance(state, 'forage', state.party.at);
+    expect(worn, 'five days of foraging cost nothing').toBeLessThan(1);
+    // The band walks on. The next stop has never been touched.
+    state.party.stop = 7;
+    expect(abundance(state, 'forage', state.party.at)).toBe(1);
+    // And walking back finds it exactly as they left it.
+    state.party.stop = 6;
+    expect(abundance(state, 'forage', state.party.at)).toBe(worn);
+  });
+
+  it('keeps the two larders apart at one stop', () => {
+    const state = band(6);
+    for (let i = 0; i < 5; i += 1) noteTake(state, 'fish', state.party.at);
+    expect(abundance(state, 'fish', state.party.at)).toBeLessThan(1);
+    expect(abundance(state, 'forage', state.party.at), 'fishing thinned the berries').toBe(1);
+  });
+
+  it('says so before the day is spent', () => {
+    // The deed sheet's warning, which is what makes this not an invisible
+    // tax — and it has to survive the change of address or it is one.
+    const state = band(6);
+    expect(thinness(state, 'hunt', state.party.at)).toBe('good');
+    for (let i = 0; i < 8; i += 1) noteTake(state, 'hunt', state.party.at);
+    expect(thinness(state, 'hunt', state.party.at)).not.toBe('good');
+  });
+});
+
+describe('the water off the coast', () => {
+  it('is always there to put a net in', () => {
+    // Every stop on a coast has the sea off it. On the hex map most of the
+    // island was inland and this was a real question.
+    for (const at of [0, 5, 13, ROUTE_STOPS - 1]) {
+      expect(canFish(band(at)), `stop ${at}`).toBe(true);
+    }
+  });
+
+  it('pays a ground’s multiple at the stops that have one', () => {
+    const grounds: number[] = [];
+    for (let at = 0; at < ROUTE_STOPS; at += 1) {
+      if (groundAtStop(SEED, at)) grounds.push(at);
+    }
+    expect(grounds.length, 'not one fishing ground on the whole coast').toBeGreaterThan(0);
+    expect(grounds.length, 'the entire coast is a fishing ground').toBeLessThan(ROUTE_STOPS);
+    for (const at of grounds) {
+      expect(fisheryYield(band(at), band(at).party.at)).toBe(GROUND_YIELD);
+    }
+    const bare = [...Array(ROUTE_STOPS).keys()].find((at) => !groundAtStop(SEED, at))!;
+    expect(fisheryYield(band(bare), band(bare).party.at)).toBe(1);
+  });
+
+  it('puts the same grounds off the same coast every time', () => {
+    for (let at = 0; at < ROUTE_STOPS; at += 1) {
+      expect(groundAtStop(SEED, at)).toBe(groundAtStop(SEED, at));
+    }
   });
 });

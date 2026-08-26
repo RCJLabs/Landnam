@@ -1699,12 +1699,30 @@ is written so the choice is made with both arcs visible, not by drift.
     hex seeding stays untouched underneath, which is what keeps the worldgen
     parity vectors from moving.
 
-    Still to do here, and none of it is cosmetic:
+    **Fisheries and foraging** followed, and a correction with them. The
+    note above said the remaining sites read a whole `Tile` "because a tile
+    carries per-hex depletion". It does not: a `Tile` is `{ terrain, river }`
+    and nothing else. Depletion lives in `world.worked`, a sparse record
+    keyed `${kind}:${hexKey}` in `abundance.ts`. The conversion was therefore
+    smaller and cleaner than the note claimed — the storage KEY becomes a
+    stop, and the tile reads were all `terrainDef(here.terrain)`, which is
+    `countryHere` again. Ten sites down to two, and both of those are
+    `river`, which a coast does not have.
 
-    - **Fisheries and foraging.** Six of the fifteen sites read a whole
-      `Tile`, not a terrain, because a tile carries per-hex depletion — how
-      much game and fish are left. That is a real model and it needs a
-      per-STOP version, not a rename.
+    A fishing ground is now a property of a stop (`groundAtStop`), on the
+    same one-in-seven share the hex water paid, from its own stream — sharing
+    the hex fishery's would make a stop's water a function of a hex key it
+    has nothing to do with. And every stop can be fished, because every stop
+    on a coast has the sea off it; on the hex map that was a real question,
+    since most of the island is inland.
+
+    One narrowing, stated rather than discovered later: on the coast the
+    larder is filed under the band's OWN stop, so a ground worked from
+    somewhere else is not told apart from one worked from here. Nothing does
+    that yet — the colony's fishers are 8.4 — but it is a real limit.
+
+    Still to do here, and neither is cosmetic:
+
     - **Neighbours.** `neighbours.ts` is 383 lines and ten hex references,
       and a neighbour is somebody with a position relative to yours.
     - **The sea.** `strandTarget` asks whether the band is on ocean, and on
@@ -2433,6 +2451,42 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-26 — The coast feeds you, and a claim I made yesterday was
+  wrong** — fisheries and foraging move onto the line, and the correction is
+  the more useful half.
+
+  Last night's entry said ten call sites read a whole `Tile` "because a tile
+  carries per-hex depletion — how much game and fish are left in it". A
+  `Tile` is `{ terrain, river }`. Depletion lives somewhere else entirely:
+  `world.worked`, a sparse record keyed `${kind}:${hexKey}`, in
+  `abundance.ts`. I reasoned about a data structure instead of opening it,
+  and wrote the guess into the roadmap and a commit message as fact.
+
+  What it cost was an overestimate, which is the lucky direction. The real
+  conversion is one line — the storage key becomes a stop — and the ten
+  "tile reads" turned out to be nine `terrainDef(here.terrain)`, which is
+  `countryHere` again, and one `river`, which a coast does not have. Ten
+  sites down to two.
+
+  So: working a stretch of coast hard thins THAT stretch and no other, the
+  two larders stay apart at one stop, and the deed sheet still warns before
+  the day is spent — which is what keeps depletion from being an invisible
+  tax. A fishing ground is a property of a stop now, on the same one-in-seven
+  share the hex water paid, from its own stream: sharing the hex fishery's
+  would make a stop's water a function of a hex key it has nothing to do
+  with. Every stop can be fished, because every stop on a coast has the sea
+  off it — on the hex map that was a real question, since most of the island
+  is inland.
+
+  One narrowing, written down rather than left to be discovered: on the coast
+  the larder is filed under the band's own stop, so a ground worked from
+  somewhere else is not told apart from one worked from here. Nothing does
+  that yet; the colony's fishers are 8.4's problem.
+
+  No save bump. Nothing about the shape changed — `world.worked` was always a
+  sparse map of strings, and a stop key and a hex key sit in it side by side
+  without either inventing entries for the other.
+
 - **2026-08-26 — The coast has places on it, and one question asked once** —
   8.2c in part: the places and the country underfoot.
 
@@ -2446,10 +2500,10 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   seeds, because a seam that quietly changed an answer would move balance
   under a conversion that has not started yet.
 
-  Five of the fifteen are converted. The other ten read a whole `Tile` rather
-  than a terrain, because a tile carries per-hex depletion — how much game
-  and fish are left in it — and that is a model wanting a per-stop version
-  rather than a rename. Named in 8.2c rather than quietly skipped.
+  Five of the fifteen are converted here. The other ten read a whole `Tile`
+  rather than a terrain, and the reason given at the time — "a tile carries
+  per-hex depletion" — was WRONG; see the entry above for what they actually
+  read and how much smaller that made the job.
 
   Places now stand at stops: seeded from `route.placeAt` when the flag is on,
   `Place.stop` (v49), and `placeHere`/`sackBlocker` asking it. The hex
