@@ -14,7 +14,11 @@
 import { key } from '../hex';
 import type { GameState, Terrain } from '../state/types';
 import { COAST_IS_A_LINE } from './flags';
-import { ROUTE_STOPS, daysBetween, onRoute, stopAt } from './route';
+import { LEG_MAX, ROUTE_STOPS, daysBetween, onRoute, stopAt } from './route';
+import {
+  SEASON_LENGTH, SEASON_ORDER, daysUntilNextSeason, nextSeason, seasonOf,
+} from './calendar';
+import { foodPerDay } from './upkeep';
 import { unseaworthy } from './ship';
 
 /**
@@ -198,4 +202,48 @@ export function learnStop(state: GameState, stop: number): void {
  */
 export function onHeights(state: GameState, stop = standingAt(state)): boolean {
   return stopAt(state.seed, stop).country === 'hills';
+}
+
+/**
+ * Days until the next winter shuts the coast, from any day of any year.
+ *
+ * NOT `calendar.daysUntilWinter`, and the difference is the whole reason
+ * this exists. That one counts down to day 49 and answers 0 for every day
+ * after it — a first-winter warning helper, which is what it is used for and
+ * what its own comment says. Read as a general deadline it tells a band in
+ * the autumn of year three that nothing is coming, and the chart would then
+ * offer them the whole coast on the strength of a full larder.
+ *
+ * Zero while winter is actually here: the season has stopped being a
+ * deadline the walking can beat, and the packs are the whole of the answer.
+ */
+function daysUntilNextWinter(day: number): number {
+  if (seasonOf(day) === 'winter') return 0;
+  let days = daysUntilNextSeason(day);
+  let season = nextSeason(day);
+  // At most the three seasons that are not winter; the guard is a backstop,
+  // not a bound anything real reaches.
+  for (let i = 0; i < SEASON_ORDER.length && season !== 'winter'; i += 1) {
+    days += SEASON_LENGTH;
+    season = SEASON_ORDER[(SEASON_ORDER.indexOf(season) + 1) % SEASON_ORDER.length]!;
+  }
+  return days;
+}
+
+/**
+ * Days the band could keep walking on what it is carrying.
+ *
+ * `pushLimit` deliberately does not guess which clock the caller means —
+ * food, or the days until the season turns — because those are different
+ * questions. This answers the one the CHART asks, and the chart asks the
+ * player's question: how far can I go before something stops me.
+ *
+ * The smaller of the two, because a band does not get to pick which one runs
+ * out first.
+ */
+export function daysInHand(state: GameState): number {
+  const perDay = foodPerDay(state);
+  const onFood = perDay > 0 ? Math.floor(state.party.food / perDay) : ROUTE_STOPS * LEG_MAX;
+  const toWinter = daysUntilNextWinter(state.day);
+  return toWinter > 0 ? Math.min(onFood, toWinter) : onFood;
 }

@@ -23,5 +23,22 @@
  *
  * The walking itself is live and tested behind this: `sim/coast.ts` and the
  * `WALK` action. What the flag gates is whether the game OFFERS it.
+ *
+ * Still a build-time constant: Vite replaces `import.meta.env.VITE_COAST`
+ * statically and drops the dead branch, exactly as it did the bare `false`.
+ * It reads an environment variable so that a build of the coast can be MADE
+ * — `VITE_COAST=1 npm run build` — which is what `scripts/strip.mjs` needs
+ * to put a thumb on the strip chart, and what makes the half-built coast
+ * something to open and look at rather than only read about. Unset is false,
+ * so every ordinary build and every test is the hex game as before.
+ *
+ * WRITE IT EXACTLY LIKE THIS. The first draft said `import.meta.env?.` with
+ * an optional chain, which looks harmless and is not: Vite's define matches
+ * the expression TEXTUALLY, so the guard stopped folding to a constant and
+ * every branch behind this flag stayed in the bundle. The ordinary build went
+ * from 399kB to 421kB and shipped a whole coast nobody could reach — the flag
+ * still read false, so nothing failed and nothing looked wrong. Caught by
+ * grepping the built page for a string only the strip chart contains, which
+ * is the only way this kind of thing ever announces itself.
  */
-export const COAST_IS_A_LINE = false;
+export const COAST_IS_A_LINE = import.meta.env.VITE_COAST === '1';

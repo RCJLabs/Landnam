@@ -16,16 +16,39 @@ const BARS = [
 ];
 
 let bad = 0;
-for (const [name, args] of BARS) {
+let ran = 0;
+function bar(name, args, label = args.length ? `${name} ${args.join(' ')}` : name) {
+  ran++;
   const run = spawnSync('node', [`scripts/${name}.mjs`, ...args], { encoding: 'utf8' });
-  const label = args.length ? `${name} ${args.join(' ')}` : name;
   if (run.status === 0) {
     console.log(`  PASS  ${label}`);
-  } else {
-    bad++;
-    const said = (run.stdout + run.stderr).trim().split('\n').filter(Boolean).slice(-2).join(' | ');
-    console.log(`  FAIL  ${label} (exit ${run.status}) — ${said}`);
+    return;
   }
+  bad++;
+  const said = (run.stdout + run.stderr).trim().split('\n').filter(Boolean).slice(-2).join(' | ');
+  console.log(`  FAIL  ${label} (exit ${run.status}) — ${said}`);
 }
-console.log(bad === 0 ? `\nall ${BARS.length} browser bars pass` : `\n${bad} of ${BARS.length} FAILED`);
+
+for (const [name, args] of BARS) bar(name, args);
+
+// The strip chart needs a build of the COAST, which is not the default
+// build — see src/sim/flags.ts. So it cannot share `dist/` with the twelve
+// above and gets its own build here, with the ordinary one put back
+// afterwards: leaving a coast build in `dist/` would be a quiet way for one
+// to reach somebody's browser.
+const build = (env) => spawnSync('npm', ['run', 'build'], {
+  encoding: 'utf8', env: { ...process.env, ...env },
+});
+if (build({ VITE_COAST: '1' }).status !== 0) {
+  bad++; ran++;
+  console.log('  FAIL  strip — the coast build did not build');
+} else {
+  bar('strip', []);
+}
+if (build({ VITE_COAST: '' }).status !== 0) {
+  bad++;
+  console.log('  FAIL  (the ordinary build could not be put back)');
+}
+
+console.log(bad === 0 ? `\nall ${ran} browser bars pass` : `\n${bad} of ${ran} FAILED`);
 process.exit(bad === 0 ? 0 : 1);

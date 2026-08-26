@@ -1866,8 +1866,54 @@ is written so the choice is made with both arcs visible, not by drift.
 
     - **Founding.** `foundBlocker` is still hex-shaped below the elbow —
       `siteReport`, `world.seen`, terrain. That is 8.4's, not this item's.
-  - **8.2d The strip map.** The chart as a painted strip, replacing the hex
-    map behind the flag.
+  - [x] **8.2d The strip map.** The chart in the pack becomes a strip.
+
+    The hex chart fits a whole island into three hundred pixels, and its own
+    comment records what that cost: names were tried on it, could not be
+    read, and the marks now say WHERE while a key underneath says WHICH.
+    That is the right answer for a map of an island and the wrong one for a
+    coast — because a coast is not a shape to be taken in at a glance, it is
+    an ORDER, and the only question a player asks of it is how far along to
+    go. So the strip is drawn at its natural width and SCROLLED rather than
+    shrunk, which is what lets a stretch be 58px and carry its own name.
+
+    It is also the VERB. With the coast on there is no other way to walk
+    anywhere until 8.3 puts a procession under it, so tapping a stretch the
+    band could reach spends the days and shuts the card. `scripts/strip.mjs`
+    holds both halves: that a stretch is 58px on screen at 390 and at 320,
+    that the frame scrolls and the page does not — and that a tap actually
+    moves the band and costs it days. A strip that draws beautifully and
+    moves nobody is the whole feature missing.
+
+    The decision the milestone exists for is drawn rather than left to
+    arithmetic: `pushLimit` puts a dashed mark at the last stretch the band
+    could reach and still come home, and every leg is written in days on the
+    picture. `daysInHand` decides what "could" means — the smaller of the
+    food in the packs and the days until winter, because a band does not get
+    to pick which runs out first.
+
+    Three things worth recording. `sim/flags.ts` now reads `VITE_COAST`,
+    still statically replaced at build time and still false in every ordinary
+    build — but it means a build of the coast can be MADE and looked at,
+    which a conversion this long has needed for a while.
+
+    That one nearly went wrong in a way worth writing down. The first draft
+    wrote `import.meta.env?.VITE_COAST`, with an optional chain. Vite's
+    define matches the expression TEXTUALLY, so the guard stopped folding to
+    a constant, every branch behind the flag stayed in the bundle, and the
+    ordinary build went from 399kB to 421kB carrying a whole coast nobody
+    could reach. Nothing failed: the flag still read false, every test passed,
+    every bar passed. It was found by grepping the built page for a string
+    only the strip chart contains, which is the only way a dead branch that
+    still ships ever announces itself. The rule is now in the file, in
+    capitals, beside the line it applies to.
+
+    And `daysInHand` first used
+    `calendar.daysUntilWinter`, which counts down to day 49 and answers 0
+    for every day after it. It is a first-winter warning helper and says so;
+    read as a general deadline it told a band in the autumn of year three
+    that nothing was coming, and the chart offered them the whole coast on
+    the strength of a full larder. The test caught it.
 
   *Done when: a saga can be walked end to end on the route, and the travel
   decision is nameable in one sentence.*
@@ -2586,6 +2632,57 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — The coast as a strip you can walk** — 8.2d. The chart in the
+  pack stops being a map of an island and becomes what a coast actually is.
+
+  The hex chart's own comment is the argument for this one. It fits a whole
+  island into three hundred pixels, and it records what that cost: names were
+  tried on it and could not be read, so the marks say WHERE and a key says
+  WHICH. Right for a map of an island; wrong for a coast, which is not a
+  shape to take in at a glance but an ORDER, with exactly one question asked
+  of it. So the strip is drawn at its natural width — 1508px, more than any
+  phone — and SCROLLED rather than shrunk. That is the whole form: shrinking
+  is what makes a stretch too small to name and too small to touch.
+
+  And it is the verb, not a picture. With the coast on there is no other way
+  to walk anywhere until 8.3, so tapping a stretch the band can reach spends
+  the days and shuts the card. `scripts/strip.mjs` checks both halves and the
+  second one matters more: a stretch measures 58px on screen at 390 and at
+  320, the frame scrolls while the page does not — and a tap moves the band
+  and costs it days. It would be easy to ship a strip that draws beautifully
+  and moves nobody.
+
+  The decision this whole milestone exists for is now drawn instead of
+  arithmetic. Every leg is written in days on the picture, and a dashed mark
+  sits at the last stretch the band could reach and still come home.
+
+  Two things fell out of building it.
+
+  `sim/flags.ts` reads `VITE_COAST` now. Still a build-time constant — Vite
+  replaces it statically and drops the dead branch exactly as it did the bare
+  `false` — but a build of the coast can now be MADE and opened, which a
+  conversion this long has wanted for a while, and which is the only way a
+  browser bar could put a thumb on this thing at all.
+
+  It nearly went wrong quietly. The first draft wrote `import.meta.env?.` with
+  an optional chain; Vite's define matches TEXTUALLY, so the guard stopped
+  folding to a constant and every branch behind the flag stayed in the
+  bundle. The ordinary build went 399kB to 421kB and shipped a whole coast
+  nobody could reach. Nothing failed — the flag still read false, the suite
+  was green, all thirteen bars passed. It turned up only because the publish
+  line printed a size that had no business changing, and a grep of the built
+  page for a string only the strip contains confirmed it. That rule is now in
+  flags.ts in capitals, beside the line it applies to.
+
+  And a real bug the test caught rather than confirmed. `daysInHand` first
+  used `calendar.daysUntilWinter`, which counts down to day 49 and answers 0
+  for every day after. It is a first-winter warning helper and its own
+  comment says so; read as a general deadline it tells a band in the autumn
+  of year three that nothing is coming — and the chart then offers them the
+  whole coast on the strength of a full larder. My first test asserted the
+  wrong thing about it and failed for the wrong reason; the fix was in the
+  code, and the test now checks every season of several years.
 
 - **2026-08-26 — The other boat, on a coast; and a bar that could not tell a
   won fight from a squeezed one** — the rival moves onto the line, which is

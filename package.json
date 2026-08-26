@@ -25,7 +25,8 @@
     "party-tables": "vite-node scripts/party-tables.ts -- port/LandnamPartyTables.gen.h",
     "event-tables": "vite-node scripts/event-tables.ts -- port/LandnamEventTables.gen.h",
     "battle-tables": "vite-node scripts/battle-tables.ts -- port/LandnamBattleTables.gen.h",
-    "port-data": "vite-node scripts/port-data.ts"
+    "port-data": "vite-node scripts/port-data.ts",
+    "strip": "VITE_COAST=1 npm run build && node scripts/strip.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

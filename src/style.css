@@ -1007,6 +1007,49 @@ h2.grim {
   overflow: visible;
 }
 
+/* --- The strip chart (8.2d) --- */
+
+/* The strip is drawn at its natural width and SCROLLED, not shrunk. That is
+   the whole difference between it and the hex chart above: shrinking a coast
+   to fit a phone is what makes a stretch too small to touch, and the strip
+   has to be touched — with the coast switched on it is the only way to walk
+   anywhere until 8.3. */
+.strip-frame {
+  background: var(--sea);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  padding: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* The card must never make the PAGE scroll sideways; the strip scrolls
+     inside its own frame instead. */
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.strip {
+  display: block;
+  /* Natural width, so a chart pixel is a screen pixel and a stretch keeps
+     the touch target render/strip.ts sized it for. */
+  height: 176px;
+}
+
+.strip-leg {
+  fill: var(--parchment-dim);
+  font-size: 11px;
+}
+
+.strip-cost {
+  fill: var(--parchment);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.strip-limit {
+  fill: #c2703a;
+  font-size: 11px;
+}
+
 
 /* --- Minds and feuds (4.1) --- */
 
