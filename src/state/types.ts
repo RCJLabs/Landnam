@@ -233,6 +233,18 @@ export interface Person {
 
 export interface Party {
   at: Hex;
+  /**
+   * Where the band is standing on the COAST, as a stop index — see
+   * sim/route.ts.
+   *
+   * Additive while Phase 8 runs, exactly as `Combatant.rank` was: the hex
+   * map is still what travel resolves on until `COAST_IS_A_LINE` flips, so a
+   * saga caught mid-walk keeps going untouched. Absent means the landing,
+   * which is where a band that has never walked the line is standing.
+   *
+   * `at` goes when the flag does, in 8.5, and this is what replaces it.
+   */
+  stop?: number;
   people: Person[];
   food: number;
   firewood: number;

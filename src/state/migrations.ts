@@ -426,6 +426,11 @@ export const MIGRATIONS: Record<number, Migration> = {
     }
     return { ...save, version: 47 };
   },
+  // v47 -> v48: the band gains a place on the coast. Nothing to work out —
+  // a saga that has never walked the line has not left the landing, and
+  // `standingAt` reads an absent stop as 0 anyway. The bump exists so the
+  // field is declared rather than appearing from nowhere.
+  47: (save) => ({ ...save, version: 48 }),
 
 };
 

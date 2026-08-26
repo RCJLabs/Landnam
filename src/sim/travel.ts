@@ -29,10 +29,23 @@ import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
 import { THING_OPENING } from '../data/thing';
 import { advance, canMove, daysForMove, marchLine, reveal } from './road';
+import { canWalk, daysToWalk, standingAt } from './coast';
+import { COAST_IS_A_LINE } from './flags';
+import { placeAt, stopAt } from './route';
 import { doCamp, doFish, doForage, doHunt } from './gathering';
 
 export type TravelAction =
   | { type: 'MOVE'; to: Hex }
+  /**
+   * A step along the COAST, to a stop index — see sim/route.ts.
+   *
+   * A second verb beside `MOVE` rather than a change to it, and that is the
+   * whole of what "behind a flag" buys here: the hex path stays live and
+   * untouched, so the game is playable on every commit of the conversion
+   * and the two can be measured against each other. `MOVE` goes when the
+   * flag does.
+   */
+  | { type: 'WALK'; to: number }
   | { type: 'CAMP' }
   | { type: 'MAKE_WAY' }
   | { type: 'HOLD_BLOT' }
@@ -62,6 +75,41 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
   const party = state.party;
 
   switch (action.type) {
+    case 'WALK': {
+      // Refused outright while the coast is scaffolding. The walking is
+      // real and tested; what the flag gates is whether the game offers it,
+      // because a coast with nothing on it yet measures as travel getting
+      // worse — and would be right.
+      if (!COAST_IS_A_LINE) return prev;
+      if (!canWalk(state, action.to)) return prev;
+      const days = daysToWalk(state, action.to)!;
+      const from = standingAt(state);
+      const rowed = Math.abs(action.to - from) > 1;
+      const wasIn = stopAt(state.seed, from).country;
+      const stop = stopAt(state.seed, action.to);
+      party.stop = action.to;
+      party.hasCamped = false;
+      advance(state, days);
+      if (state.end) return state;
+      // The hex map's own voice, reused rather than a second one written
+      // beside it. `marchLine` already knows how to say a day at the oars,
+      // a landing, a long crossing and a dull stretch of the same country —
+      // and a coast that spoke differently from a march would read as a
+      // different game rather than the same one seen from the side.
+      chronicle(
+        state,
+        rowed
+          ? marchLine(state, 'ocean', days, false, false)
+          : marchLine(state, stop.country, days, wasIn !== stop.country, false),
+      );
+      const found = placeAt(state.seed, action.to);
+      if (found) {
+        const def = placeKind(found);
+        chronicle(state, `Along the shore stood ${def.name}. ${def.blurb}`, 'saga');
+      }
+      return state;
+    }
+
     case 'MOVE': {
       if (!canMove(state, action.to)) return prev;
       const days = daysForMove(state, action.to)!;

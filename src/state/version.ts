@@ -112,7 +112,13 @@
 //                  Dropping a field cannot orphan a saga: a fight caught
 //                  mid-swing keeps every man, his rank, his wounds and his
 //                  nerve, and simply stops carrying a hex nobody read.
-export const SAVE_VERSION = 47;
+// v48 (the coast): Party gained `stop` — where the band is standing on the
+//                  route (sim/route.ts), counted from the landing. Additive,
+//                  and nothing reads it while `COAST_IS_A_LINE` is off, so a
+//                  saga saved mid-walk carries on across the hex map exactly
+//                  as it was. Absent means the landing, which is the honest
+//                  answer for every save written before a coast existed.
+export const SAVE_VERSION = 48;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

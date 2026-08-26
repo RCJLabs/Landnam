@@ -1661,9 +1661,27 @@ is written so the choice is made with both arcs visible, not by drift.
     arithmetic on the worst case now: `2 * (ROUTE_STOPS - 1) * LEG_MIN > 90`,
     which at 26 stops and two-to-four-day legs is 100 to 200 days whatever
     the dice do.
-  - **8.2b Travel moves on it.** `MOVE` takes an index; `moveOptions` offers
-    forward, back and the ship. Behind the flag, with the hex path still
-    live.
+  - [x] **8.2b Travel moves on it.** `sim/coast.ts` and a `WALK` verb beside
+    `MOVE` — a second verb rather than a change to the first, which is what
+    "behind a flag" buys: the hex path stays live and untouched, so the game
+    is playable on every commit of the conversion. `walkOptions` offers
+    forward, back, and a day at the oars covering `SHIP_REACH` stops, the
+    direct heir of the hex map's `ROW_REACH`. `party.stop` is additive
+    (v48), exactly as `Combatant.rank` was.
+
+    `pushLimit` is where the milestone's sentence is actually answered: how
+    far can this band get and still come home on what it carries. Counted
+    from both halves of the walk, so a band that takes it at its word is
+    never stranded by it.
+
+    Two things the tests caught rather than the code. The flag is off, so
+    every `WALK` the suite dispatches is refused before it does anything —
+    which left the entire verb as code nothing executed, the same shape of
+    hole as the browser check that had quietly stopped running. It is
+    exercised for real in `test/coastWalk.test.ts` with the flag mocked on.
+    And that file's first end-to-end walk failed at stop 12: spending days
+    raises an event card and travel is refused while one is up, which is
+    correct, and which the test had to learn to do what a player does.
   - **8.2c The derived world follows.** Places, neighbours, fisheries,
     landmarks and the sea re-addressed to an index.
   - **8.2d The strip map.** The chart as a painted strip, replacing the hex
@@ -2386,6 +2404,43 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-25 — The coast can be walked** — `sim/coast.ts` and a `WALK`
+  verb, behind `COAST_IS_A_LINE`. The band has a place on the line
+  (`party.stop`, v48, additive), a step costs the leg it walks, and a day at
+  the oars covers three stops — the hex map's `ROW_REACH` in its new
+  coordinate, so the knarr does not become a thing that sits on the beach
+  being expensive.
+
+  A second verb beside `MOVE` rather than a change to it. That is the whole
+  of what the flag buys: the hex path stays live and untouched, the game is
+  playable on every commit of the conversion, and the two can be measured
+  against each other before either is deleted.
+
+  **The flag left the verb untested, and that is a shape this repo keeps
+  meeting.** With `COAST_IS_A_LINE` false every `WALK` is refused before it
+  does anything, so twenty-five lines of movement, day-spending and chronicle
+  were code no test executed — the same hole as the browser check that had
+  stopped running and looked exactly like one that passed, and as the bar
+  that asserted an identity. `test/coastWalk.test.ts` mocks the flag on and
+  plays the verb for real.
+
+  Which immediately paid: its first end-to-end walk failed at stop 12.
+  Spending days raises an event card and `applyTravel` refuses every verb
+  while one is up — correct, and proof that `WALK` is properly wired into the
+  day machinery rather than sneaking around it. The test now dismisses cards
+  as it goes, which is what a player does.
+
+  A second fixture bug worth the same note: the settled-band check faked a
+  `settlement` object, which was enough for `walkOptions` and not enough for
+  `apply`, which walked straight into a field the fake had not invented. It
+  founds a real hall now. A fixture that only survives the code path it was
+  written against is not a fixture.
+
+  The saga speaks in one voice: `WALK` calls `marchLine`, which already knows
+  how to tell a day at the oars from a landing from a dull stretch of the
+  same country. A coast with its own phrasebook would read as a second game
+  rather than the same one seen from the side.
 
 - **2026-08-25 — Travel is 0.7% of a saga, and that decided 8.2** — the
   roadmap said to answer the "six directions" question in design before
