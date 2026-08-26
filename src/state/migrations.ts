@@ -199,7 +199,7 @@ export const MIGRATIONS: Record<number, Migration> = {
     const world = save['world'] as Parameters<typeof seedPlaces>[0] | undefined;
     const seed = typeof save['seed'] === 'string' ? (save['seed'] as string) : '';
     if (world && !Array.isArray((world as { places?: unknown }).places)) {
-      world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
+      world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'), seed);
     }
     return { ...save, version: 18 };
   },
@@ -431,6 +431,11 @@ export const MIGRATIONS: Record<number, Migration> = {
   // `standingAt` reads an absent stop as 0 anyway. The bump exists so the
   // field is declared rather than appearing from nowhere.
   47: (save) => ({ ...save, version: 48 }),
+  // v48 -> v49: places may name a stop on the coast. An old world's places
+  // stand on hexes and always will — there is no honest stop to invent for
+  // them, and inventing one would put a monastery somewhere the band could
+  // walk to on a coast that world was never seeded with.
+  48: (save) => ({ ...save, version: 49 }),
 
 };
 

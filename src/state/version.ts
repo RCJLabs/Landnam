@@ -118,7 +118,13 @@
 //                  saga saved mid-walk carries on across the hex map exactly
 //                  as it was. Absent means the landing, which is the honest
 //                  answer for every save written before a coast existed.
-export const SAVE_VERSION = 48;
+// v49 (places on the coast): Place gained `stop` — which stop on the route it
+//                  stands at. Only ever written on a world seeded with
+//                  `COAST_IS_A_LINE` on, so an existing save is byte for byte
+//                  what it was; the bump is here because the SHAPE changed
+//                  and this project's rule about that has no "but nothing
+//                  writes it yet" clause.
+export const SAVE_VERSION = 49;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

@@ -23,6 +23,7 @@ import { WATCH_QUIET } from '../data/jobs';
 import { effectiveReport, standsFor } from './colony';
 import { sickCount } from './cold';
 import { checkRunEnd } from './upkeep';
+import { countryHere } from './coast';
 
 /** Chance an event fires after a travel action. */
 // 0.23, down from 0.28 — a playtest called the cards relentless, and the
@@ -331,7 +332,7 @@ export function dismissEvent(state: GameState): void {
       // Raiders bring what the place is worth taking.
       startRaid(state, difficulty + raidDifficulty(state));
     } else {
-      const terrain = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
+      const terrain = countryHere(state);
       startBattle(state, terrain, difficulty);
     }
   }

@@ -18,7 +18,9 @@ import { apply } from '../src/sim/actions';
 import {
   SHIP_REACH, canRow, canWalk, daysToWalk, pushLimit, standingAt, walkOptions,
 } from '../src/sim/coast';
+import { countryHere } from '../src/sim/coast';
 import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { key } from '../src/hex';
 import { ROUTE_STOPS, daysBetween, stopAt } from '../src/sim/route';
 import type { GameState } from '../src/state/types';
 
@@ -210,5 +212,30 @@ describe('a save from before the coast', () => {
     expect(save['version']).toBe(SAVE_VERSION);
     expect(save['day']).toBe(40);
     expect(standingAt(save as unknown as GameState)).toBe(0);
+  });
+});
+
+describe('the country underfoot, with the flag off', () => {
+  it('is exactly what the hex map says, character for character', () => {
+    // The claim that makes this seam safe to introduce. `countryHere` now
+    // stands where fifteen copies of one expression used to, and while the
+    // hex map is still the game it has to BE that expression — a seam that
+    // quietly changed an answer would move balance under a conversion that
+    // has not started yet.
+    expect(COAST_IS_A_LINE).toBe(false);
+    for (const seed of SEEDS) {
+      const state = cloneState(newGame(seed));
+      for (const k of Object.keys(state.world.tiles).slice(0, 40)) {
+        state.party.at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
+        const old = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
+        expect(countryHere(state), `${seed} at ${k}`).toBe(old);
+      }
+    }
+  });
+
+  it('falls back to meadow off the edge of the world, as it always did', () => {
+    const state = cloneState(newGame('s'));
+    state.party.at = { q: 9999, r: 9999 };
+    expect(countryHere(state)).toBe('meadow');
   });
 });

@@ -29,7 +29,7 @@ import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
 import { THING_OPENING } from '../data/thing';
 import { advance, canMove, daysForMove, marchLine, reveal } from './road';
-import { canWalk, daysToWalk, standingAt } from './coast';
+import { canWalk, countryHere, daysToWalk, standingAt } from './coast';
 import { COAST_IS_A_LINE } from './flags';
 import { placeAt, stopAt } from './route';
 import { doCamp, doFish, doForage, doHunt } from './gathering';
@@ -273,7 +273,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // before the day turns — you do not get to sleep on the decision.
       const difficulty = canFallOn(state, action.id) ? fallOn(state, action.id) : null;
       if (difficulty === null) return prev;
-      const ground = state.world.tiles[key(party.at)]?.terrain ?? 'meadow';
+      const ground = countryHere(state);
       // The camp is the stake: win the field and their stores come home.
       startBattle(state, ground, difficulty, { campId: action.id });
       return state;
@@ -287,7 +287,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const place = placeById(state, action.id)!;
       const def = placeKind(place.kind);
       if (def.garrison !== null) {
-        const ground = state.world.tiles[key(party.at)]?.terrain ?? 'meadow';
+        const ground = countryHere(state);
         startBattle(state, ground, def.garrison, { placeId: action.id });
         return state;
       }

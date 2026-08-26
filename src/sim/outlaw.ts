@@ -11,7 +11,6 @@
 // He is deliberately not a faction with a plan. He is a man with a grievance
 // and somewhere to sleep, and every so often he is waiting on the road.
 
-import { key } from '../hex';
 import { stream } from '../rng';
 import { OUTLAW_LIE_LOW, OUTLAW_MORALE } from '../data/feuds';
 import type { GameState, Outlaw, Person } from '../state/types';
@@ -19,6 +18,7 @@ import { worldBeat } from './beats';
 import { chronicle } from './saga';
 import { startBattle } from './battleTurn';
 import { atSea } from './road';
+import { countryHere } from './coast';
 
 /** Odds per outlaw per day, once they have stopped keeping their heads down. */
 export const STRIKE_ODDS = 0.008;
@@ -90,7 +90,7 @@ export function maybeOutlawStrike(state: GameState): boolean {
   const who = out[rng.int(0, out.length - 1)]!;
   who.struckOn = state.day;
 
-  const terrain = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
+  const terrain = countryHere(state);
   // What he brings is what he was worth plus whoever he has fallen in with.
   const difficulty = Math.max(0, Math.round(who.might / 2));
   chronicle(

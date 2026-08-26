@@ -1682,8 +1682,36 @@ is written so the choice is made with both arcs visible, not by drift.
     And that file's first end-to-end walk failed at stop 12: spending days
     raises an event card and travel is refused while one is up, which is
     correct, and which the test had to learn to do what a player does.
-  - **8.2c The derived world follows.** Places, neighbours, fisheries,
-    landmarks and the sea re-addressed to an index.
+  - [~] **8.2c The derived world follows.** PARTIAL, and named as such
+    rather than ticked. Done: the places, and the country underfoot.
+
+    **The country underfoot was the seam worth finding.**
+    `state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow'` appears
+    verbatim fifteen times across seven files — every one of them the same
+    question asked of a coordinate system being replaced. `countryHere` is
+    that question asked once. Off the flag it is that expression character
+    for character, and `test/coast.test.ts` asserts so against forty hexes
+    on three seeds, because a seam that quietly changed an answer would move
+    balance under a conversion that has not started yet.
+
+    **The places** are seeded from `route.placeAt` when the flag is on —
+    `Place` gains `stop` (v49), `placeHere` and `sackBlocker` ask it, and the
+    hex seeding stays untouched underneath, which is what keeps the worldgen
+    parity vectors from moving.
+
+    Still to do here, and none of it is cosmetic:
+
+    - **Fisheries and foraging.** Six of the fifteen sites read a whole
+      `Tile`, not a terrain, because a tile carries per-hex depletion — how
+      much game and fish are left. That is a real model and it needs a
+      per-STOP version, not a rename.
+    - **Neighbours.** `neighbours.ts` is 383 lines and ten hex references,
+      and a neighbour is somebody with a position relative to yours.
+    - **The sea.** `strandTarget` asks whether the band is on ocean, and on
+      a route nobody is: rowing is a step, not a state. Strandhögg needs a
+      line-shaped answer before the flag can flip.
+    - **Landmarks and telling.** `tellOfPlace` and `spotLandmarks` measure in
+      hexes; both want route distance.
   - **8.2d The strip map.** The chart as a painted strip, replacing the hex
     map behind the flag.
 
@@ -2404,6 +2432,34 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — The coast has places on it, and one question asked once** —
+  8.2c in part: the places and the country underfoot.
+
+  The find was a seam rather than a feature.
+  `state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow'` is written
+  out FIFTEEN times across seven files — audio, events, outlaws, travel,
+  gathering, the sea, the road — and every one is the same question put to a
+  coordinate system that is being replaced. `countryHere(state)` is that
+  question asked once, and with the flag off it is that expression character
+  for character. `test/coast.test.ts` holds that against forty hexes on three
+  seeds, because a seam that quietly changed an answer would move balance
+  under a conversion that has not started yet.
+
+  Five of the fifteen are converted. The other ten read a whole `Tile` rather
+  than a terrain, because a tile carries per-hex depletion — how much game
+  and fish are left in it — and that is a model wanting a per-stop version
+  rather than a rename. Named in 8.2c rather than quietly skipped.
+
+  Places now stand at stops: seeded from `route.placeAt` when the flag is on,
+  `Place.stop` (v49), and `placeHere`/`sackBlocker` asking it. The hex
+  seeding underneath is untouched, which is why the worldgen parity vectors
+  did not move — the version bump moved them, not the change.
+
+  The bump is worth a note of its own. `Place` gained an optional field that
+  is only ever written with the flag on, so every existing save is byte for
+  byte what it was and it was tempting to skip. This project's rule about
+  save shape has no "but nothing writes it yet" clause, so it bumped.
 
 - **2026-08-25 — The coast can be walked** — `sim/coast.ts` and a `WALK`
   verb, behind `COAST_IS_A_LINE`. The band has a place on the line

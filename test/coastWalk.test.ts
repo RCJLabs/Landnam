@@ -26,6 +26,8 @@ import { SHIP_REACH, standingAt } from '../src/sim/coast';
 import { ROUTE_STOPS, daysBetween, placeAt, stopAt } from '../src/sim/route';
 import { placeKind } from '../src/data/places';
 import { canFound, foundSettlement, siteReport } from '../src/sim/site';
+import { placeHere, sackBlocker } from '../src/sim/places';
+import { countryHere } from '../src/sim/coast';
 import { fromKey } from '../src/hex';
 import type { Action } from '../src/sim/actions';
 import type { GameState } from '../src/state/types';
@@ -225,5 +227,62 @@ describe('the whole coast, walked', () => {
     // never less — a walk that came out cheaper than `daysBetween` would
     // mean a leg went unpaid for.
     expect(state.day - began).toBeGreaterThanOrEqual(daysBetween(SEED, 0, ROUTE_STOPS - 1));
+  });
+});
+
+describe('the places stand on the coast', () => {
+  it('seeds them at stops rather than hexes', () => {
+    const world = band(0).world;
+    expect(world.places.length, 'a coast with nothing on it').toBeGreaterThan(0);
+    for (const p of world.places) {
+      expect(p.stop, `${p.kind} has no stop`).toBeGreaterThan(0);
+      expect(p.stop).toBeLessThan(ROUTE_STOPS);
+    }
+  });
+
+  it('agrees with the route about where they are', () => {
+    // Two derivations of the same fact would be two facts. The world's
+    // places and `route.placeAt` must be the same answer.
+    for (const p of band(0).world.places) {
+      expect(placeAt(SEED, p.stop!), `stop ${p.stop}`).toBe(p.kind);
+    }
+  });
+
+  it('is found by the band standing at its stop, and not from next door', () => {
+    const there = band(0).world.places[0]!;
+    const at = band(there.stop!);
+    expect(placeHere(at)?.id).toBe(there.id);
+    expect(placeHere(band(there.stop! - 1))).toBeUndefined();
+  });
+
+  it('cannot be taken from a stop away, and can be from its own', () => {
+    const there = band(0).world.places[0]!;
+    expect(sackBlocker(band(there.stop! - 1), there.id)).toBe('away');
+    expect(sackBlocker(band(there.stop!), there.id)).toBeNull();
+  });
+
+  it('is standing there once the band has walked to it', () => {
+    // Through `apply` rather than by setting `stop` by hand: the point is
+    // that walking the coast arrives somewhere, not that the lookup works.
+    const there = band(0).world.places.find((p) => p.stop! > 1)!;
+    let state = band(there.stop! - 1);
+    state = step(state, there.stop!);
+    expect(standingAt(state)).toBe(there.stop);
+    expect(placeHere(state)?.kind).toBe(there.kind);
+  });
+});
+
+describe('the country underfoot', () => {
+  it('is the stop’s country, not a hex’s', () => {
+    for (const at of [0, 3, 9, ROUTE_STOPS - 1]) {
+      expect(countryHere(band(at))).toBe(stopAt(SEED, at).country);
+    }
+  });
+
+  it('changes as the band walks, which is the whole point of a coast', () => {
+    // A line where every stop looked the same would be a corridor.
+    const seen = new Set<string>();
+    for (let at = 0; at < ROUTE_STOPS; at += 1) seen.add(countryHere(band(at)));
+    expect(seen.size, 'the whole coast is one country').toBeGreaterThan(2);
   });
 });

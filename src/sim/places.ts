@@ -26,6 +26,9 @@ import { shiftStanding } from './neighbours';
 import { note } from './tally';
 import { ghostTakenLine, isGhostRuin } from './haunt';
 import { worldBeat } from './beats';
+import { COAST_IS_A_LINE } from './flags';
+import { placesOn } from './route';
+import { standingAt } from './coast';
 
 /** Places keep out of each other's way, and out of the landing's. */
 const PLACE_MIN_GAP = 5;
@@ -39,7 +42,21 @@ const PLACE_MIN_GAP = 5;
  * this with the same derived stream `newGame` uses, so a save from before
  * places existed gains exactly the places its seed would have been born with.
  */
-export function seedPlaces(world: World, rng: Rng): Place[] {
+export function seedPlaces(world: World, rng: Rng, seed?: string): Place[] {
+  // On the coast, the places are already decided — `route.placeAt` derives
+  // them from `(seed, stop)`, so there is nothing to search for and no
+  // ground to be picky about. The hex seeding below stays untouched and
+  // still runs while the flag is off, which is what keeps the worldgen
+  // parity vectors from moving.
+  if (COAST_IS_A_LINE && seed !== undefined) {
+    return placesOn(seed).map(({ index, kind }) => ({
+      id: `pl_${kind}`,
+      kind,
+      // A placeholder. Nothing reads it on the coast; `stop` is the address.
+      at: { q: 0, r: 0 },
+      stop: index,
+    }));
+  }
   const placed: Place[] = [];
 
   for (const kind of PLACE_KINDS) {
@@ -284,7 +301,17 @@ export function placeById(state: GameState, id: string): Place | undefined {
 
 /** The place the party is standing on, if any. */
 export function placeHere(state: GameState): Place | undefined {
+  if (COAST_IS_A_LINE) {
+    const at = standingAt(state);
+    return state.world.places.find((p) => p.stop === at);
+  }
   return state.world.places.find((p) => key(p.at) === key(state.party.at));
+}
+
+/** Is the band standing where this place is? */
+function standingOn(state: GameState, place: Place): boolean {
+  if (COAST_IS_A_LINE) return place.stop === standingAt(state);
+  return key(place.at) === key(state.party.at);
 }
 
 export type PlaceBlock = 'gone' | 'away' | 'taken';
@@ -292,7 +319,7 @@ export type PlaceBlock = 'gone' | 'away' | 'taken';
 export function sackBlocker(state: GameState, id: string): PlaceBlock | null {
   const place = placeById(state, id);
   if (!place) return 'gone';
-  if (key(place.at) !== key(state.party.at)) return 'away';
+  if (!standingOn(state, place)) return 'away';
   if (place.sackedOn !== undefined) return 'taken';
   return null;
 }

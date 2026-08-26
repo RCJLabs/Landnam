@@ -135,6 +135,15 @@ export interface Place {
   id: string;
   kind: 'monastery' | 'town' | 'wreck' | 'oreseam' | 'ruin';
   at: Hex;
+  /**
+   * Which stop on the coast it stands at — see sim/route.ts.
+   *
+   * Set only on a world seeded with `COAST_IS_A_LINE` on, where it is the
+   * real address and `at` is a placeholder nothing reads. Additive for the
+   * same reason `rank` and `party.stop` were: both worlds have to load while
+   * the conversion runs. `at` goes with the flag in 8.5.
+   */
+  stop?: number;
   /** Set the day it was sacked or picked clean. A place is taken once. */
   sackedOn?: number;
 }

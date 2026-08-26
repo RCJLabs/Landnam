@@ -29,7 +29,7 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
   world.trod = { [key(world.landing)]: 1 };
   // From its own derived stream, so the migration for pre-place saves can
   // hand an old world exactly the places its seed would have been born with.
-  world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
+  world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'), seed);
 
   const ship = makeShip(seed);
 

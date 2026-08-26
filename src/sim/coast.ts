@@ -11,7 +11,9 @@
 // step that has to be paid for twice. That is the sentence 8.2 is measured
 // against: how far up the coast do I push before the season turns me back?
 
-import type { GameState } from '../state/types';
+import { key } from '../hex';
+import type { GameState, Terrain } from '../state/types';
+import { COAST_IS_A_LINE } from './flags';
 import { ROUTE_STOPS, daysBetween, onRoute, stopAt } from './route';
 import { unseaworthy } from './ship';
 
@@ -115,4 +117,20 @@ export function pushLimit(state: GameState, days: number): number {
     best = to;
   }
   return best;
+}
+
+/**
+ * What country the band is standing in.
+ *
+ * The seam the whole conversion turns on, and the reason it is one function
+ * rather than fifteen: `state.world.tiles[key(state.party.at)]?.terrain ??
+ * 'meadow'` appears verbatim all over the sim, and every one of those is the
+ * same question asked of a coordinate system that is being replaced.
+ *
+ * Off the flag it is that expression, character for character, so nothing
+ * moves while the hex map is still the game.
+ */
+export function countryHere(state: GameState): Terrain {
+  if (COAST_IS_A_LINE) return stopAt(state.seed, standingAt(state)).country;
+  return state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
 }

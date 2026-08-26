@@ -119,7 +119,7 @@ export function sailOn(state: GameState): boolean {
   const world = generateWorld(stream(seed, 'worldgen'));
   world.landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
   world.trod = { [key(world.landing)]: state.day };
-  world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
+  world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'), seed);
 
   // What she holds is what goes. This is the cost of sailing on, and it is
   // the ship's own number doing the work: five winters of stores do not fit
