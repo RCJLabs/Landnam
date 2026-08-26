@@ -12,7 +12,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   LEG_MAX, LEG_MIN, ROUTE_STOPS,
-  daysBetween, onRoute, placeAt, placesOn, reachable, richness, route, stopAt,
+  daysBetween, neighbourStops, onRoute, placeAt, placesOn, reachable, richness,
+  route, stopAt,
 } from '../src/sim/route';
 import { PLACE_KINDS } from '../src/data/places';
 
@@ -254,5 +255,82 @@ describe('THE BAR — a saga can be walked end to end', () => {
       expect(thereAndBack, `${seed}: the whole coast inside one season`).toBeGreaterThan(90);
       expect(thereAndBack, `${seed}: the far end is scenery`).toBeLessThan(240);
     }
+  });
+});
+
+describe('where the people already on this coast live', () => {
+  // Fixed rather than imported from data/clans, so this file stays a test of
+  // the COAST. If somebody adds a fifth clan, `neighbours.test.ts` is where
+  // that should be felt.
+  const COUNT = 4;
+  const NEAR = 13;
+  const ROOM = 2;
+  const stops = (seed: string) => neighbourStops(seed, COUNT, NEAR, ROOM);
+
+  it('puts one on every quarter of the coast', () => {
+    // The claim the whole placement exists for. A coast whose people all live
+    // inside the first fortnight answers "how far do I push" with "never
+    // far", because there is nobody out there to push toward.
+    for (const seed of SEEDS) {
+      const got = stops(seed);
+      expect(got.length, seed).toBe(COUNT);
+      const band = (ROUTE_STOPS - 1) / COUNT;
+      got.forEach((s, i) => {
+        expect(Math.floor((s - 1) / band), `${seed}: stop ${s} of quarter ${i}`).toBe(i);
+      });
+    }
+  });
+
+  it('leaves the landing foundable', () => {
+    // Not tidiness. `site.foundBlocker` refuses ground inside somebody's
+    // elbow, the landing is the only site a band has seen on day one, and a
+    // camp on stop 1 would take it away from them.
+    for (const seed of SEEDS) {
+      for (const s of stops(seed)) {
+        expect(Math.abs(s - 0), `${seed}: somebody on stop ${s}`).toBeGreaterThanOrEqual(ROOM);
+      }
+    }
+  });
+
+  it('keeps the nearest of them near enough to be a neighbour', () => {
+    for (const seed of SEEDS) {
+      const nearest = Math.min(...stops(seed));
+      expect(daysBetween(seed, 0, nearest), seed).toBeLessThanOrEqual(NEAR);
+    }
+  });
+
+  it('reaches the far half of the coast', () => {
+    // The other end of the same claim: pushing out has to find PEOPLE and
+    // not only plunder, or trade and standing are landing-side systems and
+    // depth buys loot alone.
+    for (const seed of SEEDS) {
+      const furthest = Math.max(...stops(seed));
+      expect(furthest, seed).toBeGreaterThan((ROUTE_STOPS - 1) / 2);
+    }
+  });
+
+  it('gives everyone their own stop, and keeps off the places where it can', () => {
+    for (const seed of SEEDS) {
+      const got = stops(seed);
+      expect(new Set(got).size, `${seed}: two of them in one camp`).toBe(got.length);
+      // Not an absolute — a quarter with something on every stop still gets
+      // its neighbour rather than being left empty. The bar is that it does
+      // not happen when there is anywhere else to stand.
+      for (const s of got) {
+        if (!placeAt(seed, s)) continue;
+        const band = (ROUTE_STOPS - 1) / COUNT;
+        const i = Math.floor((s - 1) / band);
+        const lo = Math.max(1, ROOM, Math.round(1 + i * band));
+        const hi = Math.min(ROUTE_STOPS - 1, Math.round((i + 1) * band));
+        let free = 0;
+        for (let t = lo; t <= hi; t += 1) if (!placeAt(seed, t)) free += 1;
+        expect(free, `${seed}: stop ${s} shares with a place for no reason`).toBe(0);
+      }
+    }
+  });
+
+  it('is the same coast every time it is asked', () => {
+    for (const seed of SEEDS) expect(stops(seed)).toEqual(stops(seed));
+    expect(stops('a')).not.toEqual(stops('b'));
   });
 });

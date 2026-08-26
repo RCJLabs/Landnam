@@ -440,6 +440,11 @@ export const MIGRATIONS: Record<number, Migration> = {
   // Absent is exactly right, and inventing a surprise for a band that has
   // been standing somewhere for a season would hand them a free raid.
   49: (save) => ({ ...save, version: 50 }),
+  // v50 -> v51: neighbours and settlements may name a stop on the coast. An
+  // old save's people live on hexes and always will — the same reasoning as
+  // v49, and for the stronger reason here that a hall's stop would decide
+  // where the whole coast thinks the band lives.
+  50: (save) => ({ ...save, version: 51 }),
 
 };
 

@@ -1733,15 +1733,55 @@ is written so the choice is made with both arcs visible, not by drift.
     surprise that survived a night ashore would be a property of the hull
     rather than a surprise.
 
-    Still to do here, and neither is cosmetic:
+    **Neighbours** moved next, and the placement is where the design work
+    was. The hex map put them in a RING — no closer to the landing than
+    `CLAN_MIN_GAP`, no further than `CLAN_MAX_GAP` — and the ceiling was a
+    fix for a measured bug: nought of thirty-two clans met across eight
+    five-hundred-day sagas, because the ones seeded across the island were
+    unreachable. A ring is right when a band can go any direction and does
+    not go far.
 
-    - **Neighbours.** `neighbours.ts` is 383 lines and ten hex references,
-      and a neighbour is somebody with a position relative to yours.
-    - **The sea.** `strandTarget` asks whether the band is on ocean, and on
-      a route nobody is: rowing is a step, not a state. Strandhögg needs a
-      line-shaped answer before the flag can flip.
+    A line wants the opposite shape for the same underlying reason. This
+    phase's whole decision is HOW FAR, and a coast whose four neighbours all
+    live inside the first fortnight answers it: never far, because there is
+    nobody out there. So `route.neighbourStops` spreads them one to a
+    quarter of the coast, and pushing out finds PEOPLE rather than only
+    plunder — trade and standing stop being landing-side systems.
+
+    Both of the ring's bounds survive, read onto the first quarter. Its
+    ceiling: the nearest is inside `CLAN_MAX_GAP` days, so "neighbour" still
+    means something. Its floor: nobody lives within `CLAN_ELBOW` stops of
+    the sand, because `foundBlocker` refuses ground inside somebody's home
+    field and the landing is the only site a band has seen on day one — a
+    coast with a camp on stop 1 is a coast that cannot be played. Two stops
+    of room on a coast 26 long is a real bite where two hexes on 1872 was
+    not, and the quarter-spread is what makes it survivable.
+
+    Everything BELOW the address is untouched and still comes out of the
+    same rng in the same order: names, opening standing, might. The
+    conversion moves where people live, not who they are — a coast where
+    the flag rerolls everybody's temper is a coast that cannot be compared
+    against the one before it. `revealNeighbour` also stopped marking a hex
+    seen, which on a line would write (0,0) into the seen map of a world
+    nobody navigates by hexes; `found` IS the knowledge there. And the saga
+    stopped saying "north": a line has two directions and they are up the
+    coast and back toward the landing.
+
+    `Settlement.stop` came with it (v51), because "who calls on the new
+    steading, nearest first" needs a hall with an address. It is written
+    only when the flag is on — `standingAt` answers 0 for a band that has
+    never walked a route, and stamping every hex-map hall "stop 0" would
+    make the field a lie the day something trusted it.
+
+    Still to do here:
+
     - **Landmarks and telling.** `tellOfPlace` and `spotLandmarks` measure in
       hexes; both want route distance.
+    - **The rival.** `rival.ts` walks the hex map and keeps clear of
+      neighbours by hex distance (`RIVAL_ELBOW`). He is a whole second band
+      moving on a coordinate system that is going away.
+    - **Founding.** `foundBlocker` is still hex-shaped below the elbow —
+      `siteReport`, `world.seen`, terrain. That is 8.4's, not this item's.
   - **8.2d The strip map.** The chart as a painted strip, replacing the hex
     map behind the flag.
 
@@ -2462,6 +2502,53 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — The coast has people on it, and they do not all live by the
+  landing** — neighbours move onto the line, and the placement is the whole
+  of it.
+
+  The hex map placed them in a ring: no closer than `CLAN_MIN_GAP`, no
+  further than `CLAN_MAX_GAP`. That ceiling was not decoration — it was a fix
+  for a measured bug, nought of thirty-two clans met across eight
+  five-hundred-day sagas, because the ones seeded across the island could not
+  be reached. A ring is the right shape when a band can walk any direction
+  and does not walk far.
+
+  A line wants the opposite shape, and for the same reason underneath. The
+  decision this phase exists to create is HOW FAR, and a coast whose four
+  neighbours all live inside the first fortnight has already answered it —
+  never far, because there is nobody out there. `route.neighbourStops` spreads
+  them one to a quarter of the coast instead, so pushing out finds people as
+  well as plunder, and trade and standing stop being things that only happen
+  near the sand.
+
+  The ring's bounds both survive on the first quarter. Nearest inside
+  `CLAN_MAX_GAP` days, so the word still means something. Nobody inside
+  `CLAN_ELBOW` stops of the landing, because `foundBlocker` refuses ground in
+  somebody's home field and the landing is the only site a band has seen on
+  day one. Two stops of room on a coast 26 long bites where two hexes on 1872
+  did not, which is exactly why the quarter-spread has to be there.
+
+  What did NOT change is the part worth naming. Names, opening standing and
+  might still come out of the same rng in the same order — the conversion
+  moves where people live, not who they are. The parity fixture backs it:
+  48 of 336 facets moved and every one of them is `run` at checkpoint 0,
+  which is the version inside the hash. `world`, `band`, `ship`, `coast`,
+  `steading` and `field` all held.
+
+  Two smaller repairs came out of writing it. `revealNeighbour` marked their
+  hex seen, which on a line means writing (0,0) into the seen map of a world
+  with no hexes in it — `found` is the knowledge there. And the saga said
+  "off north"; a line has no compass, only up the coast and back toward the
+  landing. The test for that second one demands BOTH phrases across four
+  seeds, because the bearing is one of three lines the caller picks between
+  and a single-seed check would pass on a coast where nobody ever mentions a
+  direction — the same shape as a bar that has quietly stopped running.
+
+  `Settlement.stop` came along (v51), so "who calls on the new steading,
+  nearest first" has a hall to measure from. Nearest is counted in DAYS
+  rather than stops, because the legs are not evenly long and "nearest" has
+  to mean nearest to walk or the order is a lie.
 
 - **2026-08-26 — A sail nobody was watching for** — the strandhögg gets a
   line-shaped answer, and it came out of its own docstring rather than out of

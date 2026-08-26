@@ -18,9 +18,11 @@ import {
   type Verdict,
 } from '../data/sites';
 import { CLAN_ELBOW } from '../data/clans';
+import { COAST_IS_A_LINE } from './flags';
+import { standingAt } from './coast';
 import { rivalBlocks } from './rival';
 import { stream } from '../rng';
-import type { GameState, SiteReport, Terrain, World } from '../state/types';
+import type { GameState, Neighbour, SiteReport, Terrain, World } from '../state/types';
 import { chronicle } from './saga';
 import { makePlots } from './colony';
 import { bestAt } from './people';
@@ -192,12 +194,32 @@ export function foundBlocker(state: GameState, at: Hex): FoundBlock | null {
   // so the ground they live on has to say so. Otherwise the posts go in a
   // native camp's home field, and "four neighbours share this coast"
   // becomes "one of them is in the yard".
-  if (state.neighbours.some((n) => distance(n.at, at) < CLAN_ELBOW)) return 'taken';
+  if (state.neighbours.some((n) => insideElbow(state, n, at))) return 'taken';
   // And the other landnamsmadr, who is doing exactly what we are doing and
   // started the same spring. Ground he has fenced is ground we cannot have —
   // which is the whole cost of a slow week.
   if (rivalBlocks(state, at)) return 'taken';
   return null;
+}
+
+/**
+ * Is `at` inside somebody's home field?
+ *
+ * On a line the elbow is measured in STOPS rather than hexes, and it is the
+ * one place in the conversion where the number keeps its meaning exactly:
+ * `CLAN_ELBOW` was never a length, it was "how many steps of room somebody
+ * keeps", and a step is a step in either world. Note the ceiling this puts on
+ * the line — two stops of room on a coast 26 long is a real bite, where two
+ * hexes on 1872 was not, and `neighbourStops` is why that is survivable: the
+ * four of them are spread a quarter of the coast apart, so their elbows do
+ * not overlap and there is always a stop between any two.
+ */
+function insideElbow(state: GameState, n: Neighbour, at: Hex): boolean {
+  if (COAST_IS_A_LINE) {
+    if (n.stop === undefined) return false;
+    return Math.abs(n.stop - standingAt(state)) < CLAN_ELBOW;
+  }
+  return distance(n.at, at) < CLAN_ELBOW;
 }
 
 export function canFound(state: GameState, at: Hex): boolean {
@@ -240,6 +262,11 @@ export function foundSettlement(state: GameState): boolean {
 
   state.settlement = {
     at: { q: at.q, r: at.r },
+    // Written only on a line, because on the hex map it would be a lie —
+    // `standingAt` answers 0 for a band that has never walked a route, and a
+    // hall stamped "stop 0" is a hall the coast would think it knew where to
+    // find. See src/state/types.ts.
+    ...(COAST_IS_A_LINE ? { stop: standingAt(state) } : {}),
     name,
     foundedOn: state.day,
     report,

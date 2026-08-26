@@ -33,6 +33,12 @@ import { canFish } from '../src/sim/gathering';
 import { canStrandhogg, strandTarget } from '../src/sim/sea';
 import { placeKind as kindOf } from '../src/data/places';
 import { countryHere } from '../src/sim/coast';
+import {
+  bargainBlocker, canFallOn, neighbourHere, neighboursCallOn, seeNeighbours,
+  standingIn,
+} from '../src/sim/neighbours';
+import { CLAN_COUNT, CLAN_ELBOW } from '../src/data/clans';
+import { neighbourStops } from '../src/sim/route';
 import { fromKey } from '../src/hex';
 import type { Action } from '../src/sim/actions';
 import type { GameState } from '../src/state/types';
@@ -417,5 +423,162 @@ describe('the strandhogg, on a line', () => {
     if (!open) return;
     const rowed = step(band(open.stop! - SHIP_REACH), open.stop!);
     expect(strandTarget(rowed)).toBeUndefined();
+  });
+});
+
+describe('the people already on this coast', () => {
+  it('all live at a stop, and none of them on a hex', () => {
+    for (const seed of [SEED, 'grim-fjord-100', 'curve-7']) {
+      const state = band(0, seed);
+      expect(state.neighbours.length, seed).toBe(CLAN_COUNT);
+      for (const n of state.neighbours) {
+        expect(n.stop, `${seed}: ${n.name} has no address`).not.toBeUndefined();
+        expect(n.at, `${seed}: ${n.name} still stands on ground`).toEqual({ q: 0, r: 0 });
+      }
+      expect(state.neighbours.map((n) => n.stop))
+        .toEqual(neighbourStops(seed, CLAN_COUNT, 13, CLAN_ELBOW));
+    }
+  });
+
+  it('still gets its names and its numbers out of the same rng', () => {
+    // The conversion moves WHERE people live. It must not quietly reroll WHO
+    // they are — a coast where the flag changes everybody's name and temper
+    // is a coast that cannot be compared against the one before it.
+    const state = band(0, SEED);
+    for (const n of state.neighbours) {
+      expect(n.name.length, 'a neighbour with no name').toBeGreaterThan(0);
+      expect(n.might).toBeGreaterThanOrEqual(0);
+      expect(n.standing).toBeGreaterThanOrEqual(-100);
+      expect(n.raidsSent).toBe(0);
+    }
+    expect(new Set(state.neighbours.map((n) => n.name)).size).toBe(CLAN_COUNT);
+  });
+
+  it('is "here" when the band is standing on their stretch, and nowhere else', () => {
+    const at = band(0, SEED).neighbours[0]!.stop!;
+    const there = band(at, SEED);
+    const host = neighbourHere(there);
+    expect(host?.stop).toBe(at);
+    expect(standingIn(there, host!)).toBe(true);
+    // And one stop short is not "here" — the whole point of an address.
+    const near = band(at - 1, SEED);
+    expect(neighbourHere(near)).toBeUndefined();
+    expect(standingIn(near, host!)).toBe(false);
+  });
+
+  it('opens the verbs that need a yard to stand in, and only there', () => {
+    const first = band(0, SEED).neighbours[0]!;
+    const at = first.stop!;
+    const away = band(at - 1, SEED);
+    expect(bargainBlocker(away, first.id)).toBe('nobody');
+    expect(canFallOn(away, first.id)).toBe(false);
+
+    const there = band(at, SEED);
+    there.party.food = 400;
+    expect(bargainBlocker(there, first.id)).toBeNull();
+    expect(canFallOn(there, first.id)).toBe(true);
+  });
+
+  it('is met by walking onto their stretch, and does not scribble on a hex', () => {
+    const first = band(0, SEED).neighbours[0]!;
+    const state = band(first.stop!, SEED);
+    const before = Object.keys(state.world.seen).length;
+    seeNeighbours(state);
+    expect(state.neighbours.find((n) => n.id === first.id)!.found).toBe(true);
+    // `revealNeighbour` used to mark their hex seen. On a line every one of
+    // them stands at (0,0), so doing it here would write the landing into the
+    // seen map of a world nobody is navigating by hexes any more.
+    expect(Object.keys(state.world.seen).length).toBe(before);
+    expect(state.world.seen['0,0']).toBeUndefined();
+  });
+
+  it('is not met by walking somewhere else', () => {
+    const first = band(0, SEED).neighbours[0]!;
+    const state = band(first.stop! - 1, SEED);
+    seeNeighbours(state);
+    expect(state.neighbours.some((n) => n.found)).toBe(false);
+  });
+});
+
+describe('a hall on the coast, and who comes to look at it', () => {
+  /** A hall with its posts in a stop the band chose. */
+  function hallAt(stop: number, seed = SEED): GameState {
+    const state = withHall(seed);
+    state.settlement!.stop = stop;
+    state.party.stop = stop;
+    return state;
+  }
+
+  it('records which stretch of coast the posts went into', () => {
+    const state = withHall(SEED);
+    // `withHall` founds standing at the landing, which is where a band that
+    // has not walked anywhere is standing.
+    expect(state.settlement!.stop).toBe(0);
+  });
+
+  it('is called on by the nearest of them first, working up the coast', () => {
+    const state = hallAt(0);
+    const order: number[] = [];
+    for (let day = 0; day < 400 && order.length < CLAN_COUNT; day += 1) {
+      state.day = state.settlement!.foundedOn + day;
+      const before = state.neighbours.filter((n) => n.found).map((n) => n.id);
+      neighboursCallOn(state);
+      for (const n of state.neighbours) {
+        if (n.found && !before.includes(n.id)) order.push(n.stop!);
+      }
+    }
+    expect(order.length, 'nobody ever came to look').toBe(CLAN_COUNT);
+    expect(order, 'they came in some other order than nearest first')
+      .toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it('tells the saga which way they lie in words a coast has', () => {
+    // "North" is a compass word, and a line has no compass on it. The only
+    // two directions that exist here are out and back.
+    //
+    // The bearing is one of three lines the caller picks between, so a single
+    // seed can go a whole saga without saying it. Several seeds, and BOTH
+    // phrases demanded — otherwise this passes on a coast where nobody ever
+    // mentions a direction, which is exactly the shape of a check that has
+    // quietly stopped running.
+    const said = new Set<string>();
+    for (const seed of [SEED, 'grim-fjord-100', 'curve-7', 'Þórr-vik']) {
+      const state = hallAt(10, seed);
+      for (let day = 0; day < 400 && state.neighbours.some((n) => !n.found); day += 1) {
+        state.day = state.settlement!.foundedOn + day;
+        neighboursCallOn(state);
+      }
+      const lines = state.saga.map((e) => e.text).join('\n');
+      expect(lines, seed).not.toMatch(/off (north|south|east|west)/);
+      for (const m of lines.matchAll(/off ([a-z ]+?),/g)) said.add(m[1]!);
+    }
+    expect([...said].sort()).toEqual(['back toward the landing', 'up the coast']);
+  });
+});
+
+describe('somebody else’s home field', () => {
+  it('refuses the posts inside it, and allows them a step outside', () => {
+    const state = withHall(SEED);
+    delete state.settlement;
+    const first = state.neighbours.reduce((a, b) => (a.stop! < b.stop! ? a : b));
+    const at = state.party.at;
+
+    state.party.stop = first.stop!;
+    expect(canFound(state, at), 'the posts went into a native camp').toBe(false);
+
+    state.party.stop = first.stop! - CLAN_ELBOW;
+    expect(canFound(state, at), 'a stop clear of them was still refused').toBe(true);
+  });
+
+  it('leaves the landing itself foundable, whoever lives on this coast', () => {
+    // The reason `neighbourStops` takes a `room`. The landing is the only
+    // ground a band has seen on day one; a coast that refuses it is a coast
+    // that cannot be played.
+    for (const seed of [SEED, 'grim-fjord-100', 'curve-7', 'Þórr-vik']) {
+      const state = withHall(seed);
+      delete state.settlement;
+      state.party.stop = 0;
+      expect(canFound(state, state.party.at), seed).toBe(true);
+    }
   });
 });

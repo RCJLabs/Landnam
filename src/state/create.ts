@@ -60,7 +60,7 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
     grudges: [],
     lore: [],
     tally: emptyTally(),
-    neighbours: placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours')),
+    neighbours: placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours'), seed),
     // The other boat. Built from the finished world rather than inside
     // `generateWorld`, so the port's worldgen hash — a contract with the C++
     // side — does not move for a rule about people.

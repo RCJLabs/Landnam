@@ -497,6 +497,15 @@ export interface Plot {
 
 export interface Settlement {
   at: Hex;
+  /**
+   * Which stop on the coast the posts went into — see sim/route.ts.
+   *
+   * Only written when the coast IS the line. On the hex map it would be a
+   * lie: `standingAt` answers 0 for every band that has never walked a
+   * route, and stamping every hex-map hall with "stop 0" would make the
+   * field unreadable the day something starts trusting it.
+   */
+  stop?: number;
   name: string;
   /** The day the posts went in. There is only ever one. */
   foundedOn: number;
@@ -613,6 +622,15 @@ export interface Neighbour {
   kind: string;
   name: string;
   at: Hex;
+  /**
+   * Which stop on the coast they live at — see sim/route.ts.
+   *
+   * Optional for the same reason `Place.stop` and `party.stop` are: both
+   * worlds have to load while the flag is off, and a save written by the hex
+   * map has no stop for anybody. `at` is a placeholder on the line and is
+   * never read there.
+   */
+  stop?: number;
   /** What they think of you, -100..100. */
   standing: number;
   /** How much they can field, roughly 0..3. Feeds a fight's difficulty. */

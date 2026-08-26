@@ -208,3 +208,68 @@ export function placesOn(seed: string): { index: number; kind: PlaceKind }[] {
 export function route(seed: string): Stop[] {
   return Array.from({ length: ROUTE_STOPS }, (_, i) => stopAt(seed, i));
 }
+
+/**
+ * Stops where somebody already lives.
+ *
+ * `count` and `nearDays` are the caller's, from `data/clans` — this module
+ * knows about coast and not about clans, and the day the neighbour count
+ * changes it should not have to be edited here.
+ *
+ * The hex map placed them in a RING: no closer to the landing than
+ * `CLAN_MIN_GAP` and no further than `CLAN_MAX_GAP`, because the ceiling was
+ * a fix for a measured bug — nought of thirty-two clans met across eight
+ * five-hundred-day sagas, since the ones seeded across the island were
+ * unreachable. A ring is the right shape when a band can go any direction
+ * and does not go far.
+ *
+ * A line wants the opposite shape, for the same underlying reason. The whole
+ * decision this phase is built on is HOW FAR, and a coast whose four
+ * neighbours are all inside the first fortnight answers it: never far,
+ * because there is nobody out there. So they spread — one to a quarter of
+ * the coast, which makes pushing out find PEOPLE and not only plunder.
+ *
+ * What survives from the ring is BOTH its bounds, read onto the first
+ * quarter. Its ceiling: the nearest of them is inside `nearDays` of the
+ * landing, so the word "neighbour" still means something. Its floor: nobody
+ * lives within `room` stops of the sand, which on the hex map was
+ * `CLAN_MIN_GAP` and here is the elbow — because the landing is where a band
+ * with no better idea puts its posts, and a coast whose first camp sits on
+ * stop 1 is a coast that refuses the only site the band has seen. The other
+ * three neighbours are the reward for going further, and `neighboursCallOn`
+ * walks them outward in that order.
+ *
+ * One thing to a stop. On 1872 hexes a place and a camp sharing ground was
+ * a coincidence that never came up; on 26 stops it would come up constantly,
+ * and a stop that is both a monastery and a native camp is a stop where one
+ * of them can never be gone to.
+ */
+export function neighbourStops(
+  seed: string,
+  count: number,
+  nearDays: number,
+  room: number,
+): number[] {
+  const out: number[] = [];
+  const band = (ROUTE_STOPS - 1) / count;
+  for (let i = 0; i < count; i += 1) {
+    const lo = Math.max(1, room, Math.round(1 + i * band));
+    let hi = Math.min(ROUTE_STOPS - 1, Math.round((i + 1) * band));
+    // The nearest of them is a neighbour in the ordinary sense of the word.
+    if (i === 0) hi = Math.max(lo, Math.min(hi, reachable(seed, 0, nearDays)));
+    const all: number[] = [];
+    const free: number[] = [];
+    for (let s = lo; s <= hi; s += 1) {
+      if (out.includes(s)) continue;
+      all.push(s);
+      if (!placeAt(seed, s)) free.push(s);
+    }
+    // A quarter with something on every stop still gets its neighbour; the
+    // rule is "keep out of each other's way where the coast allows", not
+    // "ship a coast with three people on it".
+    const pool = free.length > 0 ? free : all;
+    if (pool.length === 0) continue;
+    out.push(pool[stopRng(seed, i, 'clan').int(0, pool.length - 1)]!);
+  }
+  return out.sort((a, b) => a - b);
+}

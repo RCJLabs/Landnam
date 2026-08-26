@@ -137,7 +137,7 @@ export function sailOn(state: GameState): boolean {
   state.expedition = undefined;
   state.voyage = undefined;
   // A new coast has its own people on it.
-  state.neighbours = placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours'));
+  state.neighbours = placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours'), seed);
   state.rival = undefined;
   // And the man we drove out is on THAT island, with our old hall to haunt.
   state.outlaws = undefined;

@@ -131,7 +131,14 @@
 //                  taking a place moves from where the band IS to how they
 //                  got there. Lasts one day; `advance` clears it. Absent
 //                  means they walked, which is what every save so far did.
-export const SAVE_VERSION = 50;
+// v51 (people on the coast): Neighbour and Settlement gained `stop` — which
+//                  stretch of the route they live on, and which one the posts
+//                  went into. Same rule as v49: only ever written on a world
+//                  seeded with `COAST_IS_A_LINE` on, so an existing save is
+//                  byte for byte what it was. Absent on a neighbour means
+//                  they live on a hex; absent on a settlement means the hall
+//                  stands on one.
+export const SAVE_VERSION = 51;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';
