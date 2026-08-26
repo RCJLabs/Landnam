@@ -2024,12 +2024,49 @@ is written so the choice is made with both arcs visible, not by drift.
 
   1. **Flip the default.** One line in `sim/flags.ts`. It is the hinge, and
      it is what makes the next three necessary rather than optional.
-  2. **The bars.** Twelve of the fifteen drive the hex renderers —
-     `repaint.mjs` counts patterns, `sea.mjs` and `way-look.mjs` and
-     `pan.mjs` query `svg.map` and `polygon`. They do not fail informatively
-     against a coast build; they fail as "no such element". Each needs
-     rewriting against the procession and the elevation, or retiring with its
-     claim moved to one that still runs.
+  2. **The bars — done, and the count I first wrote was wrong.** I said
+     twelve of fifteen drive the hex renderers. That was read off imports
+     rather than measured. Run against a coast build, **five** fail: `sea`,
+     `pinch`, `way-look`, `repaint` and `steading`. The other ten pass
+     unchanged, because 8.1 already moved the battle to a line and `offline`,
+     `larder`, `landscape` and `reach` never cared what the map was made of.
+
+     Each of the five was decided on its own terms rather than ported:
+
+     - **`sea`** asks that the map's promise afloat equals the sim's
+       permission. On a line there is no afloat — rowing is a step, not a
+       state — so the claim has no subject. It is not lost: `strip.mjs`
+       already holds the same shape of claim, checking the stretches the
+       chart OFFERS against `walkOptions`.
+     - **`pinch`** asks that the map holds the point under your fingers. The
+       procession has no camera at all (`centreOn` is a no-op) and the strip
+       scrolls rather than zooms, so there is nothing to pinch. The
+       arithmetic it guards still matters to the battle field, which
+       `pan.mjs` drives and which passes on a coast build today.
+     - **`way-look`** turned out not to be a bar problem. See below.
+     - **`repaint`**'s live claim — a still map must not be redrawn — moved
+       into `procession.mjs`, which now watches the road's `work` counter
+       across five idle repaints AND after a walk, because a counter that
+       never moves passes the first half perfectly.
+     - **`steading`**'s brush claim — moving people must not reload the
+       painting — moved into `hearth.mjs` the same way, watching painted
+       against kept.
+
+     **And `way-look` found a real defect rather than a stale selector.**
+     `MAKE_WAY` was still being OFFERED on a coast, where `party.at` is
+     frozen at the landing hex: "Break ground" appeared exactly once a saga,
+     cost a day, marked a hex nobody was standing on, and could never appear
+     again. `wayable(from, to)` could never be true for any pair either, so
+     no journey was ever shortened — a day spent on nothing, which is the one
+     thing `sim/ways.ts`'s own header says a way must never be. It is
+     withdrawn on a line rather than half-converted.
+
+     A made way would SUIT a coast — "the journey you take again" is exactly
+     what a leg walked out and back is. What stopped it being written is a
+     real tension: `route.daysBetween` is pure and a made way is history, so
+     discounting the walk leaves the chart, the road and the strip all
+     drawing the raw leg while the price disagrees. That wants deciding.
+     Recorded as an open question rather than patched.
   3. **The world.** `worldgen.ts`, `world.tiles`, `world.seen`, `world.trod`
      and the fog are the hex map's own memory, and the parity fixture's
      `world` facet hashes them. Deleting them is a save break and a parity
@@ -2742,6 +2779,44 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — The bars for a coast, and a day spent on nothing** — 8.5's
+  second job. The bar work was routine; what it turned up was not.
+
+  I had written that twelve of the fifteen bars drive hex renderers. Wrong,
+  and wrong because I read imports instead of running them: **five** fail on
+  a coast build. The other ten pass unchanged — 8.1 already moved the battle
+  to a line, and `offline`, `larder`, `landscape` and `reach` never cared
+  what the map was made of.
+
+  Two of the five guard claims that have no subject on a line. `sea` asks
+  that the map's promise afloat matches the sim's permission, and a coast has
+  no afloat — rowing is a step, not a state; `strip.mjs` already holds that
+  shape of claim by checking offered stretches against `walkOptions`. `pinch`
+  asks that the map holds the point under your fingers, and the procession
+  has no camera while the strip scrolls rather than zooms.
+
+  Two guard claims that DO survive, so they moved rather than died.
+  `repaint`'s "a still map must not be redrawn" is now in `procession.mjs`,
+  watching the road's work counter across five idle repaints — and after a
+  walk, because a counter that never moves passes the idle half perfectly.
+  `steading`'s "moving people must not reload the brush" is now in
+  `hearth.mjs`, watching painted against kept.
+
+  **And the fifth was not a bar problem at all.** `way-look` crashed, and the
+  reason is that `MAKE_WAY` was still being offered on a coast. `party.at` is
+  frozen at the landing there, so "Break ground" appeared exactly once a
+  saga, cost a day, marked a hex nobody was standing on, and could never
+  appear again; `wayable` could never be true for any pair, so no journey was
+  ever shortened. A day spent on nothing — which `sim/ways.ts`'s own header
+  says is the one thing a way must never be. Withdrawn on a line.
+
+  It is a withdrawal and not a conversion, deliberately. A made way would
+  suit a coast well — "the journey you take AGAIN" is exactly a leg walked
+  out and back. What stopped it is a real tension rather than time:
+  `route.daysBetween` is pure and a made way is history, so discounting the
+  walk leaves the chart, the road and the strip all drawing the raw leg while
+  the price disagrees. Better recorded as a question than patched into a lie.
 
 - **2026-08-26 — Asking whether the flag can flip, and running the control
   before believing the answer** — 8.5's precondition, which turned out never

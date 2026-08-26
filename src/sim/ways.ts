@@ -15,6 +15,7 @@
 import { key, line, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import type { GameState } from '../state/types';
+import { COAST_IS_A_LINE } from './flags';
 
 /** What a made way costs a hex to enter. A road walks like a meadow. */
 export const WAY_EFFORT = 1;
@@ -53,13 +54,14 @@ export function wayDays(state: GameState, at: Hex): number {
  */
 export const WAY_REACH = 2;
 
-export type WayBlock = 'sea' | 'made' | 'rock' | 'unknown';
+export type WayBlock = 'sea' | 'made' | 'rock' | 'unknown' | 'coast';
 
 export const WAY_REASON: Record<WayBlock, string> = {
   sea: 'There is no ground here to break.',
   made: 'The way through here is already made.',
   rock: 'Bare rock. Nothing short of a season would cut through this.',
   unknown: 'We have not stood on that ground.',
+  coast: 'The strand is the road here. There is nothing to cut through.',
 };
 
 /**
@@ -72,6 +74,23 @@ export const WAY_REASON: Record<WayBlock, string> = {
  * than the rules forbidding it.
  */
 export function wayBlocker(state: GameState, at: Hex): WayBlock | null {
+  // NOT OFFERED ON A COAST, and this is a withdrawal rather than a
+  // conversion — see ROADMAP. Measured before it was taken away: on a line
+  // `party.at` is frozen at the landing hex, so "Break ground" appeared
+  // exactly once a saga, cost a day, marked a hex nobody was standing on,
+  // and could never be offered again. `wayable(from, to)` could never be
+  // true for any pair either, so no journey was ever shortened. A day spent
+  // on nothing, which is the one thing this module's own header says a way
+  // must never be.
+  //
+  // The mechanic deserves a line-shaped answer and would suit one — "the
+  // journey you take AGAIN" is exactly what a coast leg is. What stopped it
+  // being written here is a real tension rather than a lack of time:
+  // `route.daysBetween` is PURE, and a made way is history. Discount the
+  // walk and the chart, the road and the strip all go on drawing the raw
+  // leg, so the picture and the price disagree. That wants deciding, not
+  // patching.
+  if (COAST_IS_A_LINE) return 'coast';
   const tile = state.world.tiles[key(at)];
   if (!tile) return 'unknown';
   if (tile.terrain === 'ocean') return 'sea';

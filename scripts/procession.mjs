@@ -213,6 +213,44 @@ for (const [w, h] of [[390, 844], [320, 568]]) {
     }
   }
 
+  // AND A STILL ROAD COSTS NOTHING TO LOOK AT.
+  //
+  // Inherited from `scripts/repaint.mjs`, which holds this for the hex map
+  // and has nothing to say about a road. Every repaint rebuilds the scene
+  // from scratch, so the question is whether that rebuild is CHARGED: `work`
+  // moves only when what is drawn changes. A view that redraws the country
+  // on every tap of the roster is the bug this claim exists to catch, and it
+  // is invisible in a screenshot.
+  const still = await page.evaluate(() => window.landnam.drawn());
+  for (let i = 0; i < 5; i++) {
+    await page.evaluate(() => { const a = window.landnam; if (a.stock) a.stock(200, 200); });
+    await page.waitForTimeout(150);
+  }
+  const idle = await page.evaluate(() => window.landnam.drawn());
+  if (still && idle && typeof idle.work === 'number') {
+    console.log(`${w}x${h}: work ${still.work} -> ${idle.work} over five idle repaints`);
+    check(idle.work === still.work,
+      `${w}x${h}: five repaints that changed nothing cost ${idle.work - still.work} redraws`);
+    // And it is not simply frozen: walking has to move it, or the counter
+    // proves nothing at all.
+    const onward = page.locator('.action-slot button', { hasText: /up the coast/i }).first();
+    // Said out loud rather than skipped. A counter that never moves passes
+    // "five idle repaints cost nothing" perfectly, and half this check is
+    // there to catch exactly that.
+    check(await onward.count() > 0,
+      `${w}x${h}: nowhere left to walk, so "walking redraws the road" did NOT run`);
+    if (await onward.count()) {
+      await onward.click({ timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(700);
+      const moved = await page.evaluate(() => window.landnam.drawn());
+      console.log(`${w}x${h}: work ${idle.work} -> ${moved.work} after walking`);
+      check(moved.work > idle.work,
+        `${w}x${h}: the band walked and the road did not redraw — the counter is stuck`);
+    }
+  } else {
+    check(false, `${w}x${h}: the road reports no work count, so the repaint claim did NOT run`);
+  }
+
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);
 }
 

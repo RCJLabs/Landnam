@@ -158,6 +158,36 @@ if (!raised) {
     'the steading tells a screen reader the same thing after building as before');
 }
 
+// AND THE BRUSH IS NOT RELOADED FOR NOTHING.
+//
+// Inherited from `scripts/steading.mjs`, which holds this for the hex colony
+// and has nothing to say about an elevation. The scene is rebuilt from
+// scratch on every repaint; if the PAINTING went with it, every tap on the
+// roster would repaint the country. `stats()` counts painted against kept, so
+// the claim is asked of the renderer rather than of the screen.
+const brushBefore = await page.evaluate(() => window.landnam.steading());
+for (let i = 0; i < 4; i++) {
+  await page.evaluate(() => {
+    // A repaint with nothing about the country changed.
+    const api = window.landnam;
+    if (api.stock) api.stock(200, 200);
+  });
+  await page.waitForTimeout(200);
+}
+const brushAfter = await page.evaluate(() => window.landnam.steading());
+if (brushBefore && brushAfter && typeof brushAfter.painted === 'number') {
+  console.log(
+    `brush: painted ${brushBefore.painted} -> ${brushAfter.painted}, ` +
+      `kept ${brushBefore.kept} -> ${brushAfter.kept}`,
+  );
+  check(brushAfter.painted === brushBefore.painted,
+    `the ground was repainted ${brushAfter.painted - brushBefore.painted}x for nothing`);
+  check(brushAfter.kept > brushBefore.kept,
+    'no repaint reused the painting, so nothing here proves it is kept');
+} else {
+  check(false, 'the elevation reports no brush stats, so the repaint claim did NOT run');
+}
+
 check(errors.length === 0, `the page reported ${errors[0] ?? ''}`);
 
 await browser.close();
