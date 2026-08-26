@@ -2003,6 +2003,47 @@ is written so the choice is made with both arcs visible, not by drift.
 - [ ] **8.5 Retire the hexes** — Delete `src/hex/`, the old renderers and the
   dead flags once every flag has flipped. Bump `SAVE_VERSION` and land the
   documented break. Rewrite the browser bars that query hex selectors.
+
+  **The precondition is answered: the flag CAN flip.** That was never
+  actually asked. Every slice from 8.2 on proved its own piece — the walking,
+  the chart, the road, the steading — and none of them played a SAGA.
+  `test/coastSaga.test.ts` does: it lands a band on a line and plays until
+  something ends it, with a deliberately stupid player, hunting for a verb
+  the sim refuses that the player was offered. **There are none.** Nothing
+  wedges; every run reaches an ending rather than stopping dead.
+
+  The numbers needed a control before they meant anything. The fool dies —
+  twelve of twelve starve or freeze by day 34, four ever get posts in the
+  ground — which read alone looks like an uninhabitable coast. The same fool
+  on the HEX MAP settles NONE of the same twelve and dies at a median of day
+  28. The coast is not worse than the country it replaces; it is better for a
+  player this bad. The dying is the player, which is what a fool is for.
+
+  What is left is the deletion itself, and it is four separable jobs rather
+  than one:
+
+  1. **Flip the default.** One line in `sim/flags.ts`. It is the hinge, and
+     it is what makes the next three necessary rather than optional.
+  2. **The bars.** Twelve of the fifteen drive the hex renderers —
+     `repaint.mjs` counts patterns, `sea.mjs` and `way-look.mjs` and
+     `pan.mjs` query `svg.map` and `polygon`. They do not fail informatively
+     against a coast build; they fail as "no such element". Each needs
+     rewriting against the procession and the elevation, or retiring with its
+     claim moved to one that still runs.
+  3. **The world.** `worldgen.ts`, `world.tiles`, `world.seen`, `world.trod`
+     and the fog are the hex map's own memory, and the parity fixture's
+     `world` facet hashes them. Deleting them is a save break and a parity
+     regeneration, and the port contract is FROZEN against exactly those
+     bytes — so this one is a conversation with the port, not a deletion.
+  4. **`src/hex/` itself.** 94 files import it, but most take only a `type
+     Hex` for a placeholder `{q:0,r:0}`. The real work is auditing which of
+     those placeholders can go away with the fields that hold them
+     (`Place.at`, `Neighbour.at`, `Rival.at`, `Settlement.at`, `Party.at`),
+     which is the SAVE_VERSION break the milestone is named for.
+
+  Doing 1 without 2 leaves the suite red; doing 3 without deciding what the
+  port is owed breaks a contract this project deliberately froze rather than
+  drifted. So it is staged on purpose.
   *Done when: `grep -r "hex" src/` returns nothing load-bearing, all bars
   pass, and the changelog states which sagas stopped loading and why.*
 
@@ -2701,6 +2742,40 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — Asking whether the flag can flip, and running the control
+  before believing the answer** — 8.5's precondition, which turned out never
+  to have been asked.
+
+  Every slice since 8.2 proved its own piece. None of them played a saga, and
+  a coast where every part works and the whole cannot be lived through is a
+  coast nobody can ship. `test/coastSaga.test.ts` plays one — a deliberately
+  stupid player, because a clever script hides gaps by never walking into
+  them — and hunts for the thing that would block the flag: a verb the sim
+  refuses that the player was offered. There are none. Nothing wedges; every
+  run reaches an ending rather than stopping dead.
+
+  The interesting part is what it took to read the result. The fool dies:
+  twelve of twelve starve or freeze by day 34, four ever settle. That looks
+  like a broken coast, and I nearly wrote it up as one twice.
+
+  It is not. Two of those failures were the INSTRUMENT. The first draft stood
+  on the landing foraging until it starved — a forage on shore yields 3
+  against 3 eaten a day, break-even, correctly, because shore is the poorest
+  ground in the game while valley pays 8 and forest 7. The second called the
+  day's work twice in one turn, so a card raised by the first call made the
+  second refuse, and the sweep reported that as the sim refusing CAMP.
+
+  And the number itself only means anything against a control. The same fool
+  on the hex map settles NONE of the same twelve and dies at a median of day
+  28, where the coast gets four bands onto ground. The coast is not worse
+  than the country it replaces — it is better for a player this bad. The
+  dying is the player, which is what a fool is for.
+
+  The deletion itself is staged in ROADMAP as four separable jobs, because
+  flipping the default without rewriting the bars leaves the suite red, and
+  deleting `world.tiles` without deciding what the port is owed breaks a
+  contract this project deliberately froze rather than let drift.
 
 - **2026-08-26 — The steading you walk into, and two doors that were never
   locked** — 8.4. The roadmap called this the cheap one. The render was the
