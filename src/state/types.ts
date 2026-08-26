@@ -123,6 +123,23 @@ export interface World {
   landingName: string;
   /** Hexes the party has actually stood on, keyed to the day they first did. */
   trod: Record<HexKey, number>;
+  /**
+   * The same two facts for a coast that is a LINE — see sim/route.ts.
+   * `trodStops` is where the band has stood, keyed to the day it first did;
+   * `knownStops` is what it knows stands there, however it came to know.
+   *
+   * Deliberately NOT folded into `seen` and `trod`. Those are keyed by hex
+   * and eight places in this codebase iterate them expecting hexes:
+   * `exploredFraction` divides `seen`'s size by the tile count, the parity
+   * fixture hashes that size, three renderers walk it, and `commonestGround`
+   * looks every `trod` key up in `world.tiles`. A stop key dropped into
+   * either would not throw — it would quietly make a percentage wrong, which
+   * is the failure this repo keeps rediscovering under other names.
+   *
+   * Absent on every save written by the hex map, which is all of them.
+   */
+  trodStops?: Record<string, number>;
+  knownStops?: number[];
   /** Fixed points worth walking to — and some worth taking. See data/places. */
   places: Place[];
 }

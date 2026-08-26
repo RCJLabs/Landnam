@@ -138,7 +138,14 @@
 //                  byte for byte what it was. Absent on a neighbour means
 //                  they live on a hex; absent on a settlement means the hall
 //                  stands on one.
-export const SAVE_VERSION = 51;
+// v52 (the coast remembered): World gained `trodStops` and `knownStops` —
+//                  where the band has stood on the route and what it knows
+//                  stands there. The line's `trod` and `seen`, kept as their
+//                  own fields rather than folded into the hex-keyed ones,
+//                  because eight places iterate those expecting hexes and a
+//                  stop key would not throw, only make a percentage wrong.
+//                  Absent on every save the hex map ever wrote.
+export const SAVE_VERSION = 52;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

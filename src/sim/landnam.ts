@@ -25,6 +25,7 @@ import { stream } from '../rng';
 import { LANDING_NAMES } from '../data/names';
 import { generateWorld } from './worldgen';
 import { placeNeighbours } from './neighbours';
+import { COAST_IS_A_LINE } from './flags';
 import { seedPlaces } from './places';
 import { revealAround, sightRadius } from './fog';
 import { hold } from './ship';
@@ -119,6 +120,10 @@ export function sailOn(state: GameState): boolean {
   const world = generateWorld(stream(seed, 'worldgen'));
   world.landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
   world.trod = { [key(world.landing)]: state.day };
+  if (COAST_IS_A_LINE) {
+    world.trodStops = { '0': state.day };
+    world.knownStops = [0];
+  }
   world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'), seed);
 
   // What she holds is what goes. This is the cost of sailing on, and it is

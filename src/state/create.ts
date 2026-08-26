@@ -11,6 +11,7 @@ import { revealAround, sightRadius } from '../sim/fog';
 import { makeWarband } from '../sim/people';
 import { generateWorld } from '../sim/worldgen';
 import { placeNeighbours } from '../sim/neighbours';
+import { COAST_IS_A_LINE } from '../sim/flags';
 import { seedPlaces } from '../sim/places';
 import { emptyTally } from '../sim/tally';
 import type { GameState } from './types';
@@ -27,6 +28,13 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
   const landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
   world.landingName = landingName;
   world.trod = { [key(world.landing)]: 1 };
+  // The sand the knarr came onto is a stretch of coast the band has stood
+  // on, and the only one it has. Without this the landing is the one stop a
+  // saga can never name, which is the opposite of what it is.
+  if (COAST_IS_A_LINE) {
+    world.trodStops = { '0': 1 };
+    world.knownStops = [0];
+  }
   // From its own derived stream, so the migration for pre-place saves can
   // hand an old world exactly the places its seed would have been born with.
   world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'), seed);

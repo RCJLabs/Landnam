@@ -5,6 +5,8 @@
 import { key, line, range, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import type { World } from '../state/types';
+import { COAST_IS_A_LINE } from './flags';
+import { ROUTE_STOPS } from './route';
 
 /** High ground lets you see over the trees. */
 export function onHighGround(world: World, at: Hex): boolean {
@@ -53,8 +55,20 @@ export function visibilityAt(world: World, h: Hex): 'unseen' | 'seen' | 'visible
   return world.seen[key(h)] ?? 'unseen';
 }
 
-/** How much of the map has been laid eyes on, 0..1 — used in the run summary. */
+/**
+ * How much of the country has been laid eyes on, 0..1 — used in the run
+ * summary and on the closing card.
+ *
+ * On a line the denominator is the coast rather than the map. Left alone it
+ * would answer 0% for every saga ever played on a route, because `world.seen`
+ * is a hex map's memory and nothing on a line writes to it — and a closing
+ * card that tells a band who walked the whole coast that they saw none of it
+ * is worse than one that says nothing.
+ */
 export function exploredFraction(world: World): number {
+  if (COAST_IS_A_LINE) {
+    return (world.knownStops?.length ?? 0) / ROUTE_STOPS;
+  }
   const total = Object.keys(world.tiles).length;
   if (total === 0) return 0;
   return Object.keys(world.seen).length / total;

@@ -1773,13 +1773,58 @@ is written so the choice is made with both arcs visible, not by drift.
     never walked a route, and stamping every hex-map hall "stop 0" would
     make the field a lie the day something trusted it.
 
-    Still to do here:
+    **Landmarks and telling** closed the item, and it needed a field rather
+    than a re-addressing. Everything else on the coast is derived from
+    `(seed, stop)`, but *what the band knows* cannot be: it is history, not
+    country. On the hex map that history is `world.seen` and `world.trod`,
+    both keyed by hex — so `World` gained `trodStops` and `knownStops`
+    (v52), kept as their own fields rather than folded into the hex-keyed
+    ones. Eight places in this codebase iterate `seen` and `trod` expecting
+    hexes: `exploredFraction` divides `seen`'s size by the tile count, the
+    parity fixture hashes that size, three renderers walk it,
+    `commonestGround` looks every `trod` key up in `world.tiles`. A stop key
+    dropped into either would not throw — it would quietly make a percentage
+    wrong, which is the failure this repo keeps rediscovering under other
+    names.
 
-    - **Landmarks and telling.** `tellOfPlace` and `spotLandmarks` measure in
-      hexes; both want route distance.
+    The density number could not be carried over, and this is the one place
+    in the conversion where measurement changed the answer. `LANDMARK_SHARE`
+    is 0.045 per HEX across roughly 1139 of them, on a map where a saga
+    stands on eight. A coast is 26 stops and a band walks most of the ones it
+    reaches. Measured over 300 seeded coasts:
+
+    | share | named of 25 (min-med-max) | met on a 10-stop walk |
+    |---|---|---|
+    | 0.045 | 0-1-6 | 0 — nothing at all on 192 of 300 |
+    | 0.25 | 1-6-13 | 2 — nothing on 17 of 300 |
+    | 0.34 | 2-8-15 | 3 — nothing on 7 of 300 |
+    | 0.50 | 3-12-19 | 5 — nothing on 1 of 300 |
+
+    The hex map's own number is the top line, and it is the one that fails:
+    carried over unchanged it gives a median coast ONE named point and leaves
+    two ten-stop walks in three with nothing to remember a stretch by —
+    exactly the disease `sim/landmark.ts` was written against. So
+    `LANDMARK_SHARE_STOP` is a third. The ceiling is real too: about four
+    places and four neighbours already sit on a coast, leaving roughly
+    seventeen bare stretches, and a third names about half of them. A half
+    starts making the module's own rule false — a landmark that is everywhere
+    is scenery.
+
+    Two mechanics had no line-shaped analogue and are recorded as such rather
+    than ported dead. `revealAround` and the sight radius do not run on a
+    line at all: a coast is walked, not surveyed. `hasLineOfSight` has no
+    question to ask, because a coast IS a line of sight — there is nothing
+    for a hill to stand behind when the country runs one way. What DID
+    survive is `keepsBearings`, and it survived intact: a fixed point on the
+    stretch you are on or either side of it still means you know where you
+    are.
+
+    Still to do before the flag can flip:
+
     - **The rival.** `rival.ts` walks the hex map and keeps clear of
       neighbours by hex distance (`RIVAL_ELBOW`). He is a whole second band
-      moving on a coordinate system that is going away.
+      moving on a coordinate system that is going away, and on a line he is
+      currently never met at all — `meetRival` hangs off the fog block.
     - **Founding.** `foundBlocker` is still hex-shaped below the elbow —
       `siteReport`, `world.seen`, terrain. That is 8.4's, not this item's.
   - **8.2d The strip map.** The chart as a painted strip, replacing the hex
@@ -2502,6 +2547,61 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — What a coast is remembered by, and a number that had to be
+  measured** — landmarks and telling move onto the line, which closes 8.2c's
+  re-addressing. Two corrections below, one of them to what I wrote in the
+  last two commit messages.
+
+  Everything else on this coast derives from `(seed, stop)`. What the band
+  KNOWS cannot: that is history, not country. So `World` gained `trodStops`
+  and `knownStops` (v52) — the line's `trod` and `seen` — as their own fields
+  rather than folded into the hex-keyed ones. Eight places iterate those
+  expecting hexes, and a stop key in either would not throw; it would make a
+  percentage wrong. `exploredFraction` is the proof of the danger: left
+  alone it answers 0% for every saga ever played on a route, and a closing
+  card telling a band who walked the whole coast that they saw none of it is
+  worse than one that says nothing.
+
+  The density number is where measurement changed the answer rather than
+  confirming it. `LANDMARK_SHARE` is 0.045 per hex over ~1139 hexes, on a map
+  where a saga stands on eight; a coast is 26 stops and a band walks most of
+  the ones it reaches. Over 300 seeded coasts the old number gives a median
+  of ONE named point and leaves 192 of 300 ten-stop walks with nothing at
+  all — the exact disease `landmark.ts` exists to cure. A third of the coast
+  named gives a median of eight and leaves seven. Half starts making the
+  module's own rule false, so a third it is, with the table in the constant's
+  own docstring.
+
+  Two mechanics are recorded as having no line analogue rather than ported
+  dead: `revealAround` and the sight radius (a coast is walked, not
+  surveyed), and `hasLineOfSight` (a coast IS a line of sight — nothing for a
+  hill to stand behind). `keepsBearings` survived intact, which is the half
+  worth keeping: a fixed point on your stretch or either side of it still
+  means you know where you are.
+
+  **Correction, and it is mine.** The last two commit messages and the two
+  changelog entries above them say the parity fixture moved "only the `run`
+  facet at checkpoint 0". The facet is right and the conclusion is right —
+  only `run` moved, and `world`, `band`, `ship`, `coast`, `steading` and
+  `field` all held. "At checkpoint 0" is wrong. There are exactly 48
+  checkpoints across the seven readings (five worldgen-only at one each,
+  plus 21 and 22 for the two replays), so 48 `run` facets in total, and ALL
+  of them move on a version bump, because `version` sits in every one. I
+  printed the first six moved paths, saw `checkpoints[0]` on all six — they
+  were the five one-checkpoint readings plus one — and generalised from the
+  sample instead of counting. Same shape as the `Tile`-depletion error five
+  days ago: reasoning about a structure from a partial view rather than
+  opening it.
+
+  **Second correction, to myself mid-task.** The suite began reporting one
+  unhandled `Timeout calling "onTaskUpdate"`, and a stash-and-compare said it
+  was new. It is not. Run three times on each tree, HEAD produces it once in
+  three and the working tree none in three — a pre-existing flake, not a
+  regression. `beats.test.ts` runs about 58 seconds, and under parallel load
+  vitest's worker-to-reporter RPC can miss its deadline. Every test passes;
+  no sim code is involved. Recorded here so the next person does not spend
+  the same hour on it.
 
 - **2026-08-26 — The coast has people on it, and they do not all live by the
   landing** — neighbours move onto the line, and the placement is the whole

@@ -27,8 +27,8 @@ import { note } from './tally';
 import { ghostTakenLine, isGhostRuin } from './haunt';
 import { worldBeat } from './beats';
 import { COAST_IS_A_LINE } from './flags';
-import { placesOn } from './route';
-import { standingAt } from './coast';
+import { daysBetween, placesOn } from './route';
+import { knowsStop, learnStop, onHeights, standingAt } from './coast';
 
 /** Places keep out of each other's way, and out of the landing's. */
 const PLACE_MIN_GAP = 5;
@@ -131,15 +131,30 @@ export const TOLD_AT_ONCE = 1;
  * One place per bargain, nearest to the teller first, and only what they
  * could plausibly know. Returns what was named, or nothing.
  */
-export function tellOfPlace(state: GameState, from: Hex, teller: string): Place | undefined {
+export function tellOfPlace(
+  state: GameState,
+  from: Hex,
+  teller: string,
+  fromStop = standingAt(state),
+): Place | undefined {
+  // On a line a place is known or it is not — there is no fog over it, and
+  // `world.seen` is a hex map's memory. TOLD_RANGE keeps its number and its
+  // meaning: on the hex map a hex was a day's walk, so twelve hexes of
+  // "their stretch of the coast" is twelve days of it here.
+  const known = (p: Place) => (COAST_IS_A_LINE
+    ? knowsStop(state, p.stop ?? 0)
+    : state.world.seen[key(p.at)] !== undefined);
+  const away = (p: Place) => (COAST_IS_A_LINE
+    ? daysBetween(state.seed, p.stop ?? 0, fromStop)
+    : distance(p.at, from));
   const near = state.world.places
-    .filter((p) => state.world.seen[key(p.at)] === undefined
-      && distance(p.at, from) <= TOLD_RANGE)
-    .sort((a, b) => distance(a.at, from) - distance(b.at, from))
+    .filter((p) => !known(p) && away(p) <= TOLD_RANGE)
+    .sort((a, b) => away(a) - away(b))
     .slice(0, TOLD_AT_ONCE);
   if (near.length === 0) return undefined;
   for (const told of near) {
-    state.world.seen[key(told.at)] = 'seen';
+    if (COAST_IS_A_LINE) learnStop(state, told.stop ?? 0);
+    else state.world.seen[key(told.at)] = 'seen';
     const def = placeKind(told.kind);
     chronicle(
       state,
@@ -186,14 +201,23 @@ export const LANDMARK_SIGHT = 8;
 export function spotLandmarks(state: GameState): Place[] {
   const world = state.world;
   const from = state.party.at;
-  if (!onHighGround(world, from)) return [];
+  const line = COAST_IS_A_LINE;
+  if (!(line ? onHeights(state) : onHighGround(world, from))) return [];
+  const here = standingAt(state);
 
   const spotted: Place[] = [];
   for (const place of world.places) {
-    if (world.seen[key(place.at)] !== undefined) continue;
-    if (distance(place.at, from) > LANDMARK_SIGHT) continue;
-    if (!hasLineOfSight(world, from, place.at)) continue;
-    world.seen[key(place.at)] = 'seen';
+    const stop = place.stop ?? 0;
+    if (line ? knowsStop(state, stop) : world.seen[key(place.at)] !== undefined) continue;
+    if ((line ? daysBetween(state.seed, here, stop) : distance(place.at, from)) > LANDMARK_SIGHT) {
+      continue;
+    }
+    // A coast IS a line of sight. There is nothing for a hill to stand
+    // behind when the country runs in one direction, so the hex map's
+    // blocking check has no line-shaped question to ask and is not asked.
+    if (!line && !hasLineOfSight(world, from, place.at)) continue;
+    if (line) learnStop(state, stop);
+    else world.seen[key(place.at)] = 'seen';
     spotted.push(place);
     worldBeat(state, {
       kind: 'spotted', id: place.id, place: place.kind, at: { ...place.at },
@@ -291,7 +315,7 @@ export function tradeAt(state: GameState, id: string, offerId: string): PlaceTra
   });
   chronicle(state, `${offer.line} ${offer.cost} ${gaveWord} for ${got} ${gotWord}.`, 'good');
   // A counter is where the coast's news is. Same trade as a neighbour's.
-  tellOfPlace(state, place.at, def.name);
+  tellOfPlace(state, place.at, def.name, place.stop ?? standingAt(state));
   return { gave: offer.cost, got, offer };
 }
 

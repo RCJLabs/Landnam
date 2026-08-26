@@ -445,6 +445,11 @@ export const MIGRATIONS: Record<number, Migration> = {
   // v49, and for the stronger reason here that a hall's stop would decide
   // where the whole coast thinks the band lives.
   50: (save) => ({ ...save, version: 51 }),
+  // v51 -> v52: an old save's band walked hexes, and `trod` already records
+  // which ones and when. There is no coast to have walked, so both new
+  // fields stay absent — inventing a trodden stop would put a band's history
+  // on a route its world was never seeded with.
+  51: (save) => ({ ...save, version: 52 }),
 
 };
 

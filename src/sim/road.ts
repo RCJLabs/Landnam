@@ -20,6 +20,8 @@ import { WAY_EFFORT, WAY_REACH, madeWay, wayable } from './ways';
 import { weatherOn } from './weather';
 import { bonus } from './lore';
 import { passDay } from './upkeep';
+import { COAST_IS_A_LINE } from './flags';
+import { onHeights } from './coast';
 
 /** Effort to row a hex of coastal water. The knarr is faster than legs. */
 export const SEA_EFFORT = 2;
@@ -211,23 +213,33 @@ export function reveal(state: GameState): void {
   // SKY's penalty is cancelled and nothing else about sight moves. That is
   // what wayfinding buys, and it is why climbing a ridge to mark the Split
   // Rock is worth the day it costs.
-  const sky = weatherOn(state.seed, state.day).sight;
-  const weather = keepsBearings(state) ? Math.max(0, sky) : sky;
-  const sight = Math.max(1, effects.sight + weather);
-  revealAround(
-    state.world,
-    state.party.at,
-    sightRadius(state.world, state.party.at, sight),
-  );
-  // Somebody else's smoke shows up the moment the ground it stands on does.
-  seeNeighbours(state);
-  // Including the other landnamsmadr's, which is a different kind of news.
-  meetRival(state);
-  // And from a ridge, the things a country is navigated by — a town, a
+  // A line has no fog to lift and no radius to lift it over — a coast is
+  // walked, not surveyed, and `world.seen` is a hex map's memory. Sight
+  // still costs something there, but it costs it in what can be picked out
+  // from a height, which is the block below.
+  if (!COAST_IS_A_LINE) {
+    const sky = weatherOn(state.seed, state.day).sight;
+    const weather = keepsBearings(state) ? Math.max(0, sky) : sky;
+    const sight = Math.max(1, effects.sight + weather);
+    revealAround(
+      state.world,
+      state.party.at,
+      sightRadius(state.world, state.party.at, sight),
+    );
+    // Somebody else's smoke shows up the moment the ground it stands on does.
+    seeNeighbours(state);
+    // Including the other landnamsmadr's, which is a different kind of news.
+    meetRival(state);
+  } else {
+    // On a line you meet people by coming to where they live; there is no
+    // ground for their smoke to show up on first. See `seeNeighbours`.
+    seeNeighbours(state);
+  }
+  // From a ridge, the things a country is navigated by — a town, a
   // monastery, a wreck — are picked out far past the ground itself.
   spotLandmarks(state);
   // The natural ones too, and those are the ones a coast is remembered by.
-  if (onHighGround(state.world, state.party.at)) {
+  if (COAST_IS_A_LINE ? onHeights(state) : onHighGround(state.world, state.party.at)) {
     for (const found of spotFixedPoints(state, state.party.at)) {
       chronicle(
         state,

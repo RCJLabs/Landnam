@@ -134,3 +134,68 @@ export function countryHere(state: GameState): Terrain {
   if (COAST_IS_A_LINE) return stopAt(state.seed, standingAt(state)).country;
   return state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
 }
+
+// --- What the band remembers of this coast ---
+//
+// The line's answer to `world.trod` and `world.seen`, and the two are kept
+// apart here for the same reason the hex map keeps them apart: standing
+// somewhere and knowing what is there are different facts. A trader names a
+// monastery you have never walked to; you walk a stretch of empty shore and
+// learn nothing but that it was empty.
+
+/** Stops the band has actually stood on, with the day it first did. */
+export function trodStops(state: GameState): Record<string, number> {
+  return state.world.trodStops ?? {};
+}
+
+/** Has the band stood here? */
+export function hasTrod(state: GameState, stop: number): boolean {
+  return trodStops(state)[String(stop)] !== undefined;
+}
+
+/**
+ * Records that the band is standing here today. Mutates; callers hold a
+ * clone, as everywhere else in the sim.
+ *
+ * First-visit only, exactly like `world.trod` — the day a coast was first
+ * walked is a fact a saga uses, and overwriting it every time the band comes
+ * back would turn "we first saw it in spring" into "we were there Tuesday".
+ */
+export function markTrod(state: GameState, stop: number, day: number): void {
+  if (!onRoute(stop)) return;
+  const trod = (state.world.trodStops ??= {});
+  if (trod[String(stop)] === undefined) trod[String(stop)] = day;
+  // Standing somewhere is one way of learning what is there, and the
+  // commonest one.
+  learnStop(state, stop);
+}
+
+/** Does the band know what stands at this stop? */
+export function knowsStop(state: GameState, stop: number): boolean {
+  return (state.world.knownStops ?? []).includes(stop);
+}
+
+/** Marks a stretch of coast known, however the band came to know it. */
+export function learnStop(state: GameState, stop: number): void {
+  if (!onRoute(stop)) return;
+  const known = (state.world.knownStops ??= []);
+  if (!known.includes(stop)) {
+    known.push(stop);
+    // Sorted so the strip map and the saga read them seaward, and so two
+    // sagas that learned the same coast in a different order still save the
+    // same bytes.
+    known.sort((a, b) => a - b);
+  }
+}
+
+/**
+ * Is this high enough ground to see along the coast from?
+ *
+ * `fog.onHighGround` counts hills and mountains. A route's country never
+ * includes mountains — see `route.COUNTRY`, which is shore and not summit —
+ * so on a line this is hills, and it means the same thing it meant: the one
+ * kind of stretch where climbing pays in knowledge.
+ */
+export function onHeights(state: GameState, stop = standingAt(state)): boolean {
+  return stopAt(state.seed, stop).country === 'hills';
+}

@@ -29,7 +29,7 @@ import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
 import { THING_OPENING } from '../data/thing';
 import { advance, canMove, daysForMove, marchLine, reveal } from './road';
-import { canWalk, countryHere, daysToWalk, standingAt } from './coast';
+import { canWalk, countryHere, daysToWalk, markTrod, standingAt } from './coast';
 import { COAST_IS_A_LINE } from './flags';
 import { placeAt, stopAt } from './route';
 import { doCamp, doFish, doForage, doHunt } from './gathering';
@@ -89,6 +89,10 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const stop = stopAt(state.seed, action.to);
       party.stop = action.to;
       party.hasCamped = false;
+      // Before the days, because `world.trod` is stamped on arrival on the
+      // hex map too: the day you first stood somewhere is the day you got
+      // there, not the day you finished walking away from it.
+      markTrod(state, action.to, state.day);
       advance(state, days);
       if (state.end) return state;
       // After the days, because `advance` clears it: a sail is a surprise for
@@ -253,7 +257,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // willing to say about the coast while it was being weighed — which
       // is the only road into the plunder economy a settled band has, the
       // fixed places being things you must first KNOW OF to walk to.
-      if (host) tellOfPlace(state, host.at, host.name);
+      if (host) tellOfPlace(state, host.at, host.name, host.stop ?? standingAt(state));
       advance(state, 1);
       if (state.end) return state;
       reveal(state);
