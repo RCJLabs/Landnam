@@ -30,6 +30,8 @@ import { placeHere, sackBlocker } from '../src/sim/places';
 import { abundance, noteTake, thinness } from '../src/sim/abundance';
 import { GROUND_YIELD, fisheryYield, groundAtStop } from '../src/sim/fishery';
 import { canFish } from '../src/sim/gathering';
+import { canStrandhogg, strandTarget } from '../src/sim/sea';
+import { placeKind as kindOf } from '../src/data/places';
 import { countryHere } from '../src/sim/coast';
 import { fromKey } from '../src/hex';
 import type { Action } from '../src/sim/actions';
@@ -351,5 +353,69 @@ describe('the water off the coast', () => {
     for (let at = 0; at < ROUTE_STOPS; at += 1) {
       expect(groundAtStop(SEED, at)).toBe(groundAtStop(SEED, at));
     }
+  });
+});
+
+describe('the strandhogg, on a line', () => {
+  /** A stop with something on it that has men to defend it. */
+  function guarded(): { stop: number } {
+    const held = band(0).world.places.find(
+      (p) => kindOf(p.kind).garrison !== null && p.stop! > SHIP_REACH,
+    );
+    expect(held, 'no garrisoned place far enough out to row to').toBeTruthy();
+    return { stop: held!.stop! };
+  }
+
+  it('is offered to a band that came out of the water', () => {
+    // The design's own sentence — "the same place, taken two ways" — in the
+    // one coordinate a line has. Rowing there arrives with a sail nobody was
+    // watching for.
+    const { stop } = guarded();
+    const rowed = step(band(stop - SHIP_REACH), stop);
+    expect(standingAt(rowed)).toBe(stop);
+    expect(rowed.party.bySea, 'the oars did not count as the water').toBe(true);
+    expect(strandTarget(rowed)).toBeTruthy();
+    expect(canStrandhogg(rowed)).toBe(true);
+  });
+
+  it('is refused to a band that walked up the road', () => {
+    // The road is the one they watch. Same place, other door.
+    const { stop } = guarded();
+    const walked = step(band(stop - 1), stop);
+    expect(standingAt(walked)).toBe(stop);
+    expect(walked.party.bySea).toBeFalsy();
+    expect(strandTarget(walked)).toBeUndefined();
+    expect(canStrandhogg(walked)).toBe(false);
+  });
+
+  it('lasts exactly one day — a night ashore is a night they saw you', () => {
+    // The claim the whole thing hangs on. A surprise that survived camping
+    // would not be a surprise, it would be a property of the hull.
+    const { stop } = guarded();
+    const rowed = step(band(stop - SHIP_REACH), stop);
+    expect(canStrandhogg(rowed)).toBe(true);
+    const slept = apply(rowed, { type: 'CAMP' });
+    expect(slept, 'the camp was refused').not.toBe(rowed);
+    expect(slept.party.bySea).toBeFalsy();
+    expect(canStrandhogg(slept)).toBe(false);
+  });
+
+  it('is not offered at a stop with nothing standing on it', () => {
+    const bare = [...Array(ROUTE_STOPS).keys()]
+      .find((i) => i > SHIP_REACH && !placeAt(SEED, i))!;
+    const rowed = step(band(bare - SHIP_REACH), bare);
+    expect(rowed.party.bySea).toBe(true);
+    expect(strandTarget(rowed), 'a sail fell on empty coast').toBeUndefined();
+  });
+
+  it('is not offered against a place nobody is defending', () => {
+    // A wreck is a day's work, not a fight — `garrison: null`. Coming out of
+    // the water at one is arriving, not falling on anybody.
+    const open = band(0).world.places.find(
+      (p) => kindOf(p.kind).garrison === null && p.stop! > SHIP_REACH,
+    );
+    if (!open) return;
+    const rowed = step(band(open.stop! - SHIP_REACH), open.stop!);
+    expect(strandTarget(rowed)).toBeUndefined();
   });
 });

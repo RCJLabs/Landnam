@@ -240,6 +240,11 @@ export function reveal(state: GameState): void {
 
 /** Spends whole days, stopping the moment one of them ends the run. */
 export function advance(state: GameState, days: number): void {
+  // A sail is a surprise for exactly as long as nobody has looked at it.
+  // Cleared HERE rather than in each verb, because every way of spending a
+  // day goes through this one function and a surprise that survived a night
+  // ashore would not be one. `WALK` sets it again after it advances.
+  state.party.bySea = undefined;
   for (let i = 0; i < days; i++) {
     if (!passDay(state)) return;
   }

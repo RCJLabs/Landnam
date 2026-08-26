@@ -91,6 +91,10 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       party.hasCamped = false;
       advance(state, days);
       if (state.end) return state;
+      // After the days, because `advance` clears it: a sail is a surprise for
+      // exactly the day it appears in. This is the strandhögg's condition on
+      // a line — see `Party.bySea`.
+      if (rowed) party.bySea = true;
       // The hex map's own voice, reused rather than a second one written
       // beside it. `marchLine` already knows how to say a day at the oars,
       // a landing, a long crossing and a dull stretch of the same country —

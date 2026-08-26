@@ -254,6 +254,21 @@ export interface Party {
    * `at` goes when the flag does, in 8.5, and this is what replaces it.
    */
   stop?: number;
+  /**
+   * They came out of the WATER, and have not been seen yet.
+   *
+   * The strandhögg's whole condition, in the one coordinate a line has.
+   * `sim/sea.ts` calls it "the same place, taken two ways, and the ship's
+   * way is better if you win and much worse if you do not" — on the hex map
+   * the two ways were floating offshore or standing on the road, and a route
+   * has no offshore to float in, because rowing is a step and not a state.
+   *
+   * So the difference moves from WHERE they are to HOW THEY GOT THERE. A day
+   * at the oars arrives with a sail nobody was watching for; a walk up the
+   * coast arrives on the road, which is the one they watch. It lasts exactly
+   * one day — `advance` clears it, so any day spent is a day they saw you.
+   */
+  bySea?: boolean;
   people: Person[];
   food: number;
   firewood: number;

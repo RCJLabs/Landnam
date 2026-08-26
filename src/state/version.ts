@@ -124,7 +124,14 @@
 //                  what it was; the bump is here because the SHAPE changed
 //                  and this project's rule about that has no "but nothing
 //                  writes it yet" clause.
-export const SAVE_VERSION = 49;
+// v50 (out of the water): Party gained `bySea` — they arrived at a stop under
+//                  oars and have not been seen yet. The strandhögg's whole
+//                  condition on a line: a route has no "floating offshore"
+//                  to be in, so the difference between the two ways of
+//                  taking a place moves from where the band IS to how they
+//                  got there. Lasts one day; `advance` clears it. Absent
+//                  means they walked, which is what every save so far did.
+export const SAVE_VERSION = 50;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

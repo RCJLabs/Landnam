@@ -436,6 +436,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // them, and inventing one would put a monastery somewhere the band could
   // walk to on a coast that world was never seeded with.
   48: (save) => ({ ...save, version: 49 }),
+  // v49 -> v50: nobody in an old save came out of the water a moment ago.
+  // Absent is exactly right, and inventing a surprise for a band that has
+  // been standing somewhere for a season would hand them a free raid.
+  49: (save) => ({ ...save, version: 50 }),
 
 };
 

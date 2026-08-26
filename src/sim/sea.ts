@@ -15,6 +15,8 @@ import { stream } from '../rng';
 import { chronicle } from './saga';
 import { holed, mendStrake, springStrake, unseaworthy } from './ship';
 import { STRAKE_MEND_WOOD } from '../data/ships';
+import { COAST_IS_A_LINE } from './flags';
+import { standingAt } from './coast';
 
 /** Share of the packs that goes over the side when a sea fight is lost. */
 export const CARGO_LOST_SHARE = 0.35;
@@ -62,6 +64,20 @@ export const STRAND_INFAMY = 1.5;
 
 /** A place on the shore, reachable from the water we are floating on. */
 export function strandTarget(state: GameState): Place | undefined {
+  if (COAST_IS_A_LINE) {
+    // Not "are we floating on water beside it" — a route has no floating,
+    // because rowing is a step and not a state. The two ways are how you
+    // ARRIVED: out of the water with a sail nobody was watching for, or up
+    // the road, which is the one they watch. One day only; see `Party.bySea`.
+    if (state.party.bySea !== true) return undefined;
+    const at = standingAt(state);
+    return state.world.places.find(
+      (p) =>
+        p.stop === at &&
+        p.sackedOn === undefined &&
+        placeKind(p.kind).garrison !== null,
+    );
+  }
   if (state.world.tiles[key(state.party.at)]?.terrain !== 'ocean') return undefined;
   return state.world.places.find(
     (p) =>

@@ -1721,6 +1721,18 @@ is written so the choice is made with both arcs visible, not by drift.
     somewhere else is not told apart from one worked from here. Nothing does
     that yet — the colony's fishers are 8.4 — but it is a real limit.
 
+    **The sea** needed a design answer rather than a re-addressing, and got
+    one out of its own docstring. `sim/sea.ts` describes the strandhögg as
+    "the same place, taken two ways, and the ship's way is better if you win
+    and much worse if you do not". On the hex map the two ways were floating
+    offshore or standing on the road. A route has no offshore to float in —
+    rowing is a step, not a state — so the difference moves from where the
+    band IS to **how they got there**: a day at the oars arrives with a sail
+    nobody was watching for, a walk arrives on the road they watch. It lasts
+    exactly one day (`Party.bySea`, v50, cleared by `advance`), because a
+    surprise that survived a night ashore would be a property of the hull
+    rather than a surprise.
+
     Still to do here, and neither is cosmetic:
 
     - **Neighbours.** `neighbours.ts` is 383 lines and ten hex references,
@@ -2450,6 +2462,36 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — A sail nobody was watching for** — the strandhögg gets a
+  line-shaped answer, and it came out of its own docstring rather than out of
+  a new idea.
+
+  `sim/sea.ts` has described the verb the same way since it was written: "the
+  same place, taken two ways, and the ship's way is better if you win and
+  much worse if you do not." On the hex map the two ways were floating
+  offshore or standing on the road, and `strandTarget` asked whether the band
+  was on an ocean tile with a place next door. A route has neither half of
+  that — nobody is ever on ocean, because rowing is a step and not a state.
+
+  So the difference moves from WHERE the band is to HOW THEY GOT THERE. Row a
+  day up the coast and you arrive under a sail nobody was watching for; walk
+  the same stretch and you arrive on the road, which is the one they watch.
+  Same place, same two doors, and the ship's reach now does double duty —
+  it is the fast way AND the raiding way, which is the period's own logic.
+
+  It lasts exactly one day. `Party.bySea` (v50) is set after the days are
+  spent and cleared by `advance`, which every verb goes through — so a night
+  ashore is a night they saw you, and a surprise that survived camping would
+  be a property of the hull rather than a surprise. `test/coastWalk.test.ts`
+  holds that as its own claim.
+
+  Worth recording what the parity fixture proved on the way. `advance` now
+  writes `bySea = undefined` on every day of every saga, and only the `run`
+  facet moved, only at checkpoint 0 — the version in the hash. `band`, which
+  carries the party's fields, did not move at all, which is `canonical()`'s
+  "an absent field and an undefined one hash alike" earning its keep rather
+  than being taken on trust.
 
 - **2026-08-26 — The coast feeds you, and a claim I made yesterday was
   wrong** — fisheries and foraging move onto the line, and the correction is
