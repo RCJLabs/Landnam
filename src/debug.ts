@@ -20,6 +20,10 @@ import { fieldDrawn } from './render/battleScreen';
 import type { GameState } from './state/types';
 import { startBattle, startRaid } from './sim/battleTurn';
 import { canFound, foundSettlement } from './sim/site';
+import { COAST_IS_A_LINE } from './sim/flags';
+import { learnStop, standingAt } from './sim/coast';
+import { ROUTE_STOPS } from './sim/route';
+import { buildingById, type BuildingId } from './data/buildings';
 
 /**
  * What the debug levers need from the app: the current state, a way to
@@ -44,6 +48,7 @@ declare global {
       raid(difficulty?: number): void;
       visit(id?: string): void;
       settle(): boolean;
+      build(id: string): boolean;
       stock(food?: number, firewood?: number): void;
       skip(days?: number): void;
       paint(on?: boolean | null): void;
@@ -110,6 +115,23 @@ export function installDebug(hooks: DebugHooks): void {
       const state = hooks.get();
       if (!state || currentMode(state) !== 'TRAVEL' || state.settlement) return false;
       const next = cloneState(state);
+      // On a coast the walk is along the line rather than across a map, so
+      // the search is the same idea in the other coordinate system: outward
+      // from where the band stands, marking each stretch learned — because
+      // knowing the ground is one of the rules and this fabricates the walk
+      // rather than waiving it.
+      if (COAST_IS_A_LINE) {
+        const from = standingAt(next);
+        for (let stop = from; stop < ROUTE_STOPS; stop += 1) {
+          learnStop(next, stop);
+          next.party.stop = stop;
+          if (canFound(next, next.party.at)) break;
+        }
+        if (!canFound(next, next.party.at)) return false;
+        if (!foundSettlement(next)) return false;
+        hooks.commit(next);
+        return true;
+      }
       if (!canFound(next, next.party.at)) {
         // Nearest first, so the steading lands somewhere the band could
         // plausibly have walked to rather than across the map.
@@ -127,6 +149,27 @@ export function installDebug(hooks: DebugHooks): void {
         if (!spot) return false;
       }
       if (!foundSettlement(next)) return false;
+      hooks.commit(next);
+      return true;
+    },
+
+    /**
+     * Raises a building outright, without the season of work.
+     *
+     * `scripts/hearth.mjs` is about whether raising a building CHANGES the
+     * picture; how long it takes is the colony's business and is measured
+     * elsewhere. Refuses a building the game does not know, so a typo in a
+     * bar reads as a failure rather than as a steading that quietly gained
+     * nothing.
+     */
+    build(id: string) {
+      const state = hooks.get();
+      if (!state?.settlement || !buildingById(id as BuildingId)) return false;
+      const next = cloneState(state);
+      const home = next.settlement!;
+      if (home.built.includes(id)) return true;
+      home.built.push(id);
+      home.queue = home.queue.filter((q) => q !== id);
       hooks.commit(next);
       return true;
     },

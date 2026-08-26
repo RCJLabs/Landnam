@@ -31,7 +31,7 @@ function bar(name, args, label = args.length ? `${name} ${args.join(' ')}` : nam
 
 for (const [name, args] of BARS) bar(name, args);
 
-// The strip chart and the procession need a build of the COAST, which is not
+// The coast's three bars need a build of the COAST, which is not
 // the default build — see src/sim/flags.ts. So they cannot share `dist/` with
 // the twelve above and get their own build here, with the ordinary one put
 // back afterwards: leaving a coast build in `dist/` would be a quiet way for
@@ -40,11 +40,12 @@ const build = (env) => spawnSync('npm', ['run', 'build'], {
   encoding: 'utf8', env: { ...process.env, ...env },
 });
 if (build({ VITE_COAST: '1' }).status !== 0) {
-  bad += 2; ran += 2;
-  console.log('  FAIL  strip, procession — the coast build did not build');
+  bad += 3; ran += 3;
+  console.log('  FAIL  strip, procession, hearth — the coast build did not build');
 } else {
   bar('strip', []);
   bar('procession', []);
+  bar('hearth', []);
 }
 if (build({ VITE_COAST: '' }).status !== 0) {
   bad++;

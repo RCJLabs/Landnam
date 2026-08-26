@@ -6,6 +6,8 @@
 import type { GameState } from '../state/types';
 import type { Action } from '../sim/actions';
 import { createColonyView } from './colony';
+import { createSteadingView } from './steadingView';
+import { COAST_IS_A_LINE } from '../sim/flags';
 import {
   renderBuilds,
   renderColonyActions,
@@ -45,7 +47,11 @@ export function steadingDrawn(): unknown {
 export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
   if (!state.settlement) return;
   const { ui, dispatch, rerender } = h;
-  if (!colonyView) colonyView = createColonyView();
+  // A steading on a coast is a place you walk into, not a ring of ground you
+  // look down on. Both meet `ColonyView`, so nothing below this line changes.
+  if (!colonyView) {
+    colonyView = COAST_IS_A_LINE ? createSteadingView() : createColonyView();
+  }
   if (mapSlot.firstChild !== colonyView.root) mapSlot.replaceChildren(colonyView.root);
 
   // A dead or departed selection must not strand the picker open.

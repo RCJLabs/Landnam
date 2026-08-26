@@ -13,6 +13,7 @@ import { doDash, doDefend, doShove } from './footwork';
 import { doWarCry } from './warcry';
 import { endTurn, leaveBattle } from './battleTurn';
 import { assign, makePlots, queueBuild, unqueueBuild } from './colony';
+import { COAST_IS_A_LINE } from './flags';
 import { atHome } from './site';
 import { abandonSteading } from './retreat';
 import { stream } from '../rng';
@@ -139,7 +140,9 @@ export function apply(state: GameState, action: Action): GameState {
       home.plots = makePlots(
         home.report,
         home.at,
-        stream(next.seed, 'colony').derive(`found:${key(home.at)}`).derive('plots'),
+        stream(next.seed, 'colony')
+          .derive(COAST_IS_A_LINE ? `found:s${home.stop ?? 0}` : `found:${key(home.at)}`)
+          .derive('plots'),
       );
     }
     next.modes = pushMode(next, 'COLONY').modes;

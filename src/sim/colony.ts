@@ -34,6 +34,7 @@ import { homeCrew } from './expedition';
 import { chronicle } from './saga';
 import { bonus, learn } from './lore';
 import type { LoreId } from '../data/lore';
+import { COAST_IS_A_LINE } from './flags';
 
 /** Rings of local ground around the hall. Nineteen hexes at radius two. */
 export const PLOT_RADIUS = 2;
@@ -63,7 +64,20 @@ export const IDLE_BITE = 0.6;
  * the player already made.
  */
 export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
-  const hexes = range(centre, PLOT_RADIUS);
+  // On a coast there is no ring of ground around the hall to walk out into —
+  // a steading stands on a stretch of shore, and what it has is what the
+  // reading said it has. So the SAME number of plots is rolled with the SAME
+  // weights, and the only thing that changes is that `at` stops being a
+  // coordinate.
+  //
+  // It stays a Hex rather than becoming a slot index because nothing on a
+  // line reads it, `plotsFor` filters on `kind` alone, and the alternative
+  // is a save-shape change for a field that would carry no information. It
+  // is an INDEX here, written as `{q: i, r: 0}`, and the elevation view does
+  // not touch it.
+  const hexes = COAST_IS_A_LINE
+    ? Array.from({ length: range(centre, PLOT_RADIUS).length }, (_, i) => ({ q: i, r: 0 }))
+    : range(centre, PLOT_RADIUS);
   const plots: Plot[] = [];
 
   // Weights straight off the reading. The floor keeps every steading from
@@ -77,7 +91,10 @@ export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
   const total = weights.reduce((sum, w) => sum + w[1], 0);
 
   for (const at of hexes) {
-    if (at.q === centre.q && at.r === centre.r) {
+    const isCentre = COAST_IS_A_LINE
+      ? at.q === 0
+      : at.q === centre.q && at.r === centre.r;
+    if (isCentre) {
       plots.push({ at, kind: 'hall' });
       continue;
     }
@@ -96,7 +113,9 @@ export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
   // The watch stands on the edge, looking out. Always exactly one, so the
   // warrior always has somewhere to be.
   const edge = plots.filter(
-    (p) => p.kind !== 'hall' && Math.max(...[p.at.q - centre.q, p.at.r - centre.r].map(Math.abs)) >= 1,
+    (p) => p.kind !== 'hall' && (COAST_IS_A_LINE
+      ? true
+      : Math.max(...[p.at.q - centre.q, p.at.r - centre.r].map(Math.abs)) >= 1),
   );
   const post = edge[Math.floor(rng.derive('watchpost').float(0, edge.length))];
   if (post) post.kind = 'watchpost';

@@ -1961,12 +1961,44 @@ is written so the choice is made with both arcs visible, not by drift.
   where the band is standing, names what is in sight and how far off, and the
   road can be walked from the screen it is drawn on.
 
-- [ ] **8.4 The steading becomes an elevation** — Colony hex plots become
-  placed buildings on a side-on view; `plotsFor(job)` becomes
-  `buildingsFor(job)`. Your hall is placed on the route in 8.2/8.3, and
-  entering it opens this. The cheap one: `colony.ts` is 540 lines with three
-  geometry references.
+- [x] **8.4 The steading becomes an elevation** — and it was not the cheap
+  one. The render was the small half; the sim underneath it was the milestone.
+
+  **The colony map drew the wrong noun.** It drew GROUND — a ring of hex
+  plots, field and wood and water. Everything a player spends a season on
+  lives in `settlement.built`, which that map never touched: raising a
+  longhouse changed a list and changed no pixel. So the elevation draws
+  BUILDINGS, in the order they were raised, with the head of the queue
+  half-up beside them and rising as the builder-days go in. That is a bar the
+  hex map could not have passed at any level of polish.
+
+  **A stretch of coast had to be readable as a site.** Not five new measures
+  — the SAME five, handed a coast-shaped `Surrounds`: two of ocean because a
+  coast has the sea down one side, the stretch before and after, and two of
+  its own country for the land behind the strand. Rewriting `water`, `soil`,
+  `timber`, `harbour` and `defence` would have meant recalibrating `VERDICTS`,
+  `nameFor` and the whole settling floor against numbers nobody had measured.
+
+  `BECK_SHARE` is the number that decides whether a coast can be settled at
+  all, because fresh water is the one measure a shore cannot supply out of
+  its own country. Measured over 300 coasts with the clans' elbows and the
+  other boat's fences counted: at a third, one seed in three hundred had
+  NOWHERE to put the posts; at a half, none do. The landing itself is dry
+  about two times in five and that is left alone — a band that must walk a
+  stretch before it can raise a hall is making this phase's decision on its
+  first day instead of settling where it happens to be standing.
+
+  **`plotsFor` survives unchanged**, which was the point of keeping plots. It
+  is read for one thing in the whole sim — `plotsFor(...).length > 0`, which
+  gates the farmer and the fisher — so the plots are rolled with the same
+  weights and the same count, and only `at` stops being a coordinate. Had the
+  conversion broken it, those jobs would have quietly stopped being available
+  and nothing would have thrown.
+
   *Done when: raising a building visibly changes the steading you walk into.*
+  — held by `scripts/hearth.mjs`, which walks into a coast steading and finds
+  bare ground, raises a longhouse, and finds it standing at 55x40 inside the
+  picture with the screen-reader line changed to match.
 
 - [ ] **8.5 Retire the hexes** — Delete `src/hex/`, the old renderers and the
   dead flags once every flag has flipped. Bump `SAVE_VERSION` and land the
@@ -2669,6 +2701,54 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — The steading you walk into, and two doors that were never
+  locked** — 8.4. The roadmap called this the cheap one. The render was the
+  small half.
+
+  The colony map drew the wrong noun. It drew GROUND, and everything a player
+  spends a season on lives in `settlement.built`, which it never touched —
+  raising a longhouse changed a list and changed no pixel. The elevation
+  draws buildings, in the order raised, with the one in hand half-up beside
+  them and rising as the builder-days go in.
+
+  Under that, a stretch of coast had to become readable as a site. The five
+  measures are not rewritten — they are handed a coast-shaped ring (two of
+  ocean, the stretches either side, two of its own country for the land
+  behind the strand) so that `VERDICTS`, `nameFor` and the settling floor
+  keep the calibration they were measured against.
+
+  `BECK_SHARE` decides whether a coast can be settled at all, fresh water
+  being the one measure a shore cannot supply itself. Over 300 coasts with
+  every elbow and fence counted: at a third, one seed in three hundred had
+  nowhere to put the posts; at a half, none. The landing is still dry two
+  times in five, deliberately.
+
+  **Two doors, and neither was locked the way I first said.**
+
+  `atHome` compared hexes, and I wrote in the code that this left a band
+  unable to walk into its own hall. That was backwards, and I checked rather
+  than shipping it: `WALK` moves `party.stop` and never touches `party.at`,
+  so on a coast the band's hex is frozen at the landing and `settlement.at`
+  was copied from that same frozen hex. The old test answered TRUE from
+  everywhere — a band twelve stretches out could walk into its hall. Fixed,
+  and the comment now says what the bug was.
+
+  And the elevation "was not on the page" for an hour of hunting that was
+  entirely my bar's fault. It clicked `.overlay button` matching /The
+  steading/i — which also matches "Rest — pass the day at the steading", and
+  that deed comes first. The bar clicked Rest, nothing happened, and the
+  failure read as a missing renderer. It matches the deed's LABEL now. The
+  lesson is the same one as the `field.mjs` false red: a bar that reports the
+  wrong cause costs more than one that reports nothing.
+
+  Two tests in `coastWalk.test.ts` also had to change, and not by weakening.
+  Its `withHall` searched `world.tiles` for the best `siteReport` — correct
+  while founding read a hex, and quietly a search of a coordinate system the
+  code had stopped using. And "leaves the landing foundable" was a claim
+  about the CLANS that had been written as a claim about founding; a dry
+  landing is now a fact about ground, so the test asserts what it was
+  actually about and checks that dryness is the only thing that may refuse.
 
 - **2026-08-26 — The road, and the thing nobody could see coming** — 8.3.
   Travel stops being a map and becomes the road itself.

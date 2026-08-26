@@ -25,7 +25,7 @@ import { apply } from '../src/sim/actions';
 import { SHIP_REACH, standingAt } from '../src/sim/coast';
 import { ROUTE_STOPS, daysBetween, placeAt, stopAt } from '../src/sim/route';
 import { placeKind } from '../src/data/places';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
+import { canFound, foundSettlement } from '../src/sim/site';
 import { placeHere, sackBlocker } from '../src/sim/places';
 import { abundance, noteTake, thinness } from '../src/sim/abundance';
 import { GROUND_YIELD, fisheryYield, groundAtStop } from '../src/sim/fishery';
@@ -38,6 +38,7 @@ import {
   standingIn,
 } from '../src/sim/neighbours';
 import { CLAN_COUNT, CLAN_ELBOW } from '../src/data/clans';
+import { stopReport } from '../src/sim/site';
 import { neighbourStops } from '../src/sim/route';
 import {
   LANDMARK_REACH, LANDMARK_SHARE_STOP, knownLandmarks, landmarkHere,
@@ -53,7 +54,6 @@ import {
 } from '../src/sim/rival';
 import { CLAN_ELBOW as ELBOW } from '../src/data/clans';
 import { ROUTE_STOPS as STOPS } from '../src/sim/route';
-import { fromKey } from '../src/hex';
 import type { Action } from '../src/sim/actions';
 import type { GameState } from '../src/state/types';
 
@@ -94,23 +94,31 @@ function step(state: GameState, to: number): GameState {
   return cur;
 }
 
-/** A band with a hall, founded properly rather than faked. */
+/**
+ * A band with a hall, founded properly rather than faked.
+ *
+ * Searches STRETCHES, not hexes. It used to walk `world.tiles` looking for
+ * the best `siteReport`, which was right while founding still read a hex —
+ * and quietly became a search of a coordinate system the code had stopped
+ * using. `canFound` now reads `standingAt`, so the hex loop moved `party.at`
+ * around a map nobody was standing on and asked the same question about
+ * stretch 0 every time. On a coast whose landing happens to be dry that is
+ * "nothing foundable" across a whole island.
+ */
 function withHall(seed: string): GameState {
   const state = cloneState(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  let best: GameState['party']['at'] | null = null;
+  for (let s = 0; s < STOPS; s += 1) learnStop(state, s);
+  let best: number | null = null;
   let score = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > score) { score = report.total; best = at; }
+  for (let stop = 0; stop < STOPS; stop += 1) {
+    state.party.stop = stop;
+    if (!canFound(state, state.party.at)) continue;
+    const total = stopReport(seed, stop).total;
+    if (total > score) { score = total; best = stop; }
   }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
+  expect(best, `${seed}: no stretch of this coast would take a hall`).not.toBeNull();
+  state.party.stop = best!;
   expect(foundSettlement(state)).toBe(true);
-  state.party.stop = 4;
   state.party.food = 400;
   state.party.firewood = 400;
   return state;
@@ -525,9 +533,12 @@ describe('a hall on the coast, and who comes to look at it', () => {
 
   it('records which stretch of coast the posts went into', () => {
     const state = withHall(SEED);
-    // `withHall` founds standing at the landing, which is where a band that
-    // has not walked anywhere is standing.
-    expect(state.settlement!.stop).toBe(0);
+    // Whatever stretch it chose, the hall records THAT one — the claim is
+    // that the address is written down, not what the address happens to be.
+    // It used to assert stretch 0, which was only ever true because the old
+    // helper founded at the landing.
+    expect(state.settlement!.stop).toBe(standingAt(state));
+    expect(state.settlement!.stop).not.toBeUndefined();
   });
 
   it('is called on by the nearest of them first, working up the coast', () => {
@@ -584,15 +595,27 @@ describe('somebody else’s home field', () => {
     expect(canFound(state, at), 'a stop clear of them was still refused').toBe(true);
   });
 
-  it('leaves the landing itself foundable, whoever lives on this coast', () => {
-    // The reason `neighbourStops` takes a `room`. The landing is the only
-    // ground a band has seen on day one; a coast that refuses it is a coast
-    // that cannot be played.
+  it('leaves nobody camped on the landing, whoever lives on this coast', () => {
+    // The reason `neighbourStops` takes a `room`, and the claim is about the
+    // CLANS rather than about founding. It used to assert `canFound` at
+    // stretch 0 outright, which stopped being the same question in 8.4: a
+    // landing can now be refused for having no fresh water on it, which is a
+    // fact about the ground and not about who lives there. Two of every five
+    // coasts are dry at the sand, deliberately — see `BECK_SHARE`.
     for (const seed of [SEED, 'grim-fjord-100', 'curve-7', 'Þórr-vik']) {
-      const state = withHall(seed);
-      delete state.settlement;
+      const state = cloneState(newGame(seed));
       state.party.stop = 0;
-      expect(canFound(state, state.party.at), seed).toBe(true);
+      for (const n of state.neighbours) {
+        expect(Math.abs(n.stop! - 0), `${seed}: ${n.name} is camped on the landing`)
+          .toBeGreaterThanOrEqual(ELBOW);
+      }
+      // And a dry landing is the only thing that may refuse it.
+      learnStop(state, 0);
+      const refused = !canFound(state, state.party.at);
+      if (refused) {
+        expect(stopReport(seed, 0).water, `${seed}: refused the landing for no reason`)
+          .toBeLessThan(2);
+      }
     }
   });
 });
