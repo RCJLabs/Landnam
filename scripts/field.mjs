@@ -82,6 +82,10 @@ const survey = () => {
     vw: innerWidth,
     field: field ? Math.round(field.getBoundingClientRect().height) : 0,
     hex: man ? Math.round(man.width) : 0,
+    // Is there still a fight to measure? `svg.field` only exists while the
+    // battle view is up, so this is the same question as "is field > 0" —
+    // but asked BY NAME, so a caller can tell the two reasons apart.
+    fighting: !!field,
     saga: h('.saga-slot'),
     lines: document.querySelectorAll('.saga-line').length,
     clipped: [...document.querySelectorAll('.shell button')]
@@ -110,6 +114,19 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
 
   // Fourteen turns, so the log fills up and takes whatever it is going to
   // take. This is the "squeezed as the fight goes on" claim, played out.
+  //
+  // Stopping the moment the fight does is the load-bearing half, and it was
+  // added because the bar went red on a fight that had simply been WON.
+  // Fourteen turns of clicking whatever button is in the action slot can
+  // finish a fight; when it finishes the battle view pops, `svg.field` is
+  // gone, and every measurement below reads zero. The bar then reports "the
+  // field fell to 0% — the log took it", which is not what happened and not
+  // something a layout change could ever fix. So the last LIVE turn is what
+  // gets measured, and how many turns that was is printed, because a fight
+  // that ends on turn three is a different measurement from one that runs
+  // the full fourteen and the reader should be able to see which they got.
+  let late = opening;
+  let played = 0;
   for (let turn = 0; turn < 14; turn++) {
     const end = page.locator('.action-slot button', { hasText: /End turn/i }).first();
     const any = (await end.count()) ? end : page.locator('.action-slot button').first();
@@ -117,21 +134,25 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
     await page.waitForTimeout(400);
     const card = page.locator('button', { hasText: /onward|continue|dismiss|close|go on|so be it|leave|back to/i }).first();
     if (await card.count()) { await card.click().catch(() => {}); await page.waitForTimeout(280); }
+    const now = await page.evaluate(survey);
+    if (!now.fighting) break;
+    late = now;
+    played = turn + 1;
   }
-  const late = await page.evaluate(survey);
 
   const share = (m) => Math.round((100 * m.field) / m.vh);
 
   console.log(
     `${w}x${h}: field ${opening.field}px (${share(opening)}%) -> ${late.field}px (${share(late)}%) ` +
-      `after 14 turns, a fighter is ${opening.hex}px -> ${late.hex}px, log ${opening.saga} -> ${late.saga}px ` +
+      `after ${played} turn${played === 1 ? '' : 's'}, a fighter is ${opening.hex}px -> ${late.hex}px, ` +
+      `log ${opening.saga} -> ${late.saga}px ` +
       `(${late.lines} lines)`,
   );
 
   // The field must stay the biggest thing on the screen through a whole
   // fight. Half is a floor, not a target: it sits at 67% on the design size.
   check(late.field > late.vh * 0.5,
-    `${w}x${h}: the field fell to ${share(late)}% of the screen by turn 14`);
+    `${w}x${h}: the field fell to ${share(late)}% of the screen by turn ${played}`);
   check(late.clipped.length === 0, `${w}x${h}: clipped ${late.clipped.join(', ')}`);
 
   // THE BAR THAT CATCHES THE REAL FAILURE. A hex being over 44px is the
@@ -141,7 +162,7 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   // from the field, so that is what is measured: a whole fight may not cost
   // the field more than a tenth of what it opened with.
   check(late.field >= opening.field * 0.9,
-    `${w}x${h}: fourteen turns took the field from ${opening.field}px to ${late.field}px, ` +
+    `${w}x${h}: ${played} turns took the field from ${opening.field}px to ${late.field}px, ` +
       `${Math.round(100 - (100 * late.field) / opening.field)}% of it, and the log took it`);
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);
 
@@ -152,7 +173,18 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   check(opening.hex >= TAP,
     `${w}x${h}: a fighter is ${opening.hex}px, under the ${TAP}px touch target`);
   check(late.hex >= TAP,
-    `${w}x${h}: by turn 14 a fighter is ${late.hex}px, under the ${TAP}px touch target`);
+    `${w}x${h}: by turn ${played} a fighter is ${late.hex}px, under the ${TAP}px touch target`);
+
+  // And the bar has to have MEASURED something. Stopping when the fight
+  // stops fixes a false red; it also opens the way to a false green, because
+  // a fight that ends on turn one leaves `late` equal to `opening` and every
+  // check above passes without a single turn of log growth behind it. That
+  // is the other failure this project keeps finding — a check that quietly
+  // stopped running looks exactly like one that passed — so the number of
+  // turns actually played is itself a bar.
+  check(played >= 4,
+    `${w}x${h}: the fight was over after ${played} turn${played === 1 ? '' : 's'}, ` +
+      'so the log never grew and this width measured nothing');
 
   await page.close();
 }

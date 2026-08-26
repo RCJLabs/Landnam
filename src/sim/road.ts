@@ -226,15 +226,14 @@ export function reveal(state: GameState): void {
       state.party.at,
       sightRadius(state.world, state.party.at, sight),
     );
-    // Somebody else's smoke shows up the moment the ground it stands on does.
-    seeNeighbours(state);
-    // Including the other landnamsmadr's, which is a different kind of news.
-    meetRival(state);
-  } else {
-    // On a line you meet people by coming to where they live; there is no
-    // ground for their smoke to show up on first. See `seeNeighbours`.
-    seeNeighbours(state);
   }
+  // Somebody else's smoke shows up the moment the ground it stands on does —
+  // and on a line, the moment you walk onto the stretch they live on. Both
+  // rules live inside these two, so neither is gated on the fog any more:
+  // hanging `meetRival` off the hex sight pass left the other landnamsmadr
+  // unmeetable on a coast, which is a mechanic deleted rather than converted.
+  seeNeighbours(state);
+  meetRival(state);
   // From a ridge, the things a country is navigated by — a town, a
   // monastery, a wreck — are picked out far past the ground itself.
   spotLandmarks(state);

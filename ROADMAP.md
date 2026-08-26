@@ -1819,12 +1819,51 @@ is written so the choice is made with both arcs visible, not by drift.
     stretch you are on or either side of it still means you know where you
     are.
 
+    **The rival** closed it, and every number he owns had to be re-derived
+    rather than re-addressed — because his claims reach exactly ONE thing in
+    the whole sim (`foundBlocker`), so each of them is a number about
+    playability and about nothing else.
+
+    Three hex-scaled distances were over-read onto a 26-stop grid, and each
+    was caught by measuring rather than by reading:
+
+    - `RIVAL_APART` is seven, meaning "far enough that we do not start in
+      their yard". Read as DAYS that is a median of two stops, and over 200
+      coasts his elbow alone covered the landing on 24 of them. It is now
+      read as what it meant: `RIVAL_ELBOW + CLAIM_REACH_STOPS + 1`, so
+      neither his elbow nor his reach can ever touch the sand.
+    - `CLAIM_REACH` of four covers 61 of 1139 hexes — five per cent, which
+      is what "a neighbour, not an empire" was calibrated against. Four
+      stops of 26 is thirty-five per cent. Three, so he holds seven at full
+      spread.
+    - The clearance his FENCES keep from somebody else's ground was
+      `RIVAL_ELBOW`, two. Two stops around each of four clans blocks twelve
+      of twenty-six, and measured it left him holding three stretches of a
+      possible seven — a hand that closes twice and jams. `CLAIM_CLEAR_STOPS`
+      is one: a fence is not a hall, and `RIVAL_ELBOW` still governs posts.
+      It leaves the older clans CONTAINING him, which was not designed and is
+      the better game — he spreads from what he holds, so a stretch he may
+      not fence is a wall his block cannot grow past.
+
+    `CLAIM_EVERY` had to move for a different reason. What makes him a CLOCK
+    rather than a fact is that on the hex map he never finishes: 61 hexes at
+    one every eleven days is 680, longer than any saga, so the hand is still
+    closing on the last day the band plays. The same eleven days on a line
+    fills his whole reach by day 75. Widening the reach to preserve that
+    would take the coast, so the interval gives instead — one claim on a line
+    is worth 1/26 of the country against 1/1139, and a thing worth forty
+    times more should not come forty times as often. At sixty days, measured
+    over 150 coasts: he holds a median of six stretches of seven, never fewer
+    than three, his last claim lands on a median of day 309, and he is still
+    taking ground past day 200 on 135 coasts and past day 300 on 90.
+
+    He was also unmeetable. `meetRival` hung off the hex sight pass, which
+    does not run on a line — a mechanic deleted rather than converted. Both
+    it and `seeNeighbours` are now outside that block, each answering its own
+    world's question.
+
     Still to do before the flag can flip:
 
-    - **The rival.** `rival.ts` walks the hex map and keeps clear of
-      neighbours by hex distance (`RIVAL_ELBOW`). He is a whole second band
-      moving on a coordinate system that is going away, and on a line he is
-      currently never met at all — `meetRival` hangs off the fog block.
     - **Founding.** `foundBlocker` is still hex-shaped below the elbow —
       `siteReport`, `world.seen`, terrain. That is 8.4's, not this item's.
   - **8.2d The strip map.** The chart as a painted strip, replacing the hex
@@ -2547,6 +2586,58 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — The other boat, on a coast; and a bar that could not tell a
+  won fight from a squeezed one** — the rival moves onto the line, which is
+  the last of 8.2c. The bar fix is the more useful half.
+
+  His claims reach exactly one thing in the whole sim — `foundBlocker` — so
+  every number he owns is a number about playability and nothing else. Three
+  of them were hex-scaled distances being over-read onto a 26-stop grid, and
+  measurement caught each one. `RIVAL_APART`, seven, means "far enough that
+  we do not start in their yard"; read as days that is two stops, and over
+  200 coasts his elbow alone covered the landing on 24. `CLAIM_REACH` of four
+  is 5% of a hex map and 35% of a coast. And the clearance his fences keep
+  from somebody else's ground, read as two stops around each of four clans,
+  blocks twelve of twenty-six and left him holding three stretches of a
+  possible seven — a hand that closes twice and jams.
+
+  The fix to that last one produced something better than it was aiming at:
+  at a clearance of one, the older clans CONTAIN him. He spreads from what he
+  holds, so a stretch he may not fence is a wall his block cannot grow past.
+  Nobody designed that; it fell out of the rule.
+
+  `CLAIM_EVERY` moved for a different reason and it is the one worth
+  recording. What makes him a CLOCK rather than a fact is that on the hex map
+  he never finishes — 61 hexes at one every eleven days is 680, longer than
+  any saga. The same eleven days on a line fills his reach by day 75 and he
+  is scenery for the rest of the run. So the interval gives rather than the
+  reach: at sixty days, over 150 coasts, he holds a median of six stretches
+  of seven, his last claim lands on a median of day 309, and he is still
+  taking ground past day 200 on 135 coasts of 150.
+
+  **The bar.** `scripts/field.mjs` went red on a fight that had simply been
+  WON. It plays fourteen turns by clicking whatever sits in the action slot;
+  a fight can end inside that, the battle view pops, `svg.field` stops
+  existing, and every measurement reads zero — so the bar reported "the field
+  fell to 0%, and the log took it", which is not what happened and is not
+  something any layout change could fix. It now stops when the fight does and
+  measures the last live turn.
+
+  That fix opens a false GREEN in the other direction, so it comes with its
+  own bar: a fight that ends on turn one leaves the late reading equal to the
+  opening one and every check passes with no log growth behind it. The number
+  of turns actually played is therefore itself checked, and printed on every
+  line, because a fight that ran three turns is a different measurement from
+  one that ran fourteen. Both halves were verified by forcing the case —
+  driven to sixty turns the fights end on turns 15 and 41, and the bar
+  measures those and passes, where before it would have called both a
+  collapse.
+
+  Worth saying plainly: I first reported this failure as a regression from
+  this change. It was not. Six clean runs on a correct build, and the
+  starting measurements varied run to run on the SAME tree — the bar begins
+  by pressing "Take the land", which is a new game every time.
 
 - **2026-08-26 — What a coast is remembered by, and a number that had to be
   measured** — landmarks and telling move onto the line, which closes 8.2c's

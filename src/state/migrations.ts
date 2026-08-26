@@ -450,6 +450,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // fields stay absent — inventing a trodden stop would put a band's history
   // on a route its world was never seeded with.
   51: (save) => ({ ...save, version: 52 }),
+  // v52 -> v53: an old save's rival holds hexes and always will. Inventing a
+  // stop for his hall would move a man who has been standing somewhere since
+  // day nine, and his claims are the record of a whole saga's dawdling.
+  52: (save) => ({ ...save, version: 53 }),
 
 };
 

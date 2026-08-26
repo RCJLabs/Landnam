@@ -145,7 +145,11 @@
 //                  because eight places iterate those expecting hexes and a
 //                  stop key would not throw, only make a percentage wrong.
 //                  Absent on every save the hex map ever wrote.
-export const SAVE_VERSION = 52;
+// v53 (the other boat, on a coast): Rival gained `stop` and `claimStops` —
+//                  where his posts went in on the route and which stretches
+//                  his hand has closed on. Same rule as v49 and v51: only
+//                  written on a world seeded with `COAST_IS_A_LINE` on.
+export const SAVE_VERSION = 53;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

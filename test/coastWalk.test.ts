@@ -46,6 +46,12 @@ import {
 import { hasTrod, knowsStop, learnStop, markTrod, onHeights } from '../src/sim/coast';
 import { spotLandmarks, tellOfPlace, TOLD_RANGE } from '../src/sim/places';
 import { exploredFraction } from '../src/sim/fog';
+import {
+  CLAIM_EVERY_STOPS, CLAIM_REACH_STOPS, RIVAL_APART_STOPS, RIVAL_ELBOW,
+  RIVAL_SETTLES, CLAIM_CLEAR_STOPS, meetRival, nextClaimStop, rivalBlocks,
+  rivalDay, rivalStopFor, rivalStops,
+} from '../src/sim/rival';
+import { CLAN_ELBOW as ELBOW } from '../src/data/clans';
 import { ROUTE_STOPS as STOPS } from '../src/sim/route';
 import { fromKey } from '../src/hex';
 import type { Action } from '../src/sim/actions';
@@ -860,5 +866,203 @@ describe('what a trader tells you, on a coast', () => {
       }
     }
     expect(spotted, 'no ridge on four coasts ever showed a place').toBeGreaterThan(0);
+  });
+});
+
+describe('the other boat, on a coast', () => {
+  /** A rival with his posts in and the day advanced past his landing. */
+  function withRival(seed = SEED, day = RIVAL_SETTLES): GameState {
+    const state = band(0, seed);
+    state.day = day;
+    expect(state.rival, `${seed}: no rival on this coast`).toBeTruthy();
+    return state;
+  }
+
+  it('puts his posts in a stretch of coast, not on a hex', () => {
+    for (const seed of SEEDS) {
+      const state = band(0, seed);
+      expect(state.rival!.stop, seed).not.toBeUndefined();
+      expect(state.rival!.at).toEqual({ q: 0, r: 0 });
+      expect(state.rival!.claimStops).toEqual([state.rival!.stop]);
+      expect(state.rival!.stop).toBe(rivalStopFor(seed));
+    }
+  });
+
+  it('never lands where his elbow could take the landing from us', () => {
+    // The measured failure. RIVAL_APART is seven, meaning "far enough that we
+    // do not start in their yard"; read as DAYS on a line that is a median of
+    // two stops, and over 200 coasts his elbow alone covered the landing on
+    // 24 of them. Read as what it MEANT, it never can.
+    for (let i = 0; i < 200; i += 1) {
+      const stop = rivalStopFor(`sweep-${i}`);
+      expect(stop, `sweep-${i}: nowhere for him to land`).not.toBeNull();
+      expect(stop!, `sweep-${i}: his hall at stop ${stop}`)
+        .toBeGreaterThanOrEqual(RIVAL_APART_STOPS);
+      // Neither elbow nor reach can touch stop 0.
+      expect(stop! - CLAIM_REACH_STOPS, `sweep-${i}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps out of the older clans’ yards', () => {
+    // On 1872 hexes two systems placing independently never collided; on 26
+    // stops they would, and a hall inside a native camp is not a rival.
+    for (const seed of SEEDS) {
+      const state = band(0, seed);
+      const his = state.rival!.stop!;
+      for (const n of state.neighbours) {
+        expect(Math.abs(n.stop! - his), `${seed}: ${n.name} at ${n.stop}, hall at ${his}`)
+          .toBeGreaterThanOrEqual(ELBOW);
+      }
+    }
+  });
+
+  it('is a hand that is still closing when a long saga ends', () => {
+    // The property that makes him a clock rather than a fact, and the one
+    // that forced CLAIM_EVERY to move. On the hex map 61 hexes at one every
+    // eleven days is 680 — longer than any saga. The same eleven days on a
+    // line fills his whole reach by day 75.
+    const state = withRival();
+    const full = RIVAL_SETTLES + 2 * CLAIM_REACH_STOPS * CLAIM_EVERY_STOPS;
+    expect(full, 'his hand closes before a long saga is over').toBeGreaterThan(300);
+    // And he is not so slow as to be invisible: he has taken ground by day 200.
+    const byTwoHundred = 1 + Math.floor((200 - RIVAL_SETTLES) / CLAIM_EVERY_STOPS);
+    expect(byTwoHundred).toBeGreaterThan(1);
+    expect(state.rival!.claimStops!.length).toBe(1);
+  });
+
+  it('closes on one stretch at a time, and only when it is due', () => {
+    const state = withRival();
+    const start = state.rival!.stop!;
+    rivalDay(state);
+    expect(rivalStops(state), 'he claimed before his day came').toEqual([start]);
+
+    state.day = RIVAL_SETTLES + CLAIM_EVERY_STOPS;
+    rivalDay(state);
+    expect(rivalStops(state).length).toBe(2);
+    // Touching what he already held: a block of coast, not scattered flags.
+    const taken = rivalStops(state).find((s) => s !== start)!;
+    expect(Math.abs(taken - start)).toBe(1);
+  });
+
+  it('fills his reach and then stops, rather than walking up the coast', () => {
+    const state = withRival();
+    const hall = state.rival!.stop!;
+    for (let d = 1; d <= 40; d += 1) {
+      state.day = RIVAL_SETTLES + d * CLAIM_EVERY_STOPS;
+      rivalDay(state);
+    }
+    const held = rivalStops(state);
+    // Not just "more than one". A hand that closes on two stretches and
+    // jams — boxed in by a clan's elbow it can never reach past — is an
+    // inert mechanic that reads as a working one, which is the shape of bug
+    // this conversion keeps turning up.
+    expect(held.length, `${hall}: he stalled holding ${held.join(',')}`)
+      .toBeGreaterThanOrEqual(CLAIM_REACH_STOPS + 1);
+    expect(held.length).toBeLessThanOrEqual(2 * CLAIM_REACH_STOPS + 1);
+    for (const s of held) {
+      expect(Math.abs(s - hall), `stop ${s} is past his reach`)
+        .toBeLessThanOrEqual(CLAIM_REACH_STOPS);
+    }
+    expect(nextClaimStop(state), 'he was still finding ground after 40 claims').toBeNull();
+  });
+
+  it('closes on real ground on every coast, not just the test one', () => {
+    // Across sixty coasts: how many stretches does his hand actually take?
+    // The median matters more than the minimum — a mechanic that works on
+    // one seed and jams on twenty is not a mechanic.
+    const counts: number[] = [];
+    for (let i = 0; i < 60; i += 1) {
+      const seed = `sweep-${i}`;
+      const state = withRival(seed);
+      for (let d = 1; d <= 40; d += 1) {
+        state.day = RIVAL_SETTLES + d * CLAIM_EVERY_STOPS;
+        rivalDay(state);
+      }
+      counts.push(rivalStops(state).length);
+    }
+    const median = [...counts].sort((a, b) => a - b)[30]!;
+    expect(Math.min(...counts), `worst coast left him holding ${Math.min(...counts)}`)
+      .toBeGreaterThan(1);
+    expect(median, `median hold ${median} of ${2 * CLAIM_REACH_STOPS + 1}`)
+      .toBeGreaterThanOrEqual(CLAIM_REACH_STOPS + 2);
+  });
+
+  it('will not close on our ground or a clan’s', () => {
+    const state = withRival();
+    const hall = state.rival!.stop!;
+    // Put our hall inside his reach and let him run.
+    state.settlement = { at: { q: 0, r: 0 }, stop: hall + 2 } as GameState['settlement'];
+    for (let d = 1; d <= 40; d += 1) {
+      state.day = RIVAL_SETTLES + d * CLAIM_EVERY_STOPS;
+      rivalDay(state);
+    }
+    for (const s of rivalStops(state)) {
+      expect(Math.abs(s - (hall + 2)), `he fenced stop ${s}, our hall’s own stretch`)
+        .toBeGreaterThanOrEqual(CLAIM_CLEAR_STOPS);
+      for (const n of state.neighbours) {
+        expect(Math.abs(s - n.stop!), `he fenced stop ${s}, ${n.name}’s own stretch`)
+          .toBeGreaterThanOrEqual(CLAIM_CLEAR_STOPS);
+      }
+    }
+  });
+
+  it('takes the posts out of ground he holds, and leaves the rest', () => {
+    // The only thing his claims reach in the whole sim.
+    const state = withRival();
+    const hall = state.rival!.stop!;
+    state.party.stop = hall;
+    expect(rivalBlocks(state, state.party.at)).toBe(true);
+    state.party.stop = hall + RIVAL_ELBOW;
+    expect(rivalBlocks(state, state.party.at)).toBe(false);
+    // Until he fences it.
+    state.rival!.claimStops!.push(hall + RIVAL_ELBOW);
+    expect(rivalBlocks(state, state.party.at)).toBe(true);
+  });
+
+  it('is not there at all before his posts go in', () => {
+    const state = band(0, SEED);
+    state.day = RIVAL_SETTLES - 1;
+    state.party.stop = state.rival!.stop!;
+    expect(rivalBlocks(state, state.party.at), 'he blocked ground he had not landed on')
+      .toBe(false);
+  });
+
+  it('is met by walking onto his stretch, or the next headland', () => {
+    // He hung off the hex sight pass, which does not run on a line — so on a
+    // coast he was unmeetable, which is a mechanic deleted rather than
+    // converted.
+    const hall = band(0, SEED).rival!.stop!;
+    for (const at of [hall - 1, hall, hall + 1]) {
+      const state = withRival();
+      state.party.stop = at;
+      meetRival(state);
+      expect(state.rival!.met, `stop ${at}, hall at ${hall}`).toBe(true);
+    }
+    const far = withRival();
+    far.party.stop = hall + 2;
+    meetRival(far);
+    expect(far.rival!.met).toBe(false);
+  });
+
+  it('leaves a coast a band can still put posts into', () => {
+    // The bar the reach was chosen against. Between the four clans' elbows
+    // and his hand at full spread, there has to be somewhere left.
+    for (let i = 0; i < 60; i += 1) {
+      const seed = `sweep-${i}`;
+      const state = withRival(seed);
+      for (let d = 1; d <= 40; d += 1) {
+        state.day = RIVAL_SETTLES + d * CLAIM_EVERY_STOPS;
+        rivalDay(state);
+      }
+      let free = 0;
+      for (let s = 0; s < STOPS; s += 1) {
+        state.party.stop = s;
+        if (rivalBlocks(state, state.party.at)) continue;
+        if (state.neighbours.some((n) => Math.abs(n.stop! - s) < ELBOW)) continue;
+        free += 1;
+      }
+      expect(free, `${seed}: only ${free} stretches left to found on`)
+        .toBeGreaterThanOrEqual(5);
+    }
   });
 });

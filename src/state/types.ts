@@ -70,6 +70,16 @@ export interface Rival {
   at: Hex;
   /** Hexes they hold, hall first, in the order they took them. */
   claims: HexKey[];
+  /**
+   * The same two facts on a coast that is a LINE — his hall's stop and the
+   * stretches he holds, hall first. See sim/route.ts.
+   *
+   * Their own fields for the reason `trodStops` has its own: `claims` is
+   * read by `render/travelScene.ts` through `fromKey`, which answers NaN for
+   * a stop key and draws a marker nowhere. Absent on every hex-map save.
+   */
+  stop?: number;
+  claimStops?: number[];
   /** The day of the last claim. */
   lastClaim: number;
   /** True once we have laid eyes on the hall. */
