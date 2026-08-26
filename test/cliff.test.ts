@@ -8,34 +8,21 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { assign } from '../src/sim/colony';
 import { forecast } from '../src/sim/winter';
 import { reachable, readiness } from '../src/sim/reach';
-import { fromKey } from '../src/hex';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
 
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
 function settled(seed: string, day: number): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // `radius: Infinity` on purpose. Every number in this file was measured on
+  // the BEST ground in the world — "a band on the best ground is beyond
+  // saving on the eve of winter" is the claim, and it stops meaning that the
+  // moment the fixture settles for the best ground within a fortnight's walk.
+  const state = settleSomewhere(seed, { radius: Infinity });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));

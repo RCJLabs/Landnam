@@ -12,7 +12,7 @@
 // months, which is the premise that made it impossible.
 
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { LONG_LIFE_WINTERS } from '../src/data/thing';
 import { YEAR_LENGTH, wintersStood } from '../src/sim/calendar';
 import { checkRunEnd } from '../src/sim/upkeep';
@@ -28,22 +28,13 @@ import {
 } from '../src/sim/landnam';
 import { hold } from '../src/sim/ship';
 import { living } from '../src/sim/people';
-import { canFound, foundSettlement } from '../src/sim/site';
-import { fromKey, key } from '../src/hex';
+import { key } from '../src/hex';
 import type { GameState } from '../src/state/types';
 
 function hall(seed = 'landnam'): GameState {
-  const state = newGame(seed);
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    state.world.seen[k] = 'visible';
-    if (!canFound(state, at)) continue;
-    foundSettlement(state);
-    break;
-  }
-  if (!state.settlement) throw new Error('no site — the fixture never ran');
-  state.party.at = state.settlement.at;
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
+  state.party.at = state.settlement!.at;
   state.party.food = 300;
   state.party.firewood = 300;
   return state;

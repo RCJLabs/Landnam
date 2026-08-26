@@ -3,6 +3,7 @@
 // telegraphed in the autumn was an honest one. So the centre of this file is
 // a measurement of the forecast's predictive accuracy.
 
+import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
@@ -19,12 +20,10 @@ import { readFileSync } from 'node:fs';
 const SOURCE = ['src/sim/actions.ts', 'src/sim/travel.ts']
   .map((f) => readFileSync(f, 'utf8'))
   .join('\n');
-import { fromKey } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { EVENTS } from '../src/data/events';
 import { isEligible } from '../src/sim/events';
 import { seasonOf } from '../src/sim/calendar';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, buildable, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
 import { checkRunEnd, foodPerDay, passDay, SURVIVAL_DAY } from '../src/sim/upkeep';
@@ -50,30 +49,8 @@ function endCause(state: GameState): string {
 }
 
 function settledWell(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    const gap =
-      (Math.abs(at.q - landing.q) +
-        Math.abs(at.r - landing.r) +
-        Math.abs(at.q + at.r - landing.q - landing.r)) /
-      2;
-    if (gap > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));

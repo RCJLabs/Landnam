@@ -2,6 +2,7 @@
 // that job assignment visibly moves the numbers, so most of this file puts
 // two identically-placed bands to work differently and measures the gap.
 
+import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
 import { fromKey, key } from '../src/hex';
 import { newGame } from '../src/state/create';
@@ -10,7 +11,7 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { currentMode } from '../src/modes';
 import { apply } from '../src/sim/actions';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
+import { canFound, foundSettlement } from '../src/sim/site';
 import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
 import { seasonOf } from '../src/sim/calendar';
@@ -55,30 +56,8 @@ function settled(seed: string): GameState {
  * much bleaker measurement.
  */
 function settledWell(seed: string, radius = 8): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    const gap =
-      (Math.abs(at.q - landing.q) +
-        Math.abs(at.r - landing.r) +
-        Math.abs(at.q + at.r - landing.q - landing.r)) /
-      2;
-    if (gap > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable near the landing`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   return state;
 }
 

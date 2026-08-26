@@ -7,6 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { BALANCED_HARDSHIP, DEFAULT_HARDSHIP, HARDSHIPS, hardshipById, measuredLine } from '../src/data/hardship';
 import { eventChance } from '../src/sim/events';
 import { raidOdds } from '../src/sim/raid';
@@ -14,29 +15,14 @@ import { firewoodPerNight } from '../src/sim/upkeep';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { startBattle } from '../src/sim/battleTurn';
 import { edge } from '../src/sim/swing';
-import { fromKey } from '../src/hex';
 import type { GameState, HardshipId } from '../src/state/types';
 
 function settled(seed: string, hardship: HardshipId): GameState {
-  const state = structuredClone(newGame(seed, hardship));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // `radius: Infinity` because the original swept the whole world, and this
+  // file compares one setting against another on ground held constant.
+  const state = settleSomewhere(seed, { radius: Infinity, hardship });
   state.settlement!.foundedOn = 1;
   state.day = 60; // deep winter, where the fire costs most
   state.party.food = 200;

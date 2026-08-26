@@ -11,8 +11,9 @@
 // raids, and get measurably worse prices, than one that deals with them — and
 // the difference must still be there long after the deed.
 
+import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, neighbors } from '../src/hex';
+import { distance, neighbors } from '../src/hex';
 import { stream } from '../src/rng';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -20,7 +21,7 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundBlocker, foundSettlement, siteReport } from '../src/sim/site';
+import { foundBlocker, siteReport } from '../src/sim/site';
 import { WATER_FLOOR } from '../src/data/sites';
 import { campStores, sackCamp } from '../src/sim/plunder';
 import { assign } from '../src/sim/colony';
@@ -71,25 +72,8 @@ const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'w
 
 /** A steading on the best ground within reach, crewed and stocked. */
 function settled(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    if (distance(at, landing) > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));

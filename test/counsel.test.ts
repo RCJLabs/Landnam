@@ -9,8 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
-import { fromKey } from '../src/hex';
-import { canFound, foundSettlement } from '../src/sim/site';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { assign } from '../src/sim/colony';
 import { counsel, counselLine } from '../src/sim/counsel';
 import { forecast, markVisible } from '../src/sim/winter';
@@ -182,15 +181,8 @@ describe('the sentence', () => {
 });
 
 function settled(seed: string): GameState | undefined {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const at = Object.keys(state.world.tiles).map(fromKey).find((h) => {
-    state.party.at = h;
-    return canFound(state, h);
-  });
-  if (!at) return undefined;
-  state.party.at = at;
-  if (!foundSettlement(state)) return undefined;
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   const crew = ['builder', 'warrior', 'warrior', 'builder', 'warrior', 'builder'] as const;
   state.party.people
     .filter((p) => p.alive)

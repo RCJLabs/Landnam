@@ -2024,6 +2024,44 @@ is written so the choice is made with both arcs visible, not by drift.
 
   1. **Flip the default.** One line in `sim/flags.ts`. It is the hinge, and
      it is what makes the next three necessary rather than optional.
+
+     **Measured before touching it, and the measurement changed the job.**
+     Flipping the flag turns 148 tests across 39 files red. That reads as
+     thirty-nine conversions until you look at WHY, and the single commonest
+     cause by a wide margin was one fixture — "sweep `world.tiles`, keep the
+     best `siteReport`, put the posts in" — copied into twenty-two files. Not
+     thirty bugs; one duplicated helper, thirty times over.
+
+     So it is extracted first, into `test/fixtures/settle.ts`, which knows
+     both worlds and picks by the flag. Twenty-six files now call it. Measured
+     the same way before and after, on a coast build: **148 failures across 39
+     files → 103 across 25.** Fourteen whole files stopped caring what the
+     country is made of, and the conversion has one site search left to change
+     rather than twenty-two.
+
+     Two things the extraction had to say out loud rather than assume:
+
+     - The copies were two families, not one — eleven took the BEST ground by
+       `siteReport`, eight took the FIRST hex that would take posts. Unifying
+       on the best looked certain to move the yield measurements in `rations`,
+       `counsel` and `minds`. It moved none of them. Where it WOULD have
+       mattered the caller now says so: `cliff` and `hardship` pass
+       `radius: Infinity`, because their numbers were measured on the best
+       ground in the world and mean nothing off it.
+     - The first draft of the fixture stocked every band to 200 food and
+       firewood, on the reasoning that most callers want a fed band. Exactly
+       one of the twenty-two copies stocked. `buildings.test.ts` and
+       `winter.test.ts` went red at once — both exist to measure what SCARCITY
+       does, and a fixture that quietly fills the larder does not fail them,
+       it answers a different question and reports the answer as theirs. It
+       now asks: `stock` is off by default.
+
+     What is LEFT is no longer fixture noise. The remaining 103 cluster in
+     `neighbours` (24), `places` (16), `site` (7), `parity` (7), `strandhogg`
+     (6) and `colony` (6) — tests that ask hex questions on purpose ("Threefires
+     is 24 hexes off", "expected 'shore' to be 'meadow'"). Those are the
+     conversion, and they are now visible instead of buried under thirty
+     copies of the same helper reporting "nothing foundable".
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -2779,6 +2817,40 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — One site search instead of twenty-two** — Groundwork for
+  8.5's first job, and the shape of it came out of measuring rather than
+  reading. Flipping `COAST_IS_A_LINE` turns 148 tests across 39 files red, and
+  the dominant cause was not thirty conversions: it was one fixture — sweep
+  `world.tiles`, keep the best `siteReport`, put the posts in — copied into
+  twenty-two files. Extracted to `test/fixtures/settle.ts`, which knows both
+  worlds and picks by the flag. Twenty-six files call it now. Measured the
+  same way before and after, on a coast build: **148 across 39 files → 103
+  across 25**.
+
+  Two findings worth keeping, both of which are the instrument being wrong
+  before the code was:
+
+  - The copies were two families — best ground versus first foundable ground —
+    and unifying on the best looked certain to move the yield numbers in
+    `rations`, `counsel` and `minds`. It moved none of them. Where it would
+    have mattered the caller now says so out loud: `cliff` and `hardship`
+    pass `radius: Infinity`, because every number in those files was measured
+    on the best ground in the world.
+  - The first draft stocked every band to 200 food and firewood. Exactly one
+    of the twenty-two copies stocked, and `buildings` and `winter` — both of
+    which exist to measure SCARCITY — went red at once. A fixture that
+    quietly fills the larder does not fail those tests; it answers a different
+    question and reports the answer as theirs. `stock` is now off by default
+    and asked for.
+
+  What is left is no longer noise: the remaining 103 sit in `neighbours` (24),
+  `places` (16), `site` (7), `parity` (7), `strandhogg` (6) and `colony` (6),
+  and every one of them asks a hex question on purpose. That is the
+  conversion, now visible instead of buried.
+
+  Suite green throughout: 91 files, 1521 tests, including the forty-minute
+  balance sweep. No source file changed — this is test scaffolding only.
 
 - **2026-08-26 — The bars for a coast, and a day spent on nothing** — 8.5's
   second job. The bar work was routine; what it turned up was not.

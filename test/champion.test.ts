@@ -2,6 +2,7 @@
 // word has spread; and when the man with the pennant falls — theirs OR ours —
 // the heart goes out of the whole side he led.
 
+import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
@@ -20,30 +21,13 @@ import { NERVE_LEADER_FELL, STEADIED_PER_LINK, fellLeading } from '../src/sim/mo
 import { leaderOf } from '../src/sim/people';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
-import { fromKey } from '../src/hex';
 import { stream } from '../src/rng';
 import type { Combatant, GameState } from '../src/state/types';
 
 /** A settled steading a raid can actually be rolled against. */
 function settled(seed: string): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   state.day = 30;
   return state;
 }

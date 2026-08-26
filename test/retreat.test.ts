@@ -18,6 +18,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
@@ -161,14 +162,7 @@ describe('old saves', () => {
 });
 
 function settled(seed: string): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const at = Object.keys(state.world.tiles).map(fromKey).find((h) => {
-    state.party.at = h;
-    return canFound(state, h);
-  });
-  expect(at, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = at!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   return state;
 }

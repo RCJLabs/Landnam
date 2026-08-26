@@ -12,6 +12,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { PURPOSES } from '../src/sim/expedition';
 import { fieldCrew, homeCrew } from '../src/sim/expedition';
 import { foodPerDay } from '../src/sim/upkeep';
@@ -32,23 +33,13 @@ import { SEASON_LENGTH } from '../src/sim/calendar';
 import { living } from '../src/sim/people';
 import { roomLeft } from '../src/sim/joining';
 import { crowding } from '../src/sim/colony';
-import { canFound, foundSettlement } from '../src/sim/site';
-import { fromKey } from '../src/hex';
 import { SHIP_STRAKES } from '../src/data/ships';
 import type { GameState } from '../src/state/types';
 
 function hall(seed = 'voyage', extra = 0): GameState {
-  const state = newGame(seed);
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    state.world.seen[k] = 'visible';
-    if (!canFound(state, at)) continue;
-    foundSettlement(state);
-    break;
-  }
-  if (!state.settlement) throw new Error('no site — the fixture never ran');
-  state.party.at = state.settlement.at;
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
+  state.party.at = state.settlement!.at;
   state.party.food = 300;
   state.party.firewood = 300;
   const seed0 = state.party.people[0]!;

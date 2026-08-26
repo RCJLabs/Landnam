@@ -9,22 +9,16 @@
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
-import { fromKey, key } from '../src/hex';
-import { canFound, foundSettlement } from '../src/sim/site';
+import { settled as settleSomewhere } from './fixtures/settle';
+import { key } from '../src/hex';
 import { PLOTS, type JobId } from '../src/data/jobs';
 import { describeColony, HEX } from '../src/render/colonyScene';
 import type { GameState } from '../src/state/types';
 
 /** A band on ground that will have them, with the whole map charted. */
 function settled(seed: string): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  for (const k of Object.keys(state.world.tiles)) {
-    state.party.at = fromKey(k);
-    if (canFound(state, state.party.at)) break;
-  }
-  expect(canFound(state, state.party.at), `${seed}: nowhere to settle`).toBe(true);
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   return state;
 }
 

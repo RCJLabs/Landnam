@@ -14,14 +14,12 @@
 //   4. It is reachable: a band that does the work gets there.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey } from '../src/hex';
-import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
 import { nextThaw, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from '../src/sim/calendar';
 import { layDownSaga, reckoningDue } from '../src/sim/landnam';
@@ -74,33 +72,14 @@ const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'w
  * rather than on the thing under test. Third fixture to learn this.
  */
 function settled(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const reach of [radius, Infinity]) {
-    for (const k of Object.keys(state.world.tiles)) {
-      const at = fromKey(k);
-      if (distance(at, landing) > reach) continue;
-      state.party.at = at;
-      if (!canFound(state, at)) continue;
-      const report = siteReport(state.world, at)!;
-      if (report.total > bestScore) {
-        bestScore = report.total;
-        best = at;
-      }
-    }
-    if (best) break;
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search lives in `test/fixtures/settle.ts` now — twenty-two
+  // files carried their own copy of it, and the conversion has to change
+  // one search or twenty-two. What stays here is what this file's tests
+  // actually need on top of a steading.
+  const state = settleSomewhere(seed, { radius, stock: true });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
-  state.party.food = 200;
-  state.party.firewood = 200;
   seeNeighbours(state);
   return state;
 }

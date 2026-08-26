@@ -8,7 +8,7 @@
 // docks morale for, cost the band nothing it could feel in the body.
 
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { JOBS } from '../src/data/jobs';
 import { ILLNESSES } from '../src/sim/cold';
 import { crowding } from '../src/sim/colony';
@@ -25,8 +25,6 @@ import { living } from '../src/sim/people';
 import { OVER_ROOF, drawOdds, roomLeft, takeIn, willAdmit } from '../src/sim/joining';
 import { capacity } from '../src/sim/colony';
 import type { GameState, Person } from '../src/state/types';
-import { canFound, foundSettlement } from '../src/sim/site';
-import { fromKey } from '../src/hex';
 import { passDay } from '../src/sim/upkeep';
 import { SEASON_LENGTH, SEASON_ORDER, seasonOf } from '../src/sim/calendar';
 
@@ -40,17 +38,8 @@ import { SEASON_LENGTH, SEASON_ORDER, seasonOf } from '../src/sim/calendar';
  * The instrument was lying, not the feature working.
  */
 function hall(seed = 'sick', extra = 0): GameState {
-  const state = newGame(seed);
-  // Find ground the game itself would accept, stand on it, and found.
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    state.world.seen[k] = 'visible';
-    if (!canFound(state, at)) continue;
-    foundSettlement(state);
-    break;
-  }
-  if (!state.settlement) throw new Error(`no site in ${seed} — the fixture never ran`);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   state.party.food = 400;
   state.party.firewood = 400;
   // Extra bodies past what the roof holds, which is the whole subject.

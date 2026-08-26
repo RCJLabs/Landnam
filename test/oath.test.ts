@@ -11,7 +11,7 @@
 // here touches them.
 
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { EVENTS } from '../src/data/eventCards';
 import {
   OATHS,
@@ -29,20 +29,11 @@ import { passDay } from '../src/sim/upkeep';
 import { foresworn, oathDay, standingOath, sworeOn } from '../src/sim/oath';
 import { omenFor } from '../src/sim/weather';
 import type { GameState } from '../src/state/types';
-import { canFound, foundSettlement } from '../src/sim/site';
-import { fromKey } from '../src/hex';
 
 function hall(seed = 'oath'): GameState {
-  const state = newGame(seed);
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    state.world.seen[k] = 'visible';
-    if (!canFound(state, at)) continue;
-    foundSettlement(state);
-    break;
-  }
-  if (!state.settlement) throw new Error('no site — the fixture never ran');
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
+  state.party.at = state.settlement!.at;
   state.party.food = 400;
   state.party.firewood = 400;
   return state;
