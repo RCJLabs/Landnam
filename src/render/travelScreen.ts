@@ -8,6 +8,9 @@ import { equals, type Hex } from '../hex';
 import type { GameState } from '../state/types';
 import { currentMode } from '../modes';
 import { createTravelView } from './travel';
+import { createProcessionView } from './processionView';
+import { processionScene } from './procession';
+import { COAST_IS_A_LINE } from '../sim/flags';
 import { paintingWanted } from './oilFlag';
 import { travelOverlay } from './overlays';
 import { deedsFor } from './deeds';
@@ -44,20 +47,37 @@ let hooks: ScreenHooks | null = null;
 /** The last air we asked for, so an unchanged profile is not re-eased every render. */
 let air: AmbienceProfile | null = null;
 
-function onHexTap(target: Hex): void {
-  if (!hooks) return;
-  const { ui, dispatch } = hooks;
+/** Everything that makes a tap on the map a no-op rather than a step. */
+function tapRefused(): boolean {
+  if (!hooks) return true;
+  const { ui } = hooks;
   const state = hooks.current();
-  if (!state || state.event || state.aftermath || state.end) return;
-  if (ui.foundingOpen || ui.mapOpen || ui.launchOpen || ui.actOpen) return;
+  if (!state || state.event || state.aftermath || state.end) return true;
+  return ui.foundingOpen || ui.mapOpen || ui.launchOpen || ui.actOpen;
+}
+
+function onHexTap(target: Hex): void {
+  if (tapRefused()) return;
+  const state = hooks!.current()!;
   if (equals(target, state.party.at)) return;
-  dispatch({ type: 'MOVE', to: target });
+  hooks!.dispatch({ type: 'MOVE', to: target });
+}
+
+/** The road ahead and the road behind, tapped on the picture. */
+function onStopTap(to: number): void {
+  if (tapRefused()) return;
+  hooks!.dispatch({ type: 'WALK', to });
 }
 
 /** A new run: build the map view fresh and put the party in the frame. */
 export function mountTravel(h: ScreenHooks): void {
   hooks = h;
-  travelView = createTravelView(onHexTap, { paint: paintingWanted() });
+  // The country decides which view: a coast is walked, not surveyed, so it
+  // gets a procession rather than a map. Both meet `TravelView`, which is
+  // why everything downstream of this line is unchanged.
+  travelView = COAST_IS_A_LINE
+    ? createProcessionView()
+    : createTravelView(onHexTap, { paint: paintingWanted() });
   mapSlot.replaceChildren(...travelView.nodes);
   const state = h.current();
   if (state) travelView.centreOn(state.party.at);
@@ -136,6 +156,23 @@ export function renderTravelScreen(state: GameState, h: ScreenHooks): void {
     ui.mapOpen = true;
     rerender();
   });
+  // The two things a coast lets you do. Buttons in the action bar rather than
+  // shapes on the picture, because the picture is `slice` and overflows its
+  // slot — on a short screen its bottom edge lands behind the site panel, and
+  // a verb drawn there cannot be pressed. See render/processionView.ts.
+  if (COAST_IS_A_LINE && !state.end && !state.event) {
+    const scene = processionScene(state);
+    if (scene.back) {
+      actions.append(button(`Back · ${scene.back.days}d`, () => onStopTap(scene.back!.stop), {
+        class: 'action secondary',
+      }));
+    }
+    if (scene.onward) {
+      actions.append(button(`On up the coast · ${scene.onward.days}d`, () => {
+        onStopTap(scene.onward!.stop);
+      }, { class: 'action' }));
+    }
+  }
   if (!state.end && !state.event) {
     actions.append(
       button('Band', () => {

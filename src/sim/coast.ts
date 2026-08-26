@@ -172,6 +172,20 @@ export function markTrod(state: GameState, stop: number, day: number): void {
   // Standing somewhere is one way of learning what is there, and the
   // commonest one.
   learnStop(state, stop);
+  // AND THE NEXT HEADLAND EITHER SIDE.
+  //
+  // This is `revealAround` for a line, and it was missing. When the fog pass
+  // was cut in 8.2c the note said "a coast is walked, not surveyed" — right
+  // about the RADIUS, wrong about sight itself, and the cost only showed up
+  // when 8.3 put a picture of the road on screen: the procession bar walked
+  // twelve stretches and never once had anything to draw ahead, because the
+  // only stretch a band ever knew was the one under its feet.
+  //
+  // One stretch, which is two to four days' walk. A man on a coast can see
+  // the next headland; he cannot see the one after it, and that is what
+  // climbing a ridge is still for — `LANDMARK_REACH` is eight days and stays
+  // the way you see further than your own legs.
+  for (const near of [stop - 1, stop + 1]) learnStop(state, near);
 }
 
 /** Does the band know what stands at this stop? */

@@ -1918,11 +1918,48 @@ is written so the choice is made with both arcs visible, not by drift.
   *Done when: a saga can be walked end to end on the route, and the travel
   decision is nameable in one sentence.*
 
-- [ ] **8.3 Travel becomes a procession** — The side-on painted view: the band
-  walking the route, country derived from the places they are between, monas-
-  teries and camps rising ahead as silhouettes. Reuses the oil brush and the
-  seen/unseen discipline. Raiding a place drops into 8.1.
+- [x] **8.3 Travel becomes a procession** — The side-on painted view: the band
+  walking the route, the country painted with the battlefield's own brush,
+  and what stands on the stretches ahead rising as silhouettes.
+
+  The chart in the pack answers "how far along do I go". It cannot answer the
+  question a player asks a hundred times more often and never opens a card
+  for: where am I, and what is coming. The hex map answered that by being on
+  screen the whole time; a strip chart in a drawer does not.
+
+  **Distance is drawn as distance.** A row of icons would pass the milestone's
+  bar and be a chart with the paint taken off. What makes this a road is that
+  a monastery two stretches on is smaller, higher up the picture and hazier
+  than a camp on the next one — so which is nearer reads without reading a
+  number. `sightAt` is the whole of it, and `test/procession.test.ts` holds
+  the property that nearer is lower and larger.
+
+  **The verbs are not in the picture**, and that was not the first draft. The
+  two steps a coast offers were drawn into the scene at its bottom edge; it
+  looked right at 390x844 and was unpressable at 320x568, because this SVG is
+  `slice` and on a short screen its bottom edge lands 58px below the map slot,
+  behind the site panel, which swallows the tap. `scripts/procession.mjs`
+  caught it with `elementFromPoint` on the button's own centre — the answer
+  came back `span.site-word`. On the screen is not the same as reachable, and
+  only the second one is a bar. The steps are ordinary buttons in the action
+  bar now, where every other verb already lives and where the 44px rule is
+  enforced by CSS and checked by `reach.mjs`.
+
+  **A band could not see anything coming**, and that is the finding worth
+  keeping. `markTrod` learned only the stretch underfoot, so "what is ahead"
+  was structurally empty on every flat coast forever: the bar walked twelve
+  stretches and never had a thing to draw. The cause was mine, one milestone
+  back — when 8.2c cut the fog pass the note said "a coast is walked, not
+  surveyed", which is right about the RADIUS and wrong about sight itself.
+  Arriving somewhere now learns the next headland either side, which is
+  `revealAround`'s heir: one stretch, two to four days, because a man on a
+  coast can see the next headland and not the one past it. Climbing a ridge is
+  still how you see eight days out.
+
   *Done when: you can tell where you are and what is ahead without the chart.*
+  — held by `scripts/procession.mjs` at 390x844 and 320x568: the picture says
+  where the band is standing, names what is in sight and how far off, and the
+  road can be walked from the screen it is drawn on.
 
 - [ ] **8.4 The steading becomes an elevation** — Colony hex plots become
   placed buildings on a side-on view; `plotsFor(job)` becomes
@@ -2632,6 +2669,42 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-26 — The road, and the thing nobody could see coming** — 8.3.
+  Travel stops being a map and becomes the road itself.
+
+  One stretch of coast, painted with the battlefield's own brush; the band
+  walking it as a file, drawn by the same hand that draws them in a fight; and
+  what stands on the stretches ahead rising as silhouettes. The rule that
+  makes it a road rather than a chart with the paint taken off is that
+  distance is drawn as distance — nearer is lower, larger and less hazy, so a
+  player reads which is closer without reading a number.
+
+  Two things went wrong, and both are more useful than the feature.
+
+  **The verbs could not be pressed.** The two steps a coast offers were drawn
+  into the picture at its bottom edge. That looked right at 390x844 and was
+  dead at 320x568: the view is `slice`, so it overflows its slot, and on a
+  short screen the bottom of the scene lands 58px below the map slot — behind
+  the site panel, which swallows the tap. The bar found it by asking
+  `elementFromPoint` what was actually under the button's centre and getting
+  back `span.site-word`. On the screen is not the same as reachable. The steps
+  are ordinary action-bar buttons now, where every other verb in this game
+  already lives.
+
+  **And nothing was ever coming.** The bar walked twelve stretches and never
+  once had anything to draw ahead, because `markTrod` learned only the stretch
+  under the band's feet. That is not a rendering bug — it is a sim gap I made
+  one milestone earlier. When 8.2c cut the hex fog pass the note read "a coast
+  is walked, not surveyed". Right about the RADIUS; wrong about sight itself,
+  and the cost stayed invisible until something tried to draw the road. A band
+  now sees the next headland either side when it arrives — one stretch, two to
+  four days, which is what a man on a coast can actually see. Ridges still
+  reach eight days, so climbing one still pays.
+
+  Worth saying plainly: nothing failed while that gap existed. The suite was
+  green, every bar passed, and the chart looked complete. It took putting a
+  picture of the road on screen to notice that the road had nothing on it.
 
 - **2026-08-26 — The coast as a strip you can walk** — 8.2d. The chart in the
   pack stops being a map of an island and becomes what a coast actually is.

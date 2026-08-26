@@ -1007,6 +1007,43 @@ h2.grim {
   overflow: visible;
 }
 
+/* --- The procession (8.3) --- */
+
+.here-word {
+  fill: var(--parchment);
+  font-size: 17px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: rgba(20, 18, 13, 0.85);
+  stroke-width: 3px;
+}
+
+/* Names on the road ahead. Stroked the same way, because they are painted
+   over country whose colour is not ours to choose. */
+.sight-name,
+.sight-days {
+  fill: var(--parchment);
+  paint-order: stroke;
+  stroke: rgba(20, 18, 13, 0.8);
+  stroke-width: 3px;
+}
+
+.sight-days { opacity: 0.8; }
+
+.road-step { cursor: pointer; }
+
+.road-step-word {
+  fill: var(--parchment);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.road-step-days {
+  fill: var(--parchment-dim);
+  font-size: 12px;
+}
+
+
 /* --- The strip chart (8.2d) --- */
 
 /* The strip is drawn at its natural width and SCROLLED, not shrunk. That is

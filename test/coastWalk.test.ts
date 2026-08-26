@@ -680,6 +680,34 @@ describe('what the band remembers of the coast', () => {
     expect(state.world.knownStops).toEqual([0, 2, 7, 9, 14]);
   });
 
+  it('sees the next headland either side, which is what a coast lets you do', () => {
+    // The heir of `revealAround`, and it was missing until 8.3 went looking
+    // for something to draw. When the fog pass was cut the note said "a coast
+    // is walked, not surveyed" — right about the radius, wrong about sight,
+    // and the cost was a band that never knew anything but the ground under
+    // its feet. `scripts/procession.mjs` walked twelve stretches and had
+    // nothing to show ahead on any of them.
+    const state = band(0, SEED);
+    markTrod(state, 6, 20);
+    expect(knowsStop(state, 6)).toBe(true);
+    expect(knowsStop(state, 5), 'the headland behind was invisible').toBe(true);
+    expect(knowsStop(state, 7), 'the headland ahead was invisible').toBe(true);
+    // And no further. Seeing past the next headland is what a ridge is for.
+    expect(knowsStop(state, 8)).toBe(false);
+    expect(knowsStop(state, 4)).toBe(false);
+    // Standing on it is still a different fact from having seen it.
+    expect(hasTrod(state, 7), 'seeing a stretch counted as walking it').toBe(false);
+  });
+
+  it('does not see off the end of the coast', () => {
+    const state = band(0, SEED);
+    markTrod(state, 0, 1);
+    expect(state.world.knownStops).toEqual([0, 1]);
+    const far = band(0, SEED);
+    markTrod(far, STOPS - 1, 1);
+    expect(far.world.knownStops).toEqual([0, STOPS - 2, STOPS - 1]);
+  });
+
   it('is written by walking, through the verb rather than beside it', () => {
     let state = band(0, SEED);
     state = step(state, 1);
