@@ -333,8 +333,66 @@ fix, and it wants an answer before the work starts:
    has ~2, and if both sit behind a clan's elbow the band has none.
 3. **Everything derived from country gets re-measured after**, not before.
 
-Until that is answered the three failures stay, and they are honest: they are
-the game telling the truth about a coast that has not been calibrated yet.
+#### ROUND TWO — the decision was taken, the work was built, and it is STILL
+#### not landable. What it found is worth more than the change would have been.
+
+Evan chose "keep the ridges": shore 30 / bog 18 / forest 18 / hills 14 /
+meadow 12 / valley 8, the map's shape with hills kept common enough to climb.
+That was built, along with both ring fixes, and measured. **The country
+weighting works and does not fix anything.**
+
+Measured on the weighted coast: country lands at shore 33 / forest 18 / bog 17
+/ hills 14 / meadow 12 / valley 7, ridges hold at a median 3 stretches a coast
+with only 5 coasts in 200 having none, soil comes down 4.13 -> 3.58 — and
+`sickness`, `winter` and `expedition` all still fail. Sweeping `BECK_SHARE`
+from 0.50 to 0.05 on top of it made things WORSE at every step, 3 failures
+becoming 4. `BECK_SHARE` 0.05 hits both stated targets exactly — chosen water
+1.88 against the map's 1.82, dry landings 41% against the note's own "two
+times in five" — and the bars get worse anyway. **Matching the measure means
+is not the same as matching the game**, and an afternoon went into learning
+that.
+
+**What DID fix `sickness` is one line, and it is the right line.** The healer
+reads `water`, and a winter hall was measured at care 1.68 against the map's
+0.85 — double, which is why twelve tended days took the whole illness off.
+The cause is that `hasBeck` was passed as `Surrounds.river`, which on the hex
+map means a river runs THROUGH the site and is worth 3 outright. A beck does
+not run through a steading; it runs down ACROSS the strand to the sea, which
+is an adjacent water and worth 1 of the ring's two. Moving it from
+`terrain.river` into a ring entry takes care to 1.01 against the map's 0.85
+and water to 2.40 against 1.80, and `sickness` goes green.
+
+**And it is still not landable, because `winter` gets worse.** That bar wants
+60% of bands that heed the winter mark to live; the coast gives 50% before any
+of this, 41.7% with the beck fix alone and 37.5% with the weighting as well.
+The beck fix does not CREATE that — it reveals it, by taking away a site
+score that was propping the coast up — and the cause is the one measure where
+a coast is genuinely poorer: timber 1.45 against the map's 2.13, so the
+woodcutter cuts less and a band that did everything right still freezes.
+
+That is not a tuning problem either, and this is the finding to carry forward:
+**`timber` divides by 28, which is seven tiles of pure forest — a ring a coast
+cannot have.** One to three of its six are ocean and carry no wood, so a coast
+is scored against a ceiling it structurally cannot reach, exactly as `harbour`
+was scored against a floor the map's inland ground could never leave. The
+mirror image of the same mistake.
+
+But the deeper half is a design question, not a scale: on the map a band that
+wants wood WALKS INLAND and settles in a forest. On a line it cannot — there
+is no inland — so a coast band has less wood available whatever the scale
+says. Either the coast gets a way to reach wood it cannot settle on (the
+woodcutter's own errand, the way `PURPOSES` gave the sea one), or `timber`'s
+scale is made relative to the land actually in the ring, or the winter mark's
+bar is restated for a country where firewood is structurally scarcer. That is
+the next decision, and it wants the same treatment this one got: measure the
+premise before building it.
+
+**Everything above was reverted rather than landed.** Two commits on
+2026-08-27 carry the measurements and no code: trading a red `sickness` for a
+worse `winter`, at the price of re-deriving `COAST_VERDICTS`, `PLACES_FLOOR`,
+`PLACES_NEAR` and `LANDMARK_SHARE_STOP` against a new distribution, is not
+progress. The three failures stay, and they are honest: they are the game
+telling the truth about a coast that has not been calibrated yet.
 
 **The port reached PARITY OK** — 39 checkpoints across two runs, six facets
 each: 1478 actions and 457 days on `runs/long.json`, 66 to day 15 on
