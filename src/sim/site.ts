@@ -11,6 +11,7 @@ import {
   MEASURE_MAX,
   NAME_ROOTS,
   NAME_SUFFIX,
+  COAST_VERDICTS,
   SCORE_WORDS,
   VERDICTS,
   WATER_FLOOR,
@@ -183,7 +184,7 @@ function stopSurrounds(seed: string, stop: number): Surrounds {
 }
 
 /** Does a beck come down to the sea on this stretch? Derived, like everything. */
-function hasBeck(seed: string, stop: number): boolean {
+export function hasBeck(seed: string, stop: number): boolean {
   return makeRng(`landnam-route:${seed}:${stop}:beck`).next() < BECK_SHARE;
 }
 
@@ -254,8 +255,12 @@ export function scoreWord(score: number): string {
 }
 
 export function verdictFor(total: number): Verdict {
-  let found = VERDICTS[0]!;
-  for (const verdict of VERDICTS) if (total >= verdict.from) found = verdict;
+  // Which scale this world reads on — see COAST_VERDICTS for the measurement.
+  // A coast totals roughly twice a hex site, so the hex bands called 95% of
+  // every coast "Good ground" or better and the word said nothing.
+  const bands = COAST_IS_A_LINE ? COAST_VERDICTS : VERDICTS;
+  let found = bands[0]!;
+  for (const verdict of bands) if (total >= verdict.from) found = verdict;
   return found;
 }
 

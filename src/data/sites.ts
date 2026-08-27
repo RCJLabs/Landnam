@@ -75,6 +75,35 @@ export const VERDICTS: Verdict[] = [
   { from: 14, label: 'Rich ground', line: 'The kind of place a saga starts in.' },
 ];
 
+/**
+ * The same five words, on the scale a COAST actually reads.
+ *
+ * The bands above are calibrated against a hex island, where a site totals a
+ * mean of 7.4 (sd 1.53). A stretch of shore totals 14.2 (sd 2.21) — and not
+ * because anything is broken. `stopSurrounds` gives every stretch a ring that
+ * is two parts ocean, so every stretch has a harbour (mean 0.5 -> 4.1) and a
+ * flank the sea holds for it (defence 2.0 -> 2.6). A coast IS a harbour; that
+ * is what a coast is.
+ *
+ * But the WORD stopped carrying information. Measured over 260 stretches with
+ * the hex bands: Rich ground 60%, Good ground 35%, Fair 4% — a player told
+ * "Rich ground" almost everywhere cannot tell a strand worth holding from one
+ * that is not, and 3.1's whole bar is that choosing where to settle is a real
+ * decision. The totals DO spread (min 9, max 19, a wider absolute range than
+ * the hex map's); only the words hid it.
+ *
+ * So the bands are re-cut at the same PERCENTILES the hex bands sit at, which
+ * keeps the shape of the experience rather than the numbers: measured coast
+ * quantiles p10=11, p64=15, p97=18, p99=19.
+ */
+export const COAST_VERDICTS: Verdict[] = [
+  { from: 0, label: 'Bare ground', line: 'A place to die in, slowly.' },
+  { from: 11, label: 'Hard ground', line: 'It could be held, by people with nothing better.' },
+  { from: 15, label: 'Fair ground', line: 'A steading could stand here.' },
+  { from: 18, label: 'Good ground', line: 'Land worth the crossing.' },
+  { from: 19, label: 'Rich ground', line: 'The kind of place a saga starts in.' },
+];
+
 // --- Naming the steading ---
 
 /** First element: what the place is, taken from the ground it stands on. */

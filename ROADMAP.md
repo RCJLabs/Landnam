@@ -2337,10 +2337,53 @@ is written so the choice is made with both arcs visible, not by drift.
      ROADMAP section, and a test fails if that section stops existing —
      verified by deleting the heading and watching it go red.
 
-     What is LEFT is 32, in a tail of ones and twos across seventeen files.
-     The largest is `site` (7) — the hex site search itself, which job 4
-     deletes, so converting it may be work thrown away and that is worth
-     deciding before spending a pass on it.
+     **Then `site`, and there was no decision to make: 32 → 25.** It was
+     recorded above as possibly-wasted work on the hex site search. That was
+     wrong. `src/sim/site.ts` is the FOUNDING file — of thirteen exports only
+     `siteReport` dies with the hexes; `stopReport`, `foundSettlement`,
+     `foundBlocker`, `canFound`, `nameFor`, `atHome`, `verdictFor` and the
+     rest all survive and already branch. Of the seven failures exactly one
+     had no subject on a line ("the sea is never a site" — a route has no
+     ocean, as `foundBlocker` says).
+
+     And ELEVEN more of that file's tests were passing while reading the hex
+     island — `siteReport` over `world.tiles`, which a coast build still
+     generates. Not vacuous: measuring the wrong world and reporting green.
+     `readAll` now returns whichever world this build is, and with it pointed
+     at the coast the milestone's own bar failed for the first time.
+
+     **The bar was right and the coast was miscalibrated.** Measured over 260
+     stretches against 11,639 hexes:
+
+     | | hex mean (sd) | coast mean (sd) |
+     |---|---|---|
+     | harbour | 0.5 (1.30) | 4.1 (0.99) |
+     | water | 0.8 (0.81) | 3.1 (1.59) |
+     | timber | 2.5 (1.38) | 1.5 (0.74) |
+     | **total** | **7.4 (1.53)** | **14.2 (2.21)** |
+
+     None of that is a bug. `stopSurrounds` gives every stretch a ring two
+     parts ocean, so every stretch has a harbour and a flank the sea holds —
+     a coast IS a harbour. What broke is that `VERDICTS` is calibrated to a
+     mean of 7.4, so a coast read **Rich ground 60%, Good 35%** and the word
+     carried no information at all. The totals spread perfectly well (min 9,
+     max 19 — a wider absolute range than the hex map's); only the words hid
+     it. `COAST_VERDICTS` re-cuts the bands at the same PERCENTILES the hex
+     bands sit at (measured p10=11, p64=15, p97=18, p99=19), keeping the shape
+     of the experience rather than the numbers. Good-or-better is now 7.9% of
+     foundable against the hex map's 3.7%, inside the bar's 1–25%.
+
+     **And one trade-off had MOVED rather than vanished.** "Soil and
+     defensibility pull against each other" asserts two pairs. Soil/defence
+     survives (-0.44 against -0.54). Timber/defence does not: -0.73 on hexes,
+     -0.20 on a line, because two ocean in every ring leaves defence almost
+     flat (sd 0.58 against 0.99). But timber/HARBOUR is -0.68 on a coast — the
+     strongest pull in either world, and a better decision than the one it
+     replaces, because a stretch thick with wood is a stretch with nowhere to
+     beach a knarr and the player wants both on day one.
+
+     What is LEFT is 25, a tail of ones and twos across sixteen files, none of
+     it blocked on anything.
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
