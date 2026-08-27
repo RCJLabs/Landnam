@@ -3,15 +3,16 @@
 // two identically-placed bands to work differently and measures the gap.
 
 import { settled as settleSomewhere } from './fixtures/settle';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
-import { fromKey, key } from '../src/hex';
+import { key } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { currentMode } from '../src/modes';
 import { apply } from '../src/sim/actions';
-import { canFound, foundSettlement } from '../src/sim/site';
 import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
 import { seasonOf } from '../src/sim/calendar';
@@ -38,15 +39,11 @@ import { stream } from '../src/rng';
 import type { GameState, SiteReport } from '../src/state/types';
 
 function settled(seed: string): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  for (const k of Object.keys(state.world.tiles)) {
-    state.party.at = fromKey(k);
-    if (canFound(state, state.party.at)) break;
-  }
-  expect(canFound(state, state.party.at), `${seed}: nowhere to settle`).toBe(true);
-  expect(foundSettlement(state)).toBe(true);
-  return state;
+  // The site search is shared now — see test/fixtures/settle.ts. `pick:
+  // 'first'` keeps what this one was: the first ground that will have them,
+  // anywhere in the world, which is the bleak measurement several claims in
+  // this file are actually about. `settledWell` below is the other half.
+  return settleSomewhere(seed, { radius: Infinity, pick: 'first' });
 }
 
 /**
@@ -90,13 +87,28 @@ describe('the steading has ground of its own', () => {
   it('is a hex patch with the hall in the middle and a watch on it', () => {
     const state = settled('plots-1');
     const home = state.settlement!;
-    // Nineteen hexes at radius two.
+    // Nineteen hexes at radius two — the same COUNT on a line, which
+    // `makePlots` rolls deliberately so a coast steading has the same holdings
+    // as a hex one.
     expect(home.plots).toHaveLength(1 + 3 * PLOT_RADIUS * (PLOT_RADIUS + 1));
     const hall = home.plots.filter((p) => p.kind === 'hall');
     expect(hall).toHaveLength(1);
-    expect(hall[0]!.at).toEqual(home.at);
+    if (COAST_IS_A_LINE) {
+      // NOT "in the middle". A coast steading stands on a stretch of shore and
+      // has no ring of ground to be in the middle of — `makePlots` says so and
+      // writes `at` as a plain index, `{q: i, r: 0}`, precisely so nothing
+      // reads it as a coordinate. Asserting the hall sits on `home.at` would
+      // be asserting that two placeholders match.
+      //
+      // What survives is what the plots are FOR: one hall, one watchpost, and
+      // no two of them the same, which is what `plotsFor` and the day's labour
+      // actually read.
+      expect(hall[0]!.at.r, 'a coast plot is an index, not a coordinate').toBe(0);
+    } else {
+      expect(hall[0]!.at).toEqual(home.at);
+    }
     expect(home.plots.filter((p) => p.kind === 'watchpost')).toHaveLength(1);
-    // No two plots share a hex.
+    // No two plots share a hex — or, on a line, an index.
     expect(new Set(home.plots.map((p) => key(p.at))).size).toBe(home.plots.length);
   });
 
@@ -427,7 +439,7 @@ describe('COLONY mode', () => {
 
   it('will not open away from the steading, or with no steading at all', () => {
     const away = settled('mode-away');
-    away.party.at = { q: away.settlement!.at.q + 2, r: away.settlement!.at.r };
+    walkOff(away);
     expect(apply(away, { type: 'ENTER_COLONY' })).toBe(away);
 
     const homeless = structuredClone(newGame('mode-none'));

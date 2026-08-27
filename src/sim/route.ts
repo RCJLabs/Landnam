@@ -32,7 +32,7 @@
 // without the world having to remember it.
 
 import { makeRng, type Rng } from '../rng';
-import { PLACE_KINDS, type PlaceKind } from '../data/places';
+import { PLACE_KINDS, placeKind, type PlaceKind } from '../data/places';
 import type { Terrain } from '../state/types';
 
 /**
@@ -253,16 +253,21 @@ function fill(
   index: number,
   taken: Set<number>,
   stream_: string,
+  want?: (kind: (typeof PLACE_KINDS)[number]) => boolean,
 ): { index: number; kind: PlaceKind } | undefined {
   if (taken.has(index)) return undefined;
   const country = stopAt(seed, index).country;
   const kinds = PLACE_KINDS.filter(
-    (k) => k.seeded !== false && index >= k.minFromLanding && k.ground.includes(country),
+    (k) => k.seeded !== false && index >= k.minFromLanding && k.ground.includes(country)
+      && (want ? want(k) : true),
   );
   if (kinds.length === 0) return undefined;
   const rng = stopRng(seed, index, stream_);
   return { index, kind: kinds[rng.int(0, kinds.length - 1)]!.id };
 }
+
+/** Somewhere with people in it to fight — what a strandhögg needs. */
+const guarded = (kind: (typeof PLACE_KINDS)[number]): boolean => kind.garrison !== null;
 
 /** Every stop that has something on it, nearest first. */
 export function placesOn(seed: string): { index: number; kind: PlaceKind }[] {
@@ -277,6 +282,21 @@ export function placesOn(seed: string): { index: number; kind: PlaceKind }[] {
     for (let i = 1; i <= PLACES_NEAR; i += 1) {
       const near = fill(seed, i, new Set(out.map((p) => p.index)), 'place-near');
       if (near) { out.push(near); break; }
+    }
+  }
+
+  // SOMEWHERE TO FALL ON. `strandhogg.test.ts` holds that every world has
+  // one, and its own header says why in as many words: "a world with nothing
+  // strandable in it makes the whole verb unreachable content there, and no
+  // amount of policy fixes that. If this ever goes red, stop looking at the
+  // bot." Measured on the coast: 189 of 200. The hex map is 200 of 200 for a
+  // structural reason — it seeds one of each kind, so a monastery and a town
+  // always exist. A line that rolls each stretch has to be told.
+  if (!out.some((p) => guarded(placeKind(p.kind)))) {
+    const taken = new Set(out.map((p) => p.index));
+    for (let i = ROUTE_STOPS - 1; i > 0; i -= 1) {
+      const found = fill(seed, i, taken, 'place-guarded', guarded);
+      if (found) { out.push(found); break; }
     }
   }
 

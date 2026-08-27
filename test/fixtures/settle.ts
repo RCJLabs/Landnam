@@ -71,6 +71,22 @@ export interface SettleOptions {
    * is on hard terms would be measuring a state no player can reach.
    */
   hardship?: HardshipId;
+  /**
+   * `'best'` takes the highest-scoring ground in reach; `'first'` takes the
+   * first that will have them at all.
+   *
+   * Added for `colony.test.ts`, which carries BOTH searches on purpose and
+   * documents the difference: its `settledWell` is "what a player who read
+   * the panel and spent a week looking would end up with", and its `settled`
+   * is "the first hex that will have them, which is a different and much
+   * bleaker measurement". Several of its claims are about a POOR steading, so
+   * flattening the two would quietly re-ask them of a good one.
+   *
+   * Every other caller wanted the best, and the two families were measured
+   * against each other before being unified — see the header. This is the one
+   * place the difference was load-bearing, and it now says so.
+   */
+  pick?: 'best' | 'first';
 }
 
 /**
@@ -81,7 +97,7 @@ export interface SettleOptions {
  * in the fixture and not a case to handle.
  */
 export function settled(seed: string, options: SettleOptions = {}): GameState {
-  const { radius = 14, stock = false, hardship } = options;
+  const { radius = 14, stock = false, hardship, pick = 'best' } = options;
   const state = cloneState(hardship ? newGame(seed, hardship) : newGame(seed));
 
   if (COAST_IS_A_LINE) {
@@ -94,6 +110,7 @@ export function settled(seed: string, options: SettleOptions = {}): GameState {
         if (!canFound(state, state.party.at)) continue;
         const total = stopReport(seed, stop).total;
         if (total > score) { score = total; best = stop; }
+        if (pick === 'first') break;
       }
       if (best !== null) break;
     }
@@ -112,6 +129,7 @@ export function settled(seed: string, options: SettleOptions = {}): GameState {
         if (!canFound(state, at)) continue;
         const report = siteReport(state.world, at)!;
         if (report.total > score) { score = report.total; best = at; }
+        if (pick === 'first') break;
       }
       if (best) break;
     }

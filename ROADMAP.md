@@ -2183,10 +2183,38 @@ is written so the choice is made with both arcs visible, not by drift.
      12, p75 8, max 17. The channel is wide open; no constant needed changing;
      the probe was the problem. Third time this session.
 
-     What is LEFT is 70, and it clusters in `site` (7), `parity` (7),
-     `strandhogg` (6), `colony` (6) and `neighbours` (6). `parity` is job 3's
-     frozen port contract and must not be touched without deciding what the
-     port is owed.
+     **Then `colony` and `strandhogg`: 70 → 54, both files green on both
+     builds.** `colony`'s six were one unmigrated site search, but not one the
+     shared fixture could simply absorb: this file carries BOTH searches on
+     purpose and documents the difference — `settledWell` is "what a player
+     who read the panel and spent a week looking would end up with",
+     `settled` is "the first hex that will have them, which is a different and
+     much bleaker measurement", and several of its claims are about a POOR
+     steading. So the fixture learned `pick: 'first'` rather than flattening
+     them. Two more claims were converted rather than translated: a coast
+     steading's plots are a bag with an INDEX (`makePlots` says so and writes
+     `{q: i, r: 0}` deliberately), so "the hall is in the middle" has no
+     middle to be in — what survives is one hall, one watchpost, no two the
+     same, which is what `plotsFor` and the day's labour actually read.
+
+     **`strandhogg` needed a third worldgen guarantee, and its own test said
+     so in as many words.** The sim was already converted — on a line there is
+     no afloat, so the two ways into a place are how you ARRIVED, and
+     `party.bySea` is the gate. But `a coast worth falling on` holds that
+     EVERY world has something strandable, and its header explains why: "a
+     world with nothing strandable in it makes the whole verb unreachable
+     content there, and no amount of policy fixes that. If this ever goes red,
+     stop looking at the bot." Measured: 189 of 200 coasts. The hex map is 200
+     of 200 structurally, because it seeds one of each kind and so always has
+     a monastery and a town; a line that rolls each stretch has to be told.
+     Now 200 of 200, and the fill prefers a guarded kind rather than raising
+     any odds.
+
+     What is LEFT is 54, and it clusters in `site` (7), `parity` (7),
+     `neighbours` (6), `ways` (3), `rival` (3) and `coast` (3, its own
+     flag-off assertions, which fail on a coast build by design). `parity` is
+     job 3's frozen port contract and must not be touched without deciding
+     what the port is owed.
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -2942,6 +2970,41 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-27 — The steading and the strandhögg** — Two more coast clusters,
+  both files now green on both builds. 70 → 54 overall, 26 files to 22.
+
+  `colony`'s six were one unmigrated site search — but not one the shared
+  fixture could simply absorb. That file carries BOTH searches on purpose and
+  says why: `settledWell` is "what a player who read the panel and spent a
+  week looking would end up with", and `settled` is "the first hex that will
+  have them, which is a different and much bleaker measurement". Several of
+  its claims are about a poor steading, so flattening the two would quietly
+  re-ask them of a good one. The fixture learned `pick: 'first'` instead, and
+  the option documents the one place the difference is load-bearing.
+
+  Two of its claims were converted rather than translated. A coast steading's
+  plots are a bag with an INDEX — `makePlots` writes `{q: i, r: 0}` on purpose
+  so nothing reads it as a coordinate — so "a hex patch with the hall in the
+  middle" has no middle to be in. What survives is the part the sim reads: the
+  same number of plots, one hall, one watchpost, no two alike.
+
+  **The strandhögg needed a third worldgen guarantee, and its own test said so
+  before I did.** The sim was already converted: on a line there is no afloat,
+  so the two ways into a place are not water and land but how you ARRIVED, and
+  `party.bySea` — set for the one day after a row — is the gate. What was
+  missing was somewhere to do it. `a coast worth falling on` holds that every
+  world has something strandable, and its header is explicit: "a world with
+  nothing strandable in it makes the whole verb unreachable content there, and
+  no amount of policy fixes that. If this ever goes red, stop looking at the
+  bot."
+
+  Measured: 189 of 200 coasts had a guarded place; the hex map has 200 of 200
+  for a structural reason, since it seeds one of each kind and therefore always
+  has a monastery and a town. A line that rolls each stretch has to be told. So
+  the fill now prefers a guarded kind when a coast has none — 200 of 200,
+  without raising any odds. Three guarantees now: something to go to, something
+  near enough to reach in the first season, and somewhere worth falling on.
 
 - **2026-08-27 — Places, and five things nothing was asking about** — The
   `places` cluster on a coast, 15 failures down to 0, and the file is now
