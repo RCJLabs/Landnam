@@ -7,6 +7,7 @@
 // the run's ending. Views only.
 
 import { GUIDE } from '../../data/guide';
+import { COAST_IS_A_LINE } from '../../sim/flags';
 import { button, el } from '../svg';
 import { hardshipById, type HardshipId } from '../../data/hardship';
 
@@ -110,7 +111,11 @@ export function renderGuide(onClose: () => void): HTMLElement {
   for (const section of GUIDE) {
     list.append(
       el('h3', {}, [section.title]),
-      el('p', { class: 'event-body guide-body' }, [section.body]),
+      // The coast wording where the section has one — the guide names
+      // buttons plainly, and on a coast half of them are different buttons.
+      el('p', { class: 'event-body guide-body' }, [
+        (COAST_IS_A_LINE ? section.coast : undefined) ?? section.body,
+      ]),
     );
   }
   card.append(list, button('Back', onClose, { class: 'primary wide' }));

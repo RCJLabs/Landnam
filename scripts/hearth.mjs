@@ -94,10 +94,31 @@ const survey = () => page.evaluate(() => {
       building: (g.getAttribute('class') ?? '').includes('building'),
       w: Math.round(r.width),
       h: Math.round(r.height),
-      // On the picture, not just in the document.
+      // INSIDE the picture, not merely overlapping it.
+      //
+      // This asked `r.right > box.left && r.left < box.right`, which is an
+      // OVERLAP test: it passes a house hanging off the edge as long as any
+      // sliver is still on screen. Containment is the claim the name makes,
+      // so containment is what it asks now.
+      //
+      // BUT BE HONEST ABOUT WHAT THIS STILL CANNOT SEE. It did not catch the
+      // bug that prompted it — a longhouse drawn four units past the left of
+      // the viewBox — and tightening it did not either, measured by putting
+      // the broken geometry back and watching this pass. The reason is
+      // `preserveAspectRatio: 'xMidYMid meet'` in `steadingView`: the viewBox
+      // is letterboxed INSIDE the element, so content just outside the
+      // viewBox still lands inside the element rect this reads. To catch it
+      // here the check would have to map through the viewBox rather than
+      // trust `getBoundingClientRect`.
+      //
+      // That bug is caught in `test/steading.test.ts` instead, where it is
+      // pure arithmetic — `slotX(0)` against the widest roof — and needs no
+      // browser at all. Verified to fail on the old geometry. This stays
+      // because containment is still the right question for a house that is
+      // genuinely off-screen; it is simply not the whole of the question.
       inFrame: r.width > 0 && r.height > 0
-        && r.right > box.left && r.left < box.right
-        && r.bottom > box.top && r.top < box.bottom,
+        && r.left >= box.left - 0.5 && r.right <= box.right + 0.5
+        && r.top >= box.top - 0.5 && r.bottom <= box.bottom + 0.5,
     };
   });
   const folk = [...svg.querySelectorAll('g.yard-folk')].map((g) => {

@@ -52,6 +52,20 @@ export interface LessonDef {
   body: string;
   /** What the player should take away, in one line under the body. */
   point: string;
+  /**
+   * The same lesson, told for a coast.
+   *
+   * Carried as DATA rather than branched on a flag, because nothing in
+   * `data/` imports from `sim/` and that boundary is worth more than the
+   * convenience — the renderer picks (see `render/cards/interrupt.ts`).
+   *
+   * It is a rewording and not a word-swap, deliberately. Substituting
+   * "stretch" for "hex" would ship a falsehood: a hex is one day and a
+   * stretch is a whole leg, two to five, which is why the road button says
+   * "On up the coast · 2d". A lesson that misprices the day teaches the one
+   * thing this game is about wrong.
+   */
+  coast?: { body?: string; point?: string };
   when: LessonWhen[];
 }
 
@@ -73,6 +87,10 @@ export const LESSONS: LessonDef[] = [
     title: 'The First Day',
     body: 'Six of you came off the knarr with what you could carry, and the country in front of you is nobody\'s. Every hex you cross is a day of your life, and the days are what run out first.',
     point: 'Tap a marked hex to walk. Tap Act for everything else you can do with a day.',
+    coast: {
+      body: 'Six of you came off the knarr with what you could carry, and the coast in front of you is nobody\'s. Every stretch of it costs days to walk — some more than others — and the days are what run out first.',
+      point: 'Walk on up the coast, or open the Chart and tap a stretch. Tap Act for everything else you can do with a day.',
+    },
     when: [{ c: 'dayMin', day: 2 }],
   },
   {

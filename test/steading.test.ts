@@ -15,11 +15,14 @@ vi.mock('../src/sim/flags', () => ({ COAST_IS_A_LINE: true }));
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
 import {
-  GROUND_Y, SLOT_W, YARD_H, YARD_W, groundOf, sizeOf, slotX, steadingScene,
+  GROUND_Y, HOUSE_HALF, HOUSE_REACH, ROOF_OVERSAIL, SIZE_MAX, SLOT_W, YARD_H, YARD_W,
+  groundOf, sizeOf, slotX, steadingScene,
 } from '../src/render/steading';
 import { BECK_SHARE, canFound, foundSettlement, stopReport } from '../src/sim/site';
 import { learnStop, standingAt } from '../src/sim/coast';
 import { makePlots } from '../src/sim/colony';
+import { BUILDINGS } from '../src/data/buildings';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { plotsFor } from '../src/sim/colony';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { buildingById } from '../src/data/buildings';
@@ -325,5 +328,60 @@ describe('the plots the hex map still makes', () => {
     );
     expect(plots.length).toBeGreaterThan(6);
     expect(plots.filter((p) => p.kind === 'hall')).toHaveLength(1);
+  });
+});
+
+describe('every house is inside its own yard', () => {
+  /**
+   * The bug this pins, found by looking at a screenshot rather than at a bar.
+   *
+   * `slotX` inset the first slot by `SLOT_W * 0.6` — a number with no
+   * relationship to how wide a house actually is. `steadingView` drew the
+   * walls at `SLOT_W * 0.42` with the roof oversailing by five, and scaled the
+   * whole thing by up to `SIZE_MAX`. At full size that reaches 48.7 from the
+   * centre against an inset of 44.4, so a large FIRST building — a longhouse,
+   * the usual first thing anybody raises — hung four units off the left of the
+   * viewBox and was drawn half off the page.
+   *
+   * The browser bar missed it because it asked whether the house overlapped
+   * the picture rather than whether it was inside it. Both are fixed; this is
+   * the half that does not need a browser, because the arithmetic is the
+   * whole of the claim.
+   */
+  it('leaves room for the widest roof at both ends', () => {
+    // The reach is what the view actually draws: half the walls, plus the
+    // oversail, at the largest scale `sizeOf` will ever return.
+    expect(HOUSE_REACH).toBeCloseTo((HOUSE_HALF + ROOF_OVERSAIL) * SIZE_MAX, 5);
+    expect(slotX(0), 'the first slot is nearer the edge than a roof is wide')
+      .toBeGreaterThanOrEqual(HOUSE_REACH);
+  });
+
+  it('holds for every building the game can raise, in any order', () => {
+    for (const def of BUILDINGS) {
+      const size = sizeOf(def);
+      expect(size, `${def.id} is drawn larger than the layout allows`)
+        .toBeLessThanOrEqual(SIZE_MAX);
+      // First in the yard is the tight case: nothing to the left of it.
+      const leftmost = slotX(0) - (HOUSE_HALF + ROOF_OVERSAIL) * size;
+      expect(leftmost, `${def.id} raised first hangs off the left edge`)
+        .toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('gives the last house as much room as the first', () => {
+    const state = cloneState(newGame('yard-width'));
+    if (COAST_IS_A_LINE) { for (let s = 0; s < 26; s += 1) learnStop(state, s); }
+    else { for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen'; }
+    // A yard with several things in it, built through the real verb.
+    for (let stop = 0; stop < 26 && !state.settlement; stop += 1) {
+      state.party.stop = stop;
+      if (canFound(state, state.party.at)) foundSettlement(state);
+    }
+    if (!state.settlement) return;
+    state.settlement.built = BUILDINGS.slice(0, 4).map((b) => b.id);
+    const scene = steadingScene(state);
+    const last = scene.raised[scene.raised.length - 1]!;
+    expect(last.x + (HOUSE_HALF + ROOF_OVERSAIL) * last.size, 'the last house runs off the right')
+      .toBeLessThanOrEqual(scene.width);
   });
 });

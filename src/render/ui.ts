@@ -2,6 +2,7 @@
 // Views only — every button dispatches an Action and re-renders from state.
 
 import type { Action } from '../sim/actions';
+import { COAST_IS_A_LINE } from './../sim/flags';
 import type { GameState } from '../state/types';
 import { daysUntilWinter, effectsOn, seasonOf } from '../sim/calendar';
 import { foodPerDay, firewoodPerNight } from '../sim/upkeep';
@@ -488,7 +489,14 @@ export function renderHint(state: GameState): HTMLElement {
     return el('div', { class: 'hint place' }, [`${body}${whose ? ` ${whose}` : ''}`]);
   }
   if (!state.settlement) {
-    return el('div', { class: 'hint' }, ['Find ground worth holding · tap a marked hex to travel']);
+    // There are no hexes to tap on a coast, and this is the line under the
+    // picture for the whole of the walking half of the game — the first
+    // instruction a player gets, telling them to do something impossible.
+    return el('div', { class: 'hint' }, [
+      COAST_IS_A_LINE
+        ? 'Find ground worth holding · walk on up the coast, or open the Chart'
+        : 'Find ground worth holding · tap a marked hex to travel',
+    ]);
   }
   const out = expeditionLine(state);
   if (out) return el('div', { class: 'hint out' }, [out]);

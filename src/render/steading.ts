@@ -74,14 +74,40 @@ export interface SteadingScene {
  * number that says so. Kept to a narrow range — the point is that a hall
  * reads as bigger than a byre, not that a byre is a speck.
  */
+export const SIZE_MIN = 0.6;
+export const SIZE_MAX = 1.35;
+
 export function sizeOf(def: BuildingDef | undefined): number {
   const cost = def?.works ?? 4;
-  return Math.max(0.6, Math.min(1.35, 0.55 + cost / 22));
+  return Math.max(SIZE_MIN, Math.min(SIZE_MAX, 0.55 + cost / 22));
 }
+
+/**
+ * The geometry of one house, owned HERE rather than in the view.
+ *
+ * It was owned in both, and that was the bug: `steadingView` drew walls at
+ * `SLOT_W * 0.42` with the roof oversailing by five, while the layout below
+ * inset the first slot by `SLOT_W * 0.6` — a number that had no relationship
+ * to either. At full size the roof reaches 48.7 from its own centre and the
+ * first slot stood at 44.4, so a large first building hung four units off the
+ * left of the viewBox. A longhouse, raised first, was drawn half off the page.
+ *
+ * The `hearth` bar did not catch it, and — measured rather than assumed —
+ * tightening it from an overlap test to a containment one did not catch it
+ * either: `steadingView` fits the viewBox with `xMidYMid meet`, so content
+ * just outside the viewBox still lands inside the element rect the bar reads.
+ * The bar is tightened anyway because containment is the question its name
+ * asks, but the check that actually holds this is in `test/steading.test.ts`,
+ * where it is arithmetic and needs no browser.
+ */
+export const HOUSE_HALF = SLOT_W * 0.42;
+export const ROOF_OVERSAIL = 5;
+/** The furthest any house reaches from its own centre, at its largest. */
+export const HOUSE_REACH = (HOUSE_HALF + ROOF_OVERSAIL) * SIZE_MAX;
 
 /** Where a building stands in the yard, by its place in the order raised. */
 export function slotX(index: number): number {
-  return SLOT_W * 0.6 + index * SLOT_W;
+  return HOUSE_REACH + index * SLOT_W;
 }
 
 /**
@@ -128,6 +154,10 @@ export function steadingScene(state: GameState): SteadingScene {
     raised,
     folk: folkIn(state, home),
     ground: groundOf(home),
+    // A whole slot past the last house. Deliberately more generous than the
+    // reach: `steading.test.ts` pins it, the queued building needs somewhere
+    // to stand, and the folk are spread across the full width. The LEFT inset
+    // is what was wrong, and it is `slotX` that fixes it.
     width: Math.max(YARD_W, slotX(raised.length) + SLOT_W),
   };
 }

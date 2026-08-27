@@ -7,6 +7,7 @@
 // the run's ending. Views only.
 
 import type { LessonDef } from '../../data/lessons';
+import { COAST_IS_A_LINE } from '../../sim/flags';
 import type { GameState } from '../../state/types';
 import { button, el } from '../svg';
 import type { Dispatch } from '../ui';
@@ -48,8 +49,15 @@ export function renderEventCard(state: GameState, dispatch: Dispatch): HTMLEleme
 export function renderLesson(lesson: LessonDef, onDismiss: () => void): HTMLElement {
   const card = el('div', { class: 'card event-card lesson-card' }, [
     el('h2', {}, [lesson.title]),
-    el('p', { class: 'event-body' }, [lesson.body]),
-    el('p', { class: 'lesson-point' }, [lesson.point]),
+    // The coast wording when there is one. A lesson is the FIRST prose a new
+    // player reads, and on a coast build the hex one told them to tap a
+    // marked hex — on a map with no hexes to tap.
+    el('p', { class: 'event-body' }, [
+      (COAST_IS_A_LINE ? lesson.coast?.body : undefined) ?? lesson.body,
+    ]),
+    el('p', { class: 'lesson-point' }, [
+      (COAST_IS_A_LINE ? lesson.coast?.point : undefined) ?? lesson.point,
+    ]),
     button('Onward', onDismiss, { class: 'primary wide' }),
   ]);
   return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);

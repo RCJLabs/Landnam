@@ -4,7 +4,7 @@ import { createFieldPaint } from './fieldOil';
 import { figure } from './figures';
 import { svgEl } from './svg';
 import {
-  GROUND_Y, SLOT_W, YARD_H, steadingScene, type Raised, type Standing,
+  GROUND_Y, HOUSE_HALF, ROOF_OVERSAIL, YARD_H, steadingScene, type Raised, type Standing,
 } from './steading';
 import { countryHere } from '../sim/coast';
 import type { GameState } from '../state/types';
@@ -29,7 +29,9 @@ function house(r: Raised): SVGGElement {
     class: `raised raised-${r.id}${r.done < 1 ? ' building' : ''}`,
     transform: `translate(${r.x} ${GROUND_Y}) scale(${r.size})`,
   });
-  const w = SLOT_W * 0.42;
+  // From `steading.ts`, which lays the slots out with the same number. Two
+  // copies of a width is how a building ends up off the edge of its own yard.
+  const w = HOUSE_HALF;
   const wall = 22;
   const roof = 30;
 
@@ -56,7 +58,7 @@ function house(r: Raised): SVGGElement {
   }));
   // Thatched roof, oversailing the walls the way a real one does.
   g.append(svgEl('path', {
-    d: `M ${-w - 5} ${-wall} L 0 ${-wall - roof} L ${w + 5} ${-wall} Z`,
+    d: `M ${-w - ROOF_OVERSAIL} ${-wall} L 0 ${-wall - roof} L ${w + ROOF_OVERSAIL} ${-wall} Z`,
     fill: '#7a6647', stroke: '#3a3324', 'stroke-width': 1.2,
   }));
   // A lit door: a steading with people in it.

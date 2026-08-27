@@ -77,16 +77,27 @@ describe('the lessons are content, not code', () => {
     const CONTROLS = /\b(tap|button|screen|menu|press|click)\b/i;
     for (const lesson of LESSONS) {
       expect(lesson.body).not.toMatch(CONTROLS);
+      // The coast wording is held to the same rule — it is the one players
+      // read once the flag flips, so a control name smuggled into it would
+      // break the same separation the hex body is guarded for.
+      if (lesson.coast?.body) expect(lesson.coast.body, lesson.id).not.toMatch(CONTROLS);
     }
     expect(LESSONS.some((l) => CONTROLS.test(l.point))).toBe(true);
   });
 
   it('declares no effects of any kind — there is nothing to declare', () => {
+    // NAMED rather than counted. This asserted a length of five, which says
+    // how many keys there are and not which — a lesson that dropped `when`
+    // and gained `effects` would have passed it. Naming them is the claim the
+    // test's own title makes, and it is what let `coast` (prose, and the only
+    // addition since) be told apart from an effect rather than merely counted.
+    const ALLOWED = ['id', 'title', 'body', 'point', 'when', 'coast'];
     for (const lesson of LESSONS) {
-      expect(Object.keys(lesson)).toEqual(
-        expect.arrayContaining(['id', 'title', 'body', 'point', 'when']),
-      );
-      expect(Object.keys(lesson)).toHaveLength(5);
+      expect(Object.keys(lesson).sort(), `${lesson.id} carries something new`)
+        .toEqual(Object.keys(lesson).filter((k) => ALLOWED.includes(k)).sort());
+      for (const need of ['id', 'title', 'body', 'point', 'when']) {
+        expect(Object.keys(lesson), `${lesson.id} is missing ${need}`).toContain(need);
+      }
     }
   });
 });
