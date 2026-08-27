@@ -22,7 +22,19 @@ const ENTRY = 'app.html';
 // Published to BOTH, because GitHub Pages can be pointed at the branch root or
 // at /docs and we do not get to see which one is set. Two copies of a 181 kB
 // file is a cheap price for not being able to check a dropdown.
-const TARGETS = ['.', 'docs'];
+//
+// An optional argument publishes into a SUBFOLDER of both instead:
+// `node scripts/publish.mjs coast` writes coast/index.html and
+// docs/coast/index.html, leaving the live game where it is. That is how a
+// build behind a flag gets looked at on a phone without replacing the game
+// everyone else opens — Phase 8's whole conversion lives behind
+// VITE_COAST=1, so an ordinary publish shows none of it.
+const where = process.argv[2];
+if (where && !/^[a-z][a-z0-9-]*$/.test(where)) {
+  console.error(`publish: "${where}" is not a folder name I will write to`);
+  process.exit(1);
+}
+const TARGETS = where ? [where, `docs/${where}`] : ['.', 'docs'];
 
 // Guard the mistake above: if the source entry ever stops looking like a
 // source entry, something has overwritten it and the build is not to be

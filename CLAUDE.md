@@ -85,3 +85,10 @@ build stamp.
 
 Run `npm run publish` in any commit that should change what is live — a
 source-only commit will otherwise leave the site on the old build.
+
+**A build behind a flag gets its own folder.** Phase 8's whole side-on
+conversion lives behind `VITE_COAST=1`, so `npm run publish` shows none of it —
+it builds the default, which is still the hex game. `npm run publish:coast`
+writes the coast build to `coast/index.html` and `docs/coast/index.html`,
+leaving the live game exactly where it is. Two pages, one branch: `/` is what
+players open, `/coast/` is what the conversion looks like today.
