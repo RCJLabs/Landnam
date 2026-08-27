@@ -23,6 +23,7 @@ import { WATCH_QUIET } from '../data/jobs';
 import { effectiveReport, standsFor } from './colony';
 import { sickCount } from './cold';
 import { checkRunEnd } from './upkeep';
+import { COAST_IS_A_LINE } from './flags';
 import { countryHere } from './coast';
 
 /** Chance an event fires after a travel action. */
@@ -48,6 +49,10 @@ export const BASE_EVENT_CHANCE = 0.19;
 export const SETTLING_IN_DAYS = 6;
 
 function nearWater(state: GameState): boolean {
+  // Every stretch of a coast is coast — the line IS the shoreline, which is
+  // why `canFish` returns true unconditionally on it. The hex map made this a
+  // real question because most of the island is inland.
+  if (COAST_IS_A_LINE) return true;
   const here = state.world.tiles[key(state.party.at)];
   if (here?.river || here?.terrain === 'shore') return true;
   return neighbors(state.party.at).some((n) => state.world.tiles[key(n)]?.terrain === 'ocean');
@@ -63,6 +68,12 @@ export function conditionHolds(state: GameState, condition: Condition): boolean 
   const tile = state.world.tiles[key(state.party.at)];
   switch (condition.c) {
     case 'terrain':
+      // `countryHere`, because on a coast `party.at` is the frozen landing
+      // hex and this read the landing's terrain from every stretch of the
+      // line. Not a small miss: `terrain` is the commonest condition in
+      // `data/events`, so the whole drawable pool was pinned to whatever the
+      // beach happened to be, for the length of a saga.
+      if (COAST_IS_A_LINE) return condition.any.includes(countryHere(state));
       return tile !== undefined && condition.any.includes(tile.terrain);
     case 'season':
       return condition.any.includes(seasonOf(state.day));

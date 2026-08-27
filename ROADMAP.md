@@ -2096,12 +2096,97 @@ is written so the choice is made with both arcs visible, not by drift.
      said. Rule 2 still holds: a coast with no stretch free simply has no
      ruin, quietly.
 
-     What is LEFT is no longer fixture noise. The remaining 88 cluster in
-     `places` (15), `site` (7), `parity` (7), `strandhogg` (6), `colony` (6)
-     and `neighbours` (6) — tests that ask hex questions on purpose
-     ("Threefires is 24 hexes off", "expected 'shore' to be 'meadow'"). Those
-     are the conversion, and they are now visible instead of buried under
-     thirty copies of the same helper reporting "nothing foundable".
+     **Then `places`, the biggest of what was left: 88 → 70, and that file is
+     now 38/38 on BOTH builds.** It took four sim defects with it, none of
+     which any test was asking about:
+
+     - **Duplicate place ids.** The hex seeder walks `PLACE_KINDS` once and
+       puts down at most one apiece, so `pl_<kind>` is a unique name. The
+       coast asks every stretch independently and a coast with two towns is
+       ordinary — and the id template was carried across unchanged. Two places
+       called `pl_town`; `placeById` returns the first; a band standing in the
+       second was told `away` by the first, twelve stretches back. Now
+       `placeIdFor` puts the address in the name on a line.
+     - **The band's own ruin, unreachable and unnamed.** `abandonSteading`
+       filed it under `ruin:<hex>` with no stop — so on a coast every hall
+       ever walked out of was `ruin:0,0`, and none could be stood on. The
+       ghost's ruin, one commit earlier, was the same bug. `ruinIdFor` and a
+       carried `stop`.
+     - **`tradeBlocker` compared hexes.** `sackBlocker` was converted in 8.2c;
+       its sibling four functions down, asking the identical question, was
+       not. Every market in the world answered "you are not here".
+     - **`arriveHome` compared hexes**, and in the generous direction: on a
+       coast `home.at` and `party.at` are both the frozen landing hex, so an
+       expedition folded itself back into a steading it was twelve stretches
+       away from.
+     - **`conditionHolds` read the landing's terrain from everywhere.**
+       `terrain` is the commonest condition in `data/events`, so the entire
+       drawable card pool was pinned to whatever the beach happened to be for
+       the length of a saga. One call site in that file had been converted in
+       8.2c and this one had not.
+
+     And one worldgen defect with a bar attached. **291 of 399 coast places
+     stood on ground their own kind forbids** — iron seams on the open strand,
+     monasteries in bogs — because `placeAt` never consulted `kind.ground`,
+     which the hex seeder has always honoured. Fixed, and the fix immediately
+     broke `route.test.ts`'s "every coast gives the band somewhere to go":
+     forest is a sixth of every coast and no kind will stand on it, so four
+     coasts in two hundred fell below the floor. **The bar was not lowered.**
+     `PLACES_FLOOR` guarantees it instead — the far end first, where
+     `richness` already says the good things are. The hex seeder never needed
+     one because it SEARCHES the island; asking each stretch on its own is a
+     different failure with the same remedy, and raising the odds would have
+     moved every coast to fix four.
+
+     **And then the procession bar caught what the unit tests could not.** It
+     walked twelve stretches and saw nothing — the monastery it used to sight
+     at stretch 5 wants shore, and that stretch is not. Measured over two
+     hundred coasts: the chance of anything standing within eight stretches
+     had fallen from 72% to 42%. The ground rule bites hardest CLOSE IN, where
+     `minFromLanding` has already narrowed the kinds to the two that want
+     shore — which is exactly where a band spends its first season.
+
+     That is a bug this project has had before, in the other coordinate
+     system: the hex map floored every kind and ceilinged none, so places sat
+     a median of 30 hexes out and 0.06 of them were ever seen. So `PLACES_NEAR`
+     is the same remedy — at least one place within eight stretches, filled
+     nearest-out rather than farthest-in. Within eight: **72% → 99%**; within
+     thirteen: 95% → 99%; median six per coast; nothing on forbidden ground.
+     Better than before the correctness fix on every axis.
+
+     One structural consequence, and `coastWalk.test.ts` named it exactly:
+     "two derivations of the same fact would be two facts". The guarantees
+     live in `placesOn`, so `placeAt` stopped agreeing with the world. It now
+     DELEGATES to `placesOn` rather than rolling its own answer — one
+     derivation, asked two ways.
+
+     **`scripts/bars.mjs` had a hole of its own**, found by falling into it.
+     It runs the first twelve bars against whatever is in `dist/` and puts the
+     ordinary build back at the END — correct for as long as nothing else ever
+     built. A run straight after `npm run publish:coast` reported six red
+     bars: `sea`, `pinch`, `way-look`, `repaint`, `steading` — precisely the
+     five a coast has no subject for — plus `landscape` falling over. Six
+     false failures. It now builds the ordinary page first and refuses to run
+     if that build fails. All 15 pass.
+
+     `test/fixtures/stand.ts` grew to six verbs along the way — `stepOff` and
+     `standIn` joined the first four, the latter because a line cannot be
+     PAINTED, only walked to, and painting the tile underfoot is how every
+     terrain-conditioned test set itself up.
+
+     **And one instrument that was wrong again.** Measuring word-of-mouth
+     reach from `neighbours[0]` said 12 of 203 places were tellable on a coast
+     and the channel was dead. `neighbours[0]` is the one nearest the LANDING,
+     and coast places skew far out by the richness curve — it is the neighbour
+     structurally least likely to have anything to say. From each place's
+     NEAREST neighbour the walk is a median of 6 days against `TOLD_RANGE`'s
+     12, p75 8, max 17. The channel is wide open; no constant needed changing;
+     the probe was the problem. Third time this session.
+
+     What is LEFT is 70, and it clusters in `site` (7), `parity` (7),
+     `strandhogg` (6), `colony` (6) and `neighbours` (6). `parity` is job 3's
+     frozen port contract and must not be touched without deciding what the
+     port is owed.
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -2857,6 +2942,88 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-27 — Places, and five things nothing was asking about** — The
+  `places` cluster on a coast, 15 failures down to 0, and the file is now
+  38/38 on BOTH builds. Overall 88 → 70. Almost none of it turned out to be
+  test work.
+
+  Four sim defects, all one family — the hex is baked into the address, and on
+  a coast the hex is a frozen placeholder:
+
+  - **Two places called `pl_town`.** The hex seeder walks `PLACE_KINDS` once
+    and puts down at most one apiece, so the kind is a unique name; the coast
+    asks every stretch independently and two towns is ordinary. The template
+    came across unchanged. `placeById` returns the first match, so a band
+    standing in the second town asked to deal and was told `away` by the
+    first, twelve stretches back. Nine failures, one line.
+  - **A band could not stand on its own abandoned posts.** `abandonSteading`
+    filed the ruin under `ruin:<hex>` with no `stop`, so on a coast every hall
+    ever walked out of was `ruin:0,0` and none of them reachable. Yesterday's
+    ghost ruin was the same bug in a different file.
+  - **`tradeBlocker` compared hexes** while `sackBlocker`, four functions up
+    and asking the identical question, was converted in 8.2c. Every market in
+    the world answered "you are not here".
+  - **`arriveHome` compared hexes**, generously: both sides are the frozen
+    landing hex, so an expedition folded itself back into a steading twelve
+    stretches away.
+  - **`conditionHolds` read the beach's terrain from everywhere on the coast.**
+    `terrain` is the commonest condition in `data/events`, so the whole
+    drawable card pool was pinned to whatever the landing happened to be for
+    the length of a saga. One call site in that same file had been converted
+    and this one had not.
+
+  And a worldgen defect with a bar attached: **291 of 399 coast places stood
+  on ground their own kind forbids** — iron seams on the open strand,
+  monasteries in bogs — because `placeAt` never read `kind.ground`, which the
+  hex seeder has always honoured. Fixing it broke `route.test.ts`'s "every
+  coast gives the band somewhere to go", since forest is a sixth of every
+  coast and nothing will stand on it. The bar was not lowered: `PLACES_FLOOR`
+  guarantees the floor instead, far end first where `richness` already puts
+  the good things. The hex seeder never needed a guarantee because it searches
+  the island; raising the odds would have moved every coast to fix four.
+
+  `test/fixtures/stand.ts` is six verbs now. `stepOff` for the tests whose
+  subject is the refusal, and `standIn` because a line cannot be PAINTED, only
+  walked to — writing terrain into the tile underfoot is how every
+  terrain-conditioned test set itself up, and it silently stopped working the
+  moment `conditionHolds` learned to read the stop.
+
+  **And the instrument was wrong a third time this session.** Word-of-mouth
+  reach measured from `neighbours[0]` said 12 of 203 places were tellable and
+  the channel was dead on a coast. `neighbours[0]` is the neighbour nearest
+  the LANDING, and coast places skew far out by the richness curve — the one
+  probe least likely to see anything. From each place's nearest neighbour the
+  walk is a median of 6 days against `TOLD_RANGE`'s 12, p75 8, max 17. Wide
+  open. No constant changed.
+
+  Two claims were withdrawn on a line rather than translated, and said so out
+  loud: "a mountain in the way hides what is behind it" has no subject when
+  the country runs in one direction (the limit it protects is still held, in
+  days, by "stops at the edge of what can be picked out"), and "at most one of
+  each kind" becomes "at most one thing per stretch", which is what makes a
+  stop a usable address.
+
+  **The procession bar then caught what no unit test could**: it walked twelve
+  stretches and saw nothing. Honouring `kind.ground` had cost the NEAR coast
+  most — anything within eight stretches fell from 72% of coasts to 42%,
+  because close in, `minFromLanding` has already narrowed the kinds to the two
+  that want shore. That is where the first season is spent. `PLACES_NEAR`
+  guarantees one place within eight stretches, filled nearest-out: 72% → 99%
+  within eight, 95% → 99% within thirteen, nothing on forbidden ground.
+  Better than before the fix on every axis, and the bar now sights a wreck
+  from stretch 2.
+
+  Putting the guarantees in `placesOn` broke a claim `coastWalk.test.ts` makes
+  precisely — "two derivations of the same fact would be two facts" — so
+  `placeAt` now delegates to `placesOn` instead of rolling its own answer.
+
+  And `scripts/bars.mjs` had a hole found by falling into it: it runs the
+  first twelve bars against whatever sits in `dist/`, restoring the ordinary
+  build only at the END. Run straight after `npm run publish:coast` it
+  reported six red bars — the five a coast has no subject for, plus
+  `landscape`. All false. It builds the ordinary page first now, and refuses
+  to run if that fails. All 15 pass.
 
 - **2026-08-27 — One way to stand somewhere, and a grave nobody could reach**
   — The site fixture's sequel, and it played out the same way twice over.

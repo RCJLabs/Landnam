@@ -15,6 +15,10 @@ const BARS = [
   ['repaint', []], ['steading', []], ['reach', []], ['reach', ['320x568']],
 ];
 
+const build = (env) => spawnSync('npm', ['run', 'build'], {
+  encoding: 'utf8', env: { ...process.env, ...env },
+});
+
 let bad = 0;
 let ran = 0;
 function bar(name, args, label = args.length ? `${name} ${args.join(' ')}` : name) {
@@ -29,6 +33,21 @@ function bar(name, args, label = args.length ? `${name} ${args.join(' ')}` : nam
   console.log(`  FAIL  ${label} (exit ${run.status}) — ${said}`);
 }
 
+// BUILD THE ORDINARY PAGE FIRST, rather than trusting whatever is in `dist/`.
+//
+// This ran the first twelve against whatever the last command happened to
+// leave there, and the tail of this script has always put the ordinary build
+// back — so it was correct as long as nothing else ever built. Then
+// `npm run publish:coast` arrived, and a run straight after it reported six
+// red bars: `sea`, `pinch`, `way-look`, `repaint` and `steading` are exactly
+// the five the coast has no subject for, plus `landscape` falling over. Six
+// false failures, and the script's own comment below warns about precisely
+// this hazard in the other direction.
+if (build({ VITE_COAST: '' }).status !== 0) {
+  console.error('bars: the ordinary build did not build — nothing was measured.');
+  process.exit(2);
+}
+
 for (const [name, args] of BARS) bar(name, args);
 
 // The coast's three bars need a build of the COAST, which is not
@@ -36,9 +55,6 @@ for (const [name, args] of BARS) bar(name, args);
 // the twelve above and get their own build here, with the ordinary one put
 // back afterwards: leaving a coast build in `dist/` would be a quiet way for
 // one to reach somebody's browser.
-const build = (env) => spawnSync('npm', ['run', 'build'], {
-  encoding: 'utf8', env: { ...process.env, ...env },
-});
 if (build({ VITE_COAST: '1' }).status !== 0) {
   bad += 3; ran += 3;
   console.log('  FAIL  strip, procession, hearth — the coast build did not build');

@@ -42,6 +42,43 @@ const PLACE_MIN_GAP = 5;
  * this with the same derived stream `newGame` uses, so a save from before
  * places existed gains exactly the places its seed would have been born with.
  */
+/**
+ * The id a place is filed under.
+ *
+ * `pl_<kind>` was safe for exactly as long as the hex seeding below was the
+ * only seeding there was: it walks `PLACE_KINDS` once and puts down AT MOST
+ * ONE of each, so the kind is a unique name. The coast does not work that way
+ * — `placesOn` asks every stretch independently whether something stands
+ * there, and a coast with two towns on it is ordinary. The id template was
+ * carried across unchanged, and the result was two places called `pl_town`.
+ *
+ * That is not a cosmetic clash. `placeById` returns the FIRST match, so a band
+ * standing in the second town asked to deal and was told `away` — by the first
+ * town, twelve stretches back, which it was indeed away from. Nine of
+ * `places.test.ts`'s coast failures were this one line.
+ *
+ * So on a line the address goes in the name, because on a line the stop IS the
+ * address. Nothing needs migrating: the coast worldgen has only ever run
+ * behind a flag that ships off, so no save in the world carries these ids.
+ */
+export function placeIdFor(kind: string, at: { hex?: Hex; stop?: number }): string {
+  if (COAST_IS_A_LINE) return `pl_${kind}_${at.stop ?? 0}`;
+  return `pl_${kind}`;
+}
+
+/**
+ * The id a band's own abandoned hall is filed under.
+ *
+ * Same fault, one street over, and worse: on a coast `settlement.at` is the
+ * frozen landing hex, so every steading ever walked out of was filed under the
+ * same `ruin:0,0` — and carried no `stop`, which made it unreachable as well
+ * as unnamed. A band that walked out could not stand on its own posts.
+ */
+export function ruinIdFor(at: { hex?: Hex; stop?: number }): string {
+  if (COAST_IS_A_LINE) return `ruin:${at.stop ?? 0}`;
+  return `ruin:${key(at.hex!)}`;
+}
+
 export function seedPlaces(world: World, rng: Rng, seed?: string): Place[] {
   // On the coast, the places are already decided — `route.placeAt` derives
   // them from `(seed, stop)`, so there is nothing to search for and no
@@ -50,7 +87,7 @@ export function seedPlaces(world: World, rng: Rng, seed?: string): Place[] {
   // parity vectors from moving.
   if (COAST_IS_A_LINE && seed !== undefined) {
     return placesOn(seed).map(({ index, kind }) => ({
-      id: `pl_${kind}`,
+      id: placeIdFor(kind, { stop: index }),
       kind,
       // A placeholder. Nothing reads it on the coast; `stop` is the address.
       at: { q: 0, r: 0 },
@@ -81,7 +118,7 @@ export function seedPlaces(world: World, rng: Rng, seed?: string): Place[] {
     // Object key order is not something to lean on; sort, then pick.
     candidates.sort((a, b) => key(a).localeCompare(key(b)));
     const at = rng.derive(kind.id).pick(candidates);
-    placed.push({ id: `pl_${kind.id}`, kind: kind.id, at: { q: at.q, r: at.r } });
+    placed.push({ id: placeIdFor(kind.id, { hex: at }), kind: kind.id, at: { q: at.q, r: at.r } });
   }
   return placed;
 }
@@ -272,7 +309,11 @@ export function offersAt(state: GameState, id: string): PlaceOffer[] {
 export function tradeBlocker(state: GameState, id: string, offerId: string): TradeBlock | null {
   const place = placeById(state, id);
   if (!place) return 'gone';
-  if (key(place.at) !== key(state.party.at)) return 'away';
+  // `standingOn`, not a hex comparison. `sackBlocker` was converted in 8.2c
+  // and this — its sibling, four functions down, asking the identical
+  // question — was not, so on a coast every market in the world answered
+  // "you are not here". Seven of `places.test.ts`'s failures were this line.
+  if (!standingOn(state, place)) return 'away';
   // Steel ends a market. There is no dealing with a place you have emptied.
   if (place.sackedOn !== undefined) return 'taken';
   const offer = (placeKind(place.kind).market ?? []).find((o) => o.id === offerId);

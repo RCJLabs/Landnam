@@ -5,7 +5,7 @@
 // Together those are what makes it a wheel rather than a fork in the road.
 
 import { settled as settleSomewhere } from './fixtures/settle';
-import { goHome } from './fixtures/stand';
+import { goHome, walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
 import { distance, key } from '../src/hex';
 import { newGame } from '../src/state/create';
@@ -92,7 +92,7 @@ describe('the steading is where the band lives', () => {
     expect(launch(state, all, 'raid')).toBe(false);
     expect(launchBlocker(state, [])).toBe('nobody');
 
-    state.party.at = { q: state.settlement!.at.q + 2, r: state.settlement!.at.r };
+    walkOff(state);
     expect(launchBlocker(state, ids(state, 2))).toBe('away');
 
     const homeless = structuredClone(newGame('refuse-nohome'));
@@ -191,8 +191,7 @@ describe('the steading keeps working while they are gone', () => {
     launch(state, ids(state, 2), 'explore');
     expect(state.expedition).toBeDefined();
     // Walk out and back.
-    const away = moveOptions(state)[0]!;
-    state.party.at = away;
+    walkOff(state, 1);
     passDay(state);
     expect(state.expedition, 'came home too early').toBeDefined();
 
@@ -243,7 +242,7 @@ describe('a hall with its warriors out', () => {
   it('is defended by whoever stayed', () => {
     const state = settled('defend');
     launch(state, ids(state, 4), 'raid');
-    state.party.at = { q: state.settlement!.at.q + 3, r: state.settlement!.at.r };
+    walkOff(state, 3);
 
     startRaid(state, 0);
     const ours = standing(state.battle!, 'warband').map((c) => c.personId);

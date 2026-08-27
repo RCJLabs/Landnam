@@ -869,9 +869,18 @@ describe('what a ridge is worth on a coast', () => {
 
 describe('what a trader tells you, on a coast', () => {
   it('names a place by stop and prices the telling in days', () => {
-    const state = band(0, SEED);
-    const target = state.world.places.find((p) => (p.stop ?? 0) <= TOLD_RANGE / 2);
-    expect(target, 'no place near enough on this coast to be told of').toBeTruthy();
+    // The seed is SEARCHED rather than pinned. Honouring `kind.ground` on the
+    // coast changed which stretches hold anything, and `raven-skerry-317`
+    // stopped having one near the landing — a fact about that coast, not
+    // about the telling. Pinning one seed for a claim about the MECHANISM is
+    // how a worldgen fix reads as a regression.
+    let state = band(0, SEED);
+    let target = state.world.places.find((p) => (p.stop ?? 0) <= TOLD_RANGE / 2);
+    for (let i = 0; !target && i < 40; i += 1) {
+      state = band(0, `told-near-${i}`);
+      target = state.world.places.find((p) => (p.stop ?? 0) <= TOLD_RANGE / 2);
+    }
+    expect(target, 'no coast in forty had a place near enough to be told of').toBeTruthy();
     const teller = target!.stop! + 1;
     const told = tellOfPlace(state, { q: 0, r: 0 }, 'the folk here', teller);
     expect(told?.id).toBe(target!.id);

@@ -180,10 +180,18 @@ export function richness(index: number): number {
  * At most one place to a stop. A coast where two things sit in the same
  * place is a coast where one of them can never be gone to.
  */
-export function placeAt(seed: string, index: number): PlaceKind | undefined {
+function rollPlaceAt(seed: string, index: number): PlaceKind | undefined {
   if (!onRoute(index) || index === 0) return undefined;
+  // What this stretch of country will actually hold. The hex seeding has
+  // always honoured `kind.ground` — it searches tiles for terrain the kind
+  // allows — and the coast, which asks each stretch independently rather than
+  // searching, simply never asked. Measured before it was fixed: 291 of 399
+  // places across sixty coasts stood on ground their own kind forbids, which
+  // is iron seams on the open strand and monasteries in bogs. Data-driven
+  // content is only data-driven if the engine reads the data.
+  const country = stopAt(seed, index).country;
   const kinds = PLACE_KINDS.filter(
-    (k) => k.seeded !== false && index >= k.minFromLanding,
+    (k) => k.seeded !== false && index >= k.minFromLanding && k.ground.includes(country),
   );
   if (kinds.length === 0) return undefined;
   const rng = stopRng(seed, index, 'place');
@@ -194,14 +202,105 @@ export function placeAt(seed: string, index: number): PlaceKind | undefined {
   return kinds[rng.int(0, kinds.length - 1)]!.id;
 }
 
+/**
+ * The fewest things a coast may have on it.
+ *
+ * `route.test.ts` has always held that every coast gives the band somewhere
+ * to go — a map with nothing on it defeats the point of having places. That
+ * bar survived the ground rule above by luck until it did not: honouring
+ * `kind.ground` dropped four coasts in two hundred below it, because FOREST
+ * is a sixth of every coast and no kind will stand on it.
+ */
+export const PLACES_FLOOR = 2;
+
+/**
+ * How far out "within reach of the landing" reaches, in stretches.
+ *
+ * A SECOND floor, and a more important one than the count. Honouring
+ * `kind.ground` cost the NEAR coast most: measured over two hundred coasts,
+ * the chance of anything standing within eight stretches fell from 72% to
+ * 42%. The ground rule bites hardest close in, because `minFromLanding`
+ * has already narrowed the kinds to the two that want shore.
+ *
+ * That is not a small loss, and it is a bug this project has already had
+ * once. The hex map shipped with every kind floored and never ceilinged, so
+ * places sat a median of 30 hexes out and 0.06 of them were ever SEEN —
+ * "they stand on this coast, and a coast is something you can walk" exists in
+ * `places.test.ts` because of it. A coast that puts everything past the first
+ * season is the same mistake in a straight line.
+ */
+export const PLACES_NEAR = 8;
+
+/**
+ * What stands at one stop, or nothing.
+ *
+ * DELEGATES to `placesOn` rather than rolling, and that is load-bearing.
+ * `coastWalk.test.ts` holds that the world's places and this function are the
+ * same answer — "two derivations of the same fact would be two facts" — and
+ * the moment `placesOn` grew guarantees the roll alone stopped being the
+ * whole truth. One derivation, asked two ways.
+ */
+export function placeAt(seed: string, index: number): PlaceKind | undefined {
+  return placesOn(seed).find((p) => p.index === index)?.kind;
+}
+
+/**
+ * The best thing this stretch could hold, or nothing. Used only by the two
+ * guarantees below — the ordinary seeding rolls for itself.
+ */
+function fill(
+  seed: string,
+  index: number,
+  taken: Set<number>,
+  stream_: string,
+): { index: number; kind: PlaceKind } | undefined {
+  if (taken.has(index)) return undefined;
+  const country = stopAt(seed, index).country;
+  const kinds = PLACE_KINDS.filter(
+    (k) => k.seeded !== false && index >= k.minFromLanding && k.ground.includes(country),
+  );
+  if (kinds.length === 0) return undefined;
+  const rng = stopRng(seed, index, stream_);
+  return { index, kind: kinds[rng.int(0, kinds.length - 1)]!.id };
+}
+
 /** Every stop that has something on it, nearest first. */
 export function placesOn(seed: string): { index: number; kind: PlaceKind }[] {
   const out: { index: number; kind: PlaceKind }[] = [];
   for (let i = 1; i < ROUTE_STOPS; i += 1) {
-    const kind = placeAt(seed, i);
+    const kind = rollPlaceAt(seed, i);
     if (kind) out.push({ index: i, kind });
   }
-  return out;
+  // SOMEWHERE TO GO IN THE FIRST SEASON. Nearest-out rather than farthest-in,
+  // because the whole point of this one is that the band reaches it early.
+  if (!out.some((p) => p.index <= PLACES_NEAR)) {
+    for (let i = 1; i <= PLACES_NEAR; i += 1) {
+      const near = fill(seed, i, new Set(out.map((p) => p.index)), 'place-near');
+      if (near) { out.push(near); break; }
+    }
+  }
+
+  if (out.length >= PLACES_FLOOR) return out.sort((a, b) => a.index - b.index);
+
+  // A POOR COAST STILL GETS SOMEWHERE TO GO, and this is a guarantee rather
+  // than a raised chance, deliberately. The hex seeding never needed one: it
+  // SEARCHES the whole island for ground each kind allows, so it finds some
+  // unless the island truly has none. The coast asks each stretch on its own
+  // and can therefore roll nothing all the way down a line — a different
+  // failure with the same remedy. Tuning the odds up to cover it would have
+  // moved every coast to fix four.
+  //
+  // Far end first: that is where `richness` already says the good things are,
+  // so a made-up place lands where an ordinary one would have.
+  const taken = new Set(out.map((p) => p.index));
+  for (let i = ROUTE_STOPS - 1; i > 0 && out.length < PLACES_FLOOR; i -= 1) {
+    const made = fill(seed, i, taken, 'place-floor');
+    if (!made) continue;
+    out.push(made);
+    taken.add(i);
+  }
+  // Nearest first, as the contract says, whichever pass put them there.
+  return out.sort((a, b) => a.index - b.index);
 }
 
 /** The whole coast, landing first. For the strip map and for the tests. */

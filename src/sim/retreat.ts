@@ -12,7 +12,7 @@ import { ABANDON_AFTER, ABANDON_HEART } from '../data/retreat';
 import { childrenOf } from './lineage';
 import { atHome } from './site';
 import { chronicle } from './saga';
-import { key } from '../hex';
+import { ruinIdFor } from './places';
 
 /**
  * Why the band cannot walk out, or null when it can.
@@ -68,9 +68,14 @@ export function abandonSteading(state: GameState): boolean {
   if (born.length > 0) state.bairns = [...(state.bairns ?? []), ...born];
 
   state.world.places.push({
-    id: `ruin:${key(at)}`,
+    id: ruinIdFor({ hex: at, stop: home.stop }),
     kind: 'ruin',
     at,
+    // On a line the stop is the address and `at` is the placeholder every
+    // coast place carries. Without this the band's own posts were in the
+    // world and unreachable from it — `placeHere` matches on stop, so a band
+    // that walked out could never stand on what it had left.
+    ...(home.stop !== undefined ? { stop: home.stop } : {}),
     // Made empty. See the note above: a lootable ruin turns this into a
     // windfall and the whole design of the cost falls over.
     sackedOn: state.day,

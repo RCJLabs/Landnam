@@ -6,7 +6,7 @@
 // all you send a party, and everyone you send is somebody who is not farming,
 // cutting or standing the watch while they are away.
 
-import { distance, key, type Hex } from '../hex';
+import { distance, type Hex } from '../hex';
 import { stream } from '../rng';
 import type { GameState, Person, Purpose } from '../state/types';
 import { effectiveStat, living } from './people';
@@ -242,7 +242,12 @@ export function arriveHome(state: GameState): boolean {
   const out = state.expedition;
   const home = state.settlement;
   if (!out || !home) return false;
-  if (key(state.party.at) !== key(home.at)) return false;
+  // `atHome`, not a hex comparison: on a coast `home.at` and `party.at` are
+  // both the frozen landing hex, so this was TRUE from every stretch of the
+  // line — an expedition folded itself back into a steading it was twelve
+  // stretches away from. The generous direction again, which is why nothing
+  // caught it.
+  if (!atHome(state)) return false;
 
   const days = Math.max(1, state.day - out.launchedOn);
   const crew = living(state.party.people).filter((p) => out.members.includes(p.id));

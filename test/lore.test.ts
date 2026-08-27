@@ -12,6 +12,7 @@
 //      avoid.
 
 import { settled as settleSomewhere } from './fixtures/settle';
+import { standIn } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -401,26 +402,34 @@ describe('THE BAR — knowing a thing changes the run', () => {
 
 describe('discoveries in play', () => {
   it('the boulder is drawable in the right country and nowhere else', () => {
-    const state = structuredClone(newGame('lore-card'));
+    // A coast cannot be painted, only walked to — see test/fixtures/stand.ts.
+    // Seeds are walked until one has both countries on it, because a coast
+    // with no hills is a fact about that coast rather than a broken fixture.
+    const state = [...Array(40).keys()]
+      .map((i) => structuredClone(newGame(`lore-card-${i}`)))
+      .find((s) => standIn(s, 'hills') && standIn(s, 'bog'))
+      ?? structuredClone(newGame('lore-card'));
     state.day = 12;
     const def = EVENTS.find((e) => e.id === 'carved-boulder')!;
 
-    const here = `${state.party.at.q},${state.party.at.r}`;
-    state.world.tiles[here]!.terrain = 'hills';
+    expect(standIn(state, 'hills'), 'no hills on this coast').toBe(true);
     expect(isEligible(state, def)).toBe(true);
 
-    state.world.tiles[here]!.terrain = 'bog';
+    expect(standIn(state, 'bog'), 'no bog on this coast').toBe(true);
     expect(isEligible(state, def), 'runes turned up in a bog').toBe(false);
 
-    state.world.tiles[here]!.terrain = 'hills';
+    standIn(state, 'hills');
     state.day = 2;
     expect(isEligible(state, def), 'runes on the second morning ashore').toBe(false);
   });
 
   it('a card that has taught its lesson never comes round again', () => {
-    const state = structuredClone(newGame('lore-repeat'));
+    const state = [...Array(40).keys()]
+      .map((i) => structuredClone(newGame(`lore-repeat-${i}`)))
+      .find((s) => standIn(s, 'hills'))
+      ?? structuredClone(newGame('lore-repeat'));
     state.day = 12;
-    state.world.tiles[`${state.party.at.q},${state.party.at.r}`]!.terrain = 'hills';
+    expect(standIn(state, 'hills'), 'no hills on this coast').toBe(true);
     const def = EVENTS.find((e) => e.id === 'carved-boulder')!;
     expect(isEligible(state, def)).toBe(true);
 
