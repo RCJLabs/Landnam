@@ -13,6 +13,9 @@
 
 import { settled as settleSomewhere } from './fixtures/settle';
 import { goHome, standBeside } from './fixtures/stand';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ROUTE_STOPS, daysBetween, onRoute, stopAt } from '../src/sim/route';
+import { learnStop } from '../src/sim/coast';
 import { describe, it, expect } from 'vitest';
 import { distance, neighbors } from '../src/hex';
 import { stream } from '../src/rng';
@@ -22,7 +25,7 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { foundBlocker, siteReport } from '../src/sim/site';
+import { foundBlocker, siteReport, stopReport } from '../src/sim/site';
 import { WATER_FLOOR } from '../src/data/sites';
 import { campStores, sackCamp } from '../src/sim/plunder';
 import { assign } from '../src/sim/colony';
@@ -143,12 +146,32 @@ describe('the coast has people on it', () => {
       expect(ids.size, `${seed}: duplicate ids`).toBe(placed.length);
 
       for (const n of placed) {
+        if (COAST_IS_A_LINE) {
+          // The same two claims in the address a line has. Nobody lives on
+          // water or on bare rock — which holds by construction here, since
+          // `stopAt` never calls a stretch ocean or mountains, and is asserted
+          // rather than assumed so that changing the country mix has to be a
+          // decision. And nobody camps on the beach the band lands on:
+          // `neighbourStops` is handed CLAN_ELBOW as its floor.
+          expect(n.stop, `${seed}: ${n.name} is nowhere`).not.toBeUndefined();
+          const country = stopAt(seed, n.stop!).country;
+          expect(['ocean', 'mountains'], `${seed}: ${n.name}`).not.toContain(country);
+          expect(n.stop, `${seed}: ${n.name} on the beach`).toBeGreaterThanOrEqual(CLAN_ELBOW);
+          expect(n.found).toBeFalsy();
+          continue;
+        }
         const tile = state.world.tiles[`${n.at.q},${n.at.r}`];
         expect(tile, `${seed}: ${n.name} is nowhere`).toBeTruthy();
         expect(['ocean', 'mountains'], `${seed}: ${n.name}`).not.toContain(tile!.terrain);
         expect(distance(n.at, state.world.landing), `${seed}: ${n.name} on the beach`)
           .toBeGreaterThanOrEqual(CLAN_MIN_GAP);
         expect(n.found).toBeFalsy();
+      }
+      if (COAST_IS_A_LINE) {
+        // Apart from each other, which on a line is what "apart" means: no
+        // two households at the same stretch.
+        const at = placed.map((n) => n.stop);
+        expect(new Set(at).size, `${seed}: two households on one stretch`).toBe(placed.length);
       }
     }
   });
@@ -201,6 +224,28 @@ describe('the coast has people on it', () => {
   it('they share a coast, and a coast is something you can walk', () => {
     for (const seed of SEEDS) {
       const state = newGame(seed);
+      if (COAST_IS_A_LINE) {
+        // On a line every stretch is walkable from every other — that is what
+        // a route IS — so "within CLAN_MAX_GAP of the landing" cannot be the
+        // claim for all four without emptying the far half of the coast of
+        // people. `neighbourStops` spreads one per quarter and puts a CEILING
+        // on the first: the NEAREST of them is a neighbour in the ordinary
+        // sense of the word, and the rest are further up the same coast.
+        //
+        // So that is what is checked, and it is the same thing the hex
+        // ceiling was protecting: somebody close enough to reach in the time
+        // a band has, rather than four households nobody ever meets.
+        const walks = state.neighbours.map((n) => daysBetween(seed, 0, n.stop!));
+        expect(walks.length, `${seed}: nobody on this coast`).toBeGreaterThan(0);
+        expect(
+          Math.min(...walks),
+          `${seed}: the nearest household is ${Math.min(...walks)} days off — not a neighbour`,
+        ).toBeLessThanOrEqual(CLAN_MAX_GAP);
+        for (const n of state.neighbours) {
+          expect(onRoute(n.stop!), `${seed}: ${n.name} is off the end of the coast`).toBe(true);
+        }
+        continue;
+      }
       for (const n of state.neighbours) {
         expect(
           distance(n.at, state.world.landing),
@@ -217,6 +262,36 @@ describe('the coast has people on it', () => {
     let refused = 0;
     for (const seed of SEEDS) {
       const state = structuredClone(newGame(seed));
+      if (COAST_IS_A_LINE) {
+        // The elbow, in stretches. On a line the ground a household holds is
+        // its own stretch and the ones inside CLAN_ELBOW of it — there is no
+        // ring of hexes to walk round, so the check walks the route instead.
+        // `insideElbow` is what `foundBlocker` consults, and this pins that
+        // it actually refuses.
+        for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
+        for (const n of state.neighbours) {
+          // `insideElbow` is `< CLAN_ELBOW`, so the home field is their own
+          // stretch and the one either side — which is exactly what the hex
+          // arm below walks, `neighbors(n.at).concat([n.at])` being distance
+          // 0 and 1. The first draft of this walked to ±CLAN_ELBOW and read
+          // the sim's correct `null` at two stretches out as a hole in the
+          // elbow.
+          for (let d = -(CLAN_ELBOW - 1); d <= CLAN_ELBOW - 1; d += 1) {
+            const stop = n.stop! + d;
+            if (!onRoute(stop)) continue;
+            // Only stretches that would otherwise TAKE a hall, so what is
+            // being measured is the elbow and not the water — the same guard
+            // the hex arm applies, and for the same reason: `foundBlocker`
+            // answers 'dry' before it ever looks at who lives nearby.
+            if (stopReport(seed, stop).water < WATER_FLOOR) continue;
+            state.party.stop = stop;
+            expect(foundBlocker(state, state.party.at), `${seed}: founded in ${n.name}'s camp`)
+              .toBe('taken');
+            refused += 1;
+          }
+        }
+        continue;
+      }
       for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
       for (const n of state.neighbours) {
         // Ground that would otherwise take a hall — so the refusal being
@@ -246,7 +321,16 @@ describe('the coast has people on it', () => {
     seeNeighbours(state);
     expect(target.found, 'seen without looking').toBeFalsy();
 
-    state.world.seen[`${target.at.q},${target.at.r}`] = 'seen';
+    if (COAST_IS_A_LINE) {
+      // A LINE HAS NO FOG, so "somebody has laid eyes on that ground" has no
+      // mechanism behind it — `seeNeighbours` says so and uses the narrow
+      // answer instead: you have come to where they live. Walking there is
+      // the coast's version of seeing, and everything else about meeting
+      // people runs through `neighboursCallOn`, which the next test holds.
+      state.party.stop = target.stop;
+    } else {
+      state.world.seen[`${target.at.q},${target.at.r}`] = 'seen';
+    }
     seeNeighbours(state);
     expect(target.found).toBe(true);
     expect(state.saga.some((e) => e.text.includes(target.name))).toBe(true);
@@ -264,7 +348,11 @@ describe('the coast has people on it', () => {
     // what this measures. Put the fog back over the camps and forget them.
     for (const n of state.neighbours) {
       n.found = false;
-      delete state.world.seen[`${n.at.q},${n.at.r}`];
+      if (COAST_IS_A_LINE) {
+        state.world.knownStops = (state.world.knownStops ?? []).filter((s) => s !== n.stop);
+      } else {
+        delete state.world.seen[`${n.at.q},${n.at.r}`];
+      }
     }
     state.settlement!.foundedOn = state.day;
     expect(state.neighbours.some((n) => n.found), 'met somebody before settling').toBe(false);
@@ -284,7 +372,10 @@ describe('the coast has people on it', () => {
       neighboursCallOn(state);
       const after = state.neighbours.filter((n) => n.found);
       expect(after.length, `no caller in fortnight ${i}`).toBe(i);
-      seenOrder.push(distance(after[after.length - 1]!.at, state.settlement!.at));
+      const last = after[after.length - 1]!;
+      seenOrder.push(COAST_IS_A_LINE
+        ? daysBetween(state.seed, last.stop!, state.settlement!.stop!)
+        : distance(last.at, state.settlement!.at));
     }
 
     expect(state.neighbours.every((n) => n.found), 'somebody never came').toBe(true);
@@ -295,6 +386,23 @@ describe('the coast has people on it', () => {
     }
     // And found means findable — a marker under fog is not knowledge.
     for (const n of state.neighbours) {
+      if (COAST_IS_A_LINE) {
+        // ON A LINE `found` IS THE KNOWLEDGE, and `revealNeighbour` says so:
+        // there is no fog to lift, and marking (0,0) seen would write the
+        // landing into the seen map of a world with no hexes in it.
+        //
+        // So the hex claim — a marker under fog is not knowledge — has to be
+        // asked of what could still go wrong HERE, which is a household the
+        // band has met and cannot act on. Two things carry that, and neither
+        // consults `knownStops`: the chart draws a neighbour on `n.found`
+        // alone (`render/strip.ts`), and `walkOptions` never asks whether a
+        // stretch is known. So what must hold is that the stretch is a real
+        // one on the route.
+        expect(n.found, `${n.name} called and was not remembered`).toBe(true);
+        expect(onRoute(n.stop!), `${n.name} named but off the end of the coast`).toBe(true);
+        continue;
+      }
+      // Found means findable — a marker under fog is not knowledge.
       expect(state.world.seen[`${n.at.q},${n.at.r}`], `${n.name} named but not on the map`).toBeTruthy();
     }
   });
@@ -620,12 +728,28 @@ describe('a camp is a crop, not a windfall', () => {
   it('and next to nothing the morning after', () => {
     const state = settled('crop-again');
     const n = state.neighbours[0]!;
+    const empty = state.party.food + state.party.firewood;
     sackCamp(state, n.id);
     const before = state.party.food + state.party.firewood;
+    const first = before - empty;
     sackCamp(state, n.id);
     const second = state.party.food + state.party.firewood - before;
     expect(campStores(state, n.sackedOn)).toBeCloseTo(CAMP_PICKED_CLEAN, 5);
-    expect(second).toBeLessThan(15);
+
+    // THE RATIO, NOT AN ABSOLUTE. This asserted `second < 15`, which was
+    // never a property of the rule — it was one seed's neighbour. Measured
+    // over forty seeds the second haul runs 10 to 25 on the HEX build alone,
+    // so the threshold held here by luck and broke the moment a coast drew a
+    // neighbour with more might.
+    //
+    // What is actually true is tighter, and identical on both builds: both
+    // sacks fall on the same day, so `sackCamp` derives the SAME rng for each
+    // and the only thing that differs is how full the camp was. The second
+    // haul is therefore CAMP_PICKED_CLEAN of the first, give or take the
+    // rounding of two numbers. Measured: 17-21% on hexes, 17-21% on a coast.
+    expect(first, 'the first sack paid nothing, so there is no ratio').toBeGreaterThan(20);
+    expect(second / first, `${first} then ${second}`).toBeGreaterThan(CAMP_PICKED_CLEAN * 0.8);
+    expect(second / first, `${first} then ${second}`).toBeLessThan(CAMP_PICKED_CLEAN * 1.5);
     expect(state.saga.some((e) => e.text.includes('little left to take'))).toBe(true);
   });
 

@@ -2210,11 +2210,43 @@ is written so the choice is made with both arcs visible, not by drift.
      Now 200 of 200, and the fill prefers a guarded kind rather than raising
      any odds.
 
-     What is LEFT is 54, and it clusters in `site` (7), `parity` (7),
-     `neighbours` (6), `ways` (3), `rival` (3) and `coast` (3, its own
-     flag-off assertions, which fail on a coast build by design). `parity` is
+     **Then `neighbours`: 54 → 48, and that file too is green on both
+     builds.** Five of its six were addresses again, and every one had a
+     converted sim behind it. Two things came out of it worth keeping:
+
+     - **A test that was measuring the wrong thing on BOTH builds.** "Next to
+       nothing the morning after" asserted the second sack of a camp pays
+       under 15. Measured over forty seeds, the second haul runs 10 to 25 on
+       the HEX build alone — the threshold held on `crop-again` by luck and
+       broke the moment a coast drew a neighbour with more might. What is
+       actually true is tighter and identical in both worlds: both sacks fall
+       on the same day, so `sackCamp` derives the SAME rng for each and the
+       only thing that differs is how full the camp was. The second haul is
+       `CAMP_PICKED_CLEAN` of the first — 17-21% on hexes, 17-21% on a coast.
+       The test now pins the ratio.
+     - **`found` IS the knowledge on a line, and that had to be reasoned
+       about rather than translated.** The hex claim is that a marker under
+       fog is not knowledge, so being called on marks the hex seen. A line has
+       no fog and `revealNeighbour` deliberately writes nothing — so the
+       question became what could still go wrong here: a household met and
+       not actable-on. Neither road consults `knownStops` — the chart draws a
+       neighbour on `n.found` alone, and `walkOptions` never asks whether a
+       stretch is known — so the claim that carries the weight is that the
+       stretch is a real one on the route.
+
+     Two more of my own instruments were wrong, both caught by the sim
+     disagreeing: the elbow walk went to ±`CLAN_ELBOW` when `insideElbow` is
+     `< CLAN_ELBOW` (their own stretch and one either side, exactly what the
+     hex arm walks), and it did not filter out dry stretches, so it read
+     `foundBlocker`'s correct `'dry'` as a hole in the elbow — the hex arm has
+     always filtered for that reason and says so.
+
+     What is LEFT is 48, and it clusters in `site` (7), `parity` (7), `ways`
+     (3), `rival` (3) and `coast` (3, its own flag-off assertions, which fail
+     on a coast build by design), then a tail of ones and twos. `parity` is
      job 3's frozen port contract and must not be touched without deciding
-     what the port is owed.
+     what the port is owed; `site` is the hex site search itself, which job 4
+     deletes, so converting it may be work thrown away.
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -2970,6 +3002,35 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-27 — The people on the coast** — `neighbours` green on both
+  builds, 54 → 48. Five of its six failures were addresses with a converted
+  sim already behind them; the sixth was more interesting.
+
+  **"Next to nothing the morning after" was measuring the wrong thing on BOTH
+  builds.** It asserted the second sack of a camp pays under 15. Over forty
+  seeds the second haul runs 10 to 25 on the HEX build alone — the threshold
+  held on one seed by luck, and broke the moment a coast drew a neighbour with
+  more might. What is actually true is tighter and identical in both worlds:
+  both sacks fall on the same day, so `sackCamp` derives the SAME rng for each
+  and the only difference is how full the camp was. The second haul is
+  `CAMP_PICKED_CLEAN` of the first — measured 17-21% on hexes, 17-21% on a
+  coast. The test pins the ratio now, which is the claim it was always making.
+
+  **`found` IS the knowledge on a line**, and that took reasoning rather than
+  translating. The hex claim is that a marker under fog is not knowledge, so
+  being called on marks the hex seen; a line has no fog and `revealNeighbour`
+  writes nothing on purpose. So the question became what could still go wrong
+  here — a household met and not actable-on — and the answer is that nothing
+  gates it: the chart draws a neighbour on `n.found` alone, and `walkOptions`
+  never asks whether a stretch is known. What carries the weight is that the
+  stretch is a real one on the route.
+
+  Two more of my own instruments were wrong, both caught by the sim
+  disagreeing rather than by reading: the elbow walk went to ±`CLAN_ELBOW`
+  when `insideElbow` is `< CLAN_ELBOW`, and it did not filter dry stretches,
+  so `foundBlocker`'s correct `'dry'` read as a hole in the elbow. The hex arm
+  has always filtered for exactly that reason and says so in a comment.
 
 - **2026-08-27 — The steading and the strandhögg** — Two more coast clusters,
   both files now green on both builds. 70 → 54 overall, 26 files to 22.
