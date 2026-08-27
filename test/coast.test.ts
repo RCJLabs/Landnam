@@ -187,7 +187,13 @@ describe('THE DECISION — how far before you turn back', () => {
   });
 });
 
-describe('the flag', () => {
+// The two describes below exist only WHILE THE FLAG IS OFF — their own names
+// say so, and they assert `COAST_IS_A_LINE === false` in as many words. On a
+// coast build they are measuring a precondition of a different build, so they
+// skip there rather than failing by construction. They retire with the flag,
+// alongside the parity vectors: see "The parity vectors retire with the
+// hexes" in ROADMAP.md.
+describe.skipIf(COAST_IS_A_LINE)('the flag', () => {
   it('is off, and the game does not offer the coast while it is', () => {
     // Not a claim about the walking — that is proved above. A claim about
     // what the game will DO, because a coast with nothing on it yet would
@@ -215,7 +221,7 @@ describe('a save from before the coast', () => {
   });
 });
 
-describe('the country underfoot, with the flag off', () => {
+describe.skipIf(COAST_IS_A_LINE)('the country underfoot, with the flag off', () => {
   it('is exactly what the hex map says, character for character', () => {
     // The claim that makes this seam safe to introduce. `countryHere` now
     // stands where fifteen copies of one expression used to, and while the

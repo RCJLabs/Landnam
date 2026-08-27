@@ -1418,6 +1418,61 @@ recorded as one rather than hidden:
 The generated files themselves ARE regenerated and committed here. This repo
 stays internally consistent; what is paused is only carrying them across.
 
+### The parity vectors retire with the hexes
+
+**DECIDED 2026-08-27, when 8.5 asked what the coast owes the contract.**
+
+The freeze above paused the HAND-OVER. This decides what happens to
+`port/parity.json` itself when the flag flips, which the freeze did not.
+
+What the coast build actually does to it, measured rather than assumed. All
+seven failures are the same single assertion — `worldHash(newGame(seed))` —
+which runs before any checkpoint and aborts each run, so the 336 facet
+readings are never reached at all. Inside `world`, exactly three things move:
+
+| field | hex | coast |
+|---|---|---|
+| `tiles` | `47647c97` | `47647c97` — identical |
+| `landing`, `landingName`, `seen`, `trod`, `width`, `height` | | identical |
+| `places` | 4 | 6, and different |
+| `knownStops` | absent | new |
+| `trodStops` | absent | new |
+
+Two things follow, and the second decides it:
+
+- **The coast build still generates the whole hex island.** 1872 tiles,
+  hashing identically, in every coast save, because `newGame` still calls
+  `generateWorld` and the flag only branches later at `seedPlaces`. The
+  conversion has not stopped paying for the hex map. That is job 3's subject,
+  and it is the reason worldgen being bit-identical is NOT a reason to keep
+  the vectors: there are no tiles on a line.
+- **43 of the 48 checkpoints cannot be replayed on a coast at all.**
+  `runs/example.json` and `runs/long.json` are recorded scripts of HEX
+  actions — 13 and 8 `MOVE`s carrying `{q, r}`. On a line `MOVE` does not
+  exist; travel is `WALK` to a stop. Those runs are not stale, they are
+  untranslatable.
+
+So the vectors are retired in job 4 alongside `src/hex/` and `worldgen.ts`,
+rather than regenerated against the coast or kept beside a coast set. The
+rejected options and why:
+
+- **Regenerate against the coast.** Costs re-recording 140 and 1142 actions
+  of real play, and buys a contract for a port that the freeze already
+  concluded is a port of a game being replaced. Worth doing AFTER the flag
+  flips if the Unreal work resumes — not before, and not as part of 8.5.
+- **Keep the hex vectors and add coast ones.** They become unverifiable the
+  moment job 4 deletes the hex layer, which produces exactly what
+  `test/parity.test.ts`'s own header warns against: "a green parity test that
+  cannot see one side of the parity is worse than none, because it is
+  reassuring."
+
+Until job 4, `parity.test.ts` and the three "with the flag off" guards in
+`coast.test.ts` SKIP on a coast build and run normally on the default one, so
+the hex game keeps its drift bar and the coast failure count stops carrying
+seven readings nobody is going to convert. Each skip names this section and a
+test fails if this section stops existing — the same arrangement that keeps
+the freeze honest, and for the same reason.
+
 **Updated 2026-08-25, after 8.1c.** The drift is no longer cosmetic and that
 was always the point of printing it. The verbs moving onto the line changed
 what a fight resolves to, so `runs/*.json` were re-recorded and every facet
@@ -2273,13 +2328,19 @@ is written so the choice is made with both arcs visible, not by drift.
      holdings are a contiguous block rather than scattered flags, which is
      what `nextClaimStop` enforces and nothing was checking.
 
-     What is LEFT is 42, and none of it is a cluster any more: `parity` (7),
-     `coast` (3, its own flag-off assertions, which fail on a coast build by
-     design), and a tail of ones and twos across sixteen files. `parity` is
-     job 3's frozen port contract and must not be touched without deciding
-     what the port is owed; `site` (7, now the largest convertible group) is
-     the hex site search itself, which job 4 deletes, so converting it may be
-     work thrown away.
+     **Then the parity decision, which removed ten readings rather than
+     converting them: 42 → 32.** `parity`'s seven and `coast`'s three were
+     never work — they measure a world the coast build does not have, and the
+     three even say so in their own describe names ("with the flag off"). With
+     the retirement decided they skip on a coast build and run normally on the
+     default one, so the hex game keeps its drift bar. Each skip names the
+     ROADMAP section, and a test fails if that section stops existing —
+     verified by deleting the heading and watching it go red.
+
+     What is LEFT is 32, in a tail of ones and twos across seventeen files.
+     The largest is `site` (7) — the hex site search itself, which job 4
+     deletes, so converting it may be work thrown away and that is worth
+     deciding before spending a pass on it.
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -2325,9 +2386,23 @@ is written so the choice is made with both arcs visible, not by drift.
      Recorded as an open question rather than patched.
   3. **The world.** `worldgen.ts`, `world.tiles`, `world.seen`, `world.trod`
      and the fog are the hex map's own memory, and the parity fixture's
-     `world` facet hashes them. Deleting them is a save break and a parity
-     regeneration, and the port contract is FROZEN against exactly those
-     bytes — so this one is a conversation with the port, not a deletion.
+     `world` facet hashes them.
+
+     **The parity half is now DECIDED — see "The parity vectors retire with
+     the hexes" above.** They are deleted in job 4 with the hex layer rather
+     than regenerated against the coast, so this is no longer a conversation
+     with the port. What made it one was the assumption that the vectors could
+     be carried over; measurement said otherwise — 43 of the 48 checkpoints
+     are recorded scripts of HEX actions that a line cannot replay, and the
+     coast fails all seven runs on the one `worldHash` line before reaching a
+     checkpoint at all.
+
+     What is LEFT of job 3 is the deletion itself, plus one thing the
+     measurement turned up that nobody had noticed: **the coast build still
+     generates the entire hex island.** 1872 tiles, hashing bit-identical to
+     the hex build, in every coast save — `newGame` calls `generateWorld` and
+     the flag only branches later, at `seedPlaces`. So this is a save break
+     and a real size win, and no longer blocked on anybody.
   4. **`src/hex/` itself.** 94 files import it, but most take only a `type
      Hex` for a placeholder `{q:0,r:0}`. The real work is auditing which of
      those placeholders can go away with the fields that hold them

@@ -19,6 +19,8 @@
 // mean anything.
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
 import parityText from '../port/parity.json?raw';
 import exampleText from '../runs/example.json?raw';
 import longText from '../runs/long.json?raw';
@@ -64,6 +66,36 @@ interface Fixture {
   runs: Run[];
 }
 
+/**
+ * THE VECTORS RETIRE WITH THE HEXES. Decided 2026-08-27.
+ *
+ * These readings describe the hex world, and the coast is not a different
+ * arrangement of it — it is a different world. Measured: all seven runs fail
+ * on the one `worldHash` line before any checkpoint is reached, and 43 of the
+ * 48 checkpoints come from `runs/example.json` and `runs/long.json`, which are
+ * recorded scripts of HEX actions. Thirteen and eight `MOVE`s carrying
+ * `{q, r}`, and on a line `MOVE` does not exist — travel is `WALK` to a stop.
+ * Those runs are not stale, they are untranslatable.
+ *
+ * So they are deleted in job 4 alongside `src/hex/` and `worldgen.ts` rather
+ * than regenerated against the coast. Keeping them beside a coast set was the
+ * option rejected hardest, because they become unverifiable the moment the hex
+ * layer goes — which is precisely what this file's own header calls worse than
+ * having no bar at all.
+ *
+ * Until then the replay below runs on the DEFAULT build, where it still guards
+ * the game that ships, and skips on a coast build, where it is measuring a
+ * world that build does not have. `where` is checked below: this cannot
+ * outlive the decision behind it.
+ */
+const RETIRES_WITH_HEXES = {
+  decided: '2026-08-27',
+  because: 'the coast is a different world, not a rearrangement of the hex one — '
+    + 'and the recorded runs are scripts of hex actions that a line cannot replay',
+  where: 'ROADMAP.md',
+  section: 'The parity vectors retire with the hexes',
+};
+
 const fixture = JSON.parse(parityText) as Fixture;
 const SCRIPTS: Record<string, Script> = {
   'runs/example.json': JSON.parse(exampleText) as Script,
@@ -78,6 +110,19 @@ function actionsFor(run: Run): Action[] {
 }
 
 describe('the parity fixture is not stale', () => {
+  it('still records why the vectors retire with the hexes', () => {
+    // A decision that outlives its record is just a skip with no reason on
+    // it. Same arrangement `test/contract.test.ts` uses to keep the port
+    // freeze honest, and for the same reason.
+    expect(RETIRES_WITH_HEXES.because.length, 'no stated reason').toBeGreaterThan(20);
+    const roadmap = readFileSync(RETIRES_WITH_HEXES.where, 'utf8');
+    expect(
+      roadmap.includes(RETIRES_WITH_HEXES.section),
+      `${RETIRES_WITH_HEXES.where} no longer records why the parity vectors retire —`
+        + ' either write it back or stop skipping the replay on a coast build',
+    ).toBe(true);
+  });
+
   it('covers the runs and facets it claims to', () => {
     expect(fixture.runs.length).toBeGreaterThan(4);
     expect(fixture.facets.map((f) => f.id)).toEqual(FACETS.map((f) => f.id));
@@ -125,7 +170,7 @@ describe('the parity fixture is not stale', () => {
    * (regenerate) or a bug — and either way the Unreal side is now asserting
    * against something this repo no longer produces.
    */
-  it.each(fixture.runs.map((r) => [r.name, r] as const))(
+  it.skipIf(COAST_IS_A_LINE).each(fixture.runs.map((r) => [r.name, r] as const))(
     'reproduces every reading: %s',
     { timeout: 300_000 },
     (_name, run) => {
