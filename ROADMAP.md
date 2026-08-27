@@ -2241,12 +2241,45 @@ is written so the choice is made with both arcs visible, not by drift.
      `foundBlocker`'s correct `'dry'` as a hole in the elbow — the hex arm has
      always filtered for that reason and says so.
 
-     What is LEFT is 48, and it clusters in `site` (7), `parity` (7), `ways`
-     (3), `rival` (3) and `coast` (3, its own flag-off assertions, which fail
-     on a coast build by design), then a tail of ones and twos. `parity` is
+     **Then `ways` and `rival`: 48 → 42.**
+
+     `ways` had no subject — `MAKE_WAY` is withdrawn on a line (job 2 above),
+     so three tests were measuring a verb that is not offered. They are not
+     skipped silently: a coast-only test holds the WITHDRAWAL positively, and
+     asks it of every stretch rather than of one hex of forest, which is a
+     stronger claim than the three it stands in for. It is also where a
+     line-shaped made way lands if the open question below is ever decided.
+
+     **`rival` was the interesting one, and it was an instrument again — this
+     time one that had been wrong on BOTH builds since the file was written.**
+     The coast rival looked inert: 1.4 stretches held by day 200 against
+     `sim/rival.ts`'s recorded median of six. The recorded number was right.
+     `idle()` could not FIGHT — it met its first raid, found CAMP refused in
+     BATTLE mode, and broke. Of twenty seeds only one ever reached day 150;
+     the rest stopped between day 8 and day 62 with the band alive and a
+     battle on the table. Every number that file has printed was taken over
+     however many days happened to pass before somebody came over the hill.
+
+     With a loop that fights: 4 stretches by day 200, 6 by day 320 — exactly
+     what was recorded when `CLAIM_EVERY_STOPS` was chosen. And the cost
+     measurement, put on his own clock rather than a flat sixty days, reads
+     3.9 stretches against the hex map's 4.0 hexes.
+
+     Two more of that file's tests were passing VACUOUSLY on a coast and are
+     now real: "lands far enough off" measured a hex distance to the
+     placeholder `(0,0)` and happened to clear the bar, and "keeps his claim
+     in one piece" walked `claims`, which is empty on a line because the
+     stretches live in `claimStops`. The second now also holds that his
+     holdings are a contiguous block rather than scattered flags, which is
+     what `nextClaimStop` enforces and nothing was checking.
+
+     What is LEFT is 42, and none of it is a cluster any more: `parity` (7),
+     `coast` (3, its own flag-off assertions, which fail on a coast build by
+     design), and a tail of ones and twos across sixteen files. `parity` is
      job 3's frozen port contract and must not be touched without deciding
-     what the port is owed; `site` is the hex site search itself, which job 4
-     deletes, so converting it may be work thrown away.
+     what the port is owed; `site` (7, now the largest convertible group) is
+     the hex site search itself, which job 4 deletes, so converting it may be
+     work thrown away.
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -3002,6 +3035,40 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-27 — A road with nowhere to go, and a rival who was never inert**
+  — `ways` and `rival` green on both builds, 48 → 42.
+
+  `ways` had no subject. `MAKE_WAY` is withdrawn on a line — `wayBlocker`
+  answers 'coast' everywhere — so three of its tests were measuring a verb
+  that is not offered. They are not skipped silently: a coast-only test holds
+  the withdrawal positively, asking it of every stretch rather than of one hex
+  of forest, and checking that the refused verb spends no day, which is the
+  bug that made withdrawing it necessary. That test is also where a
+  line-shaped made way lands if the open question about it is ever decided.
+
+  **`rival` was an instrument again, and this one had been wrong on BOTH
+  builds since the file was written.** The coast rival looked inert — 1.4
+  stretches held by day 200, against `sim/rival.ts`'s recorded median of six.
+  The recorded number was right and the loop was wrong: `idle()` could not
+  FIGHT. It met its first raid, found CAMP refused in BATTLE mode, and broke.
+  Of twenty seeds only one ever reached day 150; the rest stopped between day
+  8 and day 62 with the band alive and a battle on the table. Every number
+  that file has ever printed was taken over however many days happened to pass
+  before somebody came over the hill.
+
+  With a loop that fights, the coast rival holds 4 stretches by day 200 and 6
+  by day 320 — exactly what was recorded when `CLAIM_EVERY_STOPS` was chosen.
+  Put on his own clock rather than a flat sixty days, the cost measurement
+  reads 3.9 stretches against the hex map's 4.0 hexes.
+
+  Two more of that file's tests were passing vacuously on a coast and are now
+  real: "lands far enough off" measured a hex distance to the placeholder
+  `(0,0)` and happened to clear the bar, and "keeps his claim in one piece"
+  walked `claims`, which is empty on a line because the stretches live in
+  `claimStops`. The second now also holds that his holdings are a contiguous
+  block rather than scattered flags — what `nextClaimStop` enforces, and what
+  nothing was checking.
 
 - **2026-08-27 — The people on the coast** — `neighbours` green on both
   builds, 54 → 48. Five of its six failures were addresses with a converted

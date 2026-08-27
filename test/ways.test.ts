@@ -11,6 +11,9 @@
 // was dug.
 
 import { describe, expect, it } from 'vitest';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ROUTE_STOPS } from '../src/sim/route';
+import { learnStop } from '../src/sim/coast';
 import { newGame } from '../src/state/create';
 import { fromKey, key } from '../src/hex';
 import { terrainDef } from '../src/data/terrain';
@@ -59,8 +62,52 @@ function stand(seed: string, terrain: Terrain): GameState | null {
   return null;
 }
 
+describe('the verb is withdrawn on a line, and withdrawn completely', () => {
+  /**
+   * The other half of the three skips above, and the more useful half.
+   *
+   * `MAKE_WAY` was still being OFFERED on a coast when 8.5 went looking: it
+   * appeared exactly once a saga, cost a day, marked a hex nobody was
+   * standing on, and could never appear again — a day spent on nothing, which
+   * `sim/ways.ts`'s own header says a way must never be. Withdrawing it is
+   * the fix; this is what stops it creeping back half-converted, and it is a
+   * stronger claim than the three it replaces because it asks the question of
+   * EVERY stretch rather than of one hex of forest.
+   *
+   * A made way would suit a coast — "the journey you take again" is exactly
+   * what a leg walked out and back is. What stopped it being written is a
+   * real tension recorded in ROADMAP.md: `route.daysBetween` is pure and a
+   * made way is history, so discounting the walk leaves the chart, the road
+   * and the strip all drawing the raw leg while the price disagrees. When
+   * that is decided, this test is where the decision lands.
+   */
+  it('refuses every stretch, and spends nothing doing it', () => {
+    if (!COAST_IS_A_LINE) return;
+    const state = newGame('ways-withdrawn');
+    state.party.food = 400;
+    state.party.firewood = 400;
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+      learnStop(state, stop);
+      state.party.stop = stop;
+      expect(wayBlocker(state, state.party.at), `stretch ${stop}`).toBe('coast');
+      expect(canMakeWay(state, state.party.at), `stretch ${stop}`).toBe(false);
+    }
+    // And the verb costs nothing when it is refused — the bug was a DAY.
+    state.party.stop = 3;
+    const before = state.day;
+    expect(applyTravel(state, { type: 'MAKE_WAY' })).toBe(state);
+    expect(state.day, 'a withdrawn verb still took a day').toBe(before);
+  });
+});
+
 describe('what may be broken', () => {
   it('allows easy ground, because a chain that jumps a meadow is not a road', () => {
+    // NO SUBJECT ON A LINE. `MAKE_WAY` is withdrawn on a coast — see
+    // `wayBlocker`, which answers 'coast' everywhere — so this measures a
+    // mechanic that is not offered. It is not skipped silently: the
+    // withdrawal itself is held below, positively, by "the verb is withdrawn
+    // on a line, and withdrawn completely".
+    if (COAST_IS_A_LINE) return;
     // An earlier cut refused this on the grounds that a lone meadow way pays
     // nothing. True of a lone hex, wrong about the mechanic.
     for (const easy of ['meadow', 'shore', 'valley'] as Terrain[]) {
@@ -71,6 +118,12 @@ describe('what may be broken', () => {
   });
 
   it('will not break the same ground twice, or open water', () => {
+    // NO SUBJECT ON A LINE. `MAKE_WAY` is withdrawn on a coast — see
+    // `wayBlocker`, which answers 'coast' everywhere — so this measures a
+    // mechanic that is not offered. It is not skipped silently: the
+    // withdrawal itself is held below, positively, by "the verb is withdrawn
+    // on a line, and withdrawn completely".
+    if (COAST_IS_A_LINE) return;
     const state = stand('ways-twice', 'forest');
     if (!state) throw new Error('no forest in a whole world');
     expect(canMakeWay(state, state.party.at)).toBe(true);
@@ -182,6 +235,12 @@ describe('what it costs and what it buys', () => {
 
 describe('the ground stays broken', () => {
   it('survives the day it was dug and everything after', () => {
+    // NO SUBJECT ON A LINE. `MAKE_WAY` is withdrawn on a coast — see
+    // `wayBlocker`, which answers 'coast' everywhere — so this measures a
+    // mechanic that is not offered. It is not skipped silently: the
+    // withdrawal itself is held below, positively, by "the verb is withdrawn
+    // on a line, and withdrawn completely".
+    if (COAST_IS_A_LINE) return;
     const state = stand('ways-last', 'forest');
     if (!state) throw new Error('no forest in a whole world');
     const at = state.party.at;
