@@ -278,6 +278,64 @@ the hex distribution and would each need its own coast branch. Fix the input,
 then re-derive `COAST_VERDICTS` and `BECK_SHARE` against the new distribution
 and re-run the balance sweep.
 
+**And the two measures pull OPPOSITE ways, which is why one knob will not do
+it.** `sickness` fails because `water` is too high — the healer reads it and a
+4.63 site pays nearly double a 1.82 one, so twelve tended days take the whole
+illness off in winter where the map takes 6.6 of 14. `winter` fails because
+`timber` is too LOW — 1.38 against 2.13 — so the woodcutter cuts less, and
+even a band that HEEDS the winter mark freezes: 50% live where the bar wants
+60%. The coast is richer in three measures and poorer in one, and both of
+those are bugs.
+
+#### THE DECISION THIS NEEDS, and it is why the work stopped rather than
+#### landed half-done
+
+The ring fixes were built and measured: sea count rolled 1/2/3 on the map's
+own 58/24/17 weights instead of always two, and the hinterland rolled per
+slot instead of two copies of the strand. Both are right. **Neither is
+enough**, measured across a `BECK_SHARE` x `HINTERLAND_SAME` sweep:
+
+| beck | hinterland | water | soil | timber | dry landing |
+|---|---|---|---|---|---|
+| target (hex) | | **1.82** | **2.65** | **2.13** | **~40%** |
+| 0.5 | 0.5 | 4.63 | 4.13 | 1.38 | 9% |
+| 0.3 | 0.5 | 4.13 | 4.03 | 1.43 | 19% |
+| 0.2 | 0.5 | 3.67 | 3.77 | 1.43 | 26% |
+| 0.15 | 0.3 | 3.42 | 3.75 | 1.55 | 24% |
+| 0.1 | 0.3 | 2.90 | 3.80 | 1.57 | 28% |
+
+Soil will not come down and timber will not come up, however the ring is
+shaken, and the reason is a level below the ring: **`ROUTE_COUNTRY` is picked
+UNIFORMLY over six countries**, so a 26-stop coast carries a measured **4.1
+valley stretches** — and the settling search takes one. The hex map's own
+coastal ring is shore 51%, forest 25%, bog 21%, valley 3%, meadow 1% of its
+land. A coast is mostly strand, scrub and bog with the occasional good
+valley; ours is a sixth of everything.
+
+Weighting `ROUTE_COUNTRY` is the fix and it is not a small one, because a
+stop's country is the seed of nearly everything else derived on the line —
+`placeAt` filters kinds by `k.ground`, `landmarkAtStop` by `l.on`, `onHeights`
+by hills, plus forage and fish yields, `COAST_VERDICTS`, `PLACES_FLOOR`,
+`PLACES_NEAR` and `LANDMARK_SHARE_STOP`, every one of them a constant
+measured against the uniform distribution over the last week.
+
+So it is a design decision with a week of tuning hanging off it, not a bug
+fix, and it wants an answer before the work starts:
+
+1. **What is a coast made of?** The map's own answer (shore 51 / forest 25 /
+   bog 21 / valley 3) makes finding a valley a real event and makes "which
+   lack can you live with" the decision it is meant to be — but it puts hills
+   at nearly nothing, and hills are what `onHeights` needs for ridges,
+   landmarks and the whole spotting mechanic. Something like shore 30 / bog
+   18 / forest 18 / hills 14 / meadow 12 / valley 8 keeps the ridges and
+   still makes a valley a prize (about two a coast rather than four).
+2. **Is the settling search still choosing from enough?** At 8% valley a coast
+   has ~2, and if both sit behind a clan's elbow the band has none.
+3. **Everything derived from country gets re-measured after**, not before.
+
+Until that is answered the three failures stay, and they are honest: they are
+the game telling the truth about a coast that has not been calibrated yet.
+
 **The port reached PARITY OK** — 39 checkpoints across two runs, six facets
 each: 1478 actions and 457 days on `runs/long.json`, 66 to day 15 on
 `runs/example.json`, `unported=0`. That was before the freeze; the Parity
