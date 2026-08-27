@@ -42,6 +42,9 @@ import { placeKind } from '../src/data/places';
 import { canFound, foundSettlement } from '../src/sim/site';
 import { living } from '../src/sim/people';
 import { currentMode } from '../src/modes';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ROUTE_STOPS, daysBetween } from '../src/sim/route';
+import { hasTrod, onHeights, walkOptions } from '../src/sim/coast';
 import type { Battle, GameState } from '../src/state/types';
 
 function empty(): Battle {
@@ -508,6 +511,23 @@ function wideStep(state: GameState, memo: Memo): GameState {
     const founded = apply(state, { type: 'FOUND' });
     if (founded !== state) return founded;
   }
+  // A FOURTH ROUND OF THIS BOT BEING THE BUG. `MOVE` and `moveOptions` are
+  // the hex mover, and a line's travel verb is `WALK` to a stop — so on a
+  // coast build the band stood on the landing for four thousand steps and
+  // twelve seeds, and the sweep reported `spotted` as a kind the game never
+  // emits. It emits it fine: walking all twenty-six stretches of sixty
+  // coasts picks something out from a ridge seventy-nine times. What never
+  // happened was the walking.
+  if (COAST_IS_A_LINE) {
+    const stops = walkOptions(state);
+    const fresh = stops.find((stop) => !hasTrod(state, stop));
+    const step = fresh ?? stops[0];
+    if (step !== undefined) {
+      const walked = apply(state, { type: 'WALK', to: step });
+      if (walked !== state) return walked;
+    }
+    return apply(state, { type: 'CAMP' });
+  }
   const options = moveOptions(state);
   const unwalked = options.find((h) => state.world.trod[`${h.q},${h.r}`] === undefined);
   const to = unwalked ?? options[0];
@@ -577,6 +597,29 @@ describe('the errands and the fixed places', () => {
 
   it('a landmark picked out from a ridge says which place, and where', () => {
     const state = homestead('beat-spot');
+    if (COAST_IS_A_LINE) {
+      // A ridge is a STRETCH whose country is hills, sight is counted in
+      // days, and the fog a line has is `knownStops` — so making the country
+      // over by rewriting tiles moves nothing here. Same three conditions as
+      // the hex branch below, asked of the address the sim reads.
+      const ridge = [...Array(ROUTE_STOPS).keys()].find((stop) => onHeights(state, stop));
+      expect(ridge, 'no stretch of this coast is high ground').toBeDefined();
+      state.party.stop = ridge;
+      const place = state.world.places.find(
+        (p) => (p.stop ?? 0) !== ridge
+          && daysBetween(state.seed, ridge!, p.stop ?? 0) <= LANDMARK_SIGHT,
+      );
+      expect(place, 'nothing within sight of that ridge to pick out').toBeDefined();
+      // Put the fog back over it, which on a line is forgetting the stretch.
+      state.world.knownStops = (state.world.knownStops ?? [])
+        .filter((stop) => stop !== (place!.stop ?? 0));
+      state.beats = [];
+      spotLandmarks(state);
+      expect(state.beats?.some((b) => b.kind === 'spotted')).toBe(true);
+      expect(state.beats!.find((b) => b.kind === 'spotted' && b.id === place!.id))
+        .toMatchObject({ id: place!.id, place: place!.kind, at: place!.at });
+      return;
+    }
     const place = state.world.places[0]!;
     delete state.world.seen[key(place.at)];
     state.party.at = { q: place.at.q + 2, r: place.at.r };

@@ -93,12 +93,37 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // hex map too: the day you first stood somewhere is the day you got
       // there, not the day you finished walking away from it.
       markTrod(state, action.to, state.day);
+      if (rowed) note(state, 'seaDays', days);
       advance(state, days);
       if (state.end) return state;
+      // THE DAY'S SIGHT, which this verb was not taking.
+      //
+      // `MOVE` has called `reveal` since the fog existed, and `WALK` never
+      // did — so on a coast the pass that meets a neighbour, meets the other
+      // landnamsmadr and picks a place out from a ridge only ran on days the
+      // band stopped to forage. `markTrod` learns the next headland either
+      // way, so the country still appeared; the PEOPLE in it did not, and
+      // `spotted` was never emitted by a played run at all.
+      reveal(state);
       // After the days, because `advance` clears it: a sail is a surprise for
       // exactly the day it appears in. This is the strandhögg's condition on
       // a line — see `Party.bySea`.
       if (rowed) party.bySea = true;
+      // The march itself, for anything that animates the road. Same beat as
+      // `MOVE` emits and deliberately the same shape: `from` and `to` are
+      // the party's placeholder hex, because on a line the band's hex never
+      // moves and the stop is the address — exactly as it is for places,
+      // neighbours and landmarks. What carries the meaning is what always
+      // did: the days it took, the country crossed, and whether it was
+      // rowed.
+      worldBeat(state, {
+        kind: 'marched',
+        from: { ...party.at },
+        to: { ...party.at },
+        days,
+        terrain: rowed ? 'ocean' : stop.country,
+        ...(rowed ? { bySea: true as const } : {}),
+      });
       // The hex map's own voice, reused rather than a second one written
       // beside it. `marchLine` already knows how to say a day at the oars,
       // a landing, a long crossing and a dull stretch of the same country —

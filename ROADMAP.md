@@ -157,14 +157,131 @@ stops being true, unlike the changelog below, which is append-only history.
 Anyone — or any future session — should be able to read this and the "dead
 ends" table and pick the work up without re-deriving a day of measurement.*
 
-### STATE AS OF 2026-08-21 — read this paragraph before any figure below it
+### STATE AS OF 2026-08-27 — read this paragraph before any figure below it
 
-**Both repos are green and pushed.** `npm test` 1072/1072 across 62 files,
-`tsc` clean, the site published. The port reaches **PARITY OK — 39
-checkpoints across two runs, six facets each** for the first time: 1478
-actions and 457 days on `runs/long.json`, 66 to day 15 on
-`runs/example.json`, `unported=0`. The Parity workflow on `landnam-ue` is
-passing.
+**Green and pushed.** `npm test` 1528 passed / 1 skipped across 91 files,
+`tsc` clean, all 15 browser bars pass, both builds published. Work is on
+`claude/landnam-handover-2026-08-21-f96jml`, **33 commits ahead of `main`**.
+
+**NOTHING OF PHASE 8 IS LIVE, and this is the first thing to know.** GitHub
+Pages serves `main`, and `main` is still at `40f5fdf` "Phase 8 planned" with
+a build stamped 2026-08-25. The conversion has never been visible at the
+published URL. `npm run publish:coast` writes the coast build to `coast/` and
+`docs/coast/` on this branch, so pointing Pages at the branch shows it at
+`/coast/` without merging anything; merging to `main` is the permanent
+version and has not been done.
+
+**The coast plays end to end.** Verified in a real browser at 390x844 rather
+than inferred from tests: land, walk the coast, take the land, walk into the
+steading, raise a building, no page errors. The Act sheet gates its deeds
+correctly and says why it refuses. What it does NOT do is look like a game —
+see "The art queue" below, which is the honest answer to "it still looks very
+basic" and was not written down anywhere until today.
+
+**Phase 8 stands at:** 8.0 decided, 8.3 and 8.4 done, 8.1 and 8.2 partial
+(8.1b and 8.2c open), 8.5 in progress. With the flag on, **3 tests fail
+across 3 files** — down from 25 earlier today and from 148 across 39 when the
+flip was first measured. All three have ONE cause, and it is the section
+immediately below: the coast's site report is not calibrated against the hex
+map's. The port hand-over is frozen and the parity vectors are now DECIDED to
+retire with the hexes rather than be regenerated; see the two sections under
+Phase 8.
+
+### THE COAST IS A RICHER COUNTRY THAN THE MAP, and every constant feels it
+
+**Measured 2026-08-27, and it is the head of 8.5's remaining work.**
+
+`stopSurrounds` reuses the hex map's five site measures by BUILDING a ring of
+six for a stretch of coast instead of reading one — that trick is why the
+conversion was cheap, and it is sound. What was never checked is whether the
+ring it builds SCORES like a real one. It does not. A settled band's site
+report, forty seeds each, through the shared `settled()` fixture:
+
+| measure | hex map | coast | why |
+|---|---|---|---|
+| water | 1.82 | 4.70 | own beck at 50%, plus BOTH neighbours' becks, plus the hills and bog bonuses |
+| soil | 2.65 | 4.23 | the ring carries two copies of the stretch's own country, so a valley counts itself twice |
+| timber | 2.13 | 1.60 | the two ocean tiles carry no wood |
+| harbour | 2.38 | 4.00 | the ring ALWAYS holds exactly two ocean, which is `harbour`'s textbook bay, every time |
+| defence | 2.00 | 2.70 | and two tiles that are never doors |
+| **total** | **10.97** | **~17** | **55% richer** |
+
+The instrument was checked before the conclusion: the hex fixture picks the
+best of roughly six hundred candidate hexes within radius 14 and the coast
+fixture the best of FIFTEEN stretches, so if anything it flatters the map.
+The gap is the ring.
+
+What it costs, all three of it measured as test failures today:
+
+- **`sickness`** — twelve tended days take the whole illness off in winter on
+  a coast (14 of 14) where the map takes 6.6. The healer reads `water`, so a
+  4.70 site pays nearly double. Winter has lost its teeth.
+- **`winter`** — heeding the mark saves 50% of bands where the bar wants 60%,
+  because the gap between a prepared and an unprepared band narrows when the
+  ground feeds everyone.
+- **`expedition`** — a band that empties its stores out-survives one that
+  trades, 16 to 12. Staying home is too good.
+
+And a fourth that is not a failure but is the same cause: **a fresh band can
+found where it lands 161 times in 200 on a coast against 7 in 200 on the
+map.** `BECK_SHARE`'s own note says the landing should be dry "about two
+times in five" and calls the opening walk "this phase's decision on its first
+day"; it is one in five, and the note's table was measured BEFORE the ring
+was fixed to carry the neighbours' becks and never re-derived.
+
+**AND THE OBVIOUS FIX IS WRONG — measured, and it is the useful half of this
+entry.** The first read was "make the coast's site report total match the map's,
+so every constant keeps its meaning", and an afternoon was spent on the ring
+shape before the population underneath it was looked at. Over every FOUNDABLE
+site rather than the chosen one:
+
+| | hex, all foundable (n=6786) | coast, all foundable (n=172) |
+|---|---|---|
+| water | 1.24 | 3.49 |
+| soil | 1.58 | 2.84 |
+| timber | 2.77 | 1.77 |
+| harbour | **0.12** | **2.83** |
+| defence | 1.87 | 2.44 |
+| total | 7.59 | 13.36 |
+
+Harbour is the whole story and it is not a defect. Only about one foundable
+hex site in fifty is on the coast at all — the map's foundable ground is
+overwhelmingly INLAND, where `harbour` is zero by definition — and a coast is
+all coast. **A coast SHOULD total higher than an island's interior**, and any
+change that made the two totals agree would be lying about the sea.
+
+So the target is per-measure, and only on the three that a job reads:
+
+- **water** 4.63 -> 1.82 (chosen sites). This is the `sickness` failure: the
+  healer reads `water`, and a 4.63 site pays nearly double a 1.82 one. The
+  levers are `BECK_SHARE` — 0.5 against a foundable hex site's measured 9%
+  own-river — and the hills/bog bonuses, which a ring holding two copies of
+  the strand's own country triggers far too often.
+- **soil** 4.13 -> 2.65. The farmer. Same double-count: the ring carries the
+  stretch's own country twice, so a valley counts itself three times in six.
+- **timber** 1.38 -> 2.13. The woodcutter, and this one is the coast being
+  POORER — the ocean tiles carry no wood.
+
+Harbour and defence stay high and feed no job; leave them.
+
+Two more corrections to the ring itself came out of the same measurement and
+should go in with the calibration: a foundable coastal hex site has ONE ocean
+neighbour 58% of the time, two 24%, three 17% (mean 1.62), where a stretch
+gets exactly two, always — which hands out `harbour`'s bay bonus and two
+non-doors on every single stretch, so both measures carry no information. And
+its ring rivers average 0.36 against a stretch's ~1.0.
+
+Do NOT re-band the outputs. `COAST_VERDICTS` already does that for the verdict
+labels and it only moves the words; every constant that reads a report — every
+job's `floor`/`perPoint`, `WATER_FLOOR`, the winter forecast — is tuned against
+the hex distribution and would each need its own coast branch. Fix the input,
+then re-derive `COAST_VERDICTS` and `BECK_SHARE` against the new distribution
+and re-run the balance sweep.
+
+**The port reached PARITY OK** — 39 checkpoints across two runs, six facets
+each: 1478 actions and 457 days on `runs/long.json`, 66 to day 15 on
+`runs/example.json`, `unported=0`. That was before the freeze; the Parity
+workflow on `landnam-ue` has not been fed since, deliberately.
 
 **The difficulty curve is 87% / 72% / 23% to spring** (fair / even / hard) and
 97% / 92% / 83% to the first winter, restated 2026-08-22. **ANY curve dated
@@ -2382,8 +2499,46 @@ is written so the choice is made with both arcs visible, not by drift.
      replaces, because a stretch thick with wood is a stretch with nowhere to
      beach a knarr and the player wants both on day one.
 
-     What is LEFT is 25, a tail of ones and twos across sixteen files, none of
-     it blocked on anything.
+     **What is LEFT is 3, and they are one bug rather than three.** The tail
+     ran 25 -> 18 -> 3 across 2026-08-27, and almost all of it was the same
+     shape as the fixture that started this job: an instrument written for a
+     coordinate system, over-reading on a line. The ones that turned out to
+     be REAL gaps in the game rather than in a test are worth naming, because
+     each was invisible while its bar was measuring the wrong world:
+
+     - **`doFish` priced the catch by the country BEHIND the beach.**
+       `terrainDef(countryHere(state)).fish` reads right on a map — a meadow
+       has `fish: 0` because a meadow is inland — and on a coast it made one
+       sea into seven. Measured: a day's net food fishing bare water was
+       +1.98 off a shore stretch and BELOW ZERO off all five other countries,
+       and the same fishing ground paid 7.29 off a beach against 2.1 off a
+       valley. A coast band fishes from the beach, so the shore's own number
+       is what the sea off any stretch is worth; it is one price now.
+     - **`WALK` made no sound.** `cuesFor` only knew `MOVE`, so a coast band
+       walked and rowed in silence. The line's own arithmetic gives the same
+       distinction the tile used to: one stretch is priced at its leg and
+       anything further at a day at the oars, so a jump is a row.
+     - **`WALK` never called `reveal`.** The pass that meets a neighbour,
+       meets the other landnamsmadr and picks a place out from a ridge ran
+       only on days the band stopped to forage. `markTrod` learns the next
+       headland either way, so the COUNTRY still appeared and the hole did
+       not show — the people in it did not, and `spotted` was never emitted
+       by a played run at all.
+     - **`WALK` emitted no `marched` beat**, so nothing that animates the
+       road had anything to animate, and rowed stretches were never counted
+       into `seaDays`.
+     - **Nothing was stopping a lesson before the player had taken a turn.**
+       The rule was in a comment for years and true only by luck: on the map
+       a fresh band lands with no fresh water, so `canSettle` was false and
+       `the-ground` stayed quiet. A coast landing carries a beck five times
+       in six, the accident stopped working, and the missing gate showed. It
+       is a rule now, on both maps, and three of the reachability builders
+       turned out to be constructing states no run reaches.
+
+     The three that remain — `sickness`, `winter`, `expedition` — are all the
+     site-report calibration, and it has its own section under "Where we are
+     now": **THE COAST IS A RICHER COUNTRY THAN THE MAP**. That is the next
+     job, and it is the last one before the flag can flip.
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -2465,6 +2620,68 @@ the turn model, deterministic seeded RNG, the sim/render split, the mode
 stack, save discipline as a practice, zero external assets, the single-file
 build, mobile-first, and the oil renderer — whose natural projection is
 side-on, which is most of why this is worth doing at all.
+
+## The art queue — what makes it look like a game
+
+**Written down 2026-08-27, and the fact that it was not written down before
+is part of the entry.** Art 1–10 were carried in a task list, worked through,
+and closed without ever reaching this document. Anyone reading the roadmap
+would conclude the game's look was unplanned, and a session picking the work
+up could not have found it.
+
+**Art 1–10 are DONE**, and they are why the battle and the hex map look
+finished: fighters became people, the field became a place, the beat stream
+was choreographed, the shield wall was made visible, weather and season
+reached the battlefield, the sea moved, terrain got relief light, the map
+became the saga's artifact, life marks arrived, and season and day were
+unified into one CSS light pass.
+
+**And that is exactly why the coast looks basic.** The art pass ran against
+the hex renderers. Phase 8 then built three new views — the procession, the
+strip and the elevation — AFTER it, and none of them has had one. The band is
+drawn as small coloured discs on the road and in the yard; the road is mostly
+empty sky. That is not a conversion bug and no bar will ever catch it: the
+bars ask whether a thing is on the screen and reachable by a thumb, which it
+is.
+
+Ordered by how much they change what a player sees, not by cost:
+
+- [ ] **Art 12 The steading becomes a place** — The elevation draws a yard, a
+  row of houses and some figures. It is not yet somewhere anybody lives:
+  no smoke, no stock, no fence, no ground worn by use, nothing that says a
+  season has passed here. THE biggest single change available to the coast,
+  because the steading is where a saga spends most of its days.
+  *Done when: a screenshot of day 20 and one of day 200 are obviously
+  different places, and neither needs a caption.*
+- [ ] **Art 13 One person, one face, everywhere** — Six people the player
+  learns to recognise, drawn the same way on the road, in the yard and in the
+  line. Today they are discs; `render/figures.ts` already draws real fighters
+  in battle, so the work is mostly making the other two views ask it for the
+  same person rather than inventing anything.
+  *Done when: you can point at a figure on the road and say which of the six
+  it is, and be right.*
+- [ ] **Art 11 Weather you can see out the window** — The travel view knows
+  the sky and the season and says so only in the status bar. A gale should
+  look like a gale.
+- [ ] **Art 15 Night, and the turning of the day** — The light pass exists
+  (Art 10) and travel does not use it.
+- [ ] **Art 19 Blows that land somewhere** — Battle hits read as numbers more
+  than as blows.
+- [ ] **Art 14 Gear you can see** — What a person carries should be visible
+  on them.
+- [ ] **Art 17 The saga as an illuminated chronicle** — The saga log is the
+  game's memory and is styled as a list.
+- [ ] **Art 20 The title and the ending as set pieces** — First and last
+  impressions, both currently plain.
+- [ ] **Art 16 Knotwork, done as a pattern** — Border and ornament, once,
+  reusable.
+- [ ] **Art 18 A hand that drew this** — The through-line: one visual voice
+  across all of it, which is the item that only makes sense last.
+
+**The rule this queue inherits:** zero external assets. Every one of these is
+inline SVG or WebAudio, and the built page still has to run offline from a
+`file://` open. Art 1–10 all landed under that constraint and none of them
+needed to bend it.
 
 ## The next queue — audit of 2026-08-11
 
@@ -3153,6 +3370,86 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-27 — Five things the coast could not do, found by fixing the
+  tests that were looking the wrong way** — 8.5's tail 25 → 18 → 3, both
+  builds green on everything but the site-report calibration.
+
+  The pattern held for the ninth or tenth time this milestone: a test that
+  fails on a coast is usually an instrument written for a coordinate system,
+  and roughly one in four is the game. This round the game's share was five,
+  and each was invisible while its own bar was measuring the wrong world.
+
+  **`doFish` priced the catch by the country behind the beach.** One sea, seven
+  prices: a day's net food fishing bare water measured +1.98 off a shore
+  stretch and below zero off all five of the other countries a coast can be,
+  and the same fishing ground paid 7.29 off a beach against 2.1 off a valley.
+  `terrainDef(countryHere(state)).fish` is right on a map, where a meadow has
+  `fish: 0` because a meadow is inland; on a line every stretch has the same
+  water off it. A coast band fishes from the beach and is never afloat, so
+  the shore's own number is what that water is worth.
+
+  **`WALK` made no sound, called no reveal pass, and emitted no beat.** Three
+  separate holes behind one verb. The sound one was cosmetic. The reveal one
+  was not: the pass that meets a neighbour, meets the other landnamsmadr and
+  picks a place out from a ridge ran only on days the band stopped to forage,
+  so `spotted` was never emitted by a played run at all — and that did not
+  show, because `markTrod` learns the next headland regardless, so the
+  country appeared on schedule and only the people in it were missing.
+
+  **Nothing stopped a lesson before the player had taken a turn.** The rule
+  had been in a comment in `lessons.test.ts` since it was written and was
+  true only by accident: on the hex map a fresh band lands on a beach with no
+  fresh water, `canSettle` is false, and `the-ground` stays quiet — 96.5% of
+  the time. A coast landing carries a beck five times in six, the accident
+  stopped working, and the gate that was never there showed up. Writing it
+  down then failed three of the file's own reachability builders, which had
+  been constructing states no run reaches: a band six days from empty on the
+  day it landed, posts in the ground before the first night.
+
+  Instruments fixed, and two of them were false passes rather than failures:
+  `sound.test.ts` walked eight terrains while standing on one, because it set
+  the ground by rewriting a tile the coast sim does not read; and the wide
+  bot in `beats.test.ts` travels with `MOVE`, so on a coast it stood on the
+  landing for four thousand steps and twelve seeds and reported a live
+  mechanic as unreachable. That is the fourth round of that bot being the
+  bug. `retreat`, `sagagen`, `lessons`, `fishery`, `landmark`, `travel` and
+  `colonyOil` all had hex-shaped fixtures; `repaint` and `travelScene` drive
+  the hex map's own renderer off the recorded hex script and retire with it,
+  under the precedent already set for the parity vectors.
+
+  Two bars were restated rather than loosened, both with the sweep that shows
+  the new one bites. The fishing trip's ceiling was `trip < land * 2.5` and on
+  a line that measures the land's poverty, not the sea's richness — the coast
+  trip returns 3.26 a day against the map's 4.54, so the STINGIER sea blows a
+  ratio the richer one passes, because the divisor is a coast band's average
+  stretch (0.97) rather than a map band's valley (3.31). Asked against upkeep,
+  which means the same thing on both maps, it admits what ships at 1.09x and
+  rejects a `GROUND_YIELD` of 3 at 2.12x — tighter than the bar it replaces,
+  which admits up to about 2.7x. And the painted steading's canvas: a side-on
+  steading is 1121x61 world units against a hex yard's 297x265, so it climbs
+  down to fit iOS's 4096 limit by construction. The claim that survives is
+  the one the climb-down is for — still sharper than the screen, still a legal
+  allocation.
+
+  **What is left is one bug wearing three hats**, and it has its own section:
+  the coast's site report totals 17 where the hex map's totals 11, because
+  `stopSurrounds` builds a ring that is a good site by the five measures' own
+  standards — always exactly two ocean, which is `harbour`'s textbook bay and
+  two tiles that are never doors, plus two copies of the strand's own country
+  and three chances at a beck. `sickness`, `winter` and `expedition` are all
+  that, and so is a landing that can be settled on the spot 161 times in 200
+  against the map's 7.
+
+  And the first fix for it was wrong, which is worth more than the finding
+  was. Chasing the TOTAL down to the map's is the obvious move and it is a
+  lie: only about one foundable hex site in fifty is coastal at all, so the
+  map's `harbour` averages 0.12 over its foundable ground against a coast's
+  2.83, and a coast that scored like an island's interior would be a coast
+  with the sea taken out of it. The target is per-measure and only on the
+  three a JOB reads — water, soil and timber — which is a much smaller change
+  than the one I had started building. The ring work was reverted rather than
+  landed half-done.
 
 - **2026-08-27 — A road with nowhere to go, and a rival who was never inert**
   — `ways` and `rival` green on both builds, 48 → 42.

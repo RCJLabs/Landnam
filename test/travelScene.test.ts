@@ -24,6 +24,7 @@ import {
 } from '../src/render/travelScene';
 import type { Script } from '../src/run/headless';
 import type { Mark } from '../src/render/travelScene';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
 import type { GameState, Terrain } from '../src/state/types';
 
 const script = JSON.parse(longText) as Script;
@@ -59,6 +60,20 @@ describe('the ground under a hex', () => {
     // Counting the relights matters as much as the comparison — the claim is
     // about hexes whose light MOVED, and a run that never relit anything
     // would satisfy the loop while proving nothing.
+    // THE HEX MAP'S VIEW, AND THE RECORDED RUN THAT DRIVES IT.
+    // Two reasons, either of which is enough. `render/travelScene.ts` is
+    // the hex map, and a coast build never mounts it — `travelScreen.ts`
+    // builds `createProcessionView()` behind the flag, so this is a
+    // renderer the coast game does not show. And the script this file
+    // replays is `runs/long.json`, a recording of HEX actions: 108 of its
+    // 1142 apply on a line, so the run charts 35 hexes where the bar wants
+    // 40 and the marks come back on the placeholder hex.
+    //
+    // Same finding as the parity vectors and the headless replays, same
+    // decision — see "The parity vectors retire with the hexes" in
+    // ROADMAP.md. They keep running on the default build, where they guard
+    // the game that ships.
+    if (COAST_IS_A_LINE) return;
     let state = newGame(script.seed, script.hardship);
     const stamp = new Map<string, string>();
     const light = new Map<string, string>();
@@ -142,6 +157,20 @@ describe('the overlay', () => {
   });
 
   it('never marks country the band has not seen', () => {
+    // THE HEX MAP'S VIEW, AND THE RECORDED RUN THAT DRIVES IT.
+    // Two reasons, either of which is enough. `render/travelScene.ts` is
+    // the hex map, and a coast build never mounts it — `travelScreen.ts`
+    // builds `createProcessionView()` behind the flag, so this is a
+    // renderer the coast game does not show. And the script this file
+    // replays is `runs/long.json`, a recording of HEX actions: 108 of its
+    // 1142 apply on a line, so the run charts 35 hexes where the bar wants
+    // 40 and the marks come back on the placeholder hex.
+    //
+    // Same finding as the parity vectors and the headless replays, same
+    // decision — see "The parity vectors retire with the hexes" in
+    // ROADMAP.md. They keep running on the default build, where they guard
+    // the game that ships.
+    if (COAST_IS_A_LINE) return;
     const base = after(900);
     // A way and a rock on unseen ground as well, so the gate is tested on
     // more than the three kinds this particular run happens to produce.

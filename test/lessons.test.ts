@@ -23,6 +23,9 @@ import { allLessonIds, lessonDue } from '../src/sim/lessons';
 import { LESSONS, lessonById } from '../src/data/lessons';
 import { moveOptions } from '../src/sim/road';
 import { foundSettlement, canFound } from '../src/sim/site';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ROUTE_STOPS } from '../src/sim/route';
+import { learnStop } from '../src/sim/coast';
 import { startBattle } from '../src/sim/battleTurn';
 import { SEASON_LENGTH } from '../src/sim/calendar';
 import { WINTERS_TO_JARL } from '../src/data/thing';
@@ -41,9 +44,25 @@ function fresh(seed = 'lessons'): GameState {
 function settled(label: string): GameState {
   for (let i = 0; i < 60; i += 1) {
     const state = fresh(`${label}-${i}`);
+    // Past day one before anything else. A band with posts in the ground on
+    // the day it landed is a state no run reaches, and leaving the day at 1
+    // was quietly the only reason three of the reachability builders below
+    // ever fired — nothing had ever stopped a lesson greeting a player who
+    // had not moved.
+    state.day = 2;
     if (foundSettlement(state)) return state;
     // The landing refused: found wherever the world allows. The fixture
     // needs A steading, not a lucky beach.
+    if (COAST_IS_A_LINE) {
+      // Walked, not scanned: `foundBlocker` reads the stretch the band is
+      // standing on, so assigning a hex leaves them where they were.
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+        state.party.stop = stop;
+        learnStop(state, stop);
+        if (canFound(state, state.party.at) && foundSettlement(state)) return state;
+      }
+      continue;
+    }
     for (const k of Object.keys(state.world.tiles)) {
       const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
       state.party.at = at;
@@ -122,7 +141,17 @@ describe('lessons arrive when the thing matters', () => {
   it('does not greet a new player before they have played a turn', () => {
     // Day one is the game introducing itself; a card in front of the map
     // before the map has been looked at is a tutorial screen.
-    expect(lessonDue(fresh(), NOBODY_TAUGHT)).toBeUndefined();
+    //
+    // Asked of many seeds, because one seed proved nothing. This passed for
+    // years on a single country where the landing happened to have no fresh
+    // water, so `canSettle` was false and `the-ground` stayed quiet — the
+    // rule was never enforced anywhere, it was just usually true. A coast
+    // landing carries a beck five times in six and the accident stopped
+    // working, which is how the missing gate was found.
+    for (let s = 0; s < 60; s += 1) {
+      expect(lessonDue(fresh(`day-one-${s}`), NOBODY_TAUGHT), `seed day-one-${s}`)
+        .toBeUndefined();
+    }
   });
 
   it('teaches the shape of the saga first, then the day', () => {
@@ -226,12 +255,31 @@ describe('lessons arrive when the thing matters', () => {
       },
       'the-store': () => {
         const s = fresh();
+        // Day two, because a band cannot be six days from empty on day one:
+        // this builder used to leave the day at 1 and only passed because
+        // nothing stopped a lesson firing before the player had moved.
+        s.day = 2;
         s.party.food = 6;
         return s;
       },
       'the-ground': () => {
         for (let i = 0; i < 30; i += 1) {
           const s = fresh(`reach-ground-${i}`);
+          // Day two for the same reason as `the-store`: nothing is taught
+          // before the player has taken a turn, and standing on ground worth
+          // holding is something they walked to.
+          s.day = 2;
+          if (COAST_IS_A_LINE) {
+            // On a line the band is placed by STOP — `foundBlocker` reads the
+            // stretch it stands on and ignores the hex it is handed — and it
+            // has to KNOW the stretch, which is what walking there buys.
+            for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+              s.party.stop = stop;
+              learnStop(s, stop);
+              if (canFound(s, s.party.at)) return s;
+            }
+            continue;
+          }
           if (canFound(s, s.party.at)) return s;
           for (const k of Object.keys(s.world.tiles)) {
             const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
@@ -319,7 +367,16 @@ describe('lessons arrive when the thing matters', () => {
       const build = builders[lesson.id];
       expect(build, `no reachability case for ${lesson.id}`).toBeDefined();
       const others = ALL_TAUGHT.filter((id) => id !== lesson.id);
-      const due = lessonDue(build!(), others);
+      const state = build!();
+      // A PLAYED GAME IS PAST DAY ONE, and saying so here rather than in
+      // fourteen builders is the point. Nothing is taught before the player
+      // has taken a turn — a rule the sim only started enforcing once a
+      // coast landing stopped being dry by accident — and most of these
+      // builders were constructing states no run reaches: a band six days
+      // from empty on the day it landed, posts in the ground before the
+      // first night, a battle joined before the first step.
+      state.day = Math.max(state.day, 2);
+      const due = lessonDue(state, others);
       expect(due?.id, `${lesson.id} never fires`).toBe(lesson.id);
       reached.add(lesson.id);
     }

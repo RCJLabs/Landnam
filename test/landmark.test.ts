@@ -21,9 +21,13 @@ import {
   landmarkAt,
   landmarkHere,
   landmarkName,
+  landmarkNameAtStop,
   spotFixedPoints,
 } from '../src/sim/landmark';
 import { onHighGround } from '../src/sim/fog';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ROUTE_STOPS, daysBetween } from '../src/sim/route';
+import { knowsStop, learnStop, onHeights } from '../src/sim/coast';
 
 describe('a fact of the seed, not of the save', () => {
   it('answers the same for the same country every time', () => {
@@ -106,6 +110,36 @@ describe('the reason to climb a ridge', () => {
     // an earlier cut of this bar waited for one and never ran at all. Put
     // them on high ground, which is what climbing it means.
     let ran = 0;
+    if (COAST_IS_A_LINE) {
+      // A ridge is a STRETCH whose country is hills, and reach is counted in
+      // days — `spotFixedPoints` says so, because a hex was already a day's
+      // walk. What is spotted comes back with a placeholder hex and a name,
+      // so the claims are asked of the stretch: within reach, and known
+      // afterwards where it was not before.
+      for (let s = 0; s < 30 && ran < 3; s++) {
+        const state = newGame(`lm-spot:${s}`);
+        const ridge = [...Array(ROUTE_STOPS).keys()].find((stop) => onHeights(state, stop));
+        if (ridge === undefined) continue;
+        state.party.stop = ridge;
+        const before = new Set(
+          [...Array(ROUTE_STOPS).keys()].filter((stop) => knowsStop(state, stop)),
+        );
+        const found = spotFixedPoints(state, state.party.at);
+        if (found.length === 0) continue;
+        ran++;
+        const after = [...Array(ROUTE_STOPS).keys()].filter((stop) => knowsStop(state, stop));
+        // Spotting LIFTS the fog — on a line that is a stretch becoming known.
+        expect(after.length, 'spotted something and learned nothing')
+          .toBeGreaterThan(before.size);
+        for (const stop of after) {
+          if (before.has(stop)) continue;
+          expect(daysBetween(state.seed, ridge, stop), `stretch ${stop} is past sight`)
+            .toBeLessThanOrEqual(LANDMARK_REACH);
+        }
+      }
+      expect(ran, 'no ridge on thirty coasts showed a fixed point').toBeGreaterThan(0);
+      return;
+    }
     for (let s = 0; s < 30 && ran < 3; s++) {
       const state = newGame(`lm-spot:${s}`);
       const ridge = Object.keys(state.world.tiles)
@@ -143,6 +177,21 @@ describe('knowing where you are', () => {
     const state = newGame('lm-bearings');
     // Nowhere near one: no bearings.
     expect(keepsBearings(state)).toBe(landmarkHere(state) !== null);
+
+    if (COAST_IS_A_LINE) {
+      // Stand on the stretch the landmark stands on, and know it — a line
+      // keeps its bearings by `knownStops`, not by lifting fog off a hex.
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+        const name = landmarkNameAtStop(state.seed, stop);
+        if (!name) continue;
+        state.party.stop = stop;
+        learnStop(state, stop);
+        expect(landmarkHere(state)?.name).toBe(name);
+        expect(keepsBearings(state)).toBe(true);
+        return;
+      }
+      throw new Error('no landmark on a whole coast');
+    }
 
     // Stand the band beside a known one and it keeps them.
     for (const k of Object.keys(state.world.tiles)) {

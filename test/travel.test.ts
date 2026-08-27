@@ -17,6 +17,8 @@ import { living } from '../src/sim/people';
 import { foodPerDay, SURVIVAL_DAY } from '../src/sim/upkeep';
 import { daysUntilWinter, seasonOf, wintersStood } from '../src/sim/calendar';
 import { visibilityAt } from '../src/sim/fog';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ROUTE_STOPS, stopAt } from '../src/sim/route';
 import { encode } from '../src/state/save';
 import type { GameState } from '../src/state/types';
 
@@ -164,6 +166,28 @@ describe('movement', () => {
   });
 
   it('you cannot raise a hall on water', () => {
+    if (COAST_IS_A_LINE) {
+      // A QUESTION A LINE CANNOT POSE, so the bar holds the reason instead
+      // of the refusal. `foundBlocker` says it in its own comment: on a
+      // coast the posts go into the STRETCH the band is standing on, and
+      // `route.COUNTRY` is shore and meadow and bog — there is no ocean on
+      // it and no mountain either, so 'sea' and 'rock' are refusals with
+      // nothing to refuse.
+      //
+      // That is only true while it stays true, which is what this checks:
+      // every stretch of a coast is ground a hall could stand on. The day
+      // someone adds an open-water stop, this fails and the refusal comes
+      // back with it.
+      for (let s = 0; s < 40; s += 1) {
+        const seed = `sea-found-${s}`;
+        for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+          const country = stopAt(seed, stop).country;
+          expect(country, `${seed} stop ${stop} is not dry land`).not.toBe('ocean');
+          expect(country, `${seed} stop ${stop} is bare rock`).not.toBe('mountains');
+        }
+      }
+      return;
+    }
     const state = newGame('sea-found');
     const water = neighbors(state.party.at).find((h) => isCoastalWater(state, h))!;
     const afloat = card(apply(state, { type: 'MOVE', to: water }));

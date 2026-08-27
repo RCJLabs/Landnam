@@ -196,7 +196,26 @@ export function doFish(prev: GameState, state: GameState): GameState {
   // Deliberately not gated on canGather: the sea is where the fish are.
   if (!canFish(state)) return prev;
   const party = state.party;
-  const def = terrainDef(countryHere(state));
+  // WHAT IS IN THE WATER IS NOT DECIDED BY WHAT IS ON THE LAND.
+  //
+  // `terrainDef(countryHere(state)).fish` is a hex-map question wearing a
+  // line's clothes. On the map it reads right — a meadow has `fish: 0`
+  // because a meadow is INLAND, and a band standing on one is fishing a
+  // river or nothing. On a coast every stretch has the same sea off it, so
+  // the same expression prices the catch by the country behind the beach,
+  // and it was doing exactly that: measured over eight coasts and four
+  // points of the year, a day's net food fishing bare water came to +1.98
+  // off a shore stretch and BELOW ZERO off all five others (bog -0.50,
+  // forest -0.63, hills -0.47, meadow -0.43, valley -0.42), while the same
+  // fishing ground paid 7.29 off a beach and 2.1 off a valley. One sea,
+  // seven prices.
+  //
+  // A coast band fishes as a shore band does — from the beach, because on a
+  // line they are never afloat: rowing is a step and not a state, which is
+  // the note `fisheryYield` already carries. So the shore's own number is
+  // what the sea off any stretch is worth, and it stays in `data/terrain`
+  // where the rest of the country's numbers live.
+  const def = terrainDef(COAST_IS_A_LINE ? 'shore' : countryHere(state));
   const river = !COAST_IS_A_LINE && state.world.tiles[key(party.at)]?.river === true;
   // A ground pays a multiple, and only to a crew floating on it — see
   // sim/fishery.ts. Folded into the BASE rather than into the take, so the

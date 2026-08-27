@@ -24,7 +24,7 @@ import { passDay } from '../src/sim/upkeep';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
 import { moveOptions } from '../src/sim/road';
 import { learn } from '../src/sim/lore';
-import { bargain, fallOn, seeNeighbours } from '../src/sim/neighbours';
+import { bargain, fallOn, neighboursCallOn, seeNeighbours } from '../src/sim/neighbours';
 import { note, tallyOf, emptyTally } from '../src/sim/tally';
 import { startRaid } from '../src/sim/battleTurn';
 import { composeSaga, sagaText } from '../src/sim/sagagen';
@@ -44,6 +44,17 @@ function settled(seed: string, radius = 14): GameState {
   state.party.firewood = 120;
   state.day = 40;
   seeNeighbours(state);
+  // AND LET THEM CALL. `seeNeighbours` is the hex map's path to knowing
+  // somebody — the fog has been lifted over their ground, so the band has
+  // laid eyes on it — and on a line that path is the narrow one: you have to
+  // be standing where they live. A band sitting in its own hall meets nobody
+  // that way, so every chapter about neighbours dropped out of a coast saga.
+  //
+  // `neighboursCallOn` is the direction the fiction always ran in and the one
+  // the line actually uses: a hall going up on an empty strand is the most
+  // interesting news on that coast. One caller per `CLAN_CALLS_EVERY` days
+  // since the posts went in, so this asks until it stops answering.
+  for (let i = 0; i < state.neighbours.length; i += 1) neighboursCallOn(state);
   return state;
 }
 

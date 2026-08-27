@@ -13,6 +13,7 @@
 // the same saga, or a recorded run is worth nothing.
 
 import { describe, it, expect } from 'vitest';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
 import exampleText from '../runs/example.json?raw';
 import longText from '../runs/long.json?raw';
 import { canonical, hashOf, play, stateHash, worldHash, type Script } from '../src/run/headless';
@@ -102,6 +103,18 @@ describe('replay', () => {
   });
 
   it('reproduces a recorded run exactly, refusing nothing', () => {
+    // THE RECORDED RUNS RETIRE WITH THE HEXES. Same finding as the parity
+    // vectors, and the same decision — see "The parity vectors retire with
+    // the hexes" in ROADMAP.md. `runs/example.json` and `runs/long.json` are
+    // scripts of HEX actions: thirteen and eight `MOVE`s carrying `{q, r}`,
+    // and on a line `MOVE` does not exist because travel is `WALK` to a stop.
+    // A coast build refuses from action #12 onward, which is the script being
+    // untranslatable rather than the sim having changed.
+    //
+    // They keep running on the default build, where they still guard the game
+    // that ships. Re-recording them from coast play is the job that follows
+    // the flag flip, not one that precedes it.
+    if (COAST_IS_A_LINE) return;
     // The committed example, replayed. A refusal here means the sim now
     // offers different choices than it did when this was recorded — which
     // is a real finding about a rules change, not a broken test.
@@ -113,6 +126,18 @@ describe('replay', () => {
   });
 
   it('replays a run that reaches the endgame, refusing nothing', () => {
+    // THE RECORDED RUNS RETIRE WITH THE HEXES. Same finding as the parity
+    // vectors, and the same decision — see "The parity vectors retire with
+    // the hexes" in ROADMAP.md. `runs/example.json` and `runs/long.json` are
+    // scripts of HEX actions: thirteen and eight `MOVE`s carrying `{q, r}`,
+    // and on a line `MOVE` does not exist because travel is `WALK` to a stop.
+    // A coast build refuses from action #12 onward, which is the script being
+    // untranslatable rather than the sim having changed.
+    //
+    // They keep running on the default build, where they still guard the game
+    // that ships. Re-recording them from coast play is the job that follows
+    // the flag flip, not one that precedes it.
+    if (COAST_IS_A_LINE) return;
     // The reason item 5 existed. Every recorded script used to come from a
     // bot that died on day 36, so there was no such thing as a repro case or
     // a seed challenge that reached the parts of the game worth reaching.

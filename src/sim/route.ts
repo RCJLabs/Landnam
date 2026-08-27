@@ -74,8 +74,17 @@ export const ROUTE_STOPS = 26;
 export const LEG_MIN = 2;
 export const LEG_MAX = 4;
 
-/** The country a stretch of coast can be. Never ocean — this is the shore. */
-const COUNTRY: readonly Terrain[] = ['shore', 'meadow', 'forest', 'hills', 'bog', 'valley'];
+/**
+ * The country a stretch of coast can be. Never ocean — this is the shore —
+ * and never mountains either: a route runs along the strand, not over a
+ * summit. Exported because those two absences are load-bearing elsewhere
+ * (`foundBlocker` drops its 'sea' and 'rock' refusals on a line, and the
+ * ambience bars have to iterate the country a coast HAS rather than the
+ * eight a hex map has), and a list every reader retypes drifts.
+ */
+export const ROUTE_COUNTRY: readonly Terrain[] =
+  ['shore', 'meadow', 'forest', 'hills', 'bog', 'valley'];
+const COUNTRY = ROUTE_COUNTRY;
 
 export interface Stop {
   /** 0 is the landing. */

@@ -27,7 +27,10 @@ import { canFound, foundSettlement } from '../src/sim/site';
 import { abandonBlocker, abandonSteading, canAbandon } from '../src/sim/retreat';
 import { ABANDON_AFTER, ABANDON_HEART } from '../src/data/retreat';
 import { childrenOf } from '../src/sim/lineage';
-import { fromKey, key } from '../src/hex';
+import { fromKey } from '../src/hex';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ROUTE_STOPS } from '../src/sim/route';
+import { walkOff } from './fixtures/stand';
 import type { GameState } from '../src/state/types';
 
 describe('the door exists', () => {
@@ -40,11 +43,24 @@ describe('the door exists', () => {
 
     // THE WHOLE POINT. `foundBlocker` answered `settled` forever before this,
     // so a band that walked out would have been homeless for good.
-    const somewhere = Object.keys(state.world.tiles).map(fromKey).find((h) => {
-      state.party.at = h;
-      return canFound(state, h);
-    });
-    expect(somewhere, 'walked out and could never settle again').toBeTruthy();
+    //
+    // Walked, not scanned. On a line `foundBlocker` reads the stretch the
+    // band is STANDING on and ignores the hex it is handed, so assigning
+    // `party.at` searched twenty-six hundred hexes while the band never left
+    // stop 8 — and stop 8 answers `taken`, because the rival fenced the
+    // neighbourhood during the days the steading stood there. The search has
+    // to move the band, which is also what the claim means: somewhere on
+    // this coast they can put posts in again.
+    const somewhere = COAST_IS_A_LINE
+      ? [...Array(ROUTE_STOPS).keys()].find((stop) => {
+          state.party.stop = stop;
+          return canFound(state, state.party.at);
+        })
+      : Object.keys(state.world.tiles).map(fromKey).find((h) => {
+          state.party.at = h;
+          return canFound(state, h);
+        });
+    expect(somewhere, 'walked out and could never settle again').toBeDefined();
   });
 
   it('is a real cost in heart, and more than founding gave back', () => {
@@ -71,9 +87,11 @@ describe('and it is not a free look at the ground', () => {
   it('refuses a band that is not standing in it', () => {
     const state = settled('ret-away');
     state.day = state.settlement!.foundedOn + ABANDON_AFTER;
-    const elsewhere = Object.keys(state.world.tiles).map(fromKey)
-      .find((h) => key(h) !== key(state.settlement!.at));
-    state.party.at = elsewhere!;
+    // `walkOff` self-checks that `atHome` agrees the band has gone, which is
+    // exactly what this refusal is built on — assigning `party.at` moved
+    // nobody on a line, so the band was still in its own yard and the
+    // refusal never came.
+    walkOff(state);
     expect(abandonBlocker(state)).toBe('away');
   });
 

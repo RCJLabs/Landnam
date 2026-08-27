@@ -119,6 +119,19 @@ export function cuesFor(before: GameState, after: GameState, action: Action): Cu
       const ground = after.world.tiles[key(after.party.at)]?.terrain;
       cues.push(ground === 'ocean' ? 'oar' : 'step');
     }
+    if (action.type === 'WALK') {
+      // The line's travel verb, which made no sound at all until now — a
+      // coast band walked and rowed in silence, because the only mover this
+      // file knew about was `MOVE`.
+      //
+      // The same distinction, read off the line's own arithmetic rather than
+      // off a tile: `daysToWalk` prices ONE stop at the length of its leg and
+      // anything further at a single day at the oars, so a stretch crossed
+      // is a walk and a jump is a row. State-derived like the rest of this
+      // file — nothing here asks which button was pressed.
+      const stops = Math.abs((after.party.stop ?? 0) - (before.party.stop ?? 0));
+      cues.push(stops > 1 ? 'oar' : 'step');
+    }
     if (action.type === 'CAMP') cues.push('camp');
     if (action.type === 'FORAGE' || action.type === 'HUNT' || action.type === 'FISH') {
       const got =

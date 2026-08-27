@@ -64,6 +64,26 @@ function screenIsFree(state: GameState): boolean {
 }
 
 /**
+ * Nothing is taught before the player has taken a turn.
+ *
+ * The rule was always the intent — a card in front of the map before the map
+ * has been looked at is a tutorial screen, and lessons.test.ts has said so in
+ * a comment since it was written. It was never a rule, though: on the hex map
+ * the first day was quiet only because a fresh band lands on a beach with no
+ * fresh water, so `canSettle` was false and `the-ground` did not fire. That
+ * is worldgen luck standing in for a design decision, and it held at 96.5%
+ * rather than 100%.
+ *
+ * A coast landing has a beck five times in six, so the same accident stopped
+ * happening and `the-ground` greeted the player before they had moved. The
+ * fix is not to make the landing dry again — it is to say the rule out loud,
+ * where it holds for every seed and both maps.
+ */
+function hasPlayedATurn(state: GameState): boolean {
+  return state.day > 1;
+}
+
+/**
  * The first untaught lesson whose conditions hold, or undefined.
  *
  * First rather than random, because LESSONS is written in teaching order: a
@@ -74,7 +94,7 @@ export function lessonDue(
   state: GameState,
   taught: readonly string[],
 ): LessonDef | undefined {
-  if (!screenIsFree(state)) return undefined;
+  if (!screenIsFree(state) || !hasPlayedATurn(state)) return undefined;
   const known = new Set(taught);
   return LESSONS.find(
     (lesson) => !known.has(lesson.id) && lesson.when.every((w) => holds(state, w)),

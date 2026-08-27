@@ -6,6 +6,7 @@
 // most of this file is about what does NOT happen.
 
 import { describe, expect, it } from 'vitest';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
 import { cuesFor } from '../src/audio/cues';
@@ -173,6 +174,12 @@ describe('across a real run', () => {
   const script = JSON.parse(longText) as Script;
 
   it('stays quiet through most of a four-hundred-day run', () => {
+    // Replays `runs/long.json`, so it retires with the recorded runs — see
+    // "The parity vectors retire with the hexes" in ROADMAP.md and the same
+    // guard in `headless.test.ts`. On a coast the script is a list of hex
+    // actions and only 108 of its 1142 apply, so the quietness this measures
+    // would be measured over a run that never happened.
+    if (COAST_IS_A_LINE) return;
     let state = newGame(script.seed, script.hardship);
     let dispatches = 0;
     let buzzed = 0;

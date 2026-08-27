@@ -16,6 +16,7 @@ import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
 import { isIdle, repaintWork, type Lit } from '../src/render/repaint';
 import type { Script } from '../src/run/headless';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
 import type { GameState } from '../src/state/types';
 
 const LONG = JSON.parse(longText) as Script;
@@ -61,7 +62,22 @@ function drive(states: GameState[]) {
   return { made, touched, idle, held: drawn.size };
 }
 
-describe('a repaint costs what changed', () => {
+// THE RECORDED RUN RETIRES WITH THE HEXES, and so does the map it measures.
+//
+// Every number in this block is measured over `runs/long.json`, a recording
+// of HEX actions — `MOVE` carrying `{q, r}`, which on a line does not exist
+// because travel is `WALK` to a stop. A coast build applies 108 of its 1142,
+// so the replay stops short and the chart it builds is a fraction of the one
+// the ratios are about. And `render/repaint.ts` is the hex map's cache:
+// `travelScreen.ts` mounts `createProcessionView()` behind the flag, so a
+// coast build never draws a polygon for a hex at all.
+//
+// Same finding as the parity vectors and the headless replays, same decision
+// — see "The parity vectors retire with the hexes" in ROADMAP.md. The block
+// below keeps running on the default build, where it guards the map that
+// ships; `repaintWork`'s own unit bars underneath are about the diff itself
+// and hold on either build, so they are not skipped.
+describe.skipIf(COAST_IS_A_LINE)('a repaint costs what changed', () => {
   const states = replay(LONG);
 
   it('replays the long run', () => {
