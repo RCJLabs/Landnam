@@ -6,6 +6,7 @@
 // exactly the places its seed would have been born with.
 
 import { describe, it, expect } from 'vitest';
+import { standBeside, standOn } from './fixtures/stand';
 import { distance, key } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
@@ -133,7 +134,7 @@ function standingOn(seed: string, kind: Place['kind']): GameState | null {
     const state = structuredClone(newGame(`${seed}-${s}`));
     const place = state.world.places.find((p) => p.kind === kind);
     if (!place) continue;
-    state.party.at = { ...place.at };
+    standOn(state, place);
     state.world.seen[key(place.at)] = 'visible';
     return state;
   }
@@ -248,7 +249,7 @@ describe('a place you can deal with', () => {
       const state = structuredClone(newGame(`market-${s}`));
       const place = state.world.places.find((p) => p.kind === kind);
       if (!place) continue;
-      state.party.at = { ...place.at };
+      standOn(state, place);
       state.world.seen[key(place.at)] = 'visible';
       state.party.food = 200;
       state.party.firewood = 200;
@@ -440,7 +441,7 @@ describe('word of the country travels', () => {
     const state = structuredClone(newGame('told-wired'));
     for (const k of Object.keys(state.world.seen)) delete state.world.seen[k];
     const host = state.neighbours[0]!;
-    state.party.at = { ...host.at };
+    standBeside(state, host);
     state.party.food = 200;
     const before = state.world.places.filter((p) => state.world.seen[key(p.at)] !== undefined).length;
     const next = apply(state, { type: 'BARTER', id: host.id });

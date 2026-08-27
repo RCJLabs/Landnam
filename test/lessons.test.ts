@@ -14,6 +14,7 @@
 //      veteran, and a veteran is shown nothing at all.
 
 import { describe, it, expect } from 'vitest';
+import { standOn } from './fixtures/stand';
 import { springStrake } from '../src/sim/ship';
 import { newGame } from '../src/state/create';
 import { apply, type Action } from '../src/sim/actions';
@@ -285,7 +286,7 @@ describe('lessons arrive when the thing matters', () => {
           const s = fresh(`reach-place-${i}`);
           const place = s.world.places[0];
           if (!place) continue;
-          s.party.at = { ...place.at };
+          standOn(s, place);
           return s;
         }
         throw new Error('no seed produced a place to stand on');

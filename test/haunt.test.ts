@@ -12,6 +12,9 @@
 //     one being bragged about.
 
 import { describe, expect, it } from 'vitest';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ROUTE_STOPS, onRoute } from '../src/sim/route';
+import { standOn } from './fixtures/stand';
 import { newGame } from '../src/state/create';
 import { settled as settleSomewhere } from './fixtures/settle';
 import { migrate } from '../src/state/migrations';
@@ -113,6 +116,27 @@ describe('worldgen never grows its own ruin', () => {
 describe('the haunting itself', () => {
   it('stands the ruin on the ground the ghost named', () => {
     const state = structuredClone(newGame('haunt-place'));
+    if (COAST_IS_A_LINE) {
+      // A DIFFERENT CLAIM, because on a line there is no ground the ghost
+      // named. `ghostOf` cuts the ghost from `settlement.at`, and on a coast
+      // that field is the frozen landing hex — every coast ghost carries the
+      // same meaningless pair. So what is owed here is that the ruin lands
+      // somewhere a band can actually walk to, which is the thing that was
+      // broken: it used to be pushed with no `stop` at all, so `placeHere`
+      // could never match it and a haunted coast had a grave nobody could
+      // reach.
+      expect(haunt(state, GHOST)).toBe(true);
+      const ruin = theRuin(state)!;
+      expect(ruin.stop, 'the ruin is not on the coast').not.toBeUndefined();
+      expect(ruin.stop, 'the ruin is on the landing beach').toBeGreaterThan(0);
+      expect(onRoute(ruin.stop!), 'the ruin is off the end of the route').toBe(true);
+      // And the same code puts it in the same place for everybody.
+      const twin = structuredClone(newGame('haunt-place'));
+      expect(haunt(twin, GHOST)).toBe(true);
+      expect(theRuin(twin)!.stop).toBe(ruin.stop);
+      expect(ghostLine(state)).toContain('Eikstead');
+      return;
+    }
     // A hex this world will actually hold a ruin on.
     const at = Object.keys(state.world.tiles).map(fromKey).find(
       (h) => placeKind('ruin').ground.includes(state.world.tiles[`${h.q},${h.r}`]!.terrain)
@@ -139,6 +163,17 @@ describe('the haunting itself', () => {
 
   it('gives up quietly rather than throwing when nothing will hold it', () => {
     const state = structuredClone(newGame('haunt-nowhere'));
+    if (COAST_IS_A_LINE) {
+      // A hex off the end of the map is not a way to say "nowhere" on a line
+      // — the stop search ignores the ghost's hex entirely. So the coast's
+      // version of nowhere is a route with every stretch already spoken for.
+      for (let stop = 1; stop < ROUTE_STOPS; stop += 1) {
+        state.world.places.push({ id: `pl_full_${stop}`, kind: 'town', at: { q: 0, r: 0 }, stop });
+      }
+      expect(() => haunt(state, GHOST)).not.toThrow();
+      expect(theRuin(state), 'a full coast still took a ruin').toBeUndefined();
+      return;
+    }
     // Far outside the map entirely.
     expect(() => haunt(state, { ...GHOST, at: { q: 9999, r: -9999 } })).not.toThrow();
     expect(theRuin(state)).toBeUndefined();
@@ -225,7 +260,7 @@ describe('the coast remembers whose steading it was', () => {
     expect(at, 'no ground in this world holds a ruin').toBeTruthy();
     expect(haunt(state, { ...GHOST, at: at! })).toBe(true);
     const ruin = theRuin(state)!;
-    state.party.at = { ...ruin.at };
+    standOn(state, ruin);
     return { state, ruinId: ruin.id };
   }
 

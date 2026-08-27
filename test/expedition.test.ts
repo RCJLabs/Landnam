@@ -5,6 +5,7 @@
 // Together those are what makes it a wheel rather than a fork in the road.
 
 import { settled as settleSomewhere } from './fixtures/settle';
+import { goHome } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
 import { distance, key } from '../src/hex';
 import { newGame } from '../src/state/create';
@@ -195,7 +196,7 @@ describe('the steading keeps working while they are gone', () => {
     passDay(state);
     expect(state.expedition, 'came home too early').toBeDefined();
 
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
     expect(arriveHome(state)).toBe(true);
     expect(state.expedition).toBeUndefined();
     expect(homeCrew(state)).toHaveLength(6);

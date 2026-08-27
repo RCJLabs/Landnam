@@ -12,6 +12,7 @@
 // the difference must still be there long after the deed.
 
 import { settled as settleSomewhere } from './fixtures/settle';
+import { goHome, standBeside } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
 import { distance, neighbors } from '../src/hex';
 import { stream } from '../src/rng';
@@ -87,22 +88,22 @@ function settled(seed: string, radius = 14): GameState {
 /** Falls on every neighbour once, without fighting anybody. */
 function makeEnemies(state: GameState): void {
   for (const n of state.neighbours) {
-    state.party.at = { ...n.at };
+    standBeside(state, n);
     expect(fallOn(state, n.id)).not.toBeNull();
   }
-  state.party.at = { ...state.settlement!.at };
+  goHome(state);
 }
 
 /** Deals honestly with every neighbour, the same number of times. */
 function makeFriends(state: GameState, rounds = 4): void {
   for (const n of state.neighbours) {
-    state.party.at = { ...n.at };
+    standBeside(state, n);
     for (let i = 0; i < rounds; i++) {
       state.party.food = 200;
       expect(bargain(state, n.id)).not.toBeNull();
     }
   }
-  state.party.at = { ...state.settlement!.at };
+  goHome(state);
   state.party.food = 90;
 }
 
@@ -317,7 +318,7 @@ describe('standing is a memory', () => {
     const target = state.neighbours[0]!;
     const before = target.standing;
 
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     expect(fallOn(state, target.id)).toBe(target.might);
     expect(target.standing).toBe(before + REP_RAIDED);
 
@@ -379,7 +380,7 @@ describe('bartering', () => {
     const state = settled('nb-bargain');
     const target = state.neighbours[0]!;
     target.standing = 30;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const food = state.party.food;
     const wood = state.party.firewood;
 
@@ -395,7 +396,7 @@ describe('bartering', () => {
   it('nobody deals with you below the floor, and the panel says why', () => {
     const state = settled('nb-floor');
     const target = state.neighbours[0]!;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
 
     target.standing = TRADE_FLOOR;
     expect(bargainBlocker(state, target.id)).toBeNull();
@@ -408,7 +409,7 @@ describe('bartering', () => {
     expect(bargainBlocker(state, target.id)).toBe('stores');
 
     state.party.food = 90;
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
     expect(bargainBlocker(state, target.id)).toBe('nobody');
   });
 
@@ -427,7 +428,7 @@ describe('bartering', () => {
       ] as const) {
         const target = state.neighbours[0]!;
         shiftStanding(state, target.id, delta);
-        state.party.at = { ...target.at };
+        standBeside(state, target);
         state.party.food = 200;
         // A refusal is the worst price there is, and counts as one.
         const deal = bargain(state, target.id);
@@ -555,7 +556,7 @@ describe('falling on a neighbour, in play', () => {
     const state = settled('nb-inplay');
     const target = state.neighbours[0]!;
     const before = target.standing;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
 
     const next = apply(state, { type: 'FALL_ON', id: target.id });
     expect(next).not.toBe(state);
@@ -568,7 +569,7 @@ describe('falling on a neighbour, in play', () => {
   it('you cannot fall on somebody you are not standing in front of', () => {
     const state = settled('nb-reach');
     const target = state.neighbours[0]!;
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
     expect(apply(state, { type: 'FALL_ON', id: target.id })).toBe(state);
     expect(apply(state, { type: 'FALL_ON', id: 'nb_nobody' })).toBe(state);
     expect(target.standing).toBe(state.neighbours[0]!.standing);
@@ -578,7 +579,7 @@ describe('falling on a neighbour, in play', () => {
     const state = settled('nb-day');
     const target = state.neighbours[0]!;
     target.standing = 30;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const day = state.day;
 
     const next = apply(state, { type: 'BARTER', id: target.id });
@@ -680,7 +681,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     const state = settled('plunder-heart');
     const target = state.neighbours[0]!;
     target.might = 2;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     // Well clear of the cap, or a win against 100 would read as no change.
     state.party.morale = 40;
 
@@ -694,7 +695,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     const full = settled('heart-full');
     const picked = settled('heart-picked');
     for (const s of [full, picked]) {
-      s.party.at = { ...s.neighbours[0]!.at };
+      standBeside(s, s.neighbours[0]!);
       s.party.morale = 40;
       s.neighbours[0]!.might = 2;
     }
@@ -709,7 +710,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     const state = settled('plunder-win');
     const target = state.neighbours[0]!;
     target.might = 2;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const before = state.party.food + state.party.firewood;
 
     const after = winFallOn(state, target.id);
@@ -723,7 +724,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
   it('a lost fight pays nothing, and leaves their stores where they were', () => {
     const state = settled('plunder-loss');
     const target = state.neighbours[0]!;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const mightBefore = target.might;
 
     let next = apply(state, { type: 'FALL_ON', id: target.id });
@@ -741,7 +742,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     const state = settled('plunder-arms');
     const target = state.neighbours[0]!;
     target.might = 1;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const after = winFallOn(state, target.id);
     expect(neighbourAt(after, target.at)!.might).toBe(2);
   });
@@ -754,7 +755,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
       const state = settled(`plunder-thrall-${s}`);
       state.settlement!.built.push('longhouse', 'bud');
       const target = state.neighbours[0]!;
-      state.party.at = { ...target.at };
+      standBeside(state, target);
       const headsBefore = state.party.people.filter((p) => p.alive).length;
       const after = winFallOn(state, target.id);
       const heads = after.party.people.filter((p) => p.alive).length;

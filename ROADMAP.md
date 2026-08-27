@@ -2056,12 +2056,52 @@ is written so the choice is made with both arcs visible, not by drift.
        it answers a different question and reports the answer as theirs. It
        now asks: `stock` is off by default.
 
-     What is LEFT is no longer fixture noise. The remaining 103 cluster in
-     `neighbours` (24), `places` (16), `site` (7), `parity` (7), `strandhogg`
-     (6) and `colony` (6) — tests that ask hex questions on purpose ("Threefires
-     is 24 hexes off", "expected 'shore' to be 'meadow'"). Those are the
-     conversion, and they are now visible instead of buried under thirty
-     copies of the same helper reporting "nothing foundable".
+     **Then the same shape again, one layer down: 103 → 88.** With the site
+     search shared, the next commonest failure was `expected null not to be
+     null` — a verb refusing because the band was not where the test believed
+     it had put them. The line that put them there is
+     `state.party.at = { ...n.at }`, written out 31 times across seven files.
+     The SIM has no such problem: `standingIn`, `standingOn` and `atHome` each
+     branch on the flag and have since 8.2c. What was never converted was the
+     tests' half of the same idea — not "where am I" but "put me there".
+
+     `test/fixtures/stand.ts` is those three predicates inverted:
+     `standBeside`, `standOn`, `goHome`. Each CHECKS ITSELF against the
+     predicate it inverts before returning, and that is the whole design — a
+     fixture that puts the band in the wrong place otherwise fails four lines
+     later inside the verb under test, as a null with no explanation.
+     `neighbours` alone went 24 → 6.
+
+     **And the self-check immediately found a real defect, which is what it
+     is for.** `haunt.test.ts` went UP, 2 → 5, all of them
+     `ruin pl_ruin is not on the coast — it has no stop`. `haunt()` pushed its
+     ruin with a hex and no stop, so `placeHere` — which matches on stop —
+     could never see it. **A challenge code's ghost put a grave on the coast
+     that nobody could ever walk to.** Exactly the shape of the `MAKE_WAY`
+     find in job 2, and invisible for the same reason: the feature still
+     "worked", it just could not be reached.
+
+     Fixed in `hauntedStop`, and the fix had a design call in it. On a line
+     the ghost has NO ADDRESS TO HONOUR: `ghostOf` cuts it from
+     `settlement.at`, and on a coast that is the frozen landing hex, so every
+     coast ghost carries the same meaningless pair and the `g<q>,<r>` slot in
+     a challenge code says nothing. So the stretch is DERIVED from the ghost's
+     own fields through the seeded stream — everyone pasting a code gets the
+     same coast, which is the requirement that actually matters. The
+     alternative, widening the code format with a stop, was rejected: codes
+     get retyped with a thumb, old codes must keep working, and the extra
+     field would carry a fact the coast does not have. `haunt.ts`'s own rule
+     about not moving a ruin because its position is "the one thing the ghost
+     is actually saying" has no force here — there is no such thing being
+     said. Rule 2 still holds: a coast with no stretch free simply has no
+     ruin, quietly.
+
+     What is LEFT is no longer fixture noise. The remaining 88 cluster in
+     `places` (15), `site` (7), `parity` (7), `strandhogg` (6), `colony` (6)
+     and `neighbours` (6) — tests that ask hex questions on purpose
+     ("Threefires is 24 hexes off", "expected 'shore' to be 'meadow'"). Those
+     are the conversion, and they are now visible instead of buried under
+     thirty copies of the same helper reporting "nothing foundable".
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -2817,6 +2857,53 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-27 — One way to stand somewhere, and a grave nobody could reach**
+  — The site fixture's sequel, and it played out the same way twice over.
+
+  With the site search shared, the commonest remaining coast failure was
+  `expected null not to be null`: a verb refusing because the band was not
+  where the test believed it had put them. The line that put them there —
+  `state.party.at = { ...n.at }` — appears 31 times across seven files. The
+  sim has no such problem; `standingIn`, `standingOn` and `atHome` have
+  branched on the flag since 8.2c. It was the tests' half of the idea that was
+  never converted: not "where am I" but "put me there".
+
+  `test/fixtures/stand.ts` inverts those three predicates — `standBeside`,
+  `standOn`, `goHome` — and each one checks itself against the predicate it
+  inverts before returning. That self-check is the design, not a nicety: a
+  fixture that puts the band in the wrong place otherwise fails four lines
+  later inside the verb under test, as an unexplained null, which is precisely
+  the 24 failures it was written to clear. Measured on a coast build:
+  **103 failures across 25 files → 88 across 26**, `neighbours` alone 24 → 6.
+
+  **And it found a real defect on its first run, which is the point of it.**
+  `haunt.test.ts` went UP, 2 → 5, every one of them
+  `ruin pl_ruin is not on the coast — it has no stop`. `haunt()` pushed its
+  ruin carrying a hex and no stop, and `placeHere` matches on stop — so a
+  challenge code's ghost put a grave on the coast that no band could ever walk
+  to. The same shape as the `MAKE_WAY` find, invisible for the same reason:
+  the feature still ran, it just could not be reached.
+
+  The fix carried a design call. On a line the ghost has no address to honour
+  — `ghostOf` cuts it from `settlement.at`, which on a coast is the frozen
+  landing hex, so every coast ghost carries the same meaningless pair of
+  numbers and the `g<q>,<r>` slot in a challenge code says nothing at all. So
+  `hauntedStop` DERIVES the stretch from the ghost's own fields through the
+  seeded stream: everyone who pastes a code still gets the same coast, which
+  is the requirement that actually matters. Widening the code format with a
+  stop was rejected — codes get retyped with a thumb, old codes have to keep
+  working, and the field would carry a fact the coast does not have.
+  `haunt.ts`'s rule about a ruin's position being "the one thing the ghost is
+  actually saying" has no force on a line, because nothing is being said; its
+  other rule does, and holds — a coast with no free stretch simply has no
+  ruin, quietly.
+
+  Two `haunt` tests were given coast branches rather than loosened: "stands on
+  the ground the ghost named" becomes "lands somewhere a band can walk to, and
+  the same code puts it in the same place twice", and "gives up quietly when
+  nothing will hold it" fills every stretch of the route instead of naming a
+  hex off the edge of the map. Both builds green, 18/18 either way.
 
 - **2026-08-26 — One site search instead of twenty-two** — Groundwork for
   8.5's first job, and the shape of it came out of measuring rather than

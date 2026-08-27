@@ -14,6 +14,7 @@
 // real fights with a bot that uses every verb, and names the kinds it saw.
 
 import { describe, it, expect } from 'vitest';
+import { goHome, standOn } from './fixtures/stand';
 import { fromKey, key, range } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
@@ -569,7 +570,7 @@ describe('the errands and the fixed places', () => {
     const crew = living(state.party.people).slice(0, 2).map((p) => p.id);
     expect(launch(state, crew, 'trade')).toBe(true);
     state.day += 6;
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
     expect(arriveHome(state)).toBe(true);
     expect(state.beats?.at(-1)).toMatchObject({ kind: 'cameHome', purpose: 'trade', days: 6 });
   });
@@ -595,7 +596,7 @@ describe('the errands and the fixed places', () => {
   it('a deal across a counter says what crossed it', () => {
     const state = homestead('beat-deal');
     const town = state.world.places.find((p) => (placeKind(p.kind).market ?? []).length > 0)!;
-    state.party.at = { ...town.at };
+    standOn(state, town);
     const offer = offersAt(state, town.id)[0]!;
     state.beats = [];
     expect(tradeAt(state, town.id, offer.id)).not.toBeNull();

@@ -13,6 +13,7 @@
 //      shipping the seed with it means nothing.
 
 import { settled as settleSomewhere } from './fixtures/settle';
+import { goHome, standBeside } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -69,10 +70,10 @@ function fullRun(seed: string): GameState {
 
   const first = state.neighbours[0];
   if (first) {
-    state.party.at = { ...first.at };
+    standBeside(state, first);
     state.party.food = 200;
     bargain(state, first.id);
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
   }
 
   const victim = state.party.people[1]!;
@@ -222,9 +223,9 @@ describe('THE BAR — it says what happened, and only that', () => {
     // The deed has to happen while the run is still running.
     const ending = raider.end!;
     delete raider.end;
-    raider.party.at = { ...target.at };
+    standBeside(raider, target);
     expect(fallOn(raider, target.id)).not.toBeNull();
-    raider.party.at = { ...raider.settlement!.at };
+    goHome(raider);
     raider.end = ending;
 
     expect(text(raider)).not.toBe(text(peaceful));
@@ -239,7 +240,7 @@ describe('the tally', () => {
     expect(tallyOf(state)).toEqual(emptyTally());
 
     const target = state.neighbours[0]!;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     state.party.food = 200;
     bargain(state, target.id);
     expect(tallyOf(state).bargains).toBe(1);
