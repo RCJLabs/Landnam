@@ -6,12 +6,18 @@
 // whole commit because of it. A bar that cannot fail loudly is not a bar.
 import { spawnSync } from 'node:child_process';
 
-// THE GAME'S OWN BARS, run against the default build — which since
-// 2026-08-28 is the COAST. Every bar the shipping game has is now measured
-// against the shipping game; before the flip the coast's own three were the
-// afterthought at the bottom of this file.
+// THE GAME'S OWN BARS. There is one build now — the coast — so there is one
+// list, and everything the shipping game has is measured against it.
 //
-// Keep every bar on one of these two lists. `repaint` was once on neither, so
+// Five bars used to sit on a second list below, run against `VITE_HEX=1`:
+// `sea` asked what the map promised afloat, `pinch`, `way-look` and `repaint`
+// were the hex map's own pan, sight and paint cache, and `steading` was the
+// hex colony yard. Every one of them made a claim about a coordinate system
+// that no longer exists, so they were deleted with it in 8.5 rather than
+// translated into claims about a line — the three the line needed
+// (`strip`, `procession`, `hearth`) were written for it in job 2.
+//
+// Keep every bar on this list. `repaint` was once on neither list, so
 // `npm run bars` never ran it and it sat red for however long it took the
 // deep to get its own pattern pair. A bar nothing runs is not a bar.
 const BARS = [
@@ -20,18 +26,7 @@ const BARS = [
   ['strip', []], ['procession', []], ['hearth', []],
 ];
 
-// Bars whose CLAIM does not exist on a coast, each decided on its own terms
-// rather than ported — see 8.5's job 2 in ROADMAP.md. `sea` asks what the map
-// promises afloat and a line is never afloat; `pinch` and `way-look` and
-// `repaint` are the hex map's own pan, sight and paint cache; `steading` is
-// the hex colony yard. They keep running while `VITE_HEX=1` still builds.
-const HEX_BARS = [
-  ['sea', []], ['pinch', []], ['way-look', []], ['repaint', []], ['steading', []],
-];
-
-const build = (env) => spawnSync('npm', ['run', 'build'], {
-  encoding: 'utf8', env: { ...process.env, ...env },
-});
+const build = () => spawnSync('npm', ['run', 'build'], { encoding: 'utf8' });
 
 let bad = 0;
 let ran = 0;
@@ -47,32 +42,18 @@ function bar(name, args, label = args.length ? `${name} ${args.join(' ')}` : nam
   console.log(`  FAIL  ${label} (exit ${run.status}) — ${said}`);
 }
 
-// BUILD THE ORDINARY PAGE FIRST, rather than trusting whatever is in `dist/`.
+// BUILD FIRST, rather than trusting whatever is in `dist/`.
 //
-// This once ran against whatever the last command happened to leave in
-// `dist/`, and was correct only as long as nothing else ever built. Then a
-// publish of the other build arrived, and a run straight after it reported
-// six red bars that were all false. Both builds get their own build step
-// here, and the default one goes back at the end: leaving the wrong page in
-// `dist/` is a quiet way for it to reach somebody's browser.
-if (build({ VITE_HEX: '' }).status !== 0) {
-  console.error('bars: the ordinary build did not build — nothing was measured.');
+// This once ran against whatever the last command happened to leave there,
+// and was correct only as long as nothing else ever built. Then a publish of
+// the other build arrived and a run straight after it reported six red bars
+// that were all false.
+if (build().status !== 0) {
+  console.error('bars: the build did not build — nothing was measured.');
   process.exit(2);
 }
 
 for (const [name, args] of BARS) bar(name, args);
-
-// The hex game's own five, which need a build of it.
-if (build({ VITE_HEX: '1' }).status !== 0) {
-  bad += HEX_BARS.length; ran += HEX_BARS.length;
-  console.log(`  FAIL  ${HEX_BARS.map(([n]) => n).join(', ')} — the hex build did not build`);
-} else {
-  for (const [name, args] of HEX_BARS) bar(name, args, `${name} (hex)`);
-}
-if (build({ VITE_HEX: '' }).status !== 0) {
-  bad++;
-  console.log('  FAIL  (the ordinary build could not be put back)');
-}
 
 console.log(bad === 0 ? `\nall ${ran} browser bars pass` : `\n${bad} of ${ran} FAILED`);
 process.exit(bad === 0 ? 0 : 1);

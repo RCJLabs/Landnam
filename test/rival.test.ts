@@ -7,16 +7,13 @@
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
-import { key, distance } from '../src/hex';
 import { apply } from '../src/sim/actions';
 import { foundBlocker } from '../src/sim/site';
 import { hasBeck } from '../src/sim/site';
 import {
   CLAIM_EVERY,
   CLAIM_EVERY_STOPS,
-  CLAIM_REACH,
   CLAIM_REACH_STOPS,
-  RIVAL_APART,
   RIVAL_APART_STOPS,
   RIVAL_SETTLES,
   rivalBlocks,
@@ -25,7 +22,6 @@ import {
   rivalStops,
 } from '../src/sim/rival';
 import { currentMode } from '../src/modes';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { learnStop } from '../src/sim/coast';
 import type { GameState } from '../src/state/types';
 
@@ -86,28 +82,24 @@ function idle(state: GameState, days: number): GameState {
 
 /** His holdings, in whichever units this world counts them. */
 function holdings(state: GameState): number {
-  return COAST_IS_A_LINE ? rivalStops(state).length : state.rival!.claims.length;
+  return rivalStops(state).length;
 }
 
 /** How long it takes him to close his hand once, in this world's clock. */
-const CLAIM_TICK = COAST_IS_A_LINE ? CLAIM_EVERY_STOPS : CLAIM_EVERY;
+const CLAIM_TICK = CLAIM_EVERY_STOPS;
 
 describe('there is a second landnam on this island', () => {
   it('lands far enough off that we do not start in his yard', () => {
     for (let i = 0; i < 20; i++) {
       const state = newGame(`rival-apart:${i}`);
       if (!state.rival) continue;
-      if (COAST_IS_A_LINE) {
-        // Was passing vacuously: `rival.at` is the placeholder (0,0) on a
-        // line, so the hex distance measured the landing against a fixed
-        // point and happened to clear the bar. RIVAL_APART_STOPS is the real
-        // one, and it means what RIVAL_APART meant — far enough that neither
-        // his elbow nor his reach touches the sand we were put down on.
-        expect(state.rival.stop, `${i}: no address`).not.toBeUndefined();
-        expect(state.rival.stop).toBeGreaterThanOrEqual(RIVAL_APART_STOPS);
-        continue;
-      }
-      expect(distance(state.rival.at, state.world.landing)).toBeGreaterThanOrEqual(RIVAL_APART);
+      // Was passing vacuously: `rival.at` is the placeholder (0,0) on a
+      // line, so the hex distance measured the landing against a fixed
+      // point and happened to clear the bar. RIVAL_APART_STOPS is the real
+      // one, and it means what RIVAL_APART meant — far enough that neither
+      // his elbow nor his reach touches the sand we were put down on.
+      expect(state.rival.stop, `${i}: no address`).not.toBeUndefined();
+      expect(state.rival.stop).toBeGreaterThanOrEqual(RIVAL_APART_STOPS);
     }
   });
 
@@ -128,44 +120,32 @@ describe('there is a second landnam on this island', () => {
     // He does not sit still. This is the whole mechanic: days spent are
     // ground lost, whatever the band spent them on.
     expect(holdings(state)).toBeGreaterThan(opening);
-    if (COAST_IS_A_LINE) {
-      // `rivalHolds` reads the stretch UNDERFOOT on a line, the way every
-      // other "is this ground spoken for" question does — so the band has to
-      // be standing on his hall for the question to be about his hall.
-      state.party.stop = state.rival!.stop;
-      expect(rivalHolds(state, state.party.at)).toBe(true);
-      return;
-    }
-    expect(rivalHolds(state, state.rival!.at)).toBe(true);
+    // `rivalHolds` reads the stretch UNDERFOOT on a line, the way every
+    // other "is this ground spoken for" question does — so the band has to
+    // be standing on his hall for the question to be about his hall.
+    state.party.stop = state.rival!.stop;
+    expect(rivalHolds(state)).toBe(true);
   });
 
   it('keeps his claim in one piece and within reach of the hall', () => {
     let state = newGame('rival-shape');
     state = idle(state, RIVAL_SETTLES + CLAIM_TICK * 4 + 2);
     if (state.end || !state.rival) return;
-    if (COAST_IS_A_LINE) {
-      // Also passing vacuously: on a line the claims live in `claimStops` and
-      // `claims` is empty, so this loop had nothing to walk.
-      const stops = rivalStops(state);
-      expect(stops.length, 'he holds nothing at all').toBeGreaterThan(0);
-      for (const stop of stops) {
-        expect(Math.abs(stop - state.rival.stop!)).toBeLessThanOrEqual(CLAIM_REACH_STOPS);
-      }
-      // A block of coast, not flags scattered along it: every stretch he
-      // holds touches another, which is what `nextClaimStop` enforces.
-      for (const stop of stops) {
-        if (stop === state.rival.stop) continue;
-        expect(
-          stops.includes(stop - 1) || stops.includes(stop + 1),
-          `stretch ${stop} is a flag on its own`,
-        ).toBe(true);
-      }
-      return;
+    // Also passing vacuously: on a line the claims live in `claimStops` and
+    // `claims` is empty, so this loop had nothing to walk.
+    const stops = rivalStops(state);
+    expect(stops.length, 'he holds nothing at all').toBeGreaterThan(0);
+    for (const stop of stops) {
+      expect(Math.abs(stop - state.rival.stop!)).toBeLessThanOrEqual(CLAIM_REACH_STOPS);
     }
-    for (const k of state.rival.claims) {
-      const [q, r] = k.split(',').map(Number);
-      // A blot on the map, not flags scattered over the island.
-      expect(distance({ q: q!, r: r! }, state.rival.at)).toBeLessThanOrEqual(CLAIM_REACH);
+    // A block of coast, not flags scattered along it: every stretch he
+    // holds touches another, which is what `nextClaimStop` enforces.
+    for (const stop of stops) {
+      if (stop === state.rival.stop) continue;
+      expect(
+        stops.includes(stop - 1) || stops.includes(stop + 1),
+        `stretch ${stop} is a flag on its own`,
+      ).toBe(true);
     }
   });
 });
@@ -175,38 +155,29 @@ describe('his ground is not ours to take', () => {
     let state = newGame('rival-block');
     state = idle(state, RIVAL_SETTLES + CLAIM_TICK + 2);
     if (state.end || !state.rival) return;
-    if (COAST_IS_A_LINE) {
-      // The band has to be STANDING on it: `foundBlocker` asks about the
-      // stretch underfoot on a line, where the hex arm asks about a
-      // coordinate handed to it.
-      //
-      // And it has to be a stretch that would OTHERWISE take posts. Since
-      // fresh water became the settling gate, `foundBlocker` answers 'dry'
-      // before it answers 'taken' — the hex map's own order — so a claimed
-      // stretch with no beck reports the water rather than the man, and this
-      // bar would be holding the wrong refusal. He does not always fence a
-      // watered stretch, so seeds are walked until he does.
-      for (let s = 0; s < 40; s += 1) {
-        let world = newGame(`rival-block-${s}`);
-        world = idle(world, RIVAL_SETTLES + CLAIM_TICK + 2);
-        if (world.end || !world.rival) continue;
-        const wet = rivalStops(world).find((stop) => hasBeck(world.seed, stop));
-        if (wet === undefined) continue;
-        learnStop(world, wet);
-        world.party.stop = wet;
-        expect(rivalBlocks(world, world.party.at)).toBe(true);
-        expect(foundBlocker(world, world.party.at)).toBe('taken');
-        return;
-      }
-      throw new Error('no rival in forty coasts fenced ground with water on it');
+    // The band has to be STANDING on it: `foundBlocker` asks about the
+    // stretch underfoot on a line, where the hex arm asks about a
+    // coordinate handed to it.
+    //
+    // And it has to be a stretch that would OTHERWISE take posts. Since
+    // fresh water became the settling gate, `foundBlocker` answers 'dry'
+    // before it answers 'taken' — the hex map's own order — so a claimed
+    // stretch with no beck reports the water rather than the man, and this
+    // bar would be holding the wrong refusal. He does not always fence a
+    // watered stretch, so seeds are walked until he does.
+    for (let s = 0; s < 40; s += 1) {
+      let world = newGame(`rival-block-${s}`);
+      world = idle(world, RIVAL_SETTLES + CLAIM_TICK + 2);
+      if (world.end || !world.rival) continue;
+      const wet = rivalStops(world).find((stop) => hasBeck(world.seed, stop));
+      if (wet === undefined) continue;
+      learnStop(world, wet);
+      world.party.stop = wet;
+      expect(rivalBlocks(world)).toBe(true);
+      expect(foundBlocker(world)).toBe('taken');
+      return;
     }
-    const held = state.rival.claims[0]!;
-    const [q, r] = held.split(',').map(Number);
-    const at = { q: q!, r: r! };
-    expect(rivalBlocks(state, at)).toBe(true);
-    // Make the ground known, so the refusal is about HIM and not about fog.
-    state.world.seen[key(at)] = 'seen';
-    expect(foundBlocker(state, at)).toBe('taken');
+    throw new Error('no rival in forty coasts fenced ground with water on it');
   });
 
   it('claims nothing on top of a steading that is already standing', () => {
@@ -215,7 +186,9 @@ describe('his ground is not ours to take', () => {
     let state = newGame('rival-respect');
     state = idle(state, RIVAL_SETTLES + CLAIM_EVERY * 5 + 2);
     if (state.end || !state.rival || !state.settlement) return;
-    expect(rivalHolds(state, state.settlement.at)).toBe(false);
+    // Stand on our own hall: he must not have fenced the ground under it.
+    state.party.stop = state.settlement.stop ?? 0;
+    expect(rivalHolds(state)).toBe(false);
   });
 });
 
@@ -236,7 +209,7 @@ describe('what the second landnam actually costs', () => {
     // ticks and one of his coast ticks, so measuring both at sixty measures
     // two different questions and calls the second one a failure.
     const horizon = RIVAL_SETTLES + CLAIM_TICK * 3 + 2;
-    const unit = COAST_IS_A_LINE ? 'stretches' : 'hexes';
+    const unit = 'stretches';
 
     for (let s = 0; s < 20; s++) {
       let state = newGame(`rival-cost:${s}`);
@@ -248,19 +221,10 @@ describe('what the second landnam actually costs', () => {
 
       // How much of what he now holds would have been legal ground for us on
       // the day we landed.
-      if (COAST_IS_A_LINE) {
-        for (const stop of rivalStops(state)) {
-          learnStop(state, stop);
-          state.party.stop = stop;
-          if (foundBlocker(state, state.party.at) === 'taken') shutSites++;
-        }
-        continue;
-      }
-      for (const k of state.rival.claims) {
-        const [q, r] = k.split(',').map(Number);
-        const at = { q: q!, r: r! };
-        state.world.seen[key(at)] = 'seen';
-        if (foundBlocker(state, at) === 'taken') shutSites++;
+      for (const stop of rivalStops(state)) {
+        learnStop(state, stop);
+        state.party.stop = stop;
+        if (foundBlocker(state) === 'taken') shutSites++;
       }
     }
 

@@ -2,7 +2,6 @@
 // road puts food in the packs. Each verb spends the day through the same
 // `advance`/`reveal` walk in road.ts that a march does.
 
-import { key, neighbors } from '../hex';
 import { terrainDef } from '../data/terrain';
 import type { GameState, Person } from '../state/types';
 import { effectsOn } from './calendar';
@@ -16,20 +15,18 @@ import { actionRng, advance, atSea, reveal } from './road';
 import { landmarkHere } from './landmark';
 import { abundance, noteTake, type Larder } from './abundance';
 import { fisheryYield } from './fishery';
-import { COAST_IS_A_LINE } from './flags';
 import { countryHere } from './coast';
 
-/** Water worth putting a net in, from where we are standing (or floating). */
-function fishableWater(state: GameState): boolean {
-  // Every stop on a COAST has the sea off it — that is what makes it a coast
-  // — so the question is not whether there is water but whether it is worth
-  // a net, which `fisheryYield` answers. On the hex map it was a real
-  // question, because most of the island is inland.
-  if (COAST_IS_A_LINE) return true;
-  const here = state.world.tiles[key(state.party.at)];
-  if (!here) return false;
-  if (here.river || here.terrain === 'shore' || here.terrain === 'ocean') return true;
-  return neighbors(state.party.at).some((n) => state.world.tiles[key(n)]?.terrain === 'ocean');
+/**
+ * Water worth putting a net in, from where we are standing.
+ *
+ * Every stop on a COAST has the sea off it — that is what makes it a coast —
+ * so the question is not whether there is water but whether it is worth a
+ * net, which `fisheryYield` answers. A real question on the hex map, because
+ * most of an island is inland.
+ */
+function fishableWater(): boolean {
+  return true;
 }
 
 /**
@@ -44,13 +41,13 @@ export function canGather(state: GameState): boolean {
 
 /** Fishing is the one thing a boat is better at than a beach. */
 export function canFish(state: GameState): boolean {
-  return !atHome(state) && fishableWater(state);
+  return !atHome(state) && fishableWater();
 }
 
 interface Gather {
   amount: number;
   scout?: Person;
-  /** The share of full yield this hex still paid, for the chronicle's voice. */
+  /** The share of full yield the ground still paid, for the chronicle's voice. */
   left: number;
 }
 
@@ -72,12 +69,12 @@ function gather(
   const skill = scout ? effectiveStat(scout, stat) : 1;
   const rng = actionRng(state, kind);
   const roll = rng.float(0.7, 1.3);
-  const left = abundance(state, kind, state.party.at);
+  const left = abundance(state, kind);
   const amount = Math.max(
     0,
     Math.round(base * effects.forage * (0.6 + skill * 0.16) * roll * left),
   );
-  noteTake(state, kind, state.party.at);
+  noteTake(state, kind);
   return scout ? { amount, scout, left } : { amount, left };
 }
 
@@ -215,15 +212,14 @@ export function doFish(prev: GameState, state: GameState): GameState {
   // the note `fisheryYield` already carries. So the shore's own number is
   // what the sea off any stretch is worth, and it stays in `data/terrain`
   // where the rest of the country's numbers live.
-  const def = terrainDef(COAST_IS_A_LINE ? 'shore' : countryHere(state));
-  const river = !COAST_IS_A_LINE && state.world.tiles[key(party.at)]?.river === true;
+  const def = terrainDef('shore');
   // A ground pays a multiple, and only to a crew floating on it — see
   // sim/fishery.ts. Folded into the BASE rather than into the take, so the
-  // larder still thins with the same rule as any other worked hex: a ground
+  // larder still thins with the same rule as any other worked ground: a beck
   // fished four days running is a ground that has been fished four days
   // running, and the boat has to move.
-  const ground = fisheryYield(state, party.at);
-  const base = Math.max(def.fish, river ? 3 : 0, 2) * ground;
+  const ground = fisheryYield(state);
+  const base = Math.max(def.fish, 2) * ground;
   const { amount, left } = gather(state, base, 'wits', 'fish');
   party.food += amount;
   worldBeat(state, { kind: 'gathered', how: 'fish', got: amount });

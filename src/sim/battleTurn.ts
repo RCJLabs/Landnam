@@ -23,9 +23,7 @@ import { isSeaFight, settleSeaFight } from './sea';
 import { noteRaidSent } from './neighbours';
 import { bonus } from './lore';
 import { note } from './tally';
-import { key } from '../hex';
 import { checkRunEnd } from './upkeep';
-import { COAST_IS_A_LINE } from './flags';
 import { stopAt } from './route';
 
 /**
@@ -166,9 +164,7 @@ export function startRaid(state: GameState, difficulty = 0): void {
   // it read nothing at all and fell back to meadow. A raid fought on the
   // wrong country is a raid whose weather, cover and footing are all somebody
   // else's.
-  const terrain = COAST_IS_A_LINE
-    ? stopAt(state.seed, state.settlement!.stop ?? 0).country
-    : state.world.tiles[key(state.settlement!.at)]?.terrain ?? 'meadow';
+  const terrain = stopAt(state.seed, state.settlement!.stop ?? 0).country;
   // Somebody sent them, and it goes on their account.
   noteRaidSent(state);
   beginBattle(state, terrain, difficulty, true);

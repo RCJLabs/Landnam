@@ -133,8 +133,7 @@ coast.
 ```bash
 npm install
 npm run dev       # dev server
-npm test          # vitest: route + hex math, RNG, worldgen, sim, saves, content lint
-npm run test:hex  # the same suite against the old hex build, kept green until it is deleted
+npm test          # vitest: route maths, RNG, sim, saves, content lint
 npm run build     # typecheck + single-file dist/index.html
 npm run release   # build, verify self-containment, zip source
 ```
@@ -165,10 +164,9 @@ src/
   main.ts        boot + mode router
   modes.ts       TRAVEL | BATTLE | COLONY stack
   sim/route.ts   the coast: 26 stops, derived from the seed
-  hex/           hex math — the old world map, still buildable behind VITE_HEX=1
   rng.ts         seeded streams
   state/         GameState, saves, migrations
-  sim/           pure logic: worldgen, travel, events, upkeep, calendar
+  sim/           pure logic: the coast, travel, events, upkeep, calendar
   render/        SVG views + UI chrome
   data/          events, traits, terrain, names
 ```

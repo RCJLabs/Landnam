@@ -1,7 +1,7 @@
 // The parity contract with the Unreal build, owned by the repo that owns the
 // source of truth.
 //
-// `landnam-ue` has had a C++ port of `src/hex` and `src/rng` since
+// `landnam-ue` has had a C++ port of `src/rng` since
 // 2026-08-10, with an automation test (`LandnamParityTest.cpp`) that checks
 // it against a big file of golden vectors. That arrangement had one hole,
 // and it is the exact hole a parity harness exists to close: the vectors
@@ -13,7 +13,7 @@
 // see one side of the parity is worse than none, because it is reassuring.
 //
 // `port/golden.json` is now that file, committed here. This test recomputes
-// every vector in it from the live `src/hex` and `src/rng` and fails if any
+// every vector in it from the live `src/rng` and fails if any
 // of them moved. The stored INPUTS are the spec and the stored OUTPUTS are
 // the expectation, so the same file is both the thing Unreal asserts against
 // and the thing this repo cannot drift from without being told.
@@ -25,32 +25,10 @@
 
 import { describe, it, expect } from 'vitest';
 import goldenText from '../port/golden.json?raw';
-import {
-  axialToOffset,
-  column,
-  directionTo,
-  distance,
-  findPath,
-  fromPixel,
-  line,
-  neighbors,
-  offsetToAxial,
-  range,
-  reachable,
-  ring,
-  round,
-  toPixel,
-  type Hex,
-} from '../src/hex';
 import { hashString, makeRng, makeSeedPhrase, stream, type Rng, type StreamName } from '../src/rng';
-import { generateWorld } from '../src/sim/worldgen';
-import { makeFbm } from '../src/sim/noise';
-import { key } from '../src/hex';
 
 interface Golden {
   drawsPerStream: number;
-  hexSize: number;
-  hex: Record<string, Record<string, never>[]>;
   rng: {
     hashString: { text: string; hash: number }[];
     streams: {
@@ -69,46 +47,13 @@ interface Golden {
     }[];
     seedPhrases: { entropy: number; phrase: string }[];
   };
-  /**
-   * The island itself.
-   *
-   * These vectors lived ONLY on the Unreal side until the two branches were
-   * merged — added there, generated there, and never seen by the repo that
-   * owns the code they describe. That is precisely the hole the header of
-   * this file describes and claims to have closed, reopened one directory
-   * over. They are recomputed here now like every other vector.
-   */
-  worldgen: {
-    terrainCodes: Record<string, string>;
-    noise: { seed: string; label: string; octaves: number; samples: { x: number; y: number; v: number }[] };
-    worlds: {
-      seed: string; width: number; height: number; landing: Hex;
-      terrain: string; rivers: string;
-    }[];
-  };
 }
 
 const golden = JSON.parse(goldenText) as Golden;
-const SIZE = golden.hexSize;
 
 /** Doubles cross JSON, so compare at a tolerance far tighter than any drift. */
 const TOL = 1e-9;
 const near = (a: number, b: number) => Math.abs(a - b) <= TOL;
-
-const at = (q: number, r: number): Hex => ({ q, r });
-const pairs = (hexes: Hex[]) => hexes.map((h) => [h.q, h.r]);
-
-/**
- * The cost field the path vectors were measured over. Mirrors `GoldenCost` in
- * LandnamParityTest.cpp exactly, including the sign-safe modulo — `%` on a
- * negative differs between languages often enough that the C++ writes it out
- * the long way, and so does this.
- */
-function goldenCost(h: Hex): number {
-  if (distance(h, at(0, 0)) > 12) return Infinity;
-  if ((h.q * 7 + h.r * 13) % 5 === 0) return Infinity;
-  return 1 + ((((h.q * 3 + h.r * 5) % 4) + 4) % 4);
-}
 
 /** Collects every disagreement in a section rather than dying on the first. */
 function section(name: string, run: (fail: (why: string) => void) => number): void {
@@ -124,149 +69,6 @@ function section(name: string, run: (fail: (why: string) => void) => number): vo
     `${name}: ${failures.length} of ${checked} vectors disagree with src/`,
   ).toEqual([]);
 }
-
-describe('the hex port contract', () => {
-  it('round', () => {
-    section('hex.round', (fail) => {
-      const cases = golden.hex['round'] as unknown as { qf: number; rf: number; q: number; r: number }[];
-      for (const c of cases) {
-        const got = round(c.qf, c.rf);
-        if (got.q !== c.q || got.r !== c.r) fail(`round(${c.qf},${c.rf})`);
-      }
-      return cases.length;
-    });
-  });
-
-  it('toPixel and fromPixel', () => {
-    section('hex.toPixel', (fail) => {
-      const cases = golden.hex['toPixel'] as unknown as { q: number; r: number; x: number; y: number }[];
-      for (const c of cases) {
-        const got = toPixel(at(c.q, c.r), SIZE);
-        if (!near(got.x, c.x) || !near(got.y, c.y)) fail(`toPixel(${c.q},${c.r})`);
-      }
-      return cases.length;
-    });
-    section('hex.fromPixel', (fail) => {
-      const cases = golden.hex['fromPixel'] as unknown as { x: number; y: number; q: number; r: number }[];
-      for (const c of cases) {
-        const got = fromPixel(c.x, c.y, SIZE);
-        if (got.q !== c.q || got.r !== c.r) fail(`fromPixel(${c.x},${c.y})`);
-      }
-      return cases.length;
-    });
-  });
-
-  it('distance and line', () => {
-    section('hex.distance', (fail) => {
-      const cases = golden.hex['distance'] as unknown as
-        { aq: number; ar: number; bq: number; br: number; d: number }[];
-      for (const c of cases) {
-        if (distance(at(c.aq, c.ar), at(c.bq, c.br)) !== c.d) fail(`distance(${c.aq},${c.ar}→${c.bq},${c.br})`);
-      }
-      return cases.length;
-    });
-    section('hex.line', (fail) => {
-      const cases = golden.hex['line'] as unknown as
-        { aq: number; ar: number; bq: number; br: number; hexes: number[][] }[];
-      for (const c of cases) {
-        const got = pairs(line(at(c.aq, c.ar), at(c.bq, c.br)));
-        if (JSON.stringify(got) !== JSON.stringify(c.hexes)) fail(`line(${c.aq},${c.ar}→${c.bq},${c.br})`);
-      }
-      return cases.length;
-    });
-  });
-
-  it('neighbors and directionTo', () => {
-    section('hex.neighbors', (fail) => {
-      const cases = golden.hex['neighbors'] as unknown as
-        { q: number; r: number; neighbors: number[][]; directionTo: number[] }[];
-      for (const c of cases) {
-        const here = at(c.q, c.r);
-        const got = neighbors(here);
-        if (JSON.stringify(pairs(got)) !== JSON.stringify(c.neighbors)) fail(`neighbors(${c.q},${c.r})`);
-        // The probe list, per the C++: the six neighbours, then a far hex,
-        // then the hex itself — so both "not adjacent" answers are pinned.
-        const probes = [...got, at(c.q + 2, c.r), here];
-        c.directionTo.forEach((want, i) => {
-          const probe = probes[i]!;
-          if (directionTo(here, probe) !== want) fail(`directionTo(${c.q},${c.r} → ${probe.q},${probe.r})`);
-        });
-      }
-      return cases.length;
-    });
-  });
-
-  it('ring and range', () => {
-    for (const which of ['ring', 'range'] as const) {
-      section(`hex.${which}`, (fail) => {
-        const cases = golden.hex[which] as unknown as
-          { cq: number; cr: number; radius: number; hexes: number[][] }[];
-        const fn = which === 'ring' ? ring : range;
-        for (const c of cases) {
-          const got = pairs(fn(at(c.cq, c.cr), c.radius));
-          if (JSON.stringify(got) !== JSON.stringify(c.hexes)) fail(`${which}(${c.cq},${c.cr},${c.radius})`);
-        }
-        return cases.length;
-      });
-    }
-  });
-
-  it('offset conversions', () => {
-    section('hex.offset', (fail) => {
-      const cases = golden.hex['offset'] as unknown as
-        { col: number; row: number; q: number; r: number; backCol: number; backRow: number; column: number }[];
-      for (const c of cases) {
-        const h = offsetToAxial(c.col, c.row);
-        const back = axialToOffset(h);
-        if (h.q !== c.q || h.r !== c.r) fail(`offsetToAxial(${c.col},${c.row})`);
-        else if (back.col !== c.backCol || back.row !== c.backRow) fail(`axialToOffset(${c.col},${c.row})`);
-        else if (column(h) !== c.column) fail(`column(${c.col},${c.row})`);
-      }
-      return cases.length;
-    });
-  });
-
-  it('findPath', () => {
-    section('hex.path', (fail) => {
-      const cases = golden.hex['path'] as unknown as
-        { sq: number; sr: number; gq: number; gr: number; reachable: boolean; cost: number; hexes: number[][] }[];
-      for (const c of cases) {
-        const got = findPath(at(c.sq, c.sr), at(c.gq, c.gr), goldenCost);
-        const label = `findPath(${c.sq},${c.sr} → ${c.gq},${c.gr})`;
-        // `Path` has no `reachable` flag — an unreachable goal comes back
-        // with an empty route, which is what the golden file's boolean means.
-        // Its cost is stored as -1 rather than Infinity, because JSON has no
-        // way to write one; the C++ side skips the cost check for the same
-        // reason (`if (!bWantReachable) continue;`), so this does too.
-        const reached = got.hexes.length > 0;
-        if (reached !== c.reachable) fail(`${label} reachable ${reached} vs ${c.reachable}`);
-        else if (!reached) continue;
-        else if (!near(got.cost, c.cost)) fail(`${label} cost ${got.cost} vs ${c.cost}`);
-        else if (JSON.stringify(pairs(got.hexes)) !== JSON.stringify(c.hexes)) fail(`${label} route`);
-      }
-      return cases.length;
-    });
-  });
-
-  it('reachable', () => {
-    section('hex.reachable', (fail) => {
-      const cases = golden.hex['reachable'] as unknown as
-        { sq: number; sr: number; budget: number; entries: { q: number; r: number; cost: number }[] }[];
-      for (const c of cases) {
-        const got = reachable(at(c.sq, c.sr), c.budget, goldenCost);
-        const label = `reachable(${c.sq},${c.sr},${c.budget})`;
-        if (got.size !== c.entries.length) fail(`${label} size ${got.size} vs ${c.entries.length}`);
-        else {
-          for (const e of c.entries) {
-            const cost = got.get(`${e.q},${e.r}`);
-            if (cost === undefined || !near(cost, e.cost)) fail(`${label} at ${e.q},${e.r}`);
-          }
-        }
-      }
-      return cases.length;
-    });
-  });
-});
 
 // --- The generator ---
 
@@ -360,53 +162,6 @@ describe('the rng port contract', () => {
         if (makeSeedPhrase(c.entropy) !== c.phrase) fail(`makeSeedPhrase(${c.entropy})`);
       }
       return golden.rng.seedPhrases.length;
-    });
-  });
-
-  it('the noise field, before any world is built', () => {
-    section('worldgen.noise', (fail) => {
-      const n = golden.worldgen.noise;
-      // A BARE generator off the seed phrase, then derived by label — NOT
-      // `stream(seed, 'worldgen')`. The Unreal test builds it the same way
-      // (`MakeRng(seed)->Derive(label)`), and the two have to agree about
-      // the probe before they can agree about a coastline.
-      const fbm = makeFbm(makeRng(n.seed).derive(n.label), n.octaves);
-      for (const s of n.samples) {
-        if (Math.abs(fbm(s.x, s.y) - s.v) > TOL) fail(`fbm(${s.x}, ${s.y})`);
-      }
-      return n.samples.length;
-    });
-  });
-
-  it('whole islands, hex for hex', () => {
-    section('worldgen.worlds', (fail) => {
-      const codes = golden.worldgen.terrainCodes;
-      for (const w of golden.worldgen.worlds) {
-        const world = generateWorld(stream(w.seed, 'worldgen'), w.width, w.height);
-        if (world.landing.q !== w.landing.q || world.landing.r !== w.landing.r) {
-          fail(`${w.seed} landing`);
-        }
-        // Row-major in OFFSET space, one letter a hex — the same walk the
-        // Unreal test does, so a disagreement names a seed rather than a
-        // difference of opinion about iteration order.
-        //
-        // RIVERS TOO. They are a separate string of the same length in the
-        // vectors and the Unreal test checks them; this recomputed only the
-        // terrain at first, which would have stored a vector nobody verified
-        // — the exact thing this file exists to stop.
-        let text = '';
-        let rivers = '';
-        for (let row = 0; row < w.height; row++) {
-          for (let col = 0; col < w.width; col++) {
-            const tile = world.tiles[key(offsetToAxial(col, row))]!;
-            text += codes[tile.terrain] ?? '?';
-            rivers += tile.river ? '1' : '0';
-          }
-        }
-        if (text !== w.terrain) fail(`${w.seed} terrain`);
-        if (rivers !== w.rivers) fail(`${w.seed} rivers`);
-      }
-      return golden.worldgen.worlds.length;
     });
   });
 

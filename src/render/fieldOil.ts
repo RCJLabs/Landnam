@@ -14,11 +14,11 @@
 // The cache key is deliberately blind to the fight. Men move every turn and
 // the sky does not, so a repaint that only moved people keeps the painting.
 
-import { makeRng, type Rng } from '../rng';
+import type { Rng } from '../rng';
 import type { Terrain } from '../state/types';
 import { openBase } from './fieldArt';
 import { mix } from './terrainArt';
-import { paintPatch, rampOf } from './oil';
+import { paintPatch, patchRng, rampOf } from './oil';
 import { GROUND_Y, RANK_GAP } from './line';
 import { svgEl } from './svg';
 
@@ -86,7 +86,10 @@ export function countryKey(box: Box, terrain: Terrain, seed: string): string {
 
 /** One band's own stream. The same field, the same marks, forever. */
 function bandRng(seed: string, terrain: Terrain, band: string): Rng {
-  return makeRng(`landnam-field:${seed}:${terrain}:${band}`);
+  // Its own `landnam-field:` family, keyed exactly as it always was, but
+  // derived in one place — two callers rolling their own key is how the same
+  // ground gets painted twice, differently. See render/oil.ts.
+  return patchRng(seed, terrain, band, 'field');
 }
 
 /**

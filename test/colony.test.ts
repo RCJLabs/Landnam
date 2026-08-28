@@ -3,10 +3,8 @@
 // two identically-placed bands to work differently and measures the gap.
 
 import { settled as settleSomewhere } from './fixtures/settle';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
-import { key } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -70,7 +68,7 @@ function withReport(seed: string, override: Partial<SiteReport>): GameState {
     home.report.harbour +
     home.report.defence;
   // The ground has to match the reading, or a fisher has no water to fish.
-  home.plots = makePlots(home.report, home.at, stream(seed, 'colony').derive('replot'));
+  home.plots = makePlots(home.report, stream(seed, 'colony').derive('replot'));
   return state;
 }
 
@@ -93,23 +91,19 @@ describe('the steading has ground of its own', () => {
     expect(home.plots).toHaveLength(1 + 3 * PLOT_RADIUS * (PLOT_RADIUS + 1));
     const hall = home.plots.filter((p) => p.kind === 'hall');
     expect(hall).toHaveLength(1);
-    if (COAST_IS_A_LINE) {
-      // NOT "in the middle". A coast steading stands on a stretch of shore and
-      // has no ring of ground to be in the middle of — `makePlots` says so and
-      // writes `at` as a plain index, `{q: i, r: 0}`, precisely so nothing
-      // reads it as a coordinate. Asserting the hall sits on `home.at` would
-      // be asserting that two placeholders match.
-      //
-      // What survives is what the plots are FOR: one hall, one watchpost, and
-      // no two of them the same, which is what `plotsFor` and the day's labour
-      // actually read.
-      expect(hall[0]!.at.r, 'a coast plot is an index, not a coordinate').toBe(0);
-    } else {
-      expect(hall[0]!.at).toEqual(home.at);
-    }
-    expect(home.plots.filter((p) => p.kind === 'watchpost')).toHaveLength(1);
-    // No two plots share a hex — or, on a line, an index.
-    expect(new Set(home.plots.map((p) => key(p.at))).size).toBe(home.plots.length);
+    // NOT "in the middle". A coast steading stands on a stretch of shore and
+    // has no ring of ground to be in the middle of — `makePlots` says so and
+    // writes `at` as a plain index, `{q: i, r: 0}`, precisely so nothing
+    // reads it as a coordinate. Asserting the hall sits on `home.at` would
+    // be asserting that two placeholders match.
+    //
+    // What survives is what the plots are FOR: one hall, one watchpost, and
+    // no two of them the same, which is what `plotsFor` and the day's labour
+    // actually read.
+    expect(hall[0]!.at, 'the hall is the first plot').toBe(0);
+        expect(home.plots.filter((p) => p.kind === 'watchpost')).toHaveLength(1);
+    // No two plots share an index.
+    expect(new Set(home.plots.map((p) => p.at)).size).toBe(home.plots.length);
   });
 
   it('is a picture of the reading you settled on', () => {
@@ -451,7 +445,7 @@ describe('COLONY mode', () => {
     for (const action of [
       { type: 'CAMP' },
       { type: 'FORAGE' },
-      { type: 'MOVE', to: inside.party.at },
+      { type: 'WALK', to: (inside.party.stop ?? 0) + 1 },
       { type: 'B_END_TURN' },
     ] as const) {
       expect(apply(inside, action), action.type).toBe(inside);

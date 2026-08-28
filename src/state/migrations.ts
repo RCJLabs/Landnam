@@ -11,9 +11,10 @@
 import { SAVE_VERSION } from './version';
 import { makeShip } from '../sim/ship';
 import { SHIP_STRAKES } from '../data/ships';
-import { stream } from '../rng';
 import { seedPlaces } from '../sim/places';
-import { COAST_IS_A_LINE } from '../sim/flags';
+import { placeNeighbours } from '../sim/neighbours';
+import { makeRival } from '../sim/rival';
+import { stream } from '../rng';
 
 /** Migrates a save from version N to version N+1. */
 export type Migration = (save: Record<string, unknown>) => Record<string, unknown>;
@@ -197,10 +198,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // exactly the places its seed would have been born with, and a world whose
   // generation has since changed still gets places that fit ITS ground.
   17: (save) => {
-    const world = save['world'] as Parameters<typeof seedPlaces>[0] | undefined;
+    const world = save['world'] as { places?: unknown } | undefined;
     const seed = typeof save['seed'] === 'string' ? (save['seed'] as string) : '';
-    if (world && !Array.isArray((world as { places?: unknown }).places)) {
-      world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'), seed);
+    if (world && !Array.isArray(world.places)) {
+      world.places = seedPlaces(seed);
     }
     return { ...save, version: 18 };
   },
@@ -473,7 +474,6 @@ export const MIGRATIONS: Record<number, Migration> = {
    * `Party.at` and its siblings — this one is only the weight.
    */
   53: (save) => {
-    if (!COAST_IS_A_LINE) return { ...save, version: 54 };
     const world = save['world'] as Record<string, unknown> | undefined;
     if (!world) return { ...save, version: 54 };
     return {
@@ -510,6 +510,102 @@ export const MIGRATIONS: Record<number, Migration> = {
       }
     }
     return { ...save, version: 55, battle: { ...battle, grid } };
+  },
+  /**
+   * v55 -> v56: THE HEXES GO, AND SO DO THE SAGAS THAT LIVED ON THEM.
+   *
+   * 8.5's own break, and the one the milestone is named for. Every hex-shaped
+   * field leaves the save at once: `world.tiles`, `seen`, `trod`, `made`,
+   * `charted`, `landing`, `width` and `height`, and the `at` on the party,
+   * the settlement, every place, every neighbour, the rival, the ghost and
+   * every plot. `rival.claims` goes with them. What is left is the address a
+   * coast actually has, which is a stop on the route.
+   *
+   * WHICH SAGAS STOP LOADING, AND WHY — nothing, in the sense that every
+   * save still opens. But a save written by the HEX MAP has no stop for
+   * anybody: v49 through v53 each declined to invent one, in as many words,
+   * because "a hall's stop would decide where the whole coast thinks the band
+   * lives". That reasoning was right while both worlds ran, and it is exactly
+   * what makes those sagas unplaceable now.
+   *
+   * So a hex-map save comes forward as a band, not as a country: its people,
+   * its ship, its stores, its lore, its grudges and the whole of its saga log
+   * survive intact, and it stands on the landing of a coast derived fresh
+   * from its own seed. What does NOT survive is where anything was — the hall
+   * is re-sited on the landing stretch, and the places, the neighbours and
+   * the rival are re-derived from the seed, because the ones it carried stood
+   * on ground that no longer exists. A band twelve hexes from its hall is
+   * standing beside it again.
+   *
+   * The alternative — refusing to load the save — was rejected against this
+   * project's oldest rule: old saves must always load. A saga that opens with
+   * its history intact and its geography reset is a smaller loss than one
+   * that does not open.
+   */
+  55: (save) => {
+    const world = (save['world'] ?? {}) as Record<string, unknown>;
+    const seed = typeof save['seed'] === 'string' ? save['seed'] : '';
+    const party = (save['party'] ?? {}) as Record<string, unknown>;
+    // A save that already walks the coast keeps everything it knows; one from
+    // the hex map has none of these and is re-derived below.
+    const onTheLine = world['trodStops'] !== undefined || party['stop'] !== undefined;
+
+    const strip = (o: Record<string, unknown>, ...fields: string[]): Record<string, unknown> => {
+      const out = { ...o };
+      for (const f of fields) delete out[f];
+      return out;
+    };
+
+    const places = onTheLine
+      ? (world['places'] as Record<string, unknown>[] ?? [])
+        .filter((p) => typeof p['stop'] === 'number')
+        .map((p) => strip(p, 'at'))
+      : (seedPlaces(seed) as unknown as Record<string, unknown>[]);
+    const neighbours = onTheLine
+      ? (save['neighbours'] as Record<string, unknown>[] ?? []).map((n) => strip(n, 'at'))
+      : (placeNeighbours(
+        stream(seed, 'worldgen').derive('neighbours'), seed,
+      ) as unknown as Record<string, unknown>[]);
+    const rival = save['rival'] as Record<string, unknown> | undefined;
+    const nextRival = onTheLine
+      ? (rival ? strip(rival, 'at', 'claims') : undefined)
+      : (makeRival(seed) as unknown as Record<string, unknown> | null) ?? undefined;
+
+    const home = save['settlement'] as Record<string, unknown> | undefined;
+    const nextHome = home
+      ? {
+        ...strip(home, 'at'),
+        stop: typeof home['stop'] === 'number' ? home['stop'] : 0,
+        // A plot's `at` was `{q: i, r: 0}` — an index already. See makePlots.
+        plots: (home['plots'] as Record<string, unknown>[] ?? []).map((plot, i) => ({
+          ...plot,
+          at: typeof plot['at'] === 'number'
+            ? plot['at']
+            : ((plot['at'] as { q?: number } | undefined)?.q ?? i),
+        })),
+      }
+      : undefined;
+
+    const ghost = save['ghost'] as Record<string, unknown> | undefined;
+
+    return {
+      ...save,
+      version: 56,
+      world: {
+        landingName: world['landingName'] ?? '',
+        places,
+        ...(world['worked'] !== undefined ? { worked: world['worked'] } : {}),
+        ...(onTheLine && world['trodStops'] !== undefined
+          ? { trodStops: world['trodStops'] } : { trodStops: { '0': 1 } }),
+        ...(onTheLine && world['knownStops'] !== undefined
+          ? { knownStops: world['knownStops'] } : { knownStops: [0] }),
+      },
+      party: { ...strip(party, 'at'), stop: typeof party['stop'] === 'number' ? party['stop'] : 0 },
+      neighbours,
+      ...(nextRival ? { rival: nextRival } : {}),
+      ...(nextHome ? { settlement: nextHome } : {}),
+      ...(ghost ? { ghost: strip(ghost, 'at') } : {}),
+    };
   },
 
 };

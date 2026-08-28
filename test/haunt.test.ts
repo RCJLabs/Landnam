@@ -12,7 +12,6 @@
 //     one being bragged about.
 
 import { describe, expect, it } from 'vitest';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { ROUTE_STOPS, onRoute } from '../src/sim/route';
 import { standOn } from './fixtures/stand';
 import { newGame } from '../src/state/create';
@@ -27,21 +26,15 @@ import {
 } from '../src/sim/challenge';
 import {
   GHOST_RUIN_ID,
-  HAUNT_REACH,
   ghostLine,
   haunt,
-  hauntedHex,
   theRuin,
 } from '../src/sim/haunt';
 import { PLACE_KINDS, placeKind } from '../src/data/places';
-import { seedPlaces, settlePlace } from '../src/sim/places';
-import { stream } from '../src/rng';
-import { distance } from '../src/hex';
-import { fromKey } from '../src/hex';
+import { settlePlace } from '../src/sim/places';
 import type { GameState, Ghost } from '../src/state/types';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
-const GHOST: Ghost = { name: 'Eikstead', at: { q: 3, r: -2 }, day: 128, cause: 'starved' };
+const GHOST: Ghost = { name: 'Eikstead', day: 128, cause: 'starved' };
 
 describe('the code carries a steading and survives being retyped', () => {
   it('round-trips a ghost through the text', () => {
@@ -97,19 +90,6 @@ describe('the code carries a steading and survives being retyped', () => {
 });
 
 describe('worldgen never grows its own ruin', () => {
-  it('seeds every kind except the unseeded one', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    // If a country grew its own ruin the ghost would mean nothing, AND the
-    // worldgen parity vectors would move for every seed ever recorded.
-    const world = structuredClone(newGame('haunt-seed')).world;
-    const placed = seedPlaces(world, stream('haunt-seed', 'worldgen').derive('places'));
-    expect(placed.some((p) => p.kind === 'ruin')).toBe(false);
-    for (const kind of PLACE_KINDS) {
-      if (kind.seeded === false) continue;
-      expect(placed.some((p) => p.kind === kind.id), `${kind.id} stopped being seeded`).toBe(true);
-    }
-  });
 
   it('marks exactly the ruin as unseeded', () => {
     expect(PLACE_KINDS.filter((k) => k.seeded === false).map((k) => k.id)).toEqual(['ruin']);
@@ -119,79 +99,39 @@ describe('worldgen never grows its own ruin', () => {
 describe('the haunting itself', () => {
   it('stands the ruin on the ground the ghost named', () => {
     const state = structuredClone(newGame('haunt-place'));
-    if (COAST_IS_A_LINE) {
-      // A DIFFERENT CLAIM, because on a line there is no ground the ghost
-      // named. `ghostOf` cuts the ghost from `settlement.at`, and on a coast
-      // that field is the frozen landing hex — every coast ghost carries the
-      // same meaningless pair. So what is owed here is that the ruin lands
-      // somewhere a band can actually walk to, which is the thing that was
-      // broken: it used to be pushed with no `stop` at all, so `placeHere`
-      // could never match it and a haunted coast had a grave nobody could
-      // reach.
-      expect(haunt(state, GHOST)).toBe(true);
-      const ruin = theRuin(state)!;
-      expect(ruin.stop, 'the ruin is not on the coast').not.toBeUndefined();
-      expect(ruin.stop, 'the ruin is on the landing beach').toBeGreaterThan(0);
-      expect(onRoute(ruin.stop!), 'the ruin is off the end of the route').toBe(true);
-      // And the same code puts it in the same place for everybody.
-      const twin = structuredClone(newGame('haunt-place'));
-      expect(haunt(twin, GHOST)).toBe(true);
-      expect(theRuin(twin)!.stop).toBe(ruin.stop);
-      expect(ghostLine(state)).toContain('Eikstead');
-      return;
-    }
-    // A hex this world will actually hold a ruin on.
-    const at = Object.keys(state.world.tiles).map(fromKey).find(
-      (h) => placeKind('ruin').ground.includes(state.world.tiles[`${h.q},${h.r}`]!.terrain)
-        && !state.world.places.some((p) => p.at.q === h.q && p.at.r === h.r)
-        && distance(h, state.world.landing) > 0,
-    );
-    expect(at, 'no ground in this world holds a ruin').toBeTruthy();
-    expect(haunt(state, { ...GHOST, at: at! })).toBe(true);
-    expect(theRuin(state)?.at).toEqual({ q: at!.q, r: at!.r });
+    // A DIFFERENT CLAIM, because on a line there is no ground the ghost
+    // named. `ghostOf` cuts the ghost from `settlement.at`, and on a coast
+    // that field is the frozen landing hex — every coast ghost carries the
+    // same meaningless pair. So what is owed here is that the ruin lands
+    // somewhere a band can actually walk to, which is the thing that was
+    // broken: it used to be pushed with no `stop` at all, so `placeHere`
+    // could never match it and a haunted coast had a grave nobody could
+    // reach.
+    expect(haunt(state, GHOST)).toBe(true);
+    const ruin = theRuin(state)!;
+    expect(ruin.stop, 'the ruin is not on the coast').not.toBeUndefined();
+    expect(ruin.stop, 'the ruin is on the landing beach').toBeGreaterThan(0);
+    expect(onRoute(ruin.stop!), 'the ruin is off the end of the route').toBe(true);
+    // And the same code puts it in the same place for everybody.
+    const twin = structuredClone(newGame('haunt-place'));
+    expect(haunt(twin, GHOST)).toBe(true);
+    expect(theRuin(twin)!.stop).toBe(ruin.stop);
     expect(ghostLine(state)).toContain('Eikstead');
-    expect(ghostLine(state)).toContain('ran out of food');
   });
 
-  it('settles for near ground when the named hex is under the sea', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = structuredClone(newGame('haunt-sea'));
-    const ocean = Object.entries(state.world.tiles)
-      .find(([, t]) => t.terrain === 'ocean')![0];
-    const found = hauntedHex(state, { ...GHOST, at: fromKey(ocean) });
-    if (found) {
-      expect(distance(found, fromKey(ocean))).toBeLessThanOrEqual(HAUNT_REACH);
-      expect(placeKind('ruin').ground).toContain(state.world.tiles[`${found.q},${found.r}`]!.terrain);
-    }
-  });
 
   it('gives up quietly rather than throwing when nothing will hold it', () => {
     const state = structuredClone(newGame('haunt-nowhere'));
-    if (COAST_IS_A_LINE) {
-      // A hex off the end of the map is not a way to say "nowhere" on a line
-      // — the stop search ignores the ghost's hex entirely. So the coast's
-      // version of nowhere is a route with every stretch already spoken for.
-      for (let stop = 1; stop < ROUTE_STOPS; stop += 1) {
-        state.world.places.push({ id: `pl_full_${stop}`, kind: 'town', at: { q: 0, r: 0 }, stop });
-      }
-      expect(() => haunt(state, GHOST)).not.toThrow();
-      expect(theRuin(state), 'a full coast still took a ruin').toBeUndefined();
-      return;
+    // A hex off the end of the map is not a way to say "nowhere" on a line
+    // — the stop search ignores the ghost's hex entirely. So the coast's
+    // version of nowhere is a route with every stretch already spoken for.
+    for (let stop = 1; stop < ROUTE_STOPS; stop += 1) {
+      state.world.places.push({ id: `pl_full_${stop}`, kind: 'town', stop });
     }
-    // Far outside the map entirely.
-    expect(() => haunt(state, { ...GHOST, at: { q: 9999, r: -9999 } })).not.toThrow();
-    expect(theRuin(state)).toBeUndefined();
+    expect(() => haunt(state, GHOST)).not.toThrow();
+    expect(theRuin(state), 'a full coast still took a ruin').toBeUndefined();
   });
 
-  it('never stands on the landing beach', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = structuredClone(newGame('haunt-landing'));
-    haunt(state, { ...GHOST, at: state.world.landing });
-    const ruin = theRuin(state);
-    if (ruin) expect(distance(ruin.at, state.world.landing)).toBeGreaterThan(0);
-  });
 });
 
 describe('a haunted coast is not an easier coast', () => {
@@ -259,21 +199,16 @@ describe('the coast remembers whose steading it was', () => {
   /** A world with the ruin standing, and the band on top of it. */
   function haunted(seed: string): { state: GameState; ruinId: string } {
     const state = structuredClone(newGame(seed));
-    const at = Object.keys(state.world.tiles).map(fromKey).find(
-      (h) => placeKind('ruin').ground.includes(state.world.tiles[`${h.q},${h.r}`]!.terrain)
-        && !state.world.places.some((p) => p.at.q === h.q && p.at.r === h.r)
-        && distance(h, state.world.landing) > 0,
-    );
-    expect(at, 'no ground in this world holds a ruin').toBeTruthy();
-    expect(haunt(state, { ...GHOST, at: at! })).toBe(true);
+    // `hauntedStop` finds the stretch itself, derived from the ghost's own
+    // name, day and cause — the hex fixture that stood here searched the
+    // island for ground the kind would take, which a line has no need of.
+    expect(haunt(state, GHOST), 'no stretch of this coast holds a ruin').toBe(true);
     const ruin = theRuin(state)!;
     standOn(state, ruin);
     return { state, ruinId: ruin.id };
   }
 
   it('names them in the saga when the band takes the ruin', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
     const { state, ruinId } = haunted('ghost-taking');
     const before = state.saga.length;
     settlePlace(state, ruinId);
@@ -286,8 +221,6 @@ describe('the coast remembers whose steading it was', () => {
   });
 
   it('is written once, not on every later day', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
     // A saga line is permanent; a band that camps in the ruin for a week must
     // not get the same sentence seven times.
     const { state, ruinId } = haunted('ghost-once');
@@ -299,8 +232,6 @@ describe('the coast remembers whose steading it was', () => {
   });
 
   it('still knows whose it was after the ruin has been taken', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
     // The panel reads `ghostLine`, and this is the half of that guarantee a
     // node-environment suite can hold: the fact survives the sacking. The
     // renderer's own half — that the SACKED branch prints it, which it did
@@ -314,26 +245,23 @@ describe('the coast remembers whose steading it was', () => {
   });
 
   it("never puts the ghost's name on a ruin that is not theirs", () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
     // `abandonSteading` leaves a ruin behind too — the band's OWN hall, under
-    // `ruin:<hex>`. Keying the name off the KIND meant a band that walked out
-    // and later stood on its own posts was told a stranger had died there.
-    // Nothing caught it because the balance bot never walks out.
+    // `ruin:<stop>`. Keying the name off the KIND meant a band that walked
+    // out and later stood on its own posts was told a stranger had died
+    // there. Nothing caught it because the balance bot never walks out.
     const { state } = haunted('ghost-own');
+    const own = state.party.stop ?? 0;
     // Unshifted, so a find-by-kind would pick this one first.
-    state.world.places.unshift({ id: 'ruin:9,9', kind: 'ruin', at: { q: 9, r: 9 } });
+    state.world.places.unshift({ id: `ruin:${own}`, kind: 'ruin', stop: own });
     expect(theRuin(state)?.id).toBe(GHOST_RUIN_ID);
     const before = state.saga.length;
-    settlePlace(state, 'ruin:9,9');
+    settlePlace(state, `ruin:${own}`);
     const written = state.saga.slice(before).map((e) => e.text).join(' ');
     expect(written, "a stranger's name on the band's own posts").not.toContain('So this was');
     expect(written).not.toContain(GHOST.name);
   });
 
   it('says nothing extra when the ruin is not a ghost of anyone', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
     // Defensive: a ruin with no ghost on the state must not produce a line
     // with an empty name in it.
     const { state, ruinId } = haunted('ghost-absent');

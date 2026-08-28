@@ -36,7 +36,7 @@ import type { GameState, Person } from '../src/state/types';
 function hall(seed = 'house'): GameState {
   const state = newGame(seed);
   state.settlement = {
-    at: state.party.at, name: 'Fisklund', foundedOn: 1,
+    stop: state.party.stop ?? 0, name: 'Fisklund', foundedOn: 1,
     plots: [], shelter: 0, watch: 0, built: [], queue: [], works: 0, children: [],
   } as never;
   state.party.food = 300;

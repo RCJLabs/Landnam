@@ -406,9 +406,7 @@ describe('a sacked steading', () => {
     const fieldBuilt = field.settlement!.built.length;
     const foodBefore = field.party.food;
     // A plain fight, away from the steading and with nothing of it at stake.
-    field.party.at = { q: field.settlement!.at.q + 4, r: field.settlement!.at.r };
-    const fought = apply(field, { type: 'MOVE', to: field.party.at });
-    void fought;
+    field.party.stop = (field.settlement!.stop ?? 0) + 4;
     startBattle(field, 'meadow', 0);
     field.battle!.outcome = 'lost';
     const afterField = apply(field, { type: 'B_LEAVE' });
@@ -452,7 +450,7 @@ describe('raids arrive', () => {
 
     // And since 4.2, a hall whose warriors are three days out is exactly the
     // one worth coming for — that is the cost of sending them.
-    home.party.at = { q: home.settlement!.at.q + 3, r: home.settlement!.at.r };
+    home.party.stop = (home.settlement!.stop ?? 0) + 3;
     expect(raidCards.some((def) => isEligible(home, def))).toBe(true);
   });
 

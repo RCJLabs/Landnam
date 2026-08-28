@@ -15,7 +15,7 @@ import {
 } from './procession';
 import { ROUTE_STOPS } from '../sim/route';
 import type { GameState } from '../state/types';
-import type { TravelView } from './travel';
+import type { TravelView } from './views';
 
 /** `svgEl` takes Nodes; every label here is a string. */
 function words(text: string): Node[] {
@@ -223,7 +223,7 @@ export function createProcessionView(): TravelView {
       duplicates: 0,
       work,
     }),
-    sample: (points) => points.map(() => null),
+    sample: (points: readonly (readonly [number, number])[]) => points.map(() => null),
     update,
     // A coast has no camera to move: the band is always in the middle of its
     // own stretch, because the picture IS where they are standing.

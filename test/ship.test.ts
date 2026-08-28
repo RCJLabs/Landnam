@@ -25,10 +25,7 @@ import {
 } from '../src/sim/ship';
 import { HOLD_PER_STRAKE, HOLD_WHOLE, SHIP_STRAKES, STRAKE_MEND_WOOD } from '../src/data/ships';
 import { launch, provisionsFor } from '../src/sim/expedition';
-import { isCoastalWater, moveEffort } from '../src/sim/road';
-import { fromKey } from '../src/hex';
 import type { GameState } from '../src/state/types';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 describe('she is a ship, and she is hers', () => {
   it('comes with a name off the run seed, and the same one every time', () => {
@@ -54,44 +51,7 @@ describe('the strakes grade, and every one of them costs something', () => {
     expect(sprung(ship)).toBe(SHIP_STRAKES);
   });
 
-  it('costs a day on the water for each one, not merely for the first', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    // The old `hullHoled` was one bit: holed or not, and a second bad fight
-    // was free. This is the difference the grading buys.
-    const state = structuredClone(newGame('knarr-pace'));
-    const water = Object.keys(state.world.tiles)
-      .map(fromKey)
-      .find((at) => isCoastalWater(state, at));
-    expect(water, 'no coastal water to price').toBeTruthy();
 
-    const sound = moveEffort(state, water!)!;
-    springStrake(state.ship);
-    const one = moveEffort(state, water!)!;
-    springStrake(state.ship);
-    const two = moveEffort(state, water!)!;
-
-    expect(one).toBeGreaterThan(sound);
-    expect(two, 'the second strake was free — the flag is back').toBeGreaterThan(one);
-  });
-
-  it('will not be rowed with nothing sound left, and land does not care', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = structuredClone(newGame('knarr-dead'));
-    const water = Object.keys(state.world.tiles)
-      .map(fromKey)
-      .find((at) => isCoastalWater(state, at));
-    const land = Object.entries(state.world.tiles)
-      .find(([, t]) => t.terrain === 'meadow')![0];
-    expect(moveEffort(state, water!)).not.toBeNull();
-    state.ship.strakes = 0;
-    expect(moveEffort(state, water!)).toBeNull();
-    // SHORT OF SUNK. The run does not end on the water: the hull that cannot
-    // be rowed can still be walked away from, because coastal water always
-    // touches ground.
-    expect(moveEffort(state, fromKey(land))).not.toBeNull();
-  });
 });
 
 describe('the hold holds something', () => {

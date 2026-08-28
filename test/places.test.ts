@@ -6,16 +6,13 @@
 // exactly the places its seed would have been born with.
 
 import { describe, it, expect } from 'vitest';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { daysToWalk, knowsStop, learnStop, onHeights } from '../src/sim/coast';
 import { TOLD_RANGE } from '../src/sim/places';
 import { ROUTE_STOPS, daysBetween, onRoute, stopAt } from '../src/sim/route';
 import { standBeside, standOn, stepOff } from './fixtures/stand';
-import { distance, key, type Hex } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
-import { stream } from '../src/rng';
 import { apply } from '../src/sim/actions';
 import {
   offersAt,
@@ -31,43 +28,32 @@ import {
   TRADE_REASON,
   LANDMARK_SIGHT,
 } from '../src/sim/places';
-import { range } from '../src/hex';
-import { sightRadius } from '../src/sim/fog';
-import { effectsOn } from '../src/sim/calendar';
-import { PLACE_KINDS, PLACE_MAX_FROM_LANDING, placeKind } from '../src/data/places';
+import { PLACE_KINDS, placeKind } from '../src/data/places';
 import { knows } from '../src/sim/lore';
 import { startBattle } from '../src/sim/battleTurn';
 import type { GameState, Place } from '../src/state/types';
 
 function coast(seed: string): GameState {
   const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.seen)) delete state.world.seen[k];
-  // A line remembers in `knownStops`, not in `world.seen` — deliberately
-  // kept apart (see `sim/coast.ts`), so a fixture that wipes only the hex
-  // memory leaves a coast band knowing everything it started out knowing
-  // and there is nothing left for a trader to tell it.
-  if (COAST_IS_A_LINE) state.world.knownStops = [];
+  // A band that knows nothing of its coast, so there is something left for a
+  // trader to tell it.
+  state.world.knownStops = [];
   return state;
 }
 
-/** Where the teller stands, in whichever address the world uses. */
-function teller(state: GameState): { from: Hex; fromStop: number } {
-  const first = state.world.places[0]!;
-  return { from: first.at, fromStop: first.stop ?? 0 };
+/** The stretch the teller stands on. */
+function teller(state: GameState): number {
+  return state.world.places[0]!.stop;
 }
 
 /** How far the teller is from a place, in that world's own units. */
-function reach(state: GameState, p: Place, at: { from: Hex; fromStop: number }): number {
-  return COAST_IS_A_LINE
-    ? daysBetween(state.seed, p.stop ?? 0, at.fromStop)
-    : distance(p.at, at.from);
+function reach(state: GameState, p: Place, fromStop: number): number {
+  return daysBetween(state.seed, p.stop, fromStop);
 }
 
 /** Whether this place is on the band's map at all. */
 function onTheMap(state: GameState, p: Place): boolean {
-  return COAST_IS_A_LINE
-    ? knowsStop(state, p.stop ?? 0)
-    : state.world.seen[key(p.at)] !== undefined;
+  return knowsStop(state, p.stop ?? 0);
 }
 
 
@@ -124,34 +110,22 @@ describe('seeding the country', () => {
 
       for (const place of state.world.places) {
         const def = placeKind(place.kind);
-        if (COAST_IS_A_LINE) {
-          // The same two claims, asked of the address a coast actually has.
-          // `place.at` is the placeholder every coast place carries, so
-          // reading terrain through it measures the landing hex and nothing
-          // else — which is how the coast shipped for a while with 291 of 399
-          // places standing on ground their kind forbids.
-          const country = stopAt(state.seed, place.stop!).country;
-          expect(def.ground, `${place.id} on ${country}`).toContain(country);
-          expect(place.stop).toBeGreaterThanOrEqual(def.minFromLanding);
-          continue;
-        }
-        const ground = state.world.tiles[key(place.at)]!.terrain;
-        expect(def.ground, `${place.id} on ${ground}`).toContain(ground);
-        expect(distance(place.at, state.world.landing)).toBeGreaterThanOrEqual(def.minFromLanding);
+        // The same two claims, asked of the address a coast actually has.
+        // `place.at` is the placeholder every coast place carries, so
+        // reading terrain through it measures the landing hex and nothing
+        // else — which is how the coast shipped for a while with 291 of 399
+        // places standing on ground their kind forbids.
+        const country = stopAt(state.seed, place.stop!).country;
+        expect(def.ground, `${place.id} on ${country}`).toContain(country);
+        expect(place.stop).toBeGreaterThanOrEqual(def.minFromLanding);
       }
-      if (COAST_IS_A_LINE) {
-        // NOT "one of each kind" — two towns on one coast is ordinary, and
-        // the hex rule only held because that seeder walks the kinds once and
-        // puts down at most one apiece. What a line owes instead is one thing
-        // per stretch, which is also what makes the stop a usable address.
-        const at = state.world.places.map((p) => p.stop);
-        expect(new Set(at).size, 'two things at one stretch').toBe(at.length);
-      } else {
-        // At most one of each kind, and no two in each other's laps.
-        const kinds = state.world.places.map((p) => p.kind);
-        expect(new Set(kinds).size).toBe(kinds.length);
-      }
-    }
+      // NOT "one of each kind" — two towns on one coast is ordinary, and
+      // the hex rule only held because that seeder walks the kinds once and
+      // puts down at most one apiece. What a line owes instead is one thing
+      // per stretch, which is also what makes the stop a usable address.
+      const at = state.world.places.map((p) => p.stop);
+      expect(new Set(at).size, 'two things at one stretch').toBe(at.length);
+          }
   });
 
   /**
@@ -170,21 +144,15 @@ describe('seeding the country', () => {
     for (let s = 0; s < 24; s += 1) {
       const state = newGame(`place-reach-${s}`);
       for (const place of state.world.places) {
-        if (COAST_IS_A_LINE) {
-          // On a line the claim is stronger and simpler: the whole route is
-          // walkable end to end — `route.test.ts` holds that — so a place is
-          // reachable exactly when it stands ON the route. What would break
-          // it is a place filed at a stop off the end of the coast, which is
-          // the coast's version of the 52-hex monastery this test was written
-          // for.
-          expect(onRoute(place.stop!), `${place.id} is off the end of the coast`).toBe(true);
-          expect(daysBetween(state.seed, 0, place.stop!), `${place.id} cannot be walked to`)
-            .toBeGreaterThan(0);
-          continue;
-        }
-        const d = distance(place.at, state.world.landing);
-        expect(d, `${place.id} is ${d} hexes off — a voyage, not a country`)
-          .toBeLessThanOrEqual(PLACE_MAX_FROM_LANDING);
+        // On a line the claim is stronger and simpler: the whole route is
+        // walkable end to end — `route.test.ts` holds that — so a place is
+        // reachable exactly when it stands ON the route. What would break
+        // it is a place filed at a stop off the end of the coast, which is
+        // the coast's version of the 52-hex monastery this test was written
+        // for.
+        expect(onRoute(place.stop!), `${place.id} is off the end of the coast`).toBe(true);
+        expect(daysBetween(state.seed, 0, place.stop!), `${place.id} cannot be walked to`)
+          .toBeGreaterThan(0);
       }
     }
   });
@@ -203,7 +171,6 @@ function standingOn(seed: string, kind: Place['kind']): GameState | null {
     const place = state.world.places.find((p) => p.kind === kind);
     if (!place) continue;
     standOn(state, place);
-    state.world.seen[key(place.at)] = 'visible';
     return state;
   }
   return null;
@@ -266,9 +233,8 @@ describe('taking a place', () => {
   it('word starts where the smoke is seen: the nearest neighbour thinks less of you', () => {
     const state = standingOn('abbey-word', 'monastery')!;
     const place = placeHere(state)!;
-    const nearest = [...state.neighbours].sort(
-      (a, b) => distance(a.at, place.at) - distance(b.at, place.at),
-    )[0]!;
+    const away = (n: { stop?: number }) => daysBetween(state.seed, n.stop ?? 0, place.stop);
+    const nearest = [...state.neighbours].sort((a, b) => away(a) - away(b))[0]!;
     const before = nearest.standing;
     settlePlace(state, place.id);
     expect(state.neighbours.find((n) => n.id === nearest.id)!.standing).toBeLessThan(before);
@@ -318,8 +284,7 @@ describe('a place you can deal with', () => {
       const place = state.world.places.find((p) => p.kind === kind);
       if (!place) continue;
       standOn(state, place);
-      state.world.seen[key(place.at)] = 'visible';
-      state.party.food = 200;
+        state.party.food = 200;
       state.party.firewood = 200;
       return state;
     }
@@ -466,7 +431,7 @@ describe('word of the country travels', () => {
     // argument defaults to where the BAND is standing, and the claim here is
     // about what a trader twenty stretches away plausibly knows.
     const at = teller(state);
-    const told = tellOfPlace(state, at.from, 'Sealwatch', at.fromStop);
+    const told = tellOfPlace(state, 'Sealwatch', at);
     expect(told, 'nobody said anything at all').toBeDefined();
     // Nearest first: nothing unknown is closer to the teller than what they named.
     for (const p of state.world.places) {
@@ -481,30 +446,25 @@ describe('word of the country travels', () => {
 
   it('one a bargain, and never the same place twice', () => {
     const state = coast('told-once');
-    const from = state.world.places[0]!.at;
+    const from = state.world.places[0]!.stop;
     const named: string[] = [];
     for (let i = 0; i < state.world.places.length + 2; i += 1) {
-      const told = tellOfPlace(state, from, 'Threefires');
+      const told = tellOfPlace(state, 'Threefires', from);
       if (told) named.push(told.id);
     }
     expect(new Set(named).size, 'the same place named twice').toBe(named.length);
     expect(named.length).toBeLessThanOrEqual(state.world.places.length);
-    expect(tellOfPlace(state, from, 'Threefires'), 'still talking with nothing left to say')
+    expect(tellOfPlace(state, 'Threefires', from), 'still talking with nothing left to say')
       .toBeUndefined();
   });
 
   it('says nothing about ground the band has already stood on', () => {
     const state = coast('told-known');
-    // Marked known in whichever memory this world keeps. Through hexes alone
-    // a coast band knew nothing, so there was always something left to tell
-    // — and this only came up once the near-coast guarantee put a place
+    // Everything already known, so there is nothing left for a trader to
+    // tell. This only came up once the near-coast guarantee put a place
     // inside `TOLD_RANGE` on this seed.
-    for (const p of state.world.places) {
-      if (COAST_IS_A_LINE) learnStop(state, p.stop ?? 0);
-      else state.world.seen[key(p.at)] = 'seen';
-    }
-    const at = teller(state);
-    expect(tellOfPlace(state, at.from, 'Grimsgarth', at.fromStop)).toBeUndefined();
+    for (const p of state.world.places) learnStop(state, p.stop);
+    expect(tellOfPlace(state, 'Grimsgarth', teller(state))).toBeUndefined();
   });
 
   it('and a real bargain is what triggers it', () => {
@@ -522,7 +482,7 @@ describe('word of the country travels', () => {
     // that every bargain does.
     const state = coast('told-wired');
     const host = state.neighbours.find((n) => state.world.places.some(
-      (p) => reach(state, p, { from: n.at, fromStop: n.stop ?? 0 }) <= TOLD_RANGE,
+      (p) => reach(state, p, n.stop ?? 0) <= TOLD_RANGE,
     )) ?? state.neighbours[0]!;
     standBeside(state, host);
     state.party.food = 200;
@@ -547,48 +507,34 @@ describe('a landmark picked out from the high ground', () => {
    * band that never trades can use.
    */
   function ridge(seed: string, ground: 'hills' | 'meadow'): {
-    state: GameState; place: Place; at: { q: number; r: number };
+    state: GameState; place: Place; at: number;
   } {
-    const state = coast(seed);
-    const place = state.world.places[0]!;
-    if (COAST_IS_A_LINE) {
-      // A LINE HAS NO HEXES TO PAINT. The hex fixture stands the band four
-      // hexes off and flattens everything between so line of sight is not
-      // what is under test — a coast has no "between" to flatten, because
-      // the country runs in one direction and nothing can stand behind
-      // anything. What it does have is a country per stretch, and `onHeights`
-      // reads exactly one thing: is this stretch hills.
-      //
-      // So the ground is chosen by SEARCHING for a stretch that is what the
-      // test asked for and within sighting distance of the place, rather than
-      // by writing terrain into a tile. Seeds are walked until one obliges,
-      // which is the same tolerance the site fixtures use.
-      for (let s = 0; s < 80; s += 1) {
-        const world = coast(`${seed}-${s}`);
-        const target = world.world.places[0];
-        if (!target) continue;
-        const want = ground === 'hills' ? 'hills' : undefined;
-        for (let stop = 1; stop < ROUTE_STOPS; stop += 1) {
-          if (stop === target.stop) continue;
-          if (daysBetween(world.seed, stop, target.stop!) > LANDMARK_SIGHT) continue;
-          const isHills = onHeights(world, stop);
-          if (want === 'hills' ? !isHills : isHills) continue;
-          world.party.stop = stop;
-          return { state: world, place: target, at: world.party.at };
-        }
+    // A LINE HAS NO HEXES TO PAINT. The hex fixture stood the band four
+    // hexes off and flattened everything between, so line of sight was not
+    // what was under test — a coast has no "between" to flatten, because the
+    // country runs in one direction and nothing can stand behind anything.
+    // What it does have is a country per stretch, and `onHeights` reads
+    // exactly one thing: is this stretch hills.
+    //
+    // So the ground is chosen by SEARCHING for a stretch that is what the
+    // test asked for and within sighting distance of the place, rather than
+    // by writing terrain into a tile. Seeds are walked until one obliges,
+    // which is the same tolerance the site fixtures use.
+    for (let s = 0; s < 80; s += 1) {
+      const world = coast(`${seed}-${s}`);
+      const target = world.world.places[0];
+      if (!target) continue;
+      const want = ground === 'hills' ? 'hills' : undefined;
+      for (let stop = 1; stop < ROUTE_STOPS; stop += 1) {
+        if (stop === target.stop) continue;
+        if (daysBetween(world.seed, stop, target.stop!) > LANDMARK_SIGHT) continue;
+        const isHills = onHeights(world, stop);
+        if (want === 'hills' ? !isHills : isHills) continue;
+        world.party.stop = stop;
+        return { state: world, place: target, at: stop };
       }
-      throw new Error(`no coast in eighty put ${ground} within sight of a place`);
     }
-    // Stand a few hexes off the place, on ground we choose, with clear
-    // country in between so line of sight is not what is under test.
-    const at = { q: place.at.q + 4, r: place.at.r };
-    state.party.at = at;
-    for (const h of range(at, LANDMARK_SIGHT + 2)) {
-      const tile = state.world.tiles[key(h)];
-      if (tile) tile.terrain = 'meadow';
-    }
-    state.world.tiles[key(at)]!.terrain = ground;
-    return { state, place, at };
+    throw new Error(`no coast in eighty put ${ground} within sight of a place`);
   }
 
   it('marks a place known from a ridge, and says so', () => {
@@ -603,64 +549,34 @@ describe('a landmark picked out from the high ground', () => {
   it('sees nothing at all from flat ground, however close', () => {
     const { state, place } = ridge('spot-flat', 'meadow');
     expect(spotLandmarks(state)).toEqual([]);
-    expect(state.world.seen[key(place.at)]).toBeUndefined();
-  });
-
-  it('reaches further than the eye reaches over open country', () => {
-    // The whole justification for the constant: a landmark is a thing you
-    // pick out past the distance you could make out the ground itself.
-    const { state, at } = ridge('spot-further', 'hills');
-    expect(LANDMARK_SIGHT).toBeGreaterThan(
-      sightRadius(state.world, at, effectsOn(state.day).sight),
-    );
+    expect(onTheMap(state, place)).toBe(false);
   });
 
   it('stops at the edge of what can be picked out', () => {
     const { state, place } = ridge('spot-far', 'hills');
-    if (COAST_IS_A_LINE) {
-      // Far enough that the WALK exceeds the sighting distance, which on a
-      // line is measured in days and not in stretches — the legs are not one
-      // day each, so "one more stop" is not "one more day".
-      const far = [...Array(ROUTE_STOPS).keys()].find(
-        (stop) => onHeights(state, stop)
-          && daysBetween(state.seed, stop, place.stop!) > LANDMARK_SIGHT,
-      );
-      expect(far, 'this coast has no ridge beyond sighting distance').toBeDefined();
-      state.party.stop = far;
-      expect(spotLandmarks(state).map((p) => p.id)).not.toContain(place.id);
-      expect(onTheMap(state, place), 'seen from beyond sighting distance').toBe(false);
-      return;
-    }
-    state.party.at = { q: place.at.q + LANDMARK_SIGHT + 1, r: place.at.r };
-    state.world.tiles[key(state.party.at)]!.terrain = 'hills';
-    // This place specifically, not "nothing at all" — stepping back can walk
-    // a DIFFERENT place into range, which is the mechanism working rather
-    // than failing. The first cut of this asserted the empty list and caught
-    // the town four hexes the other way.
+    // Far enough that the WALK exceeds the sighting distance, which on a
+    // line is measured in days and not in stretches — the legs are not one
+    // day each, so "one more stop" is not "one more day".
+    const far = [...Array(ROUTE_STOPS).keys()].find(
+      (stop) => onHeights(state, stop)
+        && daysBetween(state.seed, stop, place.stop!) > LANDMARK_SIGHT,
+    );
+    expect(far, 'this coast has no ridge beyond sighting distance').toBeDefined();
+    state.party.stop = far;
     expect(spotLandmarks(state).map((p) => p.id)).not.toContain(place.id);
-    expect(state.world.seen[key(place.at)]).toBeUndefined();
+    expect(onTheMap(state, place), 'seen from beyond sighting distance').toBe(false);
   });
 
   it('a mountain in the way hides what is behind it', () => {
-    if (COAST_IS_A_LINE) {
-      // NO SUBJECT ON A LINE, and withdrawn rather than translated. A coast
-      // IS a line of sight: the country runs in one direction, so there is
-      // no "behind" for a mountain to stand in front of. `spotLandmarks`
-      // says the same thing in its own comment and skips the blocking check
-      // on a coast, so a converted version of this test would be asserting
-      // that a branch which does not run does not run.
-      //
-      // The claim it protects — that sight has LIMITS — is not lost: "stops
-      // at the edge of what can be picked out" holds it above, in days.
-      return;
-    }
-    const { state, place, at } = ridge('spot-blocked', 'hills');
-    // Only mountains block the view from high ground — that is the existing
-    // rule in fog.ts, and this pins that the landmark obeys it.
-    const between = { q: place.at.q + 2, r: place.at.r };
-    state.world.tiles[key(between)]!.terrain = 'mountains';
-    void at;
-    expect(spotLandmarks(state).map((p) => p.id)).not.toContain(place.id);
+    // NO SUBJECT ON A LINE, and withdrawn rather than translated. A coast
+    // IS a line of sight: the country runs in one direction, so there is
+    // no "behind" for a mountain to stand in front of. `spotLandmarks`
+    // says the same thing in its own comment and skips the blocking check
+    // on a coast, so a converted version of this test would be asserting
+    // that a branch which does not run does not run.
+    //
+    // The claim it protects — that sight has LIMITS — is not lost: "stops
+    // at the edge of what can be picked out" holds it above, in days.
   });
 
   it('tells you a place is THERE and nothing about what is in it', () => {
@@ -683,28 +599,20 @@ describe('a landmark picked out from the high ground', () => {
   it('happens through ordinary travel, not only when called directly', () => {
     // The same-commit rule: a capability the player cannot reach by playing
     // is measured as worthless. Walking onto a ridge has to do it.
-    const { state, place, at } = ridge('spot-played', 'hills');
-    if (COAST_IS_A_LINE) {
-      // WALK, not MOVE: a line's travel verb takes a stop. Step off the ridge
-      // and walk back onto it, so the spotting has to come out of the day's
-      // travel rather than out of the fixture.
-      const ridgeStop = state.party.stop!;
-      const from = [...Array(ROUTE_STOPS).keys()].find(
-        (stop) => stop !== ridgeStop && !onHeights(state, stop)
-          && daysToWalk({ ...state, party: { ...state.party, stop } }, ridgeStop) !== null,
-      );
-      expect(from, 'nowhere to walk onto this ridge from').toBeDefined();
-      state.party.stop = from;
-      const next = apply(state, { type: 'WALK', to: ridgeStop });
-      expect(next, 'the walk was refused').not.toBe(state);
-      expect(onTheMap(next, place), 'walked onto a ridge and saw nothing').toBe(true);
-      return;
-    }
-    state.party.at = { q: at.q + 1, r: at.r };
-    state.world.tiles[key(state.party.at)]!.terrain = 'meadow';
-    const next = apply(state, { type: 'MOVE', to: at });
-    expect(next).not.toBe(state);
-    expect(next.world.seen[key(place.at)]).toBeDefined();
+    const { state, place } = ridge('spot-played', 'hills');
+    // WALK, not MOVE: a line's travel verb takes a stop. Step off the ridge
+    // and walk back onto it, so the spotting has to come out of the day's
+    // travel rather than out of the fixture.
+    const ridgeStop = state.party.stop!;
+    const from = [...Array(ROUTE_STOPS).keys()].find(
+      (stop) => stop !== ridgeStop && !onHeights(state, stop)
+        && daysToWalk({ ...state, party: { ...state.party, stop } }, ridgeStop) !== null,
+    );
+    expect(from, 'nowhere to walk onto this ridge from').toBeDefined();
+    state.party.stop = from;
+    const next = apply(state, { type: 'WALK', to: ridgeStop });
+    expect(next, 'the walk was refused').not.toBe(state);
+    expect(onTheMap(next, place), 'walked onto a ridge and saw nothing').toBe(true);
   });
 });
 
@@ -733,11 +641,7 @@ describe('old saves gain the country they always had', () => {
 
   it('reseeding the same world twice gives the same places', () => {
     const state = newGame('reseed');
-    // The seed, third argument, exactly as `create.ts` and the migration both
-    // pass it. Left off, `seedPlaces` falls through to the hex search — so on
-    // a coast this compared the line's places against a hex island's and
-    // reported the difference as non-determinism.
-    const again = seedPlaces(state.world, stream('reseed', 'worldgen').derive('places'), 'reseed');
+    const again = seedPlaces('reseed');
     expect(again).toEqual(state.world.places);
   });
 });

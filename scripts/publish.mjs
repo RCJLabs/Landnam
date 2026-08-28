@@ -24,12 +24,13 @@ const ENTRY = 'app.html';
 // file is a cheap price for not being able to check a dropdown.
 //
 // An optional argument publishes into a SUBFOLDER of both instead:
-// `node scripts/publish.mjs hex` writes hex/index.html and docs/hex/index.html,
-// leaving the game everyone opens where it is. That is how a second build gets
-// looked at on a phone without replacing the first. It used to be the coast
-// that lived in the subfolder; since the flag flipped on 2026-08-28 the coast
-// IS the game and the hex map is the one kept alongside it, until 8.5's
-// deletion lands.
+// `node scripts/publish.mjs somewhere` writes somewhere/index.html and
+// docs/somewhere/index.html, leaving the game everyone opens where it is.
+// That is how a second build gets looked at on a phone without replacing the
+// first. It carried the coast while the conversion ran and then the hex map
+// while the two were compared; 8.5 deleted the hex map, its page and its
+// build, so nothing uses it today. It is kept because the NEXT thing worth
+// looking at side by side will want it.
 const where = process.argv[2];
 if (where && !/^[a-z][a-z0-9-]*$/.test(where)) {
   console.error(`publish: "${where}" is not a folder name I will write to`);

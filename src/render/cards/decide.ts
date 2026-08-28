@@ -9,7 +9,7 @@
 import { traitById } from '../../data/traits';
 import { fullName, effectiveStat } from '../../sim/people';
 import { XP_PER_ADVANCE } from '../../sim/consequences';
-import { scoreWord, siteReport, strongestOf, verdictFor } from '../../sim/site';
+import { reportHere, scoreWord, strongestOf, verdictFor } from '../../sim/site';
 import { moodOf, MOOD_WORD } from '../../sim/minds';
 import { known } from '../../sim/lore';
 import { jobOf } from '../../sim/colony';
@@ -28,7 +28,7 @@ export function renderFounding(
   confirm: () => void,
   cancel: () => void,
 ): HTMLElement {
-  const report = siteReport(state.world, state.party.at)!;
+  const report = reportHere(state);
   const verdict = verdictFor(report.total);
   const strongest = strongestOf(report);
   const weakest = MEASURES.reduce((worst, m) =>

@@ -18,51 +18,18 @@
 //      not there. Losing a ruin must never cost somebody the coast.
 
 import type { GameState, Ghost, Place } from '../state/types';
-import type { Hex } from '../hex';
-import { distance, fromKey, key } from '../hex';
 import { placeKind } from '../data/places';
 import { chronicle } from './saga';
 import { ROUTE_STOPS, onRoute, stopAt } from './route';
 import { stream } from '../rng';
-import { COAST_IS_A_LINE } from './flags';
 
 /** How far from the named hex a ruin will settle for ground that holds it. */
 export const HAUNT_REACH = 6;
 
 /**
- * Ground a ruin can stand on: what the kind allows, not already spoken for.
- *
- * `PLACE_MIN_GAP` is deliberately NOT applied. A ruin is not competing with
- * the country's own places for room — it is a fact about where somebody died,
- * and moving it to respect a spacing rule would be moving the one thing the
- * ghost is actually saying.
- */
-function holds(state: GameState, at: Hex): boolean {
-  const tile = state.world.tiles[key(at)];
-  if (!tile) return false;
-  if (!placeKind('ruin').ground.includes(tile.terrain)) return false;
-  if (state.world.places.some((p) => p.at.q === at.q && p.at.r === at.r)) return false;
-  // Not on top of the landing either: the first thing a player sees should be
-  // their own beach, not somebody else's grave.
-  return distance(at, state.world.landing) > 0;
-}
-
-/** The hex the ruin actually ends up on, or nothing if this world has none. */
-export function hauntedHex(state: GameState, ghost: Ghost): Hex | undefined {
-  if (holds(state, ghost.at)) return ghost.at;
-  // Nearest ground that will hold it, ties broken by key so the choice is the
-  // same on every machine and in the C++ port.
-  const near = Object.keys(state.world.tiles)
-    .map(fromKey)
-    .filter((at) => distance(at, ghost.at) <= HAUNT_REACH && holds(state, at))
-    .sort((a, b) => distance(a, ghost.at) - distance(b, ghost.at) || key(a).localeCompare(key(b)));
-  return near[0];
-}
-
-/**
  * The stretch of coast a ruin settles on, or nothing if none will hold it.
  *
- * The coast's answer to `hauntedHex`, and it cannot be a translation of it,
+ * This cannot be a translation of the hex version it replaced,
  * because on a line the ghost has NO ADDRESS TO HONOUR. A run's ghost is cut
  * by `ghostOf` from `settlement.at`, and on a coast that field is the frozen
  * landing hex — `WALK` moves `party.stop` and never touches `party.at`. So
@@ -109,26 +76,12 @@ export function hauntedStop(state: GameState, ghost: Ghost): number | undefined 
  * Called once, when a run is started from a code that carries a ghost.
  */
 export function haunt(state: GameState, ghost: Ghost): boolean {
-  if (COAST_IS_A_LINE) {
-    const stop = hauntedStop(state, ghost);
-    if (stop === undefined) return false;
-    // `at` is the placeholder every place on a coast carries; `stop` is the
-    // address. Without it the ruin was IN the world and unreachable from it:
-    // `placeHere` matches on stop, and `undefined === n` is never true, so a
-    // haunted coast had a grave nobody could ever walk to.
-    state.world.places.push({ id: GHOST_RUIN_ID, kind: 'ruin', at: { q: 0, r: 0 }, stop });
-    state.ghost = ghost;
-    chronicle(
-      state,
-      `We had been told that others tried this coast before us, and that they called their steading ${ghost.name}. Nobody said where it was.`,
-      'saga',
-    );
-    return true;
-  }
-  const at = hauntedHex(state, ghost);
-  if (!at) return false;
-  const place: Place = { id: GHOST_RUIN_ID, kind: 'ruin', at: { q: at.q, r: at.r } };
-  state.world.places.push(place);
+  const stop = hauntedStop(state, ghost);
+  if (stop === undefined) return false;
+  // Without a stop the ruin was IN the world and unreachable from it:
+  // `placeHere` matches on stop, and `undefined === n` is never true, so a
+  // haunted coast had a grave nobody could ever walk to.
+  state.world.places.push({ id: GHOST_RUIN_ID, kind: 'ruin', stop });
   state.ghost = ghost;
   chronicle(
     state,

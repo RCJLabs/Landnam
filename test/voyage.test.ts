@@ -39,7 +39,7 @@ import type { GameState } from '../src/state/types';
 function hall(seed = 'voyage', extra = 0): GameState {
   // The site search is shared now — see test/fixtures/settle.ts.
   const state = settleSomewhere(seed);
-  state.party.at = state.settlement!.at;
+  state.party.stop = state.settlement!.stop;
   state.party.food = 300;
   state.party.firewood = 300;
   const seed0 = state.party.people[0]!;

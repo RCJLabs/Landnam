@@ -5,7 +5,6 @@
 // — it is the walk to the river, the walk to the woodpile, and the ways in
 // that you cannot watch at once.
 
-import { distance, key, neighbors, type Hex } from '../hex';
 import { terrainDef } from '../data/terrain';
 import {
   MEASURE_MAX,
@@ -13,19 +12,17 @@ import {
   NAME_SUFFIX,
   COAST_VERDICTS,
   SCORE_WORDS,
-  VERDICTS,
   WATER_FLOOR,
   type Measure,
   type Verdict,
 } from '../data/sites';
 import { CLAN_ELBOW } from '../data/clans';
-import { COAST_IS_A_LINE } from './flags';
 import { ROUTE_STOPS, daysBetween, pickCountry, stopAt } from './route';
 import { makeRng } from '../rng';
 import { knowsStop, standingAt } from './coast';
 import { rivalBlocks } from './rival';
 import { stream } from '../rng';
-import type { GameState, Neighbour, SiteReport, Terrain, World } from '../state/types';
+import type { GameState, Neighbour, SiteReport, Terrain } from '../state/types';
 import { chronicle } from './saga';
 import { makePlots } from './colony';
 import { bestAt } from './people';
@@ -38,16 +35,6 @@ interface Surrounds {
   terrain: Terrain;
   river: boolean;
   ring: { terrain: Terrain; river: boolean }[];
-}
-
-function surrounds(world: World, at: Hex): Surrounds | null {
-  const here = world.tiles[key(at)];
-  if (!here) return null;
-  const ring = neighbors(at)
-    .map((h) => world.tiles[key(h)])
-    .filter((t): t is NonNullable<typeof t> => !!t)
-    .map((t) => ({ terrain: t.terrain, river: t.river }));
-  return { terrain: here.terrain, river: here.river, ring };
 }
 
 // --- The five measures ---
@@ -87,14 +74,6 @@ function soil(s: Surrounds): number {
   // A river bottom is worth working even where the hex itself is poor.
   const silt = s.river && SOIL[s.terrain] > 0 ? 1 : 0;
   return clamp(SOIL[s.terrain] + Math.min(2, fields * 0.5) + silt);
-}
-
-/** Wood within a day of the door: walls, roof beams, and a winter of fire. */
-function timber(s: Surrounds): number {
-  const total =
-    terrainDef(s.terrain).wood + s.ring.reduce((sum, t) => sum + terrainDef(t.terrain).wood, 0);
-  // Seven hexes of pure forest is 28 and the only perfect score there is.
-  return clamp((total / 28) * MEASURE_MAX);
 }
 
 /**
@@ -328,25 +307,9 @@ export function stopReport(seed: string, stop: number): SiteReport {
   };
 }
 
-// --- The whole reading ---
-
-export function siteReport(world: World, at: Hex): SiteReport | null {
-  const s = surrounds(world, at);
-  if (!s) return null;
-  const report = {
-    water: water(s),
-    soil: soil(s),
-    // The map keeps the ring measure: inland ground CAN be seven tiles of
-    // forest, so the scale means what it says here, and a band that wants
-    // wood can walk in and settle in it.
-    timber: timber(s),
-    harbour: harbour(s),
-    defence: defence(s),
-  };
-  return {
-    ...report,
-    total: report.water + report.soil + report.timber + report.harbour + report.defence,
-  };
+/** The reading for the stretch the band is standing on. */
+export function reportHere(state: GameState): SiteReport {
+  return stopReport(state.seed, standingAt(state));
 }
 
 export function scoreWord(score: number): string {
@@ -357,7 +320,7 @@ export function verdictFor(total: number): Verdict {
   // Which scale this world reads on — see COAST_VERDICTS for the measurement.
   // A coast totals roughly twice a hex site, so the hex bands called 95% of
   // every coast "Good ground" or better and the word said nothing.
-  const bands = COAST_IS_A_LINE ? COAST_VERDICTS : VERDICTS;
+  const bands = COAST_VERDICTS;
   let found = bands[0]!;
   for (const verdict of bands) if (total >= verdict.from) found = verdict;
   return found;
@@ -384,17 +347,16 @@ export type FoundBlock = 'settled' | 'unknown' | 'sea' | 'rock' | 'dry' | 'ended
  * than a bare false, because the whole point of the milestone is that the
  * player understands the choice they are being offered.
  */
-export function foundBlocker(state: GameState, at: Hex): FoundBlock | null {
+export function foundBlocker(state: GameState): FoundBlock | null {
   if (state.end) return 'ended';
   if (state.settlement) return 'settled';
-  // On a coast the posts go into the stretch the band is standing on, and
-  // the questions the hex map asks about a tile are asked of that stretch
-  // instead. Two of them stop existing: a route has no ocean and no
+  // The posts go into the stretch the band is standing on. Two of the hex
+  // map's questions stopped existing with it: a route has no ocean and no
   // mountains on it — `route.COUNTRY` is shore and not summit — so 'sea' and
-  // 'rock' are answers to questions a line cannot pose.
-  if (COAST_IS_A_LINE) {
-    const here = standingAt(state);
-    if (!knowsStop(state, here)) return 'unknown';
+  // 'rock' were answers to questions a line cannot pose, and their reasons
+  // are kept in BLOCK_REASON only because old saves can still carry them.
+  const here = standingAt(state);
+  if (!knowsStop(state, here)) return 'unknown';
     // FRESH WATER IS THE ONE THING A STRETCH CANNOT DO WITHOUT, and on a
     // line it is a beck or it is nothing.
     //
@@ -410,28 +372,17 @@ export function foundBlocker(state: GameState, at: Hex): FoundBlock | null {
     // formality — `BECK_SHARE` of the coast will have you, and the rest will
     // not, so the first thing a band does with this country is look for
     // running water.
-    if (!hasBeck(state.seed, here)) return 'dry';
-    if (stopReport(state.seed, here).water < WATER_FLOOR) return 'dry';
-    if (state.neighbours.some((n) => insideElbow(state, n, at))) return 'taken';
-    if (rivalBlocks(state, at)) return 'taken';
-    return null;
-  }
-  const tile = state.world.tiles[key(at)];
-  if (!tile || !state.world.seen[key(at)]) return 'unknown';
-  if (tile.terrain === 'ocean') return 'sea';
-  if (tile.terrain === 'mountains') return 'rock';
-  const report = siteReport(state.world, at);
-  if (!report || report.water < WATER_FLOOR) return 'dry';
-  // Neighbours are placed on a coast a band can WALK now rather than
-  // anywhere at all, which put some of them within sight of the landing —
-  // so the ground they live on has to say so. Otherwise the posts go in a
-  // native camp's home field, and "four neighbours share this coast"
-  // becomes "one of them is in the yard".
-  if (state.neighbours.some((n) => insideElbow(state, n, at))) return 'taken';
+  if (!hasBeck(state.seed, here)) return 'dry';
+  if (stopReport(state.seed, here).water < WATER_FLOOR) return 'dry';
+  // Neighbours are placed on a coast a band can WALK, which puts some of them
+  // within sight of the landing — so the ground they live on has to say so.
+  // Otherwise the posts go in a native camp's home field, and "four
+  // neighbours share this coast" becomes "one of them is in the yard".
+  if (state.neighbours.some((n) => insideElbow(state, n))) return 'taken';
   // And the other landnamsmadr, who is doing exactly what we are doing and
   // started the same spring. Ground he has fenced is ground we cannot have —
   // which is the whole cost of a slow week.
-  if (rivalBlocks(state, at)) return 'taken';
+  if (rivalBlocks(state)) return 'taken';
   return null;
 }
 
@@ -447,16 +398,13 @@ export function foundBlocker(state: GameState, at: Hex): FoundBlock | null {
  * four of them are spread a quarter of the coast apart, so their elbows do
  * not overlap and there is always a stop between any two.
  */
-function insideElbow(state: GameState, n: Neighbour, at: Hex): boolean {
-  if (COAST_IS_A_LINE) {
-    if (n.stop === undefined) return false;
-    return Math.abs(n.stop - standingAt(state)) < CLAN_ELBOW;
-  }
-  return distance(n.at, at) < CLAN_ELBOW;
+function insideElbow(state: GameState, n: Neighbour): boolean {
+  if (n.stop === undefined) return false;
+  return Math.abs(n.stop - standingAt(state)) < CLAN_ELBOW;
 }
 
-export function canFound(state: GameState, at: Hex): boolean {
-  return foundBlocker(state, at) === null;
+export function canFound(state: GameState): boolean {
+  return foundBlocker(state) === null;
 }
 
 export const BLOCK_REASON: Record<FoundBlock, string> = {
@@ -470,13 +418,10 @@ export const BLOCK_REASON: Record<FoundBlock, string> = {
 };
 
 /** A name built from the ground: the suffix says what the place is good for. */
-export function nameFor(state: GameState, at: Hex, report: SiteReport): string {
-  // Named after the ground it stands on, whichever coordinate system that
-  // ground is measured in. A hall on stretch nine keeps its name across a
-  // reload because the stretch is what the stream is derived from.
-  const rng = stream(state.seed, 'worldgen').derive(
-    COAST_IS_A_LINE ? `steading:s${standingAt(state)}` : `steading:${key(at)}`,
-  );
+export function nameFor(state: GameState, report: SiteReport): string {
+  // Named after the ground it stands on. A hall on stretch nine keeps its
+  // name across a reload because the stretch is what the stream derives from.
+  const rng = stream(state.seed, 'worldgen').derive(`steading:s${standingAt(state)}`);
   const suffix = rng.pick(NAME_SUFFIX[strongestOf(report)]);
   return `${rng.pick(NAME_ROOTS)}${suffix}`;
 }
@@ -492,27 +437,18 @@ export function nameFor(state: GameState, at: Hex, report: SiteReport): string {
  * a steading. It is a way to give one up.
  */
 export function foundSettlement(state: GameState): boolean {
-  const at = state.party.at;
-  if (!canFound(state, at)) return false;
-  const report = COAST_IS_A_LINE
-    ? stopReport(state.seed, standingAt(state))
-    : siteReport(state.world, at)!;
-  const name = nameFor(state, at, report);
-  const rng = stream(state.seed, 'colony').derive(
-    COAST_IS_A_LINE ? `found:s${standingAt(state)}` : `found:${key(at)}`,
-  );
+  if (!canFound(state)) return false;
+  const here = standingAt(state);
+  const report = stopReport(state.seed, here);
+  const name = nameFor(state, report);
+  const rng = stream(state.seed, 'colony').derive(`found:s${here}`);
 
   state.settlement = {
-    at: { q: at.q, r: at.r },
-    // Written only on a line, because on the hex map it would be a lie —
-    // `standingAt` answers 0 for a band that has never walked a route, and a
-    // hall stamped "stop 0" is a hall the coast would think it knew where to
-    // find. See src/state/types.ts.
-    ...(COAST_IS_A_LINE ? { stop: standingAt(state) } : {}),
+    stop: here,
     name,
     foundedOn: state.day,
     report,
-    plots: makePlots(report, { q: at.q, r: at.r }, rng.derive('plots')),
+    plots: makePlots(report, rng.derive('plots')),
     shelter: 0,
     watch: 0,
     built: [],
@@ -541,13 +477,12 @@ export function foundSettlement(state: GameState): boolean {
 export function atHome(state: GameState): boolean {
   const home = state.settlement;
   if (!home) return false;
-  // On a coast, home is a stretch — and the hex comparison below does not
-  // merely go wrong here, it goes wrong in the generous direction, which is
-  // why it would never have been noticed. `WALK` moves `party.stop` and
-  // never touches `party.at`, so on a line the band's hex is frozen at the
-  // landing forever and `settlement.at` was copied from that same frozen
-  // hex. The old test therefore answered TRUE from everywhere on the coast:
-  // a band twelve stretches out could walk into its own hall.
-  if (COAST_IS_A_LINE) return home.stop !== undefined && home.stop === standingAt(state);
-  return home.at.q === state.party.at.q && home.at.r === state.party.at.r;
+  // Home is a stretch. The hex comparison this replaced did not merely go
+  // wrong on a line, it went wrong in the generous direction, which is why it
+  // was never noticed: `WALK` moved `party.stop` and never touched
+  // `party.at`, so the band's hex was frozen at the landing forever and
+  // `settlement.at` was copied from that same frozen hex. The old test
+  // therefore answered TRUE from everywhere on the coast — a band twelve
+  // stretches out could walk into its own hall.
+  return home.stop !== undefined && home.stop === standingAt(state);
 }

@@ -8,9 +8,8 @@
 // So the claims here are all about the same thing: does what you built show.
 // `scripts/hearth.mjs` proves the pixels; this proves the scene.
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-vi.mock('../src/sim/flags', () => ({ COAST_IS_A_LINE: true }));
 
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
@@ -22,7 +21,6 @@ import { BECK_SHARE, canFound, foundSettlement, stopReport } from '../src/sim/si
 import { learnStop, standingAt } from '../src/sim/coast';
 import { makePlots } from '../src/sim/colony';
 import { BUILDINGS } from '../src/data/buildings';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { plotsFor } from '../src/sim/colony';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { buildingById } from '../src/data/buildings';
@@ -123,7 +121,7 @@ describe('reading a stretch of coast as a site', () => {
       let free = 0;
       for (let s = 0; s < ROUTE_STOPS; s += 1) {
         state.party.stop = s;
-        if (canFound(state, state.party.at)) free += 1;
+        if (canFound(state)) free += 1;
       }
       if (free === 0) starved += 1;
     }
@@ -160,7 +158,7 @@ describe('putting the posts in, on a coast', () => {
     const state = cloneState(newGame(SEED));
     state.party.stop = 9;
     state.world.knownStops = [];
-    expect(canFound(state, state.party.at)).toBe(false);
+    expect(canFound(state)).toBe(false);
   });
 
   it('refuses a stretch with no fresh water on it', () => {
@@ -173,7 +171,7 @@ describe('putting the posts in, on a coast', () => {
       for (let s = 0; s < ROUTE_STOPS; s += 1) learnStop(state, s);
       for (let s = 0; s < ROUTE_STOPS; s += 1) {
         state.party.stop = s;
-        if (!canFound(state, state.party.at)) dry += 1;
+        if (!canFound(state)) dry += 1;
       }
     }
     expect(dry, 'every stretch of every coast was foundable').toBeGreaterThan(0);
@@ -323,7 +321,6 @@ describe('the plots the hex map still makes', () => {
     expect(standingAt(state)).toBe(0);
     const plots = makePlots(
       { water: 3, soil: 3, timber: 3, harbour: 2, defence: 2, total: 13 },
-      { q: 0, r: 0 },
       makeRng('plots-test'),
     );
     expect(plots.length).toBeGreaterThan(6);
@@ -370,12 +367,11 @@ describe('every house is inside its own yard', () => {
 
   it('gives the last house as much room as the first', () => {
     const state = cloneState(newGame('yard-width'));
-    if (COAST_IS_A_LINE) { for (let s = 0; s < 26; s += 1) learnStop(state, s); }
-    else { for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen'; }
+    for (let s = 0; s < 26; s += 1) learnStop(state, s);
     // A yard with several things in it, built through the real verb.
     for (let stop = 0; stop < 26 && !state.settlement; stop += 1) {
       state.party.stop = stop;
-      if (canFound(state, state.party.at)) foundSettlement(state);
+      if (canFound(state)) foundSettlement(state);
     }
     if (!state.settlement) return;
     state.settlement.built = BUILDINGS.slice(0, 4).map((b) => b.id);

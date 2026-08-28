@@ -7,7 +7,6 @@
 // the run's ending. Views only.
 
 import type { LessonDef } from '../../data/lessons';
-import { COAST_IS_A_LINE } from '../../sim/flags';
 import type { GameState } from '../../state/types';
 import { button, el } from '../svg';
 import type { Dispatch } from '../ui';
@@ -53,10 +52,10 @@ export function renderLesson(lesson: LessonDef, onDismiss: () => void): HTMLElem
     // player reads, and on a coast build the hex one told them to tap a
     // marked hex — on a map with no hexes to tap.
     el('p', { class: 'event-body' }, [
-      (COAST_IS_A_LINE ? lesson.coast?.body : undefined) ?? lesson.body,
+      lesson.coast?.body ?? lesson.body,
     ]),
     el('p', { class: 'lesson-point' }, [
-      (COAST_IS_A_LINE ? lesson.coast?.point : undefined) ?? lesson.point,
+      lesson.coast?.point ?? lesson.point,
     ]),
     button('Onward', onDismiss, { class: 'primary wide' }),
   ]);

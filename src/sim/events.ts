@@ -1,12 +1,10 @@
 // Event engine. Interprets the data in data/events.ts: eligibility, weighted
 // selection, stat checks with odds shown to the player, and effects.
 
-import { key, neighbors, range } from '../hex';
 import { stream } from '../rng';
 import { EVENTS, eventById, type Condition, type Effect, type EventDef } from '../data/events';
 import type { ActiveEvent, GameState, Stats } from '../state/types';
 import { seasonOf } from './calendar';
-import { atSea } from './road';
 import { startBattle, startRaid } from './battleTurn';
 import { raidDifficulty } from './raid';
 import { settleFeud } from './minds';
@@ -15,7 +13,6 @@ import { bonus, knows, learn } from './lore';
 import { hardshipById } from '../data/hardship';
 import { takeIn } from './joining';
 import { angerLevel, angriest, friendliest, goodwillLevel, shiftStanding, stirFactor } from './neighbours';
-import { hasLineOfSight } from './fog';
 import { bestStat, living } from './people';
 import { chronicle } from './saga';
 import { mourn } from './kin';
@@ -24,8 +21,8 @@ import { WATCH_QUIET } from '../data/jobs';
 import { effectiveReport, standsFor } from './colony';
 import { sickCount } from './cold';
 import { checkRunEnd } from './upkeep';
-import { COAST_IS_A_LINE } from './flags';
-import { countryHere } from './coast';
+import { countryHere, learnStop, standingAt } from './coast';
+import { ROUTE_STOPS, daysBetween } from './route';
 
 /** Chance an event fires after a travel action. */
 // 0.23, down from 0.28 — a playtest called the cards relentless, and the
@@ -49,14 +46,16 @@ export const BASE_EVENT_CHANCE = 0.19;
 /** The country takes this many days to notice a new sail on its coast. */
 export const SETTLING_IN_DAYS = 6;
 
-function nearWater(state: GameState): boolean {
-  // Every stretch of a coast is coast — the line IS the shoreline, which is
-  // why `canFish` returns true unconditionally on it. The hex map made this a
-  // real question because most of the island is inland.
-  if (COAST_IS_A_LINE) return true;
-  const here = state.world.tiles[key(state.party.at)];
-  if (here?.river || here?.terrain === 'shore') return true;
-  return neighbors(state.party.at).some((n) => state.world.tiles[key(n)]?.terrain === 'ocean');
+/**
+ * Every stretch of a coast is coast — the line IS the shoreline.
+ *
+ * A real question on the hex map, because most of an island is inland. Kept
+ * as a named predicate rather than folded away, because `nearWater` is a
+ * condition authors write in `data/events` and the answer being "always" is
+ * a fact about the country rather than about the code.
+ */
+function nearWater(): boolean {
+  return true;
 }
 
 /**
@@ -66,7 +65,6 @@ function nearWater(state: GameState): boolean {
  * lessons drift into a second, parallel engine nobody maintains.
  */
 export function conditionHolds(state: GameState, condition: Condition): boolean {
-  const tile = state.world.tiles[key(state.party.at)];
   switch (condition.c) {
     case 'terrain':
       // `countryHere`, because on a coast `party.at` is the frozen landing
@@ -74,8 +72,7 @@ export function conditionHolds(state: GameState, condition: Condition): boolean 
       // line. Not a small miss: `terrain` is the commonest condition in
       // `data/events`, so the whole drawable pool was pinned to whatever the
       // beach happened to be, for the length of a saga.
-      if (COAST_IS_A_LINE) return condition.any.includes(countryHere(state));
-      return tile !== undefined && condition.any.includes(tile.terrain);
+      return condition.any.includes(countryHere(state));
     case 'season':
       return condition.any.includes(seasonOf(state.day));
     case 'dayMin':
@@ -87,12 +84,12 @@ export function conditionHolds(state: GameState, condition: Condition): boolean 
     case 'flagSet':
       return (state.flags[condition.flag] ?? 0) > 0;
     case 'nearWater':
-      return nearWater(state);
+      return nearWater();
     case 'afloat':
       // On the map, standing on water. On a line, having spent the day at
       // the oars — `party.bySea` is set by a rowed `WALK` and cleared by the
       // next day, which is the same window the hex arm has.
-      return COAST_IS_A_LINE ? state.party.bySea === true : atSea(state);
+      return state.party.bySea === true;
     case 'settled':
       return !!state.settlement;
     case 'atHome':
@@ -187,7 +184,13 @@ export function eventChance(state: GameState): number {
 /** Rolls for an event after a travel action. Mutates the state clone. */
 export function maybeFireEvent(state: GameState): void {
   if (state.end || state.event) return;
-  const rng = stream(state.seed, 'events').derive(`fire:${state.day}:${key(state.party.at)}`);
+  // Keyed on the day AND the stretch. It was `key(state.party.at)` until 8.5,
+  // which on a coast was the frozen landing hex — so the roll was a function
+  // of the day alone and every band rolled the same odds wherever it stood.
+  // The same defect the battle RNG had, one file over. Re-addressing it moved
+  // the long game's measured figures by four points, which is written up
+  // against the restated odds in data/hardship.ts.
+  const rng = stream(state.seed, 'events').derive(`fire:${state.day}:s${standingAt(state)}`);
   if (!rng.chance(eventChance(state))) return;
 
   // Weight 0 means "never drawn at random" — a card the calendar fires, not
@@ -260,15 +263,18 @@ function applyEffect(state: GameState, effect: Effect): void {
     case 'flag':
       state.flags[effect.flag] = (state.flags[effect.flag] ?? 0) + effect.n;
       break;
-    case 'reveal':
-      for (const h of range(state.party.at, effect.radius)) {
-        const k = key(h);
-        if (!state.world.tiles[k]) continue;
-        if (hasLineOfSight(state.world, state.party.at, h)) {
-          if (state.world.seen[k] !== 'visible') state.world.seen[k] = 'seen';
-        }
+    case 'reveal': {
+      // "We learned the shape of the country." On the map that lifted the fog
+      // over a radius of hexes with a line of sight to here; on a line it is
+      // the stretches within that many DAYS, which is what the radius always
+      // was — a hex was a day's walk. Nothing stands between two points on a
+      // coast, so there is no sight check left to make.
+      const here = standingAt(state);
+      for (let s = 0; s < ROUTE_STOPS; s += 1) {
+        if (daysBetween(state.seed, here, s) <= effect.radius) learnStop(state, s);
       }
       break;
+    }
     case 'battle':
       // Queued, not started: the player reads the outcome first, and the
       // field only appears once they dismiss the card.

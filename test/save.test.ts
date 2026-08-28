@@ -4,7 +4,7 @@ import { migrate, MIGRATIONS, type Migration } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { moveOptions } from '../src/sim/road';
+import { walkOptions } from '../src/sim/coast';
 
 describe('save codec', () => {
   it('round-trips a fresh game exactly', () => {
@@ -22,9 +22,9 @@ describe('save codec', () => {
         state = apply(state, { type: 'DISMISS_EVENT' });
         continue;
       }
-      const options = moveOptions(state);
+      const options = walkOptions(state);
       state = options[0]
-        ? apply(state, { type: 'MOVE', to: options[0] })
+        ? apply(state, { type: 'WALK', to: options[0] })
         : apply(state, { type: 'CAMP' });
     }
     const decoded = decode(encode(state));
@@ -151,7 +151,7 @@ describe('a migrated save is a playable save', () => {
       modes: ['TRAVEL'],
       world: structuredClone(seedGame.world),
       party: {
-        at: { ...seedGame.party.at },
+        stop: seedGame.party.stop ?? 0,
         // Two people carrying only the fields v1 knew about. Everything a
         // later version added must be filled in by a migration, not by luck.
         people: seedGame.party.people.slice(0, 2).map((p) => ({
@@ -234,13 +234,13 @@ describe('a migrated save is a playable save', () => {
     let state = decode(JSON.stringify(frozenV1()))!;
     expect(() => {
       for (let i = 0; i < 12 && !state.end; i += 1) {
-        const options = moveOptions(state);
+        const options = walkOptions(state);
         state = apply(
           state,
           state.event
             ? { type: 'DISMISS_EVENT' }
             : options.length > 0
-              ? { type: 'MOVE', to: options[i % options.length]! }
+              ? { type: 'WALK', to: options[i % options.length]! }
               : { type: 'CAMP' },
         );
       }

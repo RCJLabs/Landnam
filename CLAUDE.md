@@ -2,7 +2,7 @@
 
 Viking survival-strategy game: coast travel → turn-based tactical combat → colony simulation, drawn side-on. TypeScript + Vite + procedural SVG. Solo dev (Evan, RCJ Labs). Played primarily on mobile browsers.
 
-Travel runs along a ROUTE — one coast of 26 stops, walked out and back (`src/sim/route.ts`, `src/sim/coast.ts`). The hex map it replaced is still buildable behind `VITE_HEX=1` and is deleted in 8.5's last job.
+Travel runs along a ROUTE — one coast of 26 stops, walked out and back (`src/sim/route.ts`, `src/sim/coast.ts`). The hex map it replaced was deleted in 8.5 (2026-08-28): there is one build, one coordinate, and the address of everything is a stop on the route.
 
 ## Start every session
 
@@ -14,21 +14,22 @@ Travel runs along a ROUTE — one coast of 26 stops, walked out and back (`src/s
 
 - `npm run dev` — dev server
 - `npm run build` — production build; MUST emit a single self-contained `dist/index.html` (vite-plugin-singlefile)
-- `npm run test` — Vitest (route/hex math, RNG, sim logic, save migrations)
-- `npm run test:hex` — the same suite against the old hex build
-- `node scripts/bars.mjs` — all 15 browser bars, both builds
+- `npm run test` — Vitest (route maths, RNG, sim logic, save migrations)
+- `node scripts/bars.mjs` — all ten browser bars
 - `npm run release` — build + zip source to `release/landnam-src.zip`
 - `npm run publish` — build + copy to `docs/index.html`, which Pages serves
 
 ## Architecture (load-bearing rules)
 
-**One data model, three renderers.** All game state lives in one serializable `GameState` object (`src/state/`). A `Person` is a single object used by all three modes — never duplicate character data per mode. Renderers (`src/render/travel.ts`, `battle.ts`, `colony.ts`) are pure views: they read state and draw SVG; they never own state.
+**One data model, three renderers.** All game state lives in one serializable `GameState` object (`src/state/`). A `Person` is a single object used by all three modes — never duplicate character data per mode. Renderers (`src/render/processionView.ts`, `battle.ts`, `steadingView.ts`) are pure views: they read state and draw SVG; they never own state. The two they replaced — the hex map and the hex colony ring — went with the hexes in 8.5, and the contract they both met lives in `src/render/views.ts`.
 
 **Everything is turn-based.** Travel advances in day turns, battle in initiative turns, colony in day/season ticks. No `requestAnimationFrame` game loops, no real-time simulation. Animation/tweening for visual polish only.
 
 **Mode stack.** `TRAVEL | BATTLE | COLONY` managed as a stack in `src/modes.ts` — battle pushes onto travel or colony and pops back with a result object.
 
-**Shared hex library.** `src/hex/` (axial coords, neighbors, distance, A*, line, range) is pure, fully unit-tested, and used by the old world map and the battle grid. Never reimplement hex math inline. On a coast build most `Hex` values are placeholders — the address is `party.stop`, an index into the route — and retiring those fields is 8.5's remaining save break.
+**One address.** Everything on the coast — the band, the steading, the places, the neighbours, the rival, the landmarks, the fisheries — is at a STOP: an index into the 26-stop route. `src/hex/` and the `at: Hex` fields that pointed into it were deleted in 8.5. Distances are days (`daysBetween`), not tiles. The battlefield is a plain rectangle addressed by `cell(col, row)`.
+
+**Derived, not stored.** A coast is a function of `(seed, stop)`: its country, its becks, its fisheries, its places, its people and the other landnamsmadr all come out of the seed when they are asked for. A whole save is about 3 kB. If a fact can be computed, it does not go in the save.
 
 **Deterministic RNG.** `Math.random` is banned. All randomness goes through the seeded RNG in `src/rng.ts`, with separate named streams (worldgen, events, combat) so replays stay stable.
 
@@ -90,15 +91,14 @@ build stamp.
 Run `npm run publish` in any commit that should change what is live — a
 source-only commit will otherwise leave the site on the old build.
 
-**THE DEFAULT IS THE COAST since 2026-08-28.** Phase 8's side-on conversion
-was behind `VITE_COAST=1` while it was being built; it passes every bar the
-hex game passes, so the flag flipped and reads the other way round now.
-`npm run publish` builds the coast to `/` and `/docs` — that is the game.
-`npm run publish:hex` builds the old hex game to `hex/` and `docs/hex/`,
-which is kept only until 8.5's deletion lands, because a side-by-side is the
-only way to answer "is this actually better" while both still exist.
+**THE HEXES ARE GONE since 2026-08-28.** Phase 8's side-on conversion was
+behind `VITE_COAST=1` while it was being built, then the default while the two
+ran side by side, and 8.5 deleted the other one. There is no `VITE_HEX`, no
+`npm run test:hex`, no `npm run publish:hex` and no `hex/` page. `npm test` and
+`npm run build` are the game; `node scripts/bars.mjs` runs the ten browser bars
+that have a subject on a line.
 
-So: `npm test` and `npm run build` are the COAST. `npm run test:hex` and
-`VITE_HEX=1 npm run build` are the hex game. Both suites must stay green
-until the hex layer is deleted — `node scripts/bars.mjs` builds each in turn
-and runs ten bars against the coast and five against the hex game.
+The five bars that went with the map — `sea`, `pinch`, `way-look`, `repaint`,
+`steading` — each made a claim about a coordinate system that no longer exists.
+They were deleted rather than translated; the three the line needed (`strip`,
+`procession`, `hearth`) were written for it in 8.5's job 2.

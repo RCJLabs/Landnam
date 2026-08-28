@@ -5,7 +5,6 @@
 
 import { cloneState } from '../state/clone';
 import { worldBeat } from './beats';
-import { key, type Hex } from '../hex';
 import type { GameState, Person } from '../state/types';
 import { chronicle } from './saga';
 import { foundSettlement } from './site';
@@ -18,36 +17,20 @@ import { placeKind } from '../data/places';
 import { strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
-import { rowThrough } from './skerry';
-import { landmarkAt, landmarkName } from './landmark';
-import { breakGround, canMakeWay, wayDays, wayLine } from './ways';
 import { callTheBlot } from './blot';
 import { layDownSaga, sailOn } from './landnam';
-import { landmarkDef } from '../data/landmarks';
-import { springStrake, unseaworthy } from './ship';
 import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
 import { THING_OPENING } from '../data/thing';
-import { advance, canMove, daysForMove, marchLine, reveal } from './road';
+import { advance, marchLine, reveal } from './road';
 import { canWalk, countryHere, daysToWalk, markTrod, standingAt } from './coast';
-import { COAST_IS_A_LINE } from './flags';
 import { placeAt, stopAt } from './route';
 import { doCamp, doFish, doForage, doHunt } from './gathering';
 
 export type TravelAction =
-  | { type: 'MOVE'; to: Hex }
-  /**
-   * A step along the COAST, to a stop index — see sim/route.ts.
-   *
-   * A second verb beside `MOVE` rather than a change to it, and that is the
-   * whole of what "behind a flag" buys here: the hex path stays live and
-   * untouched, so the game is playable on every commit of the conversion
-   * and the two can be measured against each other. `MOVE` goes when the
-   * flag does.
-   */
+  /** A step along the coast, to a stop index — see sim/route.ts. */
   | { type: 'WALK'; to: number }
   | { type: 'CAMP' }
-  | { type: 'MAKE_WAY' }
   | { type: 'HOLD_BLOT' }
   | { type: 'SAIL_ON' }
   | { type: 'LAY_DOWN_SAGA' }
@@ -80,7 +63,6 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // real and tested; what the flag gates is whether the game offers it,
       // because a coast with nothing on it yet measures as travel getting
       // worse — and would be right.
-      if (!COAST_IS_A_LINE) return prev;
       if (!canWalk(state, action.to)) return prev;
       const days = daysToWalk(state, action.to)!;
       const from = standingAt(state);
@@ -110,16 +92,10 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // a line — see `Party.bySea`.
       if (rowed) party.bySea = true;
       // The march itself, for anything that animates the road. Same beat as
-      // `MOVE` emits and deliberately the same shape: `from` and `to` are
-      // the party's placeholder hex, because on a line the band's hex never
-      // moves and the stop is the address — exactly as it is for places,
-      // neighbours and landmarks. What carries the meaning is what always
-      // did: the days it took, the country crossed, and whether it was
-      // rowed.
       worldBeat(state, {
         kind: 'marched',
-        from: { ...party.at },
-        to: { ...party.at },
+        from,
+        to: action.to,
         days,
         terrain: rowed ? 'ocean' : stop.country,
         ...(rowed ? { bySea: true as const } : {}),
@@ -143,75 +119,6 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       return state;
     }
 
-    case 'MOVE': {
-      if (!canMove(state, action.to)) return prev;
-      const days = daysForMove(state, action.to)!;
-      const tile = state.world.tiles[key(action.to)]!;
-      const wasOn = state.world.tiles[key(party.at)]?.terrain;
-      const changedGround = wasOn !== tile.terrain;
-      const fromSea = wasOn === 'ocean' && tile.terrain !== 'ocean';
-      const cameFrom = prev.party.at;
-      party.at = action.to;
-      party.hasCamped = false;
-      // Remember the route, not just the view: the map draws where we walked.
-      const there = key(action.to);
-      const firstHere = state.world.trod[there] === undefined;
-      if (firstHere) state.world.trod[there] = state.day;
-      if (tile.terrain === 'ocean') note(state, 'seaDays', days);
-      // What the water did to her on the way. Only a crossing that was
-      // actually rowed: walking a shore hex passes over no rocks.
-      const rocks =
-        wasOn === 'ocean' || tile.terrain === 'ocean'
-          ? rowThrough(state, cameFrom, action.to)
-          : { struck: [], found: [] };
-      for (const _ of rocks.struck) springStrake(state.ship);
-      advance(state, days);
-      if (state.end) return state;
-      reveal(state);
-      worldBeat(state, {
-        kind: 'marched',
-        from: cameFrom,
-        to: action.to,
-        days,
-        terrain: tile.terrain,
-        ...(tile.terrain === 'ocean' ? { bySea: true as const } : {}),
-      });
-      chronicle(state, marchLine(state, tile.terrain, days, changedGround, fromSea));
-      // Standing under one for the first time. `trod` already remembers first
-      // visits, so this costs no new state — and it is said ONCE, which is
-      // what makes it read as arriving somewhere rather than as scenery.
-      const standing = firstHere ? landmarkAt(state.world, state.seed, action.to) : null;
-      if (standing) {
-        chronicle(
-          state,
-          `We came to ${landmarkName(state.world, state.seed, action.to)}: `
-            + `${landmarkDef(standing).blurb}.`,
-          'saga',
-        );
-      }
-      // The rocks get their own line: a strake going is the loudest thing
-      // that can happen on a quiet day, and it must never be buried in the
-      // march line's prose.
-      if (rocks.struck.length > 0) {
-        chronicle(
-          state,
-          rocks.struck.length > 1
-            ? `We came through a skerry field and she took ${rocks.struck.length} strakes doing it.`
-            : unseaworthy(state.ship)
-              ? 'Rock under the keel, and the last sound strake with it. She will not swim until she is mended.'
-              : 'There was rock under the water where none showed. A strake went.',
-          'grim',
-        );
-      } else if (rocks.found.length > 0) {
-        chronicle(
-          state,
-          'We felt rock go by close enough to touch, and marked where it lay.',
-          'plain',
-        );
-      }
-      return state;
-    }
-
     case 'SAIL_ON': {
       if (!sailOn(state)) return prev;
       return state;
@@ -227,23 +134,6 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // it does is put the card on the table, and the card is where the
       // choosing happens.
       if (!callTheBlot(state)) return prev;
-      return state;
-    }
-
-    case 'MAKE_WAY': {
-      if (!canMakeWay(state, party.at)) return prev;
-      const days = wayDays(state, party.at);
-      const line = wayLine(state, party.at);
-      breakGround(state, party.at);
-      party.hasCamped = false;
-      advance(state, days);
-      if (state.end) return state;
-      reveal(state);
-      // Deliberately NO new beat kind. Beats live in the save and in the
-      // parity vectors, so every one of them is an obligation on the port;
-      // the chronicle already says this happened and nothing has to animate
-      // a road being dug.
-      chronicle(state, line, 'saga');
       return state;
     }
 
@@ -265,7 +155,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       if (!foundSettlement(state)) return prev;
       worldBeat(state, {
         kind: 'founded',
-        at: state.settlement!.at,
+        stop: state.settlement!.stop ?? 0,
         name: state.settlement!.name,
       });
       advance(state, 1);
@@ -282,7 +172,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // willing to say about the coast while it was being weighed — which
       // is the only road into the plunder economy a settled band has, the
       // fixed places being things you must first KNOW OF to walk to.
-      if (host) tellOfPlace(state, host.at, host.name, host.stop ?? standingAt(state));
+      if (host) tellOfPlace(state, host.name, host.stop ?? standingAt(state));
       advance(state, 1);
       if (state.end) return state;
       reveal(state);
@@ -342,9 +232,7 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // stretch the prize stands on. A place's `at` is a placeholder there,
       // so this always fell through to the literal 'shore' and every
       // strandhögg in the game was fought on the same ground.
-      const ground = COAST_IS_A_LINE
-        ? stopAt(state.seed, mark.stop ?? 0).country
-        : state.world.tiles[key(mark.at)]?.terrain ?? 'shore';
+      const ground = stopAt(state.seed, mark.stop ?? 0).country;
       startBattle(state, ground, Math.max(0, (def.garrison ?? 1) - STRAND_FEWER), {
         placeId: mark.id,
       });

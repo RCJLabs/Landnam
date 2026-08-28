@@ -15,7 +15,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { goHome, standOn } from './fixtures/stand';
-import { fromKey, key, range } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
 import { activeCombatant, fighterPerson, standing, strikeTargets } from '../src/sim/battle';
@@ -33,7 +32,6 @@ import {
   type BeatKind,
   type WorldBeatKind,
 } from '../src/sim/beats';
-import { moveOptions } from '../src/sim/road';
 import { arriveHome, launch, launchBlocker } from '../src/sim/expedition';
 import {
   LANDMARK_SIGHT, offersAt, settlePlace, spotLandmarks, tradeAt,
@@ -42,7 +40,6 @@ import { placeKind } from '../src/data/places';
 import { canFound, foundSettlement } from '../src/sim/site';
 import { living } from '../src/sim/people';
 import { currentMode } from '../src/modes';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { ROUTE_STOPS, daysBetween } from '../src/sim/route';
 import { hasTrod, learnStop, onHeights, walkOptions } from '../src/sim/coast';
 import type { Battle, GameState } from '../src/state/types';
@@ -407,8 +404,7 @@ describe('the world stream', () => {
       // The bot reaches stop four to six of twenty-six before it settles.
       //
       // Held instead by 'a landmark picked out from a ridge says which place,
-      // and where', below, on both builds.
-      ...(COAST_IS_A_LINE ? [] : (['spotted'] as WorldBeatKind[])),
+      // and where', below.
     ];
     const seen = new Set<WorldBeatKind>();
     /**
@@ -429,7 +425,7 @@ describe('the world stream', () => {
     // has been seen, so this is a CEILING and not a cost — the hex build has
     // always finished inside a handful, and a coast build needs a few more
     // because its bands are shorter-lived.
-    const SWEEP_SEEDS = COAST_IS_A_LINE ? 24 : 12;
+    const SWEEP_SEEDS = 24;
     for (let s = 0; s < SWEEP_SEEDS && found() < KINDS.length; s += 1) {
       let state = structuredClone(newGame(`world-reach-${s}`, 'fair'));
       const memo: Memo = { jobsDone: false };
@@ -521,7 +517,7 @@ function wideStep(state: GameState, memo: Memo): GameState {
 
   // Still walking. Eat off the land while that is still allowed — `canGather`
   // is false at a steading, so anything foraged has to be foraged now.
-  if (state.party.food < (COAST_IS_A_LINE ? 40 : 26)) {
+  if (state.party.food < (40)) {
     // A FIFTH ROUND OF THIS BOT BEING THE BUG, and the same lesson: a bot
     // that cannot keep itself alive measures nothing. On a coast it starved
     // by day 30 having reached stop 4 of 26, so most of what this sweep is
@@ -539,9 +535,7 @@ function wideStep(state: GameState, memo: Memo): GameState {
     // And it left it too late. A leg is two to four days at three a day, so
     // a band that starts looking for supper at 26 is already inside the cost
     // of the walk it is about to take.
-    const order = COAST_IS_A_LINE
-      ? (['FISH', 'FORAGE', 'HUNT'] as const)
-      : (['FORAGE', 'HUNT', 'FISH'] as const);
+    const order = (['FISH', 'FORAGE', 'HUNT'] as const);
     for (const type of order) {
       const got = apply(state, { type });
       if (got !== state) return got;
@@ -560,22 +554,12 @@ function wideStep(state: GameState, memo: Memo): GameState {
   // emits. It emits it fine: walking all twenty-six stretches of sixty
   // coasts picks something out from a ridge seventy-nine times. What never
   // happened was the walking.
-  if (COAST_IS_A_LINE) {
-    const stops = walkOptions(state);
-    const fresh = stops.find((stop) => !hasTrod(state, stop));
-    const step = fresh ?? stops[0];
-    if (step !== undefined) {
-      const walked = apply(state, { type: 'WALK', to: step });
-      if (walked !== state) return walked;
-    }
-    return apply(state, { type: 'CAMP' });
-  }
-  const options = moveOptions(state);
-  const unwalked = options.find((h) => state.world.trod[`${h.q},${h.r}`] === undefined);
-  const to = unwalked ?? options[0];
-  if (to) {
-    const moved = apply(state, { type: 'MOVE', to });
-    if (moved !== state) return moved;
+  const stops = walkOptions(state);
+  const fresh = stops.find((stop) => !hasTrod(state, stop));
+  const step = fresh ?? stops[0];
+  if (step !== undefined) {
+    const walked = apply(state, { type: 'WALK', to: step });
+    if (walked !== state) return walked;
   }
   return apply(state, { type: 'CAMP' });
 }
@@ -599,27 +583,18 @@ describe('the errands and the fixed places', () => {
    */
   function homestead(seed: string): GameState {
     const state = structuredClone(newGame(seed, 'fair'));
-    for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
     // Found wherever this world will take posts — the landing often will not.
     let planted = false;
-    if (COAST_IS_A_LINE) {
-      // Walked, not scanned: `foundBlocker` reads the stretch underfoot and
-      // ignores the hex it is handed, so assigning `party.at` asked stop 0
-      // twenty-six hundred times. It passed while the landing usually took
-      // posts; since fresh water became the gate it usually does not.
-      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-        learnStop(state, stop);
-        state.party.stop = stop;
-        if (canFound(state, state.party.at) && foundSettlement(state)) { planted = true; break; }
-      }
-    } else {
-      for (const k of Object.keys(state.world.tiles)) {
-        const at = fromKey(k);
-        state.party.at = at;
-        if (canFound(state, at) && foundSettlement(state)) { planted = true; break; }
-      }
+    // Walked, not scanned: `foundBlocker` reads the stretch underfoot and
+    // ignores the hex it is handed, so assigning `party.at` asked stop 0
+    // twenty-six hundred times. It passed while the landing usually took
+    // posts; since fresh water became the gate it usually does not.
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+      learnStop(state, stop);
+      state.party.stop = stop;
+      if (canFound(state) && foundSettlement(state)) { planted = true; break; }
     }
-    expect(planted, 'nowhere in this world would take the posts').toBe(true);
+        expect(planted, 'nowhere in this world would take the posts').toBe(true);
     state.party.food = 400;
     state.party.firewood = 200;
     state.beats = [];
@@ -651,43 +626,26 @@ describe('the errands and the fixed places', () => {
 
   it('a landmark picked out from a ridge says which place, and where', () => {
     const state = homestead('beat-spot');
-    if (COAST_IS_A_LINE) {
-      // A ridge is a STRETCH whose country is hills, sight is counted in
-      // days, and the fog a line has is `knownStops` — so making the country
-      // over by rewriting tiles moves nothing here. Same three conditions as
-      // the hex branch below, asked of the address the sim reads.
-      const ridge = [...Array(ROUTE_STOPS).keys()].find((stop) => onHeights(state, stop));
-      expect(ridge, 'no stretch of this coast is high ground').toBeDefined();
-      state.party.stop = ridge;
-      const place = state.world.places.find(
-        (p) => (p.stop ?? 0) !== ridge
-          && daysBetween(state.seed, ridge!, p.stop ?? 0) <= LANDMARK_SIGHT,
-      );
-      expect(place, 'nothing within sight of that ridge to pick out').toBeDefined();
-      // Put the fog back over it, which on a line is forgetting the stretch.
-      state.world.knownStops = (state.world.knownStops ?? [])
-        .filter((stop) => stop !== (place!.stop ?? 0));
-      state.beats = [];
-      spotLandmarks(state);
-      expect(state.beats?.some((b) => b.kind === 'spotted')).toBe(true);
-      expect(state.beats!.find((b) => b.kind === 'spotted' && b.id === place!.id))
-        .toMatchObject({ id: place!.id, place: place!.kind, at: place!.at });
-      return;
-    }
-    const place = state.world.places[0]!;
-    delete state.world.seen[key(place.at)];
-    state.party.at = { q: place.at.q + 2, r: place.at.r };
-    for (const h of range(state.party.at, LANDMARK_SIGHT + 2)) {
-      const tile = state.world.tiles[key(h)];
-      if (tile) tile.terrain = 'meadow';
-    }
-    state.world.tiles[key(state.party.at)]!.terrain = 'hills';
+    // A ridge is a STRETCH whose country is hills, sight is counted in
+    // days, and the fog a line has is `knownStops` — so making the country
+    // over by rewriting tiles moves nothing here. Same three conditions as
+    // the hex branch below, asked of the address the sim reads.
+    const ridge = [...Array(ROUTE_STOPS).keys()].find((stop) => onHeights(state, stop));
+    expect(ridge, 'no stretch of this coast is high ground').toBeDefined();
+    state.party.stop = ridge;
+    const place = state.world.places.find(
+      (p) => (p.stop ?? 0) !== ridge
+        && daysBetween(state.seed, ridge!, p.stop ?? 0) <= LANDMARK_SIGHT,
+    );
+    expect(place, 'nothing within sight of that ridge to pick out').toBeDefined();
+    // Put the fog back over it, which on a line is forgetting the stretch.
+    state.world.knownStops = (state.world.knownStops ?? [])
+      .filter((stop) => stop !== (place!.stop ?? 0));
     state.beats = [];
     spotLandmarks(state);
     expect(state.beats?.some((b) => b.kind === 'spotted')).toBe(true);
-    expect(state.beats!.find((b) => b.kind === 'spotted')).toMatchObject({
-      id: place.id, place: place.kind, at: place.at,
-    });
+    expect(state.beats!.find((b) => b.kind === 'spotted' && b.id === place!.id))
+      .toMatchObject({ id: place!.id, place: place!.kind, stop: place!.stop });
   });
 
   it('a deal across a counter says what crossed it', () => {

@@ -9,10 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "play": "vite-node scripts/play.ts --",
-    "record": "vite-node scripts/record.ts --",
     "offline": "npm run build && node scripts/offline.mjs",
-    "repaint": "VITE_HEX=1 npm run build && node scripts/repaint.mjs",
-    "pinch": "VITE_HEX=1 npm run build && node scripts/pinch.mjs",
     "landscape": "npm run build && node scripts/landscape.mjs",
     "field": "npm run build && node scripts/field.mjs",
     "pan": "npm run build && node scripts/pan.mjs",
@@ -20,7 +17,6 @@
     "test:watch": "vitest",
     "release": "npm run build && node scripts/release.mjs",
     "publish": "npm run build && node scripts/publish.mjs",
-    "parity": "vite-node scripts/parity.ts --",
     "port:sync": "node scripts/port-sync.mjs",
     "party-tables": "vite-node scripts/party-tables.ts -- port/LandnamPartyTables.gen.h",
     "event-tables": "vite-node scripts/event-tables.ts -- port/LandnamEventTables.gen.h",
@@ -28,12 +24,7 @@
     "port-data": "vite-node scripts/port-data.ts",
     "strip": "npm run build && node scripts/strip.mjs",
     "procession": "npm run build && node scripts/procession.mjs",
-    "hearth": "npm run build && node scripts/hearth.mjs",
-    "sea": "VITE_HEX=1 npm run build && node scripts/sea.mjs",
-    "way-look": "VITE_HEX=1 npm run build && node scripts/way-look.mjs",
-    "steading": "VITE_HEX=1 npm run build && node scripts/steading.mjs",
-    "publish:hex": "VITE_HEX=1 npm run build && node scripts/publish.mjs hex",
-    "test:hex": "VITE_HEX=1 vitest run"
+    "hearth": "npm run build && node scripts/hearth.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

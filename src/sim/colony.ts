@@ -6,7 +6,6 @@
 // send out on an expedition are hands that are not farming.
 
 import { worldBeat } from './beats';
-import { key, range, type Hex } from '../hex';
 import type { Rng } from '../rng';
 import {
   JOBS,
@@ -34,10 +33,19 @@ import { homeCrew } from './expedition';
 import { chronicle } from './saga';
 import { bonus, learn } from './lore';
 import type { LoreId } from '../data/lore';
-import { COAST_IS_A_LINE } from './flags';
 
 /** Rings of local ground around the hall. Nineteen hexes at radius two. */
 export const PLOT_RADIUS = 2;
+
+/**
+ * How many plots a steading's ground is cut into.
+ *
+ * Nineteen, because that is what a radius-2 hex ring held: the yard was a
+ * ring of ground you looked down on until Phase 8 drew it side-on, and the
+ * count came across with the steadings that already existed. A bag with an
+ * index rather than a lattice — see `makePlots`.
+ */
+export const PLOT_COUNT = 19;
 
 /**
  * The most shelter mending alone can ever reach. Everything above this has to
@@ -63,21 +71,17 @@ export const IDLE_BITE = 0.6;
  * five measures said it would be, so the local map is a picture of the choice
  * the player already made.
  */
-export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
-  // On a coast there is no ring of ground around the hall to walk out into —
-  // a steading stands on a stretch of shore, and what it has is what the
-  // reading said it has. So the SAME number of plots is rolled with the SAME
-  // weights, and the only thing that changes is that `at` stops being a
-  // coordinate.
+export function makePlots(report: SiteReport, rng: Rng): Plot[] {
+  // There is no ring of ground around the hall to walk out into — a steading
+  // stands on a stretch of shore, and what it has is what the reading said it
+  // has. So the SAME number of plots is rolled with the SAME weights, and the
+  // only thing that changed is that `at` stopped being a coordinate.
   //
-  // It stays a Hex rather than becoming a slot index because nothing on a
-  // line reads it, `plotsFor` filters on `kind` alone, and the alternative
-  // is a save-shape change for a field that would carry no information. It
-  // is an INDEX here, written as `{q: i, r: 0}`, and the elevation view does
-  // not touch it.
-  const hexes = COAST_IS_A_LINE
-    ? Array.from({ length: range(centre, PLOT_RADIUS).length }, (_, i) => ({ q: i, r: 0 }))
-    : range(centre, PLOT_RADIUS);
+  // `Plot.at` is a slot index now rather than a hex. It was written as
+  // `{q: i, r: 0}` while both worlds had to load, which is an index already
+  // — the rolls derive off `${i},0` here so a steading built before the
+  // hexes went keeps exactly the plots it was built with.
+  const slots = Array.from({ length: PLOT_COUNT }, (_, i) => i);
   const plots: Plot[] = [];
 
   // Weights straight off the reading. The floor keeps every steading from
@@ -90,15 +94,14 @@ export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
   ];
   const total = weights.reduce((sum, w) => sum + w[1], 0);
 
-  for (const at of hexes) {
-    const isCentre = COAST_IS_A_LINE
-      ? at.q === 0
-      : at.q === centre.q && at.r === centre.r;
-    if (isCentre) {
+  for (const at of slots) {
+    if (at === 0) {
       plots.push({ at, kind: 'hall' });
       continue;
     }
-    let roll = rng.derive(key(at)).float(0, total);
+    // The derive key is the hex key this slot used to carry — `${i},0` — so
+    // the same steading rolls the same plots it rolled before the hexes went.
+    let roll = rng.derive(`${at},0`).float(0, total);
     let kind: PlotKind = 'rough';
     for (const [candidate, weight] of weights) {
       roll -= weight;
@@ -112,15 +115,28 @@ export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
 
   // The watch stands on the edge, looking out. Always exactly one, so the
   // warrior always has somewhere to be.
-  const edge = plots.filter(
-    (p) => p.kind !== 'hall' && (COAST_IS_A_LINE
-      ? true
-      : Math.max(...[p.at.q - centre.q, p.at.r - centre.r].map(Math.abs)) >= 1),
-  );
+  const edge = plots.filter((p) => p.kind !== 'hall');
   const post = edge[Math.floor(rng.derive('watchpost').float(0, edge.length))];
   if (post) post.kind = 'watchpost';
 
   return plots;
+}
+
+/**
+ * Plot kinds present, for the panel's summary of the ground.
+ *
+ * Was in `render/colony.ts`, which drew the hex ring and is gone. It is a
+ * question about the state rather than about the picture — which is why it
+ * belongs here and why it never should have been over there.
+ */
+export function plotTally(state: GameState): { kind: string; name: string; count: number }[] {
+  const home = state.settlement;
+  if (!home) return [];
+  const counts = new Map<string, number>();
+  for (const plot of home.plots) counts.set(plot.kind, (counts.get(plot.kind) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([kind, count]) => ({ kind, name: PLOTS[kind as keyof typeof PLOTS].name, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
 /** Plots of a kind the given job works. */

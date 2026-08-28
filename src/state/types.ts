@@ -2,7 +2,6 @@
 // a Person is a party token in TRAVEL, a unit in BATTLE, a worker in COLONY.
 // Everything here must be JSON-serializable: no Maps, Sets, or class instances.
 
-import type { Hex, HexKey } from '../hex';
 import type { HardshipId } from '../data/hardship';
 // Types only, and the arrow points back here for Battle — which TypeScript is
 // happy with and which keeps the beat vocabulary next to the code that emits
@@ -66,19 +65,9 @@ export interface Rival {
   leader: string;
   /** What their hall is called. */
   hall: string;
-  /** Where their posts went in. */
-  at: Hex;
-  /** Hexes they hold, hall first, in the order they took them. */
-  claims: HexKey[];
-  /**
-   * The same two facts on a coast that is a LINE — his hall's stop and the
-   * stretches he holds, hall first. See sim/route.ts.
-   *
-   * Their own fields for the reason `trodStops` has its own: `claims` is
-   * read by `render/travelScene.ts` through `fromKey`, which answers NaN for
-   * a stop key and draws a marker nowhere. Absent on every hex-map save.
-   */
+  /** The stretch his posts went into — see sim/route.ts. */
   stop?: number;
+  /** The stretches he holds, hall first, in the order he took them. */
   claimStops?: number[];
   /** The day of the last claim. */
   lastClaim: number;
@@ -97,56 +86,24 @@ export interface Worked {
 }
 
 export interface World {
-  width: number;
-  height: number;
-  tiles: Record<HexKey, Tile>;
-  /** Fog of war, keyed like tiles. Absent means 'unseen'. */
-  seen: Record<HexKey, Visibility>;
   /**
-   * How hard each larder has been worked, keyed `${kind}:${hexKey}`.
+   * How hard each larder has been worked, keyed `${kind}:s${stop}`.
    *
-   * Only hexes somebody has actually worked appear here, so an untouched
-   * country costs the save nothing — see sim/abundance.ts for why the figure
+   * Only stretches somebody has actually worked appear here, so an untouched
+   * coast costs the save nothing — see sim/abundance.ts for why the figure
    * can be written once and read lazily.
    */
   worked?: Record<string, Worked>;
-  /**
-   * Ground the band has broken: hexes with a way made through them, keyed to
-   * the day the work was finished.
-   *
-   * The one thing on the world the PLAYER authors, so unlike skerries and
-   * landmarks it cannot be derived and has to be carried in the save. It is
-   * also the only thing here that outlives the band that made it.
-   */
-  made?: Record<HexKey, number>;
-  /**
-   * Skerries the band has found out about, the hard way or the careful way.
-   *
-   * The rocks themselves are derived from the seed (sim/skerry.ts) and are
-   * not stored; this is the CHART, which is the part a saga earns. Absent
-   * means a coast nobody has read yet.
-   */
-  charted?: HexKey[];
-  /** Where the knarr made landfall — the run's anchor point. */
-  landing: Hex;
-  /** What the landing was called, so the map can label it. */
+  /** What the landing was called, so the chart can label it. */
   landingName: string;
-  /** Hexes the party has actually stood on, keyed to the day they first did. */
-  trod: Record<HexKey, number>;
   /**
-   * The same two facts for a coast that is a LINE — see sim/route.ts.
+   * The two things a saga learns about its coast — see sim/route.ts.
    * `trodStops` is where the band has stood, keyed to the day it first did;
    * `knownStops` is what it knows stands there, however it came to know.
    *
-   * Deliberately NOT folded into `seen` and `trod`. Those are keyed by hex
-   * and eight places in this codebase iterate them expecting hexes:
-   * `exploredFraction` divides `seen`'s size by the tile count, the parity
-   * fixture hashes that size, three renderers walk it, and `commonestGround`
-   * looks every `trod` key up in `world.tiles`. A stop key dropped into
-   * either would not throw — it would quietly make a percentage wrong, which
-   * is the failure this repo keeps rediscovering under other names.
-   *
-   * Absent on every save written by the hex map, which is all of them.
+   * Deliberately kept apart. Standing somewhere and knowing what is there are
+   * different facts: a trader names a monastery you have never walked to, and
+   * you walk a stretch of empty shore and learn only that it was empty.
    */
   trodStops?: Record<string, number>;
   knownStops?: number[];
@@ -161,16 +118,8 @@ export interface World {
 export interface Place {
   id: string;
   kind: 'monastery' | 'town' | 'wreck' | 'oreseam' | 'ruin';
-  at: Hex;
-  /**
-   * Which stop on the coast it stands at — see sim/route.ts.
-   *
-   * Set only on a world seeded with `COAST_IS_A_LINE` on, where it is the
-   * real address and `at` is a placeholder nothing reads. Additive for the
-   * same reason `rank` and `party.stop` were: both worlds have to load while
-   * the conversion runs. `at` goes with the flag in 8.5.
-   */
-  stop?: number;
+  /** Which stop on the coast it stands at — see sim/route.ts. THE address. */
+  stop: number;
   /** Set the day it was sacked or picked clean. A place is taken once. */
   sackedOn?: number;
 }
@@ -179,9 +128,14 @@ export interface Place {
 export interface Ghost {
   /** What they called their steading. */
   name: string;
-  /** Where the posts went in. */
-  at: Hex;
-  /** The day it ended. */
+  /**
+   * The day it ended.
+   *
+   * There is no `at`. A challenge code still carries a `g<q>,<r>` slot and
+   * always will — old codes have to keep working — but the numbers in it were
+   * never read: `hauntedStop` derives the stretch from the ghost's own name,
+   * day and cause, because a coast ghost had no address to honour.
+   */
   day: number;
   /** How it ended — a `RunEnd` cause. */
   cause: string;
@@ -268,17 +222,13 @@ export interface Person {
 // --- The warband ---
 
 export interface Party {
-  at: Hex;
   /**
-   * Where the band is standing on the COAST, as a stop index — see
-   * sim/route.ts.
+   * Where the band is standing, as a stop index into the route — see
+   * sim/route.ts. THE address, and since 8.5 the only one.
    *
-   * Additive while Phase 8 runs, exactly as `Combatant.rank` was: the hex
-   * map is still what travel resolves on until `COAST_IS_A_LINE` flips, so a
-   * saga caught mid-walk keeps going untouched. Absent means the landing,
-   * which is where a band that has never walked the line is standing.
-   *
-   * `at` goes when the flag does, in 8.5, and this is what replaces it.
+   * Absent means the landing, which is where a band that has not walked yet
+   * is standing. It stays optional for that reason and not for the old one:
+   * `at: Hex` stood above this line until the hexes were retired.
    */
   stop?: number;
   /**
@@ -523,22 +473,21 @@ export interface SiteReport {
   total: number;
 }
 
-/** One hex of the steading's own ground, in COLONY mode. */
+/**
+ * One piece of the steading's own ground, in COLONY mode.
+ *
+ * `at` is a slot index, 0 for the hall. It was a hex of a radius-2 ring until
+ * Phase 8 drew the yard side-on; the ring's nineteen plots came across with
+ * the steadings that already existed, and the index is what is left of the
+ * coordinate. See `makePlots`.
+ */
 export interface Plot {
-  at: Hex;
+  at: number;
   kind: 'hall' | 'field' | 'wood' | 'water' | 'rough' | 'watchpost';
 }
 
 export interface Settlement {
-  at: Hex;
-  /**
-   * Which stop on the coast the posts went into — see sim/route.ts.
-   *
-   * Only written when the coast IS the line. On the hex map it would be a
-   * lie: `standingAt` answers 0 for every band that has never walked a
-   * route, and stamping every hex-map hall with "stop 0" would make the
-   * field unreadable the day something starts trusting it.
-   */
+  /** Which stop on the coast the posts went into — see sim/route.ts. */
   stop?: number;
   name: string;
   /** The day the posts went in. There is only ever one. */
@@ -655,15 +604,7 @@ export interface Neighbour {
   /** Clan kind id from data/clans. */
   kind: string;
   name: string;
-  at: Hex;
-  /**
-   * Which stop on the coast they live at — see sim/route.ts.
-   *
-   * Optional for the same reason `Place.stop` and `party.stop` are: both
-   * worlds have to load while the flag is off, and a save written by the hex
-   * map has no stop for anybody. `at` is a placeholder on the line and is
-   * never read there.
-   */
+  /** Which stop on the coast they live at — see sim/route.ts. */
   stop?: number;
   /** What they think of you, -100..100. */
   standing: number;

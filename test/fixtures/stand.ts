@@ -23,14 +23,11 @@ import { expect } from 'vitest';
 import { standingIn } from '../../src/sim/neighbours';
 import { atHome } from '../../src/sim/site';
 import { placeHere } from '../../src/sim/places';
-import { COAST_IS_A_LINE } from '../../src/sim/flags';
 import { ROUTE_STOPS, stopAt } from '../../src/sim/route';
-import { key } from '../../src/hex';
 import type { GameState, Neighbour, Place, Terrain } from '../../src/state/types';
 
-/** Anything the band can go and stand at: it has a hex and, on a line, a stop. */
+/** Anything the band can go and stand at: it has a stop on the route. */
 interface Somewhere {
-  at: { q: number; r: number };
   stop?: number;
 }
 
@@ -39,12 +36,8 @@ interface Somewhere {
  * be going through one of the three named verbs below and getting the check.
  */
 function put(state: GameState, target: Somewhere, what: string): void {
-  if (COAST_IS_A_LINE) {
-    expect(target.stop, `${what} is not on the coast — it has no stop`).not.toBeUndefined();
-    state.party.stop = target.stop;
-    return;
-  }
-  state.party.at = { ...target.at };
+  expect(target.stop, `${what} is not on the coast — it has no stop`).not.toBeUndefined();
+  state.party.stop = target.stop;
 }
 
 /** Stand in this neighbour's yard, where falling on them and bartering work. */
@@ -76,18 +69,12 @@ export function standOn(state: GameState, place: Place): void {
  * about that coast, not a broken fixture.
  */
 export function standIn(state: GameState, country: Terrain): boolean {
-  if (COAST_IS_A_LINE) {
-    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-      if (stopAt(state.seed, stop).country !== country) continue;
-      state.party.stop = stop;
-      return true;
-    }
-    return false;
+  for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+    if (stopAt(state.seed, stop).country !== country) continue;
+    state.party.stop = stop;
+    return true;
   }
-  const tile = state.world.tiles[key(state.party.at)];
-  if (!tile) return false;
-  tile.terrain = country;
-  return true;
+  return false;
 }
 
 /**
@@ -100,14 +87,10 @@ export function standIn(state: GameState, country: Terrain): boolean {
  * test read as the sim having gone permissive.
  */
 export function stepOff(state: GameState, from: Somewhere, away = 2): void {
-  if (COAST_IS_A_LINE) {
-    const at = from.stop ?? 0;
-    const to = at + away < ROUTE_STOPS ? at + away : Math.max(0, at - away);
-    expect(to, 'this coast is too short to step off anything').not.toBe(at);
-    state.party.stop = to;
-  } else {
-    state.party.at = { q: from.at.q + away, r: from.at.r };
-  }
+  const at = from.stop ?? 0;
+  const to = at + away < ROUTE_STOPS ? at + away : Math.max(0, at - away);
+  expect(to, 'this coast is too short to step off anything').not.toBe(at);
+  state.party.stop = to;
 }
 
 /**
@@ -124,16 +107,12 @@ export function stepOff(state: GameState, from: Somewhere, away = 2): void {
 export function walkOff(state: GameState, steps = 2): void {
   const home = state.settlement;
   expect(home, 'walked away from a steading that does not exist').toBeTruthy();
-  if (COAST_IS_A_LINE) {
-    const from = home!.stop ?? 0;
-    // Toward the far end unless that runs off the coast, then back the way
-    // they came. Either is "not home", which is the whole claim.
-    const to = from + steps < ROUTE_STOPS ? from + steps : Math.max(0, from - steps);
-    expect(to, 'this coast is too short to walk off the steading').not.toBe(from);
-    state.party.stop = to;
-  } else {
-    state.party.at = { q: home!.at.q + steps, r: home!.at.r };
-  }
+  const from = home!.stop ?? 0;
+  // Toward the far end unless that runs off the coast, then back the way they
+  // came. Either is "not home", which is the whole claim.
+  const to = from + steps < ROUTE_STOPS ? from + steps : Math.max(0, from - steps);
+  expect(to, 'this coast is too short to walk off the steading').not.toBe(from);
+  state.party.stop = to;
   expect(atHome(state), 'walked away and the sim still says we are home').toBe(false);
 }
 

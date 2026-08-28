@@ -12,7 +12,6 @@ import { atHome, BLOCK_REASON, foundBlocker } from '../sim/site';
 import { atSea } from '../sim/road';
 import { canFish, canGather } from '../sim/gathering';
 import { thinWord, thinness, type Larder } from '../sim/abundance';
-import { WAY_REASON, wayBlocker, wayDays } from '../sim/ways';
 import { canHoldBlot } from '../sim/blot';
 import { SAIL_ON_REASON, reckoningDue, sailOnBlocker } from '../sim/landnam';
 import { everyoneHome } from '../sim/expedition';
@@ -77,7 +76,7 @@ export function deedsFor(
   // tracks are old is a reason to move camp, which is the whole point.
   const state_ = state;
   const leftHere = (kind: Larder, full: string): string => {
-    const how = thinness(state_, kind, state_.party.at);
+    const how = thinness(state_, kind);
     return how === 'good' ? full : `${full} ${thinWord(kind, how)}`;
   };
 
@@ -105,35 +104,6 @@ export function deedsFor(
           afloat ? 'Put the nets over the side. The best water there is.' : 'Set nets in the water here.',
         ),
         run: () => dispatch({ type: 'FISH' }),
-      });
-    }
-  }
-
-  // Breaking ground. Offered wherever it would actually pay — `wayBlocker`
-  // refuses ground that already walks easily rather than selling a wasted
-  // day — and priced in the sheet, because days are the one thing this game
-  // never gives back.
-  if (!home && !afloat) {
-    const blocked = wayBlocker(state, state.party.at);
-    if (blocked === null) {
-      const days = wayDays(state, state.party.at);
-      deeds.push({
-        id: 'make-way',
-        label: 'Break ground',
-        // The chaining has to be said. A lone made hex is nearly worthless —
-        // ways pay by JOINING UP — and a verb that hides that sells the
-        // player days for nothing.
-        blurb: `${days} ${days === 1 ? 'day' : 'days'} of work. Ways join up: two made hexes in a row are `
-          + 'crossed in a single day, so a road pays back on the journeys you take again.',
-        run: () => dispatch({ type: 'MAKE_WAY' }),
-      });
-    } else if (blocked === 'made') {
-      deeds.push({
-        id: 'make-way',
-        label: 'Break ground',
-        blurb: 'Cut a way through. The going here is easier ever after.',
-        blocked: WAY_REASON.made,
-        run: () => {},
       });
     }
   }
@@ -238,7 +208,7 @@ export function deedsFor(
     // Shown even when refused, with the ground's own reason. A missing button
     // teaches nothing; a greyed one that says "no fresh water" teaches the
     // whole system in a sentence.
-    const blocker = foundBlocker(state, state.party.at);
+    const blocker = foundBlocker(state);
     deeds.push({
       id: 'settle',
       label: 'Take this land',

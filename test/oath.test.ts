@@ -33,7 +33,7 @@ import type { GameState } from '../src/state/types';
 function hall(seed = 'oath'): GameState {
   // The site search is shared now — see test/fixtures/settle.ts.
   const state = settleSomewhere(seed);
-  state.party.at = state.settlement!.at;
+  state.party.stop = state.settlement!.stop;
   state.party.food = 400;
   state.party.firewood = 400;
   return state;
@@ -165,7 +165,7 @@ describe('can a player actually get offered it', () => {
     expect(blot.weight).toBe(0);
 
     const state = hall('oath-reach');
-    state.party.at = state.settlement!.at;
+    state.party.stop = state.settlement!.stop;
     let autumnDay = 0;
     for (let d = 1; d < YEAR_LENGTH * 2; d++) {
       if (seasonOf(d) === 'autumn') { autumnDay = d; break; }
@@ -194,7 +194,7 @@ describe('can a player actually get offered it', () => {
     // an event it never agreed to and refused every action after it. Eight
     // bars went red. A card the player calls for cannot do that.
     const state = hall('oath-quiet');
-    state.party.at = state.settlement!.at;
+    state.party.stop = state.settlement!.stop;
     for (let d = 1; d <= YEAR_LENGTH; d++) {
       state.day = d;
       state.party.food = 300;
@@ -206,7 +206,7 @@ describe('can a player actually get offered it', () => {
 
   it('stops offering itself to a band already under an oath', () => {
     const state = hall('oath-once');
-    state.party.at = state.settlement!.at;
+    state.party.stop = state.settlement!.stop;
     let autumnDay = 0;
     for (let d = 1; d < YEAR_LENGTH * 2; d++) {
       if (seasonOf(d) === 'autumn') { autumnDay = d; break; }

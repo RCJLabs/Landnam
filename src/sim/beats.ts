@@ -19,7 +19,6 @@
 // sequence and a renderer that only sees the end of it has nothing to show.
 
 import type { Battle, BattleOutcome, GameState, Side } from '../state/types';
-import type { Hex } from '../hex';
 
 /** Every kind of thing that can happen on a field. */
 export type BeatKind =
@@ -295,10 +294,17 @@ export interface SeasonBeat extends WorldBase {
 }
 
 /** The band crossed ground. `days` because a march is not always one. */
+/**
+ * A day's going.
+ *
+ * `from` and `to` were hexes until 8.5 and are stop indices now — the same
+ * change `MovedBeat` took in 8.1c, and for the same reason: the address had
+ * stopped being a coordinate long before the field carrying it did.
+ */
 export interface MarchedBeat extends WorldBase {
   kind: 'marched';
-  from: Hex;
-  to: Hex;
+  from: number;
+  to: number;
   days: number;
   terrain: string;
   bySea?: true;
@@ -314,7 +320,8 @@ export interface GatheredBeat extends WorldBase {
 
 export interface FoundedBeat extends WorldBase {
   kind: 'founded';
-  at: Hex;
+  /** The stretch the posts went into. */
+  stop: number;
   name: string;
 }
 
@@ -374,7 +381,8 @@ export interface PlaceBeat extends WorldBase {
   kind: 'spotted' | 'dealt' | 'sacked';
   id: string;
   place: string;
-  at: Hex;
+  /** The stretch it stands on. */
+  stop: number;
   /** What crossed the counter, on a deal. */
   gave?: number;
   got?: number;

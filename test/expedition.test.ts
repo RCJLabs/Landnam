@@ -7,22 +7,20 @@
 import { settled as settleSomewhere } from './fixtures/settle';
 import { goHome, walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
-import { distance, key } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
+import { daysBetween } from '../src/sim/route';
+import { walkOptions } from '../src/sim/coast';
 import { passDay } from '../src/sim/upkeep';
 import { assign, buildable, dayLabour, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
-import { canMove, moveOptions } from '../src/sim/road';
 import { startRaid } from '../src/sim/battleTurn';
 import { standing } from '../src/sim/battle';
 import {
   arriveHome,
-  distanceFromHome,
-  everyoneHome,
   fieldCrew,
   homeCrew,
   launch,
@@ -35,7 +33,6 @@ import {
 } from '../src/sim/expedition';
 import type { GameState, Purpose } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
@@ -57,28 +54,7 @@ function ids(state: GameState, count: number): string[] {
 // --- Who is where ---
 
 describe('the steading is where the band lives', () => {
-  it('before the posts go in, everyone walks together', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = structuredClone(newGame('walk-together'));
-    expect(everyoneHome(state)).toBe(false);
-    expect(fieldCrew(state)).toHaveLength(6);
-    expect(homeCrew(state)).toHaveLength(0);
-    expect(moveOptions(state).length).toBeGreaterThan(0);
-  });
 
-  it('after, nobody walks the map until a party is sent', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = settled('walk-sent');
-    expect(everyoneHome(state)).toBe(true);
-    expect(moveOptions(state)).toHaveLength(0);
-    const somewhere = moveOptions(structuredClone(newGame('walk-sent')))[0];
-    if (somewhere) expect(canMove(state, somewhere)).toBe(false);
-
-    expect(launch(state, ids(state, 3), 'explore')).toBe(true);
-    expect(moveOptions(state).length).toBeGreaterThan(0);
-  });
 
   it('splits the band in two, and the two do not overlap', () => {
     const state = settled('split');
@@ -206,28 +182,6 @@ describe('the steading keeps working while they are gone', () => {
     expect(homeCrew(state)).toHaveLength(6);
   });
 
-  it('turning for home only allows steps that shorten the walk', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = settled('turnback');
-    launch(state, ids(state, 2), 'explore');
-    // Get some distance first.
-    for (let i = 0; i < 3; i++) {
-      const step = moveOptions(state).find(
-        (h) => distance(h, state.settlement!.at) > distanceFromHome(state),
-      );
-      if (!step) break;
-      state.party.at = step;
-    }
-    const far = distanceFromHome(state);
-    expect(far).toBeGreaterThan(0);
-
-    expect(turnForHome(state)).toBe(true);
-    expect(turnForHome(state)).toBe(false); // only once
-    for (const step of moveOptions(state)) {
-      expect(distance(step, state.settlement!.at)).toBeLessThanOrEqual(far);
-    }
-  });
 
   it('a party that loses everybody simply stops existing', () => {
     const state = settled('lost');
@@ -238,7 +192,7 @@ describe('the steading keeps working while they are gone', () => {
     }
     pruneExpedition(state);
     expect(state.expedition).toBeUndefined();
-    expect(key(state.party.at)).toBe(key(state.settlement!.at));
+    expect(state.party.stop).toBe(state.settlement!.stop);
     expect(state.saga.some((e) => e.text.includes('came back'))).toBe(true);
   });
 });
@@ -286,14 +240,15 @@ describe('sending parties out beats never leaving', () => {
         const out = state.expedition;
         const days = state.day - out.launchedOn;
         if (days >= 4 && !out.returning) turnForHome(state);
-        const options = moveOptions(state);
+        const options = walkOptions(state);
         if (options.length > 0) {
+          const home = state.settlement!.stop ?? 0;
           const step = out.returning
-            ? options.reduce((best, h) =>
-                distance(h, state.settlement!.at) < distance(best, state.settlement!.at) ? h : best,
+            ? options.reduce((best, s) =>
+                daysBetween(state.seed, s, home) < daysBetween(state.seed, best, home) ? s : best,
               )
             : options[(state.day + seed.length) % options.length]!;
-          state.party.at = step;
+          state.party.stop = step;
         }
       }
       passDay(state);

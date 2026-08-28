@@ -2,7 +2,6 @@
 // Views only — every button dispatches an Action and re-renders from state.
 
 import type { Action } from '../sim/actions';
-import { COAST_IS_A_LINE } from './../sim/flags';
 import type { GameState } from '../state/types';
 import { daysUntilWinter, effectsOn, seasonOf } from '../sim/calendar';
 import { foodPerDay, firewoodPerNight } from '../sim/upkeep';
@@ -12,7 +11,7 @@ import {
   BLOCK_REASON,
   foundBlocker,
   scoreWord,
-  siteReport,
+  reportHere,
   verdictFor,
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
@@ -368,12 +367,10 @@ function hornGlyph(muted: boolean): SVGElement {
  */
 export function renderSitePanel(state: GameState): HTMLElement {
   if (state.end || state.event) return el('div');
-  const at = state.party.at;
-  const report = siteReport(state.world, at);
-  if (!report) return el('div');
+  const report = reportHere(state);
 
   const home = atHome(state);
-  const blocker = foundBlocker(state, at);
+  const blocker = foundBlocker(state);
   const verdict = verdictFor(report.total);
 
   const bars = el('div', { class: 'site-measures' });
@@ -493,9 +490,7 @@ export function renderHint(state: GameState): HTMLElement {
     // picture for the whole of the walking half of the game — the first
     // instruction a player gets, telling them to do something impossible.
     return el('div', { class: 'hint' }, [
-      COAST_IS_A_LINE
-        ? 'Find ground worth holding · walk on up the coast, or open the Chart'
-        : 'Find ground worth holding · tap a marked hex to travel',
+      'Find ground worth holding · walk on up the coast, or open the Chart',
     ]);
   }
   const out = expeditionLine(state);

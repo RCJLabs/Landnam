@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { key } from '../src/hex';
 import { makeRng } from '../src/rng';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -26,7 +25,6 @@ import { currentMode } from '../src/modes';
 import { eventById } from '../src/data/events';
 import { presentEvent } from '../src/sim/events';
 import type { GameState, Terrain } from '../src/state/types';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const FIGHT_TERRAINS: Terrain[] = ['shore', 'meadow', 'forest', 'hills', 'mountains', 'bog', 'valley'];
 
@@ -336,7 +334,7 @@ describe('the round trip', () => {
     const travelActions: Action[] = [
       { type: 'CAMP' },
       { type: 'FORAGE' },
-      { type: 'MOVE', to: state.party.at },
+      { type: 'WALK', to: (state.party.stop ?? 0) + 1 },
       { type: 'DISMISS_EVENT' },
     ];
     for (const action of travelActions) {
@@ -388,15 +386,6 @@ describe('reaching a battle through play', () => {
     expect(home.battle).toBeUndefined();
   });
 
-  it('the battlefield ground matches the hex the party stood on', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = structuredClone(newGame('ground-match'));
-    const terrain = state.world.tiles[key(state.party.at)]!.terrain;
-    state.event = presentEvent(state, eventById('landing-party')!);
-    const fighting = apply(apply(state, { type: 'CHOOSE', index: 0 }), { type: 'DISMISS_EVENT' });
-    expect(fighting.battle!.terrain).toBe(terrain);
-  });
 
   it('a queued fight never leaves a stale flag behind', () => {
     const state = structuredClone(newGame('no-stale'));

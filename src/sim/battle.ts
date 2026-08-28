@@ -4,7 +4,6 @@
 // Fighters are Person objects on both sides; a Combatant only says where
 // they stand and what they have left this turn.
 
-import { key } from '../hex';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
 import {
@@ -28,7 +27,6 @@ import { note } from './tally';
 import { chronicle } from './saga';
 import { startingNerve } from './morale';
 import { weightFor, wordBump, wordOf } from './word';
-import { COAST_IS_A_LINE } from './flags';
 import { standingAt } from './coast';
 import {
   FIELD_HEIGHT,
@@ -306,7 +304,7 @@ export function beginBattle(
   // stopped generating the island it became '0,0' for every band on every
   // coast, and the battle bars moved. Both readings were wrong; this is the
   // one that means what the key is for.
-  const where = COAST_IS_A_LINE ? `s${standingAt(state)}` : key(state.party.at);
+  const where = `s${standingAt(state)}`;
   const rng = stream(state.seed, 'combat').derive(
     `${raid ? 'raid' : 'battle'}:${state.day}:${where}`,
   );

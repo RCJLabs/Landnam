@@ -21,15 +21,13 @@ import { apply, type Action } from '../src/sim/actions';
 import { encode } from '../src/state/save';
 import { allLessonIds, lessonDue } from '../src/sim/lessons';
 import { LESSONS, lessonById } from '../src/data/lessons';
-import { moveOptions } from '../src/sim/road';
+import { walkOptions } from '../src/sim/coast';
 import { foundSettlement, canFound } from '../src/sim/site';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { learnStop } from '../src/sim/coast';
 import { startBattle } from '../src/sim/battleTurn';
 import { SEASON_LENGTH } from '../src/sim/calendar';
 import { WINTERS_TO_JARL } from '../src/data/thing';
-import { key } from '../src/hex';
 import type { GameState } from '../src/state/types';
 
 function fresh(seed = 'lessons'): GameState {
@@ -53,20 +51,12 @@ function settled(label: string): GameState {
     if (foundSettlement(state)) return state;
     // The landing refused: found wherever the world allows. The fixture
     // needs A steading, not a lucky beach.
-    if (COAST_IS_A_LINE) {
-      // Walked, not scanned: `foundBlocker` reads the stretch the band is
-      // standing on, so assigning a hex leaves them where they were.
-      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-        state.party.stop = stop;
-        learnStop(state, stop);
-        if (canFound(state, state.party.at) && foundSettlement(state)) return state;
-      }
-      continue;
-    }
-    for (const k of Object.keys(state.world.tiles)) {
-      const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
-      state.party.at = at;
-      if (canFound(state, at) && foundSettlement(state)) return state;
+    // Walked, not scanned: `foundBlocker` reads the stretch the band is
+    // standing on, so assigning a hex leaves them where they were.
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+      state.party.stop = stop;
+      learnStop(state, stop);
+      if (canFound(state) && foundSettlement(state)) return state;
     }
   }
   throw new Error('no seed in 60 put the band on foundable ground');
@@ -128,11 +118,11 @@ describe('lessons arrive when the thing matters', () => {
     let state = fresh('veteran');
     for (let i = 0; i < 40 && !state.end; i += 1) {
       expect(lessonDue(state, ALL_TAUGHT)).toBeUndefined();
-      const options = moveOptions(state);
+      const options = walkOptions(state);
       const action: Action = state.event
         ? { type: 'DISMISS_EVENT' }
         : options.length > 0
-          ? { type: 'MOVE', to: options[i % options.length]! }
+          ? { type: 'WALK', to: options[i % options.length]! }
           : { type: 'CAMP' };
       state = apply(state, action);
     }
@@ -217,7 +207,7 @@ describe('lessons arrive when the thing matters', () => {
       const state = fresh(`ground-${s}`);
       state.day = 2;
       const due = lessonDue(state, exceptGround);
-      if (canFound(state, state.party.at)) {
+      if (canFound(state)) {
         expect(due?.id).toBe('the-ground');
         taughtSomewhere = true;
       } else {
@@ -269,24 +259,13 @@ describe('lessons arrive when the thing matters', () => {
           // before the player has taken a turn, and standing on ground worth
           // holding is something they walked to.
           s.day = 2;
-          if (COAST_IS_A_LINE) {
-            // On a line the band is placed by STOP — `foundBlocker` reads the
-            // stretch it stands on and ignores the hex it is handed — and it
-            // has to KNOW the stretch, which is what walking there buys.
-            for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-              s.party.stop = stop;
-              learnStop(s, stop);
-              if (canFound(s, s.party.at)) return s;
-            }
-            continue;
-          }
-          if (canFound(s, s.party.at)) return s;
-          for (const k of Object.keys(s.world.tiles)) {
-            const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
-            if (canFound(s, at)) {
-              s.party.at = at;
-              return s;
-            }
+          // On a line the band is placed by STOP — `foundBlocker` reads the
+          // stretch it stands on and ignores the hex it is handed — and it
+          // has to KNOW the stretch, which is what walking there buys.
+          for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+            s.party.stop = stop;
+            learnStop(s, stop);
+            if (canFound(s)) return s;
           }
         }
         throw new Error('no seed put the band on foundable ground');
@@ -392,11 +371,11 @@ describe('being taught costs the run nothing', () => {
     let state = fresh(seed);
     for (let i = 0; i < 60 && !state.end; i += 1) {
       onEachTurn(state);
-      const options = moveOptions(state);
+      const options = walkOptions(state);
       const action: Action = state.event
         ? { type: 'DISMISS_EVENT' }
         : options.length > 0
-          ? { type: 'MOVE', to: options[i % options.length]! }
+          ? { type: 'WALK', to: options[i % options.length]! }
           : { type: 'CAMP' };
       state = apply(state, action);
     }
@@ -428,9 +407,9 @@ describe('being taught costs the run nothing', () => {
   it('leaves the world alone even where a lesson is due', () => {
     const state = fresh('untouched');
     state.day = 2;
-    const worldBefore = JSON.stringify(state.world.tiles[key(state.party.at)]);
+    const worldBefore = JSON.stringify(state.world);
     expect(lessonDue(state, NOBODY_TAUGHT)).toBeDefined();
-    expect(JSON.stringify(state.world.tiles[key(state.party.at)])).toBe(worldBefore);
+    expect(JSON.stringify(state.world)).toBe(worldBefore);
   });
 });
 

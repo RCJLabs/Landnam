@@ -26,7 +26,7 @@ function holds(state: GameState, when: LessonWhen): boolean {
     case 'inColony':
       return currentMode(state) === 'COLONY';
     case 'canSettle':
-      return !state.settlement && canFound(state, state.party.at);
+      return !state.settlement && canFound(state);
     case 'markVisible':
       return markVisible(state);
     case 'grudge':

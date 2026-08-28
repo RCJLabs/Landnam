@@ -35,9 +35,8 @@
 // What this file is for is narrower and is the whole of 8.5's precondition:
 // does anything on a coast ask a question only a hex can answer.
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-vi.mock('../src/sim/flags', () => ({ COAST_IS_A_LINE: true }));
 
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
@@ -143,11 +142,11 @@ function playCoast(seed: string, until: number): Saga {
     if (!state.settlement) {
       const country = countryHere(state);
       const worth = country === 'valley' || country === 'meadow' || country === 'forest';
-      if (worth && canFound(state, state.party.at)) { act({ type: 'FOUND' }); continue; }
+      if (worth && canFound(state)) { act({ type: 'FOUND' }); continue; }
       const on = walkOptions(state).filter((s) => s > standingAt(state));
       // Take poor ground rather than walk off the end of the world.
       if (on.length === 0) {
-        if (canFound(state, state.party.at)) { act({ type: 'FOUND' }); continue; }
+        if (canFound(state)) { act({ type: 'FOUND' }); continue; }
       } else if (state.party.food > foodPerDay(state) * 3) {
         // Walk while there is food for the walking.
         act({ type: 'WALK', to: Math.min(...on) });

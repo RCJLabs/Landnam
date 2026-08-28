@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
-    odds: { spring: 0.86, ruled: 0.28 },
+    odds: { spring: 0.86, ruled: 0.30 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.53, ruled: 0.15 },
+    odds: { spring: 0.53, ruled: 0.23 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.31, ruled: 0.06 },
+    odds: { spring: 0.31, ruled: 0.07 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -225,10 +225,33 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * jarldom is rare, rare events need sample, and twenty sagas cannot see one
  * setting from another.
  *
- * As It Lies is quoted at 15% rather than the 19% a hundred and twenty
+ * As It Lies was quoted at 15% rather than the 19% a hundred and twenty
  * landings gave, because two hundred and forty gave 14.6% and the larger
- * sample wins. The other two are the 120-seed figures; nothing bigger has
- * been run for them.
+ * sample won.
+ *
+ * ALL THREE RESTATED 2026-08-28, when the hexes went — 30% / 23% / 7%, from
+ * the same hundred and twenty sagas a country. What moved them is worth
+ * writing down, because it is not the sample: `maybeFireEvent` derived its
+ * roll from `key(party.at)`, which on a coast was the frozen landing hex, so
+ * every band rolled the day's odds from the same constant wherever it stood.
+ * Retiring the placeholder forced that key to become the STRETCH, and a pure
+ * re-labelling of an RNG derive moved the three arms by 4.2, 4.1 and 5.8
+ * points. Measured both ways rather than assumed: with the old key the same
+ * build reads 34% / 19% / 13%.
+ *
+ * Note what that says about the instrument. The bar on these figures is eight
+ * points, chosen as two standard errors at 120 sagas — and a change that
+ * touched no rule at all moved every arm by most of that. The harness is
+ * deterministic, so these are exact readings rather than draws, and the bar
+ * cannot flake; but the figures are only as stable as the RNG labels they are
+ * measured through, and this is the second time that has surprised somebody.
+ *
+ * ONE THING FOR A HUMAN. A Fair Country and As It Lies are now 30% and 23%,
+ * seven points apart, where the menu had them thirty apart at 28% and 15%.
+ * The two settings barely separate on "ever rule" any more. Spring still
+ * separates them cleanly — 86% against 53% — so the SETTINGS are fine; it is
+ * the jarldom figure that has stopped being a distinguishing number. Whether
+ * to tune for that or to stop quoting it is a design call, not a measurement.
  *
  * The old note here said the twenty-seed sample was "a mistake worth naming"
  * and named it, and then the fix was to re-measure at sixty — which was

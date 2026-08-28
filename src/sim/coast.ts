@@ -11,9 +11,7 @@
 // step that has to be paid for twice. That is the sentence 8.2 is measured
 // against: how far up the coast do I push before the season turns me back?
 
-import { key } from '../hex';
-import type { GameState, Terrain } from '../state/types';
-import { COAST_IS_A_LINE } from './flags';
+import type { GameState, Terrain, World } from '../state/types';
 import { LEG_MAX, ROUTE_STOPS, daysBetween, onRoute, stopAt } from './route';
 import {
   SEASON_LENGTH, SEASON_ORDER, daysUntilNextSeason, nextSeason, seasonOf,
@@ -135,8 +133,7 @@ export function pushLimit(state: GameState, days: number): number {
  * moves while the hex map is still the game.
  */
 export function countryHere(state: GameState): Terrain {
-  if (COAST_IS_A_LINE) return stopAt(state.seed, standingAt(state)).country;
-  return state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
+  return stopAt(state.seed, standingAt(state)).country;
 }
 
 // --- What the band remembers of this coast ---
@@ -260,4 +257,14 @@ export function daysInHand(state: GameState): number {
   const onFood = perDay > 0 ? Math.floor(state.party.food / perDay) : ROUTE_STOPS * LEG_MAX;
   const toWinter = daysUntilNextWinter(state.day);
   return toWinter > 0 ? Math.min(onFood, toWinter) : onFood;
+}
+
+/**
+ * How much of the coast this saga has learned, 0..1.
+ *
+ * Was `sim/fog.ts`'s, where it divided the seen hexes by the tile count. A
+ * line has no fog: what a band knows is the stretches it knows.
+ */
+export function exploredFraction(world: World): number {
+  return (world.knownStops?.length ?? 0) / ROUTE_STOPS;
 }

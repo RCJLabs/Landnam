@@ -33,7 +33,7 @@ import { sickCount } from '../sim/cold';
 import { reachable, readiness } from '../sim/reach';
 import { counsel, counselLine } from '../sim/counsel';
 import { effectiveStat, living } from '../sim/people';
-import { plotTally } from './colony';
+import { plotTally } from '../sim/colony';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';
 

@@ -16,12 +16,9 @@ import { WEATHER, weatherById } from '../src/data/weather';
 import { omenFor, seaShut, weatherNow, weatherOn } from '../src/sim/weather';
 import { firewoodPerNight } from '../src/sim/upkeep';
 import { forecast, markHaze, PRUDENCE } from '../src/sim/winter';
-import { isCoastalWater, moveEffort } from '../src/sim/road';
 import { effectsOn, nextThaw, SEASON_LENGTH, SEASON_ORDER, seasonOf } from '../src/sim/calendar';
 import { hardshipById } from '../src/data/hardship';
-import { fromKey } from '../src/hex';
 import type { Season } from '../src/state/types';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const dayIn = (season: Season): number => SEASON_ORDER.indexOf(season) * SEASON_LENGTH + 12;
 
@@ -99,28 +96,6 @@ describe('nothing arrives unannounced', () => {
 });
 
 describe('a gale shuts the sea, and never traps anybody on it', () => {
-  it('closes the water and leaves the beach open', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = structuredClone(newGame('sky-gale'));
-    const water = Object.keys(state.world.tiles).map(fromKey)
-      .find((at) => isCoastalWater(state, at));
-    const land = Object.entries(state.world.tiles).find(([, t]) => t.terrain === 'meadow')![0];
-    expect(water).toBeTruthy();
-
-    // Find a day this run is blown out, and one it is not.
-    let galeDay = 0;
-    for (let d = 1; d < 400 && !galeDay; d += 1) if (weatherOn(state.seed, d).shutsTheSea) galeDay = d;
-    expect(galeDay, 'this seed never blows').toBeGreaterThan(0);
-
-    state.day = galeDay;
-    expect(moveEffort(state, water!), 'the sea stayed open in a gale').toBeNull();
-    // THE RULE THAT MATTERS. A band already afloat can always row the one hex
-    // ashore — the same guarantee the unseaworthy hull has. Weather may cost
-    // a voyage; it may not eat a saga.
-    expect(moveEffort(state, fromKey(land)), 'a gale stranded the band on the water')
-      .not.toBeNull();
-  });
 
   it('agrees with what it tells the player', () => {
     const state = structuredClone(newGame('sky-agree'));

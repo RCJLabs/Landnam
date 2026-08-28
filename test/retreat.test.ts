@@ -25,14 +25,11 @@ import { apply } from '../src/sim/actions';
 import { pushMode } from '../src/modes';
 import { canFound, foundSettlement } from '../src/sim/site';
 import { abandonBlocker, abandonSteading, canAbandon } from '../src/sim/retreat';
-import { ABANDON_AFTER, ABANDON_HEART } from '../src/data/retreat';
 import { childrenOf } from '../src/sim/lineage';
-import { fromKey } from '../src/hex';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
+import { ABANDON_AFTER, ABANDON_HEART } from '../src/data/retreat';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { walkOff } from './fixtures/stand';
 import type { GameState } from '../src/state/types';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 describe('the door exists', () => {
   it('gives up the steading, and lets the band found again', () => {
@@ -52,15 +49,10 @@ describe('the door exists', () => {
     // neighbourhood during the days the steading stood there. The search has
     // to move the band, which is also what the claim means: somewhere on
     // this coast they can put posts in again.
-    const somewhere = COAST_IS_A_LINE
-      ? [...Array(ROUTE_STOPS).keys()].find((stop) => {
-          state.party.stop = stop;
-          return canFound(state, state.party.at);
-        })
-      : Object.keys(state.world.tiles).map(fromKey).find((h) => {
-          state.party.at = h;
-          return canFound(state, h);
-        });
+    const somewhere = [...Array(ROUTE_STOPS).keys()].find((stop) => {
+      state.party.stop = stop;
+      return canFound(state);
+    });
     expect(somewhere, 'walked out and could never settle again').toBeDefined();
   });
 
@@ -114,13 +106,13 @@ describe('the ground remembers and pays nothing', () => {
    */
   it('leaves a ruin where the hall stood, already picked clean', () => {
     const state = settled('ret-ruin');
-    const at = { ...state.settlement!.at };
+    const at = state.settlement!.stop;
     state.day = state.settlement!.foundedOn + ABANDON_AFTER;
     abandonSteading(state);
 
     const ruin = state.world.places.find((p) => p.kind === 'ruin');
     expect(ruin, 'the ground forgot there was ever a hall on it').toBeTruthy();
-    expect(ruin!.at).toEqual(at);
+    expect(ruin!.stop).toBe(at);
     expect(ruin!.sackedOn, 'the band can loot its own abandoned steading').toBe(state.day);
   });
 });
@@ -132,8 +124,6 @@ describe('the children come along', () => {
    * that would make walking out a way to stop feeding your own children.
    */
   it('carries everyone born there to the next steading', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
     const state = settled('ret-kin');
     state.day = state.settlement!.foundedOn + ABANDON_AFTER;
     state.settlement!.children = [
@@ -142,11 +132,14 @@ describe('the children come along', () => {
     abandonSteading(state);
     expect(state.bairns, 'the children were left standing in an empty yard').toHaveLength(1);
 
-    const somewhere = Object.keys(state.world.tiles).map(fromKey).find((h) => {
-      state.party.at = h;
-      return canFound(state, h);
+    // Somewhere else on this coast that will take posts — the hex version of
+    // this walked `world.tiles`; a line is walked stretch by stretch.
+    const somewhere = [...Array(ROUTE_STOPS).keys()].find((stop) => {
+      state.party.stop = stop;
+      return canFound(state);
     });
-    state.party.at = somewhere!;
+    expect(somewhere, 'walked out and could never settle again').toBeDefined();
+    state.party.stop = somewhere;
     expect(foundSettlement(state)).toBe(true);
     expect(childrenOf(state).map((c) => c.name)).toEqual(['Ásdís']);
     expect(state.bairns, 'they were carried twice').toBeUndefined();

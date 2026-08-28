@@ -11,7 +11,6 @@
 // part with no business being in a boot router at all.
 
 import { cloneState } from './state/clone';
-import { distance, fromKey, key } from './hex';
 import { currentMode } from './modes';
 import { wantPainting } from './render/oilFlag';
 import { travelDrawn, travelSample } from './render/travelScreen';
@@ -20,8 +19,7 @@ import { fieldDrawn } from './render/battleScreen';
 import type { GameState } from './state/types';
 import { startBattle, startRaid } from './sim/battleTurn';
 import { canFound, foundSettlement } from './sim/site';
-import { COAST_IS_A_LINE } from './sim/flags';
-import { learnStop, standingAt } from './sim/coast';
+import { countryHere, learnStop, standingAt } from './sim/coast';
 import { ROUTE_STOPS } from './sim/route';
 import { buildingById, type BuildingId } from './data/buildings';
 
@@ -75,8 +73,7 @@ export function installDebug(hooks: DebugHooks): void {
 
     fight(difficulty = 0) {
       onTravel((next) => {
-        const here = next.world.tiles[key(next.party.at)]?.terrain ?? 'meadow';
-        startBattle(next, here, difficulty);
+        startBattle(next, countryHere(next), difficulty);
         return true;
       });
     },
@@ -84,7 +81,7 @@ export function installDebug(hooks: DebugHooks): void {
     raid(difficulty = 0) {
       onTravel((next) => {
         if (!next.settlement) return false;
-        next.party.at = { ...next.settlement.at };
+        next.party.stop = next.settlement.stop ?? 0;
         startRaid(next, difficulty);
         return true;
       });
@@ -96,7 +93,7 @@ export function installDebug(hooks: DebugHooks): void {
       onTravel((next) => {
         const target = id ? next.neighbours.find((n) => n.id === id) : next.neighbours[0];
         if (!target) return false;
-        next.party.at = { ...target.at };
+        next.party.stop = target.stop ?? 0;
         target.found = true;
         return true;
       });
@@ -115,39 +112,16 @@ export function installDebug(hooks: DebugHooks): void {
       const state = hooks.get();
       if (!state || currentMode(state) !== 'TRAVEL' || state.settlement) return false;
       const next = cloneState(state);
-      // On a coast the walk is along the line rather than across a map, so
-      // the search is the same idea in the other coordinate system: outward
-      // from where the band stands, marking each stretch learned — because
-      // knowing the ground is one of the rules and this fabricates the walk
-      // rather than waiving it.
-      if (COAST_IS_A_LINE) {
-        const from = standingAt(next);
-        for (let stop = from; stop < ROUTE_STOPS; stop += 1) {
-          learnStop(next, stop);
-          next.party.stop = stop;
-          if (canFound(next, next.party.at)) break;
-        }
-        if (!canFound(next, next.party.at)) return false;
-        if (!foundSettlement(next)) return false;
-        hooks.commit(next);
-        return true;
+      // The walk is along the line: outward from where the band stands,
+      // marking each stretch learned — because knowing the ground is one of
+      // the rules, and this fabricates the walk rather than waiving it.
+      const from = standingAt(next);
+      for (let stop = from; stop < ROUTE_STOPS; stop += 1) {
+        learnStop(next, stop);
+        next.party.stop = stop;
+        if (canFound(next)) break;
       }
-      if (!canFound(next, next.party.at)) {
-        // Nearest first, so the steading lands somewhere the band could
-        // plausibly have walked to rather than across the map.
-        const here = next.party.at;
-        const spot = Object.keys(next.world.tiles)
-          .map((k) => fromKey(k))
-          .sort((a, b) => distance(here, a) - distance(here, b))
-          .find((at) => {
-            // Standing on the ground is one of the rules, so the walk is
-            // fabricated rather than waived: mark it seen, then ask.
-            next.world.seen[key(at)] = 'seen';
-            next.party.at = at;
-            return canFound(next, at);
-          });
-        if (!spot) return false;
-      }
+      if (!canFound(next)) return false;
       if (!foundSettlement(next)) return false;
       hooks.commit(next);
       return true;

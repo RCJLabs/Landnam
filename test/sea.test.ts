@@ -8,15 +8,12 @@
 // ashore mends her, and winning strips their hull instead.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, line, range, type Hex } from '../src/hex';
 import { holed, springStrake } from '../src/sim/ship';
 import { SHIP_STRAKES } from '../src/data/ships';
 import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
-import { ROW_REACH, daysForMove, moveOptions } from '../src/sim/road';
-import type { GameState } from '../src/state/types';
 import { startBattle } from '../src/sim/battleTurn';
 import { MAX_FOES } from '../src/sim/battle';
 import { SWORN_MAX } from '../src/sim/people';
@@ -32,80 +29,13 @@ import {
   cell,
 } from '../src/sim/battlefield';
 import { CARGO_LOST_SHARE, HULL_MEND_WOOD, SEA_SALVAGE, isSeaFight, mendHull, settleSeaFight } from '../src/sim/sea';
-import { moveEffort, isCoastalWater } from '../src/sim/road';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
-/**
- * The knarr, measured against legs.
- *
- * The guide has told the player since 5.x that the knarr "rows coastal water
- * faster than legs walk". It was false. A day's travel is
- * `ceil(effort / 2)`, land is 1 or 2 and `SEA_EFFORT` is 2, so EVERY hex of
- * everything rounded to one day — the ship was exactly as fast as a meadow
- * and no faster than a forest. That is why going out cost a season, and a
- * large part of why raiding could not be a way of living.
- *
- * The day-cost model cannot express "faster" at that granularity, so the
- * hull covers GROUND instead: `ROW_REACH` hexes of coast in the day legs
- * take to cross one.
- */
-describe('the knarr is faster than legs', () => {
-  function afloat(seed: string): { state: GameState; here: Hex } | null {
-    for (let s = 0; s < 40; s += 1) {
-      const state = structuredClone(newGame(`${seed}-${s}`));
-      for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-      for (const k of Object.keys(state.world.tiles)) {
-        const at = fromKey(k);
-        if (!isCoastalWater(state, at)) continue;
-        // Somewhere with a real stretch of coast around it, or there is
-        // nothing to measure.
-        const reach = range(at, ROW_REACH).filter((h) => isCoastalWater(state, h));
-        if (reach.length < 6) continue;
-        state.party.at = at;
-        return { state, here: at };
-      }
-    }
-    return null;
-  }
-
-  it('a day of rowing covers more coast than a day of walking', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const found = afloat('row');
-    expect(found, 'no coast long enough to row on').toBeTruthy();
-    const { state, here } = found!;
-    const options = moveOptions(state);
-    const far = options.filter((h) => distance(h, here) > 1);
-    expect(far.length, 'the hull is offered nothing but the next hex').toBeGreaterThan(0);
-    for (const h of far) {
-      expect(distance(h, here)).toBeLessThanOrEqual(ROW_REACH);
-      expect(daysForMove(state, h), 'a day is a day, however far it carried you').toBe(1);
-    }
-  });
-
-  it('and only over water, never across a headland', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const found = afloat('row-land')!;
-    const { state, here } = found;
-    for (const h of moveOptions(state)) {
-      if (distance(h, here) <= 1) continue;
-      // Every hex of the crossing has to be water we could row.
-      for (const step of line(here, h)) {
-        expect(isCoastalWater(state, step), 'rowed over dry land').toBe(true);
-      }
-    }
-  });
-
-  it('legs still take a hex at a time', () => {
-    const state = structuredClone(newGame('row-legs'));
-    for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-    // On land, nothing further than a neighbour is ever on offer.
-    for (const h of moveOptions(state)) {
-      expect(distance(h, state.party.at)).toBe(1);
-    }
-  });
-});
+// "The knarr is faster than legs" lived here as three hex bars — the ship
+// covered `ROW_REACH` hexes of coastal water in the day legs took to cross
+// one. A route prices its own legs (`sim/coast.ts`), and the claim is held
+// where it now lives: `coastWalk.test.ts` measures a day at the oars putting
+// `SHIP_REACH` stretches of coast behind the band, saying so in its own
+// words, and refusing a wrecked hull.
 
 describe('content lint: sea fields', () => {
   it('ids are unique and every fight says how it began', () => {
@@ -177,28 +107,6 @@ describe('the hull and the packs are the stake', () => {
     expect(state.party.food).toBe(food + SEA_SALVAGE.food);
   });
 
-  it('a holed hull rows at half pace, and only at sea', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = structuredClone(newGame('sea-limp'));
-    // Find a coastal water hex beside the landing to price.
-    let water: { q: number; r: number } | null = null;
-    for (const [k, tile] of Object.entries(state.world.tiles)) {
-      if (tile.terrain !== 'ocean') continue;
-      const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
-      if (isCoastalWater(state, at)) { water = at; break; }
-    }
-    expect(water).toBeTruthy();
-    const sound = moveEffort(state, water!);
-    springStrake(state.ship);
-    const hurt = moveEffort(state, water!);
-    expect(hurt!).toBeGreaterThan(sound!);
-    // Land does not care about the hull.
-    const landNeighbour = Object.entries(state.world.tiles).find(
-      ([, t]) => t.terrain === 'meadow',
-    );
-    expect(landNeighbour).toBeTruthy();
-  });
 
   it('a night ashore mends her, for the price of the timber', () => {
     const state = structuredClone(newGame('sea-mend'));

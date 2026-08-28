@@ -22,7 +22,7 @@ import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
-import { moveOptions } from '../src/sim/road';
+import { walkOptions } from '../src/sim/coast';
 import { learn } from '../src/sim/lore';
 import { bargain, fallOn, neighboursCallOn, seeNeighbours } from '../src/sim/neighbours';
 import { note, tallyOf, emptyTally } from '../src/sim/tally';
@@ -61,8 +61,10 @@ function settled(seed: string, radius = 14): GameState {
 /** A finished run with something behind every chapter. */
 function fullRun(seed: string): GameState {
   const state = settled(seed);
-  state.world.trod[`${state.party.at.q},${state.party.at.r}`] = 1;
-  for (const k of Object.keys(state.world.tiles).slice(0, 20)) state.world.trod[k] = 3;
+  // A coast with some of it behind them: the saga's country line counts the
+  // stretches walked, so a run that never moved has nothing to say about it.
+  state.world.trodStops = { [String(state.party.stop ?? 0)]: 1 };
+  for (let stop = 0; stop < 20; stop += 1) state.world.trodStops[String(stop)] = 3;
 
   queueBuild(state, 'longhouse');
   state.settlement!.works = 999;
@@ -328,9 +330,9 @@ describe('the shareable form', () => {
       }
       s.party.food = 200;
       s.party.firewood = 200;
-      const options = moveOptions(s);
+      const options = walkOptions(s);
       s = options[i % options.length]
-        ? apply(s, { type: 'MOVE', to: options[i % options.length]! })
+        ? apply(s, { type: 'WALK', to: options[i % options.length]! })
         : apply(s, { type: 'CAMP' });
     }
     if (!s.end) s.end = { cause: 'survived', title: 'They Lived', lines: [] };

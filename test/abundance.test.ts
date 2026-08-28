@@ -22,8 +22,6 @@ import type { GameState } from '../src/state/types';
 import { applyTravel } from '../src/sim/travel';
 import { canGather } from '../src/sim/gathering';
 
-const at = { q: 0, r: 0 };
-
 function fresh(): GameState {
   const state = newGame('abundance');
   state.day = 1;
@@ -33,8 +31,8 @@ function fresh(): GameState {
 describe('untouched ground', () => {
   it('pays in full and is written nowhere', () => {
     const state = fresh();
-    expect(abundance(state, 'hunt', at)).toBe(1);
-    expect(pressureAt(state, 'hunt', at)).toBe(0);
+    expect(abundance(state, 'hunt')).toBe(1);
+    expect(pressureAt(state, 'hunt')).toBe(0);
     // The save must not grow a key for every hex a band walks over.
     expect(state.world.worked).toBeUndefined();
   });
@@ -45,65 +43,64 @@ describe('working a hex costs the next day', () => {
     const state = fresh();
     // The grace: a band passing through pays nothing, which is the take a
     // starving band makes and the reason the odds survived this mechanic.
-    for (let i = 0; i < GRACE; i++) noteTake(state, 'hunt', at);
-    expect(abundance(state, 'hunt', at)).toBe(1);
-    noteTake(state, 'hunt', at);
-    expect(abundance(state, 'hunt', at)).toBeCloseTo(1 - PRESSURE_STEP, 10);
-    for (let i = 0; i < 20; i++) noteTake(state, 'hunt', at);
+    for (let i = 0; i < GRACE; i++) noteTake(state, 'hunt');
+    expect(abundance(state, 'hunt')).toBe(1);
+    noteTake(state, 'hunt');
+    expect(abundance(state, 'hunt')).toBeCloseTo(1 - PRESSURE_STEP, 10);
+    for (let i = 0; i < 20; i++) noteTake(state, 'hunt');
     // A trap pays nothing; this pays little. The band can always eat.
-    expect(abundance(state, 'hunt', at)).toBe(THIN_FLOOR);
-    expect(abundance(state, 'hunt', at)).toBeGreaterThan(0);
+    expect(abundance(state, 'hunt')).toBe(THIN_FLOOR);
+    expect(abundance(state, 'hunt')).toBeGreaterThan(0);
   });
 
   it('keeps each larder and each hex separate', () => {
     const state = fresh();
-    noteTake(state, 'hunt', at);
+    noteTake(state, 'hunt');
     // Netting the bay does not pick the berries, and the next valley is
     // its own country.
-    expect(abundance(state, 'fish', at)).toBe(1);
-    expect(abundance(state, 'forage', at)).toBe(1);
-    expect(abundance(state, 'hunt', { q: 1, r: 0 })).toBe(1);
+    expect(abundance(state, 'fish')).toBe(1);
+    expect(abundance(state, 'forage')).toBe(1);
   });
 });
 
 describe('the land grows back', () => {
   it('lifts one take of pressure every REGROW_DAYS', () => {
     const state = fresh();
-    noteTake(state, 'hunt', at);
-    noteTake(state, 'hunt', at);
-    expect(pressureAt(state, 'hunt', at)).toBeCloseTo(2, 10);
+    noteTake(state, 'hunt');
+    noteTake(state, 'hunt');
+    expect(pressureAt(state, 'hunt')).toBeCloseTo(2, 10);
     // Pressure is counted from the first take; the grace is applied when the
     // yield is read, so recovery and grace stay two separate ideas.
     state.day += REGROW_DAYS;
-    expect(pressureAt(state, 'hunt', at)).toBeCloseTo(1, 10);
+    expect(pressureAt(state, 'hunt')).toBeCloseTo(1, 10);
     state.day += REGROW_DAYS * 3;
     // Left long enough, the valley is a valley again.
-    expect(pressureAt(state, 'hunt', at)).toBe(0);
-    expect(abundance(state, 'hunt', at)).toBe(1);
+    expect(pressureAt(state, 'hunt')).toBe(0);
+    expect(abundance(state, 'hunt')).toBe(1);
   });
 
   it('folds recovery into the figure it writes, so a return is not a fresh start', () => {
     const state = fresh();
-    for (let i = 0; i < 4; i++) noteTake(state, 'hunt', at);
+    for (let i = 0; i < 4; i++) noteTake(state, 'hunt');
     state.day += REGROW_DAYS; // one take's worth back
-    noteTake(state, 'hunt', at);
+    noteTake(state, 'hunt');
     // 4 taken, 1 grown back, 1 more taken.
-    expect(pressureAt(state, 'hunt', at)).toBeCloseTo(4, 10);
+    expect(pressureAt(state, 'hunt')).toBeCloseTo(4, 10);
   });
 });
 
 describe('the band can see it coming', () => {
   it('names the state of the ground before the day is spent', () => {
     const state = fresh();
-    expect(thinness(state, 'hunt', at)).toBe('good');
-    for (let i = 0; i < GRACE; i++) noteTake(state, 'hunt', at);
+    expect(thinness(state, 'hunt')).toBe('good');
+    for (let i = 0; i < GRACE; i++) noteTake(state, 'hunt');
     // Still good: nobody has taken more than a passing band's share.
-    expect(thinness(state, 'hunt', at)).toBe('good');
-    noteTake(state, 'hunt', at);
-    expect(thinness(state, 'hunt', at)).toBe('worked');
-    noteTake(state, 'hunt', at);
-    noteTake(state, 'hunt', at);
-    expect(thinness(state, 'hunt', at)).toBe('thin');
+    expect(thinness(state, 'hunt')).toBe('good');
+    noteTake(state, 'hunt');
+    expect(thinness(state, 'hunt')).toBe('worked');
+    noteTake(state, 'hunt');
+    noteTake(state, 'hunt');
+    expect(thinness(state, 'hunt')).toBe('thin');
   });
 });
 

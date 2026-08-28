@@ -12,9 +12,7 @@
 // (what was written, how long ago), which is what makes it testable and what
 // keeps a replay honest.
 
-import { key, type Hex } from '../hex';
 import type { GameState, Worked } from '../state/types';
-import { COAST_IS_A_LINE } from './flags';
 import { standingAt } from './coast';
 
 /** The three ways a day on the road puts food in the packs. */
@@ -68,35 +66,34 @@ export const THIN_FLOOR = 0.3;
  * that yet — the colony's fishers are 8.4's problem and the coast has no
  * distant working — but it is a real narrowing and not an oversight.
  */
-function slot(state: GameState, kind: Larder, at: Hex): string {
-  if (COAST_IS_A_LINE) return `${kind}:s${standingAt(state)}`;
-  return `${kind}:${key(at)}`;
+function slot(state: GameState, kind: Larder): string {
+  return `${kind}:s${standingAt(state)}`;
 }
 
 /**
  * How hard this hex is being worked right now, in days' take, with the
  * recovery since the last one already subtracted.
  */
-export function pressureAt(state: GameState, kind: Larder, at: Hex): number {
-  const t: Worked | undefined = state.world.worked?.[slot(state, kind, at)];
+export function pressureAt(state: GameState, kind: Larder): number {
+  const t: Worked | undefined = state.world.worked?.[slot(state, kind)];
   if (!t) return 0;
   return Math.max(0, t.n - (state.day - t.day) / REGROW_DAYS);
 }
 
 /**
- * The share of its full yield this hex still pays: 1 on untouched ground,
+ * The share of its full yield this stretch still pays: 1 on untouched ground,
  * falling a quarter with each day's take, floored so it never pays nothing.
  */
-export function abundance(state: GameState, kind: Larder, at: Hex): number {
-  const pressed = Math.max(0, pressureAt(state, kind, at) - GRACE);
+export function abundance(state: GameState, kind: Larder): number {
+  const pressed = Math.max(0, pressureAt(state, kind) - GRACE);
   return Math.max(THIN_FLOOR, 1 - PRESSURE_STEP * pressed);
 }
 
 /** Mutates: records a day's take, carrying the recovery into the new figure. */
-export function noteTake(state: GameState, kind: Larder, at: Hex): void {
+export function noteTake(state: GameState, kind: Larder): void {
   if (!state.world.worked) state.world.worked = {};
-  state.world.worked[slot(state, kind, at)] = {
-    n: pressureAt(state, kind, at) + 1,
+  state.world.worked[slot(state, kind)] = {
+    n: pressureAt(state, kind) + 1,
     day: state.day,
   };
 }
@@ -106,11 +103,11 @@ export function noteTake(state: GameState, kind: Larder, at: Hex): void {
  * not an invisible tax. Tracks are thin, the berry ground is picked over,
  * the fish have moved off: the deed sheet says so before you commit.
  */
-export function thinness(state: GameState, kind: Larder, at: Hex): 'good' | 'worked' | 'thin' {
+export function thinness(state: GameState, kind: Larder): 'good' | 'worked' | 'thin' {
   // Thresholds live inside the range the floor allows — [THIN_FLOOR, 1]. A
   // cut of this keyed to the old range left 'thin' unreachable the moment
   // the floor rose, which is a warning that can never fire.
-  const left = abundance(state, kind, at);
+  const left = abundance(state, kind);
   if (left > 0.85) return 'good';
   return left > 0.45 ? 'worked' : 'thin';
 }

@@ -8,7 +8,7 @@ import {
 } from './steading';
 import { countryHere } from '../sim/coast';
 import type { GameState } from '../state/types';
-import type { ColonyView } from './colony';
+import type { ColonyView } from './views';
 
 /** `svgEl` takes Nodes; every label here is a string. */
 function words(text: string): Node[] {

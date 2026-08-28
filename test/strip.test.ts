@@ -11,9 +11,8 @@
 // about a coast the game is not playing on, and a chart nobody can open is
 // code no test executes.
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-vi.mock('../src/sim/flags', () => ({ COAST_IS_A_LINE: true }));
 
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
@@ -159,7 +158,7 @@ describe('the step the chart offers', () => {
 
   it('offers a settled band nothing, because a hall does not wander off', () => {
     const state = band(4);
-    state.settlement = { at: { q: 0, r: 0 }, stop: 4 } as GameState['settlement'];
+    state.settlement = { stop: 4 } as GameState['settlement'];
     const scene = stripScene(state, 40);
     expect(scene.stops.every((s) => s.reach === undefined)).toBe(true);
   });
@@ -272,7 +271,7 @@ describe('what the coast carries', () => {
 
   it('names our own hall', () => {
     const state = allKnown(band(4));
-    state.settlement = { at: { q: 0, r: 0 }, stop: 4, name: 'Ravensholt' } as
+    state.settlement = { stop: 4, name: 'Ravensholt' } as
       GameState['settlement'];
     expect(stripScene(state, 40).stops[4]!.marks.find((m) => m.kind === 'hall')!.text)
       .toContain('Ravensholt');

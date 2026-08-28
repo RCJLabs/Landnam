@@ -58,7 +58,6 @@ export function canAbandon(state: GameState): boolean {
 export function abandonSteading(state: GameState): boolean {
   if (!canAbandon(state)) return false;
   const home = state.settlement!;
-  const at = { q: home.at.q, r: home.at.r };
 
   // The children come along. They are records kept on the settlement, so a
   // naive retreat would simply delete them — and since `childrenOf` feeds
@@ -68,14 +67,12 @@ export function abandonSteading(state: GameState): boolean {
   if (born.length > 0) state.bairns = [...(state.bairns ?? []), ...born];
 
   state.world.places.push({
-    id: ruinIdFor({ hex: at, stop: home.stop }),
+    id: ruinIdFor({ stop: home.stop }),
     kind: 'ruin',
-    at,
-    // On a line the stop is the address and `at` is the placeholder every
-    // coast place carries. Without this the band's own posts were in the
+    // The stop is the address. Without it the band's own posts were in the
     // world and unreachable from it — `placeHere` matches on stop, so a band
     // that walked out could never stand on what it had left.
-    ...(home.stop !== undefined ? { stop: home.stop } : {}),
+    stop: home.stop ?? 0,
     // Made empty. See the note above: a lootable ruin turns this into a
     // windfall and the whole design of the cost falls over.
     sackedOn: state.day,

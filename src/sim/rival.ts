@@ -13,15 +13,12 @@
 // to balance — just a hand closing on the map, which is enough to make a
 // dawdling band pay for dawdling.
 
-import { distance, fromKey, key, neighbors, range, type Hex } from '../hex';
 import { stream } from '../rng';
 import { MEN, BYNAMES } from '../data/names';
 import { NAME_ROOTS, NAME_SUFFIX } from '../data/sites';
 import { terrainDef } from '../data/terrain';
-import type { GameState, Rival, World } from '../state/types';
-import { siteReport, strongestOf } from './site';
+import type { GameState, Rival } from '../state/types';
 import { chronicle } from './saga';
-import { COAST_IS_A_LINE } from './flags';
 import { ROUTE_STOPS, neighbourStops, stopAt } from './route';
 import { standingAt } from './coast';
 import { CLAN_COUNT, CLAN_ELBOW, CLAN_MAX_GAP } from '../data/clans';
@@ -118,35 +115,11 @@ export const RIVAL_APART_STOPS = RIVAL_ELBOW + CLAIM_REACH_STOPS + 1;
 export const CLAIM_CLEAR_STOPS = 1;
 
 /**
- * Where they came ashore, chosen once from the world and never re-rolled.
+ * Where he comes ashore.
  *
- * Deliberately NOT part of `generateWorld`: the port's worldgen hash is a
- * contract with the C++ side, and a rival is a rule about people, not a fact
- * about terrain. It reads the finished world instead.
- */
-export function rivalSite(world: World, landing: Hex): Hex | null {
-  let best: { at: Hex; score: number } | null = null;
-  for (const [k, tile] of Object.entries(world.tiles)) {
-    if (tile.terrain === 'ocean' || tile.terrain === 'mountains') continue;
-    const at = fromKey(k);
-    if (distance(at, landing) < RIVAL_APART) continue;
-    const report = siteReport(world, at);
-    if (!report) continue;
-    // Their taste is the same as ours — they are doing the same thing we
-    // are — so they want the good ground, which is what makes them a rival
-    // rather than scenery.
-    const score = report.total * 100 - distance(at, landing);
-    if (!best || score > best.score) best = { at, score };
-  }
-  return best ? best.at : null;
-}
-
-/**
- * Where he comes ashore on a coast that is a line.
- *
- * The same taste as the hex version — he wants the good ground, which is
- * what makes him a rival rather than scenery — read off the country rather
- * than a `siteReport`, because a report is a thing you build from
+ * His taste is ours — he is doing the same thing we are, which is what makes
+ * him a rival rather than scenery — read off the country's own forage rather
+ * than off a site report, because a report was a thing you built from
  * neighbouring hexes and a stretch of coast has none. Nearer wins ties: he
  * came ashore the same spring in the same kind of boat, not after a season
  * of prospecting.
@@ -167,27 +140,18 @@ export function rivalStopFor(seed: string): number | null {
 }
 
 /** The band that is not ours, made at the start of a run. */
-export function makeRival(seed: string, world: World): Rival | null {
-  const stop = COAST_IS_A_LINE ? rivalStopFor(seed) : null;
-  // A placeholder on a line, as it is for places, neighbours and landmarks;
-  // `stop` is the address. The hex path is untouched.
-  const at = COAST_IS_A_LINE
-    ? (stop === null ? null : { q: 0, r: 0 })
-    : rivalSite(world, world.landing);
-  if (!at) return null;
+export function makeRival(seed: string): Rival | null {
+  const stop = rivalStopFor(seed);
+  if (stop === null) return null;
   const rng = stream(seed, 'worldgen').derive('rival');
-  // Every draw below happens in the same order in both worlds, so his name
-  // and his hall are the same man's whichever coordinate system he stands in.
-  const report = COAST_IS_A_LINE ? null : siteReport(world, at);
-  const suffix = report
-    ? rng.pick(NAME_SUFFIX[strongestOf(report)])
-    : rng.pick(NAME_SUFFIX.soil);
+  // The draws happen in the order they always did, so he is the same man he
+  // was on the map: name, byname, hall root, hall suffix.
+  const suffix = rng.pick(NAME_SUFFIX.soil);
   return {
     leader: `${rng.pick(MEN)} ${rng.pick(BYNAMES)}`,
     hall: `${rng.pick(NAME_ROOTS)}${suffix}`,
-    at,
-    claims: [key(at)],
-    ...(stop === null ? {} : { stop, claimStops: [stop] }),
+    stop,
+    claimStops: [stop],
     lastClaim: RIVAL_SETTLES,
     met: false,
     told: false,
@@ -205,65 +169,31 @@ export function rivalSettled(state: GameState): boolean {
 }
 
 /** Ground they have taken. */
-export function rivalHolds(state: GameState, at: Hex): boolean {
+export function rivalHolds(state: GameState): boolean {
   if (!rivalSettled(state)) return false;
-  if (COAST_IS_A_LINE) return rivalStops(state).includes(standingAt(state));
-  return state.rival!.claims.includes(key(at));
+  return rivalStops(state).includes(standingAt(state));
 }
 
 /**
  * Ground we cannot put posts in because of them — their claims and the elbow
  * room around their hall, the same courtesy the older clans get.
  */
-export function rivalBlocks(state: GameState, at: Hex): boolean {
+export function rivalBlocks(state: GameState): boolean {
   if (!rivalSettled(state)) return false;
   const rival = state.rival!;
-  if (COAST_IS_A_LINE) {
-    if (rival.stop === undefined) return false;
-    const here = standingAt(state);
-    if (Math.abs(rival.stop - here) < RIVAL_ELBOW) return true;
-    return (rival.claimStops ?? []).includes(here);
-  }
-  if (distance(rival.at, at) < RIVAL_ELBOW) return true;
-  return rival.claims.includes(key(at));
-}
-
-/**
- * The next hex their hand closes on: the best ground within reach of the hall
- * that nobody holds. Ours is off limits to them — a claim is a claim on empty
- * land, not a way to take a steading that is already standing.
- */
-export function nextClaim(state: GameState): Hex | null {
-  const rival = state.rival;
-  if (!rival) return null;
-  if (COAST_IS_A_LINE) return null;   // see `nextClaimStop`
-  let best: { at: Hex; score: number } | null = null;
-  for (const at of range(rival.at, CLAIM_REACH)) {
-    const k = key(at);
-    const tile = state.world.tiles[k];
-    if (!tile || tile.terrain === 'ocean' || tile.terrain === 'mountains') continue;
-    if (rival.claims.includes(k)) continue;
-    if (state.settlement && distance(state.settlement.at, at) < RIVAL_ELBOW) continue;
-    if (state.neighbours.some((n) => distance(n.at, at) < RIVAL_ELBOW)) continue;
-    // They spread from what they hold, so the claim is a blot on the map
-    // rather than scattered flags.
-    if (!neighbors(at).some((n) => rival.claims.includes(key(n)))) continue;
-    const report = siteReport(state.world, at);
-    const worth = report ? report.total : terrainDef(tile.terrain).forage;
-    const score = worth * 100 - distance(rival.at, at);
-    if (!best || score > best.score) best = { at, score };
-  }
-  return best ? best.at : null;
+  if (rival.stop === undefined) return false;
+  const here = standingAt(state);
+  if (Math.abs(rival.stop - here) < RIVAL_ELBOW) return true;
+  return (rival.claimStops ?? []).includes(here);
 }
 
 /**
  * The next stretch of coast his hand closes on.
  *
- * The hex rule, unchanged in every respect that survives: the best ground he
- * can reach that nobody holds, touching what he already holds so the claim
- * is a block of coast rather than scattered flags, and never on ours or an
- * older clan's. "Best" is the country's forage, because a stretch of coast
- * has no neighbouring hexes to build a site report out of.
+ * The best ground he can reach that nobody holds, touching what he already
+ * holds so the claim is a block of coast rather than scattered flags, and
+ * never on ours or an older clan's. "Best" is the country's forage: a stretch
+ * of coast has no ring of ground around it to build a site report out of.
  */
 export function nextClaimStop(state: GameState): number | null {
   const rival = state.rival;
@@ -297,7 +227,6 @@ export function nextClaimStop(state: GameState): number | null {
 export function rivalDay(state: GameState): void {
   const rival = state.rival;
   if (!rival || !rivalSettled(state)) return;
-  const line = COAST_IS_A_LINE;
 
   // Their landing, told once, when it is first true.
   if (!rival.told) {
@@ -305,33 +234,16 @@ export function rivalDay(state: GameState): void {
     chronicle(
       state,
       `Word came that ${rival.leader} had put his posts in at ${rival.hall}, `
-        + (line
-          ? 'a few days up the coast from us. We were not the only boat that spring.'
-          : 'a hard day north of us. We were not the only boat that spring.'),
+        + 'a few days up the coast from us. We were not the only boat that spring.',
       'grim',
     );
   }
 
-  if (state.day - rival.lastClaim < (line ? CLAIM_EVERY_STOPS : CLAIM_EVERY)) return;
-  if (line) {
-    const stop = nextClaimStop(state);
-    if (stop === null) return;
-    (rival.claimStops ??= []).push(stop);
-    rival.claimStops.sort((a, b) => a - b);
-    rival.lastClaim = state.day;
-    if (rival.met) {
-      chronicle(
-        state,
-        `${rival.leader}'s people had put up a fence on ground we had walked. `
-          + `${rival.hall} is getting bigger.`,
-        'grim',
-      );
-    }
-    return;
-  }
-  const at = nextClaim(state);
-  if (!at) return;
-  rival.claims.push(key(at));
+  if (state.day - rival.lastClaim < CLAIM_EVERY_STOPS) return;
+  const stop = nextClaimStop(state);
+  if (stop === null) return;
+  (rival.claimStops ??= []).push(stop);
+  rival.claimStops.sort((a, b) => a - b);
   rival.lastClaim = state.day;
   // Only chronicled once we know who they are — a claim on ground we have
   // never seen is not news the band could have had.
@@ -349,14 +261,12 @@ export function rivalDay(state: GameState): void {
 export function meetRival(state: GameState): void {
   const rival = state.rival;
   if (!rival || rival.met) return;
-  if (COAST_IS_A_LINE) {
-    if (rival.stop === undefined) return;
-    // The stretch he lives on or either side of it. Wider than a neighbour's
-    // yard on purpose and for a reason the fiction already gives: he has
-    // "smoke going up and his fences already out around it", which is the
-    // one thing on this coast you see from the next headland.
-    if (Math.abs(rival.stop - standingAt(state)) > 1) return;
-  } else if (!state.world.seen[key(rival.at)]) return;
+  if (rival.stop === undefined) return;
+  // The stretch he lives on or either side of it. Wider than a neighbour's
+  // yard on purpose and for a reason the fiction already gives: he has
+  // "smoke going up and his fences already out around it", which is the one
+  // thing on this coast you see from the next headland.
+  if (Math.abs(rival.stop - standingAt(state)) > 1) return;
   rival.met = true;
   chronicle(
     state,

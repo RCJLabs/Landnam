@@ -163,7 +163,22 @@
 //            ground: the migration recomputes the old axial keys rather than
 //            assuming them, with the formula written out inline because
 //            `src/hex/` does not survive this milestone.
-export const SAVE_VERSION = 55;
+// v56 (8.5): THE HEXES GO. Every hex-shaped field leaves at once —
+//            `world.tiles`, `seen`, `trod`, `made`, `charted`, `landing`,
+//            `width`, `height`, `rival.claims`, and the `at` on the party,
+//            the settlement, the places, the neighbours, the rival, the ghost
+//            and the plots. A plot's `at` becomes the slot index it always
+//            was. What is left is the address a coast has: a stop.
+//
+//            THE DOCUMENTED BREAK. A save written by the hex map has no stop
+//            for anybody — v49 through v53 each declined to invent one, and
+//            were right to. Such a save still LOADS, with its people, ship,
+//            stores, lore, grudges and whole saga log intact, but it comes
+//            forward standing on the landing of a coast derived fresh from
+//            its own seed: the hall is re-sited on the landing stretch, and
+//            the places, the neighbours and the rival are re-derived. What it
+//            loses is where everything was, because that ground is gone.
+export const SAVE_VERSION = 56;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

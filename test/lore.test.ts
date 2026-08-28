@@ -22,7 +22,7 @@ import { apply, type Action } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
 import { assign, finishBuilds, queueBuild, shelterSaving } from '../src/sim/colony';
 import { isEligible, checkOdds, presentEvent } from '../src/sim/events';
-import { moveOptions, moveEffort, isCoastalWater, SEA_EFFORT } from '../src/sim/road';
+import { walkOptions } from '../src/sim/coast';
 import { holdSteading } from '../src/sim/raid';
 import { doStrike } from '../src/sim/strike';
 import { coldNight } from '../src/sim/cold';
@@ -33,7 +33,6 @@ import { LORE, loreById, type LoreId } from '../src/data/lore';
 import { EVENTS } from '../src/data/events';
 import type { Battle, Combatant, GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
@@ -254,20 +253,6 @@ describe('THE BAR — knowing a thing changes the run', () => {
     expect(bonus(state, 'solace')).toBe(0);
   });
 
-  it("shipwright's eye: a day on the water costs less", () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = structuredClone(newGame('lore-ship'));
-    const water = moveOptions(state).find((h) => isCoastalWater(state, h));
-    expect(water, 'no coastal water beside the landing').toBeTruthy();
-    const plain = moveEffort(state, water!)!;
-
-    const sailor = taught(state, 'shipwright');
-    const learned = moveEffort(sailor, water!)!;
-    expect(learned).toBeLessThan(plain);
-    expect(learned).toBeGreaterThanOrEqual(1);
-    expect(plain).toBe(SEA_EFFORT);
-  });
 
   it('shipwright is taught by the dock, not by a menu', () => {
     const state = settled('lore-dock');
@@ -473,9 +458,9 @@ describe('discoveries in play', () => {
           s = apply(apply(s, { type: 'CHOOSE', index: 0 }), { type: 'DISMISS_EVENT' });
           continue;
         }
-        const options = moveOptions(s);
+        const options = walkOptions(s);
         s = options[i % options.length]
-          ? apply(s, { type: 'MOVE', to: options[i % options.length]! })
+          ? apply(s, { type: 'WALK', to: options[i % options.length]! })
           : apply(s, { type: 'CAMP' });
       }
       learnedTotal += s.lore.length;

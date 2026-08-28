@@ -132,13 +132,9 @@ describe('he is still in the country', () => {
     state.event = undefined;
 
     // Afloat: a man on foot cannot reach a hull under way, and it is the one
-    // place the band could not run.
-    for (const k of Object.keys(state.world.tiles)) {
-      if (state.world.tiles[k]!.terrain !== 'ocean') continue;
-      const [q, r] = k.split(',').map(Number);
-      state.party.at = { q: q!, r: r! };
-      break;
-    }
+    // place the band could not run. On a line that is the day AFTER a row —
+    // `party.bySea` — because rowing is a step and not a state.
+    state.party.bySea = true;
     expect(maybeOutlawStrike(state)).toBe(false);
   });
 });

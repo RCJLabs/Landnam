@@ -6,7 +6,8 @@
 // all you send a party, and everyone you send is somebody who is not farming,
 // cutting or standing the watch while they are away.
 
-import { distance, type Hex } from '../hex';
+import { daysBetween } from './route';
+import { standingAt } from './coast';
 import { stream } from '../rng';
 import type { GameState, Person, Purpose } from '../state/types';
 import { effectiveStat, living } from './people';
@@ -121,10 +122,10 @@ export function isOut(state: GameState, person: Person): boolean {
   return state.expedition?.members.includes(person.id) ?? false;
 }
 
-/** How far from home they have got. */
+/** How far from home they have got, in days of walking. */
 export function distanceFromHome(state: GameState): number {
   if (!state.settlement) return 0;
-  return distance(state.party.at, state.settlement.at);
+  return daysBetween(state.seed, standingAt(state), state.settlement.stop ?? 0);
 }
 
 // --- Launching ---
@@ -302,7 +303,7 @@ export function pruneExpedition(state: GameState): void {
     delete state.expedition;
     if (state.settlement) {
       // The band's centre of gravity is the hall; nobody is out there now.
-      state.party.at = { ...state.settlement.at };
+      state.party.stop = state.settlement.stop ?? 0;
       chronicle(state, 'Nobody came back from that one.', 'grim');
     }
     return;
@@ -319,13 +320,13 @@ export function expeditionLine(state: GameState): string | undefined {
   const away = distanceFromHome(state);
   return (
     `${crew.length} out ${purposeLine(out.purpose)} · day ${days} · ` +
-    `${away} from home${out.returning ? ' · turning back' : ''}`
+    `${away}d from home${out.returning ? ' · turning back' : ''}`
   );
 }
 
 /** Where the party may step. Once turned for home, only toward it. */
-export function permittedStep(state: GameState, to: Hex): boolean {
+export function permittedStep(state: GameState, to: number): boolean {
   const out = state.expedition;
   if (!out?.returning || !state.settlement) return true;
-  return distance(to, state.settlement.at) <= distanceFromHome(state);
+  return daysBetween(state.seed, to, state.settlement.stop ?? 0) <= distanceFromHome(state);
 }

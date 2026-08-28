@@ -7,7 +7,6 @@
 // the trade rate and the raid maths.
 
 import { worldBeat } from './beats';
-import { distance, fromKey, key, type Hex } from '../hex';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
 import {
@@ -16,7 +15,6 @@ import {
   CLAN_COUNT,
   CLAN_ELBOW,
   CLAN_MAX_GAP,
-  CLAN_MIN_GAP,
   CLAN_NAMES,
   NATIVE_NAMES,
   REP_DRIFT,
@@ -27,8 +25,7 @@ import {
   standingFor,
   type Standing,
 } from '../data/clans';
-import type { GameState, Neighbour, World } from '../state/types';
-import { COAST_IS_A_LINE } from './flags';
+import type { GameState, Neighbour } from '../state/types';
 import { daysBetween, neighbourStops } from './route';
 import { standingAt } from './coast';
 import { fieldCrew, purposeDef } from './expedition';
@@ -52,75 +49,25 @@ export const PRESSURE_STIR = 0.3;
  * every coast has both somebody who was here first and somebody who came the
  * year before you — the two halves of the milestone.
  */
-export function placeNeighbours(world: World, rng: Rng, seed?: string): Neighbour[] {
-  // On a line the addresses are already decided — `route.neighbourStops`
-  // derives them from the seed, so there is no ground to search and no
-  // shuffle to do. Everything BELOW the address is unchanged and still comes
-  // out of the same rng in the same order: names, opening standing, might.
-  // That is deliberate. The conversion is meant to move where people live,
-  // not who they are.
-  if (COAST_IS_A_LINE && seed !== undefined) {
-    const stops = neighbourStops(seed, CLAN_COUNT, CLAN_MAX_GAP, CLAN_ELBOW);
-    const names = {
-      clan: rng.shuffle([...CLAN_NAMES]),
-      native: rng.shuffle([...NATIVE_NAMES]),
-    };
-    return stops.map((stop, i) => {
-      const kind = i % 2 === 0 ? 'native' : 'clan';
-      const def = clanKind(kind);
-      return {
-        id: `nb_${i + 1}`,
-        kind,
-        name: names[kind][Math.floor(i / 2)] ?? `${def.noun} ${i + 1}`,
-        // A placeholder. Nothing reads it on the coast; `stop` is the address.
-        at: { q: 0, r: 0 },
-        stop,
-        standing: def.opening + rng.int(-6, 6),
-        might: rng.int(0, 3),
-        raidsSent: 0,
-      };
-    });
-  }
-  const near: Hex[] = [];
-  const far: Hex[] = [];
-  for (const [k, tile] of Object.entries(world.tiles)) {
-    if (tile.terrain === 'ocean' || tile.terrain === 'mountains') continue;
-    const at = fromKey(k);
-    const d = distance(at, world.landing);
-    if (d < CLAN_MIN_GAP) continue;
-    (d <= CLAN_MAX_GAP ? near : far).push(at);
-  }
-  // Object key order is not something to lean on; sort, then shuffle.
-  near.sort((a, b) => key(a).localeCompare(key(b)));
-  far.sort((a, b) => key(a).localeCompare(key(b)));
-  // The band within walking distance comes first and the rest of the landmass
-  // is only a fallback, so a cramped or oddly-shaped coast still gets four
-  // neighbours rather than one.
-  const pool = [...rng.shuffle(near), ...rng.shuffle(far)];
-
-  const chosen: Hex[] = [];
-  // Spread them out first; if the landmass is too cramped for that, take what
-  // it will hold rather than shipping a coast with one neighbour on it.
-  for (const gap of [CLAN_MIN_GAP, 3, 1]) {
-    for (const at of pool) {
-      if (chosen.length >= CLAN_COUNT) break;
-      if (chosen.some((c) => distance(c, at) < gap)) continue;
-      chosen.push(at);
-    }
-  }
-
+export function placeNeighbours(rng: Rng, seed: string): Neighbour[] {
+  // The addresses are already decided — `route.neighbourStops` derives them
+  // from the seed, so there is no ground to search and no shuffle to do.
+  // Everything BELOW the address comes out of the same rng in the same order:
+  // names, opening standing, might. That is deliberate — the conversion moved
+  // where people live, not who they are.
+  const stops = neighbourStops(seed, CLAN_COUNT, CLAN_MAX_GAP, CLAN_ELBOW);
   const names = {
     clan: rng.shuffle([...CLAN_NAMES]),
     native: rng.shuffle([...NATIVE_NAMES]),
   };
-  return chosen.map((at, i) => {
+  return stops.map((stop, i) => {
     const kind = i % 2 === 0 ? 'native' : 'clan';
     const def = clanKind(kind);
     return {
       id: `nb_${i + 1}`,
       kind,
       name: names[kind][Math.floor(i / 2)] ?? `${def.noun} ${i + 1}`,
-      at: { q: at.q, r: at.r },
+      stop,
       standing: def.opening + rng.int(-6, 6),
       might: rng.int(0, 3),
       raidsSent: 0,
@@ -134,10 +81,6 @@ export function neighbourById(state: GameState, id: string): Neighbour | undefin
   return state.neighbours.find((n) => n.id === id);
 }
 
-export function neighbourAt(state: GameState, at: Hex): Neighbour | undefined {
-  return state.neighbours.find((n) => n.at.q === at.q && n.at.r === at.r);
-}
-
 /**
  * Is the band standing in this one's yard?
  *
@@ -146,8 +89,7 @@ export function neighbourAt(state: GameState, at: Hex): Neighbour | undefined {
  * was a coordinate comparison against a coordinate system being replaced.
  */
 export function standingIn(state: GameState, n: Neighbour): boolean {
-  if (COAST_IS_A_LINE) return n.stop !== undefined && n.stop === standingAt(state);
-  return n.at.q === state.party.at.q && n.at.r === state.party.at.r;
+  return n.stop !== undefined && n.stop === standingAt(state);
 }
 
 /** The one the party is standing in. */
@@ -225,9 +167,6 @@ export function revealNeighbour(state: GameState, n: Neighbour, line: string): v
   // On a line there is no fog to lift and no hex to mark: `found` IS the
   // knowledge, and marking (0,0) seen would quietly write the landing into
   // the seen map of a world that has no hexes in it.
-  if (!COAST_IS_A_LINE && state.world.seen[key(n.at)] === undefined) {
-    state.world.seen[key(n.at)] = 'seen';
-  }
   worldBeat(state, { kind: 'met', id: n.id, name: n.name });
   chronicle(state, line, 'plain');
 }
@@ -241,7 +180,7 @@ export function seeNeighbours(state: GameState): void {
     // narrow one: you have come to where they live. Everything else about
     // meeting people on a coast runs through `neighboursCallOn`, which is
     // the direction the fiction always ran in anyway.
-    if (COAST_IS_A_LINE ? !standingIn(state, n) : state.world.seen[key(n.at)] === undefined) continue;
+    if (!standingIn(state, n)) continue;
     const def = clanKind(n.kind);
     revealNeighbour(state, n, `We came in sight of ${n.name}. A ${def.noun}, lived in, and not ours.`);
   }
@@ -295,26 +234,17 @@ export function neighboursCallOn(state: GameState): void {
 function fromHome(state: GameState, n: Neighbour): number {
   const home = state.settlement;
   if (!home) return 0;
-  if (COAST_IS_A_LINE) {
-    return daysBetween(state.seed, home.stop ?? 0, n.stop ?? 0);
-  }
-  return distance(n.at, home.at);
+  return daysBetween(state.seed, home.stop ?? 0, n.stop ?? 0);
 }
 
 /** Rough word for which way they lie. Nothing reads a bearing off a number. */
 function bearing(state: GameState, n: Neighbour): string {
   const home = state.settlement;
   if (!home) return 'somewhere';
-  if (COAST_IS_A_LINE) {
-    // A coast has two directions and the saga should say so plainly. "North"
-    // on a line would be a compass word invented for a world with no compass
-    // in it.
-    return (n.stop ?? 0) >= (home.stop ?? 0) ? 'up the coast' : 'back toward the landing';
-  }
-  const dq = n.at.q - home.at.q;
-  const dr = n.at.r - home.at.r;
-  if (Math.abs(dr) >= Math.abs(dq)) return dr < 0 ? 'north' : 'south';
-  return dq < 0 ? 'west' : 'east';
+  // A coast has two directions and the saga should say so plainly. "North"
+  // on a line would be a compass word invented for a world with no compass
+  // in it.
+  return (n.stop ?? 0) >= (home.stop ?? 0) ? 'up the coast' : 'back toward the landing';
 }
 
 // --- Bartering ---

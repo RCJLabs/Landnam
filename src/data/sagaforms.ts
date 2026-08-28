@@ -60,9 +60,9 @@ export const LANDFALL: string[] = [
 ];
 
 export const COUNTRY: string[] = [
-  'They walked {hexes} stretches of country and saw {seen} of it, and most of what they saw was {ground}.',
+  'They walked {stretches} stretches of country and saw {seen} of it, and most of what they saw was {ground}.',
   'The band went inland through {ground} and back again, and by the end had the shape of {seen} of the country in their heads.',
-  'They crossed {hexes} stretches of ground before it was done, and it was {ground} that they came to know best.',
+  'They crossed {stretches} stretches of ground before it was done, and it was {ground} that they came to know best.',
 ];
 
 export const AT_SEA: string[] = [

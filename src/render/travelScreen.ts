@@ -4,14 +4,11 @@
 // painting. The ambience easing lives here too: what the road sounds like is
 // read off the same render that draws it.
 
-import { equals, type Hex } from '../hex';
 import type { GameState } from '../state/types';
 import { currentMode } from '../modes';
-import { createTravelView } from './travel';
 import { createProcessionView } from './processionView';
+import type { TravelView } from './views';
 import { processionScene } from './procession';
-import { COAST_IS_A_LINE } from '../sim/flags';
-import { paintingWanted } from './oilFlag';
 import { travelOverlay } from './overlays';
 import { deedsFor } from './deeds';
 import {
@@ -41,7 +38,7 @@ import {
   type ScreenHooks,
 } from '../shell';
 
-let travelView: ReturnType<typeof createTravelView> | null = null;
+let travelView: TravelView | null = null;
 let hooks: ScreenHooks | null = null;
 
 /** The last air we asked for, so an unchanged profile is not re-eased every render. */
@@ -56,31 +53,21 @@ function tapRefused(): boolean {
   return ui.foundingOpen || ui.mapOpen || ui.launchOpen || ui.actOpen;
 }
 
-function onHexTap(target: Hex): void {
-  if (tapRefused()) return;
-  const state = hooks!.current()!;
-  if (equals(target, state.party.at)) return;
-  hooks!.dispatch({ type: 'MOVE', to: target });
-}
-
 /** The road ahead and the road behind, tapped on the picture. */
 function onStopTap(to: number): void {
   if (tapRefused()) return;
   hooks!.dispatch({ type: 'WALK', to });
 }
 
-/** A new run: build the map view fresh and put the party in the frame. */
+/** A new run: build the view fresh and put the band in the frame. */
 export function mountTravel(h: ScreenHooks): void {
   hooks = h;
-  // The country decides which view: a coast is walked, not surveyed, so it
-  // gets a procession rather than a map. Both meet `TravelView`, which is
-  // why everything downstream of this line is unchanged.
-  travelView = COAST_IS_A_LINE
-    ? createProcessionView()
-    : createTravelView(onHexTap, { paint: paintingWanted() });
+  // A coast is walked, not surveyed, so it gets a procession. This picked
+  // between that and a hex map until 8.5; there is one view now, and it
+  // still meets `TravelView`, so everything downstream is unchanged.
+  travelView = createProcessionView();
   mapSlot.replaceChildren(...travelView.nodes);
-  const state = h.current();
-  if (state) travelView.centreOn(state.party.at);
+  travelView.centreOn();
 }
 
 /** Back to the title: drop the view and the eased air with it. */
@@ -120,7 +107,7 @@ export function renderTravelScreen(state: GameState, h: ScreenHooks): void {
   // under the map and the SVG is the one at the end.
   if (mapSlot.lastChild !== travelView.root) {
     mapSlot.replaceChildren(...travelView.nodes);
-    travelView.centreOn(state.party.at);
+    travelView.centreOn();
   }
 
   topbarSlot.replaceChildren(renderTopBar(state));
@@ -160,7 +147,7 @@ export function renderTravelScreen(state: GameState, h: ScreenHooks): void {
   // shapes on the picture, because the picture is `slice` and overflows its
   // slot — on a short screen its bottom edge lands behind the site panel, and
   // a verb drawn there cannot be pressed. See render/processionView.ts.
-  if (COAST_IS_A_LINE && !state.end && !state.event) {
+  if (!state.end && !state.event) {
     const scene = processionScene(state);
     if (scene.back) {
       actions.append(button(`Back · ${scene.back.days}d`, () => onStopTap(scene.back!.stop), {
@@ -197,7 +184,7 @@ export function renderTravelScreen(state: GameState, h: ScreenHooks): void {
   nameOverlays();
 
   // Keep the party in view after it moves.
-  if (currentMode(state) === 'TRAVEL') travelView.centreOn(state.party.at);
+  if (currentMode(state) === 'TRAVEL') travelView.centreOn();
 
   // And keep the weather honest. Easing means calling this every render costs
   // nothing when nothing has changed.

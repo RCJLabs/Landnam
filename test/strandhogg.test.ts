@@ -7,12 +7,9 @@
 // much worse if you lose.
 
 import { describe, it, expect } from 'vitest';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { holed } from '../src/sim/ship';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { isCoastalWater } from '../src/sim/road';
-import { distance, neighbors, key } from '../src/hex';
 import { placeKind } from '../src/data/places';
 import { settlePlace } from '../src/sim/places';
 import { leaveBattle } from '../src/sim/battleTurn';
@@ -23,6 +20,7 @@ import {
   canStrandhogg,
   strandTarget,
 } from '../src/sim/sea';
+import { daysBetween } from '../src/sim/route';
 import type { GameState, Place } from '../src/state/types';
 
 /**
@@ -34,42 +32,19 @@ function afloatBeside(seed: string, kind: Place['kind'] = 'monastery'): {
   place: Place;
 } {
   const state = structuredClone(newGame(seed));
-  if (COAST_IS_A_LINE) {
-    // THERE IS NO AFLOAT ON A LINE. `strandTarget` says so in its own words:
-    // rowing is a step and not a state, so the two ways into a place are not
-    // "from the water" and "from the land" but HOW YOU ARRIVED — `party.bySea`
-    // is set for the one day after a row, and it is the whole difference.
-    //
-    // So the fixture rows in rather than floating: stand at a stretch, put the
-    // place on it, and mark the arrival. Every claim below survives the
-    // translation because the sim was converted before the test was.
-    const stop = 6;
-    state.party.stop = stop;
-    state.party.bySea = true;
-    const place: Place = { id: 'strand-mark', kind, at: { q: 0, r: 0 }, stop };
-    state.world.places = [place, ...state.world.places.filter((p) => p.stop !== stop)];
-    return { state, place };
-  }
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  // Find any water hex with a land neighbour.
-  let water: GameState['party']['at'] | null = null;
-  let shore: GameState['party']['at'] | null = null;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
-    if (state.world.tiles[key(at)]?.terrain !== 'ocean') continue;
-    const land = neighbors(at).find(
-      (n) => state.world.tiles[key(n)] && state.world.tiles[key(n)]!.terrain !== 'ocean',
-    );
-    if (land) {
-      water = at;
-      shore = land;
-      break;
-    }
-  }
-  expect(water && shore, `${seed}: no coast at all`).toBeTruthy();
-  state.party.at = water!;
-  const place: Place = { id: 'strand-mark', kind, at: shore! };
-  state.world.places = [place, ...state.world.places.filter((p) => key(p.at) !== key(shore!))];
+  // THERE IS NO AFLOAT ON A LINE. `strandTarget` says so in its own words:
+  // rowing is a step and not a state, so the two ways into a place are not
+  // "from the water" and "from the land" but HOW YOU ARRIVED — `party.bySea`
+  // is set for the one day after a row, and it is the whole difference.
+  //
+  // So the fixture rows in rather than floating: stand at a stretch, put the
+  // place on it, and mark the arrival. Every claim below survives the
+  // translation because the sim was converted before the test was.
+  const stop = 6;
+  state.party.stop = stop;
+  state.party.bySea = true;
+  const place: Place = { id: 'strand-mark', kind, stop };
+  state.world.places = [place, ...state.world.places.filter((p) => p.stop !== stop)];
   return { state, place };
 }
 
@@ -79,11 +54,8 @@ function afloatBeside(seed: string, kind: Place['kind'] = 'monastery'): {
  */
 function byLandInstead(state: GameState, place: Place): GameState {
   const copy = structuredClone(state);
-  if (COAST_IS_A_LINE) {
-    delete copy.party.bySea;
-    return copy;
-  }
-  copy.party.at = { ...place.at };
+  delete copy.party.bySea;
+  copy.party.stop = place.stop;
   return copy;
 }
 
@@ -128,8 +100,7 @@ describe('what coming out of the water is worth', () => {
     expect(battle.log.join(' ')).toContain('not thought to watch the water');
 
     // Fewer than walking up would have brought.
-    const byLand = apply({ ...structuredClone(state), party: { ...structuredClone(state).party, at: place.at } },
-      { type: 'SACK_PLACE', id: place.id });
+    const byLand = apply(byLandInstead(state, place), { type: 'SACK_PLACE', id: place.id });
     expect(battle.foes.length).toBeLessThanOrEqual(byLand.battle!.foes.length);
     expect(def.garrison).toBeGreaterThan(0);
 
@@ -156,8 +127,10 @@ describe('what coming out of the water is worth', () => {
     // like the band least. Reading the minimum across the coast was the
     // fixture's own bug: it passed only while the two were the same person,
     // and went quiet the moment placement moved anybody.
+    const away = (s: GameState, n: { stop?: number }) =>
+      daysBetween(s.seed, n.stop ?? 0, place.stop);
     const moved = (s: GameState) =>
-      [...s.neighbours].sort((a, b) => distance(a.at, place.at) - distance(b.at, place.at))[0]!;
+      [...s.neighbours].sort((a, b) => away(s, a) - away(s, b))[0]!;
     expect(STRAND_INFAMY).toBeGreaterThan(1);
     expect(moved(bySea).standing).toBeLessThan(moved(byLand).standing);
     expect(moved(byLand).standing).toBeLessThan(moved(state).standing);
@@ -226,16 +199,11 @@ describe('a coast worth falling on', () => {
       for (const p of state.world.places) {
         if (placeKind(p.kind).garrison === null) continue;
         guarded += 1;
-        // What `strandTarget` actually asks, in each world's own terms. On a
-        // line every stretch IS the shore and the gate is `party.bySea`, so a
-        // guarded place that has not been picked clean is strandable full
-        // stop — there is no dry approach to disqualify it.
-        const canBeFallenOn = COAST_IS_A_LINE
-          ? p.sackedOn === undefined
-          : neighbors(p.at).some((n) => {
-            const tile = state.world.tiles[key(n)];
-            return tile?.terrain === 'ocean' && isCoastalWater(state, n);
-          });
+        // What `strandTarget` actually asks. Every stretch IS the shore and
+        // the gate is `party.bySea`, so a guarded place that has not been
+        // picked clean is strandable full stop — there is no dry approach
+        // left to disqualify it.
+        const canBeFallenOn = p.sackedOn === undefined;
         if (canBeFallenOn) {
           reachable += 1;
           here += 1;

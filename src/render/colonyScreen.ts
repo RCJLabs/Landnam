@@ -5,9 +5,8 @@
 
 import type { GameState } from '../state/types';
 import type { Action } from '../sim/actions';
-import { createColonyView } from './colony';
 import { createSteadingView } from './steadingView';
-import { COAST_IS_A_LINE } from '../sim/flags';
+import type { ColonyView } from './views';
 import {
   renderBuilds,
   renderColonyActions,
@@ -31,7 +30,7 @@ import {
   type ScreenHooks,
 } from '../shell';
 
-let colonyView: ReturnType<typeof createColonyView> | null = null;
+let colonyView: ColonyView | null = null;
 
 /**
  * What the steading's brush has done, for the debug read-out and the bars.
@@ -50,7 +49,7 @@ export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
   // A steading on a coast is a place you walk into, not a ring of ground you
   // look down on. Both meet `ColonyView`, so nothing below this line changes.
   if (!colonyView) {
-    colonyView = COAST_IS_A_LINE ? createSteadingView() : createColonyView();
+    colonyView = createSteadingView();
   }
   if (mapSlot.firstChild !== colonyView.root) mapSlot.replaceChildren(colonyView.root);
 

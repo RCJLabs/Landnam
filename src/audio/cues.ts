@@ -11,7 +11,6 @@ import type { Action } from '../sim/actions';
 import type { CueId } from '../data/sounds';
 import type { Combatant, GameState, Person } from '../state/types';
 import { currentMode } from '../modes';
-import { key } from '../hex';
 import { SEASON_LENGTH } from '../sim/calendar';
 
 /** Living members of the warband proper. Foes are counted on the battle. */
@@ -114,11 +113,6 @@ export function cuesFor(before: GameState, after: GameState, action: Action): Cu
   // --- On the road ---
 
   if (!wasFighting && !isFighting) {
-    if (action.type === 'MOVE') {
-      // A day under oars does not sound like a day's walking.
-      const ground = after.world.tiles[key(after.party.at)]?.terrain;
-      cues.push(ground === 'ocean' ? 'oar' : 'step');
-    }
     if (action.type === 'WALK') {
       // The line's travel verb, which made no sound at all until now — a
       // coast band walked and rowed in silence, because the only mover this

@@ -14,13 +14,9 @@ import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
-import { apply } from '../src/sim/actions';
 import {
   SHIP_REACH, canRow, canWalk, daysToWalk, pushLimit, standingAt, walkOptions,
 } from '../src/sim/coast';
-import { countryHere } from '../src/sim/coast';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
-import { key } from '../src/hex';
 import { ROUTE_STOPS, daysBetween, stopAt } from '../src/sim/route';
 import type { GameState } from '../src/state/types';
 
@@ -35,7 +31,12 @@ function band(seed: string, stop = 0): GameState {
 
 describe('where the band is standing', () => {
   it('reads a save that has never heard of the coast as the landing', () => {
+    // `stop` stays optional, and this is why: a save written before the
+    // field existed carries no address, and `standingAt` has to answer the
+    // landing rather than `undefined`. `newGame` writes a 0 of its own — the
+    // claim is about the ABSENCE, so the field is taken away here.
     const state = cloneState(newGame('s'));
+    delete state.party.stop;
     expect(state.party.stop).toBeUndefined();
     expect(standingAt(state)).toBe(0);
   });
@@ -131,7 +132,7 @@ describe('what the coast offers today', () => {
     // The hex map's rule, unchanged and for the same reason: a band with a
     // hall does not wander off it, and an expedition is how they leave.
     const settled = band('s', 4);
-    settled.settlement = { at: { q: 0, r: 0 } } as GameState['settlement'];
+    settled.settlement = { stop: 4 } as GameState['settlement'];
     expect(walkOptions(settled)).toEqual([]);
     expect(canWalk(settled, 5)).toBe(false);
     settled.expedition = { purpose: 'raid' } as GameState['expedition'];
@@ -187,25 +188,6 @@ describe('THE DECISION — how far before you turn back', () => {
   });
 });
 
-// The two describes below exist only WHILE THE FLAG IS OFF — their own names
-// say so, and they assert `COAST_IS_A_LINE === false` in as many words. On a
-// coast build they are measuring a precondition of a different build, so they
-// skip there rather than failing by construction. They retire with the flag,
-// alongside the parity vectors: see "The parity vectors retire with the
-// hexes" in ROADMAP.md.
-describe.skipIf(COAST_IS_A_LINE)('the flag', () => {
-  it('is off, and the game does not offer the coast while it is', () => {
-    // Not a claim about the walking — that is proved above. A claim about
-    // what the game will DO, because a coast with nothing on it yet would
-    // measure as travel getting worse, and would be right.
-    expect(COAST_IS_A_LINE).toBe(false);
-    const state = band('s', 0);
-    const after = apply(state, { type: 'WALK', to: 1 });
-    expect(after, 'WALK was accepted with the flag off').toBe(state);
-    expect(standingAt(after)).toBe(0);
-  });
-});
-
 describe('a save from before the coast', () => {
   it('comes forward standing on the landing, with its saga intact', () => {
     const state = cloneState(newGame('grim-fjord-100'));
@@ -221,27 +203,3 @@ describe('a save from before the coast', () => {
   });
 });
 
-describe.skipIf(COAST_IS_A_LINE)('the country underfoot, with the flag off', () => {
-  it('is exactly what the hex map says, character for character', () => {
-    // The claim that makes this seam safe to introduce. `countryHere` now
-    // stands where fifteen copies of one expression used to, and while the
-    // hex map is still the game it has to BE that expression — a seam that
-    // quietly changed an answer would move balance under a conversion that
-    // has not started yet.
-    expect(COAST_IS_A_LINE).toBe(false);
-    for (const seed of SEEDS) {
-      const state = cloneState(newGame(seed));
-      for (const k of Object.keys(state.world.tiles).slice(0, 40)) {
-        state.party.at = { q: Number(k.split(',')[0]), r: Number(k.split(',')[1]) };
-        const old = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
-        expect(countryHere(state), `${seed} at ${k}`).toBe(old);
-      }
-    }
-  });
-
-  it('falls back to meadow off the edge of the world, as it always did', () => {
-    const state = cloneState(newGame('s'));
-    state.party.at = { q: 9999, r: 9999 };
-    expect(countryHere(state)).toBe('meadow');
-  });
-});

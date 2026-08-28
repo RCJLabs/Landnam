@@ -9,7 +9,6 @@
 
 import { describe, expect, it } from 'vitest';
 import { makeRng } from '../src/rng';
-import { HEX_SIZE } from '../src/render/travel';
 import { ALL_TERRAINS, terrainDef } from '../src/data/terrain';
 import {
   CENTRES,
@@ -104,7 +103,9 @@ describe('where the marks land', () => {
   it('draws the hex the renderer actually draws', () => {
     // The whole geometry hangs off this. If travel.ts moves its hex and this
     // does not, every mark is placed for a grid that is not there any more.
-    expect(HEX).toBe(HEX_SIZE);
+    // `HEX_SIZE` in render/travel.ts was the other half of this pair until
+    // 8.5 deleted the map it sized. The number is the art's own now.
+    expect(HEX).toBe(26);
   });
 });
 

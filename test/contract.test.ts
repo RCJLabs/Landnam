@@ -119,10 +119,12 @@ describe('the port contract', () => {
       'port/foe-names.json',
       'port/foes.json',
       'port/golden.json',
-      'port/parity.json',
       'port/terrain.json',
-      'runs/example.json',
-      'runs/long.json',
+      // `port/parity.json`, `runs/example.json` and `runs/long.json` left the
+      // contract in 8.5 when they were deleted: the vectors and the recorded
+      // scripts retired with the hexes, as DECIDED on 2026-08-27. Named here
+      // rather than quietly dropped, because a shrinking contract is exactly
+      // what this bar exists to notice.
     ]);
   });
 

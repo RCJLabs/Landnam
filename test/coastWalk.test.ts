@@ -15,9 +15,8 @@
 //
 // So the flag is mocked on here and the verb is played for real.
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
-vi.mock('../src/sim/flags', () => ({ COAST_IS_A_LINE: true }));
 
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
@@ -47,7 +46,7 @@ import {
 } from '../src/sim/landmark';
 import { hasTrod, knowsStop, learnStop, markTrod, onHeights } from '../src/sim/coast';
 import { spotLandmarks, tellOfPlace, TOLD_RANGE } from '../src/sim/places';
-import { exploredFraction } from '../src/sim/fog';
+import { exploredFraction } from '../src/sim/coast';
 import {
   CLAIM_EVERY_STOPS, CLAIM_REACH_STOPS, RIVAL_APART_STOPS, RIVAL_ELBOW,
   RIVAL_SETTLES, CLAIM_CLEAR_STOPS, meetRival, nextClaimStop, rivalBlocks,
@@ -146,7 +145,7 @@ function withHall(seed: string): GameState {
   let score = -1;
   for (let stop = 0; stop < STOPS; stop += 1) {
     state.party.stop = stop;
-    if (!canFound(state, state.party.at)) continue;
+    if (!canFound(state)) continue;
     const total = stopReport(seed, stop).total;
     if (total > score) { score = total; best = stop; }
   }
@@ -359,32 +358,32 @@ describe('the larder is a place on the coast', () => {
     // The whole reason depletion exists, re-addressed: working one stretch
     // of coast hard has to be a reason to move on, not a global tax.
     const state = band(6);
-    expect(abundance(state, 'forage', state.party.at)).toBe(1);
-    for (let i = 0; i < 5; i += 1) noteTake(state, 'forage', state.party.at);
-    const worn = abundance(state, 'forage', state.party.at);
+    expect(abundance(state, 'forage')).toBe(1);
+    for (let i = 0; i < 5; i += 1) noteTake(state, 'forage');
+    const worn = abundance(state, 'forage');
     expect(worn, 'five days of foraging cost nothing').toBeLessThan(1);
     // The band walks on. The next stop has never been touched.
     state.party.stop = 7;
-    expect(abundance(state, 'forage', state.party.at)).toBe(1);
+    expect(abundance(state, 'forage')).toBe(1);
     // And walking back finds it exactly as they left it.
     state.party.stop = 6;
-    expect(abundance(state, 'forage', state.party.at)).toBe(worn);
+    expect(abundance(state, 'forage')).toBe(worn);
   });
 
   it('keeps the two larders apart at one stop', () => {
     const state = band(6);
-    for (let i = 0; i < 5; i += 1) noteTake(state, 'fish', state.party.at);
-    expect(abundance(state, 'fish', state.party.at)).toBeLessThan(1);
-    expect(abundance(state, 'forage', state.party.at), 'fishing thinned the berries').toBe(1);
+    for (let i = 0; i < 5; i += 1) noteTake(state, 'fish');
+    expect(abundance(state, 'fish')).toBeLessThan(1);
+    expect(abundance(state, 'forage'), 'fishing thinned the berries').toBe(1);
   });
 
   it('says so before the day is spent', () => {
     // The deed sheet's warning, which is what makes this not an invisible
     // tax — and it has to survive the change of address or it is one.
     const state = band(6);
-    expect(thinness(state, 'hunt', state.party.at)).toBe('good');
-    for (let i = 0; i < 8; i += 1) noteTake(state, 'hunt', state.party.at);
-    expect(thinness(state, 'hunt', state.party.at)).not.toBe('good');
+    expect(thinness(state, 'hunt')).toBe('good');
+    for (let i = 0; i < 8; i += 1) noteTake(state, 'hunt');
+    expect(thinness(state, 'hunt')).not.toBe('good');
   });
 });
 
@@ -405,10 +404,10 @@ describe('the water off the coast', () => {
     expect(grounds.length, 'not one fishing ground on the whole coast').toBeGreaterThan(0);
     expect(grounds.length, 'the entire coast is a fishing ground').toBeLessThan(ROUTE_STOPS);
     for (const at of grounds) {
-      expect(fisheryYield(band(at), band(at).party.at)).toBe(GROUND_YIELD);
+      expect(fisheryYield(band(at))).toBe(GROUND_YIELD);
     }
     const bare = [...Array(ROUTE_STOPS).keys()].find((at) => !groundAtStop(SEED, at))!;
-    expect(fisheryYield(band(bare), band(bare).party.at)).toBe(1);
+    expect(fisheryYield(band(bare))).toBe(1);
   });
 
   it('puts the same grounds off the same coast every time', () => {
@@ -489,7 +488,6 @@ describe('the people already on this coast', () => {
       expect(state.neighbours.length, seed).toBe(CLAN_COUNT);
       for (const n of state.neighbours) {
         expect(n.stop, `${seed}: ${n.name} has no address`).not.toBeUndefined();
-        expect(n.at, `${seed}: ${n.name} still stands on ground`).toEqual({ q: 0, r: 0 });
       }
       expect(state.neighbours.map((n) => n.stop))
         .toEqual(neighbourStops(seed, CLAN_COUNT, 13, CLAN_ELBOW));
@@ -535,17 +533,11 @@ describe('the people already on this coast', () => {
     expect(canFallOn(there, first.id)).toBe(true);
   });
 
-  it('is met by walking onto their stretch, and does not scribble on a hex', () => {
+  it('is met by walking onto their stretch', () => {
     const first = band(0, SEED).neighbours[0]!;
     const state = band(first.stop!, SEED);
-    const before = Object.keys(state.world.seen).length;
     seeNeighbours(state);
     expect(state.neighbours.find((n) => n.id === first.id)!.found).toBe(true);
-    // `revealNeighbour` used to mark their hex seen. On a line every one of
-    // them stands at (0,0), so doing it here would write the landing into the
-    // seen map of a world nobody is navigating by hexes any more.
-    expect(Object.keys(state.world.seen).length).toBe(before);
-    expect(state.world.seen['0,0']).toBeUndefined();
   });
 
   it('is not met by walking somewhere else', () => {
@@ -620,13 +612,12 @@ describe('somebody else’s home field', () => {
     const state = withHall(SEED);
     delete state.settlement;
     const first = state.neighbours.reduce((a, b) => (a.stop! < b.stop! ? a : b));
-    const at = state.party.at;
 
     state.party.stop = first.stop!;
-    expect(canFound(state, at), 'the posts went into a native camp').toBe(false);
+    expect(canFound(state), 'the posts went into a native camp').toBe(false);
 
     state.party.stop = first.stop! - CLAN_ELBOW;
-    expect(canFound(state, at), 'a stop clear of them was still refused').toBe(true);
+    expect(canFound(state), 'a stop clear of them was still refused').toBe(true);
   });
 
   it('leaves nobody camped on the landing, whoever lives on this coast', () => {
@@ -645,7 +636,7 @@ describe('somebody else’s home field', () => {
       }
       // And a dry landing is the only thing that may refuse it.
       learnStop(state, 0);
-      const refused = !canFound(state, state.party.at);
+      const refused = !canFound(state);
       if (refused) {
         expect(stopReport(seed, 0).water, `${seed}: refused the landing for no reason`)
           .toBeLessThan(2);
@@ -852,7 +843,7 @@ describe('what a ridge is worth on a coast', () => {
     while (flat < STOPS && stopAt(seed, flat).country === 'hills') flat += 1;
     const state = band(flat, seed);
     expect(onHeights(state)).toBe(false);
-    expect(spotFixedPoints(state, state.party.at)).toEqual([]);
+    expect(spotFixedPoints(state)).toEqual([]);
   });
 
   it('picks out fixed points days of coast away, and marks them known', () => {
@@ -865,7 +856,7 @@ describe('what a ridge is worth on a coast', () => {
     for (const seed of seeds) {
       const at = hillStop(seed)!;
       const state = band(at, seed);
-      const found = spotFixedPoints(state, state.party.at);
+      const found = spotFixedPoints(state);
       everSpotted += found.length;
       for (const f of found) expect(f.name.length).toBeGreaterThan(0);
       // Everything it named is now known, and nothing beyond the reach is.
@@ -888,15 +879,15 @@ describe('what a ridge is worth on a coast', () => {
       for (let at = 1; at < STOPS && !found; at += 1) {
         if (stopAt(seed, at).country !== 'hills') continue;
         const probe = band(at, seed);
-        const n = spotFixedPoints(probe, probe.party.at).length;
+        const n = spotFixedPoints(probe).length;
         if (n > 0) found = { seed, at, first: n };
       }
       if (found) break;
     }
     expect(found, 'no ridge on four coasts showed anything to repeat').toBeTruthy();
     const state = band(found!.at, found!.seed);
-    expect(spotFixedPoints(state, state.party.at).length).toBe(found!.first);
-    expect(spotFixedPoints(state, state.party.at), 'a ridge showed the same coast twice')
+    expect(spotFixedPoints(state).length).toBe(found!.first);
+    expect(spotFixedPoints(state), 'a ridge showed the same coast twice')
       .toEqual([]);
   });
 });
@@ -916,17 +907,15 @@ describe('what a trader tells you, on a coast', () => {
     }
     expect(target, 'no coast in forty had a place near enough to be told of').toBeTruthy();
     const teller = target!.stop! + 1;
-    const told = tellOfPlace(state, { q: 0, r: 0 }, 'the folk here', teller);
+    const told = tellOfPlace(state, 'the folk here', teller);
     expect(told?.id).toBe(target!.id);
     expect(knowsStop(state, target!.stop!)).toBe(true);
-    // And it does not write a hex into a world nobody navigates by hexes.
-    expect(state.world.seen['0,0']).toBeUndefined();
   });
 
   it('tells you nothing about a coast you already know', () => {
     const state = band(0, SEED);
     for (let s = 0; s < STOPS; s += 1) learnStop(state, s);
-    expect(tellOfPlace(state, { q: 0, r: 0 }, 'the folk here', 0)).toBeUndefined();
+    expect(tellOfPlace(state, 'the folk here', 0)).toBeUndefined();
   });
 
   it('will not name a place beyond the stretch a teller could know', () => {
@@ -941,7 +930,7 @@ describe('what a trader tells you, on a coast', () => {
       if (far.length === 0) continue;
       refused += far.length;
       // Let the teller name everything it can, then check what it could not.
-      for (let i = 0; i < 8; i += 1) tellOfPlace(state, { q: 0, r: 0 }, 'the folk here', 0);
+      for (let i = 0; i < 8; i += 1) tellOfPlace(state, 'the folk here', 0);
       for (const p of far) {
         expect(knowsStop(state, p.stop!), `${seed}: named ${p.kind} out of reach`).toBe(false);
       }
@@ -972,11 +961,10 @@ describe('the other boat, on a coast', () => {
     return state;
   }
 
-  it('puts his posts in a stretch of coast, not on a hex', () => {
+  it('puts his posts in a stretch of coast', () => {
     for (const seed of SEEDS) {
       const state = band(0, seed);
       expect(state.rival!.stop, seed).not.toBeUndefined();
-      expect(state.rival!.at).toEqual({ q: 0, r: 0 });
       expect(state.rival!.claimStops).toEqual([state.rival!.stop]);
       expect(state.rival!.stop).toBe(rivalStopFor(seed));
     }
@@ -1085,7 +1073,7 @@ describe('the other boat, on a coast', () => {
     const state = withRival();
     const hall = state.rival!.stop!;
     // Put our hall inside his reach and let him run.
-    state.settlement = { at: { q: 0, r: 0 }, stop: hall + 2 } as GameState['settlement'];
+    state.settlement = { stop: hall + 2 } as GameState['settlement'];
     for (let d = 1; d <= 40; d += 1) {
       state.day = RIVAL_SETTLES + d * CLAIM_EVERY_STOPS;
       rivalDay(state);
@@ -1105,19 +1093,19 @@ describe('the other boat, on a coast', () => {
     const state = withRival();
     const hall = state.rival!.stop!;
     state.party.stop = hall;
-    expect(rivalBlocks(state, state.party.at)).toBe(true);
+    expect(rivalBlocks(state)).toBe(true);
     state.party.stop = hall + RIVAL_ELBOW;
-    expect(rivalBlocks(state, state.party.at)).toBe(false);
+    expect(rivalBlocks(state)).toBe(false);
     // Until he fences it.
     state.rival!.claimStops!.push(hall + RIVAL_ELBOW);
-    expect(rivalBlocks(state, state.party.at)).toBe(true);
+    expect(rivalBlocks(state)).toBe(true);
   });
 
   it('is not there at all before his posts go in', () => {
     const state = band(0, SEED);
     state.day = RIVAL_SETTLES - 1;
     state.party.stop = state.rival!.stop!;
-    expect(rivalBlocks(state, state.party.at), 'he blocked ground he had not landed on')
+    expect(rivalBlocks(state), 'he blocked ground he had not landed on')
       .toBe(false);
   });
 
@@ -1151,7 +1139,7 @@ describe('the other boat, on a coast', () => {
       let free = 0;
       for (let s = 0; s < STOPS; s += 1) {
         state.party.stop = s;
-        if (rivalBlocks(state, state.party.at)) continue;
+        if (rivalBlocks(state)) continue;
         if (state.neighbours.some((n) => Math.abs(n.stop! - s) < ELBOW)) continue;
         free += 1;
       }

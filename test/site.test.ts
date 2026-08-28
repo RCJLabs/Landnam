@@ -3,7 +3,6 @@
 // a measurement of whether the sites actually differ and actually trade off.
 
 import { describe, it, expect } from 'vitest';
-import { fromKey } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -25,13 +24,11 @@ import {
   nameFor,
   hasBeck,
   scoreWord,
-  siteReport,
   stopReport,
   strongestOf,
   verdictFor,
 } from '../src/sim/site';
 import { MEASURES, MEASURE_MAX, VERDICTS, WATER_FLOOR } from '../src/data/sites';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { ROUTE_STOPS, stopAt } from '../src/sim/route';
 import { knowsStop, learnStop } from '../src/sim/coast';
 import { walkOff } from './fixtures/stand';
@@ -44,35 +41,26 @@ function fresh(seed: string): GameState {
   return structuredClone(newGame(seed));
 }
 
-/** A state with the fog lifted, so site reading is not gated by exploration. */
+/** A state that knows its whole coast, so reading is not gated by walking. */
 function surveyed(seed: string): GameState {
   const state = fresh(seed);
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
+  for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
   return state;
 }
 
 /**
- * Every readable site in this world.
+ * Every readable site in this world: every stretch of the route.
  *
- * On the hex map that is every land hex; on a coast it is every stretch of
- * the route. The distinction matters more than it looks: a coast build still
- * GENERATES the hex island (see job 3), so the old version of this kept
- * working there and quietly measured a country the game does not use. Eleven
- * of this file's tests were green against it.
+ * This swept every land hex until 8.5, and the distinction mattered more
+ * than it looked — a coast build still GENERATED the hex island (see job 3),
+ * so the old version kept working there and quietly measured a country the
+ * game does not use. Eleven of this file's tests were green against it.
  */
 function readAll(state: GameState): { where: string; report: SiteReport }[] {
-  if (COAST_IS_A_LINE) {
-    return Array.from({ length: ROUTE_STOPS }, (_, stop) => ({
-      where: `stretch ${stop}`,
-      report: stopReport(state.seed, stop),
-    }));
-  }
-  const out: { where: string; report: SiteReport }[] = [];
-  for (const k of Object.keys(state.world.tiles)) {
-    if (state.world.tiles[k]!.terrain === 'ocean') continue;
-    out.push({ where: k, report: siteReport(state.world, fromKey(k))! });
-  }
-  return out;
+  return Array.from({ length: ROUTE_STOPS }, (_, stop) => ({
+    where: `stretch ${stop}`,
+    report: stopReport(state.seed, stop),
+  }));
 }
 
 // --- Reading the ground ---
@@ -93,85 +81,54 @@ describe('reading a site', () => {
     }
   });
 
-  it('reads the ground, not the party — the same hex always scores the same', () => {
+  it('reads the ground, not the party — a stretch always scores the same', () => {
     const state = surveyed('stable');
-    const at = state.party.at;
-    const first = siteReport(state.world, at)!;
+    const at = state.party.stop ?? 0;
+    const first = stopReport(state.seed, at);
     state.day = 60;
     state.party.food = 0;
-    expect(siteReport(state.world, at)).toEqual(first);
-  });
-
-  it('a hex off the map has no reading at all', () => {
-    const state = fresh('offmap');
-    expect(siteReport(state.world, { q: 9999, r: -9999 })).toBeNull();
+    expect(stopReport(state.seed, at)).toEqual(first);
   });
 
   it('the sea is never a site, however good the surroundings', () => {
-    if (COAST_IS_A_LINE) {
-      // NO SUBJECT ON A LINE. `foundBlocker` says so itself: a route has no
-      // ocean and no mountains on it, so 'sea' and 'rock' are answers to
-      // questions a line cannot pose. The claim underneath — that the water
-      // gate is a real constraint — is held by "a beck is water and bare
-      // shore is not" below.
-      return;
-    }
-    const state = surveyed('sea');
-    for (const k of Object.keys(state.world.tiles)) {
-      if (state.world.tiles[k]!.terrain !== 'ocean') continue;
-      expect(foundBlocker(state, fromKey(k))).toBe('sea');
-    }
+    // NO SUBJECT ON A LINE. `foundBlocker` says so itself: a route has no
+    // ocean and no mountains on it, so 'sea' and 'rock' are answers to
+    // questions a line cannot pose. The claim underneath — that the water
+    // gate is a real constraint — is held by "a beck is water and bare
+    // shore is not" below.
   });
 
   it('a river hex always has water, and dry open ground does not', () => {
-    if (COAST_IS_A_LINE) {
-      // A BECK IS THE COAST'S RIVER, and the same two claims are asked of it:
-      // a stretch with one is never dry, and some stretch somewhere is. The
-      // second half is what makes fresh water a gate rather than a formality
-      // — a coast where every stretch had water would let a band settle on
-      // the first one every time.
-      //
-      // ONE, not three. A beck used to be passed as `Surrounds.river`, which
-      // means a river runs THROUGH the site and which `water` pays 3 for
-      // outright; it does not run through a steading, it runs down across
-      // the strand to the sea, so it is an adjacent water and worth one of
-      // the ring's two. What the beck decides now is not the SCORE but the
-      // REFUSAL: `foundBlocker` asks for one by name, so this holds the gate
-      // rather than the number.
-      let sawBeck = false;
-      let sawDry = false;
-      for (const seed of ['water-a', 'water-b', 'water-c']) {
-        for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-          const report = stopReport(seed, stop);
-          if (hasBeck(seed, stop)) {
-            sawBeck = true;
-            expect(report.water, `beck at ${seed} stretch ${stop}`)
-              .toBeGreaterThanOrEqual(WATER_FLOOR);
-          } else {
-            // And no score off a bog behind it makes a dry stretch settleable.
-            sawDry = true;
-          }
+    // A BECK IS THE COAST'S RIVER, and the same two claims are asked of it:
+    // a stretch with one is never dry, and some stretch somewhere is. The
+    // second half is what makes fresh water a gate rather than a formality
+    // — a coast where every stretch had water would let a band settle on
+    // the first one every time.
+    //
+    // ONE, not three. A beck used to be passed as `Surrounds.river`, which
+    // means a river runs THROUGH the site and which `water` pays 3 for
+    // outright; it does not run through a steading, it runs down across
+    // the strand to the sea, so it is an adjacent water and worth one of
+    // the ring's two. What the beck decides now is not the SCORE but the
+    // REFUSAL: `foundBlocker` asks for one by name, so this holds the gate
+    // rather than the number.
+    let sawBeck = false;
+    let sawDry = false;
+    for (const seed of ['water-a', 'water-b', 'water-c']) {
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+        const report = stopReport(seed, stop);
+        if (hasBeck(seed, stop)) {
+          sawBeck = true;
+          expect(report.water, `beck at ${seed} stretch ${stop}`)
+            .toBeGreaterThanOrEqual(WATER_FLOOR);
+        } else {
+          // And no score off a bog behind it makes a dry stretch settleable.
+          sawDry = true;
         }
       }
-      expect(sawBeck, 'no beck on any of three coasts').toBe(true);
-      expect(sawDry, 'every stretch of every coast had water — the gate is not a gate').toBe(true);
-      return;
     }
-    const state = surveyed('water');
-    let sawRiver = false;
-    let sawDry = false;
-    for (const k of Object.keys(state.world.tiles)) {
-      if (state.world.tiles[k]!.terrain === 'ocean') continue;
-      const report = siteReport(state.world, fromKey(k))!;
-      if (state.world.tiles[k]!.river) {
-        sawRiver = true;
-        expect(report.water, `river at ${k}`).toBeGreaterThanOrEqual(3);
-      }
-      if (report.water === 0) sawDry = true;
-    }
-    expect(sawRiver).toBe(true);
-    // If nothing were ever dry, the water gate would not be a constraint.
-    expect(sawDry).toBe(true);
+    expect(sawBeck, 'no beck on any of three coasts').toBe(true);
+    expect(sawDry, 'every stretch of every coast had water — the gate is not a gate').toBe(true);
   });
 
   it('the verdict bands cover every total and never go backwards', () => {
@@ -207,10 +164,7 @@ describe('choosing where to settle is a real decision', () => {
    * count sites and are calibrated on `SEEDS`, so only the pairs get the
    * wider read.
    */
-  const WIDE = Array.from(
-    { length: COAST_IS_A_LINE ? 60 : 10 },
-    (_, i) => `site-wide-${i}`,
-  );
+  const WIDE = Array.from({ length: 60 }, (_, i) => `site-wide-${i}`);
 
   function wideCorpus(): SiteReport[] {
     return WIDE.flatMap((seed) => readAll(fresh(seed)).map((r) => r.report));
@@ -252,48 +206,36 @@ describe('choosing where to settle is a real decision', () => {
   it('soil and defensibility pull against each other', () => {
     const all = wideCorpus();
     const soilDefence = correlation(all, 'soil', 'defence');
-    if (COAST_IS_A_LINE) {
-      // THE SAME CLAIM, IN THE PAIRS A COAST ACTUALLY TRADES OFF.
-      //
-      // Good farmland being open ground still holds, but only just: measured
-      // over sixty coasts it is -0.26 against the map's -0.54, and it got
-      // weaker rather than stronger when the ring was corrected on
-      // 2026-08-28. That is the honest direction — the old ring carried two
-      // copies of the strand's own country, which put the same terrain into
-      // `soil` and into `defence`'s door count and manufactured part of the
-      // pull. What is left is real and thin, and it is a live question
-      // whether a line wants `defence` to depend on the LAND more than it
-      // does; see ROADMAP.
-      //
-      // What does NOT survive at all is timber/defence: -0.73 on hexes and
-      // about -0.01 on a line, because a ring of six that always holds sea
-      // leaves defence driven by HOW MUCH sea rather than by what the land
-      // is, and it cannot anti-correlate with wood.
-      //
-      // The wood trade-off moved rather than vanished. On a line it is
-      // timber against HARBOUR, at -0.46 and the strongest pull the coast
-      // has. A stretch thick with wood — or within an easy haul of it, which
-      // is what `timberWithin` now measures — is a stretch with nowhere to
-      // beach a knarr, and that is a better decision than the one it
-      // replaces because both halves are things the player wants on day one.
-      const timberHarbour = correlation(all, 'timber', 'harbour');
-      // eslint-disable-next-line no-console
-      console.log(
-        `corr soil/defence ${soilDefence.toFixed(2)} · timber/harbour ${timberHarbour.toFixed(2)}`,
-      );
-      expect(soilDefence).toBeLessThan(-0.25);
-      expect(timberHarbour).toBeLessThan(-0.25);
-      return;
-    }
-    const timberDefence = correlation(all, 'timber', 'defence');
+    // THE SAME CLAIM, IN THE PAIRS A COAST ACTUALLY TRADES OFF.
+    //
+    // Good farmland being open ground still holds, but only just: measured
+    // over sixty coasts it is -0.26 against the map's -0.54, and it got
+    // weaker rather than stronger when the ring was corrected on
+    // 2026-08-28. That is the honest direction — the old ring carried two
+    // copies of the strand's own country, which put the same terrain into
+    // `soil` and into `defence`'s door count and manufactured part of the
+    // pull. What is left is real and thin, and it is a live question
+    // whether a line wants `defence` to depend on the LAND more than it
+    // does; see ROADMAP.
+    //
+    // What does NOT survive at all is timber/defence: -0.73 on hexes and
+    // about -0.01 on a line, because a ring of six that always holds sea
+    // leaves defence driven by HOW MUCH sea rather than by what the land
+    // is, and it cannot anti-correlate with wood.
+    //
+    // The wood trade-off moved rather than vanished. On a line it is
+    // timber against HARBOUR, at -0.46 and the strongest pull the coast
+    // has. A stretch thick with wood — or within an easy haul of it, which
+    // is what `timberWithin` now measures — is a stretch with nowhere to
+    // beach a knarr, and that is a better decision than the one it
+    // replaces because both halves are things the player wants on day one.
+    const timberHarbour = correlation(all, 'timber', 'harbour');
     // eslint-disable-next-line no-console
     console.log(
-      `corr soil/defence ${soilDefence.toFixed(2)} · timber/defence ${timberDefence.toFixed(2)}`,
+      `corr soil/defence ${soilDefence.toFixed(2)} · timber/harbour ${timberHarbour.toFixed(2)}`,
     );
-    // Good farmland is open ground and open ground cannot be held. This is
-    // the trade-off the whole decision rests on, so it is asserted, not hoped.
     expect(soilDefence).toBeLessThan(-0.25);
-    expect(timberDefence).toBeLessThan(-0.25);
+    expect(timberHarbour).toBeLessThan(-0.25);
   });
 
   it('the best site for one thing is rarely the best for another', () => {
@@ -321,7 +263,7 @@ describe('choosing where to settle is a real decision', () => {
     const p95 = totals[Math.floor(totals.length * 0.95)]!;
     // eslint-disable-next-line no-console
     console.log(`totals p50 ${p50} · p95 ${p95} · max ${totals[totals.length - 1]}`);
-    // A map where every hex reads the same is a map with no decision on it.
+    // A coast where every stretch reads the same has no decision on it.
     expect(p95 - p50).toBeGreaterThanOrEqual(3);
     expect(new Set(totals).size).toBeGreaterThan(6);
   });
@@ -332,36 +274,23 @@ describe('choosing where to settle is a real decision', () => {
     let land = 0;
     for (const seed of SEEDS) {
       const state = surveyed(seed);
-      if (COAST_IS_A_LINE) {
-        // The same question of a line: how much of the coast will take posts,
-        // and how much of THAT is worth walking for. `canFound` reads the
-        // stretch underfoot, so the band is stood on each one in turn.
-        for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
-        for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-          land++;
-          state.party.stop = stop;
-          if (!canFound(state, state.party.at)) continue;
-          foundable++;
-          const label = verdictFor(stopReport(seed, stop).total).label;
-          if (label === 'Good ground' || label === 'Rich ground') good++;
-        }
-        continue;
-      }
-      for (const k of Object.keys(state.world.tiles)) {
-        if (state.world.tiles[k]!.terrain === 'ocean') continue;
+      // The same question of a line: how much of the coast will take posts,
+      // and how much of THAT is worth walking for. `canFound` reads the
+      // stretch underfoot, so the band is stood on each one in turn.
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
         land++;
-        const at = fromKey(k);
-        if (!canFound(state, at)) continue;
+        state.party.stop = stop;
+        if (!canFound(state)) continue;
         foundable++;
-        const label = verdictFor(siteReport(state.world, at)!.total).label;
+        const label = verdictFor(stopReport(seed, stop).total).label;
         if (label === 'Good ground' || label === 'Rich ground') good++;
       }
     }
     const goodShare = good / foundable;
     // eslint-disable-next-line no-console
     console.log(
-      `${COAST_IS_A_LINE ? 'stretches' : 'land'} ${land} · ` +
-        `foundable ${Math.round((foundable / land) * 100)}% · ` +
+      `stretches: foundable ${Math.round((foundable / land) * 100)}% · ` +
         `good-or-better ${(goodShare * 100).toFixed(1)}% of foundable`,
     );
     expect(foundable / land).toBeGreaterThan(0.25);
@@ -376,20 +305,12 @@ describe('the land-taking', () => {
   /** Puts the party on the first ground it can found on, or gives up. */
   function settleSomewhere(seed: string): GameState {
     const state = surveyed(seed);
-    if (COAST_IS_A_LINE) {
-      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
-      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-        state.party.stop = stop;
-        if (canFound(state, state.party.at)) break;
-      }
-    } else {
-      for (const k of Object.keys(state.world.tiles)) {
-        const at = fromKey(k);
-        state.party.at = at;
-        if (canFound(state, at)) break;
-      }
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+      state.party.stop = stop;
+      if (canFound(state)) break;
     }
-    expect(canFound(state, state.party.at), `${seed}: nowhere foundable`).toBe(true);
+        expect(canFound(state), `${seed}: nowhere foundable`).toBe(true);
     expect(foundSettlement(state)).toBe(true);
     return state;
   }
@@ -397,14 +318,12 @@ describe('the land-taking', () => {
   it('founding sets the posts, names the place, and writes it in saga voice', () => {
     const state = settleSomewhere('found-1');
     const home = state.settlement!;
-    expect(home.at).toEqual(state.party.at);
+    expect(home.stop).toBe(state.party.stop ?? 0);
     expect(home.foundedOn).toBe(state.day);
     expect(home.name.length).toBeGreaterThan(3);
     // The reading the posts went in on, from whichever world this is.
     expect(home.report).toEqual(
-      COAST_IS_A_LINE
-        ? stopReport(state.seed, state.party.stop ?? 0)
-        : siteReport(state.world, state.party.at),
+      stopReport(state.seed, state.party.stop ?? 0),
     );
     expect(state.saga.some((e) => e.tone === 'saga' && e.text.includes(home.name))).toBe(true);
     expect(atHome(state)).toBe(true);
@@ -415,84 +334,59 @@ describe('the land-taking', () => {
     const first = structuredClone(state.settlement!);
 
     // Standing somewhere better changes nothing.
-    for (const k of Object.keys(state.world.tiles)) {
-      const at = fromKey(k);
-      if (state.world.tiles[k]!.terrain === 'ocean') continue;
-      state.party.at = at;
-      expect(foundBlocker(state, at)).toBe('settled');
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+      state.party.stop = stop;
+      expect(foundBlocker(state)).toBe('settled');
       expect(foundSettlement(state)).toBe(false);
     }
     expect(state.settlement).toEqual(first);
 
     // And the action layer refuses it too.
-    state.party.at = first.at;
+    state.party.stop = first.stop ?? 0;
     expect(applyTravel(state, { type: 'FOUND' })).toBe(state);
   });
 
   it('refuses ground that cannot hold a steading, and says why', () => {
-    const state = surveyed('refuse');
     const reasons = new Set<string>();
-    if (COAST_IS_A_LINE) {
-      // A line poses fewer questions: there is no ocean and no summit on a
-      // route, so 'sea' and 'rock' cannot come up — `foundBlocker` says so.
-      // 'dry' is the one that matters and it is the same claim, that fresh
-      // water is a constraint rather than a decoration. Walked over several
-      // coasts because one coast may happen to be wet all the way along.
-      for (const seed of ['refuse-a', 'refuse-b', 'refuse-c', 'refuse-d']) {
-        const coast = surveyed(seed);
-        for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(coast, stop);
-        for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-          coast.party.stop = stop;
-          const blocker = foundBlocker(coast, coast.party.at);
-          if (blocker) reasons.add(blocker);
-        }
+    // A line poses fewer questions: there is no ocean and no summit on a
+    // route, so 'sea' and 'rock' cannot come up — `foundBlocker` says so.
+    // 'dry' is the one that matters and it is the same claim, that fresh
+    // water is a constraint rather than a decoration. Walked over several
+    // coasts because one coast may happen to be wet all the way along.
+    for (const seed of ['refuse-a', 'refuse-b', 'refuse-c', 'refuse-d']) {
+      const coast = surveyed(seed);
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(coast, stop);
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+        coast.party.stop = stop;
+        const blocker = foundBlocker(coast);
+        if (blocker) reasons.add(blocker);
       }
-      expect(reasons.has('dry'), 'no stretch of four coasts was too dry to settle').toBe(true);
-      expect(reasons.has('sea'), 'a route has no open water on it').toBe(false);
-      expect(reasons.has('rock'), 'a route has no summit on it').toBe(false);
-      return;
     }
-    for (const k of Object.keys(state.world.tiles)) {
-      const at = fromKey(k);
-      const blocker = foundBlocker(state, at);
-      if (blocker) reasons.add(blocker);
-    }
-    // Open water and bare rock are always refused; dry ground is the one that
-    // makes fresh water a constraint rather than a decoration.
-    expect(reasons.has('sea')).toBe(true);
-    expect(reasons.has('rock')).toBe(true);
-    expect(reasons.has('dry')).toBe(true);
+    expect(reasons.has('dry'), 'no stretch of four coasts was too dry to settle').toBe(true);
+    expect(reasons.has('sea'), 'a route has no open water on it').toBe(false);
+    expect(reasons.has('rock'), 'a route has no summit on it').toBe(false);
   });
 
   it('never offers ground the party has not stood on', () => {
     const state = fresh('unseen');
     let unseen = 0;
-    if (COAST_IS_A_LINE) {
-      // A line remembers in `knownStops`, and a fresh band knows the landing
-      // and what it can see either side of it. Everything further up the
-      // coast is ground nobody has stood on, and the posts must refuse it.
-      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-        if (knowsStop(state, stop)) continue;
-        unseen++;
-        state.party.stop = stop;
-        expect(foundBlocker(state, state.party.at), `stretch ${stop}`).toBe('unknown');
-      }
-      expect(unseen, 'a fresh band already knows the whole coast').toBeGreaterThan(10);
-      return;
-    }
-    for (const k of Object.keys(state.world.tiles)) {
-      if (state.world.seen[k]) continue;
+    // A line remembers in `knownStops`, and a fresh band knows the landing
+    // and what it can see either side of it. Everything further up the
+    // coast is ground nobody has stood on, and the posts must refuse it.
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+      if (knowsStop(state, stop)) continue;
       unseen++;
-      expect(foundBlocker(state, fromKey(k))).toBe('unknown');
+      state.party.stop = stop;
+      expect(foundBlocker(state), `stretch ${stop}`).toBe('unknown');
     }
-    expect(unseen).toBeGreaterThan(100);
+    expect(unseen, 'a fresh band already knows the whole coast').toBeGreaterThan(10);
   });
 
   it('the name says what the place is good for', () => {
     for (const seed of ['name-a', 'name-b', 'name-c']) {
       const state = settleSomewhere(seed);
       const report = state.settlement!.report;
-      const again = nameFor(state, state.party.at, report);
+      const again = nameFor(state, report);
       // Naming is seeded on the hex, so the same ground always earns the
       // same name — a saved run and a replayed one agree.
       expect(again).toBe(state.settlement!.name);
@@ -524,44 +418,33 @@ describe('home ground pays for itself', () => {
    */
   function standing(seed: string): GameState {
     const state = surveyed(seed);
-    if (COAST_IS_A_LINE) {
-      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
-      const wooded = Array.from({ length: ROUTE_STOPS }, (_, i) => i)
-        .find((stop) => stopAt(state.seed, stop).country === 'forest');
-      // Not every coast has a wood on it, and that is a fact about the coast
-      // rather than a broken fixture — any stretch will do for an A/B where
-      // both arms stand on the same one.
-      state.party.stop = wooded ?? 1;
-      return state;
-    }
-    const forest = Object.keys(state.world.tiles).find(
-      (k) => state.world.tiles[k]!.terrain === 'forest',
-    );
-    expect(forest, `${seed}: no forest to stand in`).toBeTruthy();
-    state.party.at = fromKey(forest!);
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
+    const wooded = Array.from({ length: ROUTE_STOPS }, (_, i) => i)
+      .find((stop) => stopAt(state.seed, stop).country === 'forest');
+    // Not every coast has a wood on it, and that is a fact about the coast
+    // rather than a broken fixture — any stretch will do for an A/B where
+    // both arms stand on the same one.
+    state.party.stop = wooded ?? 1;
     return state;
   }
 
-  /** The same party, with a settlement forced onto that hex. */
+  /** The same party, with a settlement forced onto that stretch. */
   function homed(seed: string, override: Partial<SiteReport>): GameState {
     const state = standing(seed);
-    const base = COAST_IS_A_LINE
-      ? stopReport(state.seed, state.party.stop ?? 0)
-      : siteReport(state.world, state.party.at)!;
+    const base = stopReport(state.seed, state.party.stop ?? 0);
     const report = { ...base, ...override };
     report.total = KEYS.reduce((sum, k) => sum + report[k], 0);
     state.settlement = {
-      at: state.party.at,
-      // THE STOP, or none of this is home. `atHome` reads it on a line, and
-      // without it every A/B below compared two bands who were both still out
-      // on the road — which is why all three of these read as "the settlement
+      // THE STOP, or none of this is home. `atHome` reads it, and without it
+      // every A/B below compared two bands who were both still out on the
+      // road — which is why all three of these read as "the settlement
       // changed nothing".
-      ...(COAST_IS_A_LINE ? { stop: state.party.stop ?? 0 } : {}),
+      stop: state.party.stop ?? 0,
       name: 'Testholt',
       foundedOn: 1,
       report,
       // Real ground, or no job that needs a field or a shore can be assigned.
-      plots: makePlots(report, state.party.at, stream(seed, 'colony').derive('plots')),
+      plots: makePlots(report, stream(seed, 'colony').derive('plots')),
       shelter: 0,
       watch: 0,
       built: [],

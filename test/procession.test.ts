@@ -9,9 +9,8 @@
 // Flag mocked on, for the reason `strip.test.ts` gives: with it off this view
 // is never mounted and every line of it is code nothing executes.
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-vi.mock('../src/sim/flags', () => ({ COAST_IS_A_LINE: true }));
 
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
@@ -213,7 +212,7 @@ describe('the two things a coast lets you do', () => {
 
   it('offers a settled band neither, because a hall does not wander off', () => {
     const state = band(4);
-    state.settlement = { at: { q: 0, r: 0 }, stop: 4 } as GameState['settlement'];
+    state.settlement = { stop: 4 } as GameState['settlement'];
     const scene = processionScene(state);
     expect(scene.onward).toBeUndefined();
     expect(scene.back).toBeUndefined();

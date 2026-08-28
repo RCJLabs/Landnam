@@ -85,7 +85,6 @@ import { CROWDING_BITE, MOOD_DRIFT } from '../src/sim/minds';
 import { BAND_BASE, HEARTH_SHARE } from '../src/sim/upkeep';
 import { BASE_EVENT_CHANCE, SETTLING_IN_DAYS } from '../src/sim/events';
 import { LONG_LIFE_WINTERS } from '../src/data/thing';
-import { ROW_REACH, SEA_EFFORT } from '../src/sim/road';
 import { START_FIREWOOD, START_FOOD } from '../src/state/create';
 import { SAVE_VERSION } from '../src/state/version';
 
@@ -421,8 +420,6 @@ ${ILLNESSES.map((i) => `\t\t{ ${quote(i.label)}, { ${Object.entries(i.effect).ma
 \t/** Winters stood before the run closes itself out. */
 \tconstexpr int32_t LongLifeWinters = ${int(LONG_LIFE_WINTERS)};
 \t/** Effort to row a hex of coast, and how far a day's rowing carries. */
-\tconstexpr int32_t SeaEffort = ${int(SEA_EFFORT)};
-\tconstexpr int32_t RowReach = ${int(ROW_REACH)};
 
 \t// --- The steading (stage 5, rung 3) ---
 

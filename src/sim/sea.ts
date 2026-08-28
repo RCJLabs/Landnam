@@ -9,13 +9,11 @@
 // must end by decision, not by one bad fight on the water.
 
 import type { Battle, GameState, Place } from '../state/types';
-import { distance, key } from '../hex';
 import { placeKind } from '../data/places';
 import { stream } from '../rng';
 import { chronicle } from './saga';
 import { holed, mendStrake, springStrake, unseaworthy } from './ship';
 import { STRAKE_MEND_WOOD } from '../data/ships';
-import { COAST_IS_A_LINE } from './flags';
 import { standingAt } from './coast';
 
 /** Share of the packs that goes over the side when a sea fight is lost. */
@@ -64,26 +62,17 @@ export const STRAND_INFAMY = 1.5;
 
 /** A place on the shore, reachable from the water we are floating on. */
 export function strandTarget(state: GameState): Place | undefined {
-  if (COAST_IS_A_LINE) {
-    // Not "are we floating on water beside it" — a route has no floating,
-    // because rowing is a step and not a state. The two ways are how you
-    // ARRIVED: out of the water with a sail nobody was watching for, or up
-    // the road, which is the one they watch. One day only; see `Party.bySea`.
-    if (state.party.bySea !== true) return undefined;
-    const at = standingAt(state);
-    return state.world.places.find(
-      (p) =>
-        p.stop === at &&
-        p.sackedOn === undefined &&
-        placeKind(p.kind).garrison !== null,
-    );
-  }
-  if (state.world.tiles[key(state.party.at)]?.terrain !== 'ocean') return undefined;
+  // Not "are we floating on water beside it" — a route has no floating,
+  // because rowing is a step and not a state. The two ways are how you
+  // ARRIVED: out of the water with a sail nobody was watching for, or up the
+  // road, which is the one they watch. One day only; see `Party.bySea`.
+  if (state.party.bySea !== true) return undefined;
+  const at = standingAt(state);
   return state.world.places.find(
     (p) =>
+      p.stop === at &&
       p.sackedOn === undefined &&
-      placeKind(p.kind).garrison !== null &&
-      distance(p.at, state.party.at) === 1,
+      placeKind(p.kind).garrison !== null,
   );
 }
 

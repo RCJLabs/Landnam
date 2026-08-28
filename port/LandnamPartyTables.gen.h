@@ -392,8 +392,6 @@ namespace Tables
 	/** Winters stood before the run closes itself out. */
 	constexpr int32_t LongLifeWinters = 5;
 	/** Effort to row a hex of coast, and how far a day's rowing carries. */
-	constexpr int32_t SeaEffort = 2;
-	constexpr int32_t RowReach = 3;
 
 	// --- The steading (stage 5, rung 3) ---
 
@@ -545,6 +543,6 @@ namespace Tables
 		{ "watchpost", { "warrior" } },
 	};
 
-	constexpr int32_t SaveVersion = 55;
+	constexpr int32_t SaveVersion = 56;
 }
 }

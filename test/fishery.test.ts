@@ -7,7 +7,6 @@
 // worth rowing to (that you cannot walk to one) actually holds.
 
 import { describe, it, expect } from 'vitest';
-import { fromKey, key, neighbors, type Hex } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -15,37 +14,28 @@ import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { canFish } from '../src/sim/gathering';
 import { abundance } from '../src/sim/abundance';
-import { isCoastalWater } from '../src/sim/road';
 import { PURPOSES } from '../src/sim/expedition';
 import {
   GROUND_SHARE,
   GROUND_YIELD,
   fisheryYield,
-  groundAt,
   groundAtStop,
-  knownGround,
-  knownGrounds,
-} from '../src/sim/fishery';
-import { COAST_IS_A_LINE } from '../src/sim/flags';
+  } from '../src/sim/fishery';
 import { ROUTE_STOPS, stopAt } from '../src/sim/route';
 import { SHIP_REACH, markTrod } from '../src/sim/coast';
 import type { GameState } from '../src/state/types';
-import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 function fresh(seed: string): GameState {
   return structuredClone(newGame(seed));
 }
 
-/** Fog lifted, stores full: so a measurement is of fishing and nothing else. */
+/** Stores full, so a measurement is of fishing and nothing else. */
 function ready(seed: string): GameState {
   const state = fresh(seed);
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
   state.party.food = 400;
   state.party.firewood = 400;
   return state;
 }
-
-const hexes = (state: GameState): Hex[] => Object.keys(state.world.tiles).map(fromKey);
 
 /** Stretches of coast, with and without a ground off them. */
 const stops = (seed: string, want: boolean): number[] =>
@@ -77,44 +67,6 @@ function workDay(state: GameState, verb: 'FISH' | 'FORAGE' | 'CAMP'): number | n
 }
 
 describe('a fishing ground', () => {
-  it('is derived from the seed, so a replay finds the same fish', () => {
-    for (const seed of ['derive-a', 'derive-b']) {
-      const first = fresh(seed);
-      const second = fresh(seed);
-      for (const at of hexes(first)) {
-        expect(groundAt(second, at), key(at)).toBe(groundAt(first, at));
-      }
-    }
-  });
-
-  it('is only ever on water the knarr can actually work', () => {
-    const state = fresh('water-only');
-    for (const at of hexes(state)) {
-      if (!groundAt(state, at)) continue;
-      expect(state.world.tiles[key(at)]!.terrain, key(at)).toBe('ocean');
-      expect(isCoastalWater(state, at), `${key(at)} is out of the knarr's reach`).toBe(true);
-    }
-  });
-
-  it('lands near its declared share of the coast', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    let coastal = 0;
-    let grounds = 0;
-    for (let s = 0; s < 8; s += 1) {
-      const state = fresh(`share-${s}`);
-      for (const at of hexes(state)) {
-        if (!isCoastalWater(state, at)) continue;
-        coastal += 1;
-        if (groundAt(state, at)) grounds += 1;
-      }
-    }
-    const share = grounds / coastal;
-    // eslint-disable-next-line no-console
-    console.log(`grounds: ${grounds} of ${coastal} coastal hexes — ${(share * 100).toFixed(1)}%`);
-    expect(Math.abs(share - GROUND_SHARE)).toBeLessThan(0.03);
-  });
-
   it('costs the save nothing — it is not in it', () => {
     const state = ready('nosave');
     const encoded = encode(state);
@@ -125,23 +77,13 @@ describe('a fishing ground', () => {
     expect((back.save as { version: number }).version).toBe(SAVE_VERSION);
   });
 
-  it('is known once the water has been looked at, and not before', () => {
-    // Retires with the hexes — see test/fixtures/hexOnly.ts.
-    if (RETIRED_WITH_THE_HEXES) return;
-    const state = fresh('known');
-    const ground = hexes(state).find((h) => groundAt(state, h))!;
-    expect(knownGround(state, ground)).toBe(false);
-    state.world.seen[key(ground)] = 'seen';
-    expect(knownGround(state, ground)).toBe(true);
-    expect(knownGrounds(state).some((h) => key(h) === key(ground))).toBe(true);
-  });
 });
 
-// The same two facts asked of the address a line has. The five bars above
-// are about `groundAt`, which takes a hex; a coast build never calls it, so
-// they are green against a country the game does not use — the same trap
-// `site.test.ts` fell into. `groundAtStop` is what a coast asks, and until
-// this block nothing asked it anything.
+// The same two facts asked of the address a coast has. Five bars above these
+// were about `groundAt`, which took a hex; a coast build never called it, so
+// they were green against a country the game does not use — the same trap
+// `site.test.ts` fell into. They went with the hexes; `groundAtStop` is what
+// a coast asks.
 describe('a fishing ground, off a stretch of coast', () => {
   it('is derived from the seed, so a replay finds the same fish', () => {
     for (const seed of ['derive-a', 'derive-b']) {
@@ -306,45 +248,26 @@ describe('THE BAR — the sea is worth rowing to', () => {
     // fishing ground. If the beach next door paid the same, the ship would
     // still have no reason to leave it.
     let checked = 0;
-    if (COAST_IS_A_LINE) {
-      // The same claim, asked of the address a line actually has. "Beside"
-      // is the next stretch over rather than the next hex, and the refusal
-      // survives the move intact: the multiple is paid to a band standing at
-      // a stretch with a ground off it and to nobody else, so a band that
-      // wants the fish has to spend the days getting there.
-      //
-      // What does NOT survive is the wording of the sim's own note — a coast
-      // band is never "at sea", because rowing is a step and not a state, so
-      // there is no floating to do. Being there is the whole test.
-      for (let s = 0; s < 12; s += 1) {
-        const seed = `beside-${s}`;
-        for (const at of stops(seed, true)) {
-          const on = standAt(fresh(seed), at, 30);
-          expect(fisheryYield(on, on.party.at), `stretch ${at} of ${seed}`).toBe(GROUND_YIELD);
-          for (const n of [at - 1, at + 1]) {
-            if (n < 0 || n >= ROUTE_STOPS || groundAtStop(seed, n)) continue;
-            const beside = standAt(fresh(seed), n, 30);
-            // The next stretch of coast, within sight of the richest water
-            // on it, gets nothing from it.
-            expect(fisheryYield(beside, beside.party.at), `${n} beside ${at}`).toBe(1);
-            checked += 1;
-          }
-        }
-      }
-      expect(checked).toBeGreaterThan(50);
-      return;
-    }
-    for (let s = 0; s < 6; s += 1) {
-      const state = fresh(`beside-${s}`);
-      for (const at of hexes(state)) {
-        if (!groundAt(state, at)) continue;
-        expect(fisheryYield(state, at)).toBe(GROUND_YIELD);
-        for (const n of neighbors(at)) {
-          const tile = state.world.tiles[key(n)];
-          if (!tile || tile.terrain === 'ocean') continue;
-          // Dry land beside the richest water in the country gets nothing
-          // from it.
-          expect(fisheryYield(state, n), `${key(n)} beside ${key(at)}`).toBe(1);
+    // The same claim, asked of the address a line actually has. "Beside"
+    // is the next stretch over rather than the next hex, and the refusal
+    // survives the move intact: the multiple is paid to a band standing at
+    // a stretch with a ground off it and to nobody else, so a band that
+    // wants the fish has to spend the days getting there.
+    //
+    // What does NOT survive is the wording of the sim's own note — a coast
+    // band is never "at sea", because rowing is a step and not a state, so
+    // there is no floating to do. Being there is the whole test.
+    for (let s = 0; s < 12; s += 1) {
+      const seed = `beside-${s}`;
+      for (const at of stops(seed, true)) {
+        const on = standAt(fresh(seed), at, 30);
+        expect(fisheryYield(on), `stretch ${at} of ${seed}`).toBe(GROUND_YIELD);
+        for (const n of [at - 1, at + 1]) {
+          if (n < 0 || n >= ROUTE_STOPS || groundAtStop(seed, n)) continue;
+          const beside = standAt(fresh(seed), n, 30);
+          // The next stretch of coast, within sight of the richest water
+          // on it, gets nothing from it.
+          expect(fisheryYield(beside), `${n} beside ${at}`).toBe(1);
           checked += 1;
         }
       }
@@ -356,72 +279,18 @@ describe('THE BAR — the sea is worth rowing to', () => {
     // Measured rather than asserted from the constant, because the constant
     // is not the claim — the claim is about the TRIP, which is two travel
     // days plus what the ground gives before it thins.
-    if (COAST_IS_A_LINE) { tripOnTheLine(); return; }
-    const upkeep: number[] = [];
-    const ashore: number[] = [];
-    const afloat: number[] = [];
-    for (let s = 0; s < 8; s += 1) {
-      const seed = `pays-${s}`;
-      for (const day of [30, 110, 190, 270]) {
-        const probe = ready(seed);
-        const ground = hexes(probe).find((h) => groundAt(probe, h));
-        const valley = hexes(probe).find(
-          (h) => probe.world.tiles[key(h)]!.terrain === 'valley',
-        );
-        if (!ground || !valley) continue;
-
-        const camp = ready(seed);
-        camp.party.at = valley; camp.day = day;
-        const c = workDay(camp, 'CAMP');
-        if (c !== null) upkeep.push(-c);
-
-        const land = ready(seed);
-        land.party.at = valley; land.day = day;
-        const l = workDay(land, 'FORAGE');
-        if (l !== null) ashore.push(l);
-
-        const sea = ready(seed);
-        sea.party.at = ground; sea.day = day;
-        const f = workDay(sea, 'FISH');
-        if (f !== null) afloat.push(f);
-      }
-    }
-    const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
-    const up = mean(upkeep);
-    const land = mean(ashore);
-    const sea = mean(afloat);
-    // A trip is two days' rowing at a day's upkeep each, then three days on
-    // the ground before the larder thins (GRACE in sim/abundance.ts).
-    const trip = (3 * sea - 2 * up) / 5;
-    // eslint-disable-next-line no-console
-    console.log(
-      `a day's food — upkeep ${up.toFixed(2)}, forage ${land.toFixed(2)} net, ` +
-        `a ground ${sea.toFixed(2)} net; the five-day trip returns ${trip.toFixed(2)} a day ` +
-        `against ${land.toFixed(2)} for staying home (x${(trip / land).toFixed(2)})`,
-    );
-    // Worth going: the trip has to beat staying put by a real margin, or
-    // nobody sails and this is decoration.
-    expect(trip).toBeGreaterThan(land * 1.2);
-    // And not a solved game: an early cut of GROUND_YIELD read forty times
-    // the land verbs over five days, because multiplying the GROSS take when
-    // upkeep is a flat 3 a day is hugely leveraged. Food is what kills bands
-    // and it has to stay that way.
-    expect(trip).toBeLessThan(land * 2.5);
+    tripOnTheLine();
   });
 
   it('thins under a crew that squats on it, so knowing several is the point', () => {
     const state = ready('thins');
-    if (COAST_IS_A_LINE) {
-      // On a line the larder is keyed by STRETCH (see `sim/abundance.ts`), so
-      // squatting has to be done where the sim thinks the band is standing.
-      // Placing it by hex, as the line below does, silently measured six days
-      // of bare water off the landing instead.
-      const ground = stops(state.seed, true)[0]!;
-      standAt(state, ground, state.day);
-    } else {
-      state.party.at = hexes(state).find((h) => groundAt(state, h))!;
-    }
-    const takes: number[] = [];
+    // On a line the larder is keyed by STRETCH (see `sim/abundance.ts`), so
+    // squatting has to be done where the sim thinks the band is standing.
+    // Placing it by hex, as the line below does, silently measured six days
+    // of bare water off the landing instead.
+    const ground = stops(state.seed, true)[0]!;
+    standAt(state, ground, state.day);
+        const takes: number[] = [];
     for (let d = 0; d < 6; d += 1) {
       if (!canFish(state)) break;
       const got = workDay(state, 'FISH');
@@ -431,7 +300,7 @@ describe('THE BAR — the sea is worth rowing to', () => {
     expect(takes.length).toBe(6);
     // eslint-disable-next-line no-console
     console.log(`six days on one ground: ${takes.join(', ')}`);
-    expect(abundance(state, 'fish', state.party.at)).toBeLessThan(0.5);
+    expect(abundance(state, 'fish')).toBeLessThan(0.5);
     // The last day is worth a fraction of the first. A ground that never
     // thinned would be a reason to sail once and never move again.
     expect(takes[takes.length - 1]!).toBeLessThan(takes[0]! * 0.6);

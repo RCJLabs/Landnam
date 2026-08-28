@@ -11,7 +11,7 @@
 //      same text — which is the whole point of shipping the seed with it.
 
 import { stream } from '../rng';
-import { exploredFraction } from './fog';
+import { exploredFraction } from './coast';
 import { terrainDef } from '../data/terrain';
 import { clanKind, standingFor } from '../data/clans';
 import { known } from './lore';
@@ -19,7 +19,6 @@ import { fullName, living } from './people';
 import { tallyOf } from './tally';
 import { verdictFor } from './site';
 import { buildingById } from '../data/buildings';
-import { COAST_IS_A_LINE } from './flags';
 import { stopAt } from './route';
 import {
   AT_SEA,
@@ -84,9 +83,8 @@ function commonestGround(state: GameState): Terrain | undefined {
   // in `world.tiles` — a stop key looked up there answers undefined, which
   // would leave the saga's country line empty rather than wrong, which is a
   // worse kind of wrong to ship.
-  const walked = COAST_IS_A_LINE
-    ? Object.keys(state.world.trodStops ?? {}).map((k) => stopAt(state.seed, Number(k)).country)
-    : Object.keys(state.world.trod).map((k) => state.world.tiles[k]?.terrain);
+  const walked = Object.keys(state.world.trodStops ?? {})
+    .map((k) => stopAt(state.seed, Number(k)).country);
   for (const terrain of walked) {
     if (!terrain || terrain === 'ocean') continue;
     counts.set(terrain, (counts.get(terrain) ?? 0) + 1);
@@ -159,15 +157,13 @@ export function composeSaga(state: GameState): Saga {
   });
 
   // --- The country ---
-  const walked = COAST_IS_A_LINE
-    ? Object.keys(world.trodStops ?? {}).length
-    : Object.keys(world.trod).length;
+  const walked = Object.keys(world.trodStops ?? {}).length;
   const ground = commonestGround(state);
   const country: string[] = [];
   if (walked > 1 && ground) {
     country.push(
       fill(rng.derive('country').pick(COUNTRY), {
-        hexes: `${walked}`,
+        stretches: `${walked}`,
         seen: `${Math.round(exploredFraction(world) * 100)}%`,
         ground: terrainDef(ground).name.toLowerCase(),
       }),

@@ -183,15 +183,18 @@ correctly and says why it refuses. What it does NOT do is look like a game —
 see "The art queue" below, which is the honest answer to "it still looks very
 basic" and was not written down anywhere until today.
 
-**Phase 8 stands at:** 8.0 decided, 8.3 and 8.4 done, 8.1 and 8.2 partial
-(8.1b and 8.2c open), 8.5 all but done. **With the flag on, every test
-passes** — 90 files green, down from 148 failures across 39 files when the
-flip was first measured, by way of 25 and then 3. The last three were one
-uncalibrated coast and are settled; see the section immediately below. What is
-left of 8.5 is the deletion itself and the `SAVE_VERSION` break, not the
-conversion. The port hand-over is frozen and the parity vectors are DECIDED to
-retire with the hexes rather than be regenerated; see the two sections under
-Phase 8.
+**Phase 8 stands at:** 8.0 decided, 8.3, 8.4 and 8.5 done, 8.1 and 8.2 partial
+(8.1b and 8.2c open). **The hexes are gone as of 2026-08-28** — `src/hex/`,
+the world that stood on it, the flag that chose between them, the second
+build, the second suite, the second page and the five bars whose claim had no
+subject on a line. There is one game. The parity vectors retired with them, as
+DECIDED on 2026-08-27; the RNG's own port contract is kept and still checked.
+
+What is left of Phase 8 is not the conversion: 8.1b (`Combatant.at` is already
+gone, but `battle.grid`'s remaining ground is one boolean wearing a rectangle)
+and 8.2c's tail. **What the coast most needs now is not more conversion, it is
+the art queue below** — the procession, the strip and the elevation were built
+AFTER the Art 1–10 pass and none of them has had one.
 
 ### THE HARNESS LEARNS THE COAST — and the raider was never a design problem
 
@@ -2239,9 +2242,13 @@ is written so the choice is made with both arcs visible, not by drift.
   bare ground, raises a longhouse, and finds it standing at 55x40 inside the
   picture with the screen-reader line changed to match.
 
-- [ ] **8.5 Retire the hexes** — Delete `src/hex/`, the old renderers and the
-  dead flags once every flag has flipped. Bump `SAVE_VERSION` and land the
-  documented break. Rewrite the browser bars that query hex selectors.
+- [x] **8.5 Retire the hexes — DONE 2026-08-28.** `src/hex/` is deleted, with
+  `worldgen.ts`, `fog.ts`, `ways.ts`, `skerry.ts`, the hex half of `road.ts`,
+  the three hex renderers and `COAST_IS_A_LINE` itself. `SAVE_VERSION` 56
+  lands the documented break. The five browser bars that queried hex selectors
+  were deleted rather than translated — see the changelog entry "The hexes are
+  gone" for what went, what was kept and why, and for the `sailOn` defect the
+  fold found.
 
   **The precondition is answered: the flag CAN flip.** That was never
   actually asked. Every slice from 8.2 on proved its own piece — the walking,
@@ -2776,17 +2783,24 @@ is written so the choice is made with both arcs visible, not by drift.
      reference it is. The file's own header says to regenerate when a change
      is deliberate; a version bump is. The hand-over stays frozen, so the
      Unreal side is re-fed when that work resumes rather than now.
-  4. **`src/hex/` itself.** 94 files import it, but most take only a `type
-     Hex` for a placeholder `{q:0,r:0}`. The real work is auditing which of
-     those placeholders can go away with the fields that hold them
-     (`Place.at`, `Neighbour.at`, `Rival.at`, `Settlement.at`, `Party.at`),
-     which is the SAVE_VERSION break the milestone is named for.
+  4. **`src/hex/` itself — DONE 2026-08-28.** 94 files imported it, and the
+     audit that opened the job found the thing worth writing down: the biggest
+     single user left was the BATTLEFIELD, and it had not asked a hex question
+     since 8.1c put the fight onto ranks. `battle.grid` had exactly one reader
+     in the whole of `src/` — "is any tile a wall" — and every access to it
+     went through `key(offsetToAxial(col, row))`, a column and a row encoded
+     into a hex and decoded straight back. So the field became a plain
+     rectangle first (v55, not one RNG draw moved), which left `src/hex/`
+     load-bearing in exactly one place: the world layer this milestone exists
+     to delete. Then the flag folded, the world went, and the placeholder `at`
+     fields went with it (v56).
 
   Doing 1 without 2 leaves the suite red; doing 3 without deciding what the
   port is owed breaks a contract this project deliberately froze rather than
   drifted. So it is staged on purpose.
   *Done when: `grep -r "hex" src/` returns nothing load-bearing, all bars
-  pass, and the changelog states which sagas stopped loading and why.*
+  pass, and the changelog states which sagas stopped loading and why.* — MET.
+  The grep returns comments only; all ten bars pass; the changelog says it.
 
 ### What does NOT change
 
@@ -3545,6 +3559,101 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-28 — The hexes are gone** — 8.5's last job, and the milestone the
+  phase is named for. `src/hex/` is deleted, and with it `worldgen.ts`,
+  `fog.ts`, `ways.ts`, `skerry.ts`, the hex half of `road.ts`, `render/map.ts`,
+  `render/travel.ts`, `render/colony.ts` and the two oil backdrops that painted
+  them. `COAST_IS_A_LINE` is deleted too: there is no flag, no `VITE_HEX`, no
+  `npm run test:hex`, no `npm run publish:hex`, no second page and no second
+  suite. **`grep -r hex src/` returns comments and nothing else.**
+
+  **`SAVE_VERSION` 56, and this is the documented break.** Every hex-shaped
+  field leaves at once — `world.tiles`, `seen`, `trod`, `made`, `charted`,
+  `landing`, `width`, `height`, `rival.claims`, and the `at` on the party, the
+  settlement, the places, the neighbours, the rival, the ghost and the plots.
+  A plot's `at` becomes the slot index it always was.
+
+  **Which sagas stopped loading, and why: none, and that is the point.** A
+  hex-map save still opens. What it cannot bring is where anything was —
+  v49 through v53 each declined, in as many words, to invent a stop for a hall
+  or a neighbour on a world that had no route in it, and they were right to.
+  So such a save comes forward as a BAND rather than as a country: its people,
+  its ship, its stores, its lore, its grudges and the whole of its saga log
+  survive intact, and it stands on the landing of a coast derived fresh from
+  its own seed, with the hall re-sited on the landing stretch and the places,
+  the neighbours and the rival re-derived. Refusing to load was rejected
+  against this project's oldest rule — old saves must always load — and a saga
+  that opens with its history intact and its geography reset is a smaller loss
+  than one that does not open.
+
+  **The fold found a real defect, and it is the same one twice.** `sailOn`
+  called `generateWorld` unconditionally: job 3 stopped `newGame` seeding the
+  hex island and missed its twin one street over, so a coast band that took the
+  land a second time got all 1872 tiles back. Measured before it was fixed:
+  **3.2 kB to 81.1 kB**, of ground nothing reads.
+
+  Three things were kept rather than deleted, each for a reason:
+
+  - **The RNG's port contract.** `port/golden.json` loses its `hex` and
+    `worldgen` sections — the code they describe no longer exists, and a
+    vector nobody can recompute is worse than none — and keeps the `rng` ones,
+    which are live and still checked against `src/rng.ts` on every run. The
+    parity vectors and `runs/*.json` retire as DECIDED on 2026-08-27: 43 of 48
+    checkpoints were recorded hex `MOVE`s and are untranslatable, not stale.
+  - **The oil brush.** `render/oil.ts` painted the map and outlives it: the
+    battlefield and the steading paint with the same strokes. Its hexagonal
+    clip is written out inline now, because a hexagon is a SHAPE — it has no
+    long straight edge for the eye to catch, which is what keeps a field of
+    patches reading as paint rather than as tiles — and not a lattice.
+    `hexRng` became `patchRng`, addressed by a string, and `fieldOil` routes
+    through it so the property test pins the thing the game actually uses.
+  - **Five ghost-naming tests.** They were guarded as hex-only because their
+    FIXTURE searched `world.tiles`, not because their claim was. The claim —
+    that taking a dead steading names whose it was — is live on a coast, so
+    the fixture was converted and the tests came back.
+
+  What did NOT survive, each stated rather than quietly dropped: `MAKE_WAY`,
+  whose `wayBlocker` had answered `'coast'` since 8.2 and so could never fire
+  — the design question of whether a line should have made ways at all is
+  still open and still recorded above; the hex `MOVE` verb; `moveOptions`,
+  `daysForMove`, `canMove`, `isCoastalWater` and the coast-hugging rule; the
+  five browser bars whose subject was the map; and `cloneState`'s tile-sharing
+  optimisation, which existed to avoid copying 78 kB of terrain and now has
+  nothing to share — the ninety-eight percent went with the island rather than
+  being optimised away.
+
+  **Two balance readings moved, and both were worth chasing rather than
+  nudging.** `maybeFireEvent` derived its roll from `key(party.at)` — the
+  frozen landing hex on a coast — so every band rolled the day's odds from the
+  same constant wherever it stood, the same defect the battle RNG had one file
+  over. Retiring the placeholder forced that key to become the STRETCH, and
+  measuring it BOTH WAYS showed a pure re-labelling of an RNG derive moving
+  the long game's three arms by 4.2, 4.1 and 5.8 points. The jarldom odds in
+  `data/hardship.ts` are restated to 30% / 23% / 7%, with the arithmetic
+  written down — and with one thing left for a human: A Fair Country and As It
+  Lies are seven points apart on "ever rule" where the menu had them thirty
+  apart, so that figure has stopped separating the two settings. Spring still
+  does, cleanly.
+
+  The other was the instrument, again. "The winter panel does not tell bands
+  that go on to live that they are already dead" read 50% against a 40% bar
+  and looked like a regression. Its sample was sixty seeds, which condemned
+  SIX bands — a ratio over six can only report 0, 17, 33, 50, 67, 83 or 100,
+  so a bar at 40% was being decided by one band either way. At three hundred
+  seeds it condemns 62 and reads **27%, better than the 33% the bar was
+  written against.** A bigger sample, not a wider bound, and it cost forty
+  seconds of suite time.
+
+  Both halves of the tree came out together: 1034 compile errors across 79
+  files at the start of the fold, and the honest breakdown is that roughly a
+  third were one shape — a coast arm and a hex arm side by side, where folding
+  the flag left the hex half unreachable and broken. The instrument was wrong
+  as often as ever: `site.test.ts` swept every land hex to measure "readable
+  sites" on a build that generates none, `fishery.test.ts` had five bars about
+  `groundAt` that a coast never calls, and `balance.test.ts` carried three
+  target-finders ranking by `distance(x.at, ...)` where every `at` was the
+  same placeholder.
 
 - **2026-08-28 — The battlefield stops being a hex lattice** — 8.5's job 4
   opened with an audit rather than a deletion, and the audit found something

@@ -6,7 +6,7 @@
 // Full-screen overlays: the title, the event card, the warband roster, and
 // the run's ending. Views only.
 
-import { exploredFraction } from '../../sim/fog';
+import { exploredFraction } from '../../sim/coast';
 import { composeSaga, sagaText } from '../../sim/sagagen';
 import type { Fallen } from '../../memorial';
 import type { GameState } from '../../state/types';
