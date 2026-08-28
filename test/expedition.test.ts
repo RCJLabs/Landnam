@@ -35,6 +35,7 @@ import {
 } from '../src/sim/expedition';
 import type { GameState, Purpose } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
@@ -57,6 +58,8 @@ function ids(state: GameState, count: number): string[] {
 
 describe('the steading is where the band lives', () => {
   it('before the posts go in, everyone walks together', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = structuredClone(newGame('walk-together'));
     expect(everyoneHome(state)).toBe(false);
     expect(fieldCrew(state)).toHaveLength(6);
@@ -65,6 +68,8 @@ describe('the steading is where the band lives', () => {
   });
 
   it('after, nobody walks the map until a party is sent', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = settled('walk-sent');
     expect(everyoneHome(state)).toBe(true);
     expect(moveOptions(state)).toHaveLength(0);
@@ -202,6 +207,8 @@ describe('the steading keeps working while they are gone', () => {
   });
 
   it('turning for home only allows steps that shorten the walk', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = settled('turnback');
     launch(state, ids(state, 2), 'explore');
     // Get some distance first.

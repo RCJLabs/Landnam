@@ -21,6 +21,7 @@ import { effectsOn, nextThaw, SEASON_LENGTH, SEASON_ORDER, seasonOf } from '../s
 import { hardshipById } from '../src/data/hardship';
 import { fromKey } from '../src/hex';
 import type { Season } from '../src/state/types';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const dayIn = (season: Season): number => SEASON_ORDER.indexOf(season) * SEASON_LENGTH + 12;
 
@@ -99,6 +100,8 @@ describe('nothing arrives unannounced', () => {
 
 describe('a gale shuts the sea, and never traps anybody on it', () => {
   it('closes the water and leaves the beach open', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = structuredClone(newGame('sky-gale'));
     const water = Object.keys(state.world.tiles).map(fromKey)
       .find((at) => isCoastalWater(state, at));

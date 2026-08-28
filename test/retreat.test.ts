@@ -32,6 +32,7 @@ import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { walkOff } from './fixtures/stand';
 import type { GameState } from '../src/state/types';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 describe('the door exists', () => {
   it('gives up the steading, and lets the band found again', () => {
@@ -131,6 +132,8 @@ describe('the children come along', () => {
    * that would make walking out a way to stop feeding your own children.
    */
   it('carries everyone born there to the next steading', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = settled('ret-kin');
     state.day = state.settlement!.foundedOn + ABANDON_AFTER;
     state.settlement!.children = [

@@ -25,6 +25,7 @@ import { currentMode } from '../src/modes';
 import { eventById } from '../src/data/events';
 import { presentEvent } from '../src/sim/events';
 import type { GameState, Terrain } from '../src/state/types';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const FIGHT_TERRAINS: Terrain[] = ['shore', 'meadow', 'forest', 'hills', 'mountains', 'bog', 'valley'];
 
@@ -387,6 +388,8 @@ describe('reaching a battle through play', () => {
   });
 
   it('the battlefield ground matches the hex the party stood on', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = structuredClone(newGame('ground-match'));
     const terrain = state.world.tiles[key(state.party.at)]!.terrain;
     state.event = presentEvent(state, eventById('landing-party')!);

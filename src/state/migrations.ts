@@ -13,6 +13,7 @@ import { makeShip } from '../sim/ship';
 import { SHIP_STRAKES } from '../data/ships';
 import { stream } from '../rng';
 import { seedPlaces } from '../sim/places';
+import { COAST_IS_A_LINE } from '../sim/flags';
 
 /** Migrates a save from version N to version N+1. */
 export type Migration = (save: Record<string, unknown>) => Record<string, unknown>;
@@ -454,6 +455,33 @@ export const MIGRATIONS: Record<number, Migration> = {
   // stop for his hall would move a man who has been standing somewhere since
   // day nine, and his claims are the record of a whole saga's dawdling.
   52: (save) => ({ ...save, version: 53 }),
+  /**
+   * v53 -> v54: a coast save stops carrying the hex island.
+   *
+   * MEASURED: 1872 tiles is 77.2 kB of an 81.1 kB save — 96% of it — and a
+   * coast build reads none of them. `newGame` stopped generating the island
+   * on 2026-08-28; this is the same relief for saves that already exist.
+   *
+   * Only on a coast build, and that is not a hedge. The two pages are two
+   * games with two save slots, and the hex one navigates by those tiles: a
+   * migration that stripped them there would delete the country out from
+   * under a band mid-saga. So the flag decides, exactly as it decides
+   * everything else about which of the two is being played.
+   *
+   * `landing` is kept and the other hex fields are left where they are. They
+   * go in 8.5's last job, which is the SAVE_VERSION break that retires
+   * `Party.at` and its siblings — this one is only the weight.
+   */
+  53: (save) => {
+    if (!COAST_IS_A_LINE) return { ...save, version: 54 };
+    const world = save['world'] as Record<string, unknown> | undefined;
+    if (!world) return { ...save, version: 54 };
+    return {
+      ...save,
+      version: 54,
+      world: { ...world, tiles: {}, seen: {}, trod: {} },
+    };
+  },
 
 };
 

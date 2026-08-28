@@ -24,6 +24,7 @@ import { canMove, deepOcean, isCoastalWater, moveOptions } from '../src/sim/road
 import { applyTravel } from '../src/sim/travel';
 import type { GameState } from '../src/state/types';
 import { range } from '../src/hex';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 /** Every hex a move could conceivably reach, independent of moveOptions —
  * so the bar compares two different readings rather than one with itself. */
@@ -81,6 +82,8 @@ describe('the sea the map draws is the sea the band can row', () => {
 
 describe('every move the map offers is a move the band can make', () => {
   it('offers all of them and only them, afloat and ashore', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     let afloatTurns = 0;
     for (let s = 0; s < 25; s++) {
       let state = newGame(`reach-markers:${s}`);
@@ -105,6 +108,8 @@ describe('every move the map offers is a move the band can make', () => {
   });
 
   it('never offers the hex the band is already standing on', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     // Found by the browser bar the moment the map began drawing the real
     // reach: a marker at span ZERO. `rowable` is trivially true from a hex to
     // itself, so afloat the sim accepted a MOVE that advanced the day and
@@ -127,6 +132,8 @@ describe('every move the map offers is a move the band can make', () => {
   });
 
   it("shows the knarr's whole day of rowing, not one hex of it", () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     // The reach exists in the rules (ROW_REACH = 3 hexes for one day) and was
     // invisible on the map. Find a band afloat with real sea room and check
     // the map offers something further than a single step.

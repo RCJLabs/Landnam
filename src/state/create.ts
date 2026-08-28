@@ -14,16 +14,47 @@ import { placeNeighbours } from '../sim/neighbours';
 import { COAST_IS_A_LINE } from '../sim/flags';
 import { seedPlaces } from '../sim/places';
 import { emptyTally } from '../sim/tally';
-import type { GameState } from './types';
+import type { GameState, World } from './types';
 import { BALANCED_HARDSHIP, hardshipById, type HardshipId } from '../data/hardship';
 import { SAVE_VERSION } from './version';
 
 export const START_FOOD = 24;
 export const START_FIREWOOD = 8;
 
+/**
+ * A world with no hexes in it, for a coast.
+ *
+ * MEASURED FIRST: an eighteen-hundred-tile island is 77.2 kB of an 81.1 kB
+ * coast save — 96% of it — and the game does not read one of them. Every
+ * derived thing that used to come off the map already comes off the seed
+ * instead: `seedPlaces`, `placeNeighbours` and `makeRival` each take the
+ * seed and answer in stops, and the five site measures read `stopReport`.
+ * So the island was being generated, hashed, saved and loaded for nothing.
+ *
+ * `landing` stays as the placeholder every other coast address is —
+ * `party.at` and `Place.at` are the same `{q:0,r:0}` — because the fields
+ * themselves do not go until 8.5's last job, which is the SAVE_VERSION break
+ * that retires them.
+ *
+ * The hex build calls `generateWorld` exactly as before, so worldgen's hash
+ * — a contract with the C++ port — does not move.
+ */
+function bareWorld(): World {
+  return {
+    width: 0,
+    height: 0,
+    tiles: {},
+    seen: {},
+    landing: { q: 0, r: 0 },
+    landingName: '',
+    trod: {},
+    places: [],
+  };
+}
+
 export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP): GameState {
   const terms = hardshipById(hardship);
-  const world = generateWorld(stream(seed, 'worldgen'));
+  const world = COAST_IS_A_LINE ? bareWorld() : generateWorld(stream(seed, 'worldgen'));
   const people = makeWarband(stream(seed, 'party'));
   const landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
   world.landingName = landingName;
@@ -88,7 +119,15 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
     nextId: people.length + 1,
   };
 
-  const effects = effectsOn(state.day);
-  revealAround(world, world.landing, sightRadius(world, world.landing, effects.sight));
+  // The first morning's sight, which a line does not have. `world.seen` is
+  // the hex map's memory; a coast remembers in `knownStops`, set above, and
+  // `road.reveal` has skipped the fog pass on a line since 8.2c. Left in, this
+  // wrote the LANDING into the seen map of a world with no hexes in it — and
+  // once the island stopped being generated the landing is (0,0), so it
+  // scribbled on the one key every coast placeholder shares.
+  if (!COAST_IS_A_LINE) {
+    const effects = effectsOn(state.day);
+    revealAround(world, world.landing, sightRadius(world, world.landing, effects.sight));
+  }
   return state;
 }

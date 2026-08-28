@@ -28,9 +28,12 @@ import { onHighGround } from '../src/sim/fog';
 import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { ROUTE_STOPS, daysBetween } from '../src/sim/route';
 import { knowsStop, learnStop, onHeights } from '../src/sim/coast';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 describe('a fact of the seed, not of the save', () => {
   it('answers the same for the same country every time', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const a = newGame('lm-same');
     const b = newGame('lm-same');
     let found = 0;
@@ -44,6 +47,8 @@ describe('a fact of the seed, not of the save', () => {
   });
 
   it('stores nothing: the tile fields that used to promise this are gone', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = newGame('lm-save');
     const tile = state.world.tiles[key(state.world.landing)]!;
     // They were dead weight for years — declared, never written, never read.
@@ -52,6 +57,8 @@ describe('a fact of the seed, not of the save', () => {
   });
 
   it('names the same stone the same thing, and names it like a place', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = newGame('lm-name');
     for (const k of Object.keys(state.world.tiles)) {
       const at = fromKey(k);
@@ -68,6 +75,8 @@ describe('a fact of the seed, not of the save', () => {
 
 describe('sparse enough to mean something', () => {
   it('salts the country rather than paving it', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     let eligible = 0;
     let marks = 0;
     for (let s = 0; s < 4; s++) {
@@ -89,6 +98,8 @@ describe('sparse enough to mean something', () => {
   });
 
   it('only stands on ground its kind belongs on', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = newGame('lm-ground');
     let checked = 0;
     for (const k of Object.keys(state.world.tiles)) {
@@ -207,6 +218,8 @@ describe('knowing where you are', () => {
   });
 
   it('needs the band to have SEEN it — an unfound stone is no help', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = newGame('lm-unseen');
     for (const k of Object.keys(state.world.tiles)) {
       const at = fromKey(k);

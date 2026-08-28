@@ -32,13 +32,51 @@ async function clearCards() {
   }
 }
 
+/**
+ * Get back to the road, through whatever the country put in the way.
+ *
+ * A DAY OF HUNTING CAN BE INTERRUPTED BY A FIGHT, and this bar had no way
+ * through one: six days on the same ground met a warband on day eight, the
+ * Act sheet became a battle sheet, and the bar reported "could not read the
+ * Hunt deed at all" — which is a true statement about the screen and a false
+ * one about the larder. It passed for as long as the seed happened not to
+ * deal a fight; nothing about the depletion warning was ever involved.
+ */
+async function backToTheRoad() {
+  for (let i = 0; i < 60; i++) {
+    await clearCards();
+    const fighting = await page.evaluate(() => /End turn|ROUND \d/.test(document.body.innerText));
+    if (!fighting) return;
+    for (const label of ['Leave', 'End turn', 'Strike']) {
+      const b = page.locator('button', { hasText: label }).first();
+      if (await b.count()) {
+        await b.click({ timeout: 1200 }).catch(() => {});
+        await page.waitForTimeout(220);
+        break;
+      }
+    }
+  }
+}
+
 /** Open the Act sheet and read what Hunt says about the ground. */
 async function huntBlurb() {
-  await clearCards();
+  await backToTheRoad();
+  // OPEN the sheet rather than TOGGLE it. This clicked Act unconditionally,
+  // and the hunting loop below leaves the sheet open — so the second reading
+  // shut it and came back null. It passed for as long as the sixth hunt
+  // happened to raise a card that `clearCards` dismissed, which closes the
+  // sheet on the way; change anything about what the country deals and the
+  // bar reports "could not read the Hunt deed at all" while the deed is
+  // sitting there.
+  const isOpen = async () => page.evaluate(
+    () => /Hunt\b/.test(document.body.innerText) && /Camp\b/.test(document.body.innerText),
+  );
   const act = page.locator('button', { hasText: 'Act' }).first();
   if (!(await act.count())) return null;
-  await act.click();
-  await page.waitForTimeout(350);
+  if (!(await isOpen())) {
+    await act.click();
+    await page.waitForTimeout(350);
+  }
   // The label and its blurb are separate elements in the sheet, so read the
   // sheet's text and take what sits between Hunt and the next deed.
   const text = await page.evaluate(() => {
@@ -56,7 +94,7 @@ for (let i = 0; i < 6; i++) {
   if (!(await hunt.count())) break;
   await hunt.click();
   await page.waitForTimeout(420);
-  await clearCards();
+  await backToTheRoad();
   const act = page.locator('button', { hasText: 'Act' }).first();
   if (await act.count()) { await act.click(); await page.waitForTimeout(250); }
 }

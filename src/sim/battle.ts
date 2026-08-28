@@ -28,6 +28,8 @@ import { note } from './tally';
 import { chronicle } from './saga';
 import { startingNerve } from './morale';
 import { weightFor, wordBump, wordOf } from './word';
+import { COAST_IS_A_LINE } from './flags';
+import { standingAt } from './coast';
 import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
@@ -294,8 +296,19 @@ export function beginBattle(
   picked = false,
 ): void {
   state.modes = pushMode(state, 'BATTLE').modes;
+  // WHERE the fight is, keyed by the address the game actually uses.
+  //
+  // `key(state.party.at)` is the hex map's answer and on a line it is the
+  // placeholder every coast address shares — so two fights on the same day at
+  // opposite ends of the coast drew from the SAME stream. It went unnoticed
+  // while the island was still being generated, because the placeholder was
+  // then a real landing hex and merely constant per seed; once a coast build
+  // stopped generating the island it became '0,0' for every band on every
+  // coast, and the battle bars moved. Both readings were wrong; this is the
+  // one that means what the key is for.
+  const where = COAST_IS_A_LINE ? `s${standingAt(state)}` : key(state.party.at);
   const rng = stream(state.seed, 'combat').derive(
-    `${raid ? 'raid' : 'battle'}:${state.day}:${key(state.party.at)}`,
+    `${raid ? 'raid' : 'battle'}:${state.day}:${where}`,
   );
 
   // A raid is fought on the ground you built, and a fight afloat on an

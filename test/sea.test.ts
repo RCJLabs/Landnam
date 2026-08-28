@@ -32,6 +32,7 @@ import {
 } from '../src/sim/battlefield';
 import { CARGO_LOST_SHARE, HULL_MEND_WOOD, SEA_SALVAGE, isSeaFight, mendHull, settleSeaFight } from '../src/sim/sea';
 import { moveEffort, isCoastalWater } from '../src/sim/road';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 /**
  * The knarr, measured against legs.
@@ -67,6 +68,8 @@ describe('the knarr is faster than legs', () => {
   }
 
   it('a day of rowing covers more coast than a day of walking', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const found = afloat('row');
     expect(found, 'no coast long enough to row on').toBeTruthy();
     const { state, here } = found!;
@@ -80,6 +83,8 @@ describe('the knarr is faster than legs', () => {
   });
 
   it('and only over water, never across a headland', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const found = afloat('row-land')!;
     const { state, here } = found;
     for (const h of moveOptions(state)) {
@@ -173,6 +178,8 @@ describe('the hull and the packs are the stake', () => {
   });
 
   it('a holed hull rows at half pace, and only at sea', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = structuredClone(newGame('sea-limp'));
     // Find a coastal water hex beside the landing to price.
     let water: { q: number; r: number } | null = null;

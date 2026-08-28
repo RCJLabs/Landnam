@@ -33,6 +33,7 @@ import { LORE, loreById, type LoreId } from '../src/data/lore';
 import { EVENTS } from '../src/data/events';
 import type { Battle, Combatant, GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
@@ -254,6 +255,8 @@ describe('THE BAR — knowing a thing changes the run', () => {
   });
 
   it("shipwright's eye: a day on the water costs less", () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = structuredClone(newGame('lore-ship'));
     const water = moveOptions(state).find((h) => isCoastalWater(state, h));
     expect(water, 'no coastal water beside the landing').toBeTruthy();

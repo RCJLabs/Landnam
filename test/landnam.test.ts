@@ -30,6 +30,7 @@ import { hold } from '../src/sim/ship';
 import { living } from '../src/sim/people';
 import { key } from '../src/hex';
 import type { GameState } from '../src/state/types';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 function hall(seed = 'landnam'): GameState {
   // The site search is shared now — see test/fixtures/settle.ts.
@@ -118,6 +119,8 @@ describe('taking the land again', () => {
   });
 
   it('gives a whole new country, and keeps the band that crossed to it', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = hall('landnam-sail');
     state.day = reckoningDay();
     const crew = living(state.party.people).map((p) => p.id).sort();

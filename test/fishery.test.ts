@@ -30,6 +30,7 @@ import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { ROUTE_STOPS, stopAt } from '../src/sim/route';
 import { SHIP_REACH, markTrod } from '../src/sim/coast';
 import type { GameState } from '../src/state/types';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 function fresh(seed: string): GameState {
   return structuredClone(newGame(seed));
@@ -96,6 +97,8 @@ describe('a fishing ground', () => {
   });
 
   it('lands near its declared share of the coast', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     let coastal = 0;
     let grounds = 0;
     for (let s = 0; s < 8; s += 1) {
@@ -123,6 +126,8 @@ describe('a fishing ground', () => {
   });
 
   it('is known once the water has been looked at, and not before', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = fresh('known');
     const ground = hexes(state).find((h) => groundAt(state, h))!;
     expect(knownGround(state, ground)).toBe(false);

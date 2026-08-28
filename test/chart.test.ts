@@ -12,6 +12,7 @@ import { apply } from '../src/sim/actions';
 import { moveOptions } from '../src/sim/road';
 import { route } from '../src/render/map';
 import type { GameState } from '../src/state/types';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 function fresh(seed: string): GameState {
   return structuredClone(newGame(seed));
@@ -54,6 +55,8 @@ describe('the route', () => {
   });
 
   it('records every hex actually stood on, with the day it was reached', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = wander('chart-walk', 6);
     const walked = route(state);
     expect(walked.length).toBeGreaterThan(1);
@@ -67,6 +70,8 @@ describe('the route', () => {
   });
 
   it('remembers ground once, however often it is crossed', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     let state = fresh('chart-back');
     const start = state.party.at;
     const there = moveOptions(state)[0]!;
@@ -83,6 +88,8 @@ describe('the route', () => {
   });
 
   it('only records ground walked, not ground merely seen', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = wander('chart-seen', 5);
     const trod = Object.keys(state.world.trod);
     const seen = Object.keys(state.world.seen);
@@ -92,6 +99,8 @@ describe('the route', () => {
   });
 
   it('is a path: consecutive steps are neighbours', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = wander('chart-path', 8);
     const walked = route(state);
     let adjacent = 0;
@@ -119,11 +128,20 @@ describe('the route', () => {
     });
     expect(save['version']).toBe(SAVE_VERSION);
     const world = save['world'] as { trod: Record<string, number>; landingName: string };
-    expect(world.trod).toEqual({ '5,7': 1 });
     expect(world.landingName).toBeTruthy();
+    // The ROUTE itself retires with the hexes. `world.trod` is the hex map's
+    // record of where a band walked, and v54 takes it out of a coast save
+    // along with the island and the fog — a line remembers in `trodStops`,
+    // and a hex route carried forward into a coast is a road through a
+    // country that is not there. The v9 rule this asserts is the hex map's
+    // and is still checked on the hex build.
+    if (RETIRED_WITH_THE_HEXES) return;
+    expect(world.trod).toEqual({ '5,7': 1 });
   });
 
   it('a walk of many days leaves a route the chart can draw', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = wander('chart-long', 12);
     const walked = route(state);
     expect(walked.length).toBeGreaterThan(3);

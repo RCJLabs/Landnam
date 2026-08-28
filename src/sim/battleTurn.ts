@@ -25,6 +25,8 @@ import { bonus } from './lore';
 import { note } from './tally';
 import { key } from '../hex';
 import { checkRunEnd } from './upkeep';
+import { COAST_IS_A_LINE } from './flags';
+import { stopAt } from './route';
 
 /**
  * Pure safety net on the auto-played foe turns. Generous enough never to fire
@@ -158,7 +160,15 @@ export function startBattle(
 
 /** Opens a raid on the steading — same machinery, your own ground. */
 export function startRaid(state: GameState, difficulty = 0): void {
-  const terrain = state.world.tiles[key(state.settlement!.at)]?.terrain ?? 'meadow';
+  // THE GROUND THE HALL STANDS ON, which on a line is its stretch. The
+  // steading's `at` is a placeholder on a coast, so this read the LANDING's
+  // terrain from every steading — and once the island stopped being generated
+  // it read nothing at all and fell back to meadow. A raid fought on the
+  // wrong country is a raid whose weather, cover and footing are all somebody
+  // else's.
+  const terrain = COAST_IS_A_LINE
+    ? stopAt(state.seed, state.settlement!.stop ?? 0).country
+    : state.world.tiles[key(state.settlement!.at)]?.terrain ?? 'meadow';
   // Somebody sent them, and it goes on their account.
   noteRaidSent(state);
   beginBattle(state, terrain, difficulty, true);

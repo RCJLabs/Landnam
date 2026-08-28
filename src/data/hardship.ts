@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.25, ruled: 0.06 },
+    odds: { spring: 0.31, ruled: 0.06 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -164,19 +164,25 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * THREE HUNDRED landings a setting, not sixty, and that is the whole lesson
  * of this figure's history. Latest: 86% / 53% / 25% seeing the first spring.
  *
- * RE-MEASURED ON THE COAST, 2026-08-28, when the flag flipped and the harness
- * ran against the game that ships for the first time. Reached winter 93% /
- * 68% / 50%; saw spring 83% / 52% / 25%. Two of the three published figures
- * survived the change of country inside the harness's ±5 — 86 against 83, 53
- * against 52 — which is a better result than it looks, because the coast is a
- * different country and nothing was tuned to make them agree.
+ * RE-MEASURED ON THE COAST, 2026-08-28, and twice in the same day — which is
+ * the honest record and worth keeping as one. The flag flipped in the morning
+ * and the harness ran against the game that ships for the first time: reached
+ * winter 93% / 68% / 50%, saw spring 83% / 52% / 25%. By the evening a coast
+ * save had stopped carrying the hex island and the battle stream had been
+ * re-keyed to the stretch it is fought on (both in 8.5's job 3), and the
+ * curve settled at reached winter 96% / 72% / 56%, saw spring 83% / 56% / 31%.
  *
- * A Hard Country moved, 17% to 25%, and it moved for a reason worth keeping:
- * a hard country's band dies to the ground it settled on, and on a coast the
- * settling gate is FRESH WATER rather than a five-measure total, so the worst
- * ground a hard band can talk itself onto is less bad. The gaps are 31 and 27
- * points now against 33 and 36; still comfortably past the ±10 this harness
- * can resolve, which is what lets the three names differ at all.
+ * A FAIR COUNTRY did not move at all across either change — 83% both times,
+ * against a published 86% — and As It Lies moved three points. Neither was
+ * tuned to agree; they simply describe a game whose shape survived being
+ * rebuilt underneath them, which is the most reassuring thing in this note.
+ *
+ * A Hard Country moved twice, 17% -> 25% -> 31%, and the direction has one
+ * cause: a hard country's band dies to the ground it settled on, and on a
+ * coast the settling gate is FRESH WATER rather than a five-measure total, so
+ * the worst ground a hard band can talk itself onto is less bad. The gaps are
+ * 27 and 25 points, still comfortably past the ±10 this harness can resolve,
+ * which is what lets the three names differ at all.
  *
  * As It Lies promised 72% for a day and a half and was never within twenty
  * points of it. The 72 was written on 2026-08-22 off a sixty-seed reading,

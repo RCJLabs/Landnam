@@ -149,7 +149,12 @@
 //                  where his posts went in on the route and which stretches
 //                  his hand has closed on. Same rule as v49 and v51: only
 //                  written on a world seeded with `COAST_IS_A_LINE` on.
-export const SAVE_VERSION = 53;
+// v54 (8.5): a coast save stops carrying the hex island. 1872 tiles is 96%
+//            of an 81 kB save and a coast build reads none of them. The
+//            migration only strips them when COAST_IS_A_LINE — the hex page
+//            still navigates by those tiles, and taking them would delete the
+//            country out from under a band mid-saga.
+export const SAVE_VERSION = 54;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

@@ -28,6 +28,7 @@ import { launch, provisionsFor } from '../src/sim/expedition';
 import { isCoastalWater, moveEffort } from '../src/sim/road';
 import { fromKey } from '../src/hex';
 import type { GameState } from '../src/state/types';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 describe('she is a ship, and she is hers', () => {
   it('comes with a name off the run seed, and the same one every time', () => {
@@ -54,6 +55,8 @@ describe('the strakes grade, and every one of them costs something', () => {
   });
 
   it('costs a day on the water for each one, not merely for the first', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     // The old `hullHoled` was one bit: holed or not, and a second bad fight
     // was free. This is the difference the grading buys.
     const state = structuredClone(newGame('knarr-pace'));
@@ -73,6 +76,8 @@ describe('the strakes grade, and every one of them costs something', () => {
   });
 
   it('will not be rowed with nothing sound left, and land does not care', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const state = structuredClone(newGame('knarr-dead'));
     const water = Object.keys(state.world.tiles)
       .map(fromKey)

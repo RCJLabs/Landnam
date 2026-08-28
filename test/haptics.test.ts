@@ -15,6 +15,7 @@ import { FEELINGS, FELT, buzzFor, patternFor, type Hand } from '../src/haptics';
 import type { CueId } from '../src/data/sounds';
 import longText from '../runs/long.json?raw';
 import type { Script } from '../src/run/headless';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 const READY: Hand = { supported: true, enabled: true, still: false };
 
@@ -53,6 +54,8 @@ describe('the common cues never reach the hand', () => {
   }
 
   it('says nothing across a stretch of real walking', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     // Not a hand-picked cue list: real MOVEs through the real fog, and the
     // cues they actually produce. `runs/long.json` cannot carry this — it
     // makes eight moves in four hundred days and then sits in a steading, so

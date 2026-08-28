@@ -338,7 +338,13 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       const mark = strandTarget(state);
       if (!mark) return prev;
       const def = placeKind(mark.kind);
-      const ground = state.world.tiles[key(mark.at)]?.terrain ?? 'shore';
+      // The beach they came out of the water onto, which on a line is the
+      // stretch the prize stands on. A place's `at` is a placeholder there,
+      // so this always fell through to the literal 'shore' and every
+      // strandhögg in the game was fought on the same ground.
+      const ground = COAST_IS_A_LINE
+        ? stopAt(state.seed, mark.stop ?? 0).country
+        : state.world.tiles[key(mark.at)]?.terrain ?? 'shore';
       startBattle(state, ground, Math.max(0, (def.garrison ?? 1) - STRAND_FEWER), {
         placeId: mark.id,
       });

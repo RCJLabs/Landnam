@@ -25,9 +25,12 @@ import { apply } from '../src/sim/actions';
 import { distance } from '../src/hex';
 import { fromKey, neighbors } from '../src/hex';
 import { springStrake } from '../src/sim/ship';
+import { RETIRED_WITH_THE_HEXES } from './fixtures/hexOnly';
 
 describe('the rocks are a fact of the seed', () => {
   it('answers the same for the same coast every time', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const a = newGame('skerry-same');
     const b = newGame('skerry-same');
     let checked = 0;
@@ -49,6 +52,8 @@ describe('the rocks are a fact of the seed', () => {
   });
 
   it('salts the coast rather than paving or sparing it', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     let water = 0;
     let rocks = 0;
     for (let s = 0; s < 6; s++) {
@@ -109,6 +114,8 @@ describe('what it costs and what it teaches', () => {
   }
 
   it('springs strakes on a blind crossing, and charts what it found', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const found = findCrossing('skerry-cost');
     if (!found) throw new Error('no reachable skerry in a whole world — the probe never ran');
     const { from, to } = found;
@@ -129,6 +136,8 @@ describe('what it costs and what it teaches', () => {
   });
 
   it('is far kinder once the rocks are on the chart', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     // The measurement the mechanic rests on: learning has to be worth the
     // strake it cost. Same rocks, same days, blind against charted.
     const found = findCrossing('skerry-learn');
@@ -156,6 +165,8 @@ describe('what it costs and what it teaches', () => {
   });
 
   it('never sinks her: a hull can lose every strake and still be mended', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     const found = findCrossing('skerry-floor');
     if (!found) throw new Error('no reachable skerry in a whole world');
     const { from, to } = found;
@@ -172,6 +183,8 @@ describe('what it costs and what it teaches', () => {
 
 describe('the decision the rocks are FOR', () => {
   it('prices a fast row against a careful one', () => {
+    // Retires with the hexes — see test/fixtures/hexOnly.ts.
+    if (RETIRED_WITH_THE_HEXES) return;
     // The knarr's three-hex day was free speed. This measures what it now
     // costs: the same coast, covered in long hops or short ones, counting
     // strakes lost and days spent. Neither number alone is the answer —

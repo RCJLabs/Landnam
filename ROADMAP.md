@@ -163,8 +163,10 @@ ends" table and pick the work up without re-deriving a day of measurement.*
 is the coast now — 1513 passed / 16 skipped across 91 files — and
 `npm run test:hex` is the old game at 1528 / 1. `tsc` clean, all 15 browser
 bars pass (ten against the coast, five against the hex build), both pages
-published: `/` is the coast and `/hex/` the map. Work is on
-`claude/landnam-handover-2026-08-21-f96jml`, **35 commits ahead of `main`**.
+published: `/` is the coast and `/hex/` the map. **A coast save is 3.3 kB**,
+down from 81.1 — the hex island stopped being generated on 2026-08-28 and
+`v54` strips it out of saves that already exist. Work is on
+`claude/landnam-handover-2026-08-21-f96jml`, **36 commits ahead of `main`**.
 
 **NOTHING OF PHASE 8 IS LIVE, and this is the first thing to know.** GitHub
 Pages serves `main`, and `main` is still at `40f5fdf` "Phase 8 planned" with
@@ -2697,12 +2699,83 @@ is written so the choice is made with both arcs visible, not by drift.
      coast fails all seven runs on the one `worldHash` line before reaching a
      checkpoint at all.
 
-     What is LEFT of job 3 is the deletion itself, plus one thing the
-     measurement turned up that nobody had noticed: **the coast build still
-     generates the entire hex island.** 1872 tiles, hashing bit-identical to
-     the hex build, in every coast save — `newGame` calls `generateWorld` and
-     the flag only branches later, at `seedPlaces`. So this is a save break
-     and a real size win, and no longer blocked on anybody.
+     **DONE 2026-08-28.** The coast build was still generating the entire hex
+     island — 1872 tiles in every coast save, `newGame` calling
+     `generateWorld` with the flag only branching later at `seedPlaces`. It
+     is **77.2 kB of an 81.1 kB save, 96% of it**, and the game reads none of
+     it: `seedPlaces`, `placeNeighbours` and `makeRival` all take the seed and
+     answer in stops, and the five site measures read `stopReport`.
+
+     A coast save is **3.3 kB now, twenty-five times smaller**, and `v54`
+     strips the island out of saves that already exist. The migration only
+     fires when `COAST_IS_A_LINE`, and that is not a hedge: the two pages are
+     two games with two slots, and the hex one navigates by those tiles —
+     stripping them there would delete the country out from under a band
+     mid-saga. `generateWorld` is untouched on the hex build, so worldgen's
+     hash still holds.
+
+     **Sixty-two tests across twenty files went red, and every one of them was
+     a test of the HEX systems** — worldgen, the fog, hex movement, the
+     skerries, the hex fishery, the map renderer, the ways, the chart. They
+     had been green on a coast build the whole time, which is the part worth
+     saying out loud: they were passing against a country the game does not
+     have. Guarded with `RETIRED_WITH_THE_HEXES` rather than deleted, because
+     the hex build still ships behind `VITE_HEX=1` and these are what keep it
+     honest until it goes; job 4 deletes the blocks and the guard together.
+
+     **And emptying the world exposed four real coast bugs**, each invisible
+     while a hex island happened to be lying underneath:
+
+     - `newGame` still ran the opening fog reveal on a coast, writing the
+       landing into a `seen` map nothing reads — and once the landing became
+       `(0,0)` it scribbled on the key every coast placeholder shares.
+     - A raid on the steading was fought on `world.tiles[settlement.at]`,
+       which on a line is the placeholder: every hall defended itself on the
+       LANDING's ground, and then on a bare `?? 'meadow'`. It reads the
+       steading's own stretch now.
+     - Every strandhögg was fought on the literal `'shore'` for the same
+       reason — a place's `at` is a placeholder, so the lookup never hit.
+     - **The battle's RNG was keyed by `key(state.party.at)`.** On a line that
+       is one placeholder, so two fights on the same day at opposite ends of
+       the coast drew from the SAME stream. It hid while the island existed,
+       because the placeholder was then a real landing hex and merely constant
+       per seed. Keyed by the stretch now.
+
+     Two battle bars moved when that key changed, and both turned out to be
+     instruments rather than regressions. "A maimed warband fights worse than
+     a whole one" was fought at the hardest difficulty and read **0 of 14 wins
+     on both arms** — no signal at all — so it fell through to a headcount
+     that measures the opposite of its claim, because a maimed band's nerve
+     breaks sooner and a band that runs early loses fewer people. Fought at a
+     winnable difficulty it reads 5 wins against 4, and the headcount agrees.
+     And "a fight you were meant to win is usually survivable" was a RATE
+     asked of twenty-four fights, where the standard error is about ten
+     points: the same machinery on a different draw read 13 fatal of 24 where
+     it had read 7. At a hundred and twenty fights the two builds agree — 36
+     of 120 against 31 — and neither of the old numbers was the truth.
+
+     The maimed bar had the same disease twice over. Even once it was fought
+     at a winnable difficulty, fourteen fights read 5 wins against 4 on one
+     build and 6 against 7 on the OTHER — the same claim coming out both ways
+     round, decided by which seeds were in the bag. At ninety it is 48 against
+     35 on a coast and 56 against 45 on the map, and the headcounts agree.
+
+     **And two browser bars had been passing on luck.** `larder` hunts the
+     same ground six days and reads what the deed sheet says about it — but a
+     day of hunting can be interrupted, and on day eight this seed now meets a
+     warband. The bar had no way through a fight, so it reported "could not
+     read the Hunt deed at all", which is a true statement about the screen
+     and a false one about the larder; it fights its way back to the road now.
+     It also clicked Act unconditionally to open the sheet, which TOGGLES it,
+     and worked only while the sixth hunt happened to deal a card whose
+     dismissal closed the sheet first.
+
+     **`port/parity.json` was regenerated, and only the hashes moved** — 48 of
+     them, one per checkpoint, which is `SAVE_VERSION` flowing through every
+     state hash and nothing else. Generated from the HEX build, which is whose
+     reference it is. The file's own header says to regenerate when a change
+     is deliberate; a version bump is. The hand-over stays frozen, so the
+     Unreal side is re-fed when that work resumes rather than now.
   4. **`src/hex/` itself.** 94 files import it, but most take only a `type
      Hex` for a placeholder `{q:0,r:0}`. The real work is auditing which of
      those placeholders can go away with the fields that hold them
@@ -3472,6 +3545,58 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-28 — A coast save stops carrying the island it never reads** —
+  81.0 kB to 3.3 kB, twenty-five times smaller, and `v54` strips it out of
+  saves that already exist.
+
+  `newGame` was still calling `generateWorld` on a coast build: 1872 hex tiles
+  in every save, 77.2 kB of 81.1, and the game reads none of them —
+  `seedPlaces`, `placeNeighbours` and `makeRival` all take the seed and answer
+  in stops, and the five site measures read `stopReport`. The migration only
+  fires when `COAST_IS_A_LINE`, which is not a hedge: the two pages are two
+  games with two slots, and the hex one navigates by those tiles.
+
+  Sixty-two tests across twenty files went red on it, and every one was a test
+  of the HEX systems — worldgen, the fog, hex movement, the skerries, the hex
+  fishery, the map renderer, the ways, the chart. They had been green on a
+  coast build the whole time, passing against a country the game does not
+  have. Guarded rather than deleted; job 4 takes the blocks and the guard
+  together.
+
+  **And emptying the world exposed four real coast bugs**, each invisible
+  while a hex island happened to be lying underneath. `newGame` still ran the
+  opening fog reveal, scribbling the landing into a `seen` map nothing reads.
+  A raid on the steading was fought on the LANDING's ground, because
+  `world.tiles[settlement.at]` is a placeholder lookup on a line. Every
+  strandhögg was fought on the literal `'shore'` for the same reason. And the
+  battle's RNG was keyed by `key(state.party.at)` — one placeholder — so two
+  fights on the same day at opposite ends of the coast drew from the SAME
+  stream. That one hid while the island existed, because the placeholder was
+  then a real landing hex and merely constant per seed.
+
+  Two browser bars had been passing on luck too. `larder` hunts one patch of
+  ground six days to see whether the sheet admits it is worked out, and a day
+  of hunting can be interrupted — on day eight this seed now meets a warband,
+  and the bar had no way through a fight, so it reported "could not read the
+  Hunt deed at all" while the deed sat there. It also opened the Act sheet by
+  clicking Act unconditionally, which toggles it.
+
+  `port/parity.json` was regenerated from the hex build and only the hashes
+  moved — 48 of them, one per checkpoint, which is `SAVE_VERSION` flowing
+  through every state hash and nothing else.
+
+  Two battle bars moved when that key changed and both turned out to be
+  instruments. "A maimed warband fights worse than a whole one" was fought at
+  the hardest difficulty and read 0 of 14 wins on BOTH arms — no signal — so
+  it fell through to a headcount that measures the opposite of its claim,
+  since a maimed band's nerve breaks sooner and a band that runs early loses
+  fewer people. At a winnable difficulty it reads 5 wins against 4. And "a
+  fight you were meant to win is usually survivable" was a rate asked of
+  twenty-four fights, where the standard error is ten points: the same
+  machinery on a different draw read 13 fatal of 24 where it had read 7. At a
+  hundred and twenty the two builds agree, 36 against 31, and neither of the
+  old numbers was the truth.
 
 - **2026-08-28 — The coast is the default, and the harness learned it** — the
   flag flipped, and flipping it ran `balance.test.ts` against a coast for the
