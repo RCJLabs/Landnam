@@ -44,7 +44,7 @@ import { living } from '../src/sim/people';
 import { currentMode } from '../src/modes';
 import { COAST_IS_A_LINE } from '../src/sim/flags';
 import { ROUTE_STOPS, daysBetween } from '../src/sim/route';
-import { hasTrod, onHeights, walkOptions } from '../src/sim/coast';
+import { hasTrod, learnStop, onHeights, walkOptions } from '../src/sim/coast';
 import type { Battle, GameState } from '../src/state/types';
 
 function empty(): Battle {
@@ -391,7 +391,24 @@ describe('the world stream', () => {
     // long enough for the coast to call and the queue to finish something.
     const KINDS: WorldBeatKind[] = [
       'dawn', 'ate', 'burned', 'worked', 'hurt', 'died', 'seasonTurned',
-      'marched', 'gathered', 'founded', 'built', 'joined', 'met', 'spotted',
+      'marched', 'gathered', 'founded', 'built', 'joined', 'met',
+      // `spotted` IS PINNED BY FIXTURE ON A LINE, which is this file's own
+      // precedent — `rallied` and `fled` came in at four and one over thirty
+      // fights and were held the same way rather than chased with a bigger
+      // sample.
+      //
+      // Measured before it was moved: sixty seeded coasts, and this bot never
+      // emits one. It is not that the mechanic is dead — walking all
+      // twenty-six stretches of sixty coasts picks something out from a ridge
+      // on 57 of them. It is that the two things it needs pull against each
+      // other: a band has to be still walking, on a hills stretch, with
+      // unmapped country ahead — and since fresh water became the settling
+      // gate, a band that finds a beck puts the posts in and stops walking.
+      // The bot reaches stop four to six of twenty-six before it settles.
+      //
+      // Held instead by 'a landmark picked out from a ridge says which place,
+      // and where', below, on both builds.
+      ...(COAST_IS_A_LINE ? [] : (['spotted'] as WorldBeatKind[])),
     ];
     const seen = new Set<WorldBeatKind>();
     /**
@@ -408,7 +425,12 @@ describe('the world stream', () => {
      * search for the others.
      */
     const found = (): number => KINDS.filter((k) => seen.has(k)).length;
-    for (let s = 0; s < 12 && found() < KINDS.length; s += 1) {
+    // Seeds to sweep before giving up. The loop stops the moment every kind
+    // has been seen, so this is a CEILING and not a cost — the hex build has
+    // always finished inside a handful, and a coast build needs a few more
+    // because its bands are shorter-lived.
+    const SWEEP_SEEDS = COAST_IS_A_LINE ? 24 : 12;
+    for (let s = 0; s < SWEEP_SEEDS && found() < KINDS.length; s += 1) {
       let state = structuredClone(newGame(`world-reach-${s}`, 'fair'));
       const memo: Memo = { jobsDone: false };
       for (let i = 0; i < 4000 && !state.end; i += 1) {
@@ -499,8 +521,28 @@ function wideStep(state: GameState, memo: Memo): GameState {
 
   // Still walking. Eat off the land while that is still allowed — `canGather`
   // is false at a steading, so anything foraged has to be foraged now.
-  if (state.party.food < 26) {
-    for (const type of ['FORAGE', 'HUNT', 'FISH'] as const) {
+  if (state.party.food < (COAST_IS_A_LINE ? 40 : 26)) {
+    // A FIFTH ROUND OF THIS BOT BEING THE BUG, and the same lesson: a bot
+    // that cannot keep itself alive measures nothing. On a coast it starved
+    // by day 30 having reached stop 4 of 26, so most of what this sweep is
+    // meant to reach was never reached — and both halves of that were the
+    // bot's own doing.
+    //
+    // It ate the wrong thing. Measured over eight coasts and four points of
+    // the year, a day's NET food is +0.9 foraging the average stretch and
+    // +1.9 to +7.4 with a net in the water, because every stretch of a coast
+    // has the sea off it and half the countries a coast is made of return
+    // less than the three a day it costs to stand on them. The order below
+    // is the hex map's, where most of the island is inland and the basket is
+    // the right tool; on a line the net is.
+    //
+    // And it left it too late. A leg is two to four days at three a day, so
+    // a band that starts looking for supper at 26 is already inside the cost
+    // of the walk it is about to take.
+    const order = COAST_IS_A_LINE
+      ? (['FISH', 'FORAGE', 'HUNT'] as const)
+      : (['FORAGE', 'HUNT', 'FISH'] as const);
+    for (const type of order) {
       const got = apply(state, { type });
       if (got !== state) return got;
     }
@@ -560,10 +602,22 @@ describe('the errands and the fixed places', () => {
     for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
     // Found wherever this world will take posts — the landing often will not.
     let planted = false;
-    for (const k of Object.keys(state.world.tiles)) {
-      const at = fromKey(k);
-      state.party.at = at;
-      if (canFound(state, at) && foundSettlement(state)) { planted = true; break; }
+    if (COAST_IS_A_LINE) {
+      // Walked, not scanned: `foundBlocker` reads the stretch underfoot and
+      // ignores the hex it is handed, so assigning `party.at` asked stop 0
+      // twenty-six hundred times. It passed while the landing usually took
+      // posts; since fresh water became the gate it usually does not.
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+        learnStop(state, stop);
+        state.party.stop = stop;
+        if (canFound(state, state.party.at) && foundSettlement(state)) { planted = true; break; }
+      }
+    } else {
+      for (const k of Object.keys(state.world.tiles)) {
+        const at = fromKey(k);
+        state.party.at = at;
+        if (canFound(state, at) && foundSettlement(state)) { planted = true; break; }
+      }
     }
     expect(planted, 'nowhere in this world would take the posts').toBe(true);
     state.party.food = 400;

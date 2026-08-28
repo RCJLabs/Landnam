@@ -93,15 +93,33 @@ export const VERDICTS: Verdict[] = [
  * the hex map's); only the words hid it.
  *
  * So the bands are re-cut at the same PERCENTILES the hex bands sit at, which
- * keeps the shape of the experience rather than the numbers: measured coast
- * quantiles p10=11, p64=15, p97=18, p99=19.
+ * keeps the shape of the experience rather than the numbers.
+ *
+ * RE-DERIVED 2026-08-28, when the ring was corrected and fresh water became
+ * the settling gate. Both moved the scale down — the ring stopped carrying
+ * two copies of the strand's own country, and `timber` became a distance
+ * instead of a count — and the old cut left a coast with NO rich ground on
+ * it at all, which is a fifth of this list as dead content. Measured over
+ * 428 FOUNDABLE stretches on sixty coasts (foundable, because ground a band
+ * cannot take is ground it is never given a word for): p10=11, p64=14,
+ * p97=17, p99=18.
+ *
+ * What the player is told, against the map it is the side view of:
+ *
+ *            Bare   Hard   Fair   Good   Rich
+ *   hex map   0.6%  62.8%  31.9%   3.5%   1.1%
+ *   coast     5.6%  49.8%  40.4%   3.0%   1.2%
+ *
+ * Good-or-better lands at 4.2% against the map's 4.6%, so "land worth the
+ * crossing" means about the same thing on both — which is the whole point of
+ * cutting by percentile rather than by score.
  */
 export const COAST_VERDICTS: Verdict[] = [
   { from: 0, label: 'Bare ground', line: 'A place to die in, slowly.' },
   { from: 11, label: 'Hard ground', line: 'It could be held, by people with nothing better.' },
-  { from: 15, label: 'Fair ground', line: 'A steading could stand here.' },
-  { from: 18, label: 'Good ground', line: 'Land worth the crossing.' },
-  { from: 19, label: 'Rich ground', line: 'The kind of place a saga starts in.' },
+  { from: 14, label: 'Fair ground', line: 'A steading could stand here.' },
+  { from: 17, label: 'Good ground', line: 'Land worth the crossing.' },
+  { from: 18, label: 'Rich ground', line: 'The kind of place a saga starts in.' },
 ];
 
 // --- Naming the steading ---

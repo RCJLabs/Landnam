@@ -83,8 +83,43 @@ export const LEG_MAX = 4;
  * eight a hex map has), and a list every reader retypes drifts.
  */
 export const ROUTE_COUNTRY: readonly Terrain[] =
-  ['shore', 'meadow', 'forest', 'hills', 'bog', 'valley'];
-const COUNTRY = ROUTE_COUNTRY;
+  ['shore', 'bog', 'forest', 'hills', 'meadow', 'valley'];
+
+/**
+ * How much of a coast each country is — and it is NOT a sixth each.
+ *
+ * It was, and what that cost only showed when the whole site report was
+ * compared against the hex map's on 2026-08-27. A uniform roll over six
+ * countries puts a measured 4.1 VALLEY stretches on a 26-stop coast, and the
+ * settling search takes one every time — so a coast site came out at soil
+ * 4.13 against a hex site's 2.65, and "no two good things ever come together"
+ * was a sentence on a lesson card that the country itself contradicted. Every
+ * stretch was somebody's good ground, so no stretch was.
+ *
+ * The map's own answer, measured over the land around 132 foundable coastal
+ * hex sites: shore 51%, forest 25%, bog 21%, valley 3%, meadow 1%, hills 0%.
+ * That is the faithful figure and it cannot be copied straight, because a
+ * coast with no hills has no ridges — `onHeights` is what `spotFixedPoints`
+ * and `spotLandmarks` stand on, and the whole wayfinding mechanic goes with
+ * them.
+ *
+ * So: the map's SHAPE, with hills kept common enough to climb. A valley is
+ * about two stretches a coast rather than four, and forest about five — which
+ * matters more than it used to, because since `timber` became a DISTANCE (see
+ * `timberWithin` in sim/site.ts) the nearest wood is a thing a band walks to
+ * rather than a number the ground hands them.
+ */
+const COUNTRY_SHARE: readonly number[] = [0.30, 0.18, 0.18, 0.14, 0.12, 0.08];
+
+/** A country, by the shares above. */
+export function pickCountry(roll: number): Terrain {
+  let seen = 0;
+  for (let i = 0; i < ROUTE_COUNTRY.length; i += 1) {
+    seen += COUNTRY_SHARE[i]!;
+    if (roll < seen) return ROUTE_COUNTRY[i]!;
+  }
+  return ROUTE_COUNTRY[ROUTE_COUNTRY.length - 1]!;
+}
 
 export interface Stop {
   /** 0 is the landing. */
@@ -114,7 +149,7 @@ export function onRoute(index: number): boolean {
 export function stopAt(seed: string, index: number): Stop {
   const country = index === 0
     ? 'shore'
-    : COUNTRY[stopRng(seed, index, 'country').int(0, COUNTRY.length - 1)]!;
+    : pickCountry(stopRng(seed, index, 'country').next());
   const leg = index === 0
     ? 0
     : stopRng(seed, index, 'leg').int(LEG_MIN, LEG_MAX);

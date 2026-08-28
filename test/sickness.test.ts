@@ -249,19 +249,33 @@ describe('a winter illness mends for a healer and for nobody else', () => {
     const winter = winterHall('frost-rate', true);
     const summer = winterHall('thaw-rate', true);
     summer.day = SEASON_ORDER.indexOf('summer') * SEASON_LENGTH + 3;
-    const took = (state: GameState): number => {
-      const man = living(state.party.people)[1]!;
-      const before = man.injuries[0]!.heals;
-      twelveDays(state);
-      return before - (man.injuries[0]?.heals ?? 0);
+    // DAYS TO MEND, not days-off-in-twelve, and the difference is the whole
+    // reason this reads right. The first cut asked how much came off in a
+    // fixed twelve days, which is a quantity with a CEILING: an illness is 14
+    // to heal, so any hall that tends fast enough to finish inside the window
+    // reports 14 in both seasons and the comparison says nothing. That is
+    // exactly what a coast build does — its healer reads a site with a beck
+    // on it by law, so care lands at 1.24 against the map's 1.01 and twelve
+    // days clear the whole thing either way.
+    //
+    // Counting days to mend has no ceiling, so it holds the claim on any
+    // ground: winter tends at `care` a day and out of the frost there is a
+    // free day-a-day on top of it.
+    const mendDays = (state: GameState): number => {
+      for (let d = 1; d <= 400; d += 1) {
+        state.event = undefined;
+        if (!passDay(state)) break;
+        const man = living(state.party.people)[1];
+        if (!man || (man.injuries[0]?.heals ?? 0) <= 0) return d;
+      }
+      return Infinity;
     };
-    const inFrost = took(winter);
-    const inThaw = took(summer);
+    const inFrost = mendDays(winter);
+    const inThaw = mendDays(summer);
     // eslint-disable-next-line no-console
-    console.log(`twelve tended days took ${inFrost.toFixed(1)} off it in winter, `
-      + `${inThaw.toFixed(1)} in summer`);
-    expect(inFrost).toBeGreaterThan(0);
-    expect(inFrost).toBeLessThan(inThaw);
+    console.log(`tended, it mended in ${inFrost} days in winter and ${inThaw} out of the frost`);
+    expect(inFrost, 'never mended at all under a healer').toBeLessThan(Infinity);
+    expect(inFrost).toBeGreaterThan(inThaw);
   });
 });
 

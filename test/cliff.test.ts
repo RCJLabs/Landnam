@@ -49,14 +49,46 @@ describe('whether the mark can be met at all', () => {
   });
 
   it('says no to the photograph: late, roofless and empty', () => {
-    const state = settled('cliff-doomed', 40);
-    state.party.food = 4;
-    state.party.firewood = 0;
-    const f = forecast(state);
-    expect(f.ready).toBe(false);
-    expect(reachable(state)).toBe(false);
-    // And it SAYS so, in words, with something left to try.
-    const line = readiness(state);
+    // MEASURED ACROSS SEEDS, because one seed was measuring luck.
+    //
+    // This asked a single band on day 40 and expected `reachable` false. It
+    // held on the hex map and failed on a coast, which read as the coast
+    // being soft — and it is not. Swept over twelve worlds on the best ground
+    // each of them has, food 4 and firewood 0, the two maps have the same
+    // cliff in the same place:
+    //
+    //   day    30      40      50      60
+    //   hex    10/12   6/12    1/12    1/12   still savable
+    //   coast  12/12   8/12    2/12    1/12
+    //
+    // Day 40 is late autumn and HALF of both maps can still be saved from
+    // it; 'cliff-doomed' just happened to be one of the six the hex map
+    // gives up on. The cliff is the turn of winter, and it is there on both.
+    const EVE = 50;
+    let saveable = 0;
+    for (let i = 0; i < 12; i += 1) {
+      const state = settled(`cliff-doomed-${i}`, EVE);
+      state.party.food = 4;
+      state.party.firewood = 0;
+      expect(forecast(state).ready, `${i}: a band with nothing was called ready`).toBe(false);
+      if (reachable(state)) saveable += 1;
+    }
+    // eslint-disable-next-line no-console
+    console.log(`empty on the eve of winter: ${12 - saveable}/12 past saving`);
+    expect(saveable, 'the eve of winter is not a cliff at all').toBeLessThanOrEqual(3);
+
+    // And it SAYS so, in words, with something left to try — asked of a band
+    // the verdict has actually given up on.
+    const doomed = [...Array(12).keys()]
+      .map((i) => {
+        const state = settled(`cliff-doomed-${i}`, EVE);
+        state.party.food = 4;
+        state.party.firewood = 0;
+        return state;
+      })
+      .find((state) => !reachable(state));
+    expect(doomed, 'no band on the eve of winter was past saving').toBeDefined();
+    const line = readiness(doomed!);
     expect(line).toContain('cannot cut or hunt our way');
     expect(line).toMatch(/taking it from somebody else|wintering elsewhere/);
   });

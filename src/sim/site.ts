@@ -20,7 +20,7 @@ import {
 } from '../data/sites';
 import { CLAN_ELBOW } from '../data/clans';
 import { COAST_IS_A_LINE } from './flags';
-import { ROUTE_STOPS, stopAt } from './route';
+import { ROUTE_STOPS, daysBetween, pickCountry, stopAt } from './route';
 import { makeRng } from '../rng';
 import { knowsStop, standingAt } from './coast';
 import { rivalBlocks } from './rival';
@@ -157,31 +157,125 @@ function defence(s: Surrounds): number {
  * from the seed like everything else on this coast — some stretches have a
  * beck coming down to the sea and most do not.
  */
+/**
+ * How much of a stretch's ring is open sea: a bight, or a head.
+ *
+ * The first cut said two, always, and what that cost only showed when the
+ * whole report was compared against the map's. Two ocean in a ring of six is
+ * EXACTLY `harbour`'s textbook bay (+2 for two or three sides of sea) and
+ * exactly two tiles `defence` does not count as doors — so every stretch of
+ * every coast took the bay bonus and the sheltered flank, every time, and
+ * neither measure separated one stretch from another.
+ *
+ * Measured off the map this is the side view of: 132 foundable coastal hex
+ * sites across twelve worlds have ONE ocean neighbour 58% of the time, two
+ * 24%, three 17%, four 2% — a mean of 1.62, not 2.
+ */
+function seaAtStop(seed: string, stop: number): number {
+  const roll = makeRng(`landnam-route:${seed}:${stop}:sea`).next();
+  if (roll < 0.58) return 1;
+  if (roll < 0.82) return 2;
+  return 3;
+}
+
+/**
+ * Share of the land behind a stretch that is the same country as the strand.
+ *
+ * Not one, which is what the first cut effectively used: it filled both
+ * hinterland slots with `here`, so the stretch's own country appeared THREE
+ * times in a ring of six and a valley counted itself over and over into
+ * `soil`. Not zero either — the land behind a bog usually is boggy, and a
+ * coast whose every stretch read as six unrelated tiles would stop feeling
+ * like a place.
+ */
+export const HINTERLAND_SAME = 0.5;
+
+/** The country behind the strand, which the route does not map. */
+function hinterlandAt(seed: string, stop: number, slot: number): Terrain {
+  const rng = makeRng(`landnam-route:${seed}:${stop}:behind:${slot}`);
+  if (rng.next() < HINTERLAND_SAME) return stopAt(seed, stop).country;
+  return pickCountry(rng.next());
+}
+
 function stopSurrounds(seed: string, stop: number): Surrounds {
   const here = stopAt(seed, stop).country;
   const before = stop > 0 ? stop - 1 : stop;
   const after = stop < ROUTE_STOPS - 1 ? stop + 1 : stop;
-  return {
-    terrain: here,
-    river: hasBeck(seed, stop),
-    ring: [
-      { terrain: 'ocean', river: false },
-      { terrain: 'ocean', river: false },
-      // The neighbouring stretches carry their OWN becks, which is not a
-      // detail. `water` counts adjacent rivers up to two, and the first
-      // draft passed `false` here — threw the information away, and left a
-      // shore with no beck of its own scoring nought however many ran down
-      // to the sea on either side of it. Measured: 131 coasts in 200 could
-      // not be settled at their own landing.
-      { terrain: stopAt(seed, before).country, river: hasBeck(seed, before) },
-      { terrain: stopAt(seed, after).country, river: hasBeck(seed, after) },
-      // The land behind the strand, which the route does not map and which
-      // is the same country as the strand itself.
-      { terrain: here, river: false },
-      { terrain: here, river: false },
-    ],
-  };
+  const ring: { terrain: Terrain; river: boolean }[] = [];
+  for (let i = 0; i < seaAtStop(seed, stop); i += 1) {
+    ring.push({ terrain: 'ocean', river: false });
+  }
+  // The neighbouring stretches carry their OWN becks, which is not a detail:
+  // `water` counts adjacent rivers up to two, and the first draft threw that
+  // information away and left a shore scoring nought however many becks ran
+  // down to the sea on either side of it.
+  ring.push({ terrain: stopAt(seed, before).country, river: hasBeck(seed, before) });
+  ring.push({ terrain: stopAt(seed, after).country, river: hasBeck(seed, after) });
+  // AND THE STRETCH'S OWN BECK GOES IN THE RING, not on `terrain.river`.
+  //
+  // `Surrounds.river` means a river runs THROUGH the site, and `water` pays
+  // it 3 outright for that. A beck does not run through a steading; it runs
+  // down ACROSS the strand to the sea, which is an adjacent water and worth
+  // one of the ring's two. The difference is not cosmetic: passing it as
+  // `terrain.river` put a settled coast band's `water` at 4.80 against the
+  // map's 1.80, and the healer reads `water` — a winter hall measured care
+  // 1.68 against the map's 0.85, so twelve tended days took a whole winter
+  // illness off where the map takes 6.6 of 14.
+  ring.push({ terrain: here, river: hasBeck(seed, stop) });
+  // Whatever is left of the six is the land behind the strand — so a head
+  // with three sides of sea has one field behind it and a bight has two.
+  while (ring.length < 6) {
+    ring.push({ terrain: hinterlandAt(seed, stop, ring.length), river: false });
+  }
+  return { terrain: here, river: false, ring };
 }
+
+/**
+ * Wood a woodcutter can actually reach from this stretch, scored 0..MEASURE_MAX.
+ *
+ * THE ONE MEASURE THAT IS NOT THE HEX MAP'S, and it had to stop being it.
+ * `timber` counts the wood in a ring of seven and divides by 28 — seven tiles
+ * of pure forest — which is a ring a coast cannot have, because one to three
+ * of its six are ocean and carry none. A coast was scored against a ceiling
+ * it structurally could not reach: 1.45 against the map's 2.13, so the
+ * woodcutter cut a third less and a band that heeded the winter mark still
+ * froze, 50% living against a bar wanting 60%.
+ *
+ * The scale was only half of it. On the map a band that wants wood WALKS
+ * INLAND and settles in a forest. On a line there is no inland — so the
+ * answer is not to score the ground differently, it is that the woodcutters
+ * GO OUT to the wood and the walk is what it costs. The nearest forest at the
+ * door is a full measure; the same forest a week up the coast is worth a
+ * fraction of it, because most of the day went into getting there and back.
+ *
+ * That makes "how far are the trees" a thing a player reads off the site
+ * panel and weighs against fresh water and a field, which is the decision
+ * this whole phase is built on.
+ */
+export function timberWithin(seed: string, stop: number): number {
+  let best = 0;
+  for (let s = 0; s < ROUTE_STOPS; s += 1) {
+    const wood = terrainDef(stopAt(seed, s).country).wood;
+    if (wood === 0) continue;
+    // A day's haul out and a day back is a day not spent cutting, so what a
+    // stand is worth falls off with the walk rather than stopping at a range.
+    const reach = wood / (1 + daysBetween(seed, stop, s) / HAUL_HALVES);
+    if (reach > best) best = reach;
+  }
+  // Four is a stand of pure forest, which is the top of `data/terrain`'s wood.
+  return clamp((best / 4) * MEASURE_MAX);
+}
+
+/**
+ * Days of walking at which a stand of wood is worth half what it is at the
+ * door.
+ *
+ * Chosen against the measure it replaces rather than from the fiction: a
+ * coast's forest is about a fifth of it, so the nearest stand is a median two
+ * to three stretches off — six to nine days — and this puts a median coast
+ * steading's timber where a hex steading's sits.
+ */
+export const HAUL_HALVES = 6;
 
 /** Does a beck come down to the sea on this stretch? Derived, like everything. */
 export function hasBeck(seed: string, stop: number): boolean {
@@ -222,7 +316,9 @@ export function stopReport(seed: string, stop: number): SiteReport {
   const report = {
     water: water(s),
     soil: soil(s),
-    timber: timber(s),
+    // Not `timber(s)`: on a line what wood is worth is how far the cutters
+    // have to walk for it, which no ring of six can say. See `timberWithin`.
+    timber: timberWithin(seed, stop),
     harbour: harbour(s),
     defence: defence(s),
   };
@@ -240,6 +336,9 @@ export function siteReport(world: World, at: Hex): SiteReport | null {
   const report = {
     water: water(s),
     soil: soil(s),
+    // The map keeps the ring measure: inland ground CAN be seven tiles of
+    // forest, so the scale means what it says here, and a band that wants
+    // wood can walk in and settle in it.
     timber: timber(s),
     harbour: harbour(s),
     defence: defence(s),
@@ -296,6 +395,22 @@ export function foundBlocker(state: GameState, at: Hex): FoundBlock | null {
   if (COAST_IS_A_LINE) {
     const here = standingAt(state);
     if (!knowsStop(state, here)) return 'unknown';
+    // FRESH WATER IS THE ONE THING A STRETCH CANNOT DO WITHOUT, and on a
+    // line it is a beck or it is nothing.
+    //
+    // `WATER_FLOOR` is 1, and on the hex map a 1 can come from a bog in the
+    // ring or a fell behind — standing water you can drink if you must. That
+    // is a fair reading of an inland site with a spring somewhere in it. It
+    // is not a fair reading of a strand: the sea is down one whole side, and
+    // "some bog nearby" is how a coast band ends up with a hall it cannot
+    // drink at. So the line asks the narrow question. A beck comes down to
+    // the sea here, or the posts do not go in.
+    //
+    // It is also what makes the opening walk a decision rather than a
+    // formality — `BECK_SHARE` of the coast will have you, and the rest will
+    // not, so the first thing a band does with this country is look for
+    // running water.
+    if (!hasBeck(state.seed, here)) return 'dry';
     if (stopReport(state.seed, here).water < WATER_FLOOR) return 'dry';
     if (state.neighbours.some((n) => insideElbow(state, n, at))) return 'taken';
     if (rivalBlocks(state, at)) return 'taken';

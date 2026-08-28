@@ -159,9 +159,11 @@ ends" table and pick the work up without re-deriving a day of measurement.*
 
 ### STATE AS OF 2026-08-27 — read this paragraph before any figure below it
 
-**Green and pushed.** `npm test` 1528 passed / 1 skipped across 91 files,
-`tsc` clean, all 15 browser bars pass, both builds published. Work is on
-`claude/landnam-handover-2026-08-21-f96jml`, **33 commits ahead of `main`**.
+**Green and pushed, on BOTH builds.** `npm test` 1528 passed / 1 skipped
+across 91 files; with `VITE_COAST=1`, 1416 passed / 16 skipped across the same
+90 files and **nothing failing** — the first time in the conversion. `tsc`
+clean, all 15 browser bars pass, both builds published. Work is on
+`claude/landnam-handover-2026-08-21-f96jml`, **34 commits ahead of `main`**.
 
 **NOTHING OF PHASE 8 IS LIVE, and this is the first thing to know.** GitHub
 Pages serves `main`, and `main` is still at `40f5fdf` "Phase 8 planned" with
@@ -179,220 +181,100 @@ see "The art queue" below, which is the honest answer to "it still looks very
 basic" and was not written down anywhere until today.
 
 **Phase 8 stands at:** 8.0 decided, 8.3 and 8.4 done, 8.1 and 8.2 partial
-(8.1b and 8.2c open), 8.5 in progress. With the flag on, **3 tests fail
-across 3 files** — down from 25 earlier today and from 148 across 39 when the
-flip was first measured. All three have ONE cause, and it is the section
-immediately below: the coast's site report is not calibrated against the hex
-map's. The port hand-over is frozen and the parity vectors are now DECIDED to
+(8.1b and 8.2c open), 8.5 all but done. **With the flag on, every test
+passes** — 90 files green, down from 148 failures across 39 files when the
+flip was first measured, by way of 25 and then 3. The last three were one
+uncalibrated coast and are settled; see the section immediately below. What is
+left of 8.5 is the deletion itself and the `SAVE_VERSION` break, not the
+conversion. The port hand-over is frozen and the parity vectors are DECIDED to
 retire with the hexes rather than be regenerated; see the two sections under
 Phase 8.
 
-### THE COAST IS A RICHER COUNTRY THAN THE MAP, and every constant feels it
+### THE COAST IS CALIBRATED — settled by a design decision, not by tuning
 
-**Measured 2026-08-27, and it is the head of 8.5's remaining work.**
+**Done 2026-08-28. The coast build is green on every test for the first time.**
 
-`stopSurrounds` reuses the hex map's five site measures by BUILDING a ring of
-six for a stretch of coast instead of reading one — that trick is why the
-conversion was cheap, and it is sound. What was never checked is whether the
-ring it builds SCORES like a real one. It does not. A settled band's site
-report, forty seeds each, through the shared `settled()` fixture:
+The problem, measured on 2026-08-27: a settled coast band's site report came
+out at water 4.70 / soil 4.13 / timber 1.38 against a hex band's 1.82 / 2.65 /
+2.13. Three of the five measures were wrong and two of them pulled opposite
+ways, so `sickness` failed for a healer paid nearly double and `winter` failed
+for a woodcutter who cut a third too little. Two rounds of tuning constants
+made it worse, not better, and both were reverted.
 
-| measure | hex map | coast | why |
+**Evan settled it as a design question, and the answer made the arithmetic
+fall out.** Two rules:
+
+- **You HAVE to settle near fresh water.** `foundBlocker` asks for a beck by
+  name on a line. `WATER_FLOOR` is 1 and on the hex map a 1 can come off a
+  bog in the ring or a fell behind it — a fair reading of an inland site with
+  a spring somewhere in it, and not a fair reading of a strand with the sea
+  down one whole side. So the line asks the narrow question.
+- **Woodcutters go out to the wood, and the walk is what it costs.** `timber`
+  on a line is no longer the ring's wood over a denominator of seven forest
+  tiles — a ring a coast cannot have, since one to three of its six are ocean.
+  `timberWithin` is the best stand on the coast discounted by the days to walk
+  it: a stand at the door is a full measure, the same stand a week up the
+  coast is worth a fraction of it. `HAUL_HALVES = 6` is the half-life, chosen
+  because a coast's forest is about a fifth of it, so the nearest stand is a
+  median two to three stretches off.
+
+Both rules made the ground a decision instead of a reading. Four supporting
+corrections went in with them, each measured off the map first:
+
+| | was | now | why |
 |---|---|---|---|
-| water | 1.82 | 4.70 | own beck at 50%, plus BOTH neighbours' becks, plus the hills and bog bonuses |
-| soil | 2.65 | 4.23 | the ring carries two copies of the stretch's own country, so a valley counts itself twice |
-| timber | 2.13 | 1.60 | the two ocean tiles carry no wood |
-| harbour | 2.38 | 4.00 | the ring ALWAYS holds exactly two ocean, which is `harbour`'s textbook bay, every time |
-| defence | 2.00 | 2.70 | and two tiles that are never doors |
-| **total** | **10.97** | **~17** | **55% richer** |
+| `ROUTE_COUNTRY` | a uniform sixth each | shore 30 / bog 18 / forest 18 / hills 14 / meadow 12 / valley 8 | a uniform roll put 4.1 valley stretches on a 26-stop coast and the search took one every time. The map's own coastal land is shore 51 / forest 25 / bog 21 / valley 3 — its shape, with hills kept common enough that ridges and `spotFixedPoints` survive |
+| ocean in a ring | two, always | rolled 1/2/3 at 58/24/17 | two is EXACTLY `harbour`'s textbook bay and exactly two non-doors, so both measures separated nothing. 132 foundable coastal hex sites average 1.62 |
+| the hinterland | two copies of the strand | rolled per slot, `HINTERLAND_SAME = 0.5` | the strand's own country appeared three times in six and counted itself over and over into `soil` |
+| a beck | `Surrounds.river`, worth 3 | a ring river, worth 1 | a river runs THROUGH a site; a beck runs down ACROSS the strand to the sea. That one line took a winter hall's care from 1.68 to 1.01 against the map's 0.85 |
 
-The instrument was checked before the conclusion: the hex fixture picks the
-best of roughly six hundred candidate hexes within radius 14 and the coast
-fixture the best of FIFTEEN stretches, so if anything it flatters the map.
-The gap is the ring.
+`COAST_VERDICTS` was re-derived at the same percentiles against the new
+distribution — the old cut left a coast with no Rich ground on it at all.
+Good-or-better now reads 4.2% of foundable stretches against the map's 4.6%.
 
-What it costs, all three of it measured as test failures today:
+**What it cost in tests, and what that shook out.** Twelve files went red on
+the change and every one of them was a fixture reading the old world. The ones
+worth naming, because each was a bar that had been passing while measuring
+something else:
 
-- **`sickness`** — twelve tended days take the whole illness off in winter on
-  a coast (14 of 14) where the map takes 6.6. The healer reads `water`, so a
-  4.70 site pays nearly double. Winter has lost its teeth.
-- **`winter`** — heeding the mark saves 50% of bands where the bar wants 60%,
-  because the gap between a prepared and an unprepared band narrows when the
-  ground feeds everyone.
-- **`expedition`** — a band that empties its stores out-survives one that
-  trades, 16 to 12. Staying home is too good.
+- **`sickness`'s mend bar had a CEILING.** It asked how much came off an
+  illness in twelve days — but an illness is 14 to heal, so any hall that
+  tends fast enough to finish inside the window reports 14 in both seasons and
+  the comparison says nothing. Counting DAYS TO MEND has no ceiling and holds
+  on either ground: coast 11 days in winter against 7 out of it, map 23
+  against 9.
+- **`cliff` was measuring one seed's luck.** It asked a single band on day 40
+  and read the coast as soft. Swept over twelve worlds on the best ground each
+  has, food 4 and firewood 0, the two maps have the same cliff in the same
+  place — day 40 still saves 6/12 on the map and 8/12 on a coast, day 50 saves
+  1/12 and 2/12. Day 40 is late autumn and half of BOTH maps survive it;
+  'cliff-doomed' happened to be one of the six the map gives up on.
+- **`coastWalk`'s end-to-end walk stopped at stretch twelve**, and it was not
+  the coast running out — it was six people standing in a wood with their
+  shields up. `WALK` is refused by the mode gate while a battle is live, and
+  the fixture only ever asked to LEAVE, which is itself refused mid-fight. It
+  fights now.
+- **`site`'s correlations were read off a fortieth of the sample.** Ten worlds
+  is ~11,000 hex sites and ~260 stretches, so a coast correlation at ten seeds
+  carries real sampling error and wandered either side of the bar as the ring
+  was retuned. Sixty coasts settle it: soil/defence -0.26, timber/harbour
+  -0.46.
+- **`beats`'s played sweep cannot reach `spotted` on a line**, measured over
+  sixty seeds, and it is not that the mechanic is dead — walking all
+  twenty-six stretches of sixty coasts picks something out from a ridge on 57
+  of them. The two things it needs pull against each other: a band has to be
+  still walking, on a hills stretch, with unmapped country ahead — and a band
+  that finds a beck now puts the posts in and stops walking. Pinned by fixture
+  instead, which is this file's own precedent for `rallied` and `fled`.
 
-And a fourth that is not a failure but is the same cause: **a fresh band can
-found where it lands 161 times in 200 on a coast against 7 in 200 on the
-map.** `BECK_SHARE`'s own note says the landing should be dry "about two
-times in five" and calls the opening walk "this phase's decision on its first
-day"; it is one in five, and the note's table was measured BEFORE the ring
-was fixed to carry the neighbours' becks and never re-derived.
-
-**AND THE OBVIOUS FIX IS WRONG — measured, and it is the useful half of this
-entry.** The first read was "make the coast's site report total match the map's,
-so every constant keeps its meaning", and an afternoon was spent on the ring
-shape before the population underneath it was looked at. Over every FOUNDABLE
-site rather than the chosen one:
-
-| | hex, all foundable (n=6786) | coast, all foundable (n=172) |
-|---|---|---|
-| water | 1.24 | 3.49 |
-| soil | 1.58 | 2.84 |
-| timber | 2.77 | 1.77 |
-| harbour | **0.12** | **2.83** |
-| defence | 1.87 | 2.44 |
-| total | 7.59 | 13.36 |
-
-Harbour is the whole story and it is not a defect. Only about one foundable
-hex site in fifty is on the coast at all — the map's foundable ground is
-overwhelmingly INLAND, where `harbour` is zero by definition — and a coast is
-all coast. **A coast SHOULD total higher than an island's interior**, and any
-change that made the two totals agree would be lying about the sea.
-
-So the target is per-measure, and only on the three that a job reads:
-
-- **water** 4.63 -> 1.82 (chosen sites). This is the `sickness` failure: the
-  healer reads `water`, and a 4.63 site pays nearly double a 1.82 one. The
-  levers are `BECK_SHARE` — 0.5 against a foundable hex site's measured 9%
-  own-river — and the hills/bog bonuses, which a ring holding two copies of
-  the strand's own country triggers far too often.
-- **soil** 4.13 -> 2.65. The farmer. Same double-count: the ring carries the
-  stretch's own country twice, so a valley counts itself three times in six.
-- **timber** 1.38 -> 2.13. The woodcutter, and this one is the coast being
-  POORER — the ocean tiles carry no wood.
-
-Harbour and defence stay high and feed no job; leave them.
-
-Two more corrections to the ring itself came out of the same measurement and
-should go in with the calibration: a foundable coastal hex site has ONE ocean
-neighbour 58% of the time, two 24%, three 17% (mean 1.62), where a stretch
-gets exactly two, always — which hands out `harbour`'s bay bonus and two
-non-doors on every single stretch, so both measures carry no information. And
-its ring rivers average 0.36 against a stretch's ~1.0.
-
-Do NOT re-band the outputs. `COAST_VERDICTS` already does that for the verdict
-labels and it only moves the words; every constant that reads a report — every
-job's `floor`/`perPoint`, `WATER_FLOOR`, the winter forecast — is tuned against
-the hex distribution and would each need its own coast branch. Fix the input,
-then re-derive `COAST_VERDICTS` and `BECK_SHARE` against the new distribution
-and re-run the balance sweep.
-
-**And the two measures pull OPPOSITE ways, which is why one knob will not do
-it.** `sickness` fails because `water` is too high — the healer reads it and a
-4.63 site pays nearly double a 1.82 one, so twelve tended days take the whole
-illness off in winter where the map takes 6.6 of 14. `winter` fails because
-`timber` is too LOW — 1.38 against 2.13 — so the woodcutter cuts less, and
-even a band that HEEDS the winter mark freezes: 50% live where the bar wants
-60%. The coast is richer in three measures and poorer in one, and both of
-those are bugs.
-
-#### THE DECISION THIS NEEDS, and it is why the work stopped rather than
-#### landed half-done
-
-The ring fixes were built and measured: sea count rolled 1/2/3 on the map's
-own 58/24/17 weights instead of always two, and the hinterland rolled per
-slot instead of two copies of the strand. Both are right. **Neither is
-enough**, measured across a `BECK_SHARE` x `HINTERLAND_SAME` sweep:
-
-| beck | hinterland | water | soil | timber | dry landing |
-|---|---|---|---|---|---|
-| target (hex) | | **1.82** | **2.65** | **2.13** | **~40%** |
-| 0.5 | 0.5 | 4.63 | 4.13 | 1.38 | 9% |
-| 0.3 | 0.5 | 4.13 | 4.03 | 1.43 | 19% |
-| 0.2 | 0.5 | 3.67 | 3.77 | 1.43 | 26% |
-| 0.15 | 0.3 | 3.42 | 3.75 | 1.55 | 24% |
-| 0.1 | 0.3 | 2.90 | 3.80 | 1.57 | 28% |
-
-Soil will not come down and timber will not come up, however the ring is
-shaken, and the reason is a level below the ring: **`ROUTE_COUNTRY` is picked
-UNIFORMLY over six countries**, so a 26-stop coast carries a measured **4.1
-valley stretches** — and the settling search takes one. The hex map's own
-coastal ring is shore 51%, forest 25%, bog 21%, valley 3%, meadow 1% of its
-land. A coast is mostly strand, scrub and bog with the occasional good
-valley; ours is a sixth of everything.
-
-Weighting `ROUTE_COUNTRY` is the fix and it is not a small one, because a
-stop's country is the seed of nearly everything else derived on the line —
-`placeAt` filters kinds by `k.ground`, `landmarkAtStop` by `l.on`, `onHeights`
-by hills, plus forage and fish yields, `COAST_VERDICTS`, `PLACES_FLOOR`,
-`PLACES_NEAR` and `LANDMARK_SHARE_STOP`, every one of them a constant
-measured against the uniform distribution over the last week.
-
-So it is a design decision with a week of tuning hanging off it, not a bug
-fix, and it wants an answer before the work starts:
-
-1. **What is a coast made of?** The map's own answer (shore 51 / forest 25 /
-   bog 21 / valley 3) makes finding a valley a real event and makes "which
-   lack can you live with" the decision it is meant to be — but it puts hills
-   at nearly nothing, and hills are what `onHeights` needs for ridges,
-   landmarks and the whole spotting mechanic. Something like shore 30 / bog
-   18 / forest 18 / hills 14 / meadow 12 / valley 8 keeps the ridges and
-   still makes a valley a prize (about two a coast rather than four).
-2. **Is the settling search still choosing from enough?** At 8% valley a coast
-   has ~2, and if both sit behind a clan's elbow the band has none.
-3. **Everything derived from country gets re-measured after**, not before.
-
-#### ROUND TWO — the decision was taken, the work was built, and it is STILL
-#### not landable. What it found is worth more than the change would have been.
-
-Evan chose "keep the ridges": shore 30 / bog 18 / forest 18 / hills 14 /
-meadow 12 / valley 8, the map's shape with hills kept common enough to climb.
-That was built, along with both ring fixes, and measured. **The country
-weighting works and does not fix anything.**
-
-Measured on the weighted coast: country lands at shore 33 / forest 18 / bog 17
-/ hills 14 / meadow 12 / valley 7, ridges hold at a median 3 stretches a coast
-with only 5 coasts in 200 having none, soil comes down 4.13 -> 3.58 — and
-`sickness`, `winter` and `expedition` all still fail. Sweeping `BECK_SHARE`
-from 0.50 to 0.05 on top of it made things WORSE at every step, 3 failures
-becoming 4. `BECK_SHARE` 0.05 hits both stated targets exactly — chosen water
-1.88 against the map's 1.82, dry landings 41% against the note's own "two
-times in five" — and the bars get worse anyway. **Matching the measure means
-is not the same as matching the game**, and an afternoon went into learning
-that.
-
-**What DID fix `sickness` is one line, and it is the right line.** The healer
-reads `water`, and a winter hall was measured at care 1.68 against the map's
-0.85 — double, which is why twelve tended days took the whole illness off.
-The cause is that `hasBeck` was passed as `Surrounds.river`, which on the hex
-map means a river runs THROUGH the site and is worth 3 outright. A beck does
-not run through a steading; it runs down ACROSS the strand to the sea, which
-is an adjacent water and worth 1 of the ring's two. Moving it from
-`terrain.river` into a ring entry takes care to 1.01 against the map's 0.85
-and water to 2.40 against 1.80, and `sickness` goes green.
-
-**And it is still not landable, because `winter` gets worse.** That bar wants
-60% of bands that heed the winter mark to live; the coast gives 50% before any
-of this, 41.7% with the beck fix alone and 37.5% with the weighting as well.
-The beck fix does not CREATE that — it reveals it, by taking away a site
-score that was propping the coast up — and the cause is the one measure where
-a coast is genuinely poorer: timber 1.45 against the map's 2.13, so the
-woodcutter cuts less and a band that did everything right still freezes.
-
-That is not a tuning problem either, and this is the finding to carry forward:
-**`timber` divides by 28, which is seven tiles of pure forest — a ring a coast
-cannot have.** One to three of its six are ocean and carry no wood, so a coast
-is scored against a ceiling it structurally cannot reach, exactly as `harbour`
-was scored against a floor the map's inland ground could never leave. The
-mirror image of the same mistake.
-
-But the deeper half is a design question, not a scale: on the map a band that
-wants wood WALKS INLAND and settles in a forest. On a line it cannot — there
-is no inland — so a coast band has less wood available whatever the scale
-says. Either the coast gets a way to reach wood it cannot settle on (the
-woodcutter's own errand, the way `PURPOSES` gave the sea one), or `timber`'s
-scale is made relative to the land actually in the ring, or the winter mark's
-bar is restated for a country where firewood is structurally scarcer. That is
-the next decision, and it wants the same treatment this one got: measure the
-premise before building it.
-
-**Everything above was reverted rather than landed.** Two commits on
-2026-08-27 carry the measurements and no code: trading a red `sickness` for a
-worse `winter`, at the price of re-deriving `COAST_VERDICTS`, `PLACES_FLOOR`,
-`PLACES_NEAR` and `LANDMARK_SHARE_STOP` against a new distribution, is not
-progress. The three failures stay, and they are honest: they are the game
-telling the truth about a coast that has not been calibrated yet.
+**One thing got weaker and is left as a question rather than papered over.**
+Soil and defence pull against each other at -0.26 on a coast against the map's
+-0.54, and the correction made it weaker rather than stronger — honestly so,
+because the old ring put the same terrain into `soil` and into `defence`'s
+door count and manufactured part of the pull. A ring that always holds sea
+leaves `defence` driven by HOW MUCH sea rather than by what the land is.
+Whether a line wants defence to depend on the land more than it does is a
+design question nobody has asked yet.
 
 **The port reached PARITY OK** — 39 checkpoints across two runs, six facets
 each: 1478 actions and 457 days on `runs/long.json`, 66 to day 15 on
@@ -2651,10 +2533,11 @@ is written so the choice is made with both arcs visible, not by drift.
        is a rule now, on both maps, and three of the reachability builders
        turned out to be constructing states no run reaches.
 
-     The three that remain — `sickness`, `winter`, `expedition` — are all the
-     site-report calibration, and it has its own section under "Where we are
-     now": **THE COAST IS A RICHER COUNTRY THAN THE MAP**. That is the next
-     job, and it is the last one before the flag can flip.
+     The three that remained — `sickness`, `winter`, `expedition` — were all
+     the site-report calibration, and that is DONE: see **THE COAST IS
+     CALIBRATED** under "Where we are now". A coast build is green on every
+     test. What is left of this milestone is the deletion and the
+     `SAVE_VERSION` break, not the conversion.
   2. **The bars — done, and the count I first wrote was wrong.** I said
      twelve of fifteen drive the hex renderers. That was read off imports
      rather than measured. Run against a coast build, **five** fail: `sea`,
@@ -3486,6 +3369,69 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-28 — Settle near water, and send the woodcutters out** — the
+  coast is calibrated and a coast build is green on every test for the first
+  time since the conversion began.
+
+  Two rounds of tuning constants had failed and been reverted. The third
+  attempt was not a tuning at all: Evan settled it as a design question, and
+  the arithmetic fell out of the answer.
+
+  **You HAVE to settle near fresh water.** `foundBlocker` asks for a beck by
+  name on a line. `WATER_FLOOR` is 1, and on the hex map a 1 can come off a
+  bog in the ring or a fell behind it — a fair reading of an inland site with
+  a spring somewhere in it, and not a fair reading of a strand with the sea
+  down one whole side. It also makes the opening walk a decision rather than a
+  formality: half the coast will have you and the rest will not, so the first
+  thing a band does with this country is look for running water.
+
+  **And woodcutters go out to the wood, with the walk as the cost.** `timber`
+  on a line stopped being the ring's wood over a denominator of seven forest
+  tiles — a ring a coast cannot have, since one to three of its six are ocean,
+  so a coast was scored against a ceiling it structurally could not reach.
+  `timberWithin` is the best stand on the coast discounted by the days to walk
+  to it. A stand at the door is a full measure; the same stand a week up the
+  coast is worth a fraction of it, because most of the day went into getting
+  there and back. That makes "how far are the trees" a thing the site panel
+  says and the player weighs against fresh water and a field.
+
+  Four supporting corrections went in with them, each measured off the map
+  first. `ROUTE_COUNTRY` stopped being a uniform sixth each — that put 4.1
+  valley stretches on a 26-stop coast and the settling search took one every
+  time — and became shore 30 / bog 18 / forest 18 / hills 14 / meadow 12 /
+  valley 8: the map's own shape, with hills kept common enough that ridges and
+  landmark-spotting survive. A ring's ocean count stopped being two always,
+  which was exactly `harbour`'s textbook bay and exactly two tiles `defence`
+  does not count as doors, so neither measure separated one stretch from
+  another; 132 foundable coastal hex sites average 1.62. The hinterland stopped
+  being two copies of the strand, which counted the same country three times in
+  six into `soil`. And a beck moved out of `Surrounds.river` and into the ring
+  — a river runs THROUGH a site, a beck runs down ACROSS the strand to the sea
+  — which took a winter hall's care from 1.68 to 1.01 against the map's 0.85.
+  `COAST_VERDICTS` was re-derived at the same percentiles; the old cut had left
+  a coast with no Rich ground on it at all.
+
+  Twelve files went red on the change and every one was a fixture reading the
+  old world. Four of them had been passing while measuring something else, and
+  those are the ones worth keeping: `sickness` asked how much came off an
+  illness in twelve days, which has a CEILING at the 14 an illness is worth, so
+  a hall that tends fast enough reports 14 in both seasons and the comparison
+  says nothing — it counts days to mend now, which cannot saturate. `cliff`
+  read one seed's luck as the coast being soft; swept over twelve worlds the
+  two maps have the same cliff in the same place, and day 40 still saves 6/12
+  on the map against 8/12 on a coast. `coastWalk`'s end-to-end walk stopped at
+  stretch twelve, and it was not the coast running out — it was six people
+  standing in a wood with their shields up, because `WALK` is refused while a
+  battle is live and the fixture only ever asked to leave, which is refused
+  mid-fight. And `site` read its correlations off a fortieth of the sample: ten
+  worlds is 11,000 hex sites and 260 stretches.
+
+  One thing got weaker and is left as a question rather than papered over. Soil
+  and defence pull against each other at -0.26 on a coast against the map's
+  -0.54, and the correction made it weaker rather than stronger — honestly so,
+  because the old ring put the same terrain into `soil` and into `defence`'s
+  door count and manufactured part of the pull.
 
 - **2026-08-27 — Five things the coast could not do, found by fixing the
   tests that were looking the wrong way** — 8.5's tail 25 → 18 → 3, both

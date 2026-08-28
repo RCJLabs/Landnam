@@ -22,6 +22,7 @@ vi.mock('../src/sim/flags', () => ({ COAST_IS_A_LINE: true }));
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
 import { apply } from '../src/sim/actions';
+import { strikeTargets } from '../src/sim/battle';
 import { SHIP_REACH, standingAt } from '../src/sim/coast';
 import { ROUTE_STOPS, daysBetween, placeAt, stopAt } from '../src/sim/route';
 import { placeKind } from '../src/data/places';
@@ -79,7 +80,8 @@ function band(stop = 0, seed = SEED): GameState {
  */
 function step(state: GameState, to: number): GameState {
   let cur = state;
-  for (let guard = 0; guard < 8; guard += 1) {
+  // Generous, because a fight met on a leg has to be finished inside it.
+  for (let guard = 0; guard < 400; guard += 1) {
     if (cur.event) {
       const card: Action = cur.event.outcome
         ? { type: 'DISMISS_EVENT' }
@@ -87,6 +89,38 @@ function step(state: GameState, to: number): GameState {
       const next = apply(cur, card);
       if (next === cur) break;
       cur = next;
+      continue;
+    }
+    // AND A FIGHT IS A THING THAT HAPPENS ON A WALK. `WALK` is refused by the
+    // mode gate while a battle is up, so a band brought to a fight on one leg
+    // never took another — the walk stopped dead at that stretch and the bar
+    // read it as the coast running out at stretch twelve. It was not the
+    // coast; it was six people standing in a wood with their shields up.
+    //
+    // Fighting it out rather than only asking to leave: `B_LEAVE` is refused
+    // while the fight is still live, so a loop that only ever asks to go
+    // spins without spending a turn.
+    if (cur.battle) {
+      if (cur.battle.outcome) {
+        const left = apply(cur, { type: 'B_LEAVE' });
+        if (left === cur) break;
+        cur = left;
+        continue;
+      }
+      const targets = strikeTargets(cur);
+      const swing: Action = targets.length > 0
+        ? { type: 'B_STRIKE', targetId: targets[0]!.personId }
+        : { type: 'B_END_TURN' };
+      const next = apply(cur, swing);
+      const moved = next === cur ? apply(cur, { type: 'B_END_TURN' }) : next;
+      if (moved === cur) break;
+      cur = moved;
+      continue;
+    }
+    if (cur.aftermath) {
+      const done = apply(cur, { type: 'DISMISS_AFTERMATH' });
+      if (done === cur) break;
+      cur = done;
       continue;
     }
     return apply(cur, { type: 'WALK', to });

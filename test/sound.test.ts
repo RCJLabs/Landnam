@@ -45,12 +45,24 @@ function fresh(seed = 'sound'): GameState {
 function standingOn(state: GameState, terrain: Terrain): GameState {
   const next = structuredClone(state);
   if (COAST_IS_A_LINE) {
-    const stop = [...Array(ROUTE_STOPS).keys()]
-      .find((s) => stopAt(next.seed, s).country === terrain);
-    expect(stop, `no stretch of this coast is ${terrain}`).toBeDefined();
-    next.party.stop = stop;
-    expect(countryHere(next), `stood on ${terrain} and the sim disagrees`).toBe(terrain);
-    return next;
+    // A coast does not carry every country. Since `ROUTE_COUNTRY` stopped
+    // being a uniform sixth each — valley is 8% of it now, so a 25-stretch
+    // coast misses one about an eighth of the time — asking a particular
+    // seed for a valley is a coin toss, and the bar would fail on the
+    // country rather than on the sound. So walk seeds until one has it, and
+    // carry the day over, which is the only thing the ambience reads besides
+    // the ground.
+    for (let s = -1; s < 200; s += 1) {
+      const on = s < 0 ? next : structuredClone(newGame(`${state.seed}-on-${terrain}-${s}`));
+      const stop = [...Array(ROUTE_STOPS).keys()]
+        .find((i) => stopAt(on.seed, i).country === terrain);
+      if (stop === undefined) continue;
+      on.party.stop = stop;
+      on.day = state.day;
+      expect(countryHere(on), `stood on ${terrain} and the sim disagrees`).toBe(terrain);
+      return on;
+    }
+    throw new Error(`no coast in two hundred carries ${terrain}`);
   }
   next.world.tiles[key(next.party.at)] = {
     ...(next.world.tiles[key(next.party.at)] ?? { river: false }),

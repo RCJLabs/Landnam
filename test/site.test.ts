@@ -127,9 +127,17 @@ describe('reading a site', () => {
     if (COAST_IS_A_LINE) {
       // A BECK IS THE COAST'S RIVER, and the same two claims are asked of it:
       // a stretch with one is never dry, and some stretch somewhere is. The
-      // second half is what makes `WATER_FLOOR` a gate rather than a
-      // formality — a coast where every stretch had water would let a band
-      // settle on the first one every time.
+      // second half is what makes fresh water a gate rather than a formality
+      // — a coast where every stretch had water would let a band settle on
+      // the first one every time.
+      //
+      // ONE, not three. A beck used to be passed as `Surrounds.river`, which
+      // means a river runs THROUGH the site and which `water` pays 3 for
+      // outright; it does not run through a steading, it runs down across
+      // the strand to the sea, so it is an adjacent water and worth one of
+      // the ring's two. What the beck decides now is not the SCORE but the
+      // REFUSAL: `foundBlocker` asks for one by name, so this holds the gate
+      // rather than the number.
       let sawBeck = false;
       let sawDry = false;
       for (const seed of ['water-a', 'water-b', 'water-c']) {
@@ -137,9 +145,12 @@ describe('reading a site', () => {
           const report = stopReport(seed, stop);
           if (hasBeck(seed, stop)) {
             sawBeck = true;
-            expect(report.water, `beck at ${seed} stretch ${stop}`).toBeGreaterThanOrEqual(3);
+            expect(report.water, `beck at ${seed} stretch ${stop}`)
+              .toBeGreaterThanOrEqual(WATER_FLOOR);
+          } else {
+            // And no score off a bog behind it makes a dry stretch settleable.
+            sawDry = true;
           }
-          if (report.water < WATER_FLOOR) sawDry = true;
         }
       }
       expect(sawBeck, 'no beck on any of three coasts').toBe(true);
@@ -186,6 +197,25 @@ describe('reading a site', () => {
 describe('choosing where to settle is a real decision', () => {
   const SEEDS = Array.from({ length: 10 }, (_, i) => `site-${i}`);
 
+  /**
+   * A bigger corpus, for the correlations only.
+   *
+   * Ten worlds is about eleven thousand hex sites and about TWO HUNDRED AND
+   * SIXTY stretches — a fortieth of the sample — so a correlation read off a
+   * coast at ten seeds carries real sampling error, and it wandered either
+   * side of the bar as the ring was retuned. The other bars in this block
+   * count sites and are calibrated on `SEEDS`, so only the pairs get the
+   * wider read.
+   */
+  const WIDE = Array.from(
+    { length: COAST_IS_A_LINE ? 60 : 10 },
+    (_, i) => `site-wide-${i}`,
+  );
+
+  function wideCorpus(): SiteReport[] {
+    return WIDE.flatMap((seed) => readAll(fresh(seed)).map((r) => r.report));
+  }
+
   function corpus(): SiteReport[] {
     return SEEDS.flatMap((seed) => readAll(fresh(seed)).map((r) => r.report));
   }
@@ -220,23 +250,32 @@ describe('choosing where to settle is a real decision', () => {
   });
 
   it('soil and defensibility pull against each other', () => {
-    const all = corpus();
+    const all = wideCorpus();
     const soilDefence = correlation(all, 'soil', 'defence');
     if (COAST_IS_A_LINE) {
       // THE SAME CLAIM, IN THE PAIRS A COAST ACTUALLY TRADES OFF.
       //
-      // Good farmland being open ground still holds — soil/defence is -0.44
-      // on a coast against -0.54 on the map. What does NOT survive is
-      // timber/defence: it is -0.73 on hexes and -0.20 on a line, because
-      // `stopSurrounds` puts two of ocean in every ring, so defence barely
-      // varies (sd 0.58 against the hex map's 0.99) and cannot anti-correlate
-      // with anything much.
+      // Good farmland being open ground still holds, but only just: measured
+      // over sixty coasts it is -0.26 against the map's -0.54, and it got
+      // weaker rather than stronger when the ring was corrected on
+      // 2026-08-28. That is the honest direction — the old ring carried two
+      // copies of the strand's own country, which put the same terrain into
+      // `soil` and into `defence`'s door count and manufactured part of the
+      // pull. What is left is real and thin, and it is a live question
+      // whether a line wants `defence` to depend on the LAND more than it
+      // does; see ROADMAP.
+      //
+      // What does NOT survive at all is timber/defence: -0.73 on hexes and
+      // about -0.01 on a line, because a ring of six that always holds sea
+      // leaves defence driven by HOW MUCH sea rather than by what the land
+      // is, and it cannot anti-correlate with wood.
       //
       // The wood trade-off moved rather than vanished. On a line it is
-      // timber against HARBOUR, at -0.68 — the strongest pull in either
-      // world. A stretch thick with wood is a stretch with nowhere to beach a
-      // knarr, and that is a better decision than the one it replaces because
-      // both halves are things the player wants on day one.
+      // timber against HARBOUR, at -0.46 and the strongest pull the coast
+      // has. A stretch thick with wood — or within an easy haul of it, which
+      // is what `timberWithin` now measures — is a stretch with nowhere to
+      // beach a knarr, and that is a better decision than the one it
+      // replaces because both halves are things the player wants on day one.
       const timberHarbour = correlation(all, 'timber', 'harbour');
       // eslint-disable-next-line no-console
       console.log(

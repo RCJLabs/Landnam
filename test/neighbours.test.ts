@@ -25,7 +25,7 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { foundBlocker, siteReport, stopReport } from '../src/sim/site';
+import { foundBlocker, hasBeck, siteReport, stopReport } from '../src/sim/site';
 import { WATER_FLOOR } from '../src/data/sites';
 import { campStores, sackCamp } from '../src/sim/plunder';
 import { assign } from '../src/sim/colony';
@@ -283,6 +283,12 @@ describe('the coast has people on it', () => {
             // being measured is the elbow and not the water — the same guard
             // the hex arm applies, and for the same reason: `foundBlocker`
             // answers 'dry' before it ever looks at who lives nearby.
+            //
+            // A BECK, not the water score. Since fresh water became the
+            // settling gate the two are different questions: a stretch can
+            // score a 1 or 2 off a bog behind it and still have nothing to
+            // drink, and `foundBlocker` calls that dry.
+            if (!hasBeck(seed, stop)) continue;
             if (stopReport(seed, stop).water < WATER_FLOOR) continue;
             state.party.stop = stop;
             expect(foundBlocker(state, state.party.at), `${seed}: founded in ${n.name}'s camp`)

@@ -10,6 +10,7 @@ import { newGame } from '../src/state/create';
 import { key, distance } from '../src/hex';
 import { apply } from '../src/sim/actions';
 import { foundBlocker } from '../src/sim/site';
+import { hasBeck } from '../src/sim/site';
 import {
   CLAIM_EVERY,
   CLAIM_EVERY_STOPS,
@@ -178,12 +179,26 @@ describe('his ground is not ours to take', () => {
       // The band has to be STANDING on it: `foundBlocker` asks about the
       // stretch underfoot on a line, where the hex arm asks about a
       // coordinate handed to it.
-      const stop = rivalStops(state)[0]!;
-      learnStop(state, stop);
-      state.party.stop = stop;
-      expect(rivalBlocks(state, state.party.at)).toBe(true);
-      expect(foundBlocker(state, state.party.at)).toBe('taken');
-      return;
+      //
+      // And it has to be a stretch that would OTHERWISE take posts. Since
+      // fresh water became the settling gate, `foundBlocker` answers 'dry'
+      // before it answers 'taken' — the hex map's own order — so a claimed
+      // stretch with no beck reports the water rather than the man, and this
+      // bar would be holding the wrong refusal. He does not always fence a
+      // watered stretch, so seeds are walked until he does.
+      for (let s = 0; s < 40; s += 1) {
+        let world = newGame(`rival-block-${s}`);
+        world = idle(world, RIVAL_SETTLES + CLAIM_TICK + 2);
+        if (world.end || !world.rival) continue;
+        const wet = rivalStops(world).find((stop) => hasBeck(world.seed, stop));
+        if (wet === undefined) continue;
+        learnStop(world, wet);
+        world.party.stop = wet;
+        expect(rivalBlocks(world, world.party.at)).toBe(true);
+        expect(foundBlocker(world, world.party.at)).toBe('taken');
+        return;
+      }
+      throw new Error('no rival in forty coasts fenced ground with water on it');
     }
     const held = state.rival.claims[0]!;
     const [q, r] = held.split(',').map(Number);
