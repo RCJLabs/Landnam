@@ -154,7 +154,16 @@
 //            migration only strips them when COAST_IS_A_LINE — the hex page
 //            still navigates by those tiles, and taking them would delete the
 //            country out from under a band mid-saga.
-export const SAVE_VERSION = 54;
+// v55 (8.5): `battle.grid` stops being a hex-keyed record and becomes a plain
+//            rectangle indexed `row * width + col`. Nothing had walked that
+//            ground since 8.1c moved the fight onto ranks — its one surviving
+//            reader asks whether any tile is a wall — and every access to it
+//            already went `key(offsetToAxial(col, row))`, a column and a row
+//            wearing a coordinate system. A save caught mid-fight keeps its
+//            ground: the migration recomputes the old axial keys rather than
+//            assuming them, with the formula written out inline because
+//            `src/hex/` does not survive this milestone.
+export const SAVE_VERSION = 55;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

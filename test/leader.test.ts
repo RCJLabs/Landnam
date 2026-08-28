@@ -28,7 +28,7 @@ function fight(seed: string): GameState {
   const state = structuredClone(newGame(seed));
   startBattle(state, 'meadow', 1);
   const battle = state.battle!;
-  for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+  for (let i = 0; i < battle.grid.length; i += 1) battle.grid[i] = { ground: 'open' };
   return state;
 }
 

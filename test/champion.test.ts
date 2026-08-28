@@ -86,7 +86,7 @@ describe('the fall of the one who led', () => {
     const state = structuredClone(newGame(seed));
     startBattle(state, 'meadow', 2);
     const battle = state.battle!;
-    for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+    for (let i = 0; i < battle.grid.length; i += 1) battle.grid[i] = { ground: 'open' };
 
     const ours = battle.combatants.filter((c) => c.side === 'warband');
     const foes = battle.combatants.filter((c) => c.side === 'foe');

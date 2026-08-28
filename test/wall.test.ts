@@ -6,9 +6,9 @@ import {
   MIDDLE_ROWS,
   generateBattlefield,
   widestStand,
+  cell,
 } from '../src/sim/battlefield';
 import { makeRng } from '../src/rng';
-import { key, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
 import type { Terrain } from '../src/state/types';
 import { encode } from '../src/state/save';
@@ -61,7 +61,7 @@ function lineUp(seed: string, ranks: number[]): GameState {
   // sometimes pairs brothers measures the wall plus a coin flip. Caught by
   // the shoulder-mate test reading 33.75 against 35 the day kin landed.
   for (const person of state.party.people) delete person.kin;
-  for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+  for (let i = 0; i < battle.grid.length; i += 1) battle.grid[i] = { ground: 'open' };
 
   const ours = battle.combatants.filter((c) => c.side === 'warband').slice(0, ranks.length);
   ours.forEach((c, i) => {
@@ -267,7 +267,7 @@ describe('nerve', () => {
   it('running off your own edge takes you out of the fight alive', () => {
     let state = fight('nerve-flee', 1);
     const battle = state.battle!;
-    for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+    for (let i = 0; i < battle.grid.length; i += 1) battle.grid[i] = { ground: 'open' };
     // One warrior, already broken, with nobody behind him to give ground to
     // — which is what "beside their own edge" means on a line. A broken man
     // swaps back one rank at a time and only runs off the field when he is
@@ -694,7 +694,7 @@ describe('every field has ground a line can form on', () => {
     const solid = generateBattlefield('mountains', makeRng('hostile'));
     for (const row of MIDDLE_ROWS) {
       for (let col = 0; col < 7; col += 1) {
-        const tile = solid.grid[key(offsetToAxial(col, row))];
+        const tile = solid.grid[cell(col, row)];
         if (tile) tile.ground = 'block';
       }
     }

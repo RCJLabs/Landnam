@@ -8,7 +8,7 @@
 // ashore mends her, and winning strips their hull instead.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, key, line, offsetToAxial, range, type Hex } from '../src/hex';
+import { distance, fromKey, line, range, type Hex } from '../src/hex';
 import { holed, springStrake } from '../src/sim/ship';
 import { SHIP_STRAKES } from '../src/data/ships';
 import { newGame } from '../src/state/create';
@@ -29,6 +29,7 @@ import {
   isPassable,
   seaFieldFrom,
   widestStand,
+  cell,
 } from '../src/sim/battlefield';
 import { CARGO_LOST_SHARE, HULL_MEND_WOOD, SEA_SALVAGE, isSeaFight, mendHull, settleSeaFight } from '../src/sim/sea';
 import { moveEffort, isCoastalWater } from '../src/sim/road';
@@ -122,8 +123,7 @@ describe('content lint: sea fields', () => {
       for (const row of field.rows) expect(row, field.id).toMatch(/^[.,#~]{7}$/);
 
       const { grid, warbandSpots, foeSpots } = seaFieldFrom(field);
-      const passableAt = (h: { q: number; r: number }) =>
-        isPassable(grid[key(h)]?.ground ?? 'block');
+      const passableAt = (i: number) => isPassable(grid[i]?.ground ?? 'block');
       expect(foeSpots.filter(passableAt).length, field.id).toBeGreaterThanOrEqual(MAX_FOES);
       expect(warbandSpots.filter(passableAt).length, field.id).toBeGreaterThanOrEqual(SWORN_MAX);
 
@@ -131,7 +131,7 @@ describe('content lint: sea fields', () => {
       const widest = Math.max(...MIDDLE_ROWS.map((row) => widestStand(grid, row)));
       expect(widest, `${field.id}: nowhere to form up`).toBeGreaterThanOrEqual(FRONT_WIDTH);
       const crossable = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-        MIDDLE_ROWS.every((row) => isPassable(grid[key(offsetToAxial(col, row))]!.ground)),
+        MIDDLE_ROWS.every((row) => isPassable(grid[cell(col, row)]!.ground)),
       );
       expect(crossable.some(Boolean), `${field.id}: cannot be crossed`).toBe(true);
     }

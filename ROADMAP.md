@@ -3546,6 +3546,34 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-28 — The battlefield stops being a hex lattice** — 8.5's job 4
+  opened with an audit rather than a deletion, and the audit found something
+  worth writing down: **`battle.grid` had exactly one reader left in the whole
+  of `src/`.** It is 63 tiles of ground, generated per fight, keyed by axial
+  hex — and since 8.1c put the fight onto ranks, nobody walks it. The only
+  question anyone still asks it is `atThePalisade`'s: *is any tile a wall.*
+  `warbandSpots` and `foeSpots` had no reader at all outside the file that
+  builds them.
+
+  So the hexes came out of it and nothing else moved. Every access went
+  through `key(offsetToAxial(col, row))` — a column and a row encoded into a
+  hex and decoded straight back — so the grid is a plain rectangle now,
+  indexed by `cell(col, row)`. **Not one RNG draw changed position**, which
+  was the whole constraint: the ground rolls in the same order from the same
+  stream, so every fight in `balance.test.ts` is the fight it was. 161 tests
+  across the nine affected files green, and the 40-minute balance suite green
+  unchanged.
+
+  `SAVE_VERSION` 55, and the migration earns its keep: a save caught mid-fight
+  keeps its ground, because the old axial keys are recomputed rather than
+  assumed. The axial formula is spelled out inline inside the migration on
+  purpose — `src/hex/` is being deleted in this same milestone, and a
+  migration that outlives its own import is a migration that throws.
+
+  What this leaves is the honest scope of what remains: `src/hex/` is not
+  load-bearing in battle and never really was after 8.1. It is load-bearing in
+  exactly one place — the world layer that 8.5 exists to delete.
+
 - **2026-08-28 — A coast save stops carrying the island it never reads** —
   81.0 kB to 3.3 kB, twenty-five times smaller, and `v54` strips it out of
   saves that already exist.

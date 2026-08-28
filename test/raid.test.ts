@@ -4,7 +4,6 @@
 
 import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
-import { key, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -29,6 +28,7 @@ import {
   pickRaidField,
   steadingFieldFrom,
   widestStand,
+  cell,
 } from '../src/sim/battlefield';
 import { RAID_FIELDS } from '../src/data/raidFields';
 import { MAX_RAIDERS_FAMED } from '../src/sim/battle';
@@ -133,11 +133,11 @@ describe('the steading under attack', () => {
     // "...and nobody deploys inside it" used to be checked here and cannot
     // be any more: since 8.1d nobody deploys anywhere, because a fighter's
     // place is his rank. The grid survives only to say whether the stakes
-    // were up (see `atThePalisade`), and it goes with the rest of the hexes
-    // in 8.5.
+    // were up (see `atThePalisade`), and since 8.5 it is a plain rectangle
+    // rather than a hex lattice.
     const yardBlocks = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-      offsetToAxial(col, FIELD_HEIGHT - 1),
-    ).filter((h) => battle.grid[key(h)]!.ground === 'block');
+      cell(col, FIELD_HEIGHT - 1),
+    ).filter((i) => battle.grid[i]!.ground === 'block');
     expect(yardBlocks).toHaveLength(1);
   });
 
@@ -149,7 +149,7 @@ describe('the steading under attack', () => {
 
     const wallRow = (state: GameState) =>
       Array.from({ length: FIELD_WIDTH }, (_, col) =>
-        state.battle!.grid[key(offsetToAxial(col, WALL_ROW))]!.ground,
+        state.battle!.grid[cell(col, WALL_ROW)]!.ground,
       );
 
     // Authored fields may end the wall against water or trees, so the line
@@ -227,15 +227,14 @@ describe('content lint: raid fields', () => {
         const { grid, warbandSpots, foeSpots } = steadingFieldFrom(field, palisade);
 
         // Room for the biggest raid the game can send, and for six sworn.
-        const passableAt = (h: { q: number; r: number }) =>
-          isPassable(grid[key(h)]?.ground ?? 'block');
+        const passableAt = (i: number) => isPassable(grid[i]?.ground ?? 'block');
         expect(foeSpots.filter(passableAt).length, label).toBeGreaterThanOrEqual(MAX_RAIDERS_FAMED);
         expect(warbandSpots.filter(passableAt).length, label).toBeGreaterThanOrEqual(SWORN_MAX);
 
         // A way in that needs no climbing: some column runs clear from the
         // raiders' edge through the wall line.
         const lane = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-          Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[key(offsetToAxial(col, row))]!.ground)
+          Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[cell(col, row)]!.ground)
             .every((g) => g !== 'wall' && isPassable(g)),
         );
         expect(lane.some(Boolean), `${label}: no gate lane`).toBe(true);
@@ -244,7 +243,7 @@ describe('content lint: raid fields', () => {
         const widest = Math.max(...MIDDLE_ROWS.map((row) => widestStand(grid, row)));
         expect(widest, `${label}: nowhere to form up`).toBeGreaterThanOrEqual(FRONT_WIDTH);
         const crossable = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-          MIDDLE_ROWS.every((row) => isPassable(grid[key(offsetToAxial(col, row))]!.ground)),
+          MIDDLE_ROWS.every((row) => isPassable(grid[cell(col, row)]!.ground)),
         );
         expect(crossable.some(Boolean), `${label}: cannot be crossed`).toBe(true);
       }
@@ -278,7 +277,7 @@ describe('content lint: raid fields', () => {
       // Some column runs from the raiders' edge to the wall row without a
       // climb, or the gate is not actually the fast way in.
       const clear = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-        Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[key(offsetToAxial(col, row))]!.ground)
+        Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[cell(col, row)]!.ground)
           .every((g) => g !== 'wall' && isPassable(g)),
       );
       expect(clear.some(Boolean), `${seed}: no gate lane`).toBe(true);

@@ -22,7 +22,7 @@ export const SHIELD_IN_WALL = 1;
  * `steadingFieldFrom`).
  */
 export function atThePalisade(battle: Battle): boolean {
-  for (const tile of Object.values(battle.grid)) {
+  for (const tile of battle.grid) {
     if (tile.ground === 'wall') return true;
   }
   return false;

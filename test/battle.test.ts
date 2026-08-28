@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { key, offsetToAxial } from '../src/hex';
+import { key } from '../src/hex';
 import { makeRng } from '../src/rng';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -20,6 +20,7 @@ import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
   MIDDLE_ROWS,
+  cell,
 } from '../src/sim/battlefield';
 import { currentMode } from '../src/modes';
 import { eventById } from '../src/data/events';
@@ -66,13 +67,13 @@ function fightItOut(start: GameState, limit = 400): GameState {
 describe('battlefield generation', () => {
   it.each(FIGHT_TERRAINS.map((t) => [t]))('%s produces a usable field', (terrain) => {
     const { grid, warbandSpots, foeSpots } = generateBattlefield(terrain, makeRng(`bf-${terrain}`));
-    expect(Object.keys(grid)).toHaveLength(FIELD_WIDTH * FIELD_HEIGHT);
+    expect(grid).toHaveLength(FIELD_WIDTH * FIELD_HEIGHT);
     expect(warbandSpots.length).toBeGreaterThanOrEqual(FIELD_HEIGHT);
     expect(foeSpots.length).toBeGreaterThanOrEqual(FIELD_HEIGHT);
 
     // Deployment ground is always clear, so nobody starts entombed.
     for (const spot of [...warbandSpots, ...foeSpots]) {
-      expect(isPassable(grid[key(spot)]!.ground)).toBe(true);
+      expect(isPassable(grid[spot]!.ground)).toBe(true);
     }
   });
 
@@ -87,7 +88,7 @@ describe('battlefield generation', () => {
     for (let i = 0; i < 60; i++) {
       const { grid } = generateBattlefield('mountains', makeRng(`cross-${i}`));
       const anyColumnClear = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-        MIDDLE_ROWS.every((row) => isPassable(grid[key(offsetToAxial(col, row))]!.ground)),
+        MIDDLE_ROWS.every((row) => isPassable(grid[cell(col, row)]!.ground)),
       ).some(Boolean);
       expect(anyColumnClear, `seed cross-${i}`).toBe(true);
     }

@@ -79,7 +79,7 @@ function duel(base: GameState, side: 'warband' | 'foe'): GameState {
     terrain: 'meadow',
     width: 3,
     height: 3,
-    grid: { '0,0': { ground: 'open' }, '1,0': { ground: 'open' } },
+    grid: [{ ground: 'open' }, { ground: 'open' }],
     foes: [foe],
     combatants: [
       stand(ours.id, { q: 0, r: 0 }, 'warband'),

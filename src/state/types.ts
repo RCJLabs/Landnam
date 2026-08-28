@@ -479,7 +479,14 @@ export interface Battle {
   championOf?: string;
   width: number;
   height: number;
-  grid: Record<HexKey, BattleTile>;
+  /**
+   * The ground, as a rectangle read by `sim/battlefield.ts`'s `cell(col, row)`.
+   *
+   * A hex-keyed record until v55. Nothing had walked it since 8.1c put the
+   * fight on ranks, and the one question left of it — is there a palisade on
+   * this field — never needed a coordinate system.
+   */
+  grid: BattleTile[];
   /** Enemies are People too — same model, same renderer treatment. */
   foes: Person[];
   combatants: Combatant[];

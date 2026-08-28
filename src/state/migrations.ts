@@ -482,6 +482,35 @@ export const MIGRATIONS: Record<number, Migration> = {
       world: { ...world, tiles: {}, seen: {}, trod: {} },
     };
   },
+  /**
+   * v54 -> v55: the battlefield stops being a hex lattice.
+   *
+   * `battle.grid` was a record keyed by axial hex, written and read only ever
+   * as `key(offsetToAxial(col, row))` — a rectangle wearing a coordinate
+   * system. It is a plain array indexed `row * width + col` now.
+   *
+   * A save caught mid-fight has to keep its ground, so the old keys are
+   * recomputed here rather than assumed: the axial formula is spelled out
+   * inline on purpose, because `src/hex/` is being deleted in this same
+   * milestone and a migration that outlives its import is a migration that
+   * throws. Anything missing is open ground, which is what an absent tile
+   * already meant to every reader.
+   */
+  54: (save) => {
+    const battle = save['battle'] as Record<string, unknown> | undefined;
+    if (!battle || Array.isArray(battle['grid'])) return { ...save, version: 55 };
+    const old = (battle['grid'] ?? {}) as Record<string, { ground?: string } | undefined>;
+    const width = (battle['width'] as number | undefined) ?? 7;
+    const height = (battle['height'] as number | undefined) ?? 9;
+    const grid: { ground: string }[] = [];
+    for (let row = 0; row < height; row += 1) {
+      for (let col = 0; col < width; col += 1) {
+        const q = col - ((row - (row & 1)) >> 1);
+        grid.push({ ground: old[`${q},${row}`]?.ground ?? 'open' });
+      }
+    }
+    return { ...save, version: 55, battle: { ...battle, grid } };
+  },
 
 };
 
