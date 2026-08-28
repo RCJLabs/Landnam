@@ -36,6 +36,19 @@ export const SLOT_W = 74;
 /** How many buildings stand before the yard has to scroll. */
 export const SLOTS_SHOWN = 5;
 
+/**
+ * How tall the folk in the yard stand.
+ *
+ * Against a house whose walls are 22 and whose ridge is 52, a person of 34
+ * comes to the eaves — which is roughly right for a turf longhouse and, more
+ * to the point, leaves the building the bigger thing in the picture. It was
+ * effectively 45 before (a head-on fighter drawn at radius 15, plus helm and
+ * health bar), and a band standing shoulder-high to the ridge is why the
+ * yard read as figures pasted over houses rather than people in front of
+ * them.
+ */
+export const FOLK_H = 34;
+
 export interface Raised {
   id: string;
   name: string;
@@ -149,16 +162,18 @@ export function steadingScene(state: GameState): SteadingScene {
     });
   }
 
+  // A whole slot past the last house. Deliberately more generous than the
+  // reach: `steading.test.ts` pins it, the queued building needs somewhere
+  // to stand, and the folk are spread across the full width. The LEFT inset
+  // is what was wrong, and it is `slotX` that fixes it.
+  const width = Math.max(YARD_W, slotX(raised.length) + SLOT_W);
+
   return {
     name: home.name,
     raised,
-    folk: folkIn(state, home),
+    folk: folkIn(state, width),
     ground: groundOf(home),
-    // A whole slot past the last house. Deliberately more generous than the
-    // reach: `steading.test.ts` pins it, the queued building needs somewhere
-    // to stand, and the folk are spread across the full width. The LEFT inset
-    // is what was wrong, and it is `slotX` that fixes it.
-    width: Math.max(YARD_W, slotX(raised.length) + SLOT_W),
+    width,
   };
 }
 
@@ -186,15 +201,24 @@ export function groundOf(home: Settlement): SteadingScene['ground'] {
  * kind a screenshot cannot catch because the second figure IS drawn, exactly
  * underneath the first.
  */
-export function folkIn(state: GameState, home: Settlement): Standing[] {
+export function folkIn(state: GameState, width: number): Standing[] {
   const here = state.party.people.filter((p) => p.alive);
-  const wide = Math.max(YARD_W, slotX(home.built.length + 1) + SLOT_W);
   return here.map((person, i) => ({
     person,
     job: jobOf(person)?.name ?? 'no work',
     // Spread across whatever the yard is wide, in two staggered rows so a
     // full hall does not become one long line off the edge of the picture.
-    x: (wide / (here.length + 1)) * (i + 1),
-    y: GROUND_Y + 22 + (i % 2) * 20,
+    //
+    // THE WIDTH IS HANDED IN, and that is the fix. It used to be computed
+    // here as `slotX(built.length + 1) + SLOT_W` while `steadingScene`
+    // computed the yard's real width as `slotX(raised.length) + SLOT_W` —
+    // the same expression with a different count in it. With nothing in the
+    // build queue the two disagree by a whole slot, so the last of the band
+    // was placed 74 units past the right edge of the picture and drawn half
+    // off it. One number, one place.
+    x: (width / (here.length + 1)) * (i + 1),
+    // Both rows stand in the foreground, in front of the houses, with room
+    // under the back row for the word saying what they are at.
+    y: GROUND_Y + 26 + (i % 2) * 18,
   }));
 }

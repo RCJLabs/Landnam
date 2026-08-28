@@ -43,11 +43,47 @@ export const ROAD_Y = SCENE_H * 0.78;
 /** How far up the picture the horizon is. Sky above, country below. */
 export const HORIZON_Y = SCENE_H * 0.42;
 
-/** The band stands here, a third in, so there is more road ahead than behind. */
-export const BAND_X = SCENE_W * 0.33;
+/**
+ * The band's leader stands here, so there is more road ahead than behind.
+ *
+ * It was a third in until Art 13, and a third was too far left: the file
+ * trails BACKWARD from the leader, so at 0.33 a band of six reached x = 27
+ * and the last two were half off the picture. Measured on the built page at
+ * 390x844 — the tail walker's own shadow crossed the frame. The file now
+ * gets a stated amount of room (`FILE_LEFT`) and the leader stands where
+ * that room begins, still comfortably inside the left half.
+ */
+export const BAND_X = SCENE_W * 0.4;
 
-/** How tall a walker is. Comfortably past the touch target. */
+/** How near the left edge the tail of the file may come. */
+export const FILE_LEFT = SCENE_W * 0.08;
+
+/**
+ * How tall a walker is drawn, crown to heel.
+ *
+ * 82 of a 640-tall scene, which is about 108 real pixels on a 390x844
+ * phone. 68 was the first cut and it was too small to read a person off:
+ * the shield came out 22px across and the face four, so the figure was a
+ * coloured dot again by another route.
+ */
+export const WALKER_H = 82;
+
+/**
+ * Half the width a walker takes, for spacing and for tap targets.
+ *
+ * Kept under its old name because the file's spacing, the touch rule and the
+ * bars are all written against it.
+ */
 export const WALKER_R = 26;
+
+/**
+ * How much smaller each walker further back in the file is drawn.
+ *
+ * A file goes AWAY from the viewer, so the one at the back is further off,
+ * and the cheapest way to say that is size. Ten percent a head: the sixth is
+ * two-thirds of the first, which reads as depth and not as a giant.
+ */
+export const FILE_FALLOFF = 0.1;
 
 /**
  * How many stretches ahead can be made out.
@@ -178,21 +214,46 @@ export function processionScene(state: GameState): ProcessionScene {
   };
 }
 
+/** How big the `i`th walker in the file is drawn, as a fraction of the first. */
+export function fileScale(i: number): number {
+  return 1 / (1 + i * FILE_FALLOFF);
+}
+
 /**
  * Where each of the band's people walks, spread along the road.
  *
  * They walk as a file rather than a rank — a road is not a shield wall — so
  * they trail back from the leader, and a big band is a longer file rather
  * than a taller pile.
+ *
+ * The file is FITTED rather than merely spaced. The old version stepped back
+ * by a fixed 20 units per head with no idea where the edge of the picture
+ * was, so it was correct for a band of four and wrong for a band of six —
+ * and a hall that has taken people in can walk a dozen. Now the preferred
+ * gaps are laid out first, and if they do not fit between the leader and
+ * `FILE_LEFT` the whole file is squeezed to the room there is. A crowd
+ * bunches up, which is what a crowd on a road does; nobody walks off the
+ * page.
  */
-export function fileSpots(count: number): { x: number; y: number }[] {
-  const out: { x: number; y: number }[] = [];
+export function fileSpots(count: number): { x: number; y: number; scale: number }[] {
+  // Preferred gap between walker i-1 and i: the further back they are, the
+  // smaller they are drawn and the less room they need.
+  const gaps: number[] = [];
+  for (let i = 1; i < count; i += 1) gaps.push(WALKER_H * 0.34 * fileScale(i));
+  const wanted = gaps.reduce((a, b) => a + b, 0);
+  const room = BAND_X - FILE_LEFT;
+  const squeeze = wanted > room ? room / wanted : 1;
+
+  const out: { x: number; y: number; scale: number }[] = [];
+  let x = BAND_X;
   for (let i = 0; i < count; i += 1) {
-    // Behind the leader and very slightly up the picture, so the file reads
-    // as going away from the viewer rather than sideways across it.
+    if (i > 0) x -= gaps[i - 1]! * squeeze;
     out.push({
-      x: BAND_X - i * (WALKER_R * 0.78),
-      y: ROAD_Y - i * (WALKER_R * 0.1),
+      x,
+      // Very slightly up the picture, so the file reads as going away from
+      // the viewer rather than sideways across it.
+      y: ROAD_Y - i * (WALKER_R * 0.1) * squeeze,
+      scale: fileScale(i),
     });
   }
   return out;

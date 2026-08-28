@@ -7,10 +7,10 @@
 // read off the same render — keeps working unchanged.
 
 import { createFieldPaint } from './fieldOil';
-import { figure } from './figures';
+import { walker } from './walker';
 import { svgEl } from './svg';
 import {
-  BAND_X, HORIZON_Y, ROAD_Y, SCENE_H, SCENE_W, WALKER_R, fileSpots,
+  BAND_X, HORIZON_Y, ROAD_Y, SCENE_H, SCENE_W, WALKER_H, fileSpots,
   processionScene, whereWeAre, type Sighting,
 } from './procession';
 import { ROUTE_STOPS } from '../sim/route';
@@ -170,21 +170,34 @@ export function createProcessionView(): TravelView {
     }
     drawnSights = scene.ahead.length;
 
-    // The band, walking. Real people, drawn by the same hand that draws them
-    // in a fight — one Person, one look, everywhere.
+    // The band, walking. Real people, and now people seen from the side:
+    // `walker()` reads the same `look.ts` the battle figure does, so the
+    // shield on a man's back on the road is the shield on his arm in the
+    // line. That is Art 13's whole claim, and it is the reason the look
+    // moved out of `figures.ts` rather than being copied.
+    //
+    // It also fixes a defect that had been in this view since it was
+    // written: `health` here was the person's HIT POINTS, and `figure()`
+    // wants a fraction. At 20 of 20 hale it drew the health bar
+    // `radius * 2 * 20` wide — a green rectangle a thousand units across,
+    // under every walker, which on a `slice` viewBox simply painted over the
+    // road. It also meant nobody on the road ever showed a scratch, because
+    // 20 is never less than 0.67.
     const walking = state.party.people.filter((p) => p.alive);
     const spots = fileSpots(walking.length);
     layers.band.replaceChildren();
     // Back of the file first, so the leader is painted over the ones behind.
     for (let i = walking.length - 1; i >= 0; i -= 1) {
       const spot = spots[i]!;
-      layers.band.append(figure(spot.x, spot.y - WALKER_R, WALKER_R, walking[i]!, {
+      const person = walking[i]!;
+      layers.band.append(walker(spot.x, spot.y, WALKER_H * spot.scale, person, {
         friendly: true,
-        health: walking[i]!.health ?? 100,
-        active: i === 0,
-        defending: false,
-        broken: false,
-        pennant: null,
+        health: person.maxHealth > 0 ? person.health / person.maxHealth : 1,
+        // The road runs to the right, which is where the sightings stand, so
+        // the band walks toward them.
+        facing: 1,
+        walking: true,
+        leader: i === 0,
       }));
     }
 

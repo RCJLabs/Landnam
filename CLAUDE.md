@@ -21,6 +21,13 @@ Travel runs along a ROUTE — one coast of 26 stops, walked out and back (`src/s
 
 ## Architecture (load-bearing rules)
 
+**One person, one look.** What somebody looks like is derived once, in
+`render/look.ts`, from the person themselves — shield ground, paint, motif,
+cloak, tunic, hair, beard, stride, build. `render/figures.ts` draws them
+head-on for the shield wall and `render/walker.ts` draws them in profile for
+the road and the yard; `render/shield.ts` draws the shield for both. A view
+that invents its own colours for a person has broken the pillar below.
+
 **One data model, three renderers.** All game state lives in one serializable `GameState` object (`src/state/`). A `Person` is a single object used by all three modes — never duplicate character data per mode. Renderers (`src/render/processionView.ts`, `battle.ts`, `steadingView.ts`) are pure views: they read state and draw SVG; they never own state. The two they replaced — the hex map and the hex colony ring — went with the hexes in 8.5, and the contract they both met lives in `src/render/views.ts`.
 
 **Everything is turn-based.** Travel advances in day turns, battle in initiative turns, colony in day/season ticks. No `requestAnimationFrame` game loops, no real-time simulation. Animation/tweening for visual polish only.
@@ -42,9 +49,8 @@ src/
   main.ts        # boot + mode router
   modes.ts       # mode stack
   state/         # GameState, save/load, migrations
-  hex/           # shared hex math (pure, tested)
   rng.ts         # seeded RNG streams
-  sim/           # travel.ts, battle.ts, colony.ts (pure logic, tested)
+  sim/           # route.ts, coast.ts, travel.ts, battle.ts, colony.ts (pure, tested)
   render/        # SVG renderers per mode + ui.ts (panels, bars)
   data/          # events, traits, buildings, enemies, names
   audio/         # WebAudio synth (no files)

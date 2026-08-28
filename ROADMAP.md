@@ -23,12 +23,31 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
-> (C++), item 5 (parity CI) is BUILT on both sides, and BOTH SCRIPTED RUNS
-> ARE GREEN END TO END: `PARITY OK — 39 checkpoints across two runs, six
-> facets each`, 1478 actions and 457 days on `runs/long.json` and 66 actions
-> to day 15 on `runs/example.json`, with `unported=0` — nothing anywhere in
-> either was skipped.**
+> **CURRENT MILESTONE (from 2026-08-28): the art queue — "what makes it look
+> like a game", below.** Phase 8 built three new views for the coast — the
+> procession, the strip and the elevation — AFTER the art pass ran, so none
+> of them has had one, and 8.5 has now deleted the two hex renderers the art
+> pass was made for. **Art 13 is done.** Art 12 (the steading becomes a
+> place) is next, then Art 11. Ordered by how much they change what a player
+> sees, not by cost.
+>
+> **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
+> is kept here because nothing in it has been undone.** Phase 7 — the Unreal
+> build. Item 1 is DECIDED (C++), item 5 (parity CI) is BUILT on both sides,
+> and BOTH SCRIPTED RUNS WERE GREEN END TO END when last run:
+> `PARITY OK — 39 checkpoints across two runs, six facets each`, 1478
+> actions and 457 days on `runs/long.json` and 66 actions to day 15 on
+> `runs/example.json`, with `unported=0` — nothing anywhere in either was
+> skipped.
+>
+> **THE RECORDED RUNS AND THE PARITY HARNESS WENT WITH THE HEXES.**
+> `runs/long.json`, `runs/example.json`, `port/parity.json`,
+> `scripts/parity.ts` and `scripts/record.ts` were deleted in 8.5 along with
+> `src/hex/`: every one of them was a recording of, or a claim about, a
+> coordinate system this repo no longer has. So the figures above are
+> HISTORY, not a live green light. Whatever the port's next parity harness
+> is, it has to be recorded against a coast, and that recording does not
+> exist yet. Nothing below this line has been re-verified since.
 >
 > **Re-earned on 2026-08-21 after five days of drift.** The figures above
 > read "41 checkpoints, 1320 actions" until then, and were true when written;
@@ -2842,13 +2861,34 @@ Ordered by how much they change what a player sees, not by cost:
   because the steading is where a saga spends most of its days.
   *Done when: a screenshot of day 20 and one of day 200 are obviously
   different places, and neither needs a caption.*
-- [ ] **Art 13 One person, one face, everywhere** — Six people the player
+- [x] **Art 13 One person, one face, everywhere** — Six people the player
   learns to recognise, drawn the same way on the road, in the yard and in the
-  line. Today they are discs; `render/figures.ts` already draws real fighters
-  in battle, so the work is mostly making the other two views ask it for the
-  same person rather than inventing anything.
+  line. **Done 2026-08-28.**
+
+  The line above used to end "the work is mostly making the other two views
+  ask `render/figures.ts` for the same person rather than inventing
+  anything". THEY ALREADY DID. Both the procession and the elevation called
+  `figure()` for every person and both came out coloured discs anyway,
+  because `figure()` draws a fighter HEAD-ON: a round shield the width of the
+  whole figure with a helm peeping over it. That is exactly right in a shield
+  wall, where a wall of shields is what you are looking at, and at 26px on a
+  road it is a disc.
+
+  So what was missing was not a shared call but a second VIEW of the same
+  person. `render/look.ts` now owns the seeded derivation — shield ground,
+  paint, motif, cloak, and new with this: tunic, hair, beard, stride phase
+  and build — and `render/walker.ts` draws a body in profile with the shield
+  slung on its back. `render/shield.ts` draws the shield once for both. The
+  road and the yard are provably the same Ulf as the line, rather than a
+  lookalike.
+
   *Done when: you can point at a figure on the road and say which of the six
-  it is, and be right.*
+  it is, and be right.* **Measured, 400 coasts and 2400 people:** two people
+  in one band share a shield (ground, paint and motif) in 13.5% of bands —
+  five grounds times four paints times five motifs is a hundred shields, and
+  six draws from a hundred collide about one time in seven. Sharing a WHOLE
+  look: none, in 400. That gap is the whole reason a walker carries hair, a
+  beard and a tunic and not just a shield.
 - [ ] **Art 11 Weather you can see out the window** — The travel view knows
   the sky and the season and says so only in the status bar. A gale should
   look like a gale.
@@ -3559,6 +3599,54 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-28 — One person, one face, everywhere (Art 13)** — The first of
+  the art queue to run against the coast's own renderers, and it started by
+  disproving its own roadmap entry. That entry said the road and the yard
+  needed to be pointed at `render/figures.ts`; they were already pointed at
+  it. `figure()` draws a fighter HEAD-ON — a round shield as wide as the
+  whole figure with a helm over the top — which is the right drawing in a
+  shield wall and a coloured disc on a road.
+
+  So the look moved out into `render/look.ts` and a second view of the same
+  person was drawn: `render/walker.ts`, a body in profile with legs
+  mid-stride, a tunic and belt, a cloak, and the shield slung on the back
+  where the paint still carries the identity. `render/shield.ts` draws the
+  shield once for both views. What a person looks like is now a pure
+  function with unit tests on it, where before it was fifteen lines buried
+  inside a DOM-only draw call and untestable without a browser.
+
+  **Measured — 400 fresh coasts, 2400 people.** Two people in one band
+  sharing a shield (ground, paint and motif): 54 bands, 13.5%. Sharing a
+  whole look: 0. Hair, beard and tunic take the space from a hundred
+  combinations to seven thousand, which is what turns "which one is Ulf"
+  into a question with an answer. Every new bar was watched fail first: the
+  sameness bar reports 21 of 120 bands colliding when pointed at the shield
+  alone.
+
+  **Two shipped defects came out with it.** Both new views handed `figure()`
+  the person's HIT POINTS where it wanted a fraction, so at 20 of 20 hale
+  every walker trailed a health bar `radius * 2 * 20` wide — a green
+  rectangle a thousand units across, painted over the road — and nobody
+  outside a battle ever showed a scratch, because 20 is never less than
+  0.67. And `folkIn` computed the yard's width as
+  `slotX(built.length + 1) + SLOT_W` while `steadingScene` computed it as
+  `slotX(raised.length) + SLOT_W`: the same expression with a different
+  count in it, which stood the last of the band 15 units past the right edge
+  of the picture once the steading passed three houses. Below three the
+  `Math.max(YARD_W, ...)` floor hid it.
+
+  **The file on the road is now fitted rather than spaced.** It stepped back
+  a fixed 20 units a head from a leader standing a third of the way in, with
+  no idea where the edge of the picture was; measured by putting that
+  geometry back, six clear the left edge by 1.3 units of 390 and seven are
+  18.7 units off the page. The margin was luck. Gaps are laid out at a
+  preferred spacing and squeezed to the room there is, so a hall that has
+  taken people in bunches its file up instead of walking half of it out of
+  frame. `scripts/procession.mjs` counts `g.walker` rather than `g.fighter`,
+  which is the battlefield's class and would have counted nothing.
+
+  All ten browser bars pass.
 
 - **2026-08-28 — The hexes are gone** — 8.5's last job, and the milestone the
   phase is named for. `src/hex/` is deleted, and with it `worldgen.ts`,

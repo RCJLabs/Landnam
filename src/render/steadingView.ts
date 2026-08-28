@@ -1,10 +1,11 @@
 // Drawing the steading. The hand; `render/steading.ts` is the head.
 
 import { createFieldPaint } from './fieldOil';
-import { figure } from './figures';
+import { walker } from './walker';
 import { svgEl } from './svg';
 import {
-  GROUND_Y, HOUSE_HALF, ROOF_OVERSAIL, YARD_H, steadingScene, type Raised, type Standing,
+  FOLK_H, GROUND_Y, HOUSE_HALF, ROOF_OVERSAIL, YARD_H, steadingScene,
+  type Raised, type Standing,
 } from './steading';
 import { countryHere } from '../sim/coast';
 import type { GameState } from '../state/types';
@@ -68,16 +69,25 @@ function house(r: Raised): SVGGElement {
   return g;
 }
 
-/** Who is in the yard, drawn by the same hand that draws them in a fight. */
-function folkMark(s: Standing): SVGGElement {
+/**
+ * Who is in the yard, drawn by the same hand that draws them on the road.
+ *
+ * Standing rather than walking, and turned to face the middle of the yard so
+ * a household reads as people who live together rather than a queue.
+ *
+ * The health argument was the person's HIT POINTS here too, and `figure()`
+ * wants a fraction — see the note in `processionView.ts`. It drew a health
+ * bar thirty times too wide across the bottom of the yard, once per head.
+ */
+function folkMark(s: Standing, middle: number): SVGGElement {
   const g = svgEl('g', { class: 'yard-folk' });
-  g.append(figure(s.x, s.y - 15, 15, s.person, {
+  g.append(walker(s.x, s.y, FOLK_H, s.person, {
     friendly: true,
-    health: s.person.health ?? 100,
-    active: false,
-    defending: false,
-    broken: false,
-    pennant: null,
+    health: s.person.maxHealth > 0 ? s.person.health / s.person.maxHealth : 1,
+    facing: s.x > middle ? -1 : 1,
+    walking: false,
+    leader: false,
+    doing: s.job,
   }));
   return g;
 }
@@ -119,7 +129,7 @@ export function createSteadingView(): ColonyView {
     for (const r of scene.raised) layers.houses.append(house(r));
 
     layers.folk.replaceChildren();
-    for (const s of scene.folk) layers.folk.append(folkMark(s));
+    for (const s of scene.folk) layers.folk.append(folkMark(s, scene.width / 2));
 
     layers.ui.replaceChildren();
     if (scene.name) {

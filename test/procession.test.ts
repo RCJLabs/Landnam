@@ -15,9 +15,10 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
 import {
-  BAND_X, HORIZON_Y, ROAD_Y, SCENE_H, SCENE_W, SEEN_AHEAD, WALKER_R,
+  BAND_X, HORIZON_Y, ROAD_Y, SCENE_H, SCENE_W, SEEN_AHEAD, WALKER_H, WALKER_R,
   countryWord, fileSpots, processionScene, sightAt, whereWeAre,
 } from '../src/render/procession';
+import { walkerBox } from '../src/render/walker';
 import { ROUTE_STOPS, daysBetween, stopAt } from '../src/sim/route';
 import { learnStop, standingAt, walkOptions } from '../src/sim/coast';
 import { landmarkNameAtStop } from '../src/sim/landmark';
@@ -82,6 +83,59 @@ describe('the band on the road', () => {
     }
     expect(fileSpots(1)).toHaveLength(1);
     expect(fileSpots(0)).toEqual([]);
+  });
+
+  it('draws the far end of the file smaller, because it is further away', () => {
+    const six = fileSpots(6);
+    for (let i = 1; i < six.length; i += 1) {
+      expect(six[i]!.scale).toBeLessThan(six[i - 1]!.scale);
+    }
+    expect(six[0]!.scale).toBe(1);
+    // Depth, not a dwindling. The one at the back is still a person.
+    expect(six[5]!.scale).toBeGreaterThan(0.5);
+  });
+
+  /**
+   * THE FILE STAYS IN THE PICTURE.
+   *
+   * This is the bar Art 13 was written against, and it exists because the
+   * road was one head away from failing it in the shipped build. The old
+   * `fileSpots` walked back a fixed 20 units a head from `BAND_X` at 0.33 of
+   * the width, with no idea where the edge of the picture was. Measured by
+   * putting that geometry back and running this: a band of six clears the
+   * left edge by 1.3 units of 390, and a band of SEVEN is 18.7 units off the
+   * page. The margin was luck, not design — and a band is not always six. A
+   * hall that has taken people in walks a dozen, and twelve was never laid
+   * out at all.
+   *
+   * What the screenshot actually showed — a file crammed against the left
+   * edge and running off it — was the health-bar defect on top of this:
+   * `processionView` handed `figure()` hit points where it wanted a
+   * fraction, so every walker trailed a green bar a thousand units wide.
+   */
+  it('keeps every walker inside the picture, however many there are', () => {
+    for (let count = 1; count <= 14; count += 1) {
+      const spots = fileSpots(count);
+      expect(spots).toHaveLength(count);
+      for (const [i, spot] of spots.entries()) {
+        const box = walkerBox(spot.x, spot.y, WALKER_H * spot.scale, 1);
+        expect(box.left, `walker ${i} of ${count} hangs off the left edge`)
+          .toBeGreaterThanOrEqual(0);
+        expect(box.right, `walker ${i} of ${count} hangs off the right edge`)
+          .toBeLessThanOrEqual(SCENE_W);
+        // And on the road rather than in the sky or under the picture.
+        expect(box.bottom).toBeLessThanOrEqual(SCENE_H);
+        expect(box.top).toBeGreaterThan(HORIZON_Y);
+      }
+    }
+  });
+
+  it('bunches a crowd up rather than letting it walk off the page', () => {
+    // Six fit at their preferred spacing; fourteen do not, and the whole
+    // file is squeezed instead of the tail being abandoned.
+    const gap = (spots: { x: number }[]) => spots[0]!.x - spots[1]!.x;
+    expect(gap(fileSpots(14))).toBeLessThan(gap(fileSpots(6)));
+    expect(gap(fileSpots(14))).toBeGreaterThan(0);
   });
 });
 

@@ -79,8 +79,11 @@ for (const [w, h] of [[390, 844], [320, 568]]) {
     return {
       view: { w: Math.round(box.width), h: Math.round(box.height) },
       here: here ? here.textContent.trim() : '',
-      // Real people, drawn by the same hand that draws them in a fight.
-      walkers: svg.querySelectorAll('g.fighter').length,
+      // Real people, drawn by the same hand that draws them in a fight —
+      // `g.walker` since Art 13, because the road stopped drawing the
+      // head-on battle figure. `look.ts` is what the two views now share;
+      // `g.fighter` is the battlefield's class and would count nothing here.
+      walkers: svg.querySelectorAll('g.walker').length,
       sights: svg.querySelectorAll('g.sight').length,
       names: [...svg.querySelectorAll('text.sight-name')].map((t) => t.textContent.trim()),
       steps,

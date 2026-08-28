@@ -1030,6 +1030,17 @@ h2.grim {
 
 .sight-days { opacity: 0.8; }
 
+/* What a person in the yard is at. Same stroked treatment as the sightings,
+   and for the same reason: it is painted over country whose colour comes out
+   of a seed and is not ours to plan against. */
+.walker-doing {
+  fill: var(--parchment);
+  paint-order: stroke;
+  stroke: rgba(20, 18, 13, 0.8);
+  stroke-width: 2.5px;
+  opacity: 0.85;
+}
+
 .road-step { cursor: pointer; }
 
 .road-step-word {

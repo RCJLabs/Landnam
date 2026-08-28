@@ -7,33 +7,21 @@
 // the same Ulf carries the same quartered madder shield every time he stands
 // on a field this run. That is the data model made visible.
 //
-// Seeded like terrainArt's marks: decoration takes no run stream, consumes
-// nothing the sim rolls, and the same person looks the same on every paint.
+// The seeding itself now lives in `look.ts` and the shield in `shield.ts`,
+// because this is the HEAD-ON view — a shield filling the middle of the
+// picture with a helm over it — and the road and the yard needed the same
+// person seen from the side. What is drawn here did not change when they
+// moved out; where it is decided did.
 //
 // Everything must survive ~40px on a phone — the motifs are bold blocks and
 // spokes, not linework, and every state signal the old counter carried
 // (side, health, active, defending, broken, banner) is still here and still
 // reads at a glance.
 
-import { makeRng } from '../rng';
+import { darken, lighten, lookOf, INK, IRON } from './look';
+import { crack, shieldFace } from './shield';
 import type { Person } from '../state/types';
-import { mix } from './terrainArt';
 import { svgEl } from './svg';
-
-const darken = (hex: string, amount: number): string => mix(hex, '#000000', amount);
-const lighten = (hex: string, amount: number): string => mix(hex, '#ffffff', amount);
-
-/**
- * Period shield paint, split by side so the one glance that decides a fight
- * — who is ours — never has to be read off a motif. The warband paints warm
- * (madder, ochre, oxblood, parchment); the foes cold (woad, sea, iron,
- * slate). Any pairing within a family stays inside that read.
- */
-const WARM = ['#b23b2e', '#d3a441', '#8a2f24', '#e8dcc0', '#8a6f43'];
-const COLD = ['#3f4a5a', '#2e5468', '#6a7684', '#4a555f', '#8fa0b4'];
-
-const IRON = '#5b6570';
-const INK = '#14110d';
 
 export interface FigureState {
   friendly: boolean;
@@ -42,77 +30,6 @@ export interface FigureState {
   defending: boolean;
   broken: boolean;
   pennant: 'gold' | 'blood' | null;
-}
-
-/** One wedge of a round shield, for quarters and rays. Angles in radians. */
-function sector(cx: number, cy: number, r: number, a0: number, a1: number): SVGElement {
-  const x0 = cx + Math.cos(a0) * r;
-  const y0 = cy + Math.sin(a0) * r;
-  const x1 = cx + Math.cos(a1) * r;
-  const y1 = cy + Math.sin(a1) * r;
-  return svgEl('path', {
-    d: `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1} Z`,
-  });
-}
-
-/** The painted face: one of five period motifs in the accent colour. */
-function motif(
-  kind: number,
-  cx: number,
-  cy: number,
-  r: number,
-  accent: string,
-  tilt: number,
-): SVGElement[] {
-  const out: SVGElement[] = [];
-  if (kind === 0) {
-    // Halved.
-    const a0 = tilt;
-    const a1 = tilt + Math.PI;
-    out.push(sector(cx, cy, r, a0, a1));
-  } else if (kind === 1) {
-    // Quartered: two opposite quarters carry the paint.
-    out.push(sector(cx, cy, r, tilt, tilt + Math.PI / 2));
-    out.push(sector(cx, cy, r, tilt + Math.PI, tilt + Math.PI * 1.5));
-  } else if (kind === 2) {
-    // Sunwheel: six spokes off the boss.
-    for (let i = 0; i < 6; i++) {
-      const a = tilt + (i * Math.PI) / 3;
-      out.push(
-        svgEl('line', {
-          x1: cx + Math.cos(a) * r * 0.26,
-          y1: cy + Math.sin(a) * r * 0.26,
-          x2: cx + Math.cos(a) * r * 0.92,
-          y2: cy + Math.sin(a) * r * 0.92,
-          stroke: accent,
-          'stroke-width': r * 0.18,
-          'stroke-linecap': 'round',
-        }),
-      );
-    }
-    return out;
-  } else if (kind === 3) {
-    // Rayed: three alternating wedges.
-    for (let i = 0; i < 3; i++) {
-      const a = tilt + (i * 2 * Math.PI) / 3;
-      out.push(sector(cx, cy, r, a, a + Math.PI / 3));
-    }
-  } else {
-    // Ringed.
-    out.push(
-      svgEl('circle', {
-        cx,
-        cy,
-        r: r * 0.58,
-        fill: 'none',
-        stroke: accent,
-        'stroke-width': r * 0.2,
-      }),
-    );
-    return out;
-  }
-  for (const shape of out) shape.setAttribute('fill', accent);
-  return out;
 }
 
 /**
@@ -126,18 +43,8 @@ export function figure(
   person: Person,
   s: FigureState,
 ): SVGGElement {
-  // The person's look, drawn once from who they are. `name` joins the id so
-  // two runs' "p3" are not condemned to the same shield.
-  const rng = makeRng(`landnam-figure:${person.id}:${person.name}`);
-  const palette = s.friendly ? WARM : COLD;
-  const fieldIx = rng.int(0, palette.length - 1);
-  let accentIx = rng.int(0, palette.length - 2);
-  if (accentIx >= fieldIx) accentIx += 1;
-  const field = palette[fieldIx]!;
-  const accent = palette[accentIx]!;
-  const cloak = darken(palette[rng.int(0, palette.length - 1)]!, 0.35);
-  const motifKind = rng.int(0, 4);
-  const motifTilt = rng.float(0, Math.PI * 2);
+  const look = lookOf(person, s.friendly);
+  const rng = look.rng;
 
   // Marked so the browser bars can find a fighter and measure him. On the
   // hex field they measured a ground polygon, because a fighter's touch
@@ -194,7 +101,7 @@ export function figure(
       cy: cy + radius * 0.3,
       rx: radius * 1.04,
       ry: radius * 0.74,
-      fill: cloak,
+      fill: look.cloak,
       opacity: 0.95,
     }),
   );
@@ -241,62 +148,26 @@ export function figure(
     );
   }
 
+  // Wear is painted on, not only counted below: past two-thirds the paint
+  // dulls and a crack opens; past a third, a second crack.
+  const wear: SVGElement[] = [];
+  if (s.health < 0.67) {
+    wear.push(crack(cx, cy, radius, rng.float(0, Math.PI * 2)));
+    if (s.health < 0.34) {
+      wear.push(
+        crack(cx, cy, radius, rng.float(0, Math.PI * 2)),
+        svgEl('circle', { cx, cy, r: radius, fill: INK, opacity: 0.22 }),
+      );
+    }
+  }
+
   // The shield itself. Broken, it sags: tilted and dropped, a line going out
   // of the fight before the body does.
   const shield = svgEl(
     'g',
     s.broken ? { transform: `rotate(16 ${cx} ${cy}) translate(1.5 2)` } : {},
   );
-  shield.append(
-    svgEl('circle', {
-      cx,
-      cy,
-      r: radius,
-      fill: field,
-      stroke: s.friendly ? '#e8dcc0' : '#9fb0c4',
-      'stroke-width': 2,
-    }),
-    ...motif(motifKind, cx, cy, radius, accent, motifTilt),
-  );
-
-  // Wear is painted on, not only counted below: past two-thirds the paint
-  // dulls and a crack opens; past a third, a second crack.
-  if (s.health < 0.67) {
-    const crack = (angle: number): SVGElement => {
-      const x0 = cx + Math.cos(angle) * radius * 0.95;
-      const y0 = cy + Math.sin(angle) * radius * 0.95;
-      const midA = angle + 0.45;
-      return svgEl('path', {
-        d:
-          `M ${x0} ${y0} L ${cx + Math.cos(midA) * radius * 0.5} ${cy + Math.sin(midA) * radius * 0.5}` +
-          ` L ${cx + Math.cos(angle + 0.2) * radius * 0.18} ${cy + Math.sin(angle + 0.2) * radius * 0.18}`,
-        fill: 'none',
-        stroke: INK,
-        'stroke-width': 1.3,
-        opacity: 0.75,
-        'stroke-linejoin': 'round',
-      });
-    };
-    shield.append(crack(rng.float(0, Math.PI * 2)));
-    if (s.health < 0.34) {
-      shield.append(
-        crack(rng.float(0, Math.PI * 2)),
-        svgEl('circle', { cx, cy, r: radius, fill: INK, opacity: 0.22 }),
-      );
-    }
-  }
-
-  // The boss: iron, a dark seat and one catch of light.
-  shield.append(
-    svgEl('circle', { cx, cy, r: radius * 0.24, fill: IRON, stroke: darken(IRON, 0.35), 'stroke-width': 1.2 }),
-    svgEl('circle', {
-      cx: cx - radius * 0.07,
-      cy: cy - radius * 0.08,
-      r: radius * 0.07,
-      fill: lighten(IRON, 0.5),
-      opacity: 0.9,
-    }),
-  );
+  shield.append(...shieldFace(cx, cy, radius, look, s.friendly, wear));
   g.append(shield);
 
   if (s.active) {

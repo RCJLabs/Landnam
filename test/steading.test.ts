@@ -14,9 +14,10 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
 import {
-  GROUND_Y, HOUSE_HALF, HOUSE_REACH, ROOF_OVERSAIL, SIZE_MAX, SLOT_W, YARD_H, YARD_W,
-  groundOf, sizeOf, slotX, steadingScene,
+  FOLK_H, GROUND_Y, HOUSE_HALF, HOUSE_REACH, ROOF_OVERSAIL, SIZE_MAX, SLOT_W,
+  YARD_H, YARD_W, groundOf, sizeOf, slotX, steadingScene,
 } from '../src/render/steading';
+import { walkerBox } from '../src/render/walker';
 import { BECK_SHARE, canFound, foundSettlement, stopReport } from '../src/sim/site';
 import { learnStop, standingAt } from '../src/sim/coast';
 import { makePlots } from '../src/sim/colony';
@@ -290,6 +291,68 @@ describe('the folk in the yard', () => {
       expect(f.y).toBeGreaterThan(GROUND_Y);
       expect(f.y).toBeLessThan(YARD_H + 60);
     }
+  });
+
+  /**
+   * THE YARD IS A PICTURE WITH EDGES, and everybody in it is inside them.
+   *
+   * `y < YARD_H + 60` above is not that claim: it allows a person to stand
+   * sixty units below the bottom of the yard, which was written when a
+   * figure was a disc and nobody had asked where its feet were. The bug it
+   * let through was on the other axis anyway. `folkIn` computed the yard's
+   * width for itself as `slotX(built.length + 1) + SLOT_W` while
+   * `steadingScene` computed it as `slotX(raised.length) + SLOT_W` — the
+   * same expression with a different count in it. With nothing queued the
+   * two disagree by a whole slot, so the last of the band was placed 74
+   * units past the right edge and drawn half off it.
+   *
+   * Watched fail: putting the old expression back stands the last of the
+   * band with his shield 15 units past the right edge of a 420-wide yard.
+   * Note that it takes a GROWING steading to show — at one or two houses
+   * the `Math.max(YARD_W, ...)` floor absorbs the disagreement and both
+   * expressions answer 420, which is why the loop below raises up to six.
+   */
+  it('stands every one of them inside the yard, on both axes', () => {
+    // Across a growing steading, because the bug only bit once the yard was
+    // wider than its floor: at three houses `Math.max(YARD_W, ...)` absorbed
+    // the disagreement and nothing showed.
+    const raisable = BUILDINGS.map((b) => b.id);
+    for (const seed of SEEDS) {
+      for (let houses = 1; houses <= 6; houses += 1) for (const queued of [true, false]) {
+        const state = withHall(4, seed);
+        const home = state.settlement!;
+        home.built = raisable.slice(0, houses);
+        home.queue = queued ? [raisable[houses]!] : [];
+        const scene = steadingScene(state);
+        for (const [i, f] of scene.folk.entries()) {
+          const box = walkerBox(f.x, f.y, FOLK_H, f.x > scene.width / 2 ? -1 : 1);
+          expect(box.left, `${seed}: folk ${i} hangs off the left of the yard`)
+            .toBeGreaterThanOrEqual(0);
+          expect(box.right, `${seed}: folk ${i} hangs off the right of the yard`)
+            .toBeLessThanOrEqual(scene.width);
+          // Standing in the foreground, in front of the houses, with room
+          // under them for the word saying what they are at.
+          expect(box.bottom).toBeGreaterThan(GROUND_Y);
+          expect(box.bottom + FOLK_H * 0.3).toBeLessThanOrEqual(YARD_H);
+        }
+      }
+    }
+  });
+
+
+  it('leaves the houses the bigger thing in the picture', () => {
+    // A band standing shoulder-high to the ridge reads as figures pasted
+    // over a row of sheds rather than people living among buildings. A
+    // house is 52 units to the ridge at its own scale; a person is 34.
+    //
+    // Asked of the buildings the game HAS rather than of `SIZE_MIN`: the
+    // floor is 0.6, which would put a ridge at 31.2 and fail this, but
+    // nothing in `data/buildings.ts` costs little enough to reach it — the
+    // cheapest is four works, which is 0.73 and a ridge of 38. If a
+    // one-work shed is ever added, this is the bar that will say so.
+    const ridges = BUILDINGS.map((b) => (22 + 30) * sizeOf(b));
+    expect(Math.min(...ridges), 'a person is taller than the smallest building')
+      .toBeGreaterThan(FOLK_H);
   });
 
   it('says what each of them is doing', () => {
