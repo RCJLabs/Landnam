@@ -1,6 +1,8 @@
 # CLAUDE.md — Landnám
 
-Viking survival-strategy game: hex-map travel → turn-based tactical combat → colony simulation. TypeScript + Vite + procedural SVG. Solo dev (Evan, RCJ Labs). Played primarily on mobile browsers.
+Viking survival-strategy game: coast travel → turn-based tactical combat → colony simulation, drawn side-on. TypeScript + Vite + procedural SVG. Solo dev (Evan, RCJ Labs). Played primarily on mobile browsers.
+
+Travel runs along a ROUTE — one coast of 26 stops, walked out and back (`src/sim/route.ts`, `src/sim/coast.ts`). The hex map it replaced is still buildable behind `VITE_HEX=1` and is deleted in 8.5's last job.
 
 ## Start every session
 
@@ -12,7 +14,9 @@ Viking survival-strategy game: hex-map travel → turn-based tactical combat →
 
 - `npm run dev` — dev server
 - `npm run build` — production build; MUST emit a single self-contained `dist/index.html` (vite-plugin-singlefile)
-- `npm run test` — Vitest (hex math, RNG, sim logic, save migrations)
+- `npm run test` — Vitest (route/hex math, RNG, sim logic, save migrations)
+- `npm run test:hex` — the same suite against the old hex build
+- `node scripts/bars.mjs` — all 15 browser bars, both builds
 - `npm run release` — build + zip source to `release/landnam-src.zip`
 - `npm run publish` — build + copy to `docs/index.html`, which Pages serves
 
@@ -24,7 +28,7 @@ Viking survival-strategy game: hex-map travel → turn-based tactical combat →
 
 **Mode stack.** `TRAVEL | BATTLE | COLONY` managed as a stack in `src/modes.ts` — battle pushes onto travel or colony and pops back with a result object.
 
-**Shared hex library.** `src/hex/` (axial coords, neighbors, distance, A*, line, range) is pure, fully unit-tested, and used by BOTH the world map and the battle grid. Never reimplement hex math inline.
+**Shared hex library.** `src/hex/` (axial coords, neighbors, distance, A*, line, range) is pure, fully unit-tested, and used by the old world map and the battle grid. Never reimplement hex math inline. On a coast build most `Hex` values are placeholders — the address is `party.stop`, an index into the route — and retiring those fields is 8.5's remaining save break.
 
 **Deterministic RNG.** `Math.random` is banned. All randomness goes through the seeded RNG in `src/rng.ts`, with separate named streams (worldgen, events, combat) so replays stay stable.
 
@@ -86,9 +90,15 @@ build stamp.
 Run `npm run publish` in any commit that should change what is live — a
 source-only commit will otherwise leave the site on the old build.
 
-**A build behind a flag gets its own folder.** Phase 8's whole side-on
-conversion lives behind `VITE_COAST=1`, so `npm run publish` shows none of it —
-it builds the default, which is still the hex game. `npm run publish:coast`
-writes the coast build to `coast/index.html` and `docs/coast/index.html`,
-leaving the live game exactly where it is. Two pages, one branch: `/` is what
-players open, `/coast/` is what the conversion looks like today.
+**THE DEFAULT IS THE COAST since 2026-08-28.** Phase 8's side-on conversion
+was behind `VITE_COAST=1` while it was being built; it passes every bar the
+hex game passes, so the flag flipped and reads the other way round now.
+`npm run publish` builds the coast to `/` and `/docs` — that is the game.
+`npm run publish:hex` builds the old hex game to `hex/` and `docs/hex/`,
+which is kept only until 8.5's deletion lands, because a side-by-side is the
+only way to answer "is this actually better" while both still exist.
+
+So: `npm test` and `npm run build` are the COAST. `npm run test:hex` and
+`VITE_HEX=1 npm run build` are the hex game. Both suites must stay green
+until the hex layer is deleted — `node scripts/bars.mjs` builds each in turn
+and runs ten bars against the coast and five against the hex game.

@@ -16,29 +16,33 @@
  * Travel runs on the ROUTE — one coast, walked out and back — rather than on
  * the hex map.
  *
- * Off until 8.2c has re-addressed the places, the neighbours, the fisheries
- * and the sea to a stop index. Turning it on before then gives a band a coast
- * to walk with nothing on it, which measures as "travel is worse now" and
- * would be true.
+ * ON BY DEFAULT SINCE 2026-08-28. This is the hinge of 8.5 and it was held
+ * shut by one thing: a coast build had to pass every bar the hex game passes,
+ * on its own terms rather than by having its bars loosened. It does — 90
+ * files green, nothing failing, after the site report was calibrated and the
+ * last of the hex-shaped fixtures were rewritten. The default is now the
+ * coast and `VITE_HEX=1` builds the old game, which is the same switch read
+ * the other way round.
  *
- * The walking itself is live and tested behind this: `sim/coast.ts` and the
- * `WALK` action. What the flag gates is whether the game OFFERS it.
+ * The hex game is kept buildable rather than deleted in the same commit,
+ * because the deletion is a save break (job 4 of 8.5) and because a
+ * side-by-side is the only way to answer "is this actually better" while both
+ * still exist. `npm run publish:hex` puts it at `/hex/`.
  *
- * Still a build-time constant: Vite replaces `import.meta.env.VITE_COAST`
- * statically and drops the dead branch, exactly as it did the bare `false`.
- * It reads an environment variable so that a build of the coast can be MADE
- * — `VITE_COAST=1 npm run build` — which is what `scripts/strip.mjs` needs
- * to put a thumb on the strip chart, and what makes the half-built coast
- * something to open and look at rather than only read about. Unset is false,
- * so every ordinary build and every test is the hex game as before.
+ * Still a build-time constant: Vite replaces `import.meta.env.VITE_HEX`
+ * statically and drops the dead branch. A flag that lived in the save would
+ * be a flag we had to migrate forever.
  *
- * WRITE IT EXACTLY LIKE THIS. The first draft said `import.meta.env?.` with
+ * WRITE IT EXACTLY LIKE THIS. An earlier draft said `import.meta.env?.` with
  * an optional chain, which looks harmless and is not: Vite's define matches
  * the expression TEXTUALLY, so the guard stopped folding to a constant and
- * every branch behind this flag stayed in the bundle. The ordinary build went
- * from 399kB to 421kB and shipped a whole coast nobody could reach — the flag
+ * every branch behind this flag stayed in the bundle. The build went from
+ * 399kB to 421kB and shipped a whole coast nobody could reach — the flag
  * still read false, so nothing failed and nothing looked wrong. Caught by
  * grepping the built page for a string only the strip chart contains, which
  * is the only way this kind of thing ever announces itself.
+ *
+ * The same hazard now runs the other way: if this stops folding, an ordinary
+ * build ships the hex map's renderers as dead weight behind a `true`.
  */
-export const COAST_IS_A_LINE = import.meta.env.VITE_COAST === '1';
+export const COAST_IS_A_LINE = import.meta.env.VITE_HEX !== '1';

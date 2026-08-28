@@ -6,6 +6,7 @@ import { stream } from '../rng';
 import { EVENTS, eventById, type Condition, type Effect, type EventDef } from '../data/events';
 import type { ActiveEvent, GameState, Stats } from '../state/types';
 import { seasonOf } from './calendar';
+import { atSea } from './road';
 import { startBattle, startRaid } from './battleTurn';
 import { raidDifficulty } from './raid';
 import { settleFeud } from './minds';
@@ -87,6 +88,11 @@ export function conditionHolds(state: GameState, condition: Condition): boolean 
       return (state.flags[condition.flag] ?? 0) > 0;
     case 'nearWater':
       return nearWater(state);
+    case 'afloat':
+      // On the map, standing on water. On a line, having spent the day at
+      // the oars — `party.bySea` is set by a rowed `WALK` and cleared by the
+      // next day, which is the same window the hex arm has.
+      return COAST_IS_A_LINE ? state.party.bySea === true : atSea(state);
     case 'settled':
       return !!state.settlement;
     case 'atHome':

@@ -2076,7 +2076,7 @@ export const EVENTS: EventDef[] = [
     title: 'A Lean Sail Closing',
     body: 'She has been on the same tack as us for an hour and she is faster. A crew that eats shows it in the rowing; this one rows like men who have not, and they are not closing to trade news.',
     weight: 14,
-    when: [{ c: 'terrain', any: ['ocean'] }, { c: 'dayMin', day: 5 }],
+    when: [{ c: 'afloat' }, { c: 'dayMin', day: 5 }],
     choices: [
       {
         label: 'Ship oars and let them come alongside',

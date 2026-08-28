@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.17, ruled: 0.06 },
+    odds: { spring: 0.25, ruled: 0.06 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -162,7 +162,21 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * Where the numbers above came from, so nobody has to guess later.
  *
  * THREE HUNDRED landings a setting, not sixty, and that is the whole lesson
- * of this figure's history. Latest: 86% / 53% / 17% seeing the first spring.
+ * of this figure's history. Latest: 86% / 53% / 25% seeing the first spring.
+ *
+ * RE-MEASURED ON THE COAST, 2026-08-28, when the flag flipped and the harness
+ * ran against the game that ships for the first time. Reached winter 93% /
+ * 68% / 50%; saw spring 83% / 52% / 25%. Two of the three published figures
+ * survived the change of country inside the harness's ±5 — 86 against 83, 53
+ * against 52 — which is a better result than it looks, because the coast is a
+ * different country and nothing was tuned to make them agree.
+ *
+ * A Hard Country moved, 17% to 25%, and it moved for a reason worth keeping:
+ * a hard country's band dies to the ground it settled on, and on a coast the
+ * settling gate is FRESH WATER rather than a five-measure total, so the worst
+ * ground a hard band can talk itself onto is less bad. The gaps are 31 and 27
+ * points now against 33 and 36; still comfortably past the ±10 this harness
+ * can resolve, which is what lets the three names differ at all.
  *
  * As It Lies promised 72% for a day and a half and was never within twenty
  * points of it. The 72 was written on 2026-08-22 off a sixty-seed reading,

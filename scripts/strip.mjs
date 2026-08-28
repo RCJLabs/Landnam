@@ -13,7 +13,7 @@
 // and that the card's own controls stay reachable.
 //
 // This bar needs a build of the COAST, which is not the default build — see
-// src/sim/flags.ts. `npm run strip` builds one with VITE_COAST=1.
+// src/sim/flags.ts — which since 2026-08-28 is the ordinary build.
 import { existsSync } from 'node:fs';
 
 const PAGE = 'dist/app.html';

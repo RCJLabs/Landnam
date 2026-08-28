@@ -87,7 +87,7 @@ import { angerLevel, bargainBlocker, canFallOn, neighbourHere } from '../src/sim
 import { canCallThing, hasSpeakers, thingNeeds, yearsRuled } from '../src/sim/thing';
 import type { NeedId } from '../src/data/thing';
 import { SPEAKER_STANDING } from '../src/data/thing';
-import { launchBlocker, provisionsFor } from '../src/sim/expedition';
+import { fieldCrew, launchBlocker, provisionsFor } from '../src/sim/expedition';
 import { provisioning, sailBlocker } from '../src/sim/voyage';
 import { BARTER_FOOD, CLAN_KINDS } from '../src/data/clans';
 import { wintersStood } from '../src/sim/calendar';
@@ -108,6 +108,12 @@ import { eventChance, isEligible } from '../src/sim/events';
 import { currentMode } from '../src/modes';
 import { stream } from '../src/rng';
 import { GHOST_RUIN_ID, haunt, theRuin } from '../src/sim/haunt';
+import { COAST_IS_A_LINE } from '../src/sim/flags';
+
+import { ROUTE_STOPS, daysBetween, stopAt } from '../src/sim/route';
+import { hasTrod, knowsStop, learnStop, standingAt, walkOptions } from '../src/sim/coast';
+import { groundAtStop } from '../src/sim/fishery';
+import { atHome, stopReport } from '../src/sim/site';
 
 const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
 
@@ -341,10 +347,87 @@ interface Policy {
  * slowly", and a band that would take THAT is not a player, it is a strawman.
  */
 const HARD_GROUND = 6;
+/**
+ * The two floors are on DIFFERENT SCALES, because the two countries are.
+ *
+ * `policy.siteFloor` is 9 of 25 and `HARD_GROUND` is 6, both read off the hex
+ * map, where a foundable site totals a mean of 7.6. A foundable stretch of
+ * coast totals a mean of 13.4 — not because a coast is better ground but
+ * because a coast is all HARBOUR, and only about one foundable hex site in
+ * fifty is coastal at all. Carried over unchanged, a floor of 9 is met by
+ * every stretch that will take posts and the bot's whole "hold out for good
+ * ground" policy stops existing.
+ *
+ * Set at the same PERCENTILES of foundable ground, which is what the floor
+ * actually means — 9 of 25 is about the 70th percentile of hex sites and 6 is
+ * about the 20th. On 428 foundable stretches those land at 14 and 12.
+ */
+const COAST_FLOOR = { site: 14, hard: 12 };
+
+
 function floorOn(day: number): number {
-  if (policy.relaxFrom === undefined || day <= policy.relaxFrom) return policy.siteFloor;
+  // A floor of nought is not a scale reading, it is the ABSENCE of a floor —
+  // "take the first legal ground" — and it means that on either map. Shifting
+  // it up with the rest turned the harness's rash arm into a band holding out
+  // for a 5, which is why its two arms measured the same run twice.
+  if (policy.siteFloor <= 0) return 0;
+  const base = COAST_IS_A_LINE
+    ? policy.siteFloor + (COAST_FLOOR.site - 9)
+    : policy.siteFloor;
+  const hard = COAST_IS_A_LINE ? COAST_FLOOR.hard : HARD_GROUND;
+  if (policy.relaxFrom === undefined || day <= policy.relaxFrom) return base;
   const given = Math.floor((day - policy.relaxFrom) / 7);
-  return Math.max(HARD_GROUND, policy.siteFloor - given);
+  return Math.max(hard, base - given);
+}
+
+// --- Walking a line, for every bot below ---
+//
+// The harness's bots were written against `moveOptions` and `distance` and
+// there was nothing wrong with that until the coast became the default build
+// on 2026-08-28 — at which point every one of them stood still, because
+// `MOVE` is the hex map's verb and a line travels by `WALK` to a stop. What
+// they measured then was a band that never went anywhere: 14 of this file's
+// claims failed, and about half of those failures were the bot rather than
+// the game.
+//
+// Three helpers, so each rule below converts by swapping "nearest hex" for
+// "nearest stretch" and keeps its own reasoning intact.
+
+/** The stretch the band is on, or the steading's if they are settled at home. */
+function whereOn(state: GameState): number {
+  return standingAt(state);
+}
+
+/**
+ * One step of the walk toward a stretch, or null if there is nowhere to go.
+ *
+ * `walkOptions` already knows what a day buys — one stretch on foot, up to
+ * `SHIP_REACH` of them at the oars — so picking the option that ends nearest
+ * the target IS the line's version of "move toward it".
+ */
+function stepToward(state: GameState, target: number): Action | null {
+  const opts = walkOptions(state);
+  if (opts.length === 0) return null;
+  const best = opts.reduce((a, b) =>
+    daysBetween(state.seed, b, target) < daysBetween(state.seed, a, target) ? b : a);
+  return { type: 'WALK', to: best };
+}
+
+/** The nearest stretch the band knows of that answers `want`, within `days`. */
+function nearestStop(
+  state: GameState,
+  want: (stop: number) => boolean,
+  days: number,
+): number | null {
+  const here = whereOn(state);
+  let best: number | null = null;
+  let far = days;
+  for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+    if (stop === here || !knowsStop(state, stop) || !want(stop)) continue;
+    const d = daysBetween(state.seed, here, stop);
+    if (d < far) { far = d; best = stop; }
+  }
+  return best;
 }
 
 function recrew(state: GameState): number {
@@ -791,8 +874,22 @@ function step(state: GameState): Action {
   // — a desperation rule wearing a strategy's name, which is why even the
   // raider policy sacked 0.3 camps a saga.
   const host = neighbourHere(state);
+  // WHO IS ACTUALLY THERE, not who is on the roster.
+  //
+  // `sworn(state.party.people)` counts the whole band, including everyone
+  // sitting at home — so a TRADING party of two, walking past a camp on its
+  // way to a counter, passed a test about six people and stormed the place
+  // with two. This file's own launch rule says what that is worth: 9% won
+  // with three, 47% with six, "half a shield wall walking into a fight".
+  //
+  // It hardly bit on the hex map, where an errand rarely passes a camp at
+  // all. A coast puts every camp on the only road there is, so the raider
+  // measured 3.1 of ours against 3.3 of theirs and won 30%, against 5.1 and
+  // 63% on the map — both sides scaling together, so it was never the odds.
+  // It was the wall.
+  const outWith = sworn(fieldCrew(state)).length;
   if (host && policy.robsCamps && canFallOn(state, host.id)
-      && sworn(state.party.people).length >= 4
+      && outWith >= 4
       && campStores(state, host.sackedOn) >= CAMP_WORTH) {
     return { type:'FALL_ON', id: host.id };
   }
@@ -830,9 +927,24 @@ function step(state: GameState): Action {
         // Walking the country to find out what is in it. Aims at the
         // nearest ground nobody has stood on, which is what turns fog into
         // a place worth coming back for.
-        if (!out.returning && (raidTarget(state, policy.raidReach)
+        if (!out.returning && (raidWorth(state, policy.raidReach)
             || state.day - out.launchedOn >= RAID_DAYS)) {
           return { type:'TURN_HOME' };
+        }
+        if (COAST_IS_A_LINE) {
+          const homeStop = state.settlement.stop ?? 0;
+          const stops = walkOptions(state);
+          if (stops.length === 0) return { type:'CAMP' };
+          const fresh = (stop: number) => (knowsStop(state, stop) ? 0 : 1);
+          const pick = out.returning
+            ? stops.reduce((a, b) =>
+                daysBetween(state.seed, b, homeStop) < daysBetween(state.seed, a, homeStop) ? b : a)
+            : stops.reduce((a, b) => {
+                const sa = fresh(a) * 6 + daysBetween(state.seed, a, homeStop);
+                const sb = fresh(b) * 6 + daysBetween(state.seed, b, homeStop);
+                return sb > sa ? b : a;
+              });
+          return { type: 'WALK', to: pick };
         }
         const opts4 = moveOptions(state);
         if (opts4.length > 0) {
@@ -855,6 +967,21 @@ function step(state: GameState): Action {
         // Out to the fishing. Three things, in order: work the ground under
         // us while it is worth working, come home when it is not, and
         // otherwise row for the nearest one we know.
+        if (COAST_IS_A_LINE) {
+          // A line is never "at sea" — the sea is off every stretch — so
+          // what the crew is standing on is a stretch with a ground off it.
+          const at = whereOn(state);
+          if (!out.returning && groundAtStop(state.seed, at)
+            && abundance(state, 'fish', state.party.at) > 0.5 && canFish(state)) {
+            return { type: 'FISH' };
+          }
+          const near = nearestStop(state, (stop) => groundAtStop(state.seed, stop), 40);
+          if (!out.returning && (near === null || state.day - out.launchedOn >= FISH_DAYS)) {
+            return { type: 'TURN_HOME' };
+          }
+          const aim = out.returning ? (state.settlement.stop ?? 0) : near!;
+          return stepToward(state, aim) ?? { type: 'CAMP' };
+        }
         const ground = nearestKnownGround(state, state.party.at);
         if (!out.returning && atSea(state) && groundAt(state, state.party.at)) {
           // Stop when the ground is thin rather than when the days run out.
@@ -897,6 +1024,14 @@ function step(state: GameState): Action {
         // A bot that will not mend her measures the sea at half speed and
         // reports the sea as slow.
         if (holed(state.ship) && !atSea(state)) return { type:'CAMP' };
+        if (COAST_IS_A_LINE) {
+          const mark = raidTargetOn(state);
+          if (!out.returning && (!mark || state.day - out.launchedOn >= RAID_DAYS)) {
+            return { type: 'TURN_HOME' };
+          }
+          const aim = out.returning ? (state.settlement.stop ?? 0) : mark!.stop;
+          return stepToward(state, aim) ?? { type: 'CAMP' };
+        }
         const prize = raidTarget(state);
         if (!out.returning && (!prize || state.day - out.launchedOn >= RAID_DAYS)) {
           return { type:'TURN_HOME' };
@@ -938,6 +1073,11 @@ function step(state: GameState): Action {
         }
       }
       if (!out.returning && state.day - out.launchedOn >= 20) return { type:'TURN_HOME' };
+      if (COAST_IS_A_LINE) {
+        const homeStop = state.settlement.stop ?? 0;
+        const aimStop = out.returning ? homeStop : (counterStopOn(state) ?? homeStop);
+        return stepToward(state, aimStop) ?? { type: 'CAMP' };
+      }
       const aim = out.returning
         ? state.settlement.at
         : (nearestCounter(state) ?? state.settlement.at);
@@ -1092,7 +1232,7 @@ function step(state: GameState): Action {
     const reach = cornered ? Math.max(policy.raidReach, 8) : policy.raidReach;
     const buffer = cornered ? 0 : policy.errandBuffer;
     if (reach > 0 && oldEnough && seasonOk
-        && !raidTarget(state, reach)) {
+        && !raidWorth(state, reach)) {
       const scouts = sworn(state.party.people).slice(0, 2).map(p => p.id);
       if (scouts.length === 2
         && state.party.food > provisionsFor(2) + foodPerDay(state) * buffer
@@ -1102,7 +1242,7 @@ function step(state: GameState): Action {
     }
 
     if (reach > 0 && oldEnough && seasonOk
-        && raidTarget(state, reach)) {
+        && raidWorth(state, reach)) {
       // The band takes its WALL now, not a detachment of it. Hands hold the
       // yard (see `standAtHome`), so the sworn are free to go — and #34 says
       // the width of the line is the whole of whether the errand is worth
@@ -1131,8 +1271,89 @@ function step(state: GameState): Action {
   // Settle on anything workable rather than holding out for perfection.
   if (canFound(state, state.party.at) && state.day >= settleNotBefore
     && state.day >= walkOutHold) {
-    const r = siteReport(state.world, state.party.at);
+    // READ THE GROUND THE SIM IS STANDING ON. `siteReport(world, party.at)`
+    // is the hex map's reading and on a line it reads the placeholder hex,
+    // which is the landing — so the bot's whole settling floor was being
+    // applied to a stretch it was nowhere near.
+    const r = COAST_IS_A_LINE
+      ? stopReport(state.seed, whereOn(state))
+      : siteReport(state.world, state.party.at);
     if (r && r.total >= floorOn(state.day)) return { type:'FOUND' };
+  }
+
+  if (COAST_IS_A_LINE) {
+    const at = whereOn(state);
+    const country = stopAt(state.seed, at).country;
+    if (nights < 6 && (country === 'forest' || country === 'hills' || country === 'valley')) {
+      return { type:'CAMP' };
+    }
+
+    // THE FISHING GROUND, asked before the land verbs for the reason the hex
+    // arm gives below: the order was the constraint, not the reach. On a line
+    // there is no "at sea" to be in — the sea is off every stretch — so what
+    // is worth walking to is a stretch with a GROUND off it.
+    const shortOfFood = days < 6;
+    if (shortOfFood && groundAtStop(state.seed, at) && canFish(state)) return { type:'FISH' };
+    if (shortOfFood) {
+      const ground = nearestStop(state, (s) => groundAtStop(state.seed, s), 8);
+      if (ground !== null) {
+        const go = stepToward(state, ground);
+        if (go) return go;
+      }
+    }
+    if (days < 4 && canGather(state)) return { type:'FORAGE' };
+    if (days < 4 && canFish(state)) return { type:'FISH' };
+
+    if (walkOptions(state).length === 0) return { type:'CAMP' };
+
+    // Short on food with a soft larder in sight: the average player robs it.
+    if (days < 5) {
+      const larder = nearestStop(state, (s) => state.world.places.some((p) => {
+        if ((p.stop ?? 0) !== s || p.sackedOn !== undefined) return false;
+        const def = placeKind(p.kind);
+        return !(def.garrison !== null && def.garrison > 1) && def.loot.food > 0;
+      }), 14);
+      if (larder !== null) {
+        const go = stepToward(state, larder);
+        if (go) return go;
+      }
+    }
+
+    // Wealth in sight and the strength to take it, on the same clock as the
+    // hex arm: an average player plunders ON THE WAY to a steading.
+    if (!state.settlement && mighty && state.day < policy.plunderWindow) {
+      const mark = nearestStop(state, (s) => state.world.places.some(
+        (p) => (p.stop ?? 0) === s && p.sackedOn === undefined,
+      ), 12);
+      if (mark !== null) {
+        const go = stepToward(state, mark);
+        if (go) return go;
+      }
+    }
+
+    // Actually go and look for somewhere to live: among coast we have SEEN,
+    // the nearest stretch that would take the posts and reads above the hard
+    // floor.
+    const site = nearestStop(state, (s) => {
+      const probe = { ...state, party: { ...state.party, stop: s } } as GameState;
+      return canFound(probe, probe.party.at)
+        && stopReport(state.seed, s).total >= COAST_FLOOR.hard;
+    }, 40);
+    if (site !== null) {
+      const go = stepToward(state, site);
+      if (go) return go;
+    }
+
+    // Nothing worth stopping for yet: push ON UP THE COAST, which is the
+    // line's version of pushing into the dark, favouring wood when short.
+    // Outward rather than either way, because a stretch already walked has
+    // been read and going back over it learns nothing.
+    const opts = walkOptions(state);
+    const score = (stop: number) =>
+      (nights < 8 ? terrainDef(stopAt(state.seed, stop).country).wood * 6 : 0)
+      + stop
+      + (hasTrod(state, stop) ? -4 : 0);
+    return { type: 'WALK', to: opts.reduce((a, b) => (score(b) > score(a) ? b : a)) };
   }
 
   const here = state.world.tiles[key(state.party.at)]!.terrain;
@@ -1395,6 +1616,92 @@ function nearestMarket(state: GameState): {q:number;r:number} | null {
  * than the game's reach. A capability the bot cannot use gets measured as
  * worthless, which is this repo's oldest rule about harnesses.
  */
+/**
+ * THE SAME THREE FINDERS, ADDRESSED BY STRETCH.
+ *
+ * `raidTarget`, `nearestFriendable` and `nearestMarket` all rank by
+ * `distance(x.at, ...)` and gate on `world.seen[key(x.at)]`. On a line every
+ * one of those `at`s is the placeholder hex — the address is `stop` — so
+ * every distance was zero, every `seen` lookup was undefined, and all three
+ * returned null. That is why the raider never went out under arms and the
+ * trader struck no deals at all: not a game with nothing in it, a bot asking
+ * for a coordinate the game had stopped using.
+ *
+ * `within` carries over unchanged, and it is the same number in the same
+ * unit: a hex WAS a day's walk, and `daysBetween` is days.
+ */
+function raidTargetOn(
+  state: GameState,
+  within = policy.raidReach + 4,
+): { id: string; stop: number } | null {
+  const home = state.settlement;
+  if (!home) return null;
+  const from = home.stop ?? 0;
+  const strong = sworn(state.party.people).length >= 5;
+  let best: { id: string; stop: number } | null = null;
+  let bestScore = within;
+  if (strong) {
+    for (const n of state.neighbours) {
+      if (!n.found || n.stop === undefined) continue;
+      if (campStores(state, n.sackedOn) < CAMP_WORTH) continue;
+      const d = daysBetween(state.seed, n.stop, from);
+      if (d < bestScore) { bestScore = d; best = { id: n.id, stop: n.stop }; }
+    }
+  }
+  for (const p of state.world.places) {
+    if (p.sackedOn !== undefined) continue;
+    const stop = p.stop ?? 0;
+    if (!knowsStop(state, stop)) continue;
+    const def = placeKind(p.kind);
+    if (def.loot.food <= 0 && def.loot.firewood <= 0) continue;
+    if (def.garrison !== null && def.garrison > 1 && !strong) continue;
+    const d = daysBetween(state.seed, stop, from);
+    if (d >= within) continue;
+    // No `seaApproach` bonus: on a line there is no water to come out of.
+    // Rowing is a STEP, not a state, so every prize on this coast is already
+    // reachable by ship if the hull is sound — `walkOptions` says so.
+    if (d < bestScore) { bestScore = d; best = { id: p.id, stop }; }
+  }
+  return best;
+}
+
+/**
+ * Is there a prize worth going out for? Asked of whichever country this is.
+ *
+ * The three gates that gate LAUNCHING a raid all called `raidTarget`, which
+ * returns null on a line for the reason above — so the harness reported "the
+ * raider never went out under arms at all" and read a whole way of playing as
+ * unreachable.
+ */
+function raidWorth(state: GameState, within?: number): boolean {
+  return COAST_IS_A_LINE
+    ? raidTargetOn(state, within) !== null
+    : raidTarget(state, within) !== null;
+}
+
+/** Where a trade errand should go, as a stretch. */
+function counterStopOn(state: GameState): number | null {
+  const here = whereOn(state);
+  let best: number | null = null;
+  let bestD = 99;
+  const weigh = (stop: number) => {
+    const d = daysBetween(state.seed, stop, here);
+    if (d < bestD) { bestD = d; best = stop; }
+  };
+  for (const n of state.neighbours) {
+    if (n.standing >= 25 || !n.found || n.stop === undefined) continue;
+    weigh(n.stop);
+  }
+  for (const p of state.world.places) {
+    if (p.sackedOn !== undefined) continue;
+    const stop = p.stop ?? 0;
+    if (!knowsStop(state, stop)) continue;
+    if ((placeKind(p.kind).market ?? []).length === 0) continue;
+    weigh(stop);
+  }
+  return best;
+}
+
 function nearestCounter(state: GameState): {q:number;r:number} | null {
   const camp = nearestFriendable(state);
   const market = nearestMarket(state);
@@ -1578,6 +1885,19 @@ function armSeed(arm: number, s: number, seeds: number): string {
  */
 function foundAnywhere(state: GameState): boolean {
   if (foundSettlement(state)) return true;
+  if (COAST_IS_A_LINE) {
+    // Walked, not scanned. `foundBlocker` reads the stretch underfoot and
+    // ignores the hex it is handed, so assigning `party.at` asked the landing
+    // twenty-six hundred times over — and since fresh water became the
+    // settling gate the landing usually says no. Two of this file's fixtures
+    // failed with "nothing foundable" on a coast that has a dozen sites on it.
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+      learnStop(state, stop);
+      state.party.stop = stop;
+      if (canFound(state, state.party.at) && foundSettlement(state)) return true;
+    }
+    return false;
+  }
   for (const k of Object.keys(state.world.tiles)) {
     const at = fromKey(k);
     state.party.at = at;
@@ -2652,6 +2972,17 @@ describe('how hard the country is', () => {
     // flourish: ten was chosen to sit outside what sixty seeds could resolve,
     // and three hundred resolve to about three. A tolerance loose enough to
     // hide a twenty-point lie is not a guard.
+    // AND THE MENU DESCRIBES THE GAME THAT SHIPS, which since 2026-08-28 is
+    // the coast. `data/hardship.ts` holds one set of odds and there are two
+    // buildable countries behind it, so this asks the published figure only
+    // of the one a player is given. The hex build is scaffolding kept for a
+    // side-by-side until 8.5's deletion lands; its balance is not maintained
+    // separately, and a second set of numbers nobody reads would be a second
+    // set of numbers nobody keeps true.
+    //
+    // The ORDER above is asked of both, because that is a claim about the
+    // game rather than about the copy.
+    if (!COAST_IS_A_LINE) return;
     for (const terms of HARDSHIPS) {
       expect(
         Math.abs(terms.odds.spring - spring[terms.id]!),
@@ -3415,9 +3746,13 @@ describe('the sea is reached', () => {
           }
           if (after.settlement && !after.expedition) {
             samples += 1;
-            placesKnown += after.world.places.filter(
-              (p) => after.world.seen[key(p.at)] !== undefined,
-            ).length;
+            // KNOWN is a stretch on a line, not a hex. Every place carries a
+            // placeholder `at`, so this counted the fog over (0,0) and read
+            // the knowledge economy as empty on a coast where the band had
+            // walked past half of it.
+            placesKnown += after.world.places.filter((p) => (COAST_IS_A_LINE
+              ? knowsStop(after, p.stop ?? 0)
+              : after.world.seen[key(p.at)] !== undefined)).length;
           }
         }, terms);
         seaDays += state.tally.seaDays;
@@ -3993,6 +4328,27 @@ describe('the sea is reached', () => {
             // that refuses the water and a bot that declines it. Read on the
             // state BEFORE the move, so it is the choice the bot actually had.
             if (!before.settlement || before.expedition) {
+              if (COAST_IS_A_LINE) {
+                // TAKING TO THE WATER, on a line, is a step and not a state.
+                // There is no wet stretch to stand on — the sea is off all of
+                // them — so what the hex arm calls "a wet hex among your
+                // options" is here "a stretch further than one leg away",
+                // which `daysToWalk` prices at a single day at the oars and
+                // which no walker can reach. Offered against taken is the
+                // same question in the same shape.
+                const offered = walkOptions(before);
+                if (offered.length > 0) {
+                  daysWithAChoice += 1;
+                  const from = standingAt(before);
+                  const rowable = offered.filter((stop) => Math.abs(stop - from) > 1).length;
+                  if (rowable > 0) {
+                    daysWaterOffered += 1;
+                    wetOptions += rowable;
+                    allOptions += offered.length;
+                    if (Math.abs(standingAt(after) - from) > 1) daysWaterTaken += 1;
+                  }
+                }
+              } else {
               const offered = moveOptions(before);
               if (offered.length > 0) {
                 daysWithAChoice += 1;
@@ -4007,25 +4363,45 @@ describe('the sea is reached', () => {
                       && key(after.party.at) !== key(before.party.at)) daysWaterTaken += 1;
                 }
               }
+              }
             }
             // WHY the ground is not worked, counted at the moment of the
             // choice rather than inferred from the outcome.
             {
               let near = 99;
+              if (COAST_IS_A_LINE) {
+                const from = standingAt(before);
+                for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+                  if (!knowsStop(before, stop) || !groundAtStop(before.seed, stop)) continue;
+                  const d = daysBetween(before.seed, stop, from);
+                  if (d < near) near = d;
+                }
+              } else {
               for (const k of Object.keys(before.world.seen)) {
                 const h = fromKey(k);
                 if (!groundAt(before, h)) continue;
                 const d = distance(h, before.party.at);
                 if (d < near) near = d;
               }
+              }
               if (near <= 2) {
                 dayGroundNear += 1;
                 const fed = before.party.food / Math.max(1, foodPerDay(before));
                 if (fed >= 6) dayNearButFed += 1;
                 else if (before.settlement && !before.expedition) dayNearButSettled += 1;
-                else if (moveOptions(before).length === 0) dayNearButStuck += 1;
+                else if ((COAST_IS_A_LINE ? walkOptions(before) : moveOptions(before))
+                  .length === 0) dayNearButStuck += 1;
                 else dayNearAndFree += 1;
               }
+            }
+            if (COAST_IS_A_LINE) {
+              const from = standingAt(before);
+              const to = standingAt(after);
+              const span = Math.abs(to - from);
+              // A day that covered more than one stretch was rowed, and how
+              // far it covered is what the ship bought.
+              if (span > 1) { wet.add(String(to)); spans.push(span); }
+              return;
             }
             const at = after.party.at;
             if (key(at) === key(before.party.at)) return;
@@ -4829,15 +5205,48 @@ describe('more than one way to play', () => {
         let built = 0;
         let sacked = 0;
         let peak = 0;
+        // WHAT ENDED IT, which this row never said and badly needed to. The
+        // raider reads 0 second winters with five of six still standing, and
+        // "died out" and "sailed home rich" are opposite findings that look
+        // identical in a day count.
+        const ends: Record<string, number> = {};
+        let raids = 0;
+        let held = 0;
+        let endFood = 0;
+        let endWood = 0;
+        let hungryDays = 0;
+        let coldDays = 0;
+        let illDays = 0;
+        let awayDays = 0;
+        let allDays = 0;
+        let fightDays = 0;
+        const m30: number[] = []; const m50: number[] = []; const m70: number[] = [];
 
         for (let s = 0; s < SEEDS; s += 1) {
-          const state = run(`curve-${s}`, 200, undefined, 'fair');
+          const state = run(`curve-${s}`, 200, (before, after) => {
+            if (after.day === before.day) return;
+            if (before.party.food < foodPerDay(before)) hungryDays += 1;
+            if (before.party.firewood <= 0) coldDays += 1;
+            if (ailingCount(before) > 0) illDays += 1;
+            if (before.settlement && !atHome(before)) awayDays += 1;
+            if (before.battle) fightDays += 1;
+            for (const [d, bucket] of [[30, m30], [50, m50], [70, m70]] as const) {
+              if (before.day === d) bucket.push(before.party.morale);
+            }
+            allDays += 1;
+          }, 'fair');
+          const cause = state.end?.cause ?? 'ran out of days';
+          ends[cause] = (ends[cause] ?? 0) + 1;
           days += state.day;
           if (state.day >= 49) sawWinter += 1;
           if (state.day >= 73) sawSpring += 1;
           if (state.day >= 169) secondWinter += 1;
           built += state.settlement?.built.length ?? 0;
           sacked += state.tally.sackings;
+          raids += state.tally.raids;
+          held += state.tally.raidsHeld;
+          endFood += state.party.food;
+          endWood += state.party.firewood;
           peak += state.party.people.filter((x) => x.alive).length;
           await new Promise((resolve) => setTimeout(resolve, 0));
         }
@@ -4848,7 +5257,18 @@ describe('more than one way to play', () => {
           `  ${p.id.padEnd(8)} winter ${sawWinter}/${SEEDS}, spring ${sawSpring}/${SEEDS}, ` +
             `second winter ${secondWinter}/${SEEDS}; avg ${Math.round(days / SEEDS)} days, ` +
             `${(built / SEEDS).toFixed(1)} built, ${(sacked / SEEDS).toFixed(1)} sacked, ` +
-            `${(peak / SEEDS).toFixed(1)} alive at the end`,
+            `${(raids / SEEDS).toFixed(1)} raids suffered (${(held / SEEDS).toFixed(1)} held), ` +
+            `left ${(endFood / SEEDS).toFixed(0)} food and ${(endWood / SEEDS).toFixed(0)} wood; ` +
+            `of ${allDays} days: ${(hungryDays / allDays * 100).toFixed(0)}% hungry, ` +
+            `${(coldDays / allDays * 100).toFixed(0)}% cold, ${(illDays / allDays * 100).toFixed(0)}% ill, ` +
+            `${(awayDays / allDays * 100).toFixed(0)}% away, ` +
+            `${(fightDays / allDays * 100).toFixed(0)}% fighting; heart ` +
+            `${[m30, m50, m70].map((b) => (b.length
+              ? (b.reduce((x, y) => x + y, 0) / b.length).toFixed(0) : '-')).join('/')} ` +
+            `on days 30/50/70; ` +
+            `${(peak / SEEDS).toFixed(1)} alive at the end; ended by ` +
+            `${Object.entries(ends).sort((a, b) => b[1] - a[1])
+              .map(([c, n]) => `${c} ${n}`).join(', ')}`,
         );
       }
     } finally {
@@ -5355,12 +5775,32 @@ describe('falling on a camp is a fight the band loses', () => {
   it('counts what the raider wins of the fights it picks', { timeout: 900_000 }, async () => {
     const SEEDS = 30;
     let campFights = 0, campWins = 0, placeFights = 0, placeWins = 0;
+    // HOW WORN THEY GO IN, and how long since the last one. The hypothesis a
+    // coast build put on the table: the line puts every camp within a few
+    // days, so the raider fights three times as often and never stands down
+    // long enough to mend — and a band that goes into every fight carrying
+    // the last one loses.
+    const wear: number[] = [];
+    const rest: number[] = [];
+    const foes: number[] = [];
+    const ours: number[] = [];
+    let lastFight = 0;
     try {
       policy = RAIDER;
       for (let s = 0; s < SEEDS; s += 1) {
+        lastFight = 0;
         run(`curve-${s}`, 200, (before, after) => {
           if (!before.battle && after.battle) {
-            if (after.battle.campId) campFights += 1;
+            if (after.battle.campId) {
+              campFights += 1;
+              const band = before.party.people.filter((x) => x.alive);
+              const whole = band.reduce((t, x) => t + x.health / x.maxHealth, 0);
+              wear.push(band.length > 0 ? whole / band.length : 1);
+              rest.push(before.day - lastFight);
+              foes.push(after.battle.combatants.filter((c) => c.side === 'foe').length);
+              ours.push(after.battle.combatants.filter((c) => c.side === 'warband').length);
+              lastFight = before.day;
+            }
             if (after.battle.placeId) placeFights += 1;
           }
           if (before.battle && !after.battle && before.battle.outcome === 'won') {
@@ -5376,9 +5816,13 @@ describe('falling on a camp is a fight the band loses', () => {
 
     const pc = (w: number, n: number) => `${w}/${n} (${Math.round((w / Math.max(1, n)) * 100)}%)`;
     // eslint-disable-next-line no-console
+    const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
     console.log(
       `the fights the raider picks, ${SEEDS} landings (A Fair Country):\n` +
-        `  camps  ${pc(campWins, campFights)}\n  places ${pc(placeWins, placeFights)}`,
+        `  camps  ${pc(campWins, campFights)}\n  places ${pc(placeWins, placeFights)}\n` +
+        `  going in: ${(mean(wear) * 100).toFixed(0)}% whole, ` +
+        `${mean(rest).toFixed(1)} days since the last one, ` +
+        `${mean(ours).toFixed(1)} of ours against ${mean(foes).toFixed(1)} of theirs`,
     );
 
     expect(campFights, 'the raider never fell on a camp at all').toBeGreaterThan(10);
@@ -6470,7 +6914,14 @@ describe('walking out, for a band that took its ground too fast', () => {
         const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
           if (!noted && !before.settlement && after.settlement) {
             noted = true;
-            const r = siteReport(after.world, after.settlement.at);
+            // The ground the posts actually went into. On a line the steading's
+            // `at` is the placeholder hex, so this read the LANDING's reading
+            // from every steading on the coast and the two arms of the probe
+            // came out within three hundredths of each other — the same run
+            // twice, wearing two labels.
+            const r = COAST_IS_A_LINE
+              ? stopReport(after.seed, after.settlement.stop ?? 0)
+              : siteReport(after.world, after.settlement.at);
             if (r) scores.push(r.total);
             days.push(after.day);
           }
@@ -6569,7 +7020,14 @@ describe('PROBE: what the settling floor is worth', () => {
         const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
           if (!noted && !before.settlement && after.settlement) {
             noted = true;
-            const r = siteReport(after.world, after.settlement.at);
+            // The ground the posts actually went into. On a line the steading's
+            // `at` is the placeholder hex, so this read the LANDING's reading
+            // from every steading on the coast and the two arms of the probe
+            // came out within three hundredths of each other — the same run
+            // twice, wearing two labels.
+            const r = COAST_IS_A_LINE
+              ? stopReport(after.seed, after.settlement.stop ?? 0)
+              : siteReport(after.world, after.settlement.at);
             if (r) { ground += r.total; day += after.day; settled += 1; }
           }
         }, 'even');

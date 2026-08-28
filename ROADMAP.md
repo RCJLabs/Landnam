@@ -159,11 +159,12 @@ ends" table and pick the work up without re-deriving a day of measurement.*
 
 ### STATE AS OF 2026-08-27 — read this paragraph before any figure below it
 
-**Green and pushed, on BOTH builds.** `npm test` 1528 passed / 1 skipped
-across 91 files; with `VITE_COAST=1`, 1416 passed / 16 skipped across the same
-90 files and **nothing failing** — the first time in the conversion. `tsc`
-clean, all 15 browser bars pass, both builds published. Work is on
-`claude/landnam-handover-2026-08-21-f96jml`, **34 commits ahead of `main`**.
+**Green and pushed, on BOTH builds, and THE COAST IS THE DEFAULT.** `npm test`
+is the coast now — 1513 passed / 16 skipped across 91 files — and
+`npm run test:hex` is the old game at 1528 / 1. `tsc` clean, all 15 browser
+bars pass (ten against the coast, five against the hex build), both pages
+published: `/` is the coast and `/hex/` the map. Work is on
+`claude/landnam-handover-2026-08-21-f96jml`, **35 commits ahead of `main`**.
 
 **NOTHING OF PHASE 8 IS LIVE, and this is the first thing to know.** GitHub
 Pages serves `main`, and `main` is still at `40f5fdf` "Phase 8 planned" with
@@ -189,6 +190,72 @@ left of 8.5 is the deletion itself and the `SAVE_VERSION` break, not the
 conversion. The port hand-over is frozen and the parity vectors are DECIDED to
 retire with the hexes rather than be regenerated; see the two sections under
 Phase 8.
+
+### THE HARNESS LEARNS THE COAST — and the raider was never a design problem
+
+**Done 2026-08-28.** Flipping the default ran `balance.test.ts` against a
+coast for the first time and 14 of its claims failed. Thirteen were the bot:
+it travelled by `MOVE`, found sites by scanning `world.tiles`, and ranked
+every target by `distance(x.at, ...)` — and on a line `at` is a placeholder,
+so the distances were all zero, the `seen` lookups all undefined, and the band
+simply stood on the landing. The raider "never went out under arms at all";
+the trader "struck no deals"; the sea probe measured a game with no water in
+it. None of that was the game.
+
+The fourteenth took three wrong diagnoses to get right, and the wrong ones are
+the useful part:
+
+1. **"The raider is a dead end — 0 second winters in 30 against the turtle's
+   19."** True, and the reason looked like heart: those bands ended *fed*,
+   warm, and up to fourteen strong, with morale at zero.
+2. **So: give raiding its own heart.** Built it — a haul pays back in the
+   currency hunger spends, days of food — and swept it at 0.6, 1.2 and 2.0.
+   **The numbers did not move by a single day.** Reverted rather than land an
+   unmeasurable balance change.
+3. **Then: they lose the fights they pick.** 32 of 118 camp fights on a coast
+   (27%) against 23 of 36 on the map (64%). Three times the fights, a quarter
+   of the wins.
+4. **So: they never heal between them.** Measured — and wrong again. Going in
+   they are 78% whole on a coast against 76% on the map. Identical.
+
+What the same measurement did show is the answer, in the column nobody had
+asked for: **3.1 of ours against 3.3 of theirs on a coast, 5.1 against 5.3 on
+the map.** Both sides scale together, so it was never the odds. It was that a
+wall of three has no shoulder-mates and dies — which this file's own launch
+rule has said in a comment for months: *9% won with three, 47% with six, three
+was never a raiding party, it was half a shield wall walking into a fight.*
+
+And the bug is one line. The rule that falls on a camp gated on
+`sworn(state.party.people)` — the whole ROSTER, including everyone sitting at
+home — so a TRADING party of two, walking past a camp on its way to a counter,
+passed a test about six people and stormed the place with two. It hardly bit
+on the hex map, where an errand rarely passes a camp at all. A coast puts
+every camp on the only road there is.
+
+Gated on `sworn(fieldCrew(state))` — who is actually there — the raider stands
+**7 second winters of 30**, reaches spring 25/30 (the best of the three
+lines), and lives to day 115 against 90. The hex build does not move at all:
+22/35 and 5.1 of ours, identical before and after, because the gate only ever
+differed where the bug was. Two other fixes were tried alongside it — a
+strength test on the camp, a floor on the raid party's width — and both were
+removed after measuring, because with this one in place neither changed a
+number.
+
+**The published difficulty odds were re-measured on the coast** at the 300
+landings `data/hardship.ts` demands: 83% / 52% / 25% see spring against a
+published 86% / 53% / 17%. Two of the three survived the change of country
+inside the harness's ±5 with nothing tuned to make them agree; A Hard Country
+moved to 25% and is restated. The menu describes the game that ships, so that
+comparison is asked of the coast build only — the hex game is scaffolding, and
+a second set of numbers nobody reads is a second set nobody keeps true.
+
+Two smaller things fell out of the same sweep. `a-lean-sail` was gated on
+`terrain: ['ocean']` and had become **undrawable** — a line has no ocean
+stretch — so events grew an `afloat` condition that both maps can answer, and
+the card is back. And the raid errand's site floor was on the hex scale: a
+foundable hex site totals a mean of 7.6 where a stretch totals 13.4, so a
+floor of 9 was met by every stretch that would take posts and the bot's whole
+"hold out for good ground" policy had quietly stopped existing.
 
 ### THE COAST IS CALIBRATED — settled by a design decision, not by tuning
 
@@ -2192,8 +2259,44 @@ is written so the choice is made with both arcs visible, not by drift.
   What is left is the deletion itself, and it is four separable jobs rather
   than one:
 
-  1. **Flip the default.** One line in `sim/flags.ts`. It is the hinge, and
-     it is what makes the next three necessary rather than optional.
+  1. **Flip the default — DONE 2026-08-28.** `COAST_IS_A_LINE` reads
+     `import.meta.env.VITE_HEX !== '1'`: the coast is what builds, and the
+     hex game is what you have to ask for. It is the hinge, and it is what
+     makes the next two necessary rather than optional.
+
+     Held shut by exactly one thing, which is why it took until now — a coast
+     build had to pass every bar the hex game passes, on its own terms rather
+     than by having its bars loosened. It does for 90 files of 91 on either
+     build, and for all 15 browser bars.
+
+     **The ninety-first is `balance.test.ts`, and flipping the default is
+     what finally ran it against a coast: 14 of its claims failed.** That file
+     is forty minutes of measured survival numbers and every one of them was
+     taken on the hex map — the last body of hex-shaped measurement in the
+     tree, and it could not have been found any other way, because `npm test`
+     never built a coast until the flag flipped. All fourteen are fixed; see
+     **THE HARNESS LEARNS THE COAST** below.
+
+     The roles swap all the way through rather than only in `flags.ts`, and
+     the point of that is that the SHIPPING game is the one under test:
+
+     - `npm test` and `npm run build` are the coast. `npm run test:hex` and
+       `VITE_HEX=1 npm run build` are the old game, and CI runs both — a
+       change that quietly breaks the build nobody runs is how a
+       half-finished conversion rots.
+     - `scripts/bars.mjs` runs TEN bars against the coast (`offline`,
+       `larder`, `pan`, `field`, `landscape`, `reach` at both widths, plus
+       `strip`, `procession`, `hearth`) and five against the hex build
+       (`sea`, `pinch`, `way-look`, `repaint`, `steading` — the five whose
+       claim has no subject on a line). Before the flip the coast's own three
+       were an afterthought at the bottom of that file.
+     - `npm run publish` writes the coast to `/` and `/docs`; `npm run
+       publish:hex` writes the hex game to `hex/` and `docs/hex/`. The old
+       `coast/` and `docs/coast/` folders are deleted — they were the
+       conversion's waiting room and it has left.
+     - `README.md` and `CLAUDE.md` describe the coast game. The README had
+       been describing a hex battlefield since 8.1 moved the fight onto ranks,
+       which nobody had noticed because nothing tests prose.
 
      **Measured before touching it, and the measurement changed the job.**
      Flipping the flag turns 148 tests across 39 files red. That reads as
@@ -3369,6 +3472,63 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-28 — The coast is the default, and the harness learned it** — the
+  flag flipped, and flipping it ran `balance.test.ts` against a coast for the
+  first time: 14 claims failed and all 14 are fixed.
+
+  `COAST_IS_A_LINE` reads `import.meta.env.VITE_HEX !== '1'` now. The roles
+  swap all the way through rather than only in `flags.ts`, and the point of
+  that is that the SHIPPING game is the one under test: `npm test` is the
+  coast and `npm run test:hex` the old game, with CI running both; the bars
+  runner puts ten against the coast and five against the hex build instead of
+  treating the coast's three as an afterthought; `npm run publish` writes the
+  coast to `/` and `publish:hex` the old game to `/hex/`. `README.md` had been
+  describing a hex battlefield since 8.1 moved the fight onto ranks, which
+  nobody had noticed because nothing tests prose.
+
+  Thirteen of the fourteen failures were the bot, and all the same shape: it
+  travelled by `MOVE`, found sites by scanning `world.tiles`, and ranked every
+  target by `distance(x.at, ...)` — where on a line `at` is a placeholder. So
+  the distances were zero, the fog lookups undefined, and the band stood on
+  the landing while the harness reported that the raider never went out under
+  arms and the trader struck no deals.
+
+  **The fourteenth took three wrong diagnoses, and they are the useful part.**
+  The raider line stood 0 second winters in 30 against the turtle's 19, and
+  those bands ended fed, warm and up to fourteen strong with morale at zero —
+  so it looked like heart. Built the haul-pays-heart change, swept it at 0.6,
+  1.2 and 2.0, and the numbers did not move by a single day; reverted rather
+  than land an unmeasurable balance change. Then it looked like losing fights,
+  which was true — 27% won on a coast against 64% on the map — and then like
+  never healing between them, which was not: they go in 78% whole on a coast
+  and 76% on the map.
+
+  The answer was in a column nobody had asked for. **3.1 of ours against 3.3
+  of theirs on a coast; 5.1 against 5.3 on the map.** Both sides scale
+  together, so it was never the odds — it was that a wall of three has no
+  shoulder-mates, which this file's own launch rule has said in a comment for
+  months: *9% won with three, 47% with six.* And the bug is one line: the rule
+  that falls on a camp counted `sworn(state.party.people)`, the whole roster
+  including everyone at home, so a TRADING party of two walking past a camp
+  passed a test about six people and stormed it with two. Counted on
+  `fieldCrew` instead, the raider stands 7 second winters of 30, reaches
+  spring 25/30 — best of the three lines — and lives to day 115 against 90.
+  The hex build does not move at all, because the gate only ever differed
+  where the bug was.
+
+  The published difficulty odds were re-measured at the 300 landings
+  `data/hardship.ts` demands: 83% / 52% / 25% see spring against a published
+  86% / 53% / 17%. Two survived the change of country inside ±5 with nothing
+  tuned to make them agree. A Hard Country is restated to 25%, and the menu
+  now describes the game that ships — the comparison is asked of the coast
+  build only, because the hex game is scaffolding and a second set of numbers
+  nobody reads is a second set nobody keeps true.
+
+  And `a-lean-sail` had become undrawable: gated on `terrain: ['ocean']` in a
+  game with no ocean stretch. Events grew an `afloat` condition both maps can
+  answer — standing on water, or having spent the day at the oars — and the
+  card is back.
 
 - **2026-08-28 — Settle near water, and send the woodcutters out** — the
   coast is calibrated and a coast build is green on every test for the first

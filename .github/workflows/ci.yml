@@ -41,7 +41,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit
+      # The game as it ships, which since 2026-08-28 is the coast.
       - run: npm test
+      # AND the hex game, which is still buildable and must stay green until
+      # 8.5's deletion lands — see src/sim/flags.ts. Two suites over one tree:
+      # a change that quietly breaks the build nobody runs is exactly how the
+      # conversion would rot before it is finished.
+      - run: npm run test:hex
       # The single-file constraint is load-bearing: release.mjs fails the
       # build if dist/index.html is not self-contained.
       - run: npm run release

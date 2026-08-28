@@ -6,13 +6,27 @@
 // whole commit because of it. A bar that cannot fail loudly is not a bar.
 import { spawnSync } from 'node:child_process';
 
-// `repaint` was not on this list, so `npm run bars` never ran it and it sat
-// red for however long it took the deep to get its own pattern pair. A bar
-// nothing runs is not a bar either.
+// THE GAME'S OWN BARS, run against the default build — which since
+// 2026-08-28 is the COAST. Every bar the shipping game has is now measured
+// against the shipping game; before the flip the coast's own three were the
+// afterthought at the bottom of this file.
+//
+// Keep every bar on one of these two lists. `repaint` was once on neither, so
+// `npm run bars` never ran it and it sat red for however long it took the
+// deep to get its own pattern pair. A bar nothing runs is not a bar.
 const BARS = [
-  ['offline', []], ['sea', []], ['larder', []], ['pan', []],
-  ['field', []], ['pinch', []], ['landscape', []], ['way-look', []],
-  ['repaint', []], ['steading', []], ['reach', []], ['reach', ['320x568']],
+  ['offline', []], ['larder', []], ['pan', []], ['field', []],
+  ['landscape', []], ['reach', []], ['reach', ['320x568']],
+  ['strip', []], ['procession', []], ['hearth', []],
+];
+
+// Bars whose CLAIM does not exist on a coast, each decided on its own terms
+// rather than ported — see 8.5's job 2 in ROADMAP.md. `sea` asks what the map
+// promises afloat and a line is never afloat; `pinch` and `way-look` and
+// `repaint` are the hex map's own pan, sight and paint cache; `steading` is
+// the hex colony yard. They keep running while `VITE_HEX=1` still builds.
+const HEX_BARS = [
+  ['sea', []], ['pinch', []], ['way-look', []], ['repaint', []], ['steading', []],
 ];
 
 const build = (env) => spawnSync('npm', ['run', 'build'], {
@@ -35,35 +49,27 @@ function bar(name, args, label = args.length ? `${name} ${args.join(' ')}` : nam
 
 // BUILD THE ORDINARY PAGE FIRST, rather than trusting whatever is in `dist/`.
 //
-// This ran the first twelve against whatever the last command happened to
-// leave there, and the tail of this script has always put the ordinary build
-// back — so it was correct as long as nothing else ever built. Then
-// `npm run publish:coast` arrived, and a run straight after it reported six
-// red bars: `sea`, `pinch`, `way-look`, `repaint` and `steading` are exactly
-// the five the coast has no subject for, plus `landscape` falling over. Six
-// false failures, and the script's own comment below warns about precisely
-// this hazard in the other direction.
-if (build({ VITE_COAST: '' }).status !== 0) {
+// This once ran against whatever the last command happened to leave in
+// `dist/`, and was correct only as long as nothing else ever built. Then a
+// publish of the other build arrived, and a run straight after it reported
+// six red bars that were all false. Both builds get their own build step
+// here, and the default one goes back at the end: leaving the wrong page in
+// `dist/` is a quiet way for it to reach somebody's browser.
+if (build({ VITE_HEX: '' }).status !== 0) {
   console.error('bars: the ordinary build did not build — nothing was measured.');
   process.exit(2);
 }
 
 for (const [name, args] of BARS) bar(name, args);
 
-// The coast's three bars need a build of the COAST, which is not
-// the default build — see src/sim/flags.ts. So they cannot share `dist/` with
-// the twelve above and get their own build here, with the ordinary one put
-// back afterwards: leaving a coast build in `dist/` would be a quiet way for
-// one to reach somebody's browser.
-if (build({ VITE_COAST: '1' }).status !== 0) {
-  bad += 3; ran += 3;
-  console.log('  FAIL  strip, procession, hearth — the coast build did not build');
+// The hex game's own five, which need a build of it.
+if (build({ VITE_HEX: '1' }).status !== 0) {
+  bad += HEX_BARS.length; ran += HEX_BARS.length;
+  console.log(`  FAIL  ${HEX_BARS.map(([n]) => n).join(', ')} — the hex build did not build`);
 } else {
-  bar('strip', []);
-  bar('procession', []);
-  bar('hearth', []);
+  for (const [name, args] of HEX_BARS) bar(name, args, `${name} (hex)`);
 }
-if (build({ VITE_COAST: '' }).status !== 0) {
+if (build({ VITE_HEX: '' }).status !== 0) {
   bad++;
   console.log('  FAIL  (the ordinary build could not be put back)');
 }

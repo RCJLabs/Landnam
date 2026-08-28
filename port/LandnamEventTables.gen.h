@@ -1327,7 +1327,7 @@ namespace Tables
 	{ "a-lean-sail", "A Lean Sail Closing",
 		"She has been on the same tack as us for an hour and she is faster. A crew that eats shows it in the rowing; this one rows like men who have not, and they are not closing to trade news.",
 		14, false,
-		{ { "terrain", { "ocean" }, 0, "" }, { "dayMin", {  }, 5, "" } },
+		{ { "afloat", {  }, 0, "" }, { "dayMin", {  }, 5, "" } },
 		{
 			{ "Ship oars and let them come alongside", false, "", 0,
 				{ "We took the way off her and got the shields up along the rail. They came on.", { { "battle", 0, 1, "" } } },
