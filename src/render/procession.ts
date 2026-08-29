@@ -129,6 +129,15 @@ export interface ProcessionScene {
    */
   weather: WeatherId;
   season: Season;
+  /**
+   * The band has stopped for the night and not yet walked on.
+   *
+   * `party.hasCamped` survives from the CAMP action until the next WALK, so
+   * it is a real, already-stored trigger for night — see `render/light.ts`
+   * for why the light is driven by this and the season rather than by an
+   * hour the sim does not have.
+   */
+  camped: boolean;
   /** What this stretch is called, if it is called anything. */
   landmark?: string;
   /** Things standing on the road ahead, nearest first. */
@@ -218,6 +227,7 @@ export function processionScene(state: GameState): ProcessionScene {
     country: countryHere(state),
     weather: weatherOn(state.seed, state.day).id,
     season: seasonOf(state.day),
+    camped: state.party.hasCamped,
     ...(landmarkNameAtStop(state.seed, at) && knowsStop(state, at)
       ? { landmark: landmarkNameAtStop(state.seed, at)! }
       : {}),

@@ -1056,6 +1056,44 @@ h2.grim {
   .hearth-smoke { animation: none; }
 }
 
+/* --- The light on the road (art queue item 15) --- */
+
+/* Stars breathe, faintly and out of step. Decoration only: the starfield is
+   drawn at full opacity in the markup, so a still night still has stars. */
+@keyframes star-breathe {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+
+.starfield .star {
+  animation: star-breathe 4s ease-in-out infinite alternate;
+}
+
+/* The campfire's glow pulses like a fire. Its flames are static shapes, so
+   stillness keeps a lit camp lit. */
+@keyframes camp-breathe {
+  from { opacity: 0.22; transform: scaleY(0.9); }
+  to { opacity: 0.42; transform: scaleY(1.08); }
+}
+
+.procession .campglow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: camp-breathe 3.2s ease-in-out infinite alternate;
+}
+
+:root.still .starfield .star,
+:root.still .procession .campglow {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield .star,
+  .procession .campglow {
+    animation: none;
+  }
+}
+
 .road-step { cursor: pointer; }
 
 .road-step-word {

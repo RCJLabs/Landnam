@@ -8,6 +8,7 @@
 
 import { createFieldPaint } from './fieldOil';
 import { seasonTint, skyNodes } from './fieldWeather';
+import { lightAt, washOpacity } from './light';
 import { makeRng } from '../rng';
 import { walker } from './walker';
 import { svgEl } from './svg';
@@ -108,6 +109,28 @@ export function createProcessionView(): TravelView {
     role: 'img',
   });
 
+  // The road's own vignette. `fieldArt`'s is `#field-vignette` and the
+  // battlefield owns it; two views cannot share one id when both may be in
+  // the document, so the road defines its own with the same shape.
+  const defs = svgEl('defs');
+  const dusk = svgEl('radialGradient', {
+    id: 'road-vignette', cx: '0.5', cy: '0.55', r: '0.78',
+  });
+  dusk.append(
+    svgEl('stop', { offset: '0.45', 'stop-color': '#080b12', 'stop-opacity': 0 }),
+    svgEl('stop', { offset: '1', 'stop-color': '#080b12', 'stop-opacity': 1 }),
+  );
+  // The campfire's glow. A flat ellipse read as a brown puddle on the road —
+  // a glow is defined by its soft edge, so it needs a gradient, not a fill.
+  const fireGlow = svgEl('radialGradient', { id: 'road-firelight', cx: '0.5', cy: '0.5', r: '0.5' });
+  fireGlow.append(
+    svgEl('stop', { offset: '0', 'stop-color': '#ffc061', 'stop-opacity': 1 }),
+    svgEl('stop', { offset: '0.45', 'stop-color': '#e0a94f', 'stop-opacity': 0.45 }),
+    svgEl('stop', { offset: '1', 'stop-color': '#e0a94f', 'stop-opacity': 0 }),
+  );
+  defs.append(dusk, fireGlow);
+  root.append(defs);
+
   // The painted country, the same brush the battlefield uses — which is the
   // whole reason the oil work in 8.1d was written where it was.
   const paint = createFieldPaint();
@@ -122,9 +145,15 @@ export function createProcessionView(): TravelView {
     // Same class the battlefield's layer carries, so the animation loop,
     // the stillness freeze and reduced-motion all come from the same CSS.
     weather: svgEl('g', { class: 'weather' }),
+    fire: svgEl('g'),
     ui: svgEl('g'),
   };
-  root.append(layers.sea, layers.road, layers.sights, layers.band, layers.weather, layers.ui);
+  root.append(
+    layers.sea, layers.road, layers.sights, layers.band, layers.weather,
+    // The fire sits ABOVE the light, because a light source is not dimmed by
+    // the night it lights. Under it the campfire was a grey triangle.
+    layers.fire, layers.ui,
+  );
 
   // The cost meter the bars read. A still road must not move `work`, however
   // many repaints go past — the same rule `repaint.mjs` holds the hex view to.
@@ -141,7 +170,7 @@ export function createProcessionView(): TravelView {
     // is what lets a bar tell a still road from a busy one.
     const key = [
       scene.at, scene.country, scene.landmark ?? '',
-      scene.weather, scene.season,
+      scene.weather, scene.season, scene.camped ? 'night' : 'day',
       scene.ahead.map((a) => `${a.stop}:${a.kind}`).join(','),
       scene.onward?.stop ?? '-', scene.back?.stop ?? '-',
       state.party.people.filter((p) => p.alive).length,
@@ -232,13 +261,44 @@ export function createProcessionView(): TravelView {
       }));
     }
 
-    // The sky, in three coats: the season's light, the named weather's own
-    // static wash (there even with every animation stilled), and the moving
-    // weather the battlefield already knows how to draw.
+    // The sky, in coats: the season's own colour, the light of the hour the
+    // year is at, the named weather's static wash (there even with every
+    // animation stilled), and the moving weather the battlefield draws.
     layers.weather.replaceChildren();
     const bounds = { x: 0, y: 0, w: SCENE_W, h: SCENE_H };
     const tint = seasonTint(scene.season, bounds);
     if (tint) layers.weather.append(tint);
+
+    // THE LIGHT (Art 15). One wash and one vignette, both driven by
+    // `light.ts` off the season and whether the band has camped — see that
+    // file for why those two and not a clock.
+    const light = lightAt(scene.season, scene.camped);
+    const lightWash = washOpacity(light.level);
+    if (lightWash > 0) {
+      layers.weather.append(svgEl('rect', {
+        x: 0, y: 0, width: SCENE_W, height: SCENE_H,
+        class: 'lightwash',
+        fill: light.tint,
+        opacity: lightWash,
+      }));
+    }
+    if (light.stars) {
+      // Stars, seeded once so the same night has the same sky. Only above
+      // the horizon, and never in summer — see `STAR_LEVEL`.
+      const sky = makeRng('landnam-stars');
+      const field = svgEl('g', { class: 'starfield' });
+      for (let i = 0; i < 40; i += 1) {
+        field.append(svgEl('circle', {
+          cx: sky.float(0, 1) * SCENE_W,
+          cy: sky.float(0.02, 0.92) * HORIZON_Y,
+          r: sky.float(0.5, 1.5),
+          class: 'star',
+          fill: '#e8ecf2',
+          opacity: sky.float(0.35, 0.9).toFixed(2),
+        }));
+      }
+      layers.weather.append(field);
+    }
     const wash = skyWash(scene.weather);
     if (wash) {
       layers.weather.append(svgEl('rect', {
@@ -249,6 +309,37 @@ export function createProcessionView(): TravelView {
       }));
     }
     layers.weather.append(...skyNodes(scene.weather, bounds));
+
+    // A camped band has a fire, and the fire is why they are not walking.
+    // Above the light wash, so it lights the night rather than being dimmed
+    // by it — and it burns brighter the darker the night is.
+    layers.fire.replaceChildren();
+    if (scene.camped) {
+      const fireX = BAND_X + WALKER_H * 0.5;
+      const glow = 0.22 + (1 - light.level) * 0.5;
+      layers.fire.append(
+        svgEl('ellipse', {
+          cx: fireX, cy: ROAD_Y - 6, rx: WALKER_H * 1.15, ry: WALKER_H * 0.5,
+          class: 'campglow', fill: 'url(#road-firelight)', opacity: glow.toFixed(2),
+        }),
+        svgEl('path', {
+          d: `M ${fireX - 9} ${ROAD_Y} q 4 -9 2 -17 q 6 6 7 17 Z`,
+          fill: '#e88f36',
+        }),
+        svgEl('path', {
+          d: `M ${fireX - 4} ${ROAD_Y} q 2 -6 1 -11 q 4 4 5 11 Z`,
+          fill: '#f7dda2',
+        }),
+      );
+    }
+
+    // Night closes the frame in: you see as far as the fire.
+    layers.weather.append(svgEl('rect', {
+      x: 0, y: 0, width: SCENE_W, height: SCENE_H,
+      class: 'nightfall',
+      fill: 'url(#road-vignette)',
+      opacity: light.vignette,
+    }));
 
     // Where we are, said in words, and the two steps a coast offers. These
     // are on the picture rather than in a panel because the whole bar for

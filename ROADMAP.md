@@ -31,9 +31,11 @@
 > what a player sees, not by cost. **Art 12 is done too** — the yard is framed to its
 > slot on the painted horizon, and wears its days. **And Art 11** — the sky
 > out the window now shows the weather the chip names, with a static coat
-> so a gale is a gale even with motion stilled. Next: Art 15 (night and the
-> turning of the day), which has the same shape — the light pass exists and
-> travel does not use it.
+> so a gale is a gale even with motion stilled. **And Art 15** — camp brings
+> dusk, stars and firelight, with daylight driven by the season because at
+> these latitudes the turning of the day is the turning of the year. Next:
+> Art 19 (blows that land somewhere) or Art 14 (gear you can see), both in
+> the battle view, which has not been touched since Art 5.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -2940,8 +2942,34 @@ Ordered by how much they change what a player sees, not by cost:
   `scripts/procession.mjs` now steers by `landnam.sky()` to find a gale, a
   frost and a fair day and reads the marks off the screen — watched fail
   (gale found, zero gusts, zero wash) before the view was wired.
-- [ ] **Art 15 Night, and the turning of the day** — The light pass exists
-  (Art 10) and travel does not use it.
+- [x] **Art 15 Night, and the turning of the day** — **Done 2026-08-29**, and
+  the premise needed correcting first in two ways.
+
+  **There is no hour in this game.** `day` is an integer and the atomic unit
+  of play — the "everything is turn-based" pillar — and nothing in `src/sim`
+  knows about a time within a day. A clock would mean a new field, a save
+  bump, and a concept the sim has no use for. **And "the light pass" was
+  half a thing:** what Art 10 left behind is the battlefield's STATIC light,
+  a fixed low sun and a vignette, plus `seasonTint` — which travel has used
+  since Art 11 landed the day before this. There was no day/night pass
+  anywhere to be reused.
+
+  So the light runs off the two facts the game already has, and both are
+  truer to the setting than a clock would be. THE SEASON, because at these
+  latitudes the turning of the day IS the turning of the year: a midwinter
+  day here is a few hours of blue twilight and a midsummer night never gets
+  properly dark, so `lightAt` gives a winter DAY less light than a summer
+  NIGHT and gives the light nights no stars at all. And WHETHER THE BAND HAS
+  CAMPED, because `party.hasCamped` has been in state since the gathering
+  work and survives from CAMP until the next WALK — a night trigger that was
+  already there and drew nothing.
+
+  Camp now brings dusk, stars in the seasons dark enough for them, and a
+  fire that is drawn ABOVE the light wash, because a light source is not
+  dimmed by the night it lights. Measured before building: the road drew the
+  same 108 nodes walking and camped. `render/light.ts` is pure and tested;
+  `scripts/procession.mjs` camps through the real Act sheet and reads the
+  wash, the fire and the stars off the screen.
 - [ ] **Art 19 Blows that land somewhere** — Battle hits read as numbers more
   than as blows.
 - [ ] **Art 14 Gear you can see** — What a person carries should be visible
@@ -3647,6 +3675,44 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — Night, and the turning of the day (Art 15)** — Two
+  corrections to the premise before a line was written. **There is no hour
+  in this game**: `day` is an integer and the atomic unit of play, and
+  nothing in `src/sim` knows about a time within a day — a clock would mean
+  a new field, a save bump, and a concept the sim has no use for. **And the
+  light pass the item said to reuse was half a thing**: Art 10 left the
+  battlefield's STATIC light (a fixed low sun, a vignette) and `seasonTint`,
+  which travel has used since Art 11 landed the day before. There was no
+  day/night pass anywhere.
+
+  So `render/light.ts` drives the light off the two facts the game does
+  have, both truer to the setting than a clock. THE SEASON — at these
+  latitudes the turning of the day IS the turning of the year, so a winter
+  DAY gets less light than a summer NIGHT and the light nights get no stars.
+  AND WHETHER THE BAND HAS CAMPED — `party.hasCamped` has survived from CAMP
+  to the next WALK since the gathering work, an already-stored night trigger
+  that drew nothing. Measured first: the road drew the same 108 nodes on a
+  walking afternoon and a camped night.
+
+  Two things the pictures forced. The night tint started as a mid-slate and
+  a winter midnight came out an overcast afternoon with stars in it — half a
+  coat of mid-blue over the painted sky's #a8afb2 is another light grey, so
+  night has to DARKEN and the tint is near-black now with the opacity
+  carrying it. And the campfire was drawn under the light wash, which dimmed
+  the one thing in the picture giving light; it has its own layer above the
+  wash, burns brighter the darker the night, and got a radial gradient after
+  a flat ellipse read as a brown puddle on the road.
+
+  `scripts/procession.mjs` camps through the real Act sheet and reads the
+  wash, the fire and the stars off the screen — watched fail (0.148 camped
+  against 0.148 walking) on a light that ignores camping. Getting it to run
+  at all took a real fix: the weather claim above skips days to find a gale,
+  skipping days raises LESSON cards, and a `.lesson-card` sat over the
+  action bar swallowing the Act tap — diagnosed off Playwright's own
+  interception log, not guessed. Worth recording that the first attempt to
+  falsify the claim was itself a false pass: the sabotage did not compile,
+  `npm run build` failed, and the bar happily measured the previous `dist`.
 
 - **2026-08-29 — Weather you can see out the window (Art 11)** — The sim
   has named the sky since the weather work and the top bar prints it; the

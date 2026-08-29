@@ -302,6 +302,77 @@ for (const [w, h] of [[390, 844], [320, 568]]) {
     }
   }
 
+  // NIGHT, AND THE TURNING OF THE DAY (art queue item 15). There is no hour
+  // in this game, so the light runs off the season and off whether the band
+  // has camped — see `render/light.ts`. Both halves are checked on the
+  // screen: a camped band is darker than a walking one, and it has a fire.
+  //
+  // Only at one width; the light does not change shape with the viewport.
+  if (w === 390) {
+    const readLight = () => page.evaluate(() => {
+      const svg = document.querySelector('svg.procession');
+      const wash = svg?.querySelector('.lightwash');
+      return {
+        camped: window.landnam.state().party.hasCamped,
+        wash: wash ? Number(wash.getAttribute('opacity')) : 0,
+        stars: svg?.querySelectorAll('.starfield .star').length ?? 0,
+        fire: svg?.querySelectorAll('.campglow').length ?? 0,
+        night: svg?.querySelectorAll('.nightfall').length ?? 0,
+      };
+    });
+    // Walk to a fresh day so the band is definitely not camped.
+    const walk = page.locator('.action-slot button', { hasText: /up the coast/i }).first();
+    if (await walk.count()) {
+      await walk.click({ timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(700);
+      for (let i = 0; i < 6; i++) {
+        const b = page.locator('.overlay .card button').first();
+        if (!(await b.count())) break;
+        await b.click({ timeout: 1200 }).catch(() => {});
+        await page.waitForTimeout(180);
+      }
+    }
+    const walking = await readLight();
+    // CLEAR THE OVERLAY FIRST, and with `.overlay button` rather than
+    // `.overlay .card button`. The weather claim above skips days to find a
+    // gale, and skipping days raises LESSON cards — a `.card.event-card
+    // .lesson-card` sat over the action bar and swallowed the Act tap, so
+    // the sheet never opened and this claim reported that it could not run.
+    // Diagnosed off Playwright's own interception log rather than guessed.
+    for (let i = 0; i < 8; i += 1) {
+      const b = page.locator('.overlay button').first();
+      if (!(await b.count())) break;
+      await b.click({ timeout: 1200 }).catch(() => {});
+      await page.waitForTimeout(180);
+    }
+    // Wait for the sheet rather than guessing at it: a fixed 250ms was short
+    // enough that the Camp tap could land on a backdrop still opening.
+    await page.locator('.action-slot button', { hasText: /^Act$/ }).first()
+      .click({ timeout: 2000 }).catch(() => {});
+    const campBtn = page.locator('.overlay button').filter({ hasText: /^Camp/i }).first();
+    await campBtn.waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
+    await campBtn.click({ timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(700);
+    for (let i = 0; i < 6; i++) {
+      const b = page.locator('.overlay .card button').first();
+      if (!(await b.count())) break;
+      await b.click({ timeout: 1200 }).catch(() => {});
+      await page.waitForTimeout(180);
+    }
+    const camped = await readLight();
+    console.log(`390x844: walking wash ${walking.wash} fire ${walking.fire} · ` +
+      `camped wash ${camped.wash} fire ${camped.fire} stars ${camped.stars}`);
+
+    check(walking.night > 0, '390x844: the road has no light pass on it at all');
+    if (camped.camped) {
+      check(camped.wash > walking.wash,
+        `390x844: camping left the road as bright as walking (${camped.wash} vs ${walking.wash})`);
+      check(camped.fire > 0, '390x844: the band camped and lit no fire');
+    } else {
+      check(false, '390x844: could not get the band to camp, so the night claim did NOT run');
+    }
+  }
+
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);
 }
 
