@@ -14,6 +14,8 @@
 // `test/knot.test.ts` can ask whether the thing actually tiles and actually
 // weaves.
 
+import { GOLD, alpha } from './palette';
+
 export interface PlaitOpts {
   /** One full period. The tile abuts itself at 0 and at `w`. */
   w?: number;
@@ -121,7 +123,7 @@ export function plait(opts: PlaitOpts = {}): Plait {
     // is kept as it reads: first crossing, then second.
     strokes: [d(a1), b1a, b1b, a2a, a2b, d(b2)],
     w, h, thick,
-    ink: opts.ink ?? 'rgba(211,164,65,0.62)',
+    ink: opts.ink ?? alpha(GOLD, 0.62),
   };
 }
 
@@ -190,6 +192,6 @@ export function knotUri(p: Plait): string {
  */
 export function installKnot(root: HTMLElement = document.documentElement): void {
   const base = { w: 22, h: 11, thick: 2.1 } as const;
-  root.style.setProperty('--knot', knotUri(plait({ ...base, ink: 'rgba(211,164,65,0.62)' })));
-  root.style.setProperty('--knot-dim', knotUri(plait({ ...base, ink: 'rgba(211,164,65,0.3)' })));
+  root.style.setProperty('--knot', knotUri(plait({ ...base, ink: alpha(GOLD, 0.62) })));
+  root.style.setProperty('--knot-dim', knotUri(plait({ ...base, ink: alpha(GOLD, 0.3) })));
 }

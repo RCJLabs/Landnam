@@ -12,6 +12,8 @@ import { mix } from './terrainArt';
 import { countryHere } from '../sim/coast';
 import type { GameState } from '../state/types';
 import type { ColonyView } from './views';
+import { EMBER, HAFT, ROPE, TIMBER } from './palette';
+import { folkLook } from './look';
 
 /** `svgEl` takes Nodes; every label here is a string. */
 function words(text: string): Node[] {
@@ -51,7 +53,7 @@ function house(r: Raised, greened: number): SVGGElement {
     }));
     g.append(svgEl('path', {
       d: `M ${-w} ${-wall} L 0 ${-wall - up} L ${w} ${-wall}`,
-      stroke: '#8a7c5e', 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round',
+      stroke: ROPE, 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round',
       'stroke-dasharray': '6 4',
     }));
     return g;
@@ -61,7 +63,7 @@ function house(r: Raised, greened: number): SVGGElement {
   g.append(svgEl('rect', {
     x: -w, y: -wall, width: w * 2, height: wall,
     fill: mix('#5d5340', '#4d5c38', greened * 0.75),
-    stroke: '#3a3324', 'stroke-width': 1.2,
+    stroke: TIMBER, 'stroke-width': 1.2,
   }));
   // Thatched roof, oversailing the walls the way a real one does — and
   // weathering darker while the walls green, so age moves two colours at
@@ -69,11 +71,11 @@ function house(r: Raised, greened: number): SVGGElement {
   g.append(svgEl('path', {
     d: `M ${-w - ROOF_OVERSAIL} ${-wall} L 0 ${-wall - roof} L ${w + ROOF_OVERSAIL} ${-wall} Z`,
     fill: mix('#7a6647', '#5c5038', greened * 0.6),
-    stroke: '#3a3324', 'stroke-width': 1.2,
+    stroke: TIMBER, 'stroke-width': 1.2,
   }));
   // A lit door: a steading with people in it.
   g.append(svgEl('rect', {
-    x: -5, y: -wall + 4, width: 10, height: wall - 4, fill: '#e0a94f', opacity: 0.9,
+    x: -5, y: -wall + 4, width: 10, height: wall - 4, fill: EMBER, opacity: 0.9,
   }));
   return g;
 }
@@ -166,7 +168,7 @@ function groundMarks(scene: SteadingScene): SVGGElement {
         cx: 16 + (i % 3) * 9 + row * 4.5,
         cy: GROUND_Y - 4 - row * 8,
         r: 4.4,
-        fill: '#8a6f43',
+        fill: HAFT,
         stroke: '#4a3c26',
         'stroke-width': 1.2,
       }));
@@ -210,7 +212,11 @@ function childMarks(scene: SteadingScene): SVGGElement {
     const rng = makeRng(`landnam-child:${name}`);
     const x = first.x + HOUSE_HALF + 10 + i * 11 + rng.float(-2, 2);
     const h = 14 + rng.float(0, 3);
-    const tunic = ['#7a6a4e', '#916f4a', '#6b5f4a'][rng.int(0, 2)]!;
+    // The wardrobe is `render/look.ts`'s, not this file's. It used to be
+    // three of look's six wools copied out here, which meant a child could
+    // wear half the wardrobe and would go on wearing those three whatever
+    // look.ts did next. See `folkLook`.
+    const { tunic, skin } = folkLook(name);
     g.append(
       svgEl('path', {
         d: `M ${x - h * 0.16} ${GROUND_Y} L ${x - h * 0.12} ${GROUND_Y - h * 0.62}` +
@@ -218,7 +224,7 @@ function childMarks(scene: SteadingScene): SVGGElement {
         fill: tunic,
       }),
       svgEl('circle', {
-        cx: x, cy: GROUND_Y - h * 0.78, r: h * 0.17, fill: '#c6a184',
+        cx: x, cy: GROUND_Y - h * 0.78, r: h * 0.17, fill: skin,
       }),
     );
   }

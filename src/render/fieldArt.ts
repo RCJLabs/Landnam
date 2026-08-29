@@ -18,6 +18,7 @@ import type { Ground, Terrain } from '../state/types';
 import { ALL_TERRAINS } from '../data/terrain';
 import { copies, latticeCentres, mix, scatter, type Mark } from './terrainArt';
 import { svgEl } from './svg';
+import { BLACK, SUN, WATER, WHITE } from './palette';
 
 /**
  * The battle grid's hex size. render/battle.ts draws with this — one
@@ -30,8 +31,8 @@ export const FIELD_TILE_W = 2 * Math.sqrt(3) * FIELD_HEX;
 export const FIELD_TILE_H = 4 * 1.5 * FIELD_HEX;
 export const FIELD_CENTRES = latticeCentres(FIELD_HEX);
 
-const lighten = (hex: string, amount: number): string => mix(hex, '#ffffff', amount);
-const darken = (hex: string, amount: number): string => mix(hex, '#000000', amount);
+const lighten = (hex: string, amount: number): string => mix(hex, WHITE, amount);
+const darken = (hex: string, amount: number): string => mix(hex, BLACK, amount);
 
 /**
  * What open ground on this country is made of, for the marks.
@@ -151,7 +152,7 @@ function churn(x: number, y: number, mark: Mark, base: string): SVGElement {
 const GROUND_BASE: Record<Exclude<Ground, 'open'>, string> = {
   rough: '#6d6446',
   block: '#4a453c',
-  water: '#2e5468',
+  water: WATER,
   wall: '#4a3b28',
 };
 
@@ -242,8 +243,8 @@ export function fieldPatterns(): SVGPatternElement[] {
 export function lightDefs(): SVGElement[] {
   const sun = svgEl('linearGradient', { id: 'field-sun', x1: '0', y1: '0', x2: '1', y2: '1' });
   sun.append(
-    svgEl('stop', { offset: '0', 'stop-color': '#ffe9b8', 'stop-opacity': 0.16 }),
-    svgEl('stop', { offset: '0.5', 'stop-color': '#ffe9b8', 'stop-opacity': 0 }),
+    svgEl('stop', { offset: '0', 'stop-color': SUN, 'stop-opacity': 0.16 }),
+    svgEl('stop', { offset: '0.5', 'stop-color': SUN, 'stop-opacity': 0 }),
     svgEl('stop', { offset: '1', 'stop-color': '#0a1014', 'stop-opacity': 0.2 }),
   );
   const dusk = svgEl('radialGradient', { id: 'field-vignette', cx: '0.5', cy: '0.46', r: '0.72' });

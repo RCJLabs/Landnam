@@ -27,6 +27,7 @@
 // `processionView` draws it; the numbers are decided here.
 
 import type { Season } from '../state/types';
+import { SUN } from './palette';
 
 export interface Light {
   /**
@@ -79,12 +80,12 @@ const NIGHT: Record<Season, number> = {
  * Warm at full light, and near-black blue as it goes.
  *
  * The night tint was a mid-slate (#2b3b57) in the first cut and it did not
- * work: the painted country's sky runs to #a8afb2, and half a coat of a
+ * work: the painted country's sky runs to HAZE, and half a coat of a
  * mid-blue over a light grey is another light grey. A winter midnight came
  * out as an overcast afternoon with stars in it. Night has to DARKEN, so the
  * tint is nearly black and the opacity carries the rest.
  */
-const DAY_TINT = '#ffe9b8';
+const DAY_TINT = SUN;
 const NIGHT_TINT = '#080d1a';
 
 /** Below this the sky is dark enough for stars — a summer night is not. */

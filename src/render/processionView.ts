@@ -19,6 +19,7 @@ import {
 import { ROUTE_STOPS } from '../sim/route';
 import type { GameState } from '../state/types';
 import type { TravelView } from './views';
+import { EMBER, SNOW } from './palette';
 
 /** `svgEl` takes Nodes; every label here is a string. */
 function words(text: string): Node[] {
@@ -55,7 +56,7 @@ function silhouette(s: Sighting): SVGGElement {
     }));
     // A lit door, because this one is ours and the difference should be
     // visible from a stretch away.
-    g.append(svgEl('rect', { x: -7, y: -18, width: 14, height: 18, fill: '#e0a94f' }));
+    g.append(svgEl('rect', { x: -7, y: -18, width: 14, height: 18, fill: EMBER }));
   } else if (s.kind === 'rival') {
     g.append(svgEl('path', { d: 'M -34 0 L -34 -18 L 0 -36 L 34 -18 L 34 0 Z', fill: ink }));
   } else {
@@ -128,8 +129,8 @@ export function createProcessionView(): TravelView {
   const fireGlow = svgEl('radialGradient', { id: 'road-firelight', cx: '0.5', cy: '0.5', r: '0.5' });
   fireGlow.append(
     svgEl('stop', { offset: '0', 'stop-color': '#ffc061', 'stop-opacity': 1 }),
-    svgEl('stop', { offset: '0.45', 'stop-color': '#e0a94f', 'stop-opacity': 0.45 }),
-    svgEl('stop', { offset: '1', 'stop-color': '#e0a94f', 'stop-opacity': 0 }),
+    svgEl('stop', { offset: '0.45', 'stop-color': EMBER, 'stop-opacity': 0.45 }),
+    svgEl('stop', { offset: '1', 'stop-color': EMBER, 'stop-opacity': 0 }),
   );
   defs.append(dusk, fireGlow);
   root.append(defs);
@@ -213,7 +214,7 @@ export function createProcessionView(): TravelView {
           d: `M ${x} ${y} q 3 -2.4 6 0`,
           class: 'whitecap',
           fill: 'none',
-          stroke: '#dfe6ea',
+          stroke: SNOW,
           'stroke-width': 1.4,
           'stroke-linecap': 'round',
           opacity: 0.7,

@@ -28,6 +28,14 @@ head-on for the shield wall and `render/walker.ts` draws them in profile for
 the road and the yard; `render/shield.ts` draws the shield for both. A view
 that invents its own colours for a person has broken the pillar below.
 
+**One ink.** A colour used by more than one renderer is named in
+`render/palette.ts` and spelled nowhere else; a colour only one painter uses
+stays with that painter. `style.css` keeps its own `:root` block so the page
+does not wait for JavaScript to learn what colour its text is, and
+`test/palette.test.ts` asserts the two say the same thing. That test is also
+what makes the rule a rule: it fails on any renderer that respells a shared
+colour, and on any file that keeps its own copy of `look.ts`'s wardrobe.
+
 **One knot.** The interlace is drawn once, in `render/knot.ts`, as a single
 period of a plait — a tile. It is put on the document root at boot as
 `--knot` and `--knot-dim`, so the stylesheet never holds a second copy and

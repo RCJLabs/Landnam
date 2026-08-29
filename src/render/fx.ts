@@ -15,6 +15,7 @@ import type { Beat, BlowBeat } from '../sim/beats';
 import { makeRng } from '../rng';
 import { FIGURE_LIFT, FIGURE_R, RANK_GAP, standAt } from './line';
 import { svgEl } from './svg';
+import { BLOOD, BRASS, PALE_IRON, PARCHMENT, SLATE, STEEL } from './palette';
 
 /**
  * The scale effects are drawn at: THE RADIUS A FIGHTER IS ACTUALLY DRAWN AT.
@@ -262,7 +263,7 @@ export function showBeat(
           class: `fx-thrust${soft ? ' soft' : ''}`,
           pathLength: 100,
           fill: 'none',
-          stroke: '#e8dcc0',
+          stroke: PARCHMENT,
         }),
         380,
       );
@@ -276,9 +277,9 @@ export function showBeat(
       spear.append(
         svgEl('line', {
           x1: -7, y1: 0, x2: 5, y2: 0,
-          stroke: '#c9a468', 'stroke-width': 1.8, 'stroke-linecap': 'round',
+          stroke: BRASS, 'stroke-width': 1.8, 'stroke-linecap': 'round',
         }),
-        svgEl('path', { d: 'M 5 0 l 4 1.8 l -1.2 -1.8 l 1.2 -1.8 Z', fill: '#9fb0c4' }),
+        svgEl('path', { d: 'M 5 0 l 4 1.8 l -1.2 -1.8 l 1.2 -1.8 Z', fill: PALE_IRON }),
       );
       const style = (spear as SVGElement & { style: CSSStyleDeclaration }).style;
       style.setProperty('--x0', `${from.x}px`);
@@ -300,7 +301,7 @@ export function showBeat(
       if (b.result === 'turned' || b.result === 'miss') {
         // A shield that held still shoves the man behind it, a little.
         if (b.result === 'turned') shove(root, b.target, dx, dy, HEX * 0.07);
-        spawn(burst(to.x, to.y, '#cfd8dc', b.result === 'turned' ? 9 : 6, 5), 420);
+        spawn(burst(to.x, to.y, STEEL, b.result === 'turned' ? 9 : 6, 5), 420);
         return;
       }
       if (b.damage > 0) {
@@ -308,7 +309,7 @@ export function showBeat(
         // his middle.
         const place = blowLanding(b);
         const at = { x: t.x, y: t.y + placeOffset(place, HEX) };
-        if (b.result === 'glance') spawn(burst(at.x, at.y, '#cfd8dc', 6, 4), 380);
+        if (b.result === 'glance') spawn(burst(at.x, at.y, STEEL, 6, 4), 380);
         spawn(svgEl('circle', {
           cx: at.x, cy: at.y,
           // A heavier blow flashes wider. Head blows read sharper than body
@@ -340,7 +341,7 @@ export function showBeat(
     if (!at) return;
     if (b.result === 'held') {
       // Nobody moved: the brace flash where the shove was refused.
-      spawn(burst(at.x, at.y - R * 0.4, '#cfd8dc', 7, 4), 380);
+      spawn(burst(at.x, at.y - R * 0.4, STEEL, 7, 4), 380);
       return;
     }
     if (b.result === 'crushed') {
@@ -366,7 +367,7 @@ export function showBeat(
           x2: was.x + dx * f + (dx / d) * 6,
           y2: was.y + dy * f + (dy / d) * 6,
           class: 'fx-streak',
-          stroke: '#cfd8dc',
+          stroke: STEEL,
         }),
         360,
       );
@@ -390,7 +391,7 @@ export function showBeat(
       svgEl('circle', {
         cx: p.x, cy: p.y, r: HEX * 0.42,
         class: 'fall-fade',
-        fill: b.side === 'warband' ? '#b23b2e' : '#3f4a5a',
+        fill: b.side === 'warband' ? BLOOD : SLATE,
       }),
       900,
     );
@@ -419,7 +420,7 @@ export function showBeat(
           x2: ox + ((half === -1 ? link.ax : link.bx) - ox) * 0.8,
           y2: oy + ((half === -1 ? link.ay : link.by) - oy) * 0.8,
           class: 'fx-snap',
-          stroke: link.friendly ? '#e8dcc0' : '#9fb0c4',
+          stroke: link.friendly ? PARCHMENT : PALE_IRON,
         });
         (snap as SVGElement & { style: CSSStyleDeclaration }).style.setProperty(
           '--tx',

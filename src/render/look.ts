@@ -20,21 +20,29 @@
 import { makeRng, type Rng } from '../rng';
 import type { Person } from '../state/types';
 import { mix } from './terrainArt';
+import { BLACK, BLOOD, GOLD, HAFT, INK, IRON, PARCHMENT, SKIN, SLATE, WATER, WHITE } from './palette';
 
-export const darken = (hex: string, amount: number): string => mix(hex, '#000000', amount);
-export const lighten = (hex: string, amount: number): string => mix(hex, '#ffffff', amount);
+export const darken = (hex: string, amount: number): string => mix(hex, BLACK, amount);
+export const lighten = (hex: string, amount: number): string => mix(hex, WHITE, amount);
 
 /**
  * Period shield paint, split by side so the one glance that decides a fight
  * — who is ours — never has to be read off a motif. The warband paints warm
  * (madder, ochre, oxblood, parchment); the foes cold (woad, sea, iron,
  * slate). Any pairing within a family stays inside that read.
+ *
+ * Four of the warm grounds and two of the cold ones ARE the game's own ink —
+ * the madder is the blood, the ochre is the gold, the pale is the parchment
+ * — so they come from `palette.ts` rather than being spelled again here. A
+ * shield painted in a colour nothing else in the game uses is a shield from
+ * a different game. The rest are wardrobe and belong to this file.
  */
-export const WARM = ['#b23b2e', '#d3a441', '#8a2f24', '#e8dcc0', '#8a6f43'];
-export const COLD = ['#3f4a5a', '#2e5468', '#6a7684', '#4a555f', '#8fa0b4'];
+export const WARM = [BLOOD, GOLD, '#8a2f24', PARCHMENT, HAFT];
+export const COLD = [SLATE, WATER, '#6a7684', '#4a555f', '#8fa0b4'];
 
-export const IRON = '#5b6570';
-export const INK = '#14110d';
+// Kept as re-exports: half the renderers import IRON and INK from here, and
+// this is the file they think of as the source for what a person is made of.
+export { IRON, INK };
 
 /** Undyed and cheaply dyed wool. What a tunic is, when nobody is showing off. */
 const WOOL = ['#7a6a4e', '#6b5f4a', '#8a7b5c', '#5f5642', '#7d7360', '#916f4a'];
@@ -122,4 +130,27 @@ export function lookOf(person: Person, friendly: boolean): Look {
   const hair = grey > 0 ? mix(born, '#cfc9bd', grey) : born;
 
   return { field, accent, cloak, motifKind, motifTilt, tunic, hair, beard, stride, build, rng };
+}
+
+/**
+ * What somebody who is not in the warband is wearing, from their name.
+ *
+ * THIS EXISTS BECAUSE A VIEW HAD INVENTED ITS OWN. `steadingView.ts` drew the
+ * children of the household with
+ *
+ *     const tunic = ['#7a6a4e', '#916f4a', '#6b5f4a'][rng.int(0, 2)]!;
+ *
+ * — three of this file's six wools, copied out, so a child could only ever
+ * wear half the wardrobe and would keep wearing those three if the wardrobe
+ * here ever changed. CLAUDE.md's first pillar says it in as many words: a
+ * view that invents its own colours for a person has broken it. The children
+ * are named people with a seed of their own; they were just not going through
+ * the file that decides what people look like.
+ *
+ * They are not a `Person` — they have a name and nothing else — so this is
+ * the name-only door into the same wardrobe rather than a second one.
+ */
+export function folkLook(name: string): { tunic: string; skin: string } {
+  const rng = makeRng(`landnam-folk:${name}`);
+  return { tunic: WOOL[rng.int(0, WOOL.length - 1)]!, skin: SKIN };
 }

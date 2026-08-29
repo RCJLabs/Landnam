@@ -32,9 +32,9 @@ import { beltAxes } from './gear';
 import { crack, shieldTurned } from './shield';
 import type { Person } from '../state/types';
 import { svgEl } from './svg';
+import { BLOOD, GOLD, HAFT, MOSS, PALE_IRON, SKIN, STEEL } from './palette';
 
 /** One tone for skin, as `walker.ts` uses; a second one is a smudge here. */
-const SKIN = '#c6a184';
 
 /**
  * How much of its face a shield shows when it is turned at the enemy.
@@ -105,20 +105,20 @@ export function figure(
   g.append(
     svgEl('line', {
       x1: buttX, y1: spearY + h * 0.08, x2: tipX, y2: spearY - h * 0.02,
-      stroke: '#8a6f43', 'stroke-width': Math.max(1.4, h * 0.026),
+      stroke: HAFT, 'stroke-width': Math.max(1.4, h * 0.026),
       'stroke-linecap': 'round',
     }),
     svgEl('path', {
       d: `M ${tipX} ${spearY - h * 0.02} l ${f * h * 0.07} ${h * 0.02}` +
          ` l ${-f * h * 0.07} ${h * 0.035} Z`,
-      fill: '#9fb0c4',
+      fill: PALE_IRON,
     }),
   );
   if (s.pennant) {
     g.append(svgEl('path', {
       d: `M ${buttX} ${spearY + h * 0.06} l ${-f * h * 0.13} ${h * 0.04}` +
          ` l ${f * h * 0.13} ${h * 0.05} Z`,
-      fill: s.pennant === 'gold' ? '#d3a441' : '#b23b2e',
+      fill: s.pennant === 'gold' ? GOLD : BLOOD,
       class: 'leader-pennant',
     }));
   }
@@ -224,7 +224,7 @@ export function figure(
   if (s.defending) {
     g.append(svgEl('ellipse', {
       cx: shieldX, cy: shieldY, rx: (shieldR + 3) * SHIELD_TURN, ry: shieldR + 3,
-      fill: 'none', stroke: '#cfd8dc', 'stroke-width': 4, opacity: 0.85,
+      fill: 'none', stroke: STEEL, 'stroke-width': 4, opacity: 0.85,
     }));
   }
   const shield = svgEl(
@@ -243,7 +243,7 @@ export function figure(
   if (s.active) {
     g.append(svgEl('ellipse', {
       cx, cy: groundY, rx: h * 0.22, ry: h * 0.06,
-      fill: 'none', stroke: '#d3a441', 'stroke-width': 2.6,
+      fill: 'none', stroke: GOLD, 'stroke-width': 2.6,
     }));
   }
 
@@ -251,7 +251,7 @@ export function figure(
   if (s.broken) {
     g.append(svgEl('path', {
       d: `M ${cx - radius * 0.5} ${groundY - h - 6} l ${radius} 0 l ${-radius * 0.5} ${-radius * 0.6} Z`,
-      fill: '#d3a441',
+      fill: GOLD,
     }));
   }
 
@@ -265,7 +265,7 @@ export function figure(
     svgEl('rect', {
       x: cx - width / 2, y: groundY + 4,
       width: Math.max(0, width * s.health), height: 4,
-      fill: s.health > 0.5 ? '#7d9150' : s.health > 0.25 ? '#d3a441' : '#b23b2e',
+      fill: s.health > 0.5 ? MOSS : s.health > 0.25 ? GOLD : BLOOD,
     }),
   );
   return g;

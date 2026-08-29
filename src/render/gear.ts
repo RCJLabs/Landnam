@@ -27,10 +27,10 @@
 import { darken } from './look';
 import { svgEl } from './svg';
 import type { ToolId } from '../data/jobs';
+import { HAFT, MOSS, PALE_IRON, PARCHMENT, ROPE } from './palette';
 
-const HAFT = '#8a6f43';
-const IRON = '#9fb0c4';
-const darkIron = darken(IRON, 0.45);
+
+const darkIron = darken(PALE_IRON, 0.45);
 
 /**
  * A hand-axe on the belt, one per throw the fighter has left.
@@ -65,7 +65,7 @@ export function beltAxes(
       svgEl('path', {
         d: `M ${hx} ${hy - h * 0.075} l ${-f * h * 0.085} ${h * 0.022}` +
            ` l ${f * h * 0.022} ${h * 0.078} l ${f * h * 0.063} ${-h * 0.038} Z`,
-        fill: IRON,
+        fill: PALE_IRON,
         stroke: darkIron,
         'stroke-width': 0.8,
       }),
@@ -110,21 +110,21 @@ export function toolInHand(
     out.push(svgEl('path', {
       d: `M ${headX} ${headY + h * 0.02} l ${-f * h * 0.1} ${-h * 0.035}` +
          ` l ${f * h * 0.02} ${h * 0.1} l ${f * h * 0.08} ${-h * 0.045} Z`,
-      fill: IRON,
+      fill: PALE_IRON,
     }));
   } else if (tool === 'sickle') {
     // A curved blade — the one tool whose shape IS a curve.
     out.push(svgEl('path', {
       d: `M ${headX} ${headY + h * 0.04} q ${-f * h * 0.14} ${-h * 0.02}` +
          ` ${-f * h * 0.1} ${h * 0.09}`,
-      fill: 'none', stroke: IRON, 'stroke-width': Math.max(1.4, h * 0.032),
+      fill: 'none', stroke: PALE_IRON, 'stroke-width': Math.max(1.4, h * 0.032),
       'stroke-linecap': 'round',
     }));
   } else if (tool === 'adze') {
     // A heavy block across the haft.
     out.push(svgEl('rect', {
       x: headX - h * 0.055, y: headY, width: h * 0.11, height: h * 0.055,
-      fill: IRON, stroke: darken(IRON, 0.4), 'stroke-width': 1,
+      fill: PALE_IRON, stroke: darken(PALE_IRON, 0.4), 'stroke-width': 1,
     }));
   } else if (tool === 'bow') {
     // A stave and a string, held upright.
@@ -135,7 +135,7 @@ export function toolInHand(
       }),
       svgEl('line', {
         x1: headX, y1: headY, x2: headX, y2: headY + h * 0.48,
-        stroke: '#e8dcc0', 'stroke-width': 1, opacity: 0.8,
+        stroke: PARCHMENT, 'stroke-width': 1, opacity: 0.8,
       }),
     );
   } else if (tool === 'net') {
@@ -144,7 +144,7 @@ export function toolInHand(
     const ny = groundY - h * 0.5;
     out.push(svgEl('path', {
       d: `M ${nx - h * 0.09} ${ny} q ${h * 0.09} ${h * 0.22} ${h * 0.18} 0 Z`,
-      fill: '#8a7c5e', opacity: 0.85, stroke: '#5a5140', 'stroke-width': 1,
+      fill: ROPE, opacity: 0.85, stroke: '#5a5140', 'stroke-width': 1,
     }));
     for (const t of [-0.04, 0, 0.04]) {
       out.push(svgEl('line', {
@@ -159,7 +159,7 @@ export function toolInHand(
     out.push(svgEl('path', {
       d: `M ${hx} ${hy} l ${-f * h * 0.02} ${h * 0.12} M ${hx} ${hy}` +
          ` l ${-f * h * 0.06} ${h * 0.06} M ${hx} ${hy} l ${f * h * 0.03} ${h * 0.07}`,
-      fill: 'none', stroke: '#7d9150', 'stroke-width': Math.max(1.2, h * 0.024),
+      fill: 'none', stroke: MOSS, 'stroke-width': Math.max(1.2, h * 0.024),
       'stroke-linecap': 'round',
     }));
   }

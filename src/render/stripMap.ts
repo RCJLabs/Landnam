@@ -11,6 +11,7 @@ import {
 } from './strip';
 import { ROUTE_STOPS } from '../sim/route';
 import type { GameState } from '../state/types';
+import { PARCHMENT, ROPE, RUST, TIMBER } from './palette';
 
 /** `svgEl` takes Nodes, and every label here is a string. */
 function words(text: string): Node[] {
@@ -23,34 +24,34 @@ function glyph(mark: StripMark, x: number, y: number): SVGGElement {
     class: `strip-mark strip-${mark.kind}`,
     opacity: mark.spent ? 0.4 : 0.95,
   });
-  const ink = mark.ink ?? '#e8dcc0';
+  const ink = mark.ink ?? PARCHMENT;
   if (mark.kind === 'landing') {
     // A hull on the sand: the shape the saga opens with.
     g.append(svgEl('path', {
       d: `M ${x - 9} ${y} q 9 7 18 0 z`,
-      fill: '#d9c9a3', stroke: '#8a7c5e', 'stroke-width': 1,
+      fill: '#d9c9a3', stroke: ROPE, 'stroke-width': 1,
     }));
   } else if (mark.kind === 'hall') {
     g.append(svgEl('path', {
       d: `M ${x - 8} ${y + 5} L ${x - 8} ${y - 1} L ${x} ${y - 7} L ${x + 8} ${y - 1} ` +
         `L ${x + 8} ${y + 5} z`,
-      fill: '#e8dcc0', stroke: '#8a7c5e', 'stroke-width': 1,
+      fill: PARCHMENT, stroke: ROPE, 'stroke-width': 1,
     }));
   } else if (mark.kind === 'neighbour' || mark.kind === 'rival') {
     // A gable, like ours, because they are doing what we are doing — inked
     // by their temper where they have one.
     g.append(svgEl('path', {
       d: `M ${x - 7} ${y + 4} L ${x} ${y - 6} L ${x + 7} ${y + 4} z`,
-      fill: ink, stroke: '#3a3324', 'stroke-width': 0.8,
+      fill: ink, stroke: TIMBER, 'stroke-width': 0.8,
     }));
   } else if (mark.kind === 'landmark') {
     g.append(svgEl('circle', {
-      cx: x, cy: y, r: 6, fill: 'none', stroke: '#e8dcc0', 'stroke-width': 1.4,
+      cx: x, cy: y, r: 6, fill: 'none', stroke: PARCHMENT, 'stroke-width': 1.4,
     }));
   } else {
     g.append(svgEl('rect', {
       x: x - 6, y: y - 6, width: 12, height: 12,
-      fill: '#d9c9a3', stroke: '#8a7c5e', 'stroke-width': 1,
+      fill: '#d9c9a3', stroke: ROPE, 'stroke-width': 1,
       transform: `rotate(45 ${x} ${y})`,
     }));
   }
@@ -78,7 +79,7 @@ function lane(stop: StripStop): SVGGElement {
   if (stop.trod) {
     g.append(svgEl('line', {
       x1: x + 3, y1: LANE_Y + LANE_H - 7, x2: x + STOP_W - 3, y2: LANE_Y + LANE_H - 7,
-      stroke: '#e8dcc0', 'stroke-width': 2.2, opacity: 0.5,
+      stroke: PARCHMENT, 'stroke-width': 2.2, opacity: 0.5,
       'stroke-linecap': 'round',
     }));
   }
@@ -101,7 +102,7 @@ function lane(stop: StripStop): SVGGElement {
   if (stop.here) {
     g.append(svgEl('circle', {
       cx: xOf(stop.index), cy: LANE_Y + LANE_H + 12, r: 7,
-      fill: '#f0e3c2', stroke: '#3a3324', 'stroke-width': 1.6,
+      fill: '#f0e3c2', stroke: TIMBER, 'stroke-width': 1.6,
     }));
   }
 
@@ -174,7 +175,7 @@ export function renderStrip(
     const x = (scene.limit + 1) * STOP_W;
     layers.limit.append(svgEl('line', {
       x1: x, y1: LANE_Y - 22, x2: x, y2: LANE_Y + LANE_H + 8,
-      stroke: '#c2703a', 'stroke-width': 2, 'stroke-dasharray': '5 4', opacity: 0.9,
+      stroke: RUST, 'stroke-width': 2, 'stroke-dasharray': '5 4', opacity: 0.9,
     }));
     layers.limit.append(svgEl('text', {
       x: x - 4, y: LANE_Y - 26, 'text-anchor': 'end', class: 'strip-limit',

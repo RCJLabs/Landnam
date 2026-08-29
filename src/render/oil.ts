@@ -18,6 +18,7 @@
 
 import { mix } from './terrainArt';
 import { makeRng, type Rng } from '../rng';
+import { BLACK, PARCHMENT, WHITE } from './palette';
 
 /**
  * World units per painted pixel.
@@ -83,9 +84,9 @@ const GROUND = 1.03;
  * and the world's terrain go through the same mixer.
  */
 export function rampOf(fill: string, edge: string, dim = 0): [string, string, string] {
-  const body = dim > 0 ? mix(fill, '#000000', dim) : fill;
-  const shade = dim > 0 ? mix(edge, '#000000', dim) : edge;
-  return [mix(body, '#e8dcc0', 0.13), body, shade];
+  const body = dim > 0 ? mix(fill, BLACK, dim) : fill;
+  const shade = dim > 0 ? mix(edge, BLACK, dim) : edge;
+  return [mix(body, PARCHMENT, 0.13), body, shade];
 }
 
 /**
@@ -125,7 +126,7 @@ function stroke(
     // cold pair — a shared highlight dragged every terrain towards the same
     // hue and was most of why the map went monochrome.
     ctx.globalAlpha = alpha * rng.float(0.1, 0.28);
-    ctx.fillStyle = rng.chance(0.55) ? mix(colour, '#ffffff', 0.34) : mix(colour, '#000000', 0.44);
+    ctx.fillStyle = rng.chance(0.55) ? mix(colour, WHITE, 0.34) : mix(colour, BLACK, 0.44);
     ctx.fillRect(-length / 2, rng.float(-0.4, 0.4) * width, length * rng.float(0.4, 0.9), width * 0.17);
   }
   ctx.restore();

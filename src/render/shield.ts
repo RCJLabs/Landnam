@@ -11,6 +11,7 @@
 
 import { darken, lighten, INK, IRON, type Look } from './look';
 import { svgEl } from './svg';
+import { PALE_IRON, PARCHMENT } from './palette';
 
 /** One wedge of a round shield, for quarters and rays. Angles in radians. */
 function sector(cx: number, cy: number, r: number, a0: number, a1: number): SVGElement {
@@ -117,7 +118,7 @@ export function shieldFace(
     svgEl('circle', {
       cx, cy, r,
       fill: look.field,
-      stroke: friendly ? '#e8dcc0' : '#9fb0c4',
+      stroke: friendly ? PARCHMENT : PALE_IRON,
       'stroke-width': 2,
     }),
     ...motif(look.motifKind, cx, cy, r, look.accent, look.motifTilt),

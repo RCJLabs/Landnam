@@ -23,6 +23,7 @@ import { hasTrod, knowsStop, pushLimit, standingAt, walkOptions } from '../sim/c
 import { ROUTE_STOPS, daysBetween, stopAt } from '../sim/route';
 import { rivalSettled } from '../sim/rival';
 import type { GameState, Terrain } from '../state/types';
+import { BLOOD, RUST } from './palette';
 
 /**
  * Width of one stretch of coast, in chart pixels.
@@ -212,8 +213,8 @@ export function stripScene(state: GameState, daysInHand: number): StripScene {
  * wherever a player meets it.
  */
 export const STANDING_INK: Record<string, string> = {
-  hostile: '#b23b2e',
-  cold: '#c2703a',
+  hostile: BLOOD,
+  cold: RUST,
   wary: '#b6a06a',
   friendly: '#7fa05a',
   sworn: '#5fa389',

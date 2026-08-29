@@ -42,7 +42,9 @@
 > the title is the coast the typed seed actually makes, and the ending has
 > the chronicle's voice and the screen to itself. **And Art 16** — the
 > weave is one tile, set on the root, costing the document no nodes at any
-> length. Next: 18, last by design.
+> length. **And Art 18, which finishes the queue** — the colours with more
+> than one author are one file now, and the children of the household stopped
+> keeping a wardrobe of their own. **THE ART QUEUE IS DONE.**
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -3207,8 +3209,65 @@ Ordered by how much they change what a player sees, not by cost:
   two". That is the failure this needed a bar for: `var(--knot)` unset is
   invalid at computed-value time, resolves to `none`, and every rule in the
   game quietly goes back to nothing with nothing thrown and nothing logged.
-- [ ] **Art 18 A hand that drew this** — The through-line: one visual voice
-  across all of it, which is the item that only makes sense last.
+- [x] **Art 18 A hand that drew this** — **Done 2026-08-29.** The last item is
+  not a feature. It asks whether all of it looks like ONE HAND, and the only
+  way to answer that is to count.
+
+  Counted, before anything was changed: **93 distinct colours across the 18
+  files in `render/`, 182 times over, with 140 pairs closer to each other
+  than dE 8** — the threshold below which two colours are the same colour
+  written twice — spread across DIFFERENT files. **Twenty-six had two or more
+  authors. Five were exact duplicates, at dE 0.0, of a colour `style.css`
+  already had a name for.**
+
+  The gold was the worst of it and the worst of the gold was this session's.
+  `--gold` is `#d3a441` in the stylesheet; `battle.ts`, `fieldWeather.ts`,
+  `figures.ts` and `look.ts` each spell it out again; and `render/knot.ts`,
+  shipped an hour earlier by Art 16, wrote it a sixth way as
+  `rgba(211,164,65,...)` — the same colour in decimal. **One colour, six
+  spellings, added to by the item that was itself about having one place for
+  a thing.** It needed an alpha and hex has nowhere to put one, so it wrote
+  the colour out again, which is what always happens when the shared thing
+  cannot do what the caller needs. `palette.ts` has an `alpha()` now.
+
+  **Two files already disagreed about what a word MEANT**, which is worse
+  than any repeated literal: `gear.ts` had `const IRON = '#9fb0c4'` for an
+  axe edge and `look.ts` exports `IRON = '#5b6570'` for a helm. Same word,
+  same directory, two colours, and a reader of either would have been
+  confident and wrong. Both are wanted — a pale edge and a dark mass — so
+  they are kept and told apart by name.
+
+  **And a load-bearing pillar was being broken in the code.** CLAUDE.md's
+  first rule says a view that invents its own colours for a person has broken
+  it. `steadingView.ts` dressed the household's children with
+
+      const tunic = ['#7a6a4e', '#916f4a', '#6b5f4a'][rng.int(0, 2)]!;
+
+  — three of `look.ts`'s six wools, copied out, so a child could only ever
+  wear half the wardrobe and would go on wearing those three whatever
+  `look.ts` did next. They are named people with a seed of their own; they
+  were just not going through the file that decides what people look like.
+  `folkLook(name)` is the name-only door into the same wardrobe.
+
+  `src/render/palette.ts` is the ink: the colours with MORE THAN ONE AUTHOR
+  and no others. The sixty-seven that belong to a single painter stay with
+  that painter, because a shared name for a colour one place uses is
+  bureaucracy, not a voice. After: **26 colours with two authors became 0,
+  and the five exact duplicates of a named CSS colour became none.**
+
+  **Nothing changed on screen, and that was checked rather than asserted.**
+  The set of colours in the built page is 143 before and 143 after, with none
+  lost and none invented — the histogram is not the instrument, because a
+  constant defined once and referenced legitimately drops its count from 13
+  to 2; the SET is.
+
+  `test/palette.test.ts` is what makes a name the only spelling there is,
+  and it took two goes. The respelling claim caught a sabotaged literal
+  first time. The three wardrobe claims did NOT: they exercise `folkLook`,
+  which stays perfectly correct while a view quietly keeps its own list
+  beside it — watched against exactly the copied wardrobe this item removed,
+  all three stayed green. The claim that works reads look.ts's own `WOOL`
+  and `HAIR` and asserts no other renderer contains one of them.
 
 **The rule this queue inherits:** zero external assets. Every one of these is
 inline SVG or WebAudio, and the built page still has to run offline from a
@@ -3902,6 +3961,41 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — A hand that drew this (Art 18 — the art queue is finished)**
+  — The last item is not a feature: it asks whether all of it looks like one
+  hand, and the way to answer that is to count. Counted first: **93 distinct
+  colours across the 18 files in `render/`, 182 times over, 140 pairs closer
+  than dE 8 in different files, 26 colours with two or more authors, and five
+  exact duplicates of a colour `style.css` already named.**
+
+  The gold was the worst, and the worst of the gold was this session's own:
+  five spellings of `#d3a441` plus `rgba(211,164,65,...)` added an hour
+  earlier by Art 16 — the item about having one place for a thing. It needed
+  an alpha and hex has nowhere to put one, which is what always happens when
+  the shared thing cannot do what the caller needs. `palette.ts` has
+  `alpha()` now.
+
+  Two worse faults than repetition. **`gear.ts` and `look.ts` both defined
+  `IRON` and meant different colours** (`#9fb0c4`, an axe edge; `#5b6570`, a
+  helm) — same word, same directory, and a reader of either confident and
+  wrong. And **`steadingView.ts` dressed the household's children from three
+  of look.ts's six wools, copied out**, which is CLAUDE.md's first pillar
+  broken in the code: a view inventing its own colours for a person. They are
+  named people with their own seed; they now go through `folkLook`.
+
+  `render/palette.ts` holds the colours with more than one author and no
+  others — the 67 local to a single painter stay with it. Twenty-six shared
+  colours became zero; the five CSS duplicates became none. **Nothing changed
+  on screen and it was checked: 143 distinct colours in the built page before
+  and after, none lost, none invented.**
+
+  `test/palette.test.ts` needed two goes. The respelling claim caught a
+  sabotaged literal first time; the three wardrobe claims did not — they
+  exercise `folkLook`, which stays correct while a view keeps its own list
+  beside it, and all three stayed green against exactly the bug this item
+  removed. The one that works reads look.ts's `WOOL` and `HAIR` and asserts
+  no other renderer contains one.
 
 - **2026-08-29 — Knotwork, done as a pattern (Art 16)** — This item existed
   because Art 8 tried knotwork and backed out: *"knotwork corners at 1px

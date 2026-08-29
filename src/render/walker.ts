@@ -30,9 +30,9 @@ import type { ToolId } from '../data/jobs';
 import { crack, shieldFace } from './shield';
 import type { Person } from '../state/types';
 import { svgEl } from './svg';
+import { HAFT, PALE_IRON, SKIN } from './palette';
 
 /** One tone for skin; at this size a second one is a smudge. */
-const SKIN = '#c6a184';
 
 /**
  * How far a walker reaches from the ground he stands on, in heights.
@@ -148,12 +148,12 @@ export function walker(
     g.append(
       svgEl('line', {
         x1: butt, y1: groundY - h * 0.02, x2: tip, y2: tipY,
-        stroke: '#8a6f43', 'stroke-width': Math.max(1.2, h * 0.022),
+        stroke: HAFT, 'stroke-width': Math.max(1.2, h * 0.022),
       }),
       svgEl('path', {
         d: `M ${tip} ${tipY - h * 0.05} l ${h * 0.028} ${h * 0.055} l ${-h * 0.028} ${-h * 0.016}` +
            ` l ${-h * 0.028} ${h * 0.016} Z`,
-        fill: '#9fb0c4',
+        fill: PALE_IRON,
       }),
     );
   }

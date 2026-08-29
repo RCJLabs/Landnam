@@ -21,6 +21,7 @@ import { mix } from './terrainArt';
 import { paintPatch, patchRng, rampOf } from './oil';
 import { GROUND_Y, RANK_GAP } from './line';
 import { svgEl } from './svg';
+import { HAZE, SKY, SOOT } from './palette';
 
 /** iOS Safari will not allocate a canvas past this on either axis. */
 const MAX_AXIS = 4096;
@@ -256,8 +257,8 @@ export function createFieldPaint(): FieldPaint {
     // thing with weather in it, and strokes all the way down read as a wall.
     const sky = ctx.createLinearGradient(0, box.y, 0, GROUND_Y);
     sky.addColorStop(0, '#5d6f84');
-    sky.addColorStop(0.65, '#8b9aa8');
-    sky.addColorStop(1, '#a8afb2');
+    sky.addColorStop(0.65, SKY);
+    sky.addColorStop(1, HAZE);
     ctx.fillStyle = sky;
     ctx.fillRect(box.x, box.y, box.w, GROUND_Y - box.y);
     // NO brush on the sky, and this took three goes to see.
@@ -361,13 +362,13 @@ export function createFieldPaint(): FieldPaint {
       // from nowhere — and only a little, for the same reason as the sky. A
       // near-black edge against sand painted the field with dark blades,
       // which reads as leaf litter rather than as ground.
-      rampOf(ground, mix(ground, '#2b2a22', 0.18)),
+      rampOf(ground, mix(ground, SOOT, 0.18)),
       RANK_GAP * 0.55, 2.0,
     );
     // A little shade along the horizon, so the ground turns away rather than
     // meeting the hills as a flat plane.
     const turn = ctx.createLinearGradient(0, GROUND_Y, 0, GROUND_Y + RANK_GAP * 1.4);
-    turn.addColorStop(0, mix(ground, '#2b2a22', 0.34));
+    turn.addColorStop(0, mix(ground, SOOT, 0.34));
     turn.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = turn;
     ctx.fillRect(box.x, GROUND_Y, box.w, RANK_GAP * 1.4);

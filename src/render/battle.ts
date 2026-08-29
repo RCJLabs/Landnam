@@ -35,6 +35,7 @@ import { showBeat, type WallMemory } from './fx';
 import { seasonTint, skyNodes } from './fieldWeather';
 import { seasonOf } from '../sim/calendar';
 import { weatherOn } from '../sim/weather';
+import { BLACK, BLOOD, BRASS, GOLD, HAFT, IRON, PALE_IRON, PARCHMENT, SKY, SOOT, STEEL, WHITE } from './palette';
 
 /**
  * The thumb rule, and the scale a rank needs to meet it.
@@ -367,7 +368,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     layers.ground.append(
       svgEl('rect', {
         x: box.x, y: box.y, width: box.w, height: GROUND_Y - box.y,
-        fill: 'var(--sky, #8b9aa8)',
+        fill: `var(--sky, ${SKY})`,
       }),
       svgEl('rect', {
         x: box.x, y: GROUND_Y, width: box.w, height: box.y + box.h - GROUND_Y,
@@ -405,7 +406,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
       const marked = markedFor(state, aim);
       for (const target of marked) {
         const p = standAt(target.side, target.rank);
-        const ink = aim === 'throw' ? '#d3a441' : aim === 'reach' ? '#cfd8dc' : '#b23b2e';
+        const ink = aim === 'throw' ? GOLD : aim === 'reach' ? STEEL : BLOOD;
         // A mark UNDER the man, not a ring around a tile. On a line the
         // thing being aimed at is a person, and the ground he is standing on
         // is the only part of him nobody else overlaps.
@@ -430,12 +431,12 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
             layers.overlay.append(
               svgEl('path', {
                 d: `M ${q.x} ${q.y - FIGURE_LIFT} L ${p.x} ${p.y - FIGURE_LIFT}`,
-                stroke: '#d3a441', 'stroke-width': 2.5, fill: 'none',
+                stroke: GOLD, 'stroke-width': 2.5, fill: 'none',
                 'stroke-dasharray': '5 4', opacity: 0.9,
               }),
               svgEl('ellipse', {
                 cx: q.x, cy: q.y, rx: RANK_GAP * 0.34, ry: RANK_GAP * 0.1,
-                fill: 'none', stroke: '#d3a441', 'stroke-width': 2, opacity: 0.9,
+                fill: 'none', stroke: GOLD, 'stroke-width': 2, opacity: 0.9,
               }),
             );
           }
@@ -460,7 +461,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
       const pa = { x: sa.x, y: sa.y - FIGURE_LIFT };
       const pb = { x: sb.x, y: sb.y - FIGURE_LIFT };
       const friendly = a.side === 'warband';
-      const ink = friendly ? '#e8dcc0' : '#9fb0c4';
+      const ink = friendly ? PARCHMENT : PALE_IRON;
       linkCount.set(a.personId, (linkCount.get(a.personId) ?? 0) + 1);
       linkCount.set(b.personId, (linkCount.get(b.personId) ?? 0) + 1);
       wallNow.set(`${a.personId}|${b.personId}`, {
@@ -478,14 +479,14 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
         }),
         svgEl('line', {
           x1: pa.x + nx * 2, y1: pa.y + ny * 2, x2: pb.x + nx * 2, y2: pb.y + ny * 2,
-          stroke: '#ffffff', 'stroke-width': 1.4, 'stroke-linecap': 'round', opacity: 0.18,
+          stroke: WHITE, 'stroke-width': 1.4, 'stroke-linecap': 'round', opacity: 0.18,
         }),
       );
       for (const f of [0.32, 0.5, 0.68]) {
         layers.overlay.append(
           svgEl('circle', {
             cx: pa.x + dx * f, cy: pa.y + dy * f, r: 2.4,
-            fill: '#5b6570', stroke: '#2b2a22', 'stroke-width': 0.8, opacity: 0.9,
+            fill: IRON, stroke: SOOT, 'stroke-width': 0.8, opacity: 0.9,
           }),
         );
       }
@@ -497,7 +498,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
         svgEl('ellipse', {
           cx: spot.x, cy: spot.y, rx: FIGURE_R + 4.5, ry: RANK_GAP * 0.16,
           fill: 'none',
-          stroke: combatant.side === 'warband' ? '#e8dcc0' : '#9fb0c4',
+          stroke: combatant.side === 'warband' ? PARCHMENT : PALE_IRON,
           'stroke-width': 4,
           opacity: 0.3,
         }),
@@ -677,7 +678,7 @@ function stakes(cx: number, groundY: number): SVGGElement {
     g.append(
       svgEl('path', {
         d: `M ${x} ${groundY + 4} L ${x} ${groundY - h} L ${x + step * 0.34} ${groundY - h - step * 0.55}`,
-        stroke: '#c9a468',
+        stroke: BRASS,
         'stroke-width': 4,
         fill: 'none',
         'stroke-linecap': 'round',
@@ -689,11 +690,11 @@ function stakes(cx: number, groundY: number): SVGGElement {
     svgEl('line', {
       x1: cx - step * 3.4, y1: groundY - tall * 0.42,
       x2: cx + step * 3.4, y2: groundY - tall * 0.42,
-      stroke: '#8a6f43', 'stroke-width': 3,
+      stroke: HAFT, 'stroke-width': 3,
     }),
     svgEl('ellipse', {
       cx, cy: groundY + 4, rx: step * 3.6, ry: RANK_GAP * 0.07,
-      fill: '#000', opacity: 0.22,
+      fill: BLACK, opacity: 0.22,
     }),
   );
   return g;
