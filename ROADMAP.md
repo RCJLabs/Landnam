@@ -27,9 +27,10 @@
 > like a game", below.** Phase 8 built three new views for the coast — the
 > procession, the strip and the elevation — AFTER the art pass ran, so none
 > of them has had one, and 8.5 has now deleted the two hex renderers the art
-> pass was made for. **Art 13 is done.** Art 12 (the steading becomes a
-> place) is next, then Art 11. Ordered by how much they change what a player
-> sees, not by cost.
+> pass was made for. **Art 13 is done.** Ordered by how much they change
+> what a player sees, not by cost. **Art 12 is done too** — the yard is framed to its
+> slot on the painted horizon, and wears its days. Art 11 (weather you can
+> see) is next.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -2854,13 +2855,43 @@ is.
 
 Ordered by how much they change what a player sees, not by cost:
 
-- [ ] **Art 12 The steading becomes a place** — The elevation draws a yard, a
-  row of houses and some figures. It is not yet somewhere anybody lives:
-  no smoke, no stock, no fence, no ground worn by use, nothing that says a
-  season has passed here. THE biggest single change available to the coast,
-  because the steading is where a saga spends most of its days.
+- [x] **Art 12 The steading becomes a place** — The elevation draws a yard, a
+  row of houses and some figures. It was not somewhere anybody lived:
+  no smoke, no ground worn by use, nothing that said a season had passed.
+  **Done 2026-08-28**, in two halves.
+
+  **The frame first, because it was broken before anything was drawn.**
+  Measured on the built page: a fixed 420x300 viewBox under `meet`
+  letterboxed 176px of a 382px slot at 390x844 — 46% black bands — and drew
+  a 161px postage stamp at 320x568; and since raising a building WIDENED the
+  viewBox, every building shrank the whole picture. Worse, the yard's ground
+  sat at y 228, which is inside the PAINTING'S SKY: `fieldOil` paints one
+  world with its horizon at `line.ts`'s ground line, and the battlefield
+  composes on it while the yard floated a brown rectangle over the clouds.
+  `GROUND_Y` is now THE painted horizon, and `composeYard` (pure, tested)
+  fits the viewBox to the slot's own aspect — zero letterbox at any size,
+  refit on resize by the same observer pattern the battlefield uses.
+
+  **Then time, as derived scene facts** — none stored, all from state the
+  sim already keeps: smoke over the hearth (walls standing and somebody
+  home), a path worn dark by feet (`(day - foundedOn) / 160`), turf walls
+  greening and thatch weathering (`/ 400` — wear is faster than growth, so
+  day 20 is raw earth and fresh-cut walls, day 200 a worn path in front of
+  greening houses), a woodpile counted off the actual firewood, field rows
+  tilled only when somebody holds the farmer job, and the children born
+  here, small by the door.
+
   *Done when: a screenshot of day 20 and one of day 200 are obviously
-  different places, and neither needs a caption.*
+  different places, and neither needs a caption.* **They are:** day 20 is
+  one fresh brown longhouse on raw ground under a big sky; day 200 is a row
+  of six greened, weathered houses on a trodden yard. Both taken at
+  390x844; the frame bar was watched fail against the old fixed viewBox.
+
+  Left on the table, named rather than implied: every building is still the
+  same house SHAPE — a palisade drawn as a longhouse is a misdrawing this
+  item did not take on — and the byre keeps no visible stock. Both belong
+  to a per-building silhouette pass, which is smaller work now that
+  `house()` is the one place a building is drawn.
 - [x] **Art 13 One person, one face, everywhere** — Six people the player
   learns to recognise, drawn the same way on the road, in the yard and in the
   line. **Done 2026-08-28.**
@@ -3599,6 +3630,31 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-28 — The steading becomes a place (Art 12)** — Two findings, and
+  the first was that the picture was broken before a single mark of life was
+  missing from it. The yard's fixed 420x300 viewBox under `meet` letterboxed
+  46% of its slot at 390x844 and drew a 161px-wide postage stamp at 320x568
+  — and because the viewBox WIDENED as buildings were raised, every building
+  shrank the whole steading. Deeper: the yard's ground line sat at y 228,
+  inside the sky of the one world `fieldOil` paints — the battlefield stands
+  on that painting's horizon, and the yard floated a flat brown rectangle
+  over its clouds. `GROUND_Y` is now the painted horizon itself, and
+  `composeYard` (pure, unit-tested, watched fail against the old frame)
+  fits the frame to the slot's exact aspect: no letterbox at any size, and
+  a ResizeObserver refits it when the slot moves, the way the battlefield
+  already does. At 320x568 the steading is now a readable full-width strip
+  where it was a stamp between black bands.
+
+  The second half is time made visible, every fact derived and none stored:
+  smoke over the hearth when walls stand and somebody is home; a path worn
+  dark by feet over 160 days; turf greening and thatch weathering over 400
+  — wear outpaces growth on purpose, so a young yard is raw earth by
+  fresh-cut walls and an old one a worn track past greened houses; a
+  woodpile counted off the actual firewood; field rows tilled only when
+  somebody holds the farmer job; the children born here small by the door.
+  Day 20 and day 200 are different places in a screenshot with no caption,
+  which is the milestone's bar, verbatim.
 
 - **2026-08-28 — One person, one face, everywhere (Art 13)** — The first of
   the art queue to run against the coast's own renderers, and it started by

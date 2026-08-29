@@ -1041,6 +1041,21 @@ h2.grim {
   opacity: 0.85;
 }
 
+/* Hearth smoke drifts. Polish only: the still wisp already says a fire is
+   lit, so the motion is free to be turned off. */
+@keyframes smoke-drift {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-7px); opacity: 0.55; }
+}
+
+.hearth-smoke {
+  animation: smoke-drift 4s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hearth-smoke { animation: none; }
+}
+
 .road-step { cursor: pointer; }
 
 .road-step-word {

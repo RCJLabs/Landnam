@@ -16,14 +16,34 @@
 
 import { buildingById, type BuildingDef } from '../data/buildings';
 import { jobOf } from '../sim/colony';
+import { GROUND_Y as HORIZON_Y } from './line';
 import type { GameState, Person, Settlement } from '../state/types';
 
-/** The painted world, in view units. */
+/** The narrowest the yard is drawn, before buildings widen it. */
 export const YARD_W = 420;
-export const YARD_H = 300;
 
-/** Where the ground the steading stands on sits. */
-export const GROUND_Y = YARD_H * 0.76;
+/**
+ * Where the ground the steading stands on sits: ON THE PAINTED HORIZON.
+ *
+ * `fieldOil` paints one world — sky above `line.ts`'s ground line, ridges on
+ * it, brushed ground below — and the battlefield composes on that horizon.
+ * The yard did not: its own ground sat at y 228 in a 0..300 viewBox, which
+ * is entirely inside the PAINTING'S SKY, so the view drew a flat brown
+ * rectangle over the clouds for the houses to stand on. Measured on the
+ * built page: at 390x844 the yard letterboxed 176px of a 382px slot, and
+ * every building raised shrank the whole picture, because the viewBox
+ * widened under `meet`. Standing the steading on the painting's own ground
+ * is what lets the composition (`composeYard`) show sky, ridges and worn
+ * earth instead of black bands.
+ */
+export const GROUND_Y = HORIZON_Y;
+
+/**
+ * The bottom of the yard's world: the foreground strip below the ground
+ * line where the folk stand, with room under the back row for the word
+ * saying what they are at.
+ */
+export const YARD_H = GROUND_Y + 90;
 
 /**
  * How wide a building's plot is.
@@ -48,6 +68,46 @@ export const SLOTS_SHOWN = 5;
  * them.
  */
 export const FOLK_H = 34;
+
+/**
+ * The frame the yard is seen through, fitted to the slot that shows it.
+ *
+ * The viewBox matches the SLOT'S aspect exactly, so `meet` letterboxes
+ * nothing — the defect this replaces gave 46% of the picture to black bands
+ * at 390x844 and drew a 161px-wide postage stamp at 320x568. Anchored on
+ * the ground line: the foreground keeps just enough room for the folk (up
+ * to `FORE_MAX` world units), and everything else is sky and ridge over the
+ * houses, which is how the battlefield composes the same painting.
+ */
+export const FORE_MAX = 90;
+
+/**
+ * How long the ground takes to wear and the turf to green over.
+ *
+ * Wear is faster than growth on purpose: a path is trodden in one season,
+ * turf takes a couple of years to knit — so a day-20 yard is raw earth and
+ * fresh-cut walls, day-200 is a worn path in front of greening houses, and
+ * the two read as different ages at a glance.
+ */
+export const TRODDEN_DAYS = 160;
+export const GREENED_DAYS = 400;
+
+/** A hard winter's worth of firewood, for sizing the pile against. */
+export const WOODPILE_FULL = 60;
+
+export function composeYard(
+  sceneW: number,
+  slotW: number,
+  slotH: number,
+): { x: number; y: number; w: number; h: number } {
+  // A slot that has not been laid out yet measures zero; frame for a phone
+  // rather than dividing by it.
+  const w = slotW >= 10 ? slotW : 390;
+  const h = slotH >= 10 ? slotH : 380;
+  const visH = (sceneW * h) / w;
+  const fore = Math.min(FORE_MAX, Math.max(40, visH * 0.28));
+  return { x: 0, y: GROUND_Y - (visH - fore), w: sceneW, h: visH };
+}
 
 export interface Raised {
   id: string;
@@ -77,6 +137,24 @@ export interface SteadingScene {
   ground: { field: number; wood: number; water: number; rough: number };
   /** How wide the yard has to be for everything to stand in it. */
   width: number;
+  /**
+   * The facts below are Art 12's whole point: every one is a function of
+   * time or of what the band has actually done, so a screenshot of day 20
+   * and one of day 200 are different pictures without a caption. None is
+   * stored — each is derived from state the sim already keeps.
+   */
+  /** A hearth is lit: something stands, and somebody is home to feed it. */
+  smoke: boolean;
+  /** 0..1 — how worn the yard is by feet, from days lived on it. */
+  trodden: number;
+  /** 0..1 — how far the turf walls have greened over, same clock. */
+  greened: number;
+  /** 0..1 — the woodpile against a hard winter's worth. */
+  woodpile: number;
+  /** The steading's fields, and whether anybody is actually working them. */
+  fields: { count: number; tilled: boolean };
+  /** Everyone born here, for the small figures by the door. */
+  childNames: string[];
 }
 
 /**
@@ -131,10 +209,16 @@ export function slotX(index: number): number {
  * head of the queue stands beside them half-up, because a steading with
  * scaffolding in it is a truer picture than one that hides its work.
  */
+const clamp01 = (v: number): number => Math.max(0, Math.min(1, v));
+
 export function steadingScene(state: GameState): SteadingScene {
   const home = state.settlement;
   if (!home) {
-    return { name: '', raised: [], folk: [], ground: emptyGround(), width: YARD_W };
+    return {
+      name: '', raised: [], folk: [], ground: emptyGround(), width: YARD_W,
+      smoke: false, trodden: 0, greened: 0, woodpile: 0,
+      fields: { count: 0, tilled: false }, childNames: [],
+    };
   }
 
   const raised: Raised[] = home.built.map((id, i) => {
@@ -168,12 +252,27 @@ export function steadingScene(state: GameState): SteadingScene {
   // is what was wrong, and it is `slotX` that fixes it.
   const width = Math.max(YARD_W, slotX(raised.length) + SLOT_W);
 
+  const folk = folkIn(state, width);
+  const ground = groundOf(home);
+  const stood = Math.max(0, state.day - home.foundedOn);
+
   return {
     name: home.name,
     raised,
-    folk: folkIn(state, width),
-    ground: groundOf(home),
+    folk,
+    ground,
     width,
+    // Standing walls and somebody home to keep the fire: the scaffolding in
+    // hand does not smoke, and neither does a steading everyone has left.
+    smoke: home.built.length > 0 && folk.length > 0,
+    trodden: clamp01(stood / TRODDEN_DAYS),
+    greened: clamp01(stood / GREENED_DAYS),
+    woodpile: clamp01(state.party.firewood / WOODPILE_FULL),
+    fields: {
+      count: ground.field,
+      tilled: state.party.people.some((p) => p.alive && p.job === 'farmer'),
+    },
+    childNames: home.children.map((c) => c.name),
   };
 }
 

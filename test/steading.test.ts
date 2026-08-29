@@ -14,8 +14,8 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
 import {
-  FOLK_H, GROUND_Y, HOUSE_HALF, HOUSE_REACH, ROOF_OVERSAIL, SIZE_MAX, SLOT_W,
-  YARD_H, YARD_W, groundOf, sizeOf, slotX, steadingScene,
+  FOLK_H, FORE_MAX, GROUND_Y, HOUSE_HALF, HOUSE_REACH, ROOF_OVERSAIL, SIZE_MAX, SLOT_W,
+  WOODPILE_FULL, YARD_H, YARD_W, composeYard, groundOf, sizeOf, slotX, steadingScene,
 } from '../src/render/steading';
 import { walkerBox } from '../src/render/walker';
 import { BECK_SHARE, canFound, foundSettlement, stopReport } from '../src/sim/site';
@@ -363,6 +363,140 @@ describe('the folk in the yard', () => {
 
   it('has a yard at least as wide as it started', () => {
     expect(steadingScene(withHall(4)).width).toBeGreaterThanOrEqual(YARD_W);
+  });
+});
+
+/**
+ * ART 12's FRAME. The old view was a fixed 420x300 viewBox under `meet` in
+ * a slot whose shape it never asked about. Measured on the built page
+ * before this existed: at 390x844 the yard letterboxed 176px of a 382px
+ * slot (46% black bands), and at 320x568 it drew a 161px-wide postage
+ * stamp with 159px of side letterbox — and every building raised widened
+ * the viewBox and SHRANK the whole picture. `composeYard` frames to the
+ * slot's own aspect, anchored on the painted horizon.
+ */
+describe('the frame fits the slot that shows it', () => {
+  const cases: [number, number, number][] = [
+    [420, 390, 382],   // bare yard, phone portrait
+    [567, 390, 382],   // six houses, phone portrait
+    [567, 320, 85],    // six houses, the squeezed short-phone slot
+    [420, 844, 390],   // landscape
+  ];
+
+  it('matches the slot aspect exactly, so meet letterboxes nothing', () => {
+    for (const [sceneW, slotW, slotH] of cases) {
+      const box = composeYard(sceneW, slotW, slotH);
+      expect(box.w).toBe(sceneW);
+      expect(box.w / box.h).toBeCloseTo(slotW / slotH, 5);
+    }
+  });
+
+  it('keeps the ground line in frame with sky over it and folk room under it', () => {
+    for (const [sceneW, slotW, slotH] of cases) {
+      const box = composeYard(sceneW, slotW, slotH);
+      // The horizon is inside the frame...
+      expect(box.y).toBeLessThan(GROUND_Y);
+      expect(box.y + box.h).toBeGreaterThan(GROUND_Y);
+      // ...with the foreground held to a strip: the picture is mostly sky
+      // and houses, never mostly empty earth.
+      const fore = box.y + box.h - GROUND_Y;
+      expect(fore).toBeLessThanOrEqual(FORE_MAX);
+      expect(fore).toBeGreaterThanOrEqual(40 * 0.999);
+    }
+  });
+
+  it('gives a tall slot its folk room in full', () => {
+    const box = composeYard(420, 390, 382);
+    expect(box.y + box.h - GROUND_Y).toBeCloseTo(FORE_MAX, 5);
+  });
+
+  it('frames for a phone when the slot has not been laid out yet', () => {
+    // A zero-sized slot is what an unmounted element measures; dividing by
+    // it would frame the yard through a NaN.
+    const box = composeYard(420, 0, 0);
+    expect(Number.isFinite(box.y)).toBe(true);
+    expect(Number.isFinite(box.h)).toBe(true);
+    expect(box.h).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * ART 12's BAR, as scene facts: a day-20 yard and a day-200 yard are
+ * different pictures. Everything asserted here is derived — nothing was
+ * added to the save — and each fact names the pixel it drives.
+ */
+describe('a screenshot of day 20 and one of day 200 are different places', () => {
+  function aged(days: number): ReturnType<typeof steadingScene> {
+    const state = withHall(4);
+    state.day = state.settlement!.foundedOn + days;
+    return steadingScene(state);
+  }
+
+  it('wears a path and greens the turf only as the days pass', () => {
+    const young = aged(20);
+    const old = aged(200);
+    // Fresh ground, fresh-cut walls.
+    expect(young.trodden).toBeLessThan(0.2);
+    expect(young.greened).toBeLessThan(0.1);
+    // Worn and knitted.
+    expect(old.trodden).toBe(1);
+    expect(old.greened).toBeGreaterThan(0.4);
+    expect(old.greened).toBeGreaterThan(young.greened);
+  });
+
+  it('smokes when walls stand and somebody is home, and not before', () => {
+    const state = withHall(4);
+    state.settlement!.built = [];
+    state.settlement!.queue = ['longhouse'];
+    expect(steadingScene(state).smoke, 'scaffolding does not smoke').toBe(false);
+    state.settlement!.built = ['longhouse'];
+    expect(steadingScene(state).smoke).toBe(true);
+    // A steading everyone has left is a ruin, not a home.
+    for (const person of state.party.people) person.alive = false;
+    expect(steadingScene(state).smoke).toBe(false);
+  });
+
+  it('sizes the woodpile off the actual firewood', () => {
+    const state = withHall(4);
+    state.party.firewood = 0;
+    expect(steadingScene(state).woodpile).toBe(0);
+    state.party.firewood = WOODPILE_FULL / 2;
+    expect(steadingScene(state).woodpile).toBeCloseTo(0.5, 5);
+    state.party.firewood = WOODPILE_FULL * 3;
+    expect(steadingScene(state).woodpile).toBe(1);
+  });
+
+  it('tills the fields only when somebody actually farms them', () => {
+    const state = withHall(4);
+    for (const person of state.party.people) delete person.job;
+    expect(steadingScene(state).fields.tilled).toBe(false);
+    state.party.people[0]!.job = 'farmer';
+    expect(steadingScene(state).fields.tilled).toBe(true);
+    // The count is the plots', not the jobs'.
+    expect(steadingScene(state).fields.count).toBe(
+      steadingScene(state).ground.field,
+    );
+  });
+
+  it('carries everyone born here into the picture', () => {
+    const state = withHall(4);
+    expect(steadingScene(state).childNames).toEqual([]);
+    state.settlement!.children.push(
+      { name: 'Ragnhild', bornOn: 40, mother: state.party.people[0]!.id },
+      { name: 'Sten', bornOn: 90, mother: state.party.people[0]!.id },
+    );
+    expect(steadingScene(state).childNames).toEqual(['Ragnhild', 'Sten']);
+  });
+
+  it('never runs the clocks backward on a save from before the posts', () => {
+    // `foundedOn` after `day` cannot happen in play, but a migration bug
+    // would make it happen in a save, and a negative wear would throw the
+    // renderer a NaN opacity.
+    const state = withHall(4);
+    state.day = state.settlement!.foundedOn - 5;
+    const scene = steadingScene(state);
+    expect(scene.trodden).toBe(0);
+    expect(scene.greened).toBe(0);
   });
 });
 
