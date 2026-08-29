@@ -376,6 +376,64 @@ button.wide {
   color: var(--parchment);
 }
 
+/* --- The saga as a chronicle (art queue item 17) --- */
+
+/* The season's rubric. A chronicle is kept by year, not by day: "the first
+   winter" is the game's own name for its clock, and the reason the bare day
+   number could go. */
+.chronicle-season {
+  margin: 18px 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(211, 164, 65, 0.35);
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.chronicle-season:first-child { margin-top: 2px; }
+
+.chronicle-count {
+  margin: 0 0 2px;
+  color: var(--parchment-dim);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* WEIGHT FOLLOWS MATTER. Everything the scribe wrote is on the page — a view
+   must not quietly edit somebody's record of their own run — but the day's
+   business sits back and the run's story comes forward. */
+.saga-line.routine {
+  color: var(--parchment-dim);
+  font-size: 13px;
+  padding: 1px 0;
+  opacity: 0.75;
+}
+
+.saga-line.told {
+  padding: 5px 0;
+}
+
+/* One illuminated capital a season, on the first line worth telling. */
+.saga-capital {
+  float: left;
+  margin: 2px 6px 0 0;
+  color: var(--gold);
+  font-size: 30px;
+  line-height: 0.86;
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(20, 18, 13, 0.6);
+}
+
+/* A run of identical nights, said once and counted. */
+.saga-times {
+  margin-left: 4px;
+  color: var(--parchment-dim);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
 .saga-day {
   display: inline-block;
   min-width: 26px;

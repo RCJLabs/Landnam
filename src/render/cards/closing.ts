@@ -11,6 +11,7 @@ import { composeSaga, sagaText } from '../../sim/sagagen';
 import type { Fallen } from '../../memorial';
 import type { GameState } from '../../state/types';
 import { button, el } from '../svg';
+import { chronicle, dayOfSeason, isTold, told } from '../chronicle';
 import { beats, challengeOf, describeMark, markOf } from '../../sim/challenge';
 import { copyText } from '../clipboard';
 
@@ -55,16 +56,41 @@ export function renderSagaBook(
   onGuide?: () => void,
 ): HTMLElement {
   const list = el('div', { class: 'saga-book' });
-  for (const entry of state.saga.slice(-120)) {
-    list.append(
-      el('p', { class: `saga-line tone-${entry.tone}` }, [
-        el('span', { class: 'saga-day' }, [`${entry.day}`]),
-        entry.text,
-      ]),
-    );
+  // Arranged by `render/chronicle.ts` — grouped into seasons, adjacent
+  // repeats folded, nothing hidden and nothing moved. See that file for why
+  // a view must not quietly edit somebody's record of their own run.
+  const blocks = chronicle(state.saga.slice(-160));
+  for (const block of blocks) {
+    list.append(el('h3', { class: 'chronicle-season' }, [block.heading]));
+    let lit = false;
+    for (const line of block.lines) {
+      const told = isTold(line.tone);
+      const parts: (Node | string)[] = [];
+      // ONE illuminated capital per season, and it goes to the first line
+      // worth telling rather than to whatever happened first — a scribe
+      // does not gild "we made camp".
+      if (told && !lit) {
+        lit = true;
+        parts.push(el('span', { class: 'saga-capital' }, [line.text.slice(0, 1)]));
+        parts.push(line.text.slice(1));
+      } else {
+        parts.push(el('span', { class: 'saga-day' }, [`${dayOfSeason(line.day)}`]));
+        parts.push(line.text);
+      }
+      // A run of identical nights, said once with its count.
+      if (line.times > 1) {
+        parts.push(el('span', { class: 'saga-times' }, [` \u00d7${line.times}`]));
+      }
+      list.append(
+        el('p', { class: `saga-line tone-${line.tone}${told ? ' told' : ' routine'}` }, parts),
+      );
+    }
   }
   const card = el('div', { class: 'card saga-card' }, [
     el('h2', {}, ['The Saga So Far']),
+    el('p', { class: 'chronicle-count' }, [
+      `${state.saga.length} entries, ${told(state.saga)} worth the telling`,
+    ]),
     list,
     ...(onGuide ? [button('How to play', onGuide, { class: 'relearn' })] : []),
     button('Back', onClose, { class: 'primary wide' }),

@@ -373,6 +373,56 @@ for (const [w, h] of [[390, 844], [320, 568]]) {
     }
   }
 
+  // THE SAGA IS A CHRONICLE (art queue item 17). The arrangement is pure and
+  // held by `test/chronicle.test.ts`; what this checks is that it reaches the
+  // page — seasons under their own rubric, a capital on what is worth
+  // telling, and the counts still adding up to every entry the run wrote.
+  //
+  // The last of those is the one that matters. Arranging a record must not
+  // falsify it: a player's saga is their own account of their run, and a
+  // view that quietly dropped lines to read better would be editing it.
+  if (w === 390) {
+    const book = page.locator('.action-slot button', { hasText: /^Saga$/ }).first();
+    if (await book.count() === 0) {
+      check(false, `${w}x${h}: there is no way to open the saga, so item 17 did NOT run`);
+    } else {
+      await book.click({ timeout: 2000 }).catch(() => {});
+      await page.waitForTimeout(500);
+      const told = await page.evaluate(() => {
+        const el = document.querySelector('.saga-book');
+        if (!el) return null;
+        const counted = [...el.querySelectorAll('.saga-line')].reduce((n, p) => {
+          const times = p.querySelector('.saga-times');
+          return n + (times ? Number(times.textContent.replace(/[^0-9]/g, '')) : 1);
+        }, 0);
+        return {
+          headings: el.querySelectorAll('h3.chronicle-season').length,
+          capitals: el.querySelectorAll('.saga-capital').length,
+          lines: el.querySelectorAll('.saga-line').length,
+          counted,
+          entries: window.landnam.state().saga.length,
+        };
+      });
+      if (!told) {
+        check(false, `${w}x${h}: the saga would not open`);
+      } else {
+        console.log(`${w}x${h}: saga — ${told.entries} entries in ${told.lines} lines, ` +
+          `${told.headings} seasons, ${told.capitals} capitals`);
+        check(told.headings > 0, `${w}x${h}: the saga is a flat list with no seasons in it`);
+        check(told.counted === told.entries,
+          `${w}x${h}: the chronicle shows ${told.counted} of ${told.entries} entries — ` +
+            'arranging the record has falsified it');
+        // Folding has to actually do something, or the claim above passes on
+        // a chronicle that changed nothing at all.
+        check(told.lines <= told.entries,
+          `${w}x${h}: ${told.lines} lines for ${told.entries} entries`);
+      }
+      const back = page.locator('.overlay button', { hasText: /^Back$/ }).first();
+      await back.click({ timeout: 1500 }).catch(() => {});
+      await page.waitForTimeout(250);
+    }
+  }
+
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);
 }
 

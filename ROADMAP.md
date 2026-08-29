@@ -37,7 +37,9 @@
 > Art 19 (blows that land somewhere), now done too — a blow lands in a place
 > and the man takes it. **Art 14 is done too** — hand-axes on the belt that
 > go as they are thrown, shields only on the sworn, and a tool for every job.
-> Next: 17 (the saga as an illuminated chronicle), 20, 16, and 18 last by
+> **Art 17 is done too** — the saga is a chronicle kept by the year, with
+> the day's business gathered and the story illuminated. Next: 20 (the title
+> and the ending as set pieces), 16 (knotwork as a pattern), and 18 last by
 > design.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
@@ -3035,8 +3037,39 @@ Ordered by how much they change what a player sees, not by cost:
   right". `landnam.work()` joins the debug levers for the same reason `stock`
   exists: a fresh steading is entirely idle, so a tool in a hand is
   unreachable without six taps through a roster.
-- [ ] **Art 17 The saga as an illuminated chronicle** — The saga log is the
-  game's memory and is styled as a list.
+- [x] **Art 17 The saga as an illuminated chronicle** — **Done 2026-08-29.**
+  It was styled as a list, and the list was the smaller half of the problem.
+  Measured on a real sixty-one-day run: 87 entries, 61 of them `plain`, and
+  the screen a player lands on read
+
+      51  We made camp and cut 1 of firewood.
+      53  a long swell coming in with no wind behind it — a gale by morning
+      53  We made camp and cut 1 of firewood.
+      55  Thorbjorn's shield-arm broken had mended.
+      55  We made camp and cut 1 of firewood.
+
+  The camp line five times in one screen, the forecast twice word for word,
+  and a man's arm healing given exactly the same weight as a night's
+  firewood. The shape of a saga — its years, its winters, the things worth
+  telling — was all in the data and none of it on the page.
+
+  `render/chronicle.ts` (pure, tested) arranges it the way a scribe would.
+  THE YEAR IS THE UNIT: seasons under their own rubric, "The first winter",
+  which is the game's own name for its clock. THE DAY'S BUSINESS GATHERS: a
+  season's fourteen identical camps are one line and "×14", dated to the
+  night it started. WEIGHT FOLLOWS MATTER: the routine sits back small and
+  dim, `good`, `grim` and `saga` keep their voice, and one illuminated
+  capital a season goes to the first line worth telling — a scribe does not
+  gild "we made camp". Measured after: the same run's 61 routine lines
+  become 13, all 26 told lines untouched and in order.
+
+  **The bar is that arranging a record must not falsify it.** A player's saga
+  is their own account of their run, so nothing is dropped and no told line
+  ever moves — only repeated ROUTINE lines lose their place in the queue
+  between other routine lines, which is not information. `scripts/procession.mjs`
+  adds up every count on the page against `state.saga.length` and was watched
+  fail on a version that quietly dropped the routine to read better: "the
+  chronicle shows 9 of 12 entries — arranging the record has falsified it".
 - [ ] **Art 20 The title and the ending as set pieces** — First and last
   impressions, both currently plain.
 - [ ] **Art 16 Knotwork, done as a pattern** — Border and ornament, once,
@@ -3736,6 +3769,45 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — The saga as an illuminated chronicle (Art 17)** — The item
+  said the saga log "is styled as a list", and the styling was the smaller
+  half. Measured on a real sixty-one-day run: 87 entries, 61 of them
+  `plain`, with the camp line five times in one screen, the weather forecast
+  twice word for word, and a man's arm healing given exactly the same weight
+  as a night's firewood. Everything a saga's shape is made of — years,
+  winters, the things worth telling — was in the data and none of it on the
+  page.
+
+  `render/chronicle.ts` arranges it: seasons under their own rubric ("The
+  first winter", the game's own name for its clock), the day's business
+  gathered into one line with a count and dated to the night it started, the
+  routine set back small and dim while `good`, `grim` and `saga` keep their
+  voice, and one illuminated capital a season on the first line worth
+  telling — a scribe does not gild "we made camp". The same run's 61 routine
+  lines become 13; all 26 told lines are untouched and in order.
+
+  **The rule the whole thing is built on: arranging a record must not
+  falsify it.** A player's saga is their own account of their own run. So
+  nothing is dropped, and a told line never folds and never moves — two grim
+  days with the same words are two things that happened, and their order is
+  the point of a chronicle. What a repeated ROUTINE line loses is its place
+  in the queue between other routine lines, which is not information, and
+  that distinction is stated in the file rather than glossed.
+
+  Worth recording as a near-miss: the first fold only caught CONSECUTIVE
+  repeats, which is the obviously-safe rule and did nothing at all — the
+  real page alternates camp, forecast, camp, forecast, so not one of the
+  61 folded. The bar for it is arithmetic rather than taste:
+  `scripts/procession.mjs` adds every count on the page against
+  `state.saga.length`, and was watched fail on a version that dropped the
+  routine to read better — "the chronicle shows 9 of 12 entries".
+
+  One measuring note that cost time: `landnam.skip()` only bumps the day
+  counter, it does not run `passDay`. Two hundred skipped days wrote two
+  saga lines. Days have to be lived, so the probe camps — and camping runs
+  into raids, which it now fights rather than stalling, the trap
+  `test/rival.test.ts` documents at length.
 
 - **2026-08-29 — Gear you can see (Art 14)** — The premise was not that
   gear needed inventing. The game already knew what everybody was carrying
