@@ -7,11 +7,13 @@
 // read off the same render — keeps working unchanged.
 
 import { createFieldPaint } from './fieldOil';
+import { seasonTint, skyNodes } from './fieldWeather';
+import { makeRng } from '../rng';
 import { walker } from './walker';
 import { svgEl } from './svg';
 import {
   BAND_X, HORIZON_Y, ROAD_Y, SCENE_H, SCENE_W, WALKER_H, fileSpots,
-  processionScene, whereWeAre, type Sighting,
+  processionScene, skyWash, whereWeAre, type Sighting,
 } from './procession';
 import { ROUTE_STOPS } from '../sim/route';
 import type { GameState } from '../state/types';
@@ -116,9 +118,13 @@ export function createProcessionView(): TravelView {
     road: svgEl('g'),
     sights: svgEl('g'),
     band: svgEl('g'),
+    // The sky, OVER the band: rain is between the viewer and everything.
+    // Same class the battlefield's layer carries, so the animation loop,
+    // the stillness freeze and reduced-motion all come from the same CSS.
+    weather: svgEl('g', { class: 'weather' }),
     ui: svgEl('g'),
   };
-  root.append(layers.sea, layers.road, layers.sights, layers.band, layers.ui);
+  root.append(layers.sea, layers.road, layers.sights, layers.band, layers.weather, layers.ui);
 
   // The cost meter the bars read. A still road must not move `work`, however
   // many repaints go past — the same rule `repaint.mjs` holds the hex view to.
@@ -135,6 +141,7 @@ export function createProcessionView(): TravelView {
     // is what lets a bar tell a still road from a busy one.
     const key = [
       scene.at, scene.country, scene.landmark ?? '',
+      scene.weather, scene.season,
       scene.ahead.map((a) => `${a.stop}:${a.kind}`).join(','),
       scene.onward?.stop ?? '-', scene.back?.stop ?? '-',
       state.party.people.filter((p) => p.alive).length,
@@ -150,9 +157,29 @@ export function createProcessionView(): TravelView {
     layers.sea.replaceChildren(
       svgEl('rect', {
         x: 0, y: HORIZON_Y - 8, width: SCENE_W, height: 26,
-        fill: '#3f6a80', opacity: 0.55,
+        // A gale's sea is darker before it is anything else.
+        fill: scene.weather === 'gale' ? '#31586e' : '#3f6a80',
+        opacity: 0.55,
       }),
     );
+    if (scene.weather === 'gale') {
+      // Whitecaps: broken water on the band of sea, seeded once so the same
+      // day shows the same sea. Static on purpose — see `skyWash`.
+      const caps = makeRng('landnam-whitecaps');
+      for (let i = 0; i < 12; i += 1) {
+        const x = caps.float(0.03, 0.95) * SCENE_W;
+        const y = HORIZON_Y - 6 + caps.float(0, 20);
+        layers.sea.append(svgEl('path', {
+          d: `M ${x} ${y} q 3 -2.4 6 0`,
+          class: 'whitecap',
+          fill: 'none',
+          stroke: '#dfe6ea',
+          'stroke-width': 1.4,
+          'stroke-linecap': 'round',
+          opacity: 0.7,
+        }));
+      }
+    }
 
     // The road: a band of ground running from under the band's feet to the
     // horizon, narrowing, so the picture has a direction in it.
@@ -160,7 +187,11 @@ export function createProcessionView(): TravelView {
       svgEl('path', {
         d: `M -20 ${SCENE_H} L ${BAND_X - 30} ${ROAD_Y} L ${SCENE_W * 0.9} ${HORIZON_Y + 6} ` +
            `L ${SCENE_W * 0.96} ${HORIZON_Y + 10} L ${SCENE_W + 40} ${SCENE_H} Z`,
-        fill: '#6b5b3e', opacity: 0.4,
+        // Under a hard frost the road rimes over: the one static mark that
+        // tells a still frost from a still sea fog, since both wash pale.
+        fill: scene.weather === 'frost' ? '#aeb9bd' : '#6b5b3e',
+        opacity: scene.weather === 'frost' ? 0.5 : 0.4,
+        ...(scene.weather === 'frost' ? { class: 'rimed' } : {}),
       }),
     );
 
@@ -200,6 +231,24 @@ export function createProcessionView(): TravelView {
         leader: i === 0,
       }));
     }
+
+    // The sky, in three coats: the season's light, the named weather's own
+    // static wash (there even with every animation stilled), and the moving
+    // weather the battlefield already knows how to draw.
+    layers.weather.replaceChildren();
+    const bounds = { x: 0, y: 0, w: SCENE_W, h: SCENE_H };
+    const tint = seasonTint(scene.season, bounds);
+    if (tint) layers.weather.append(tint);
+    const wash = skyWash(scene.weather);
+    if (wash) {
+      layers.weather.append(svgEl('rect', {
+        x: 0, y: 0, width: SCENE_W, height: SCENE_H,
+        class: 'skywash',
+        fill: wash.fill,
+        opacity: wash.opacity,
+      }));
+    }
+    layers.weather.append(...skyNodes(scene.weather, bounds));
 
     // Where we are, said in words, and the two steps a coast offers. These
     // are on the picture rather than in a panel because the whole bar for

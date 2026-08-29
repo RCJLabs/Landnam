@@ -31,7 +31,10 @@ import { STANDING_INK } from './strip';
 import { countryHere, knowsStop, standingAt, walkOptions } from '../sim/coast';
 import { ROUTE_STOPS, daysBetween } from '../sim/route';
 import { rivalSettled } from '../sim/rival';
-import type { GameState, Terrain } from '../state/types';
+import { seasonOf } from '../sim/calendar';
+import { weatherOn } from '../sim/weather';
+import type { WeatherId } from '../data/weather';
+import type { GameState, Season, Terrain } from '../state/types';
 
 /** The painted world, in view units. Portrait, because the phone is. */
 export const SCENE_W = 390;
@@ -117,6 +120,15 @@ export interface ProcessionScene {
   at: number;
   /** The country underfoot, which is what gets painted. */
   country: Terrain;
+  /**
+   * The sky the band walks under, and the season it walks in.
+   *
+   * Art 11: the sim has named the sky since the weather work and the top
+   * bar prints it, but the picture ignored it — "A gale" in a chip over a
+   * calm painted road. The window and the chip now read the same facts.
+   */
+  weather: WeatherId;
+  season: Season;
   /** What this stretch is called, if it is called anything. */
   landmark?: string;
   /** Things standing on the road ahead, nearest first. */
@@ -204,6 +216,8 @@ export function processionScene(state: GameState): ProcessionScene {
   return {
     at,
     country: countryHere(state),
+    weather: weatherOn(state.seed, state.day).id,
+    season: seasonOf(state.day),
     ...(landmarkNameAtStop(state.seed, at) && knowsStop(state, at)
       ? { landmark: landmarkNameAtStop(state.seed, at)! }
       : {}),
@@ -257,6 +271,26 @@ export function fileSpots(count: number): { x: number; y: number; scale: number 
     });
   }
   return out;
+}
+
+/**
+ * What a named sky does to the LIGHT, as one wash over the whole picture.
+ *
+ * Separate from the moving weather on purpose. The gusts and flakes the
+ * battlefield lends us start invisible and are shown only by their
+ * animation — under stillness or reduced motion that reads as a calm day,
+ * which was Art 5's deliberate call for a battle. This view's bar is "a
+ * gale should look like a gale", and a claim about the picture cannot
+ * depend on the picture moving: the wash is static, so the sky is the
+ * right colour in a screenshot, under stillness, and for every player who
+ * turned the motion off. Fair adds nothing; thaw is a fact about the
+ * snowpack, not the air — the battle's own stance, kept.
+ */
+export function skyWash(weather: WeatherId): { fill: string; opacity: number } | null {
+  if (weather === 'gale') return { fill: '#3c4653', opacity: 0.34 };
+  if (weather === 'frost') return { fill: '#dfe8f2', opacity: 0.18 };
+  if (weather === 'seafog') return { fill: '#c8d2d8', opacity: 0.34 };
+  return null;
 }
 
 /**

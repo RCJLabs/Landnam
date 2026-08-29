@@ -254,6 +254,54 @@ for (const [w, h] of [[390, 844], [320, 568]]) {
     check(false, `${w}x${h}: the road reports no work count, so the repaint claim did NOT run`);
   }
 
+  // WEATHER YOU CAN SEE OUT THE WINDOW (art queue item 11). The sim names
+  // the sky and the top bar prints it; the claim here is that the PICTURE
+  // says it too. Steered by `landnam.sky()` because the sky is a pure
+  // function of (seed, day): skip a day at a time until a gale, and ask the
+  // scene for the gale's own marks — moving streaks for the ones who watch,
+  // and a wash plus whitecaps that are there even with animation stilled,
+  // because "a gale looks like a gale" must not depend on motion.
+  //
+  // Only at one width: the sky does not change shape with the viewport.
+  if (w === 390) {
+    const seen = { gale: null, frost: null, fair: null };
+    for (let d = 0; d < 60 && Object.values(seen).some((v) => v === null); d += 1) {
+      const sky = await page.evaluate(() => window.landnam.sky());
+      if (sky in seen && seen[sky] === null) {
+        seen[sky] = await page.evaluate(() => {
+          const svg = document.querySelector('svg.procession');
+          return {
+            gusts: svg?.querySelectorAll('g.weather .gust').length ?? 0,
+            flakes: svg?.querySelectorAll('g.weather .flake').length ?? 0,
+            wash: svg?.querySelectorAll('.skywash').length ?? 0,
+            caps: svg?.querySelectorAll('.whitecap').length ?? 0,
+          };
+        });
+      }
+      await page.evaluate(() => window.landnam.skip(1));
+      await page.waitForTimeout(120);
+    }
+    for (const [sky, read] of Object.entries(seen)) {
+      if (!read) { console.log(`390x844: no ${sky} day in sixty — that claim did not run`); continue; }
+      console.log(`390x844: ${sky} — ${read.gusts} gusts, ${read.flakes} flakes, ` +
+        `${read.wash} wash, ${read.caps} whitecaps`);
+    }
+    if (seen.gale) {
+      check(seen.gale.gusts >= 5, `390x844: a gale blows ${seen.gale.gusts} gusts across the road`);
+      check(seen.gale.wash > 0, '390x844: a gale leaves the sky the same colour as a fair day');
+      check(seen.gale.caps > 0, '390x844: a gale leaves the sea flat');
+    } else {
+      check(false, '390x844: sixty days and no gale, so the weather claim did NOT run');
+    }
+    if (seen.frost) {
+      check(seen.frost.flakes >= 8, `390x844: a frost snows ${seen.frost.flakes} flakes`);
+    }
+    if (seen.fair) {
+      check(seen.fair.gusts === 0 && seen.fair.flakes === 0 && seen.fair.wash === 0,
+        '390x844: a fair day still has weather drawn on it');
+    }
+  }
+
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);
 }
 

@@ -29,8 +29,11 @@
 > of them has had one, and 8.5 has now deleted the two hex renderers the art
 > pass was made for. **Art 13 is done.** Ordered by how much they change
 > what a player sees, not by cost. **Art 12 is done too** — the yard is framed to its
-> slot on the painted horizon, and wears its days. Art 11 (weather you can
-> see) is next.
+> slot on the painted horizon, and wears its days. **And Art 11** — the sky
+> out the window now shows the weather the chip names, with a static coat
+> so a gale is a gale even with motion stilled. Next: Art 15 (night and the
+> turning of the day), which has the same shape — the light pass exists and
+> travel does not use it.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -2920,9 +2923,23 @@ Ordered by how much they change what a player sees, not by cost:
   six draws from a hundred collide about one time in seven. Sharing a WHOLE
   look: none, in 400. That gap is the whole reason a walker carries hair, a
   beard and a tunic and not just a shield.
-- [ ] **Art 11 Weather you can see out the window** — The travel view knows
-  the sky and the season and says so only in the status bar. A gale should
-  look like a gale.
+- [x] **Art 11 Weather you can see out the window** — The travel view knows
+  the sky and the season and said so only in the status bar. **Done
+  2026-08-29.** The scene now carries `weather` and `season` as facts (the
+  same pure `weatherOn`/`seasonOf` the chip reads, so the window and the
+  chip can never disagree), and the view draws the sky in three coats: the
+  season's tint and the moving weather come straight from the battlefield's
+  Art 5 work (`fieldWeather.ts` took any bounds all along, and the `.weather`
+  CSS — loop, stillness freeze, reduced motion — was never battle-scoped);
+  new is the STATIC coat, because Art 5's gusts and flakes are shown only by
+  their animation and this item's bar is a claim about the picture, not the
+  motion. A gale washes the light slate, darkens the sea and breaks it with
+  whitecaps; a hard frost washes it pale and rimes the road over — the one
+  static mark that tells a still frost from a still sea fog; sea fog hazes
+  everything. Fair adds nothing, and thaw stays a fact about the snowpack.
+  `scripts/procession.mjs` now steers by `landnam.sky()` to find a gale, a
+  frost and a fair day and reads the marks off the screen — watched fail
+  (gale found, zero gusts, zero wash) before the view was wired.
 - [ ] **Art 15 Night, and the turning of the day** — The light pass exists
   (Art 10) and travel does not use it.
 - [ ] **Art 19 Blows that land somewhere** — Battle hits read as numbers more
@@ -3630,6 +3647,33 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — Weather you can see out the window (Art 11)** — The sim
+  has named the sky since the weather work and the top bar prints it; the
+  road ignored it — "A gale" in red over a calm painted afternoon. The
+  scene now carries `weather` and `season` (the same pure functions the
+  chip reads, so window and chip cannot disagree), and the view draws the
+  sky in three coats. Two come straight from Art 5: `fieldWeather.ts`'s
+  gusts, flakes and fog banks took arbitrary bounds all along, and the
+  `.weather` CSS contract — looping, frozen under stillness, off under
+  reduced motion — was never scoped to the battlefield. The third coat is
+  new and is the actual finding: Art 5's moving weather starts invisible
+  and is SHOWN by its animation, which on a battlefield deliberately made
+  stillness read as a calm day — but this item's bar is "a gale should look
+  like a gale", and a claim about the picture cannot depend on the picture
+  moving. So each named sky gets a static wash (`skyWash`, pure, tested),
+  a gale darkens the sea and breaks it with whitecaps, and a hard frost
+  rimes the road over — which is also the one static mark separating a
+  still frost from a still sea fog. Fair adds nothing; thaw stays a fact
+  about the snowpack, not the air.
+
+  `scripts/procession.mjs` grew the claim: it steers by the new
+  `landnam.sky()` (the sky is a pure function of seed and day) to find a
+  gale, a frost and a fair day inside sixty, then reads gusts, wash and
+  whitecaps off the screen — and demands a fair day carry NONE of it.
+  Watched fail before the view was wired: gale found, zero everything.
+  The repaint key gained weather and season, so a sky that changes is a
+  redraw that is charged and a still one stays free.
 
 - **2026-08-28 — The steading becomes a place (Art 12)** — Two findings, and
   the first was that the picture was broken before a single mark of life was

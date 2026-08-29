@@ -19,6 +19,7 @@ import { fieldDrawn } from './render/battleScreen';
 import type { GameState } from './state/types';
 import { startBattle, startRaid } from './sim/battleTurn';
 import { canFound, foundSettlement } from './sim/site';
+import { weatherNow } from './sim/weather';
 import { countryHere, learnStop, standingAt } from './sim/coast';
 import { ROUTE_STOPS } from './sim/route';
 import { buildingById, type BuildingId } from './data/buildings';
@@ -42,6 +43,7 @@ declare global {
   interface Window {
     landnam?: {
       state(): GameState | null;
+      sky(): string | null;
       fight(difficulty?: number): void;
       raid(difficulty?: number): void;
       visit(id?: string): void;
@@ -70,6 +72,15 @@ export function installDebug(hooks: DebugHooks): void {
 
   window.landnam = {
     state: () => hooks.get(),
+
+    // Today's sky, by its id. `scripts/procession.mjs` steers by this to
+    // find a gale day and then asks whether the WINDOW shows one — the sim
+    // is deterministic about the sky, and the bar should not have to parse
+    // a localized label out of the top bar to know what it is standing in.
+    sky: () => {
+      const state = hooks.get();
+      return state ? weatherNow(state).id : null;
+    },
 
     fight(difficulty = 0) {
       onTravel((next) => {

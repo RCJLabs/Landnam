@@ -16,13 +16,15 @@ import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
 import {
   BAND_X, HORIZON_Y, ROAD_Y, SCENE_H, SCENE_W, SEEN_AHEAD, WALKER_H, WALKER_R,
-  countryWord, fileSpots, processionScene, sightAt, whereWeAre,
+  countryWord, fileSpots, processionScene, sightAt, skyWash, whereWeAre,
 } from '../src/render/procession';
 import { walkerBox } from '../src/render/walker';
 import { ROUTE_STOPS, daysBetween, stopAt } from '../src/sim/route';
 import { learnStop, standingAt, walkOptions } from '../src/sim/coast';
 import { landmarkNameAtStop } from '../src/sim/landmark';
 import { RIVAL_SETTLES } from '../src/sim/rival';
+import { seasonOf } from '../src/sim/calendar';
+import { weatherOn } from '../src/sim/weather';
 import type { GameState } from '../src/state/types';
 
 const SEED = 'raven-skerry-317';
@@ -136,6 +138,41 @@ describe('the band on the road', () => {
     const gap = (spots: { x: number }[]) => spots[0]!.x - spots[1]!.x;
     expect(gap(fileSpots(14))).toBeLessThan(gap(fileSpots(6)));
     expect(gap(fileSpots(14))).toBeGreaterThan(0);
+  });
+});
+
+describe('the sky out the window', () => {
+  it('carries the day\'s own weather and season, not an invention', () => {
+    // The chip in the top bar and the picture must never disagree: both
+    // read the same pure function of (seed, day).
+    for (let day = 1; day <= 30; day += 5) {
+      const state = band(1);
+      state.day = day;
+      const scene = processionScene(state);
+      expect(scene.weather).toBe(weatherOn(state.seed, day).id);
+      expect(scene.season).toBe(seasonOf(day));
+    }
+  });
+
+  it('washes the light for every sky that is not calm, and only those', () => {
+    // The static half of the claim: a gale must look like a gale in a
+    // SCREENSHOT — under stillness and reduced motion the moving weather is
+    // deliberately frozen invisible, so the wash is what remains.
+    expect(skyWash('gale')).not.toBeNull();
+    expect(skyWash('frost')).not.toBeNull();
+    expect(skyWash('seafog')).not.toBeNull();
+    // Fair adds nothing; thaw is a fact about the snowpack, not the air —
+    // the battlefield's own stance, kept.
+    expect(skyWash('fair')).toBeNull();
+    expect(skyWash('thaw')).toBeNull();
+  });
+
+  it('keeps every wash translucent, because it is light and not paint', () => {
+    for (const sky of ['gale', 'frost', 'seafog'] as const) {
+      const wash = skyWash(sky)!;
+      expect(wash.opacity).toBeGreaterThan(0);
+      expect(wash.opacity).toBeLessThan(0.5);
+    }
   });
 });
 
