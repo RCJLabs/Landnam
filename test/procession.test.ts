@@ -15,7 +15,8 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
 import { cloneState } from '../src/state/clone';
 import {
-  BAND_X, HORIZON_Y, ROAD_Y, SCENE_H, SCENE_W, SEEN_AHEAD, WALKER_H, WALKER_R,
+  BAND_FORE, BAND_X, HORIZON_Y, HORIZON_FRAC, ROAD_Y, SCENE_W, SEEN_AHEAD,
+  WALKER_H, WALKER_R, composeRoad,
   countryWord, fileSpots, processionScene, sightAt, skyWash, whereWeAre,
 } from '../src/render/procession';
 import { walkerBox } from '../src/render/walker';
@@ -69,7 +70,9 @@ describe('how the road runs away from you', () => {
 
   it('leaves more road ahead than behind, because that is the decision', () => {
     expect(BAND_X).toBeLessThan(SCENE_W / 2);
-    expect(ROAD_Y).toBeLessThan(SCENE_H);
+    // The band walks in FRONT of the horizon, on the brushed earth — see
+    // the `HORIZON_Y` note for the 142-unit float this replaced.
+    expect(ROAD_Y).toBeGreaterThan(HORIZON_Y);
   });
 });
 
@@ -126,8 +129,12 @@ describe('the band on the road', () => {
         expect(box.right, `walker ${i} of ${count} hangs off the right edge`)
           .toBeLessThanOrEqual(SCENE_W);
         // And on the road rather than in the sky or under the picture.
-        expect(box.bottom).toBeLessThanOrEqual(SCENE_H);
-        expect(box.top).toBeGreaterThan(HORIZON_Y);
+        // Feet on the road — never below it, which is what floating looked
+        // like. Not "head above the horizon": the file recedes and the ones
+        // at the back are drawn smaller, so only the leader necessarily
+        // crosses the skyline. That is the perspective working, not a bug.
+        expect(box.bottom).toBeLessThanOrEqual(ROAD_Y + 1);
+        expect(box.top).toBeGreaterThan(HORIZON_Y - WALKER_H * 1.3);
       }
     }
   });
@@ -138,6 +145,72 @@ describe('the band on the road', () => {
     const gap = (spots: { x: number }[]) => spots[0]!.x - spots[1]!.x;
     expect(gap(fileSpots(14))).toBeLessThan(gap(fileSpots(6)));
     expect(gap(fileSpots(14))).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * THE BAND WALKS ON THE PAINTED GROUND.
+ *
+ * The bug this replaces was reported off a phone — "they're just kinda
+ * floating" — and measuring it proved it exactly. `fieldOil` paints ONE
+ * world, with sky above `line.ts`'s ground line and brushed earth below it;
+ * this view invented its own 640-unit scene, put its horizon at 0.42 and its
+ * road at 0.78 of that, and handed the brush a box from 0 to 640. The
+ * painting's ground line therefore landed at 630 of 640 and its earth was a
+ * ten-unit sliver that `slice` then cropped away. Measured on the built
+ * page: the visible window ran y 20..620 and the band's feet landed at 488 —
+ * 142 units above the ground, standing on the painting's cloud.
+ *
+ * The same defect Art 12 found in the yard, and the same fix.
+ */
+describe('the band walks on the ground the brush paints', () => {
+  it('stands the road in FRONT of the painted horizon, not above it', () => {
+    expect(ROAD_Y).toBeGreaterThan(HORIZON_Y);
+    expect(ROAD_Y - HORIZON_Y).toBe(BAND_FORE);
+  });
+
+  const slots: [number, number][] = [
+    [390, 599], [390, 382], [320, 330], [844, 390],
+  ];
+
+  it('frames to the slot exactly, so nothing is cropped', () => {
+    for (const [w, h] of slots) {
+      const box = composeRoad(w, h);
+      expect(box.w).toBe(SCENE_W);
+      expect(box.w / box.h).toBeCloseTo(w / h, 5);
+    }
+  });
+
+  it('keeps the horizon and the whole band inside the frame', () => {
+    for (const [w, h] of slots) {
+      const box = composeRoad(w, h);
+      expect(box.y, `${w}x${h}: the horizon is off the top`).toBeLessThan(HORIZON_Y);
+      expect(box.y + box.h, `${w}x${h}: the road is off the bottom`)
+        .toBeGreaterThanOrEqual(ROAD_Y);
+      // And with room under their feet, so a shadow is not clipped.
+      expect(box.y + box.h - ROAD_Y).toBeGreaterThanOrEqual(20);
+      // NOT "their heads cross the skyline". That was asserted for one cut
+      // of BAND_FORE and it is a nicety of a particular composition, not a
+      // requirement — how far in front of the horizon the band walks is an
+      // art decision that was tuned by looking, twice. What has to hold is
+      // that they stand on the foreground earth with the frame around them.
+      expect(ROAD_Y).toBeGreaterThan(HORIZON_Y);
+    }
+  });
+
+  it('composes on the horizon rather than bisecting the picture', () => {
+    // `line.ts`'s own rule for the shield wall: the subject sits low with
+    // the weather over it. A tall frame should put the horizon near
+    // HORIZON_FRAC; a squat one gives the foreground its floor instead.
+    const box = composeRoad(390, 599);
+    expect((HORIZON_Y - box.y) / box.h).toBeCloseTo(HORIZON_FRAC, 2);
+  });
+
+  it('frames for a phone when the slot has not been laid out yet', () => {
+    const box = composeRoad(0, 0);
+    expect(Number.isFinite(box.y)).toBe(true);
+    expect(box.h).toBeGreaterThan(0);
+    expect(box.y).toBeLessThan(HORIZON_Y);
   });
 });
 

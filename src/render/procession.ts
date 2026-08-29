@@ -31,6 +31,7 @@ import { STANDING_INK } from './strip';
 import { countryHere, knowsStop, standingAt, walkOptions } from '../sim/coast';
 import { ROUTE_STOPS, daysBetween } from '../sim/route';
 import { rivalSettled } from '../sim/rival';
+import { GROUND_Y as PAINTED_HORIZON } from './line';
 import { seasonOf } from '../sim/calendar';
 import { weatherOn } from '../sim/weather';
 import type { WeatherId } from '../data/weather';
@@ -38,13 +39,78 @@ import type { GameState, Season, Terrain } from '../state/types';
 
 /** The painted world, in view units. Portrait, because the phone is. */
 export const SCENE_W = 390;
-export const SCENE_H = 640;
+
+/**
+ * How far up the picture the horizon is — and it is THE PAINTING'S OWN.
+ *
+ * `fieldOil` paints one world: sky above `line.ts`'s ground line, ridges on
+ * it, brushed earth below. The battlefield stands its men on that line. This
+ * view did not: it invented a horizon at 0.42 of its own 640-unit scene and
+ * a road at 0.78, then handed the brush a box from 0 to 640 — so the
+ * painting's ground line landed at 630 of 640, its earth was a ten-unit
+ * sliver at the very bottom, and `slice` cropped even that away.
+ *
+ * MEASURED on the built page before this was changed: the visible window ran
+ * from world y 20 to 620 and the band's feet landed at 488, which is 142
+ * units ABOVE the painted ground. Every pixel of country a player could see
+ * was the painting's sky, and the band was standing on cloud. The road wedge
+ * drawn under them was a translucent brown triangle over that sky, which is
+ * why it never read as ground.
+ *
+ * This is the same defect Art 12 found in the yard — its ground sat at y 228
+ * inside the same painting's sky — and the same fix: stand on the horizon
+ * the brush actually paints.
+ */
+export const HORIZON_Y = PAINTED_HORIZON;
+
+/**
+ * How far in front of the horizon the band walks.
+ *
+ * Foreground, so they stand ON the brushed earth rather than at the join.
+ * Their heads then cross the skyline, which is what a figure standing in
+ * front of a landscape does.
+ *
+ * Tuned by looking, in both directions. At 74 the band stood just under the
+ * horizon with a quarter of the picture below them as bare earth; at 140
+ * they were marooned in the middle of a brown field with the coast a long
+ * way behind. 88, with the horizon at HORIZON_FRAC, puts them on the strand
+ * with the sea at their backs and about a sixth of the frame as apron.
+ */
+export const BAND_FORE = 88;
 
 /** Where the road the band walks on sits. */
-export const ROAD_Y = SCENE_H * 0.78;
+export const ROAD_Y = HORIZON_Y + BAND_FORE;
 
-/** How far up the picture the horizon is. Sky above, country below. */
-export const HORIZON_Y = SCENE_H * 0.42;
+/**
+ * Where the horizon sits in the FRAME, as a fraction from the top.
+ *
+ * Low, for the reason `line.ts` gives about the shield wall: a side-on scene
+ * is composed on its horizon, and the subject wants to sit in the lower
+ * third with the weather over it rather than bisect the picture.
+ */
+export const HORIZON_FRAC = 0.68;
+
+/**
+ * The frame the road is seen through, fitted to the slot showing it.
+ *
+ * Same discipline as the yard's `composeYard`, and here it also replaces a
+ * fixed 640-unit scene under `slice` that cropped 40 units off the top and
+ * bottom at 390x599 — including the only ground there was.
+ */
+export function composeRoad(
+  slotW: number,
+  slotH: number,
+): { x: number; y: number; w: number; h: number } {
+  // A slot that has not been laid out yet measures zero; frame for a phone
+  // rather than dividing by it.
+  const w = slotW >= 10 ? slotW : 390;
+  const h = slotH >= 10 ? slotH : 599;
+  const visH = (SCENE_W * h) / w;
+  // The foreground must hold the band whatever the frame does, or a short
+  // screen crops their feet off the bottom of their own road.
+  const fore = Math.max(BAND_FORE + 44, visH * (1 - HORIZON_FRAC));
+  return { x: 0, y: HORIZON_Y - (visH - fore), w: SCENE_W, h: visH };
+}
 
 /**
  * The band's leader stands here, so there is more road ahead than behind.

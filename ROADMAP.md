@@ -3676,6 +3676,45 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-29 — The band was walking on the sky** — Reported off a phone
+  ("they're just kinda floating"), and measuring it proved it exactly. This
+  is the SAME DEFECT Art 12 found in the yard the day before, on the other
+  view, and it was not checked for.
+
+  `fieldOil` paints ONE world: sky above `line.ts`'s ground line at 630,
+  ridges on it, brushed earth below. The battlefield stands its men on that
+  line and the yard does now. The procession did not — it invented a
+  640-unit scene of its own with a horizon at 0.42 and a road at 0.78, then
+  handed the brush a box from 0 to 640. So the painting's ground line landed
+  at 630 of 640, its earth was a ten-unit sliver at the very bottom, and
+  `slice` cropped even that away. **Measured on the built page: the visible
+  window ran world y 20..620 and the band's feet landed at 488 — 142 units
+  above the painted ground.** Every pixel of country on screen was the
+  painting's sky. They were not "kinda" floating; they were standing on
+  cloud, and the road drawn under them was a translucent brown triangle over
+  it, which is why it never read as a road.
+
+  Fixed the way the yard was: `HORIZON_Y` IS the painted horizon now,
+  `ROAD_Y` is `BAND_FORE` in front of it so the band stands on the brushed
+  earth, and `composeRoad` fits the frame to the slot's own aspect — so
+  `meet` and `slice` are the same thing and nothing is cropped, with a
+  ResizeObserver refit like the battlefield's and the yard's. The worn track
+  is drawn DARKER than the earth rather than lighter, because a path is
+  where the turf has been walked off and a mid-brown at 0.4 over the brush's
+  own mid-brown was invisible.
+
+  `BAND_FORE` was tuned by looking, in both directions: at 74 the band stood
+  just under the horizon with a quarter of the frame below them as bare
+  earth; at 140 they were marooned in the middle of a brown field with the
+  coast a long way behind. 88 puts them on the strand with the sea at their
+  backs. One test assertion went with it — "their heads cross the skyline"
+  was true of one cut of that number and is a nicety of a particular
+  composition, not a requirement, so it says what has to hold instead.
+
+  **The lesson worth keeping: a bug found in one renderer is a question to
+  ask of every renderer that shares the machinery.** Art 12 diagnosed this
+  precisely, wrote it up, and fixed one of the two views it applied to.
+
 - **2026-08-29 — Night, and the turning of the day (Art 15)** — Two
   corrections to the premise before a line was written. **There is no hour
   in this game**: `day` is an integer and the atomic unit of play, and

@@ -13,7 +13,7 @@ import { makeRng } from '../rng';
 import { walker } from './walker';
 import { svgEl } from './svg';
 import {
-  BAND_X, HORIZON_Y, ROAD_Y, SCENE_H, SCENE_W, WALKER_H, fileSpots,
+  BAND_X, HORIZON_Y, ROAD_Y, SCENE_W, WALKER_H, composeRoad, fileSpots,
   processionScene, skyWash, whereWeAre, type Sighting,
 } from './procession';
 import { ROUTE_STOPS } from '../sim/route';
@@ -104,8 +104,11 @@ export function createProcessionView(): TravelView {
   const root = svgEl('svg', {
     class: 'map procession',
     xmlns: 'http://www.w3.org/2000/svg',
-    viewBox: `0 0 ${SCENE_W} ${SCENE_H}`,
-    preserveAspectRatio: 'xMidYMid slice',
+    // The frame is fitted to the slot by `composeRoad`, so `meet` and
+    // `slice` are the same thing and nothing is cropped. It was `slice` over
+    // a fixed 640-unit scene, which cropped 40 units off each end at
+    // 390x599 — and the only painted ground there was lived in them.
+    preserveAspectRatio: 'xMidYMid meet',
     role: 'img',
   });
 
@@ -160,10 +163,18 @@ export function createProcessionView(): TravelView {
   let drawnSights = 0;
   let work = 0;
   let lastKey = '';
+  let latest: GameState | null = null;
 
   function update(state: GameState): void {
+    latest = state;
     const scene = processionScene(state);
-    paint.update({ x: 0, y: 0, w: SCENE_W, h: SCENE_H }, scene.country, state.seed);
+
+    // The frame first: everything below is placed in the world it defines,
+    // and the paint is handed the same box so its horizon is our horizon.
+    const slot = root.getBoundingClientRect();
+    const box = composeRoad(slot.width, slot.height);
+    root.setAttribute('viewBox', `${box.x} ${box.y} ${box.w} ${box.h}`);
+    paint.update(box, scene.country, state.seed);
 
     // Everything below is rebuilt from the scene, so what makes a repaint
     // EXPENSIVE is the scene changing. Keyed on exactly what is drawn, which
@@ -185,7 +196,7 @@ export function createProcessionView(): TravelView {
     // doubt.
     layers.sea.replaceChildren(
       svgEl('rect', {
-        x: 0, y: HORIZON_Y - 8, width: SCENE_W, height: 26,
+        x: 0, y: HORIZON_Y - 26, width: SCENE_W, height: 26,
         // A gale's sea is darker before it is anything else.
         fill: scene.weather === 'gale' ? '#31586e' : '#3f6a80',
         opacity: 0.55,
@@ -214,12 +225,20 @@ export function createProcessionView(): TravelView {
     // horizon, narrowing, so the picture has a direction in it.
     layers.road.replaceChildren(
       svgEl('path', {
-        d: `M -20 ${SCENE_H} L ${BAND_X - 30} ${ROAD_Y} L ${SCENE_W * 0.9} ${HORIZON_Y + 6} ` +
-           `L ${SCENE_W * 0.96} ${HORIZON_Y + 10} L ${SCENE_W + 40} ${SCENE_H} Z`,
+        // From under the band's feet to the horizon, narrowing — a track
+        // worn across the brushed earth rather than a wedge over the sky.
+        d: `M -30 ${box.y + box.h} L ${BAND_X - 54} ${ROAD_Y + 6} ` +
+           `L ${SCENE_W * 0.86} ${HORIZON_Y + 1} L ${SCENE_W * 0.94} ${HORIZON_Y + 5} ` +
+           `L ${SCENE_W + 50} ${box.y + box.h} Z`,
         // Under a hard frost the road rimes over: the one static mark that
         // tells a still frost from a still sea fog, since both wash pale.
-        fill: scene.weather === 'frost' ? '#aeb9bd' : '#6b5b3e',
-        opacity: scene.weather === 'frost' ? 0.5 : 0.4,
+        //
+        // DARKER than the earth otherwise, not lighter. A path is where the
+        // turf has been walked off; at 0.4 of a mid-brown over the brush's
+        // own mid-brown it was invisible, which is why the first version of
+        // this looked like a wedge of nothing.
+        fill: scene.weather === 'frost' ? '#c2cdd2' : '#3f3524',
+        opacity: scene.weather === 'frost' ? 0.55 : 0.28,
         ...(scene.weather === 'frost' ? { class: 'rimed' } : {}),
       }),
     );
@@ -265,7 +284,7 @@ export function createProcessionView(): TravelView {
     // year is at, the named weather's static wash (there even with every
     // animation stilled), and the moving weather the battlefield draws.
     layers.weather.replaceChildren();
-    const bounds = { x: 0, y: 0, w: SCENE_W, h: SCENE_H };
+    const bounds = box;
     const tint = seasonTint(scene.season, bounds);
     if (tint) layers.weather.append(tint);
 
@@ -276,7 +295,7 @@ export function createProcessionView(): TravelView {
     const lightWash = washOpacity(light.level);
     if (lightWash > 0) {
       layers.weather.append(svgEl('rect', {
-        x: 0, y: 0, width: SCENE_W, height: SCENE_H,
+        x: box.x, y: box.y, width: box.w, height: box.h,
         class: 'lightwash',
         fill: light.tint,
         opacity: lightWash,
@@ -290,7 +309,7 @@ export function createProcessionView(): TravelView {
       for (let i = 0; i < 40; i += 1) {
         field.append(svgEl('circle', {
           cx: sky.float(0, 1) * SCENE_W,
-          cy: sky.float(0.02, 0.92) * HORIZON_Y,
+          cy: box.y + sky.float(0.02, 0.86) * (HORIZON_Y - box.y),
           r: sky.float(0.5, 1.5),
           class: 'star',
           fill: '#e8ecf2',
@@ -302,7 +321,7 @@ export function createProcessionView(): TravelView {
     const wash = skyWash(scene.weather);
     if (wash) {
       layers.weather.append(svgEl('rect', {
-        x: 0, y: 0, width: SCENE_W, height: SCENE_H,
+        x: box.x, y: box.y, width: box.w, height: box.h,
         class: 'skywash',
         fill: wash.fill,
         opacity: wash.opacity,
@@ -335,7 +354,7 @@ export function createProcessionView(): TravelView {
 
     // Night closes the frame in: you see as far as the fire.
     layers.weather.append(svgEl('rect', {
-      x: 0, y: 0, width: SCENE_W, height: SCENE_H,
+      x: box.x, y: box.y, width: box.w, height: box.h,
       class: 'nightfall',
       fill: 'url(#road-vignette)',
       opacity: light.vignette,
@@ -346,12 +365,12 @@ export function createProcessionView(): TravelView {
     // this milestone is that the picture answers it.
     layers.ui.replaceChildren();
     layers.ui.append(svgEl('text', {
-      x: SCENE_W / 2, y: 34, 'text-anchor': 'middle', class: 'here-word',
+      x: SCENE_W / 2, y: box.y + 30, 'text-anchor': 'middle', class: 'here-word',
     }, words(whereWeAre(scene))));
 
     if (scene.headland) {
       layers.ui.append(svgEl('text', {
-        x: SCENE_W / 2, y: 58, 'text-anchor': 'middle', class: 'here-word',
+        x: SCENE_W / 2, y: box.y + 54, 'text-anchor': 'middle', class: 'here-word',
       }, words('The land gives out here.')));
     }
 
@@ -361,6 +380,14 @@ export function createProcessionView(): TravelView {
         ? 'Nothing in sight ahead.'
         : `Ahead: ${scene.ahead.map((s) => `${s.name}, ${s.days} days`).join('; ')}.`}`,
     );
+  }
+
+  // The slot is `flex` under panels that grow and shrink, so the frame has to
+  // follow the element — the same observer the battlefield and the yard use.
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => {
+      if (latest) update(latest);
+    }).observe(root);
   }
 
   return {
