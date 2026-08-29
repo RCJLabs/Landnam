@@ -515,6 +515,8 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
       const isActive = active?.personId === combatant.personId;
       const drawn = figure(p.x, p.y, FIGURE_R, person, {
           friendly: combatant.side === 'warband',
+          // Each wall faces the other: ours stand left and look right.
+          facing: combatant.side === 'warband' ? 1 : -1,
           health: person.health / person.maxHealth,
           active: isActive,
           defending: combatant.defending,

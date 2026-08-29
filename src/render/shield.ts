@@ -147,3 +147,31 @@ export function crack(cx: number, cy: number, r: number, angle: number): SVGElem
     'stroke-linejoin': 'round',
   });
 }
+
+/**
+ * The same shield, TURNED — held out toward an enemy rather than shown flat
+ * to the viewer.
+ *
+ * A round shield presented at a foe is edge-on to anybody watching from the
+ * side, and an edge is a line: it would throw away the paint, which is the
+ * thing a player reads a man by. So it is foreshortened instead — squashed
+ * about its own centre, motif and all, which is what a turned disc actually
+ * does. `squash` of 1 is face-on and 0 is edge-on; around 0.45 reads as a
+ * shield held toward the enemy while keeping its ground and its motif
+ * legible at phone size.
+ */
+export function shieldTurned(
+  cx: number,
+  cy: number,
+  r: number,
+  look: Look,
+  friendly: boolean,
+  squash: number,
+  wear: SVGElement[] = [],
+): SVGGElement {
+  const g = svgEl('g', {
+    transform: `translate(${cx} ${cy}) scale(${squash} 1) translate(${-cx} ${-cy})`,
+  });
+  g.append(...shieldFace(cx, cy, r, look, friendly, wear));
+  return g;
+}

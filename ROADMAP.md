@@ -3004,7 +3004,10 @@ Ordered by how much they change what a player sees, not by cost:
   Watched fail with the recoil disabled — "11 blows landed and nobody moved
   — they read as numbers".
 - [ ] **Art 14 Gear you can see** — What a person carries should be visible
-  on them.
+  on them. **Made much cheaper on 2026-08-29:** the battle fighter is drawn
+  in profile now, so there is a body with a hand, a belt and a back to hang
+  things on — where a head-on shield had nowhere to put an axe. `figures.ts`,
+  `walker.ts` and `look.ts` are the three places it would go.
 - [ ] **Art 17 The saga as an illuminated chronicle** — The saga log is the
   game's memory and is styled as a list.
 - [ ] **Art 20 The title and the ending as set pieces** — First and last
@@ -3706,6 +3709,44 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — The fighters are people now, not shields** — The third
+  thing the same phone report named: "I only saw shields and not the actual
+  vikings. So maybe we didn't implement battle art of the actual viking
+  characters and enemy yet?" We had. It was drawn head-on.
+
+  `figures.ts` drew every combatant facing the CAMERA: a round shield as wide
+  as the whole figure, a helm peeping over the rim, a health bar under it. No
+  body, no legs, no face — and head-on in a scene that is otherwise entirely
+  side-on. The ground line, the ridges, the receding ranks, the two walls
+  meeting left against right: all profile. Only the men looked out at you.
+
+  **And it was asserted, not checked.** Writing Art 13 I put this in
+  `walker.ts`: the head-on figure "is exactly right on a battlefield, where a
+  shield wall is what you are looking at" — reasoning about the battle view
+  while building a different one, and never once looking at it at the size
+  the field actually draws. At that size it is a row of discs, which is what
+  a player saw and said.
+
+  A fighter is a man in profile now, turned toward the enemy: legs braced in
+  a stance, a tunic and belt, a cloak behind, a helm with a nasal, a spear
+  levelled over the rear shoulder, and his shield held out at the wall. Built
+  from the same `look.ts` as the walker on the road and the folk in the yard,
+  so the man in the line is provably the man who walked there — which was Art
+  13's whole claim and is only now true of all three views.
+
+  The shield is FORESHORTENED rather than edge-on (`shieldTurned`). Edge-on
+  is what a presented shield really looks like from the side and it is
+  useless: an edge is a line, and it would throw away the paint, which is the
+  one thing a player tells two men apart by. Squashed to 0.46 it reads as a
+  shield turned at the enemy and keeps its ground, its motif and its cracks.
+
+  Every state signal the counter carried is still here — side, health, whose
+  turn, a braced rim, the broken man's white feather, the leader's pennant —
+  and the pennant now flies from the spear he is actually holding. The active
+  mark moved to a ring on the GROUND: ranks overlap in a wall, so a hoop
+  round a man swallows the two beside him, and the ground under him is the
+  one part nobody else covers. It is the idiom the target marks already used.
 
 - **2026-08-29 — You could not see the enemy** — Reported off a phone: "I
   didn't know where the enemy was and I didn't realize I had to scroll to see

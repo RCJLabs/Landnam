@@ -183,13 +183,20 @@ describe('a fighter is a touch target', () => {
       .toBeLessThanOrEqual(NARROW);
   });
 
-  it('knows a man is wider than twice his radius', () => {
-    // The shield is the widest thing on a fighter and `figures.ts` draws it
-    // at `rx: radius * 1.04`. Getting this wrong is not cosmetic: the view
-    // scales to whatever this says a target is, and reasoning from the
-    // radius alone shipped a 42px man against a 44px bar.
-    expect(FIGURE_W).toBeGreaterThan(FIGURE_R * 2);
-    expect(FIGURE_W).toBeCloseTo(FIGURE_R * 2.08);
+  it('says how wide a man really is, because the view scales to it', () => {
+    // This asserted `FIGURE_R * 2.08` and warned, correctly, that "getting
+    // this wrong is not cosmetic: the view scales to whatever this says a
+    // target is, and reasoning from the radius alone shipped a 42px man
+    // against a 44px bar." The 2.08 was the widest thing on a HEAD-ON
+    // fighter — his shield, at `rx: radius * 1.04`.
+    //
+    // Fighters are drawn in profile now and nothing on one reaches that far.
+    // The widest part is the health bar under him, at exactly twice the
+    // radius, and leaving the constant at 2.08 shipped THE SAME 42px MAN
+    // against the same 44px bar, from the other direction — caught by
+    // `scripts/field.mjs` at 320x568, which counts pixels on a screen
+    // instead of trusting this number.
+    expect(FIGURE_W).toBeCloseTo(FIGURE_R * 2);
   });
 
   it('draws a man wide enough to fill his place in the line', () => {

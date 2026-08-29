@@ -143,15 +143,25 @@ export const FIGURE_H = Math.min(FIELD_H * 0.52, RANK_GAP * 3.1);
 export const FIGURE_R = RANK_GAP * 0.46;
 
 /**
- * How wide a drawn fighter actually is, which is NOT twice his radius.
+ * The width a man actually occupies, which is what the view scales against.
  *
- * `figures.ts` draws the shield as an ellipse of `rx: radius * 1.04`, and the
- * shield is the widest thing on a man. This matters because the fighter is
- * the touch target: sizing the view so the GAP cleared 44px left the man
- * himself at 42px on a 320px screen, measured by `scripts/field.mjs` — the
- * bar caught a rule that had been reasoned about the wrong object.
+ * It was `FIGURE_R * 2.08` because the widest thing on a HEAD-ON fighter was
+ * his shield, drawn at `rx: radius * 1.04`. Fighters are drawn in profile
+ * now and no part of one reaches that far: the widest is the health bar
+ * under him, at exactly twice the radius.
+ *
+ * Four percent, and it cost the touch rule. `NEEDED_SCALE` is
+ * `TAP_MIN / FIGURE_W`, so a `FIGURE_W` that overstates the man makes the
+ * view zoom too little and hand back a target under the bar — measured on
+ * the built page at 320x568, a fighter came out 42px against the 44px
+ * minimum. The bar caught it, which is the whole reason it counts pixels on
+ * a screen rather than trusting this constant.
+ *
+ * The test beside this one has warned about the same failure from the other
+ * direction since it was written: "reasoning from the radius alone shipped a
+ * 42px man against a 44px bar". It is the same 42px.
  */
-export const FIGURE_W = FIGURE_R * 2.08;
+export const FIGURE_W = FIGURE_R * 2.0;
 
 /**
  * Painting order: back ranks first, so the front of a wall overlaps the men
