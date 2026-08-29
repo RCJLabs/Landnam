@@ -27,7 +27,14 @@ import { rivalDay } from './rival';
 import { maybeOutlawStrike } from './outlaw';
 import { renderTribute } from './thing';
 import { handsLeave, maybeJoin, maybeSword } from './joining';
-import { raidable, raidDifficulty, raidOdds } from './raid';
+import {
+  QUIET_SEASON_SHARE,
+  autumnChance,
+  autumnRaidDay,
+  raidable,
+  raidDifficulty,
+  raidOdds,
+} from './raid';
 import { startRaid } from './battleTurn';
 import { bonus } from './lore';
 import { chronicle } from './saga';
@@ -58,7 +65,26 @@ export const SURVIVAL_DAY = 73;
 export function maybeRaid(state: GameState): void {
   if (state.end || state.battle || state.event) return;
   if (!raidable(state)) return;
-  const odds = raidOdds(state);
+
+  // AUTUMN IS A RECKONING, NOT A TRICKLE. The rest of the year keeps the
+  // daily hazard — opportunists, a feud coming to a head, somebody who
+  // heard about the store. Autumn is when they come for the winter's food,
+  // and it is one roll on one day, so a band can see it approaching and
+  // spend the summer on a wall. See `AUTUMN_WORTH_K` for the measurement
+  // that asked for this: the threat was never too small, it was too random.
+  if (seasonOf(state.day) === 'autumn') {
+    if (state.day !== autumnRaidDay(state)) return;
+    const odds = autumnChance(state);
+    if (odds <= 0) return;
+    if (!stream(state.seed, 'events').derive(`raid-autumn:${state.day}`).chance(odds)) return;
+    startRaid(state, raidDifficulty(state));
+    return;
+  }
+
+  // The rest of the year is the background hazard it always was, quartered:
+  // autumn now carries most of the year's risk, and the whole point was to
+  // MOVE the risk rather than add it. See `QUIET_SEASON_SHARE`.
+  const odds = raidOdds(state) * QUIET_SEASON_SHARE;
   if (odds <= 0) return;
   if (!stream(state.seed, 'events').derive(`raid:${state.day}`).chance(odds)) return;
   startRaid(state, raidDifficulty(state));

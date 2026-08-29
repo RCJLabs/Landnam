@@ -3953,6 +3953,27 @@ because by year two it has more labour than uses for it.
   deed the player takes when they are ready. The rule costs what it is
   worth — +3 word and +2 raiders, both proven to bind rather than vanish
   into a clamp. The Thing is a milestone in a saga now, not its final page.
+- [x] **6.5 Autumn is a reckoning** — **Done 2026-08-29.** Winter is what kills
+  a run — `starved` ends 53 to 76 of every 120 sagas against `slain` 2 to 5 —
+  so fighting's job is not to end runs but to make the winter worse. Both
+  pipes for that were already built and almost never opened: a lost raid takes
+  40% of the stores, and injuries already cut a day's work, but a typical
+  steading read **a raid about every 469 days in a game averaging 172**.
+  Raiders come before winter now, on one seeded day, drawn against the same
+  worth; the other seasons keep a quartered background hazard, so the risk
+  moved rather than grew. `slain` held at 2 throughout. The pressure this was
+  meant to add showed (`starved` 63 to 67) and was then given back by sparing
+  the mead hall (62), so what ships is the same difficulty, legibly timed.
+  Full measurement, the justification that did not survive it, and the two
+  faults it exposed — a sack burning the roof its own comment protects, and
+  the mead hall being a locked door rather than a loss — are in the changelog.
+
+  **Open for Evan:** the mead hall is spared on my recommendation rather than
+  his ruling, and the measurement says that recommendation costs the whole of
+  the added pressure. The alternative, equally green, is that an unwalled hall
+  cannot hold the endgame — 1 of 4 without a palisade, 4 of 4 with one — which
+  keeps `starved` at 67 and makes the palisade load-bearing. One line either
+  way in `sackSteading`.
 
 ---
 
@@ -3961,6 +3982,79 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — Autumn is a reckoning (6.5)** — Asked what would make fighting
+  matter in a game about winter. The answer in the data was that it already
+  could and almost never did: a lost raid takes **40% of the food and the
+  firewood**, carries off hands and burns a building, and injuries already cut
+  `effectiveStat` and so a day's work. Both pipes from a fight to the larder
+  were built. They just barely opened — a typical steading read **a raid about
+  every 469 days in a game whose average run is 172**.
+
+  So autumn is a reckoning: one roll, on one seeded day inside the season, on
+  the same worth the daily hazard reads, saturating through `1 - e^(-worth·k)`
+  so a wall always buys something and nothing is ever certain. The other three
+  seasons keep the background hazard, quartered. **The risk moved rather than
+  grew**, and the panel says so — "They come before winter — 41 in 100 this
+  autumn" instead of a number that reads as never.
+
+  Measured over 120 sagas to day 500, against the same seeds, in the two
+  states it passed through — because the second column is the honest result
+  of the design and the third is the honest result of the ruling below it:
+
+  | | before | the reckoning | + mead hall spared |
+  |---|---|---|---|
+  | ends `slain` | 2 | **2** | **2** |
+  | ends `starved` | 63 | **67** | 62 |
+  | two winters | 30% | 27% | 28% |
+  | became jarl | 28 | 26 | 30 |
+  | avg days | 172 | 165 | 175 |
+  | spring, fair/even/hard | 83/57/29% | 83/56/29% | 83/57/29% |
+
+  **The middle column is what was wanted and the right-hand one is what
+  shipped.** The reckoning on its own did exactly the agreed thing — `slain`
+  did not move and the pressure landed in the larder — and then sparing the
+  mead hall gave that pressure back. What ships is a game of about the same
+  difficulty as before, in which raiders arrive before winter on a day a band
+  can plan for. The legibility is the win; the pressure is not, yet.
+
+  **That is the trade in front of the next decision, stated plainly:** if the
+  added pressure is wanted, it is the OTHER ruling that carries it — an
+  unwalled hall cannot hold the endgame — not this one.
+
+  **The justification given for it did not survive the measurement, and is
+  recorded here rather than quietly dropped.** The case made was "only 8 of 20
+  sagas ever see a raid — the threat is too random to plan against". After the
+  change: still 8 of 20. That number is dominated by runs that end young; it
+  measures how many sagas live long enough to be worth raiding, not how
+  randomly raids arrive. The change earns its place on the table above.
+
+  **Two faults it dragged into the light.**
+
+  `sackSteading` said "the roof over everyone survives a sacking, whichever
+  tier it is" and then fell back to `home.built[0]` — the longhouse — when it
+  had nothing else to fire. The rule was written and undone on the next line,
+  and `test/raid.test.ts` asserted BOTH: one case that the longhouse survives,
+  another that a lone longhouse burns. Raids were rare enough that no steading
+  was ever stripped to its roof, so nothing noticed for months.
+
+  And the mead hall is spared now, which is a design call and not a softening:
+  the Thing must be called in one, so a band whose only hall keeps burning can
+  never reach its own endgame however well it plays afterwards. Measured, that
+  is not hypothetical — `test/thing.test.ts` fell from 4 of 4 to 1 of 4 and
+  every failure was blocked on "a mead hall to hold it in". They still take
+  two fifths of the stores, still take hands, still break the watch. What they
+  cannot take is the run's ending.
+
+  The alternative was to accept that an unwalled hall cannot hold the endgame
+  — 1 of 4 without a palisade, **4 of 4 with one** — and say so in the guard
+  rail. Both restore it; this is the one that does not lock a door.
+
+  One instrument fixed on the way: that guard rail runs a band headless, and a
+  headless band cannot fight. Its first raid set `state.battle` and left it
+  set — **366 of the next 400 days frozen mid-fight**, an outcome no player can
+  reach. It fights its raids out now, which is strictly harder than the
+  peaceful run it was measuring before.
 
 - **2026-08-29 — The battlefield stops shrinking as men die (reported)** —
   Evan, with two screenshots: *"in battle as people die the screen shrinks."*

@@ -385,13 +385,39 @@ describe('a sacked steading', () => {
   });
 
   it('takes the burned building\'s shelter with it', () => {
+    // THE SUBJECT USED TO BE THE LONGHOUSE, and that made this file assert
+    // two opposite things: the test above says the longhouse survives a
+    // sacking, and this one said a lone longhouse burns — because
+    // `sackSteading` fell back to `home.built[0]` when it had nothing else
+    // to fire, undoing the rule its own comment stated two lines earlier.
+    // Raids were rare enough that no steading was ever stripped to its roof,
+    // so nothing noticed until autumn became a reckoning.
+    //
+    // The claim here is about SHELTER following the building that burns, so
+    // it is made on a building that can actually burn.
     const state = settled('burn-shelter');
-    state.settlement!.built.push('longhouse');
-    state.settlement!.shelter = 3;
-    sackSteading(state);
+    state.settlement!.built = ['bud'];
+    const roof = buildingById('bud')!.shelter ?? 0;
+    expect(roof).toBeGreaterThan(0);
+    state.settlement!.shelter = roof + 2;
+    const sack = sackSteading(state);
+    // The drop is what burned, not a number that happened to match.
+    expect(sack.burned).toBe('bud');
     expect(state.settlement!.built).toHaveLength(0);
-    expect(state.settlement!.shelter).toBe(0);
+    expect(state.settlement!.shelter).toBe(2);
     expect(builtIn(state.settlement!)).toHaveLength(0);
+  });
+
+  it('leaves a band its roof and its mead hall, however often they come', () => {
+    // Nothing to fire but the two that are spared, so nothing is fired. The
+    // stores and the people still go: a sacking is a loss, not a locked door.
+    const state = settled('burn-nothing');
+    state.settlement!.built = ['longhouse', 'meadhall'];
+    state.party.food = 200;
+    const sack = sackSteading(state);
+    expect(sack.burned).toBeUndefined();
+    expect(state.settlement!.built).toEqual(['longhouse', 'meadhall']);
+    expect(sack.food).toBeGreaterThan(0);
   });
 
   it('losing a raid sacks the steading, and losing a field fight does not', () => {

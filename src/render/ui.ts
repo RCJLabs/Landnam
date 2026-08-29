@@ -3,7 +3,7 @@
 
 import type { Action } from '../sim/actions';
 import type { GameState } from '../state/types';
-import { daysUntilWinter, effectsOn, seasonOf } from '../sim/calendar';
+import { daysUntilAutumn, daysUntilWinter, effectsOn, seasonOf } from '../sim/calendar';
 import { foodPerDay, firewoodPerNight } from '../sim/upkeep';
 import { living } from '../sim/people';
 import {
@@ -24,7 +24,7 @@ import { ghostLine, isGhostRuin } from '../sim/haunt';
 import { yearOf } from '../sim/calendar';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
-import { threatReading } from '../sim/raid';
+import { autumnChance, autumnRaidDay, threatReading } from '../sim/raid';
 import { beats, markOf } from '../sim/challenge';
 import { chaseLine } from '../sim/announce';
 import { WINTERS_TO_JARL } from '../data/thing';
@@ -215,21 +215,39 @@ export function renderWatchMark(state: GameState): HTMLElement {
       ]),
     ]);
   }
-  if (read.chance <= 0) {
+  if (read.chance <= 0 && autumnChance(state) <= 0) {
     return el('div', { class: 'watch-mark quiet' }, [
       el('div', { class: 'mark-head' }, ['The wall and the watch are holding. Nobody is coming.']),
     ]);
   }
 
+  // WHAT THE PANEL IS FOR IS THE AUTUMN, and it used to say the one number
+  // that could not be planned against. "A raid about every 469 days" is true
+  // and useless in a game whose average run is 172 days: it reads as "never",
+  // and a threat that reads as never is why the palisade — worth 47% to 91%
+  // on a six-man defence — was the rarest building in the game.
+  //
+  // The reckoning comes before winter, so that is what the head says, and it
+  // says the odds for THIS autumn, which is a number a summer's work can
+  // move. The rest of the year keeps the old reading, because the rest of
+  // the year is still a background hazard.
+  const autumn = seasonOf(state.day) === 'autumn';
+  const season = Math.round(autumnChance(state) * 100);
+  const passed = autumn && state.day > autumnRaidDay(state);
+  const untilAutumn = daysUntilAutumn(state.day);
+
+  const head = passed
+    ? 'Nothing came this autumn. The next reckoning is a year off.'
+    : autumn
+      ? `They come before winter — about ${season} in 100 this autumn`
+      : `They come before winter — ${untilAutumn} days until the reckoning`;
+
   // Under a fortnight between raids is a steading in real trouble; the
   // panel says so in its border rather than in more words.
-  const pressed = read.everyDays !== null && read.everyDays <= 40;
+  const pressed = (autumn && !passed && season >= 50)
+    || (read.everyDays !== null && read.everyDays <= 40);
   const panel = el('div', { class: `watch-mark${pressed ? ' dire' : ''}` }, [
-    el('div', { class: 'mark-head' }, [
-      read.everyDays !== null
-        ? `A raid about every ${read.everyDays} days`
-        : 'A raid may come',
-    ]),
+    el('div', { class: 'mark-head' }, [head]),
   ]);
 
   const row = (term: { label: string; amount: number; why: string }, keeps: boolean): HTMLElement =>

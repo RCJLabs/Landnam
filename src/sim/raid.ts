@@ -11,7 +11,7 @@ import { effectiveReport } from './colony';
 import { foeCapFor, foeCount, standing } from './battle';
 import { angerLevel, raidPressure } from './neighbours';
 import { hands, sworn } from './people';
-import { wintersStood } from './calendar';
+import { seasonStartDay, wintersStood } from './calendar';
 import { fieldCrew } from './expedition';
 import { wordBump } from './word';
 import { hardshipById } from '../data/hardship';
@@ -124,6 +124,63 @@ export const RAID_CHANCE_MAX = 0.055;
 export const CHANCE_PER_WORTH = 0.0015;
 
 /**
+ * How the autumn reckoning reads a steading's worth.
+ *
+ * THE THREAT WAS NOT TOO SMALL, IT WAS TOO RANDOM. Measured before this
+ * existed: the long game saw 268 raids across 120 sagas — 2.2 a run, which
+ * is not a rare event — and yet a twenty-saga probe found that only EIGHT
+ * OF TWENTY ever saw a single one. A low per-day chance over a run of
+ * unpredictable length does exactly that: most bands are never raided at
+ * all and a few are raided repeatedly. A threat most bands never meet
+ * cannot be planned for, and a threat that cannot be planned for cannot
+ * make anybody build a wall — which is why the palisade, worth 47% to 91%
+ * on a six-man defence, was the rarest building in the game at 13 of 60.
+ *
+ * So autumn is a reckoning: once a year, before the winter, drawn against
+ * the same worth the daily hazard reads. `1 - e^(-worth·k)` saturates, so
+ * the wall and the watch always buy something and nothing is ever certain
+ * either way. TUNED BY READING REAL STEADINGS, because the first guess was
+ * 0.5 and it saturated: five buildings and a winter's food reads a worth of
+ * 4.5, not the 1.4 the panel's "every 469 days" had suggested, so every
+ * steading in the game came out between 89% and 96% — a certainty, and one
+ * the wall could not move. At 0.155 a typical hall is about even money, a
+ * rich one three autumns in five, and bare posts with an empty store one in
+ * twenty.
+ *
+ * The wall is deliberately NOT what makes them stay away — it only moves the
+ * worth by about half a point. A palisade does not stop them coming, it
+ * stops them succeeding: 47% to 91% on a six-man defence. Knowing they come
+ * every autumn is what makes it worth building.
+ *
+ * This is deliberately NOT an increase in how often raiders come. It is the
+ * same weather, arriving on a day you can prepare for.
+ */
+export const AUTUMN_WORTH_K = 0.155;
+
+/** The window inside autumn they can arrive in, so the day is not the 1st. */
+export const AUTUMN_FROM = 5;
+export const AUTUMN_TO = 21;
+
+/**
+ * What the daily hazard is worth in the seasons that are not autumn.
+ *
+ * THE POINT WAS TO MOVE THE RISK, NOT TO ADD IT, and the first cut did not
+ * do that. Autumn took the reckoning and the other three seasons kept the
+ * full daily rate, which put a settled year at about 78% against a baseline
+ * of 49% — half again as many raids, dressed up as a redistribution.
+ *
+ * It showed where it should have: `test/thing.test.ts` went from 4 of 4 to
+ * 1 of 4, and the three that failed did so with `built` EMPTY. A sack burns
+ * a building, and enough sacks burned the mead hall the Thing has to be
+ * called in. That is the dead end `upkeep.ts` names — not difficulty, a
+ * locked door.
+ *
+ * So the off-season is quartered, which puts the year back at about half —
+ * baseline — with most of it landing on a day a band can see coming.
+ */
+export const QUIET_SEASON_SHARE = 0.25;
+
+/**
  * The chance, on a given day, that somebody comes for the steading.
  *
  * Raids used to arrive ONLY as event cards, which made their frequency a
@@ -161,6 +218,8 @@ export interface ThreatReading {
   respite: number;
   draws: ThreatTerm[];
   keeps: ThreatTerm[];
+  /** What both readings are drawn against: draws less keeps, floored at 0. */
+  worth: number;
   /** True when the watch and the wall are holding it all off. */
   quiet: boolean;
 }
@@ -188,7 +247,7 @@ export interface ThreatReading {
  */
 export function threatReading(state: GameState): ThreatReading {
   const nothing: ThreatReading = {
-    chance: 0, everyDays: null, respite: 0, draws: [], keeps: [], quiet: true,
+    chance: 0, everyDays: null, respite: 0, draws: [], keeps: [], worth: 0, quiet: true,
   };
   const home = state.settlement;
   if (!home || state.end) return nothing;
@@ -228,12 +287,42 @@ export function threatReading(state: GameState): ThreatReading {
     respite: 0,
     draws,
     keeps,
+    // The number both readings are drawn against, carried rather than
+    // recomputed. `autumnChance` summed the FILTERED term arrays to get back
+    // to it, which drops any term under 0.01 and would have drifted the two
+    // readings apart for no visible reason.
+    worth: drawn,
     quiet: drawn <= 0,
   };
 }
 
 export function raidOdds(state: GameState): number {
   return threatReading(state).chance;
+}
+
+/**
+ * The chance that this autumn's reckoning falls on the steading at all.
+ *
+ * Read on the day they would arrive rather than at the start of the season,
+ * so what draws them is what is in the store THEN. A band that has spent its
+ * winter food is a poorer prize, which is the right way round.
+ */
+export function autumnChance(state: GameState): number {
+  const read = threatReading(state);
+  if (read.respite > 0 || read.worth <= 0) return 0;
+  return (1 - Math.exp(-read.worth * AUTUMN_WORTH_K)) * hardshipById(state.hardship).raid;
+}
+
+/**
+ * The day this autumn's raid would land, if it lands.
+ *
+ * Derived from the season rather than stored — a raid nobody has rolled for
+ * yet costs the save nothing, and the same seed always names the same day.
+ */
+export function autumnRaidDay(state: GameState): number {
+  const start = seasonStartDay(state.day);
+  const roll = stream(state.seed, 'events').derive(`raid-autumn-day:${start}`);
+  return start + roll.int(AUTUMN_FROM, AUTUMN_TO);
 }
 
 /**
@@ -283,8 +372,32 @@ export function sackSteading(state: GameState): Sack {
   // Something burns. The longhouse is the last thing they fire, because it is
   // full of people — everything else goes first.
   // The roof over everyone survives a sacking, whichever tier it is.
-  const burnable = home.built.filter((id) => id !== 'longhouse' && id !== 'greathall');
-  const target = burnable.length > 0 ? rng.pick(burnable) : home.built[0];
+  // THEY LOOT THE HALL AND FIRE THE OUTBUILDINGS. The roof over everyone is
+  // spared whichever tier it is, and so is the mead hall — not out of mercy
+  // but because burning it is a locked door rather than a loss. The Thing has
+  // to be called in a mead hall, so a band whose one hall keeps burning can
+  // never reach its own endgame however well it plays afterwards. Measured
+  // once autumn became a reckoning: `test/thing.test.ts` fell to 1 of 4, and
+  // every failure was blocked on "a mead hall to hold it in".
+  //
+  // The threat is not softened by this. They still carry off two fifths of
+  // the food and the firewood, they still take hands, the watch is still
+  // broken and the morale still goes. What they cannot do is take the run's
+  // ending away.
+  const burnable = home.built.filter((id) =>
+    id !== 'longhouse' && id !== 'greathall' && id !== 'meadhall');
+  // AND IF THERE IS NOTHING ELSE, NOTHING BURNS. This used to fall back to
+  // `home.built[0]`, which is the longhouse — the one building the two lines
+  // above say survives a sacking. The rule was written and then undone on
+  // the next line, and it stayed hidden while raids were rare enough that a
+  // steading was never stripped down to its roof.
+  //
+  // Found when autumn became a reckoning: `test/thing.test.ts` went to 1 of
+  // 4 with `built` EMPTY on every failure — the hall, the mead hall and all
+  // of it gone, which is a run that cannot reach its own endgame and cannot
+  // shelter anybody either. They take the stores and the people; they do not
+  // leave a band standing in a field.
+  const target = burnable.length > 0 ? rng.pick(burnable) : undefined;
   if (target) {
     home.built = home.built.filter((id) => id !== target);
     const def = buildingById(target);

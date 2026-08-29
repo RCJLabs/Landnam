@@ -31,6 +31,20 @@ export function nextSeason(day: number): Season {
 }
 
 /** Winter counts from day 49; useful for "N days until winter" warnings. */
+/**
+ * Days until the next autumn begins, or 0 if it is autumn now.
+ *
+ * The steading's watch panel counts down to it, because autumn is when the
+ * raiders come and a wall takes a summer to raise. Here rather than in the
+ * renderer so there is one place that knows where autumn is.
+ */
+export function daysUntilAutumn(day: number): number {
+  if (seasonOf(day) === 'autumn') return 0;
+  const yearStart = Math.floor((Math.max(1, day) - 1) / YEAR_LENGTH) * YEAR_LENGTH + 1;
+  const thisAutumn = yearStart + SEASON_LENGTH;
+  return (day < thisAutumn ? thisAutumn : thisAutumn + YEAR_LENGTH) - day;
+}
+
 export function daysUntilWinter(day: number): number {
   const winterStart = SEASON_ORDER.indexOf('winter') * SEASON_LENGTH + 1;
   return day >= winterStart ? 0 : winterStart - day;
