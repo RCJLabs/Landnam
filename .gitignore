@@ -3,3 +3,8 @@ dist/
 release/
 *.log
 .DS_Store
+
+# The look bar writes a screenshot of any screen that moved, so a person can
+# see what changed before blessing it. The BASELINE (art/look/baseline.json)
+# is committed; the photographs are working output.
+art/look/*.png

@@ -15,7 +15,8 @@ Travel runs along a ROUTE — one coast of 26 stops, walked out and back (`src/s
 - `npm run dev` — dev server
 - `npm run build` — production build; MUST emit a single self-contained `dist/index.html` (vite-plugin-singlefile)
 - `npm run test` — Vitest (route maths, RNG, sim logic, save migrations)
-- `node scripts/bars.mjs` — all eleven browser bars
+- `node scripts/bars.mjs` — all twelve browser bars
+- `npm run look:bless` — approve a deliberate change to how the game LOOKS
 - `npm run release` — build + zip source to `release/landnam-src.zip`
 - `npm run publish` — build + copy to `docs/index.html`, which Pages serves
 
@@ -116,7 +117,7 @@ source-only commit will otherwise leave the site on the old build.
 behind `VITE_COAST=1` while it was being built, then the default while the two
 ran side by side, and 8.5 deleted the other one. There is no `VITE_HEX`, no
 `npm run test:hex`, no `npm run publish:hex` and no `hex/` page. `npm test` and
-`npm run build` are the game; `node scripts/bars.mjs` runs the eleven browser
+`npm run build` are the game; `node scripts/bars.mjs` runs the twelve browser
 bars that have a subject on a line.
 
 The five bars that went with the map — `sea`, `pinch`, `way-look`, `repaint`,

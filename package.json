@@ -25,7 +25,9 @@
     "strip": "npm run build && node scripts/strip.mjs",
     "procession": "npm run build && node scripts/procession.mjs",
     "hearth": "npm run build && node scripts/hearth.mjs",
-    "ending": "npm run build && node scripts/ending.mjs"
+    "ending": "npm run build && node scripts/ending.mjs",
+    "look": "npm run build && node scripts/look.mjs",
+    "look:bless": "npm run build && LOOK_BLESS=1 node scripts/look.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

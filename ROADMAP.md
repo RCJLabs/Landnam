@@ -3977,6 +3977,123 @@ because by year two it has more labour than uses for it.
 
 ---
 
+## Phase 9 — the audit of 2026-08-29
+
+Written the day the art queue finished, from numbers the suite was already
+printing on every run and nothing was acting on. Every item below carries the
+measurement that asked for it; none of them is a guess about what might be
+nice. Four groups, in the shape they were proposed and chosen from.
+
+### Things that exist and do not pay
+
+- [ ] **9.1 The dead verbs** — `B_SHOVE 6` of 1165 battle actions across 57
+  fights. Half a percent. `B_WARCRY 38`. Give each a reason to exist or take
+  it off the bar: a button nobody presses teaches the player the bar is noise.
+- [ ] **9.2 The voyage home** — `0/40 sagas sailed, 0 crossings, 0 people
+  fetched`, and the probe prints its own diagnosis: on an eligible day the
+  hall HAD `food 64 wood 309`; the rule WANTS `food 120 wood 72`. The gate is
+  set above what the game produces. A design task was closed for this once
+  already and the probe still reads zero, which is the part worth noticing.
+- [ ] **9.3 Fishing grounds** — `3.2 on the coast, 1.9 ever known, 0.8 ever
+  worked` per saga. A resource the player finds and then ignores: either it
+  does not pay, or nothing ever tells them it does.
+- [ ] **9.4 The palisade earns its place** — the largest single swing in the
+  game (six men defending: 47% to 91%; 118 stolen against 547) and the rarest
+  of twelve buildings at `13 of 60`. 6.5 gave it a deadline; it still has no
+  reason the player FEELS before their first raid.
+- [ ] **9.5 The named foe** — `named foes: 1 came back, 30 put down for good`.
+  A recurring villain that recurs once in thirty-one.
+
+### Things that are not there
+
+- [x] **9.6 A bar that looks** — **Done 2026-08-29.** The three defects a
+  player found in one week — the band floating above its own ground, the
+  illegible battle, the field shrinking as men die — were invisible to eleven
+  browser bars and 1442 tests, because every bar counts nodes and none of
+  them looks at the picture.
+
+  `scripts/look.mjs` photographs eleven screens across two widths and reduces
+  each to a 24x48 grid of brightness. Deliberately not a hash: a hash says
+  "something changed" and cannot say what, which makes every deliberate art
+  change an argument with the tooling. A grid gives a DISTANCE and a PLACE —
+  "the road moved by 0.1, most of it in the bottom, around row 36 of 48" is
+  the chart's lower knot band, and it reads like that because it is.
+
+  Node has no image decoder and this repo takes no dependency for one, so the
+  PNG is decoded in `scripts/lookSignature.mjs` — inflate the IDAT, undo the
+  five scanline filters. The header is checked rather than assumed and that
+  earned itself on the first run: the guess was RGBA and Playwright writes RGB
+  for an opaque screenshot, so a decoder that assumed four bytes a pixel would
+  have read every row a third short and produced a confident non-picture.
+
+  **Watched fail on both defects it was built for, on builds that actually
+  built.** Stopping `installKnot` reaching the page moves five screens (road
+  0.1, chronicle 0.4, ending 0.3). Reverting the battlefield to the shrinking,
+  letterboxed version moves `fight-late` by **8.3**.
+
+  Four things went wrong in the building of it, all the same shape as the bug
+  it exists to catch:
+
+  - **The threshold was a guess and was ten times too loose.** 1.0 came from a
+    synthetic test; the first real sabotage walked through it. The floor is
+    measured now — a repeated run reads 0.00 on every screen — so it sits at
+    0.05, just above nothing.
+  - **The baseline was blessed against a sabotaged build**, because a restore
+    was not followed by a rebuild. The bar caught this itself the next run,
+    which is the first useful thing it did.
+  - **The `ending` screen was a photograph of a fight**, filed under the wrong
+    name and passing happily. It tried to walk out of the battle before it,
+    which cannot be done. It starts from a fresh page now, and every scene
+    declares a selector that must be present or the bar refuses to compare.
+  - **`npm run build 2>&1 | tail -1 && echo "BUILD OK"` is a lie by
+    construction** — a pipeline's exit status is `tail`'s. A whole sabotage
+    was measured against a stale `dist` and read as a pass.
+
+  What it cannot do is tell a good drawing from a bad one, and it fails on
+  every deliberate art change: `npm run look:bless` is the human act, and it
+  now prints what it is blessing, because for a while it printed only a count.
+- [ ] **9.7 Winter as a season you play** — winter ends over half of all runs
+  (`starved` 53 to 76 per 120 sagas) and offers almost no decisions. Rations,
+  who sleeps under which roof, what gets burned when the wood runs low.
+- [ ] **9.8 The sea fight** — `0 sea fights over 120 sagas` against `1523 days
+  afloat` and a whole cargo system. Being caught on the water with a full hold
+  is the one threat the sea can make that the land cannot.
+- [ ] **9.9 Heirlooms** — the memorial, the lineage and the generations exist
+  and do not talk to each other. A blade with a name that outlives its owner
+  is the cheapest thing that would make them.
+- [ ] **9.10 The rival's saga** — there is a rival landnamsmadr with his own
+  ambitions and no way to watch him. His run as a chronicle you can read: a
+  race you can lose without being killed.
+
+### Overhauls
+
+- [ ] **9.11 The colony loop** — 53% of a saga's actions, and by year two the
+  band has more labour than uses for it. The largest system in the game and
+  the least pressured: `33 of 60` bands ever passed six people, and the hall
+  runs `9.0 souls to 14.2 of roof` — never full.
+- [~] **9.12 The pacing arc** — average run `172 days` against a 500-day
+  design horizon; on A Hard Country it is `92`. The endgame, the jarldom, the
+  households and the generations are content almost nobody reaches — `8 of
+  120` become jarl on hard. Either runs get materially longer or that content
+  moves earlier, but a late game built for an audience of 8 in 120 is a late
+  game built for nobody. **NEXT.**
+
+### The play, moment to moment
+
+- [ ] **9.13 The turn that ends itself** — once a fighter has acted the only
+  legal move left is End turn; both of the screenshots that opened this audit
+  read "nothing left this turn — end it". One mandatory tap per fighter per
+  round with exactly one outcome.
+- [ ] **9.14 Walking out is never right** — `paired: saved 0 that would have
+  died, killed 6 that would have lived`. The game offers a choice measurement
+  says is strictly wrong, and says nothing about it.
+- [ ] **9.15 The number that decides everything and is never shown** — three
+  sworn on an armed errand: `63% got there and never drew steel`. Five sworn:
+  `18%`. Party size flips the whole raiding experience and nothing tells the
+  player.
+
+---
+
 ## Parking Lot (ideas, not commitments)
 
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system

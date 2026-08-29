@@ -17,6 +17,14 @@ import { spawnSync } from 'node:child_process';
 // translated into claims about a line — the three the line needed
 // (`strip`, `procession`, `hearth`) were written for it in job 2.
 //
+// `look` is the only one that looks at the PICTURE. Every other bar here
+// counts nodes, measures boxes and taps buttons, and a view can pass all of
+// that while being a wrong drawing — which is how a band walking 142 units
+// above its own ground shipped through three art passes with the whole list
+// green. It compares screenshots against a blessed baseline, so it fails on
+// any deliberate art change too; that is the cost, and a person blessing the
+// new picture is the point rather than the price.
+//
 // Keep every bar on this list. `repaint` was once on neither list, so
 // `npm run bars` never ran it and it sat red for however long it took the
 // deep to get its own pattern pair. A bar nothing runs is not a bar.
@@ -24,6 +32,7 @@ const BARS = [
   ['offline', []], ['larder', []], ['pan', []], ['field', []],
   ['landscape', []], ['reach', []], ['reach', ['320x568']],
   ['strip', []], ['procession', []], ['hearth', []], ['ending', []],
+  ['look', []],
 ];
 
 const build = () => spawnSync('npm', ['run', 'build'], { encoding: 'utf8' });
