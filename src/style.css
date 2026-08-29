@@ -1810,6 +1810,50 @@ button.gear {
   100% { opacity: 0; }
 }
 
+/* --- Blows that land somewhere (art queue item 19) --- */
+
+/* The struck man takes it: a jolt the way the blow was going, then his feet
+   again. `--kx`/`--ky` come from `fx.ts`, scaled by the damage.
+
+   This is the ONE effect that animates a fighter rather than a spawned
+   node, and it is deliberately short: a body that keeps moving after a blow
+   reads as a stagger, and most blows in this game are not staggering. */
+@keyframes fighter-recoil {
+  0% { transform: translate(0, 0); }
+  24% { transform: translate(var(--kx, 0), var(--ky, 0)); }
+  100% { transform: translate(0, 0); }
+}
+
+g.fighter.struck {
+  animation: fighter-recoil 300ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* Blood, thrown the way the blow was going. Small, dark and gone in half a
+   second — a saga, not a gore game. */
+@keyframes blood-fling {
+  0% { transform: translate(0, 0); opacity: 0.9; }
+  70% { opacity: 0.55; }
+  100% { transform: translate(var(--tx, 0), var(--ty, 0)); opacity: 0; }
+}
+
+.fx .fx-blood circle {
+  animation: blood-fling 520ms ease-out forwards;
+}
+
+/* Stillness and reduced motion take the movement, not the information: the
+   flash and the number still say a blow landed. */
+:root.still g.fighter.struck,
+:root.still .fx .fx-blood circle {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  g.fighter.struck,
+  .fx .fx-blood circle {
+    animation: none;
+  }
+}
+
 .fx .hit-flash {
   fill: var(--blood);
   transform-box: fill-box;

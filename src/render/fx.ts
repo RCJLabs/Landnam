@@ -11,18 +11,26 @@
 // spawned at all under stillness — the same contract the old effects had.
 
 import type { Battle } from '../state/types';
-import type { Beat } from '../sim/beats';
-import { FIGURE_LIFT, RANK_GAP, standAt } from './line';
+import type { Beat, BlowBeat } from '../sim/beats';
+import { makeRng } from '../rng';
+import { FIGURE_LIFT, FIGURE_R, RANK_GAP, standAt } from './line';
 import { svgEl } from './svg';
 
 /**
- * The scale effects are drawn at.
+ * The scale effects are drawn at: THE RADIUS A FIGHTER IS ACTUALLY DRAWN AT.
  *
- * Was the hex size. Since 8.1d a fighter's size comes from the rank gap, and
- * this file has to agree with `render/battle.ts` about it or a blow lands
- * somewhere near the man who threw it. One import rather than two constants.
+ * Was the hex size, then `RANK_GAP * 0.42` — and the comment here said this
+ * file "has to agree with `render/battle.ts` about it or a blow lands
+ * somewhere near the man who threw it. One import rather than two
+ * constants." It did not agree. `battle.ts` draws every fighter at
+ * `FIGURE_R`, which is `RANK_GAP * 0.46`, so the effects were laid out
+ * against a man 9% smaller than the one on screen — near enough for a swing
+ * arc, which is why nobody caught it, and not near enough for art queue item
+ * 19, whose whole claim is that a blow lands on a PLACE on a body.
+ *
+ * So it is the same constant now, and the comment's promise is kept.
  */
-const HEX = RANK_GAP * 0.42;
+const HEX = FIGURE_R;
 
 type Spawn = (node: SVGElement, life?: number) => void;
 
@@ -83,6 +91,120 @@ function blowColour(soft: boolean): string {
   return soft ? '#9aa4ad' : '#e6ebee';
 }
 
+// ---- where a blow lands, and what it does to the man (art queue item 19) ----
+
+/**
+ * Where on a man a blow landed.
+ *
+ * Every blow used to land in exactly the same place: the centre of the
+ * figure, because that is where `spotOf` answers and nothing asked for
+ * anything else. A flash there and a number over it is a HIT REPORTED, not
+ * a blow struck, which is the whole of what this item is about.
+ *
+ * The sim does not say where a blow landed and must not start: beats live in
+ * the save and in the parity vectors, so growing a field for decoration
+ * would cost a save bump and a port change for something no rule reads. It
+ * is derived here instead, seeded off the beat's own number so a replay of
+ * the same fight shows the same blow in the same place — the same discipline
+ * every other decoration in this game keeps.
+ */
+export type BlowPlace = 'head' | 'body' | 'leg';
+
+export function blowLanding(beat: BlowBeat): BlowPlace {
+  const rng = makeRng(`landnam-blow:${beat.n}:${beat.who}:${beat.target}`);
+  // A GLANCE is a blow that did not land square — it caught a helm or a
+  // shin. So it skews to the edges of a man, and a clean hit to his middle.
+  const roll = rng.float(0, 1);
+  if (beat.result === 'glance') return roll < 0.45 ? 'head' : roll < 0.9 ? 'leg' : 'body';
+  return roll < 0.52 ? 'body' : roll < 0.78 ? 'head' : 'leg';
+}
+
+/**
+ * How far above or below the middle that is, in world units.
+ *
+ * Fitted to what `figures.ts` actually DRAWS head-on, which is not a whole
+ * body: a helm above the rim (its dome runs from `-r * 1.18` to `-r * 0.62`),
+ * a round shield filling the middle, and the health bar below at `r + 4`. So
+ * a blow to the head lands on the helm, one to the body on the shield's
+ * face, and a low one under the rim where the legs are — measured off that
+ * geometry rather than picked to look right in the abstract.
+ */
+export function placeOffset(place: BlowPlace, r: number): number {
+  return place === 'head' ? -r * 0.9 : place === 'leg' ? r * 0.8 : 0;
+}
+
+/**
+ * How hard the blow shoves him, in world units.
+ *
+ * Scaled by the damage so a blow that takes a third of a man reads heavier
+ * than a scratch, and capped so nobody is punted off the line. Not read off
+ * `maxHealth`, because `showBeat` is handed the battle and the people live
+ * in the state — and a cap makes the difference between the numbers matter
+ * more than their absolute size anyway.
+ */
+export function blowKick(damage: number): number {
+  return HEX * Math.min(0.34, 0.11 + damage * 0.045);
+}
+
+/** Blood thrown off a blow that got through, along the line it came in on. */
+function spatter(
+  x: number,
+  y: number,
+  dx: number,
+  dy: number,
+  damage: number,
+  seed: string,
+): SVGElement {
+  const g = svgEl('g', { class: 'fx-blood' });
+  const rng = makeRng(`landnam-spatter:${seed}`);
+  const d = Math.hypot(dx, dy) || 1;
+  // Restrained on purpose. This is a saga, not a gore game: a few dark marks
+  // flung the way the blow was going, gone in half a second.
+  const drops = Math.min(6, 2 + Math.round(damage * 0.6));
+  for (let i = 0; i < drops; i += 1) {
+    const spread = rng.float(-0.7, 0.7);
+    const reach = HEX * rng.float(0.35, 1.05);
+    const ax = (dx / d) * Math.cos(spread) - (dy / d) * Math.sin(spread);
+    const ay = (dx / d) * Math.sin(spread) + (dy / d) * Math.cos(spread);
+    const drop = svgEl('circle', {
+      cx: x, cy: y, r: rng.float(1.8, 4.2), fill: '#7d1f16',
+    });
+    const style = (drop as SVGElement & { style: CSSStyleDeclaration }).style;
+    style.setProperty('--tx', `${(ax * reach).toFixed(1)}px`);
+    style.setProperty('--ty', `${(ay * reach).toFixed(1)}px`);
+    style.setProperty('animation-delay', `${rng.float(0, 60).toFixed(0)}ms`);
+    g.append(drop);
+  }
+  return g;
+}
+
+/**
+ * The struck man takes it: a jolt along the blow's line, then his feet again.
+ *
+ * Reaches OUT of the effects layer to the fighter himself, which nothing else
+ * in this file does — every other effect is a node spawned and swept up. It
+ * is worth the exception because a body that does not move when it is hit is
+ * exactly what makes a hit read as a number: the recoil is the blow landing
+ * ON somebody rather than near them. `battle.ts` marks each fighter with
+ * `data-who` so there is something to find.
+ *
+ * If the node has been rebuilt by a repaint before this runs, nothing
+ * happens and nothing breaks — the repaint has already drawn his new health,
+ * which is the fact that mattered.
+ */
+function shove(root: ParentNode, who: string, dx: number, dy: number, kick: number): void {
+  const man = root.querySelector(`g.fighter[data-who="${CSS.escape(who)}"]`);
+  if (!(man instanceof SVGElement)) return;
+  const d = Math.hypot(dx, dy) || 1;
+  man.style.setProperty('--kx', `${((dx / d) * kick).toFixed(2)}px`);
+  man.style.setProperty('--ky', `${((dy / d) * kick).toFixed(2)}px`);
+  man.classList.remove('struck');
+  // Force the class to take again when two blows land on one man in a round.
+  void man.getBoundingClientRect();
+  man.classList.add('struck');
+  window.setTimeout(() => man.classList.remove('struck'), 320);
+}
+
 /**
  * One beat, drawn. Everything the effects layer knows how to show.
  *
@@ -96,6 +218,12 @@ export function showBeat(
   b: Beat,
   spawn: Spawn,
   wallBefore: Map<string, WallMemory>,
+  /**
+   * The field, so a blow can find the man it landed on and shove him. Every
+   * other effect here is a node spawned into the effects layer and swept up;
+   * the recoil is the one that has to touch the fighter himself.
+   */
+  root: ParentNode,
 ): void {
   const R = HEX * 0.42;
 
@@ -161,17 +289,37 @@ export function showBeat(
       spawn(spear, 320);
     }
 
-    // How it landed. Iron sparks for a shield that held; the flash and the
-    // number, as ever, for a blow that got through.
+    // How it landed. Iron sparks for a shield that held; for a blow that got
+    // through, a body that takes it SOMEWHERE — which is the whole of art
+    // queue item 19. It was a flash on the figure's centre and a number over
+    // its head: a hit reported rather than a blow struck.
     const arrival = b.kind === 'threw' ? 240 : b.kind === 'reached' ? 120 : 200;
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
     window.setTimeout(() => {
       if (b.result === 'turned' || b.result === 'miss') {
+        // A shield that held still shoves the man behind it, a little.
+        if (b.result === 'turned') shove(root, b.target, dx, dy, HEX * 0.07);
         spawn(burst(to.x, to.y, '#cfd8dc', b.result === 'turned' ? 9 : 6, 5), 420);
         return;
       }
       if (b.damage > 0) {
-        if (b.result === 'glance') spawn(burst(to.x, to.y, '#cfd8dc', 6, 4), 380);
-        spawn(svgEl('circle', { cx: t.x, cy: t.y, r: HEX * 0.5, class: 'hit-flash' }), 450);
+        // Where on him it landed, and everything placed there rather than at
+        // his middle.
+        const place = blowLanding(b);
+        const at = { x: t.x, y: t.y + placeOffset(place, HEX) };
+        if (b.result === 'glance') spawn(burst(at.x, at.y, '#cfd8dc', 6, 4), 380);
+        spawn(svgEl('circle', {
+          cx: at.x, cy: at.y,
+          // A heavier blow flashes wider. Head blows read sharper than body
+          // ones at the same damage, which is the read a player wants.
+          r: HEX * (place === 'head' ? 0.34 : 0.5),
+          class: 'hit-flash',
+        }), 450);
+        if (b.result === 'hit') {
+          spawn(spatter(at.x, at.y, dx, dy, b.damage, `${b.n}:${b.target}`), 620);
+        }
+        shove(root, b.target, dx, dy, blowKick(b.damage));
         const text = svgEl('text', {
           x: t.x, y: t.y - HEX * 0.55,
           class: `float-dmg${soft ? ' glance' : ''}`,

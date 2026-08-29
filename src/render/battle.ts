@@ -217,8 +217,13 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     // of a stream over a slot.
     const wall = wallBefore;
     beats.forEach((b, i) => {
-      if (i === 0) showBeat(battle, b, spawn, wall);
-      else window.setTimeout(() => showBeat(battle, b, spawn, wall), Math.min(i, 8) * BEAT_GAP);
+      if (i === 0) showBeat(battle, b, spawn, wall, root);
+      else {
+        window.setTimeout(
+          () => showBeat(battle, b, spawn, wall, root),
+          Math.min(i, 8) * BEAT_GAP,
+        );
+      }
     });
   }
 
@@ -479,20 +484,24 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
       const spot = standAt(combatant.side, combatant.rank);
       const p = { x: spot.x, y: spot.y - FIGURE_LIFT };
       const isActive = active?.personId === combatant.personId;
-      layers.fighters.append(
-        figure(p.x, p.y, FIGURE_R, person, {
+      const drawn = figure(p.x, p.y, FIGURE_R, person, {
           friendly: combatant.side === 'warband',
           health: person.health / person.maxHealth,
           active: isActive,
           defending: combatant.defending,
           broken: combatant.broken,
           pennant: isLeaderHere(state, combatant)
-            ? 'gold'
-            : battle.champion === combatant.personId
-              ? 'blood'
-              : null,
-        }),
-      );
+        ? 'gold'
+        : battle.champion === combatant.personId
+          ? 'blood'
+          : null,
+      });
+      // So a blow can find the body it landed on and shove it — see the
+      // recoil in `fx.ts`. Marked HERE rather than inside `figure()`, which
+      // is shared with the road and the yard and has no business knowing
+      // about beats.
+      drawn.setAttribute('data-who', combatant.personId);
+      layers.fighters.append(drawn);
     }
 
     playEffects(state);

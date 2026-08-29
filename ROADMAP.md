@@ -34,8 +34,9 @@
 > so a gale is a gale even with motion stilled. **And Art 15** — camp brings
 > dusk, stars and firelight, with daylight driven by the season because at
 > these latitudes the turning of the day is the turning of the year. Next:
-> Art 19 (blows that land somewhere) or Art 14 (gear you can see), both in
-> the battle view, which has not been touched since Art 5.
+> Art 19 (blows that land somewhere), now done too — a blow lands in a place
+> and the man takes it. Next: Art 14 (gear you can see), the last of the
+> battle items, then 17, 20, 16, and 18 last by design.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -2970,8 +2971,38 @@ Ordered by how much they change what a player sees, not by cost:
   same 108 nodes walking and camped. `render/light.ts` is pure and tested;
   `scripts/procession.mjs` camps through the real Act sheet and reads the
   wash, the fire and the stars off the screen.
-- [ ] **Art 19 Blows that land somewhere** — Battle hits read as numbers more
-  than as blows.
+- [x] **Art 19 Blows that land somewhere** — **Done 2026-08-29.** Art 3 gave
+  the fight its choreography — swings sweep, thrusts run flat, thrown spears
+  fly, a turned blow sparks off the rim — and then a blow that GOT THROUGH
+  produced a flash on the figure's centre and a number over its head. Every
+  blow in the game landed in the same place, because that is where `spotOf`
+  answers and nothing asked for anywhere else. A hit reported, not a blow
+  struck.
+
+  Three things now. A blow lands in a PLACE — helm, shield, or low under the
+  rim — derived in `render/fx.ts` and seeded off the beat, because the sim
+  must not grow a field for decoration (beats live in the save and the parity
+  vectors) and a replay has to show the same blow in the same spot. THE MAN
+  TAKES IT: a jolt along the line the blow came in on, scaled by the damage
+  and capped well under his own width, which is the one effect in the file
+  that reaches out and animates a fighter rather than spawning a node. And a
+  solid hit throws blood — restrained, a few dark marks gone in half a
+  second, this being a saga rather than a gore game.
+
+  **A real inconsistency fell out of it.** `fx.ts` carried a comment saying
+  it "has to agree with `render/battle.ts` about [the figure size] or a blow
+  lands somewhere near the man who threw it. One import rather than two
+  constants" — and it did not agree: it laid effects out at `RANK_GAP * 0.42`
+  while every fighter is drawn at `FIGURE_R`, `RANK_GAP * 0.46`. Nine percent
+  small, near enough for a swing arc, not near enough for an item whose whole
+  claim is that a blow lands on a place on a body. It is the same constant
+  now.
+
+  `scripts/field.mjs` holds it, and had to record with a MutationObserver
+  rather than a poll: **measured, a loop sampling every 70ms across 2.8s of a
+  real fight saw ZERO of eight blows the beat stream proves were struck.**
+  Watched fail with the recoil disabled — "11 blows landed and nobody moved
+  — they read as numbers".
 - [ ] **Art 14 Gear you can see** — What a person carries should be visible
   on them.
 - [ ] **Art 17 The saga as an illuminated chronicle** — The saga log is the
@@ -3675,6 +3706,43 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — Blows that land somewhere (Art 19)** — Art 3 gave the fight
+  real choreography and then a blow that GOT THROUGH produced a flash on the
+  figure's centre and a number over its head. Every blow in the game landed
+  in the same place, because that is where `spotOf` answers and nothing ever
+  asked for anywhere else.
+
+  Now a blow lands in a place — helm, shield, or low under the rim, fitted to
+  what `figures.ts` actually draws head-on rather than to an imagined body,
+  and derived in the view seeded off the beat, because the sim must not grow
+  a field for decoration (beats live in the save and the parity vectors) and
+  a replay has to show the same blow in the same spot. The man takes it: a
+  jolt along the line the blow came in on, scaled by the damage and capped
+  well under his own width — the one effect in `fx.ts` that reaches out and
+  animates a fighter rather than spawning a node, which is why `battle.ts`
+  now marks each with `data-who`. And a solid hit throws blood, restrained,
+  gone in half a second.
+
+  **`fx.ts` was lying about its own geometry.** Its comment said the file
+  "has to agree with `render/battle.ts` about it or a blow lands somewhere
+  near the man who threw it. One import rather than two constants" — and it
+  laid effects out at `RANK_GAP * 0.42` while every fighter is drawn at
+  `FIGURE_R`, `RANK_GAP * 0.46`. Nine percent small: near enough for a swing
+  arc, which is why it survived, and not near enough for an item about where
+  on a body a blow lands. Same constant now, and the comment's promise kept.
+
+  **A measurement worth carrying: these effects cannot be polled for.** They
+  live 300-600ms, and a loop sampling every 70ms across 2.8 seconds of a real
+  fight saw ZERO of the eight blows the beat stream proves were struck — it
+  reported the feature entirely absent. `scripts/field.mjs` records with a
+  MutationObserver instead, and its claim was watched fail with the recoil
+  disabled: "11 blows landed and nobody moved — they read as numbers".
+
+  One test assertion was restated on the way. "Never punts anybody off the
+  line" was written as `blowKick(damage) < 12` — a number picked out of the
+  air, which failed at 13.7. It asks the meaningful question now: the shove
+  is a fraction of the man's own width and of the gap to the next rank.
 
 - **2026-08-29 — The band was walking on the sky** — Reported off a phone
   ("they're just kinda floating"), and measuring it proved it exactly. This

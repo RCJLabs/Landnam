@@ -126,6 +126,27 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   // that ends on turn three is a different measurement from one that runs
   // the full fourteen and the reader should be able to see which they got.
   let late = opening;
+  // Watch for impact marks from here on — see the item 19 block below for
+  // why this is an observer and not a poll.
+  await page.evaluate(() => {
+    window.__blows = { struck: 0, blood: 0, flash: 0 };
+    const bump = (n) => {
+      if (!(n instanceof Element)) return;
+      const cl = n.getAttribute('class') ?? '';
+      if (n.matches?.('g.fighter.struck')) window.__blows.struck += 1;
+      if (cl.includes('fx-blood')) window.__blows.blood += 1;
+      if (cl.includes('hit-flash')) window.__blows.flash += 1;
+    };
+    new MutationObserver((records) => {
+      for (const r of records) {
+        for (const n of r.addedNodes) bump(n);
+        if (r.type === 'attributes') bump(r.target);
+      }
+    }).observe(document.documentElement, {
+      childList: true, subtree: true, attributes: true, attributeFilter: ['class'],
+    });
+  });
+
   let played = 0;
   for (let turn = 0; turn < 14; turn++) {
     const end = page.locator('.action-slot button', { hasText: /End turn/i }).first();
@@ -182,9 +203,40 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   // is the other failure this project keeps finding — a check that quietly
   // stopped running looks exactly like one that passed — so the number of
   // turns actually played is itself a bar.
+  // What the fight actually threw, and what the screen did about it.
+  const blows = await page.evaluate(() => ({
+    ...window.__blows,
+    count: (window.landnam.state().battle?.beats ?? []).filter(
+      (b) => ['struck', 'reached', 'threw'].includes(b.kind) && b.result === 'hit' && b.damage > 0,
+    ).length,
+  }));
+
   check(played >= 4,
     `${w}x${h}: the fight was over after ${played} turn${played === 1 ? '' : 's'}, ` +
       'so the log never grew and this width measured nothing');
+
+  // BLOWS THAT LAND SOMEWHERE (art queue item 19). A landed blow used to be
+  // a flash on the figure's centre and a number over its head — a hit
+  // REPORTED. Now the man takes it: he is shoved along the line the blow came
+  // in on, and a solid hit throws blood at the place it landed.
+  //
+  // Recorded with a MutationObserver rather than polled. These effects live
+  // 300-600ms and a poll loop steps clean over them: measured, a loop
+  // sampling every 70ms across 2.8s of a real fight saw ZERO of eight blows
+  // that the beat stream proves were struck. An observer catches every one.
+  //
+  // Only at the width the game is designed for; the choreography does not
+  // change shape with the viewport.
+  if (w === 390 && blows.count > 0) {
+    console.log(`${w}x${h}: ${blows.count} blows landed — ` +
+      `${blows.struck} recoils, ${blows.blood} spatters, ${blows.flash} flashes`);
+    check(blows.struck > 0,
+      `${w}x${h}: ${blows.count} blows landed and nobody moved — they read as numbers`);
+    check(blows.blood > 0,
+      `${w}x${h}: ${blows.count} blows landed and drew no blood`);
+  } else if (w === 390) {
+    check(false, `${w}x${h}: no blow landed in ${played} turns, so item 19 did NOT run`);
+  }
 
   await page.close();
 }
