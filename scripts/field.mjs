@@ -105,6 +105,14 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(`file://${process.cwd()}/${PAGE}`);
   await page.waitForTimeout(600);
+  // A FIXED SEED, as `pan.mjs` and `procession.mjs` have always used and
+  // this file never did. Without one every run is a different fight, and
+  // every claim below is a lottery: measured over four runs, one failed with
+  // "no blow landed in 11 turns" purely because that fight ended before
+  // anybody connected. A bar that fails one time in four teaches people to
+  // re-run it, which is how a real regression gets waved through.
+  const seed = page.locator('input').first();
+  if (await seed.count()) await seed.fill(process.env.SEED ?? 'field-bar');
   await page.locator('button', { hasText: /Take the land/i }).first().click();
   await page.waitForTimeout(800);
   await page.evaluate(() => window.landnam.fight(3));
@@ -228,6 +236,11 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   const whole = await page.evaluate(() => {
     const svg = document.querySelector('svg.field');
     const st = window.landnam.state();
+    // The fight can be OVER by now — fourteen turns is enough to finish one,
+    // and this file has watched a warband fall to its last man. With no
+    // battle there are no combatants to ask about, and reaching into
+    // `st.battle` regardless is what crashed this script intermittently.
+    if (!svg || !st?.battle) return null;
     const side = Object.fromEntries(st.battle.combatants.map((c) => [c.personId, c.side]));
     const men = [...svg.querySelectorAll('g.fighter[data-who]')].map((g) => {
       const b = g.getBoundingClientRect();
@@ -239,6 +252,12 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
     };
     return { ours: tally('warband'), foes: tally('foe') };
   });
+  if (!whole) {
+    // Said out loud rather than skipped: a check that quietly stopped
+    // running looks exactly like one that passed, which is a habit this
+    // file already names elsewhere.
+    console.log(`${w}x${h}: the fight was over before the visibility claim could run`);
+  } else {
   console.log(`${w}x${h}: on screen at rest — ours ${whole.ours.on}/${whole.ours.all}, ` +
     `theirs ${whole.foes.on}/${whole.foes.all}`);
   check(whole.foes.all > 0, `${w}x${h}: there is no enemy on the field to see`);
@@ -247,6 +266,46 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
       'you cannot see who you are fighting');
   check(whole.ours.on === whole.ours.all,
     `${w}x${h}: ${whole.ours.all - whole.ours.on} of ${whole.ours.all} of our own are off screen`);
+  }
+
+  // GEAR YOU CAN SEE (art queue item 14), and specifically gear you can see
+  // SPENT. `sim/ranks.ts`: "`throw` is a hand-axe. It reaches anybody, which
+  // is what makes the back rank worth standing in." The whole of that
+  // resource used to reach the screen as a digit on a button — "Throw 1" —
+  // so the axes are drawn on the belt, one per throw a man has left.
+  //
+  // The claim is the correspondence, not the presence: a picture that always
+  // draws two axes is decoration, and one that draws what the sim says is
+  // gear. Checked against `throwsLeft` for every fighter on the field.
+  if (w === 390) {
+    const axes = await page.evaluate(() => {
+      const svg = document.querySelector('svg.field');
+      const st = window.landnam.state();
+      if (!svg || !st?.battle) return null;
+      const left = Object.fromEntries(
+        st.battle.combatants.map((c) => [c.personId, c.down || c.fled ? 0 : c.throwsLeft]),
+      );
+      return [...svg.querySelectorAll('g.fighter[data-who]')].map((g) => ({
+        who: g.getAttribute('data-who'),
+        drawn: g.querySelectorAll('g.belt-axe').length,
+        // The picture shows at most two; past that it is a smear on one hip.
+        want: Math.min(2, left[g.getAttribute('data-who')] ?? 0),
+      }));
+    });
+    if (!axes) {
+      console.log(`${w}x${h}: the fight was over before the gear claim could run`);
+    } else {
+    const carrying = axes.filter((a) => a.want > 0);
+    const wrong = axes.filter((a) => a.drawn !== a.want);
+    console.log(`${w}x${h}: ${carrying.length} of ${axes.length} still carry an axe; ` +
+      `${axes.length - wrong.length} of ${axes.length} drawn right`);
+    check(carrying.length > 0,
+      `${w}x${h}: nobody on the field has a throw left, so the gear claim did NOT run`);
+    check(wrong.length === 0,
+      `${w}x${h}: ${wrong.length} fighters carry the wrong number of axes — ` +
+        wrong.map((a) => `${a.who} drew ${a.drawn} for ${a.want}`).join(', '));
+    }
+  }
 
   // BLOWS THAT LAND SOMEWHERE (art queue item 19). A landed blow used to be
   // a flash on the figure's centre and a number over its head — a hit

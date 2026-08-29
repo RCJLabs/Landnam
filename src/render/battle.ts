@@ -517,6 +517,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
           friendly: combatant.side === 'warband',
           // Each wall faces the other: ours stand left and look right.
           facing: combatant.side === 'warband' ? 1 : -1,
+          throws: combatant.throwsLeft,
           health: person.health / person.maxHealth,
           active: isActive,
           defending: combatant.defending,

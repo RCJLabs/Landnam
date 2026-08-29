@@ -277,6 +277,10 @@ export function createProcessionView(): TravelView {
         facing: 1,
         walking: true,
         leader: i === 0,
+        // The sworn bear arms; the hands the steading has taken in do not.
+        // Every walker carried a war shield until Art 14, which told a lie
+        // about who in this band would ever stand in a wall.
+        arms: person.bond === 'sworn',
       }));
     }
 

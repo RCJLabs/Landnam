@@ -23,6 +23,7 @@ import { weatherNow } from './sim/weather';
 import { countryHere, learnStop, standingAt } from './sim/coast';
 import { ROUTE_STOPS } from './sim/route';
 import { buildingById, type BuildingId } from './data/buildings';
+import { JOBS, type JobId } from './data/jobs';
 
 /**
  * What the debug levers need from the app: the current state, a way to
@@ -44,6 +45,7 @@ declare global {
     landnam?: {
       state(): GameState | null;
       sky(): string | null;
+      work(job?: string | null): boolean;
       fight(difficulty?: number): void;
       raid(difficulty?: number): void;
       visit(id?: string): void;
@@ -155,6 +157,33 @@ export function installDebug(hooks: DebugHooks): void {
       if (home.built.includes(id)) return true;
       home.built.push(id);
       home.queue = home.queue.filter((q) => q !== id);
+      hooks.commit(next);
+      return true;
+    },
+
+    /**
+     * Puts the whole band to work, one job each.
+     *
+     * Same reason `stock` exists: a playtest should spend its days on the
+     * thing being tested. Reaching a yard where everybody is working means
+     * six taps through a roster, and `scripts/hearth.mjs` needs it to check
+     * that a job puts a tool in somebody's hand — which is invisible while
+     * the whole band is idle, and idle is what a fresh steading is.
+     *
+     * Assigns the job named, or deals the jobs out in turn when given none.
+     * Refuses a job the game does not have, so a typo in a bar reads as a
+     * failure rather than as a band that quietly stayed idle.
+     */
+    work(job: string | null = null) {
+      const state = hooks.get();
+      if (!state?.settlement) return false;
+      const ids = JOBS.map((j) => j.id);
+      if (job !== null && !ids.includes(job as JobId)) return false;
+      const next = cloneState(state);
+      const alive = next.party.people.filter((p) => p.alive);
+      alive.forEach((person, i) => {
+        person.job = (job ?? ids[i % ids.length]!) as string;
+      });
       hooks.commit(next);
       return true;
     },

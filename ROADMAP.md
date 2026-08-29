@@ -35,8 +35,10 @@
 > dusk, stars and firelight, with daylight driven by the season because at
 > these latitudes the turning of the day is the turning of the year. Next:
 > Art 19 (blows that land somewhere), now done too — a blow lands in a place
-> and the man takes it. Next: Art 14 (gear you can see), the last of the
-> battle items, then 17, 20, 16, and 18 last by design.
+> and the man takes it. **Art 14 is done too** — hand-axes on the belt that
+> go as they are thrown, shields only on the sworn, and a tool for every job.
+> Next: 17 (the saga as an illuminated chronicle), 20, 16, and 18 last by
+> design.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -3003,11 +3005,36 @@ Ordered by how much they change what a player sees, not by cost:
   real fight saw ZERO of eight blows the beat stream proves were struck.**
   Watched fail with the recoil disabled — "11 blows landed and nobody moved
   — they read as numbers".
-- [ ] **Art 14 Gear you can see** — What a person carries should be visible
-  on them. **Made much cheaper on 2026-08-29:** the battle fighter is drawn
-  in profile now, so there is a body with a hand, a belt and a back to hang
-  things on — where a head-on shield had nowhere to put an axe. `figures.ts`,
-  `walker.ts` and `look.ts` are the three places it would go.
+- [x] **Art 14 Gear you can see** — **Done 2026-08-29**, and the premise
+  turned out to be that the game already knew what everybody carried and
+  showed none of it. Three facts, all in state, none of them stored for this:
+
+  **Hand-axes.** `sim/ranks.ts` says plainly that "`throw` is a hand-axe. It
+  reaches anybody, which is what makes the back rank worth standing in", and
+  `Combatant.throwsLeft` counts them. The whole of that resource reached the
+  screen as a digit on a button — "Throw 1". They hang on the belt now, one
+  per throw left, so it is gear you watch being SPENT, which is the only kind
+  that changes how anybody plays.
+
+  **Who bears arms.** `Person.bond` has always said it and `sim/joining.ts`
+  is explicit that growth "buys labour, never a wider shield wall" — yet the
+  road drew a painted war shield on the back of every walker, hands included.
+  A picture telling a lie about who fights. Only the sworn carry one now.
+
+  **What a job puts in your hands.** A woodcutter and a fisher were the same
+  silhouette; they carry an axe and a net. The tool is a field on the JOB
+  (`data/jobs.ts`), so a new job arrives with its own gear and `render/gear.ts`
+  is the only place that draws — the data-driven pillar, kept. The warrior is
+  the one job with no tool, deliberately: his gear is the shield and spear
+  every sworn man already carries.
+
+  `scripts/field.mjs` holds the headline as a CORRESPONDENCE rather than a
+  presence — a picture that always draws two axes is decoration, one that
+  draws what the sim says is gear — checking every fighter's axes against his
+  `throwsLeft`. Watched fail by drawing two regardless: "0 of 11 drawn
+  right". `landnam.work()` joins the debug levers for the same reason `stock`
+  exists: a fresh steading is entirely idle, so a tool in a hand is
+  unreachable without six taps through a roster.
 - [ ] **Art 17 The saga as an illuminated chronicle** — The saga log is the
   game's memory and is styled as a list.
 - [ ] **Art 20 The title and the ending as set pieces** — First and last
@@ -3709,6 +3736,38 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — Gear you can see (Art 14)** — The premise was not that
+  gear needed inventing. The game already knew what everybody was carrying
+  and showed none of it, in three places.
+
+  `Combatant.throwsLeft` counts hand-axes — `sim/ranks.ts` says "`throw` is
+  a hand-axe. It reaches anybody, which is what makes the back rank worth
+  standing in" — and the whole resource reached the screen as a digit on a
+  button. They are on the belt now, one per throw left, so they visibly go
+  as they are thrown. `Person.bond` has always said who bears arms, with
+  `sim/joining.ts` explicit that growth "buys labour, never a wider shield
+  wall", and the road drew a painted war shield on every walker's back
+  regardless — a picture lying about who fights. And `Person.job` made a
+  woodcutter and a fisher the same silhouette; they carry an axe and a net.
+
+  The tool is a field on the JOB rather than a switch in a renderer, so a
+  new job arrives carrying its own gear and `render/gear.ts` is the only
+  thing that draws — CLAUDE.md's data-driven pillar. The warrior has no
+  tool on purpose: his gear is the shield and spear every sworn man has, and
+  a tool as well would draw him holding two things he does not own.
+
+  `scripts/field.mjs` holds it as a CORRESPONDENCE, not a presence — a
+  picture that always draws two axes is decoration; one that draws what the
+  sim says is gear. Every fighter's drawn axes are checked against his
+  `throwsLeft`, and it was watched fail by drawing two regardless: "0 of 11
+  drawn right".
+
+  Two things sized by looking rather than by reasoning: the belt axe was
+  first drawn at 0.045 of a man, which is four world units and two and a half
+  pixels on screen — invisible. And `landnam.work()` joins the debug levers
+  for the same reason `stock` exists: a fresh steading is entirely idle, so a
+  tool in a hand cannot be reached without six taps through a roster.
 
 - **2026-08-29 — The fighters are people now, not shields** — The third
   thing the same phone report named: "I only saw shields and not the actual

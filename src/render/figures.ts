@@ -28,6 +28,7 @@
 // leader's pennant. They are all still here.
 
 import { darken, lighten, lookOf, INK, IRON } from './look';
+import { beltAxes } from './gear';
 import { crack, shieldTurned } from './shield';
 import type { Person } from '../state/types';
 import { svgEl } from './svg';
@@ -52,6 +53,13 @@ export interface FigureState {
   pennant: 'gold' | 'blood' | null;
   /** +1 faces right, -1 faces left. Each wall faces the other. */
   facing: number;
+  /**
+   * Hand-axes left to throw. `sim/ranks.ts`: "`throw` is a hand-axe. It
+   * reaches anybody, which is what makes the back rank worth standing in" —
+   * and the whole of that resource reached the screen as a digit on a
+   * button until Art 14.
+   */
+  throws: number;
 }
 
 /**
@@ -156,6 +164,12 @@ export function figure(
     }),
   );
   g.append(leg(f * h * 0.1, 0.15));
+
+  // Hand-axes on the rear hip, one per throw he has left — gear you can
+  // watch being spent, which is the only kind that changes how anybody
+  // plays. Drawn after the tunic so they hang on the belt, and before the
+  // shield so the shield covers nothing it should not.
+  if (s.throws > 0) g.append(...beltAxes(cx, hipY, h, f, s.throws));
 
   // The head, in profile under a helm. Hair and beard from `look`, so age
   // and colouring are the same man's wherever he is drawn.

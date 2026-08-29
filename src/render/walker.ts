@@ -25,6 +25,8 @@
 // is drawn in linework that a thumb-width of screen would swallow.
 
 import { darken, lookOf, BUILD_MAX, INK } from './look';
+import { toolInHand } from './gear';
+import type { ToolId } from '../data/jobs';
 import { crack, shieldFace } from './shield';
 import type { Person } from '../state/types';
 import { svgEl } from './svg';
@@ -82,6 +84,17 @@ export interface WalkerState {
    * the job; the road has nothing to say and passes nothing.
    */
   doing?: string;
+  /**
+   * Does this person bear arms?
+   *
+   * `sworn` do and `hand`s do not — `sim/joining.ts` is explicit that growth
+   * "buys labour, never a wider shield wall". Every walker used to carry a
+   * painted war shield on the road, which was the picture telling a lie
+   * about who fights.
+   */
+  arms: boolean;
+  /** The tool their job puts in their hands, if it puts one there. */
+  tool?: ToolId;
 }
 
 /**
@@ -194,7 +207,7 @@ export function walker(
       );
     }
   }
-  g.append(...shieldFace(shieldX, shieldY, shieldR, look, s.friendly, wear));
+  if (s.arms) g.append(...shieldFace(shieldX, shieldY, shieldR, look, s.friendly, wear));
 
   // The body: a tunic, wider at the shoulders than the hip, leaning into the
   // walk (and further when the walker is hurt).
@@ -246,6 +259,10 @@ export function walker(
       fill: look.hair,
     }));
   }
+
+  // The tool of their trade, if they have one. Drawn after the body so it
+  // sits in front of them, which is where a carried thing is.
+  if (s.tool) g.append(...toolInHand(x, groundY, h, f, s.tool));
 
   // What they are at, when the caller has something to say. The yard does;
   // the road does not, because on the road everyone is doing the same thing.

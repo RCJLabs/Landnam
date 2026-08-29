@@ -16,6 +16,7 @@
 
 import { buildingById, type BuildingDef } from '../data/buildings';
 import { jobOf } from '../sim/colony';
+import type { ToolId } from '../data/jobs';
 import { GROUND_Y as HORIZON_Y } from './line';
 import type { GameState, Person, Settlement } from '../state/types';
 
@@ -123,6 +124,8 @@ export interface Standing {
   person: Person;
   /** The job's word, so the picture can say who is doing what. */
   job: string;
+  /** And the thing it puts in their hands, off the job's own data. */
+  tool?: ToolId;
   x: number;
   y: number;
 }
@@ -305,6 +308,7 @@ export function folkIn(state: GameState, width: number): Standing[] {
   return here.map((person, i) => ({
     person,
     job: jobOf(person)?.name ?? 'no work',
+    ...(jobOf(person)?.tool ? { tool: jobOf(person)!.tool! } : {}),
     // Spread across whatever the yard is wide, in two staggered rows so a
     // full hall does not become one long line off the edge of the picture.
     //

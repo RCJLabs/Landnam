@@ -41,11 +41,28 @@ export interface JobDef {
    * midwinter and the whole clock would stop mattering.
    */
   seasonal: number;
+  /**
+   * What this job puts in a person's hands, for the picture to draw.
+   *
+   * Data rather than a switch in a renderer, because that is the rule for
+   * everything else a job carries (CLAUDE.md: adding content must never mean
+   * touching engine code). `render/gear.ts` knows how to draw each of these
+   * and nothing else needs to.
+   *
+   * A warrior has none, and that is not an omission: his gear is the shield
+   * and spear every sworn man already carries, so giving him a tool as well
+   * would draw him holding two things he does not have.
+   */
+  tool?: ToolId;
 }
+
+/** The tools a job can put in a hand. `render/gear.ts` draws them. */
+export type ToolId = 'sickle' | 'bow' | 'net' | 'axe' | 'adze' | 'herbs';
 
 export const JOBS: JobDef[] = [
   {
     id: 'farmer',
+    tool: 'sickle',
     name: 'Farmer',
     blurb: 'Breaks ground, sows, and keeps the beasts.',
     stat: 'craft',
@@ -60,6 +77,7 @@ export const JOBS: JobDef[] = [
   },
   {
     id: 'hunter',
+    tool: 'bow',
     name: 'Hunter',
     blurb: 'Works the tree line for whatever moves in it.',
     stat: 'wits',
@@ -72,6 +90,7 @@ export const JOBS: JobDef[] = [
   },
   {
     id: 'fisher',
+    tool: 'net',
     name: 'Fisher',
     blurb: 'Sets nets and lines in whatever water there is.',
     stat: 'wits',
@@ -84,6 +103,7 @@ export const JOBS: JobDef[] = [
   },
   {
     id: 'woodcutter',
+    tool: 'axe',
     name: 'Woodcutter',
     blurb: 'Fells, splits and stacks against the winter.',
     stat: 'might',
@@ -98,6 +118,7 @@ export const JOBS: JobDef[] = [
   },
   {
     id: 'builder',
+    tool: 'adze',
     name: 'Builder',
     blurb: 'Turf, timber and stone — the walls that keep the cold out.',
     stat: 'craft',
@@ -123,6 +144,7 @@ export const JOBS: JobDef[] = [
   },
   {
     id: 'healer',
+    tool: 'herbs',
     name: 'Healer',
     blurb: 'Tends the sick, sets what is broken, and keeps the hall clean.',
     stat: 'wits',

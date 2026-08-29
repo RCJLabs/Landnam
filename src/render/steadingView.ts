@@ -97,6 +97,8 @@ function folkMark(s: Standing, middle: number): SVGGElement {
     walking: false,
     leader: false,
     doing: s.job,
+    arms: s.person.bond === 'sworn',
+    ...(s.tool ? { tool: s.tool } : {}),
   }));
   return g;
 }
