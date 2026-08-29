@@ -24,7 +24,8 @@
     "port-data": "vite-node scripts/port-data.ts",
     "strip": "npm run build && node scripts/strip.mjs",
     "procession": "npm run build && node scripts/procession.mjs",
-    "hearth": "npm run build && node scripts/hearth.mjs"
+    "hearth": "npm run build && node scripts/hearth.mjs",
+    "ending": "npm run build && node scripts/ending.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

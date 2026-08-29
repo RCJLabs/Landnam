@@ -23,7 +23,7 @@ import { spawnSync } from 'node:child_process';
 const BARS = [
   ['offline', []], ['larder', []], ['pan', []], ['field', []],
   ['landscape', []], ['reach', []], ['reach', ['320x568']],
-  ['strip', []], ['procession', []], ['hearth', []],
+  ['strip', []], ['procession', []], ['hearth', []], ['ending', []],
 ];
 
 const build = () => spawnSync('npm', ['run', 'build'], { encoding: 'utf8' });

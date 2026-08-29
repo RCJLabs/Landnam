@@ -152,10 +152,24 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
   // lines, the roll of the dead — is inside it, said in prose, so the last
   // thing the player reads is a story about their run rather than a receipt.
   const body = el('div', { class: 'end-summary' });
+  // ONE illuminated capital for the whole ending, on the first chapter that
+  // opens with a letter — the same rule the chronicle keeps per season, and
+  // the same reason: gilding every chapter is decoration, gilding the first
+  // is a scribe starting a page. A capital drawn on a quote mark or a digit
+  // reads as a mistake, so those chapters take the plain paragraph.
+  let lit = false;
   for (const chapter of saga.chapters) {
+    const parts: (Node | string)[] = [];
+    if (!lit && /^\p{L}/u.test(chapter.text)) {
+      lit = true;
+      parts.push(el('span', { class: 'end-capital' }, [chapter.text.slice(0, 1)]));
+      parts.push(chapter.text.slice(1));
+    } else {
+      parts.push(chapter.text);
+    }
     body.append(
       el('h3', { class: 'saga-head' }, [chapter.heading]),
-      el('p', { class: 'saga-prose' }, [chapter.text]),
+      el('p', { class: 'saga-prose' }, parts),
     );
   }
   body.append(
@@ -192,7 +206,7 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
     note.replaceChildren(ok ? `Copied — ${code}` : code);
   }, { class: 'action secondary wide' });
 
-  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
+  return el('div', { class: 'overlay end', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card end-card' }, [
       el('h2', { class: survived ? 'good' : 'grim' }, [saga.title]),
       ...verdict,

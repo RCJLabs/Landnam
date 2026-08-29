@@ -38,9 +38,10 @@
 > and the man takes it. **Art 14 is done too** — hand-axes on the belt that
 > go as they are thrown, shields only on the sworn, and a tool for every job.
 > **Art 17 is done too** — the saga is a chronicle kept by the year, with
-> the day's business gathered and the story illuminated. Next: 20 (the title
-> and the ending as set pieces), 16 (knotwork as a pattern), and 18 last by
-> design.
+> the day's business gathered and the story illuminated. **And Art 20** —
+> the title is the coast the typed seed actually makes, and the ending has
+> the chronicle's voice and the screen to itself. Next: 16 (knotwork as a
+> pattern), and 18 last by design.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -3070,8 +3071,57 @@ Ordered by how much they change what a player sees, not by cost:
   adds up every count on the page against `state.saga.length` and was watched
   fail on a version that quietly dropped the routine to read better: "the
   chronicle shows 9 of 12 entries — arranging the record has falsified it".
-- [ ] **Art 20 The title and the ending as set pieces** — First and last
-  impressions, both currently plain.
+- [x] **Art 20 The title and the ending as set pieces** — **Done 2026-08-29.**
+  Both screens were cards floating on black, and the title was the worse of
+  the two: a wordmark, a paragraph and three difficulty buttons. A player who
+  had not yet pressed anything had seen NOTHING of the game they were about
+  to start.
+
+  **The title is now the coast the typed seed actually makes.** Not a
+  painting of a coast — that seed's coast, from `createProcessionView()` and
+  `newGame(seed)`, the same view the road is drawn with. It costs nothing to
+  do honestly: a whole `GameState` is a pure function of a seed and about
+  3 kB, so the title can simply BE the travel view of the run being chosen.
+  Type a seed, or paste somebody's challenge code, and the country behind the
+  card changes to theirs.
+
+  **The ending got the chronicle's voice and the screen to itself** — a gold
+  rule under the saga's title, one illuminated capital on the first chapter
+  that opens with a letter, and an opaque ground. It had been sitting on the
+  ordinary 0.82 overlay wash, which left the travel HUD legible behind it: a
+  day counter and a half-cut "HEA" over the last thing the run had to say.
+
+  **Three things this got wrong, all found by measuring rather than by
+  reasoning, and all worth writing down:**
+
+  - **The first cut shipped BLANK and every bar stayed green.** The sentinel
+    that forces the opening paint was `''` — which is a real seed, the one
+    you have typed when you have typed nothing. The scene mounted at full
+    size, compared empty against empty, decided nothing had changed and drew
+    nothing. `\u0000` now.
+  - **The scrim was painting behind the picture it was meant to soften.** It
+    was written on `.overlay.title`, and a parent's background paints UNDER
+    its children. It hangs off `.title-scene::after` now.
+  - **The drop caps did not cover whole lines.** Both of them — this one and
+    Art 17's — were sized by eye at 34px on a 0.84 line, which is a float
+    about a line and a QUARTER tall, so the paragraph's second line wrapped
+    short around nothing. Both are written in `em` of the paragraph they open
+    now, with the box landing just under two lines.
+
+  Two claims added, both watched fail. `scripts/procession.mjs` reads the
+  title BEFORE anything is typed — written the other way round it went green
+  against the exact blank-title bug it was for, because typing a seed repairs
+  it — and checks that two seeds paint different countries, so a backdrop
+  that ignored the seed reads as "the title is wallpaper". The eleventh bar,
+  `scripts/ending.mjs`, starves a band to death in fourteen days and measures
+  what the ending screen does with the result; its first cut of the drop-cap
+  claim said only "between one line and two", which is the range the DEFECT
+  lives in, and went green against the capital it was written to catch.
+
+  Two more, found while looking: the wordmark ran to x=279 at 320 wide and
+  the shell's mute button starts at 268, so the final Á was under a button —
+  it scales with the viewport now. And the title picture stopped in a hard
+  horizontal line partway down the screen, which is faded out rather than cut.
 - [ ] **Art 16 Knotwork, done as a pattern** — Border and ornament, once,
   reusable.
 - [ ] **Art 18 A hand that drew this** — The through-line: one visual voice
@@ -3769,6 +3819,40 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — The title and the ending as set pieces (Art 20)** — The
+  title screen never showed the game. A wordmark, a paragraph and three
+  buttons on black: somebody who had not pressed anything yet had seen
+  nothing of what they were about to play. It is now the coast THE TYPED
+  SEED MAKES, drawn with `createProcessionView()` over `newGame(seed)` —
+  the road's own view, not a picture of one — because a whole `GameState`
+  is a pure function of a seed and costs about 3 kB. Paste somebody's
+  challenge code and the country behind the card becomes theirs.
+
+  The ending got the chronicle's voice — a gold rule under the saga's title
+  and one illuminated capital on its first chapter — and an opaque ground.
+  It had been sitting on the ordinary translucent overlay, so the travel HUD
+  stayed legible behind it: a day counter and a half-cut "HEA" over the last
+  thing the run had to say.
+
+  **Everything wrong with it was found by measuring, and none of it by
+  reasoning.** The first cut shipped BLANK with all ten bars green — the
+  sentinel forcing the opening paint was `''`, which is the seed you have
+  typed when you have typed nothing. The scrim was written on the overlay,
+  and a parent's background paints under its children, so it sat behind the
+  picture it was meant to soften. Both drop caps in the game — this one and
+  Art 17's — were sized by eye into floats a line and a quarter tall, which
+  wraps the second line short around nothing. The lift that puts the band
+  above the card was derived wrong twice before being measured. And the
+  wordmark ran under the mute button at 320 wide.
+
+  Two claims, both watched fail. `procession` reads the title BEFORE
+  anything is typed — the other order went green against the exact blank
+  screen it was written for — and checks two seeds paint different
+  countries. The eleventh bar, `ending`, starves a band to death in fourteen
+  days and measures what the screen does with the result; its first drop-cap
+  claim said "between one line and two", which is where the defect lives,
+  and passed the capital it was meant to catch.
 
 - **2026-08-29 — The saga as an illuminated chronicle (Art 17)** — The item
   said the saga log "is styled as a list", and the styling was the smaller

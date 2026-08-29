@@ -7,6 +7,8 @@
 // the run's ending. Views only.
 
 import { button, el } from '../svg';
+import { createProcessionView } from '../processionView';
+import { newGame } from '../../state/create';
 import { HARDSHIPS, hardshipById, type HardshipId } from '../../data/hardship';
 import { decodeChallenge, describeMark } from '../../sim/challenge';
 import { measuredLine } from '../../data/hardship';
@@ -99,7 +101,56 @@ export function renderTitle(
     ),
   );
 
+  // THE COAST YOU ARE ABOUT TO LAND ON, painted behind the card.
+  //
+  // The title was a wordmark and a paragraph on a black field: a player who
+  // had never pressed the button had seen nothing of the game. Everything
+  // needed to show them was already built — the oil brush, the walkers, the
+  // light — and a whole `GameState` is a pure function of a seed and costs
+  // about 3 kB, so the title can simply BE the game's own travel view.
+  //
+  // And it is the seed's own country. Type a seed, or paste somebody's
+  // challenge code, and the coast behind the card changes to the one that
+  // seed makes. The screen stops being a menu about the game and becomes a
+  // window onto the particular run you are choosing.
+  const scene = el('div', { class: 'title-scene', 'aria-hidden': 'true' });
+  const view = createProcessionView();
+  scene.append(view.root);
+  // A sentinel no seed can equal. It was `''` and that is a REAL seed — the
+  // one you get by typing nothing, which is the state the title opens in —
+  // so the first paint compared empty against empty, decided nothing had
+  // changed, and returned. The scene mounted at full size and stayed blank.
+  const NEVER = '\u0000';
+  let painted = NEVER;
+  let pending = 0;
+  const paintScene = (): void => {
+    // A challenge code carries its own seed, so the picture follows what the
+    // run would actually be played on rather than the raw text.
+    const typed = seedInput.value.trim();
+    const seed = decodeChallenge(typed)?.seed ?? typed;
+    if (seed === painted) return;
+    painted = seed;
+    // `newGame` is cheap but the oil brush is not — about 200ms for a
+    // country. Debounced, so holding a key down does not repaint per stroke.
+    window.clearTimeout(pending);
+    pending = window.setTimeout(() => {
+      try {
+        view.update(newGame(seed));
+      } catch {
+        // A seed that cannot make a world must not take the title screen
+        // down with it. The picture is decoration; the button still works.
+      }
+    }, 220);
+  };
+  seedInput.addEventListener('input', paintScene);
+  // The element has to be in the document before the view can measure it.
+  queueMicrotask(() => {
+    painted = NEVER;
+    paintScene();
+  });
+
   return el('div', { class: 'overlay title', role: 'dialog', 'aria-modal': 'true' }, [
+    scene,
     el('div', { class: 'card' }, [
       el('h1', { class: 'game-title' }, ['LANDNÁM']),
       el('p', { class: 'tagline' }, ['Sail, fight, claim, survive.']),

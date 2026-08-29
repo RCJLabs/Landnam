@@ -38,6 +38,61 @@ for (const [w, h] of [[390, 844], [320, 568]]) {
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(`file://${process.cwd()}/${PAGE}`);
   await page.waitForTimeout(700);
+  // THE TITLE IS THE SEED'S OWN COAST (art queue item 20). This runs first,
+  // because it is the only claim on this line about a screen the player sees
+  // BEFORE pressing anything, and pressing is the next thing that happens.
+  //
+  // It is here because the first cut of that screen shipped BLANK and all ten
+  // bars stayed green. The scene mounted at full size, drew nothing, and
+  // nothing on the line had an opinion, because every other claim here starts
+  // by clicking past the title. A picture that is not drawn and a picture
+  // that is drawn wrong look the same to a bar that never looks at it.
+  //
+  // Two claims, and the second is the load-bearing one: there is a picture,
+  // and it is THIS seed's picture. A backdrop that ignored the seed would
+  // satisfy the first on its own while quietly being wallpaper.
+  const readPaint = () => page.evaluate(() => {
+      const svg = document.querySelector('.title-scene svg');
+      if (!svg) return null;
+      // A fingerprint of the COUNTRY, not of the whole tree: the ridge and
+      // ground geometry is what a seed decides. Node counts alone would
+      // match between two different coasts.
+      const shape = [...svg.querySelectorAll('path, polygon')]
+        .map((n) => (n.getAttribute('d') ?? n.getAttribute('points') ?? '').slice(0, 24))
+        .join('|');
+      return { nodes: svg.querySelectorAll('*').length, shape };
+  });
+  const paintOf = async (typed) => {
+    const box = page.locator('.overlay.title input').first();
+    if (await box.count() === 0) return null;
+    await box.fill(typed);
+    await page.waitForTimeout(900);
+    return readPaint();
+  };
+  // UNTOUCHED FIRST, and this order is the whole point. Written the other way
+  // round — type a seed, then look — the claim went green against the exact
+  // bug it was written for. The blank title shipped because the sentinel that
+  // forces the opening paint was `''`, which is the seed you have typed when
+  // you have typed nothing; typing anything at all repairs it. So the first
+  // thing measured is the screen as it opens, before a key is pressed, which
+  // is the screen a player is actually looking at.
+  const paint0 = await readPaint();
+  const paintA = await paintOf('procession-bar');
+  const paintB = await paintOf('a-different-country');
+  if (!paint0 || !paintA || !paintB) {
+    check(false, `${w}x${h}: the title screen has no picture behind it at all`);
+  } else {
+    console.log(`${w}x${h}: title — ${paint0.nodes} nodes untouched, ${paintA.nodes} typed, ` +
+      `${paintA.shape === paintB.shape ? 'SAME' : 'different'} country on a different seed`);
+    check(paint0.nodes > 40,
+      `${w}x${h}: the title opens on ${paint0.nodes} nodes, which is an empty frame — ` +
+        'nobody has typed anything yet and there is no coast behind the card');
+    check(paintA.nodes > 40,
+      `${w}x${h}: the title's coast is ${paintA.nodes} nodes, which is an empty frame`);
+    check(paintA.shape !== paintB.shape,
+      `${w}x${h}: two different seeds paint the same coast, so the title is wallpaper`);
+  }
+
   const seed = page.locator('input').first();
   if (await seed.count()) await seed.fill(process.env.SEED ?? 'procession-bar');
   await page.locator('button', { hasText: /Take the land/i }).first().click();
