@@ -26,8 +26,16 @@ import {
   sunWash,
 } from './fieldArt';
 import {
-  FIGURE_LIFT, FIGURE_R, FIGURE_W, GROUND_Y, RANK_GAP,
-  extent, paintOrder, pick, standAt,
+  FIGURE_LIFT,
+  FIGURE_R,
+  FIGURE_W,
+  GROUND_Y,
+  RANK_GAP,
+  deepestRank,
+  extent,
+  paintOrder,
+  pick,
+  standAt,
 } from './line';
 import { figure } from './figures';
 import { createFieldPaint, type FieldPaint } from './fieldOil';
@@ -60,13 +68,6 @@ const NEEDED_SCALE = TAP_MIN / FIGURE_W;
 /** Everyone still on their feet, which is everyone the field draws. */
 function upright(battle: Battle): Combatant[] {
   return battle.combatants.filter((c) => !c.down && !c.fled);
-}
-
-/** How deep the deeper of the two walls is standing. Sizes the field. */
-function deepest(battle: Battle): number {
-  let deep = 1;
-  for (const c of upright(battle)) deep = Math.max(deep, c.rank);
-  return deep;
 }
 
 /** The leader, if they are standing on this field at all. */
@@ -173,6 +174,8 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
   let beatMark: number | null = null;
   /** The field's extent, kept by fitViewBox for the light layers. */
   let bounds: { x: number; y: number; w: number; h: number } | null = null;
+  /** The box the oil brush covers. See `fitViewBox`. */
+  let painted: { x: number; y: number; w: number; h: number } | null = null;
   /**
    * The wall as the LAST paint drew it, so a fall can snap the link it was
    * holding — the fallen are already out of `wallPairs` by the time their
@@ -237,43 +240,62 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     // The field is sized to the deeper wall — a fixed gap and a box that
     // grows, rather than a fixed box and men who shrink. See line.ts for why
     // that is the load-bearing decision and not a detail.
-    const box = extent(deepest(battle));
+    const box = extent(deepestRank(battle));
 
-    // How big a rank would be if the whole field were framed. `xMidYMid meet`
-    // scales by the tighter axis, and a line is far wider than it is tall, so
-    // the width is what binds — which is the one a thumb has to hit, and the
-    // one scripts/field.mjs measures.
     const rect = root.getBoundingClientRect();
-    const framed = rect.width > 0 && rect.height > 0
-      ? Math.min(rect.width / box.w, rect.height / box.h)
-      : NEEDED_SCALE;
 
-    if (framed >= NEEDED_SCALE) {
-      // The field frames itself. A small fight on a wide screen, which a
-      // shallow line manages far more often than a hex grid ever did.
-      panAt = null;
-      canPan = false;
-      bounds = box;
-      root.setAttribute('viewBox', `${box.x} ${box.y} ${box.w} ${box.h}`);
-      return;
-    }
-
-    // It cannot: six sworn against six raiders is twelve ranks, and twelve
-    // ranks on a 320px screen is a 27px target. So the choice is a fighter
-    // under the thumb rule or a field that moves. Zoom is NOT a user control:
-    // it goes exactly as far as 44px demands and no further, so the field
-    // still frames as much of itself as it possibly can.
-    canPan = true;
-    // Fill the height with the FIELD, and take whatever width that leaves.
+    // THE VIEW IS SHAPED BY THE SLOT, NEVER BY WHO IS LEFT ALIVE.
+    //
+    // There used to be a branch above this one: when the whole field fitted,
+    // the viewBox was set to the FIELD, and `xMidYMid meet` letterboxed it
+    // into the slot. Both halves of that were wrong, and a player found it
+    // before any bar did — "in battle as people die the screen shrinks".
+    //
+    // `deepest` counts only the men still standing, so the field's box is a
+    // function of the SURVIVORS. Measured on the built page at 390x844: a
+    // fight four ranks deep drew 240px wide, three drew 200, two drew 160,
+    // one drew 119. Every man who went down shrank the picture, and by the
+    // end of a fight it was half the size it started. `extent`'s own comment
+    // worried that a box which "shifted off centre as men fell would slide
+    // the whole painting sideways" — it was watching for the wrong thing.
+    //
+    // The second half is that `meet` letterboxes: even at full depth the
+    // field only ever filled 62% of the width, because the field is 900 tall
+    // and the slot is not, so the height bound and the rest was black bars.
+    //
+    // So there is one path now, the one the deep case already took: fit the
+    // view to the SLOT's own shape, at whatever scale frames the field's
+    // height. `box.h` is `FIELD_H`, a constant — so the scale is a constant,
+    // the view is a constant, and a death cannot change either. What death
+    // changes now is only whether the field is wider than the view, which is
+    // the one thing it should change.
+    //
+    // THE SCALE THAT SHOWS THE WHOLE FIELD, floored by the thumb rule.
     //
     // Scaling by the thumb rule alone drew a view twice as tall as the field
     // and left the men at 7% of it — a shield wall seen from the far end of
-    // a car park, with unpainted page showing above and below the country.
-    // The height is what a side-on scene is composed on, so it binds first,
-    // and the thumb rule is the floor underneath it rather than the target.
-    const scale = Math.max(rect.height / box.h, NEEDED_SCALE);
-    const w = rect.width / scale;
-    const h = rect.height / scale;
+    // a car park. Scaling by the HEIGHT alone was the first repair of the
+    // shrinking bug and it broke the other end: at 412x915 the slot is tall,
+    // so the height gave a scale too large for the width and `field.mjs`
+    // went red with "1 of 6 foes are off screen — you cannot see who you are
+    // fighting". A fit is two axes or it is not a fit.
+    //
+    // Taking the tighter of the two puts the whole field inside the view;
+    // shaping the viewBox to the SLOT below means it fills the slot anyway,
+    // so nothing is letterboxed by the difference. And because `deepest`
+    // now counts the fallen too, `box` does not move for the whole fight —
+    // which is what makes this scale, and the picture, hold still.
+    const fit = rect.width > 0 && rect.height > 0
+      ? Math.min(rect.width / box.w, rect.height / box.h)
+      : NEEDED_SCALE;
+    const scale = Math.max(fit, NEEDED_SCALE);
+    const w = (rect.width || box.w * scale) / scale;
+    const h = (rect.height || box.h * scale) / scale;
+    // Panning is for a field longer than the view. A field that fits whole
+    // is centred and still, and a stale pan from a deeper moment in the same
+    // fight has to be dropped or it holds the view off-centre over nothing.
+    canPan = w < box.w;
+    if (!canPan) panAt = null;
     const centre = panAt ?? focusOf(battle) ?? { x: box.x + box.w / 2, y: box.y + box.h / 2 };
     // Clamped to the field: panning must not sail off into empty space. An
     // axis that still fits whole is centred rather than clamped.
@@ -299,6 +321,16 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     // the line happens to span — otherwise a view wider or taller than the
     // field paints sky onto part of it and bare page onto the rest.
     bounds = { x: cx - w / 2, y: cy - h / 2, w, h };
+    // WHAT THE BRUSH PAINTS, which is not the same as what is shown and not
+    // the same as the field either. The oil country is expensive, so it is
+    // painted over a box that does not move: the field, or the view when the
+    // view is wider than the field. Painting `bounds` would reload the brush
+    // every time the focus moved; painting the field alone would leave a
+    // strip of flat fill either side of it on a view this wide, which is a
+    // seam straight down the picture.
+    painted = box.w >= w
+      ? box
+      : { x: -w / 2, y: box.y, w, h: box.h };
     root.setAttribute('viewBox', `${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`);
   }
 
@@ -364,7 +396,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     // than the painted box on a short, wide element. Cheap insurance against
     // the one failure mode that looks like a broken page rather than a
     // plain one: bare background where the country should be.
-    const box = bounds ?? extent(deepest(battle));
+    const box = bounds ?? extent(deepestRank(battle));
     layers.ground.append(
       svgEl('rect', {
         x: box.x, y: box.y, width: box.w, height: GROUND_Y - box.y,
@@ -384,7 +416,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     // this one, where the insurance fills sat on top and hid the painting
     // completely — a canvas that is present, correct, and invisible.
     // Re-appending the same node keeps the canvas and its contents.
-    country.update(extent(deepest(battle)), battle.terrain, state.seed);
+    country.update(painted ?? extent(deepestRank(battle)), battle.terrain, state.seed);
     layers.ground.append(country.node);
 
     // The palisade, if the raiders are climbing one. On the hex field it was

@@ -188,9 +188,24 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   // rule, but at 390 and up the hex is bound by the screen's WIDTH, so no
   // amount of log growth can move it and the rule alone is insensitive to
   // exactly the thing this file is about. What the log actually does is take
-  // from the field, so that is what is measured: a whole fight may not cost
-  // the field more than a tenth of what it opened with.
-  check(late.field >= opening.field * 0.9,
+  // from the field, so that is what is measured.
+  //
+  // IT USED TO ALLOW A TENTH, AND A TENTH WAS TOO MUCH. A player reported
+  // "in battle as people die the screen shrinks" against a build where this
+  // bar was green: measured at 390x844, the field went 606px to 562px over
+  // one death — 7.3%, comfortably inside the tolerance. The log's height was
+  // CAPPED rather than reserved, so it grew into its cap over the first
+  // turns and every line it gained came out of the field. A footnote takes
+  // its space once now, so the honest number is zero and the tolerance is
+  // one pixel of rounding.
+  //
+  // The OTHER half of that report — the frame being sized by who was still
+  // standing — is not measured here. It only bites once a whole rank has
+  // emptied, and a fight played far enough for that is a long browser run
+  // that mostly measures the combat tables. It is `test/line.test.ts`'s
+  // "the field is sized by the fight, not by the survivors" instead, which
+  // is exact, runs in a millisecond, and cannot fail to reach its premise.
+  check(late.field >= opening.field - 1,
     `${w}x${h}: ${played} turns took the field from ${opening.field}px to ${late.field}px, ` +
       `${Math.round(100 - (100 * late.field) / opening.field)}% of it, and the log took it`);
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);

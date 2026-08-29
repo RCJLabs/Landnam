@@ -115,11 +115,38 @@ export function standAt(side: Side, rank: number): Spot {
 }
 
 /**
+ * How deep the deeper of the two walls is. Sizes the field.
+ *
+ * EVERY COMBATANT, not just the ones still standing, and that word is the
+ * whole of a bug a player reported as "in battle as people die the screen
+ * shrinks". It lived in `battle.ts` and counted the upright only, so the
+ * field's box was a function of the SURVIVORS: measured on the built page at
+ * 390x844, a fight four ranks deep drew 240px of picture, three drew 200,
+ * two drew 160, one drew 119. Every man who went down shrank the painting,
+ * and by the end of a fight it was half what it started.
+ *
+ * It is here rather than in the view because it is not a view's decision.
+ * The field is a property of the FIGHT, and a pure function of ranks can be
+ * asked, in a millisecond, whether burying a man changes it.
+ */
+export function deepestRank(battle: { combatants: ReadonlyArray<{ rank: number }> }): number {
+  let deep = 1;
+  // EVERY combatant. Not `.filter(c => !c.down)`, not `upright(battle)` —
+  // the point of this function living here, taking the whole battle, is that
+  // there is no call site left where somebody can helpfully narrow it to the
+  // men still standing. That narrowing is the bug.
+  for (const c of battle.combatants) deep = Math.max(deep, c.rank);
+  return deep;
+}
+
+/**
  * The field's box, sized to the deeper of the two lines.
  *
  * Symmetric even when one side is deeper, because a box that shifted off
  * centre as men fell would slide the whole painting sideways every time
- * somebody went down.
+ * somebody went down. That comment stood for months over code that let the
+ * box SHRINK as men fell, which is worse and which it never mentioned — see
+ * `deepestRank`.
  */
 export function extent(deepest: number): { x: number; y: number; w: number; h: number } {
   // A man's own half-width past the last rank, so nobody is drawn against

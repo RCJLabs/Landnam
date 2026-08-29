@@ -3962,6 +3962,48 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-29 — The battlefield stops shrinking as men die (reported)** —
+  Evan, with two screenshots: *"in battle as people die the screen shrinks."*
+  He was right twice over — it was two independent causes wearing one
+  symptom, and both had a bar pointed straight at them that let them past.
+
+  **The frame was sized by the survivors.** `deepest()` counted only the men
+  still standing, so the field's box was a function of who was left.
+  Measured on the built page at 390x844: a fight four ranks deep drew 240px
+  of picture, three drew 200, two 160, **one drew 119**. Half the size by the
+  end of a fight. `extent`'s own comment worried that a box which "shifted
+  off centre as men fell would slide the whole painting sideways" — it was
+  watching the right event for the wrong reason.
+
+  **And the log grew into its cap.** `.saga.fight .saga-entries` had
+  `max-height: 74px`, which still lets it GROW: the first turns write two
+  lines, later turns four, and every line it gained came out of the field
+  above it. Measured: the map slot went **606px to 562px over one death**,
+  monotonic, because a log only ever gets longer. It is a reserved `height`
+  now — a footnote takes its space once and never takes another pixel.
+
+  A third thing fell out of fixing the first: the view was letterboxed. With
+  the box handed straight to the viewBox and `xMidYMid meet`, the field only
+  ever filled **62% of the width** even at full depth, because the field is
+  900 tall and the slot is not. The view is shaped by the SLOT now, at the
+  scale that fits the whole field, so it fills the screen edge to edge.
+
+  **Both bars were aimed at this and both were too loose.** `field.mjs`
+  already claimed "a whole fight may not cost the field more than a tenth of
+  what it opened with" — the real loss was 7.3%, comfortably inside. It is
+  one pixel of rounding now. The first repair of the other half was a browser
+  claim that the viewBox never changes, and it **went green against the
+  unfixed build**: the bug only bites once a whole rank EMPTIES, and
+  fourteen turns takes a six-deep fight from twelve men to eight with
+  somebody still alive in the last rank the whole way. That claim is
+  `test/line.test.ts` now, where `deepestRank` takes the whole battle so
+  there is no call site left to narrow it to the living, and where burying
+  men and comparing boxes costs a millisecond and cannot miss its premise.
+
+  One more thing the first repair broke and a bar caught: scaling by the
+  height alone put a foe off the screen at 412x915 — "you cannot see who you
+  are fighting". A fit is two axes or it is not a fit.
+
 - **2026-08-29 — A hand that drew this (Art 18 — the art queue is finished)**
   — The last item is not a feature: it asks whether all of it looks like one
   hand, and the way to answer that is to count. Counted first: **93 distinct

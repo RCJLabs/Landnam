@@ -10,8 +10,20 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  CLOSE, FIELD_H, FIGURE_LIFT, FIGURE_R, FIGURE_W, GROUND_Y, RANK_GAP, RANK_STEP, RAISE,
-  extent, paintOrder, pick, standAt,
+  CLOSE,
+  FIELD_H,
+  FIGURE_LIFT,
+  FIGURE_R,
+  FIGURE_W,
+  GROUND_Y,
+  RAISE,
+  RANK_GAP,
+  RANK_STEP,
+  deepestRank,
+  extent,
+  paintOrder,
+  pick,
+  standAt,
 } from '../src/render/line';
 
 describe('where the walls meet', () => {
@@ -252,5 +264,63 @@ describe('tapping a man', () => {
 
   it('offers nobody at all when nobody is standing', () => {
     expect(pick([], chestOf('warband', 1))).toBeUndefined();
+  });
+});
+
+describe('the field is sized by the fight, not by the survivors', () => {
+  // A player reported this: "in battle as people die the screen shrinks".
+  // The view's own `deepest` counted only the men still standing, so the
+  // field's box was a function of who was left — measured on the built page
+  // at 390x844, a fight four ranks deep drew 240px of picture, three drew
+  // 200, two 160, one 119. Half the size by the end of a fight.
+  //
+  // It is checked here rather than in `scripts/field.mjs` because it only
+  // bites once a WHOLE RANK has emptied, and a browser fight played far
+  // enough for that runs about forty turns and mostly measures the combat
+  // tables. Fourteen turns takes a six-deep fight from twelve men to eight
+  // with somebody still alive in the last rank the whole way — the first
+  // version of the browser claim went green against the unfixed build,
+  // which is the same as not existing.
+  const wall = (n: number) => ({
+    combatants: [
+      { rank: 1, down: false }, { rank: 1, down: false },
+      { rank: 2, down: false }, { rank: 2, down: false },
+      { rank: 3, down: false }, { rank: 3, down: false },
+    ].map((c, i) => (i >= 6 - n ? { ...c, down: true } : c)),
+  });
+
+  it('reads the deepest rank in the fight', () => {
+    expect(deepestRank(wall(0))).toBe(3);
+    expect(deepestRank({ combatants: [{ rank: 1 }] })).toBe(1);
+  });
+
+  it('never reads less than one, so an empty field still has a box', () => {
+    expect(deepestRank({ combatants: [] })).toBe(1);
+    expect(extent(deepestRank({ combatants: [] })).w).toBeGreaterThan(0);
+  });
+
+  it('gives the same box however many men are down, which is the bug', () => {
+    // It takes the whole battle rather than a list, so there is no call site
+    // where somebody can helpfully narrow it to the men still standing —
+    // which is the narrowing that shrank the picture.
+    const whole = extent(deepestRank(wall(0)));
+    for (let dead = 1; dead <= 6; dead += 1) {
+      expect(extent(deepestRank(wall(dead)))).toEqual(whole);
+    }
+  });
+
+  it('would move if it ever went back to reading the survivors', () => {
+    // Guards the test above from being vacuous: the box it insists is
+    // constant is one that genuinely does change when the rule changes.
+    const survivors = wall(2).combatants.filter((c) => !c.down);
+    expect(extent(deepestRank({ combatants: survivors })))
+      .not.toEqual(extent(deepestRank(wall(0))));
+  });
+
+  it('grows with depth and never with anything else', () => {
+    const widths = [1, 2, 3, 4, 5].map((d) => extent(deepestRank({ combatants: [{ rank: d }] })).w);
+    for (let i = 1; i < widths.length; i += 1) {
+      expect(widths[i]!).toBeGreaterThan(widths[i - 1]!);
+    }
   });
 });

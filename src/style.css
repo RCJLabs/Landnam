@@ -318,9 +318,18 @@ button.wide {
  * The blow-by-blow is always "expanded", so it would otherwise creep toward
  * 46dvh as the fight went on and squeeze the battlefield down to a strip.
  * The field is the game; the log is a footnote that scrolls itself.
+ *
+ * RESERVED, NOT CAPPED, and the difference is the whole of a bug a player
+ * reported as "in battle as people die the screen shrinks". A cap still lets
+ * the log GROW INTO it: the first turns write two lines, later turns write
+ * four, and every line it gained came out of the battlefield above it —
+ * measured on the built page at 390x844, the map slot went 606px to 562px
+ * over one death, and the men with it. Monotonic with the fight, because a
+ * log only ever gets longer. Fixing the height means the footnote takes its
+ * space once, at the start, and never takes another pixel.
  */
 .saga.fight .saga-entries {
-  max-height: 74px;
+  height: 74px;
 }
 
 /*
@@ -347,7 +356,7 @@ button.wide {
  */
 @media (max-height: 700px) {
   .saga.fight .saga-entries {
-    max-height: 44px;
+    height: 44px;
   }
 }
 
