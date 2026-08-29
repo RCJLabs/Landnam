@@ -4071,12 +4071,53 @@ nice. Four groups, in the shape they were proposed and chosen from.
   band has more labour than uses for it. The largest system in the game and
   the least pressured: `33 of 60` bands ever passed six people, and the hall
   runs `9.0 souls to 14.2 of roof` — never full.
-- [~] **9.12 The pacing arc** — average run `172 days` against a 500-day
-  design horizon; on A Hard Country it is `92`. The endgame, the jarldom, the
-  households and the generations are content almost nobody reaches — `8 of
-  120` become jarl on hard. Either runs get materially longer or that content
-  moves earlier, but a late game built for an audience of 8 in 120 is a late
-  game built for nobody. **NEXT.**
+- [~] **9.12 The pacing arc** — **DIAGNOSED 2026-08-29, and the diagnosis
+  says the item was asking the wrong question.**
+
+  It was written off "average run 172 days against a 500-day horizon", which
+  is a mean of a distribution nobody had looked at. Looked at — 120 sagas an
+  arm, banded by the game's own clock — there is no average run at all:
+
+  | how far they got | even | fair | hard |
+  |---|---|---|---|
+  | before the first winter | 30 | 8 | 46 |
+  | the first winter | 34 | 22 | 45 |
+  | the second year | 22 | 45 | 16 |
+  | **the third year** | **4** | **3** | **2** |
+  | past the third year | 30 | 42 | 11 |
+
+  **THE MIDDLE IS EMPTY.** The third year holds two to four sagas in a
+  hundred and twenty. A run either dies in its first two years or it is past
+  the third, and there is almost nothing in between — so "the average run is
+  172 days" describes a length that hardly any saga is.
+
+  **PAST THE THIRD YEAR IS NOT A LATE GAME, IT IS A WON GAME.** Of the 30
+  that got there on even, 25 are ruling; on fair, 36 of 42; on hard, **11 of
+  11 — every single one**. Nothing on that coast can kill a band that has
+  lasted three years. 6.4 said a run goes on as long as it is held, and
+  nothing has ever contested the holding.
+
+  **AND THE KILLER CHANGES.** Early it is hunger; by the second year it is
+  morale, which no item in this audit had touched:
+
+  | | starved | despair |
+  |---|---|---|
+  | even, before the first winter | 21 | 7 |
+  | even, the second year | 12 | **10** |
+  | fair, the second year | 25 | **19** |
+  | hard, the second year | 8 | **8** |
+
+  So the work is not "make runs longer" and not "move the content earlier".
+  It is that the game has a first act and an epilogue and no third act: the
+  place a long saga would live — established, not yet safe — is where 3% of
+  runs are. **The fork is Evan's:** put something in the third year that can
+  end a jarl, or accept the jarldom as the ending it already is in practice
+  and stop building past it.
+
+  The instrument needed fixing first and the fix is worth recording: the
+  histogram was not reset between hardship arms, so `fair` printed 240 runs
+  out of 120 and `hard` printed 360 — a number that only looks wrong if you
+  add the row up.
 
 ### The play, moment to moment
 
@@ -4099,6 +4140,40 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — A bar that looks, and what a run's shape actually is
+  (9.6 and 9.12)** — Two halves of the same lesson: an instrument that cannot
+  see the thing it is about will report that the thing is fine.
+
+  **9.6.** Every browser bar in this repo counts nodes, measures boxes and
+  taps buttons, and none of them looks at the picture — which is how three
+  defects a player found in one week (a band floating above its own ground,
+  an illegible battle, a field halving as men died) passed eleven bars and
+  1442 tests. `scripts/look.mjs` photographs eleven screens at two widths and
+  reduces each to a 24x48 grid of brightness, so a change has a distance AND a
+  place. Its PNG decoder is written here because Node has none and this repo
+  takes no dependency for one; the header check earned itself on the first run
+  when Playwright turned out to write RGB, not RGBA. Watched fail on both
+  defects it was built for — a missing knot moves five screens, the shrinking
+  battlefield moves `fight-late` by 8.3 — and four things went wrong in the
+  building of it, every one the same shape as the bug it catches. Those are in
+  the roadmap entry, including that `npm run build | tail -1 && echo OK` is a
+  lie by construction.
+
+  **9.12 was asking the wrong question, and the measurement is the answer.**
+  The item was written off "average run 172 days against a 500-day horizon".
+  Banded properly, there is no average run: the third year holds **two to four
+  sagas in a hundred and twenty**. A run dies in its first two years or it is
+  past the third, and past the third it is not a late game but a WON one — on
+  A Hard Country, 11 of the 11 that get there are ruling, and nothing on the
+  coast can kill them. The killer changes too: hunger early, and by the second
+  year it is despair, which nothing in this audit had touched. So the game has
+  a first act and an epilogue and no third act. The full table, and the fork
+  that follows from it, are in the roadmap.
+
+  The histogram needed its own fix first — it was not reset between hardship
+  arms, so `fair` printed 240 runs out of 120 and `hard` 360. It only looks
+  wrong if you add the row up.
 
 - **2026-08-29 — Autumn is a reckoning (6.5)** — Asked what would make fighting
   matter in a game about winter. The answer in the data was that it already

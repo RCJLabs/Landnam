@@ -2860,6 +2860,9 @@ describe('the long game', () => {
     let sixEver = 0;
     let settledSagas = 0;
     let metAnybody = 0;
+    /** How far each saga got, and what stopped it there. See below. */
+    const lengths: Record<string, number> = {};
+    const byBand: Record<string, Record<string, number>> = {};
     // Pooled across both arms. The per-arm counters are reset at the top of
     // each loop, so asserting on them read ONLY the last arm — a bar that
     // measures half the sample and says nothing about the other half.
@@ -2897,6 +2900,13 @@ describe('the long game', () => {
     earlyFoes = 0; earlyFights = 0; lateFoes = 0; lateFights = 0; raids = 0;
     sawSecondWinter = 0; everHadHall = 0; everHadFriend = 0; everCouldCall = 0;
     for (const k of Object.keys(ends)) delete ends[k];
+    // The same reset the line above has needed since it was written, for the
+    // same reason. Without it the second arm's histogram carried the first
+    // arm's sagas and the third carried both — `fair` printed 240 runs out of
+    // 120 and `hard` printed 360, which is the sort of number that only looks
+    // wrong if you add the row up.
+    for (const k of Object.keys(lengths)) delete lengths[k];
+    for (const k of Object.keys(byBand)) delete byBand[k];
     for (let s = 0; s < LONG_SEEDS; s += 1) {
       let hall = false;
       let friend = false;
@@ -2962,6 +2972,21 @@ describe('the long game', () => {
         if (missing.length === 1) everShort[missing[0]!] = (everShort[missing[0]!] ?? 0) + 1;
       }
       days += state.day;
+      // WHERE A RUN DIES, not how long the average one is. "avg 172 days"
+      // against a 500-day horizon says a run is short; it cannot say whether
+      // that is one population dying at the same place or two populations —
+      // most dying in the first year and a few going the distance — and those
+      // want opposite fixes. Banded by the game's own clock: 96 days a year,
+      // 24 a season, the first winter at 49.
+      const band = state.day < 49 ? 'before the first winter'
+        : state.day < 97 ? 'the first winter'
+          : state.day < 193 ? 'the second year'
+            : state.day < 289 ? 'the third year'
+              : 'past the third year';
+      lengths[band] = (lengths[band] ?? 0) + 1;
+      const how = state.end?.cause ?? (state.jarl ? 'ruling' : 'still standing');
+      byBand[band] = byBand[band] ?? {};
+      byBand[band]![how] = (byBand[band]![how] ?? 0) + 1;
       if (state.day >= 49) firstWinters[TERMS] = (firstWinters[TERMS] ?? 0) + 1;
       if (state.day >= 169) sawSecondWinter += 1;
       if (hall) everHadHall += 1;
@@ -2978,9 +3003,22 @@ describe('the long game', () => {
     }
 
     const per = (n: number, of: number) => (of > 0 ? (n / of).toFixed(1) : 'n/a');
+    const BANDS = ['before the first winter', 'the first winter', 'the second year',
+      'the third year', 'past the third year'];
+    const shape = BANDS.map((b) => {
+      const n = lengths[b] ?? 0;
+      if (n === 0) return null;
+      const how = Object.entries(byBand[b] ?? {})
+        .sort((a, c) => c[1] - a[1])
+        .map(([k, v]) => `${k} ${v}`)
+        .join(', ');
+      const bar = '#'.repeat(Math.max(1, Math.round((n / LONG_SEEDS) * 40)));
+      return `    ${b.padEnd(24)} ${String(n).padStart(3)}  ${bar.padEnd(40)} ${how}`;
+    }).filter(Boolean).join('\n');
     // eslint-disable-next-line no-console
     console.log(
       `the long game [${TERMS}] — ${LONG_SEEDS} sagas to day ${LAST_DAY} (avg ${Math.round(days / LONG_SEEDS)} days):\n` +
+        `  how far they got, and what stopped them:\n${shape}\n` +
         `  ${reachedJarl} became jarl, ${ruledYears} winters ruled between them; ` +
         `${alive} still standing at the end\n` +
         `  ends: ${Object.entries(ends).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}\n` +
