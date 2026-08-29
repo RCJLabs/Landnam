@@ -85,11 +85,25 @@ const end = await page.evaluate(() => {
   const capBox = cap
     ? cap.getBoundingClientRect().height + parseFloat(getComputedStyle(cap).marginTop)
     : 0;
+  const hs = getComputedStyle(h2);
+  // The rule used to be a 1px border and is now a band of background, so
+  // "has it still got a rule" is whichever of the two is there.
+  const band = hs.backgroundImage !== 'none' && hs.backgroundImage.includes('data:image');
+  const period = 22;
   return {
     title: h2?.textContent?.trim() ?? '',
     chapters: prose.length,
     capitals: card.querySelectorAll('.end-capital').length,
-    rule: parseFloat(getComputedStyle(h2).borderBottomWidth),
+    rule: band
+      ? parseFloat(hs.paddingBottom)
+      : parseFloat(hs.borderBottomWidth),
+    rulePaints: band,
+    knotSet: getComputedStyle(document.documentElement)
+      .getPropertyValue('--knot').includes('data:image'),
+    // A background is a paint, not a tree. This is the number the item is
+    // about: six paths a period, over the width the rule actually spans.
+    ruleNodes: h2.querySelectorAll('*').length,
+    asShapes: Math.ceil(h2.getBoundingClientRect().width / period) * 6,
     ground: getComputedStyle(overlay).backgroundColor,
     line,
     capBox,
@@ -109,8 +123,25 @@ if (!end) {
   check(opaque, `the ending sits on ${end.ground}, so the run's instruments ` +
     'still show through the last thing it has to say');
 
-  check(end.rule >= 1, 'the ending title has lost its rule');
+  check(end.rule > 0, 'the ending title has lost its rule');
   check(end.chapters > 0, 'the ending card has no saga in it');
+
+  // KNOTWORK, DONE AS A PATTERN (art queue item 16). The rule under the
+  // ending's title is a woven band, and the whole point of the item is HOW:
+  // one period of a plait, repeated as a paint.
+  //
+  // It is checked on the page because the failure is silent. The tile is
+  // built in `render/knot.ts` and put on the document root at boot; if that
+  // call ever stops happening, `background-image: var(--knot)` is invalid at
+  // computed-value time, resolves to `none`, and both rules in the game
+  // simply disappear with nothing logged and nothing thrown.
+  console.log(`ending: knot — rule ${Math.round(end.rule)}px of band, ` +
+    `${end.ruleNodes} nodes, ${end.asShapes} if it were drawn as shapes`);
+  check(end.knotSet, 'the root carries no --knot, so nothing set the weave up');
+  check(end.rulePaints, 'the ending title paints no band at all — the knot did ' +
+    'not reach the page, and a missing custom property fails silently');
+  check(end.ruleNodes === 0,
+    `the rule cost ${end.ruleNodes} nodes; a pattern is supposed to cost none`);
 
   // ONE capital, and it has to cover TWO WHOLE LINES. Both drop caps on this
   // game were first sized by eye and both came out about a line and a

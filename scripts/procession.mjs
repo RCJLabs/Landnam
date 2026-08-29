@@ -478,6 +478,53 @@ for (const [w, h] of [[390, 844], [320, 568]]) {
     }
   }
 
+  // KNOTWORK ON THE CHART'S FRAME (art queue item 16), which is the border
+  // art queue item 8 measured and declined: "knotwork corners at 1px inset
+  // cost real nodes on every paint of the slot".
+  //
+  // That was true of interlace drawn as SHAPES. This is one period of a
+  // plait repeated as a background paint, so the count it reports is the
+  // one that matters — what the same border would have cost as geometry,
+  // against what it costs as a pattern, on a frame that repaints every time
+  // the band takes a step.
+  const frame = await page.evaluate(() => {
+    const slot = document.querySelector('.map-slot');
+    if (!slot) return null;
+    const cs = getComputedStyle(slot, '::after');
+    const box = slot.getBoundingClientRect();
+    return {
+      bands: (cs.backgroundImage.match(/data:image/g) ?? []).length,
+      positions: cs.backgroundPosition,
+      // Two edges, six paths a period, across the slot's own width.
+      asShapes: Math.ceil(box.width / 22) * 6 * 2,
+      kids: slot.children.length,
+      slotNodes: slot.querySelectorAll('*').length,
+      svgNodes: document.querySelectorAll('svg.map *').length,
+    };
+  });
+  if (!frame) {
+    check(false, `${w}x${h}: there is no map slot, so the frame claim did NOT run`);
+  } else {
+    console.log(`${w}x${h}: chart frame — ${frame.bands} woven bands at ` +
+      `${frame.positions}, 0 nodes against ${frame.asShapes} as shapes ` +
+      `(the chart itself is ${frame.svgNodes})`);
+    check(frame.bands === 2,
+      `${w}x${h}: the chart's frame carries ${frame.bands} woven bands, not two`);
+    // The whole claim of the item. If this ever stops holding, the border
+    // has quietly gone back to being geometry and Art 8's objection is live
+    // again.
+    // The slot holds the chart and NOTHING ELSE: its one element child, plus
+    // that child's own contents. Stated against `svgNodes + 1` because the
+    // <svg> element is itself one of the slot's descendants and is not one of
+    // its own — the first cut of this compared the two counts directly and
+    // failed by exactly one at both widths, which was the instrument being
+    // wrong rather than the border.
+    check(frame.kids === 1 && frame.slotNodes === frame.svgNodes + 1,
+      `${w}x${h}: the slot holds ${frame.kids} children and ${frame.slotNodes} ` +
+        `nodes against the chart's ${frame.svgNodes} — the frame has started ` +
+        'costing nodes of its own');
+  }
+
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);
 }
 

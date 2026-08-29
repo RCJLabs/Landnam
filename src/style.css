@@ -490,12 +490,24 @@ button.wide {
   background: #14110c;
 }
 
+/* --- Knotwork, done as a pattern (art queue item 16) --- */
+
+/* `--knot` and `--knot-dim` are set on the root at boot by `render/knot.ts`,
+   which is the ONE place the weave is drawn. They are `url("data:image/svg
+   +xml,...")` values holding a single period of a two-strand plait, so a rule
+   of any length is one repeated PAINT and costs the document no nodes at all.
+   That is the whole answer to why Art 8 backed out of this: it measured the
+   cost of knotwork drawn as shapes, which is a different thing. */
+
 /* The ending, given the chronicle's own voice — a rule under the title and
    an illuminated capital on the first thing it says. The two screens a run
    begins and ends on should sound like the book it wrote in between. */
 .end-card > h2 {
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(211, 164, 65, 0.35);
+  padding-bottom: 12px;
+  border-bottom: none;
+  background-image: var(--knot);
+  background-repeat: repeat-x;
+  background-position: left bottom;
 }
 
 /* A DROP CAP HAS TO COVER WHOLE LINES. Both capitals were first sized by
@@ -527,8 +539,11 @@ button.wide {
    number could go. */
 .chronicle-season {
   margin: 18px 0 4px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(211, 164, 65, 0.35);
+  padding-bottom: 13px;
+  border-bottom: none;
+  background-image: var(--knot);
+  background-repeat: repeat-x;
+  background-position: left bottom;
   color: var(--gold);
   font-size: 13px;
   font-weight: 600;
@@ -2304,6 +2319,15 @@ g.fighter.struck {
   box-shadow:
     inset 0 0 54px 10px rgba(10, 8, 6, 0.5),
     inset 0 0 0 1px rgba(232, 220, 192, 0.1);
+  /* THE BORDER ART 8 DECLINED. Its reason was that knotwork on this frame
+     "costs real nodes on every paint of the slot" — true of interlace drawn
+     as shapes, and not true of a repeated paint, which costs none. Top and
+     bottom only: the plait is a horizontal band, and turning the corner is
+     where a woven border stops being cheap and starts being a mitre problem
+     nobody asked for. Dim, because a chart's edge should be felt. */
+  background-image: var(--knot-dim), var(--knot-dim);
+  background-repeat: repeat-x, repeat-x;
+  background-position: left top, left bottom;
 }
 
 /* Hearth smoke: two puffs on their own loops, rising and thinning. */

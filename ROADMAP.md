@@ -40,8 +40,9 @@
 > **Art 17 is done too** — the saga is a chronicle kept by the year, with
 > the day's business gathered and the story illuminated. **And Art 20** —
 > the title is the coast the typed seed actually makes, and the ending has
-> the chronicle's voice and the screen to itself. Next: 16 (knotwork as a
-> pattern), and 18 last by design.
+> the chronicle's voice and the screen to itself. **And Art 16** — the
+> weave is one tile, set on the root, costing the document no nodes at any
+> length. Next: 18, last by design.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -3122,8 +3123,90 @@ Ordered by how much they change what a player sees, not by cost:
   the shell's mute button starts at 268, so the final Á was under a button —
   it scales with the viewport now. And the title picture stopped in a hard
   horizontal line partway down the screen, which is faded out rather than cut.
-- [ ] **Art 16 Knotwork, done as a pattern** — Border and ornament, once,
-  reusable.
+- [x] **Art 16 Knotwork, done as a pattern** — **Done 2026-08-29.** This item
+  exists because Art 8 tried it and backed out, and the backing-out is on the
+  record: *"the queue said 'parchment, knot border' — the frame is a plain
+  inset line, not interlace. Knotwork corners at 1px inset cost real nodes on
+  every paint of the slot and read as noise at phone size."*
+
+  **Both halves of that were re-measured and both are false — of a pattern.**
+  They are true of interlace drawn as SHAPES, which is what Art 8 costed.
+
+  A plait is periodic, so one period is a TILE, and a tile is a PAINT rather
+  than a tree. `src/render/knot.ts` draws it once — two strands in antiphase,
+  each a pair of half-period cubics, with the strand that passes UNDER split
+  at the crossing so it stops short and starts again after. It is set on the
+  document root at boot as `--knot` and `--knot-dim`, so `style.css` never
+  carries a second copy of the weave and the two cannot drift apart.
+
+  The cost, measured on the built page:
+
+  | | as a pattern | as shapes |
+  |---|---|---|
+  | the ending's rule (306px) | **0 nodes** | 84 |
+  | the chart's frame, 390x844 | **0 nodes** | 216 |
+  | the chart's frame, 320x568 | **0 nodes** | 180 |
+
+  The frame is the one that settles it: it is the exact border Art 8 declined,
+  it repaints every time the band takes a step, and it costs the document
+  nothing. Top and bottom only — turning the corner is where a woven border
+  stops being cheap and becomes a mitre problem nobody asked for.
+
+  **The second objection was answered by looking**, not by arguing. Five
+  weights were stacked on the real ending card and compared at 390x844: 18x9
+  is a chain, not a plait — the crossings are too close to separate; 30x12 is
+  a lazy wave that has stopped reading as interlace; 26x13 weaves best of all
+  and is thirteen pixels tall, which under a heading is a fence and not a
+  rule. **22x11 at 0.62 alpha** reads as two strands and still sits under
+  type. It is not noise at phone size. It was noise at the weight Art 8 would
+  have drawn it.
+
+  **The worst of it: what first shipped was not woven at all.** The strands
+  were drawn twice each — once fat in a "casing" colour meant to cut the
+  strand beneath, once thin in ink — and the casing was set to `transparent`
+  so a band could sit on any surface. A transparent stroke paints NOTHING. It
+  cuts nothing. Rendered at 8x beside a casing painted in the surface colour,
+  the shipped one is plainly a LATTICE: two strands crossing and overlapping,
+  brighter where they meet, with no over and under in it anywhere. It built,
+  it rendered, both bars were green, and the comment in the file said in so
+  many words that a transparent stroke "cuts exactly as well as a painted
+  one". Three screens of ornament went in on it.
+
+  The honest fix is the one an inker uses: a strand that goes under simply
+  STOPS before the crossing and starts again after. No casing, no surface
+  colour, no second copy of every path — and the tile now works on a card, a
+  chart or a picture without being told what it is lying on, which is the
+  property that lets one definition serve all three.
+
+  Four more, all caught by instruments rather than by reading the code:
+
+  - **The tile had ids.** The first cut cut the strand with two `<clipPath>`
+    elements — which makes it unusable twice in one document and unusable as
+    a CSS data URI at all, which is the entire mechanism.
+  - **`encodeURIComponent` does not encode parentheses**, and the ink is an
+    `rgba(...)`. It built, it rendered, and it worked only because the
+    `url()` is quoted; unquoted anywhere, the first `)` would have handed CSS
+    a third of a tile. `test/knot.test.ts` is what noticed.
+  - **Round caps beaded the rule.** Translucent ink doubles where strokes
+    overlap, and a round cap puts a half-disc past the end of every path —
+    at both junctions inside the tile and again at every tile seam — so the
+    band came out dotted with pips. Visible at 8x, invisible at 1x, so it is
+    asserted rather than left to the eye. Butt caps, which is also how
+    interlace is inked.
+  - **The frame's node claim failed by exactly one at both widths**, which
+    was the instrument: `slot.querySelectorAll('*')` counts the `<svg>`,
+    `svg.map *` counts only its descendants.
+
+  Watched fail on a build that actually built — the first sabotage left an
+  unused import, `npm run build` died on the tsc error, and both bars
+  measured the previous `dist` and passed. With `installKnot` writing to a
+  detached element instead, `ending` and `procession` both go red: "the root
+  carries no --knot, so nothing set the weave up", "the ending title paints
+  no band at all — the knot did not reach the page, and a missing custom
+  property fails silently", "the chart's frame carries 0 woven bands, not
+  two". That is the failure this needed a bar for: `var(--knot)` unset is
+  invalid at computed-value time, resolves to `none`, and every rule in the
+  game quietly goes back to nothing with nothing thrown and nothing logged.
 - [ ] **Art 18 A hand that drew this** — The through-line: one visual voice
   across all of it, which is the item that only makes sense last.
 
@@ -3819,6 +3902,50 @@ because by year two it has more labour than uses for it.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-29 — Knotwork, done as a pattern (Art 16)** — This item existed
+  because Art 8 tried knotwork and backed out: *"knotwork corners at 1px
+  inset cost real nodes on every paint of the slot and read as noise at phone
+  size."* Both halves are true of interlace drawn as SHAPES and false of a
+  pattern, which is the whole of the item.
+
+  A plait is periodic, so one period is a tile and a tile is a paint rather
+  than a tree. `render/knot.ts` draws it once — two strands in antiphase,
+  with the strand that passes under split at the crossing so it stops short
+  and starts again after — and puts it on the document root at boot as
+  `--knot` and `--knot-dim`. The stylesheet never carries a second copy, so
+  the two cannot drift.
+
+  Measured on the built page: the ending's rule costs **0 nodes against 84**
+  as shapes, and the chart's frame — the exact border Art 8 declined, which
+  repaints every time the band takes a step — costs **0 against 216** at
+  390x844 and **0 against 180** at 320x568. Top and bottom only; turning the
+  corner is where a woven border stops being cheap.
+
+  The second objection was settled by looking: five weights on the real
+  ending card, of which 18x9 is a chain rather than a plait, 30x12 a wave
+  that has stopped reading as interlace, and 26x13 thirteen pixels of fence
+  under a heading. 22x11 reads as two strands and still sits under type.
+
+  **And the first version was not woven at all.** Every strand was drawn
+  twice — fat in a "casing" colour to cut the strand beneath, thin in ink —
+  with the casing set to `transparent` so a band could sit on any surface. A
+  transparent stroke paints nothing and cuts nothing, so what went in was a
+  lattice: strands crossing and overlapping, brighter where they meet, no
+  over and under anywhere. It built, it rendered, both bars were green, and
+  the file's own comment asserted that a transparent stroke cuts as well as a
+  painted one. The fix is what an inker does — the strand that goes under
+  stops before the crossing and starts after it — and it needs no casing and
+  no surface colour, so the tile works on a card, a chart or a picture alike.
+
+  Three more faults, all found by instruments. The first tile carried two
+  `<clipPath>` ids, which would have made it unusable twice in a document and
+  unusable as a data URI at all. `encodeURIComponent` leaves parentheses
+  alone and the ink is an `rgba(...)`, so the value worked only because its
+  `url()` is quoted — `test/knot.test.ts` caught that. Round caps beaded the
+  rule with pips wherever translucent ink overlapped, at every junction and
+  every tile seam. And the frame's node claim was off by exactly one at both
+  widths, which was the instrument counting the `<svg>` element itself.
 
 - **2026-08-29 — The title and the ending as set pieces (Art 20)** — The
   title screen never showed the game. A wordmark, a paragraph and three

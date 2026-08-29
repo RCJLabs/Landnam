@@ -28,6 +28,13 @@ head-on for the shield wall and `render/walker.ts` draws them in profile for
 the road and the yard; `render/shield.ts` draws the shield for both. A view
 that invents its own colours for a person has broken the pillar below.
 
+**One knot.** The interlace is drawn once, in `render/knot.ts`, as a single
+period of a plait — a tile. It is put on the document root at boot as
+`--knot` and `--knot-dim`, so the stylesheet never holds a second copy and
+the two cannot drift. A tile is a PAINT, not a tree: a rule of any length
+costs the document no nodes. Ornament that is drawn as shapes instead is the
+thing art queue item 8 measured, declined, and was right to decline.
+
 **One data model, three renderers.** All game state lives in one serializable `GameState` object (`src/state/`). A `Person` is a single object used by all three modes — never duplicate character data per mode. Renderers (`src/render/processionView.ts`, `battle.ts`, `steadingView.ts`) are pure views: they read state and draw SVG; they never own state. The two they replaced — the hex map and the hex colony ring — went with the hexes in 8.5, and the contract they both met lives in `src/render/views.ts`.
 
 **Everything is turn-based.** Travel advances in day turns, battle in initiative turns, colony in day/season ticks. No `requestAnimationFrame` game loops, no real-time simulation. Animation/tweening for visual polish only.
