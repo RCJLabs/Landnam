@@ -171,36 +171,55 @@ for (const [w, h] of [[320, 568], [390, 844]]) {
   // turn while the drags were happening, which moves nobody of ours.
   const stoodAfter = await posOf(page, stood.id);
 
-  // BOTH widths pan now, and that is arithmetic rather than a regression:
-  // six sworn against six raiders is twelve ranks, twelve targets at the
-  // 44px minimum is 528px, and no phone this file tests is that wide. The
-  // hex grid framed itself at 390 because a grid is compact; a line is not.
+  // THE FIELD FRAMES ITSELF, SO IT DOES NOT MOVE.
   //
-  // The claim that used to live here — "a screen that can frame the whole
-  // field does not move" — is still a rule, and it is checked exactly rather
-  // than approximately in `test/line.test.ts`, which knows the field's width
-  // in user units instead of guessing it from a screenshot.
-  check(left !== right, 'the field pans when it cannot frame itself');
+  // This check asserted the opposite until the ranks were stacked, and its
+  // reasoning carried the same false premise `line.ts` did: "six sworn
+  // against six raiders is twelve ranks, twelve targets at the 44px minimum
+  // is 528px, and no phone this file tests is that wide." Twelve ranks are
+  // not twelve targets — `REACH` says a strike lands on the enemy's first
+  // two ranks, so at most two men are ever tappable and the rest are
+  // scenery. The rule was being applied to every figure drawn.
+  //
+  // With ranks stacked behind each other a six-a-side field is 619 units and
+  // frames whole at 390 (0.630) and 320 (0.517), both clear of the 0.479 the
+  // thumb rule needs. So there is nothing to drag to, and a drag that moved
+  // the view would now be a bug: it would be sliding the fight off a screen
+  // it already fits on.
+  //
+  // The comment this replaces noted that the ORIGINAL claim here was "a
+  // screen that can frame the whole field does not move". It was right, and
+  // it is the claim again.
+  check(left === right,
+    `the field moved under a drag it did not need — ${left} then ${right}`);
   check(
     !!stoodAfter && stood.rank === stoodAfter.rank,
     'a drag does NOT move the fighter in the line',
   );
 
-  // The hazard that comes WITH panning, and the one the old "a wide screen
-  // does not move" check was implicitly covering: a field you can drag is a
-  // field you can drag the fight out of. Shove it hard against each end and
-  // somebody must still be on screen.
+  // The hazard panning brought with it: a field you can drag is a field you
+  // can drag the fight out of. Shove it hard against each end and check.
+  //
+  // The bar was "SOMEBODY must still be on screen", which was as much as
+  // could be asked of a view that could never show both walls at once. Now
+  // that the field frames itself the honest question is stronger and it is
+  // the one a player asked out loud — "I didn't know where the enemy was":
+  // EVERYBODY is on screen, ours and theirs, and no amount of dragging can
+  // take any of them off it.
   for (const [fx, tx] of [[0.9, 0.05], [0.05, 0.9]]) {
     for (let i = 0; i < 4; i += 1) await drag(fx, 0.5, tx, 0.5);
-    const onScreen = await page.evaluate(() => {
+    const seen = await page.evaluate(() => {
       const svg = document.querySelector('svg.field');
-      const rect = svg.getBoundingClientRect();
-      return [...svg.querySelectorAll('g.fighter')].some((el) => {
+      const men = [...svg.querySelectorAll('g.fighter')];
+      const on = men.filter((el) => {
         const b = el.getBoundingClientRect();
-        return b.x + b.width > rect.x && b.x < rect.x + rect.width;
+        return b.left >= -0.5 && b.right <= innerWidth + 0.5;
       });
+      return { on: on.length, all: men.length };
     });
-    check(onScreen, `dragged ${tx < fx ? 'left' : 'right'} and the wall went with it`);
+    check(seen.all > 0 && seen.on === seen.all,
+      `dragged ${tx < fx ? 'left' : 'right'} and ${seen.all - seen.on} of ` +
+        `${seen.all} fighters went off the screen with it`);
   }
 
   // And the tap still works, which is the other half of the same handler.

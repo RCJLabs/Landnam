@@ -215,6 +215,39 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
     `${w}x${h}: the fight was over after ${played} turn${played === 1 ? '' : 's'}, ` +
       'so the log never grew and this width measured nothing');
 
+  // YOU CAN SEE THE WHOLE FIGHT, at every width, without touching it.
+  //
+  // This is the bar the battle format needed and never had. Measured on the
+  // built page before the ranks were stacked: at 390x844 there was NO pan
+  // position from which both walls were visible — at rest 3 of our 6 and 2
+  // of their 4; dragged one way, 4/4 foes and none of ours; dragged the
+  // other, 5/6 of ours and no enemy at all. A tactical view you cannot see
+  // the enemy in, and nothing in this file noticed, because every check here
+  // asked about the SIZE of a fighter and none asked whether he was on
+  // screen.
+  const whole = await page.evaluate(() => {
+    const svg = document.querySelector('svg.field');
+    const st = window.landnam.state();
+    const side = Object.fromEntries(st.battle.combatants.map((c) => [c.personId, c.side]));
+    const men = [...svg.querySelectorAll('g.fighter[data-who]')].map((g) => {
+      const b = g.getBoundingClientRect();
+      return { s: side[g.getAttribute('data-who')], on: b.left >= -0.5 && b.right <= innerWidth + 0.5 };
+    });
+    const tally = (which) => {
+      const all = men.filter((m) => m.s === which);
+      return { on: all.filter((m) => m.on).length, all: all.length };
+    };
+    return { ours: tally('warband'), foes: tally('foe') };
+  });
+  console.log(`${w}x${h}: on screen at rest — ours ${whole.ours.on}/${whole.ours.all}, ` +
+    `theirs ${whole.foes.on}/${whole.foes.all}`);
+  check(whole.foes.all > 0, `${w}x${h}: there is no enemy on the field to see`);
+  check(whole.foes.on === whole.foes.all,
+    `${w}x${h}: ${whole.foes.all - whole.foes.on} of ${whole.foes.all} foes are off screen — ` +
+      'you cannot see who you are fighting');
+  check(whole.ours.on === whole.ours.all,
+    `${w}x${h}: ${whole.ours.all - whole.ours.on} of ${whole.ours.all} of our own are off screen`);
+
   // BLOWS THAT LAND SOMEWHERE (art queue item 19). A landed blow used to be
   // a flash on the figure's centre and a number over its head — a hit
   // REPORTED. Now the man takes it: he is shoved along the line the blow came

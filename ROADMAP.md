@@ -3707,6 +3707,54 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-29 — You could not see the enemy** — Reported off a phone: "I
+  didn't know where the enemy was and I didn't realize I had to scroll to see
+  them. And scrolling wasn't smooth anyway." Measured at 390x844, and it is
+  worse than needing a scroll — **there was no pan position from which both
+  walls were visible.** At rest: 3 of our 6 and 2 of their 4. Dragged one
+  way: 4/4 foes and none of ours. Dragged the other: 5/6 of ours and no
+  enemy at all. At 320x568 the resting view showed 0 of 6 foes.
+
+  The cause was a layout mistake wearing a camera's clothes. `standAt` stepped
+  each rank a full `RANK_GAP` (96) sideways while a fighter is 92 wide, so
+  rank two stood BESIDE rank one like a crowd on open ground rather than
+  behind it. A six-a-side field came out 1223 units wide; it fits 390px only
+  at scale 0.319, and the 44px thumb rule demands 0.479 — so the view zoomed
+  50% past what fits and panned to compensate. Even a four-a-side field
+  missed (0.465 against 0.479). The whole panning apparatus existed to pay
+  for the spacing.
+
+  And the reasoning that chose it was wrong on a fact. `line.ts` argued at
+  length that fitting the field would break the touch rule: "six sworn
+  against six raiders is twelve ranks, and twelve ranks in a 320px-wide box
+  is a 27px target". **Twelve ranks are not twelve targets.** `REACH` in
+  `sim/ranks.ts` says `strike: { from: [1, 2], at: [1, 2] }` — a blow lands
+  only on the enemy's first two ranks, so at most two men on a field are ever
+  tappable and the other ten are scenery. The rule was applied to every
+  figure drawn instead of every figure you can act on.
+
+  So ranks stack behind each other now — `RANK_STEP`, a little under half a
+  man — which is what a shield wall is, and the men do not shrink by a pixel
+  (`FIGURE_R` still comes off `RANK_GAP`). A six-a-side field is 619 units
+  and frames whole at 390 (0.630) and at 320 (0.517), both clear of the thumb
+  rule. Measured after: 6/6 ours and 4/4 theirs on screen at rest, at every
+  width the bars test, and dragging does nothing because there is nowhere
+  left to drag to. The pan machinery stays for a fight deeper than any the
+  game currently makes.
+
+  The tap had to follow: half a rank step is a 12px strip once ranks overlap.
+  It now resolves to the men the current aim can actually reach, with most of
+  a man's width around each — which is what the 44px rule was always for. One
+  helper answers "who is a target" for both the mark under a man and the tap
+  that hits him, so they cannot disagree.
+
+  `scripts/field.mjs` holds it, and the gap it exposes is worth naming: every
+  check in that file asked how BIG a fighter was and none asked whether he
+  was on screen. Watched fail on the old spacing — "4 of 6 foes are off
+  screen — you cannot see who you are fighting". `test/line.test.ts` had a
+  bar named "is why the field has to pan, and says so in numbers" asserting
+  the opposite of the truth; it is inverted, with the measurement in it.
+
 - **2026-08-29 — Blows that land somewhere (Art 19)** — Art 3 gave the fight
   real choreography and then a blow that GOT THROUGH produced a flash on the
   figure's centre and a number over its head. Every blow in the game landed

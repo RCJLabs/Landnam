@@ -17,18 +17,47 @@ import type { Side } from '../state/types';
  *
  * CONSTANT, deliberately, and this is the load-bearing decision in the file.
  *
- * The obvious alternative is to fit the whole line into a fixed-width field
- * and shrink the gap as the band deepens. That reads well and it fails the
- * one rule this game will not bend: a fighter is a touch target. Six sworn
- * against six raiders is twelve ranks, and twelve ranks in a 320px-wide box
- * is a 27px target — well under the 44px minimum, and worse the bigger the
- * fight.
+ * It is NOT the space between ranks any more — see `RANK_STEP` — and the
+ * argument that made it so is worth keeping as a warning.
  *
- * So the gap is fixed and the FIELD grows instead. A deep fight is a wide
- * field that the view pans across, which is machinery `fitViewBox` already
- * has, because the 44px rule forced it into existence for the hex grid.
+ * It ran: fitting the whole line into a fixed-width field means shrinking
+ * the gap as the band deepens, and "that reads well and it fails the one
+ * rule this game will not bend: a fighter is a touch target. Six sworn
+ * against six raiders is twelve ranks, and twelve ranks in a 320px-wide box
+ * is a 27px target." So the gap was fixed and the field grew instead, and a
+ * deep fight became a wide field the view pans across.
+ *
+ * **Twelve ranks are not twelve targets.** `REACH` in `sim/ranks.ts` says
+ * `strike: { from: [1, 2], at: [1, 2] }` — a blow can only land on the
+ * enemy's first two ranks, and the same holds for the other armed verbs. At
+ * most two men on a field are ever tappable; the other ten are scenery you
+ * look at. The rule was applied to every figure drawn rather than to every
+ * figure you can act on, and the whole panning apparatus was built to pay
+ * for that mistake.
+ *
+ * What it cost, measured on the built page at 390x844 before this was
+ * changed: THERE WAS NO PAN POSITION FROM WHICH BOTH LINES WERE VISIBLE.
+ * At rest you saw 3 of your 6 and 2 of their 4; panned right, 4/4 of theirs
+ * and none of yours; panned left, 5/6 of yours and none of theirs. A
+ * tactical view you cannot see the enemy in.
  */
 export const RANK_GAP = 96;
+
+/**
+ * How far back each rank stands from the one in front, ACROSS the ground.
+ *
+ * Ranks stack BEHIND each other, which is what a shield wall is. They used
+ * to step a whole `RANK_GAP` sideways — wider than a man — so rank two stood
+ * beside rank one like a crowd on open ground rather than behind it, and a
+ * six-a-side field came out 1223 units wide against a 390px screen.
+ *
+ * Overlapping at a little under half a man puts the field at 619 units,
+ * which frames whole at every size the game is built for. The men do not
+ * shrink: `FIGURE_R` still comes off `RANK_GAP`, so this buys the view back
+ * without costing a pixel of anybody's size. Depth is carried by `RAISE`
+ * and by paint order, the way a side-on picture carries it.
+ */
+export const RANK_STEP = RANK_GAP * 0.46 * 2.08 * 0.42;
 
 /**
  * How far rank 1 stands from the line where the walls meet.
@@ -78,7 +107,7 @@ export interface Spot {
  * ground it stands on, so men of different heights still share a line.
  */
 export function standAt(side: Side, rank: number): Spot {
-  const out = CLOSE + (rank - 1) * RANK_GAP;
+  const out = CLOSE + (rank - 1) * RANK_STEP;
   return {
     x: side === 'warband' ? -out : out,
     y: GROUND_Y - (rank - 1) * RAISE,
@@ -93,7 +122,9 @@ export function standAt(side: Side, rank: number): Spot {
  * somebody went down.
  */
 export function extent(deepest: number): { x: number; y: number; w: number; h: number } {
-  const reach = CLOSE + Math.max(0, deepest - 1) * RANK_GAP + RANK_GAP * 0.75;
+  // A man's own half-width past the last rank, so nobody is drawn against
+  // the edge of his own field.
+  const reach = CLOSE + Math.max(0, deepest - 1) * RANK_STEP + FIGURE_W * 0.62;
   return { x: -reach, y: 0, w: reach * 2, h: FIELD_H };
 }
 
@@ -154,16 +185,31 @@ export const FIGURE_LIFT = FIGURE_R * 0.85;
  * returns undefined rather than the nearest fighter, because since 8.1c
  * bare ground is not an order and must not become one by rounding.
  */
+/**
+ * Who was tapped.
+ *
+ * `radius` is how much ground a man owns, either side of where he stands.
+ * It defaults to half a rank step — which, now that ranks overlap, is a
+ * narrow strip, and deliberately so: a tap in the middle of a wall should
+ * resolve to the man actually standing there.
+ *
+ * The caller hands a WIDER radius when it is asking a different question:
+ * "which of the men I can act on did they mean". There are at most two of
+ * those (`REACH` says a strike lands on ranks 1-2), they are far apart, and
+ * a generous strip around each is what keeps the 44px rule true of the
+ * things that are actually targets. See `battle.ts`'s tap handler.
+ */
 export function pick<T extends { side: Side; rank: number }>(
   line: readonly T[],
   at: Spot,
+  radius = RANK_STEP / 2,
 ): T | undefined {
   let best: T | undefined;
   let bestDx = Infinity;
   for (const c of line) {
     const spot = standAt(c.side, c.rank);
     const dx = Math.abs(at.x - spot.x);
-    if (dx > RANK_GAP / 2) continue;
+    if (dx > radius) continue;
     // Vertically: from the shadow at his feet to the top of his head.
     const top = spot.y - FIGURE_LIFT - FIGURE_R;
     if (at.y < top || at.y > spot.y) continue;

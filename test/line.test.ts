@@ -10,7 +10,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  CLOSE, FIELD_H, FIGURE_LIFT, FIGURE_R, FIGURE_W, GROUND_Y, RANK_GAP, RAISE,
+  CLOSE, FIELD_H, FIGURE_LIFT, FIGURE_R, FIGURE_W, GROUND_Y, RANK_GAP, RANK_STEP, RAISE,
   extent, paintOrder, pick, standAt,
 } from '../src/render/line';
 
@@ -21,16 +21,27 @@ describe('where the walls meet', () => {
     expect(Math.abs(standAt('warband', 1).x)).toBe(standAt('foe', 1).x);
   });
 
-  it('runs each line away from the meeting, one gap at a time', () => {
+  it('runs each line away from the meeting, one step at a time', () => {
     for (let r = 1; r < 8; r++) {
       const here = standAt('warband', r).x;
       const behind = standAt('warband', r + 1).x;
       expect(behind, `our rank ${r + 1} is not behind rank ${r}`).toBeLessThan(here);
-      expect(here - behind).toBeCloseTo(RANK_GAP);
+      expect(here - behind).toBeCloseTo(RANK_STEP);
     }
     for (let r = 1; r < 8; r++) {
-      expect(standAt('foe', r + 1).x - standAt('foe', r).x).toBeCloseTo(RANK_GAP);
+      expect(standAt('foe', r + 1).x - standAt('foe', r).x).toBeCloseTo(RANK_STEP);
     }
+  });
+
+  it('stacks the ranks BEHIND each other rather than beside them', () => {
+    // The whole of what went wrong: a step wider than a man puts rank two
+    // next to rank one like a crowd on open ground, and a six-a-side field
+    // came out 1223 units wide against a 390px screen. A shield wall is men
+    // standing behind each other.
+    expect(RANK_STEP).toBeLessThan(FIGURE_W);
+    // But not so far behind that the man in front hides him completely —
+    // depth you cannot see is depth the player cannot count.
+    expect(RANK_STEP).toBeGreaterThan(FIGURE_W * 0.3);
   });
 
   it('stands the front ranks closer than a full gap, because they are in contact', () => {
@@ -149,16 +160,27 @@ describe('a fighter is a touch target', () => {
     expect(gapAt(6)).toBeLessThan(gapAt(3));
   });
 
-  it('is why the field has to pan, and says so in numbers', () => {
-    // Scaled so a fighter is exactly a thumb wide, a deep line does not fit
-    // on the narrowest screen the game holds itself to. That is not a
-    // failure to fit — it is the choice, and `fitViewBox` is the other half
-    // of it. Six sworn against six raiders is the fight this has to hold.
+  it('is why the field NO LONGER has to pan, and says so in numbers', () => {
+    // THIS TEST USED TO CLAIM THE OPPOSITE, and it was wrong in the way that
+    // matters. It read: "scaled so a fighter is exactly a thumb wide, a deep
+    // line does not fit on the narrowest screen... That is not a failure to
+    // fit — it is the choice, and `fitViewBox` is the other half of it."
+    //
+    // It was a failure to fit. Measured on the built page at 390x844, there
+    // was NO pan position from which both walls were visible: at rest you
+    // saw 3 of your 6 and 2 of their 4; panned one way, all four foes and
+    // none of your own; panned the other, five of yours and no enemy at all.
+    // The reasoning behind the choice counted twelve ranks as twelve touch
+    // targets, and `REACH` says a strike lands on ranks 1-2 — at most two
+    // men on the field are ever tappable.
+    //
+    // With the ranks stacked behind each other, a fighter can be a full
+    // thumb wide AND the whole fight can be on screen. Both, not either.
     const perUnit = TAP_MIN / FIGURE_W;
-    expect(extent(2).w * perUnit, 'a small fight should still frame itself')
+    expect(extent(2).w * perUnit, 'a small fight should frame itself')
       .toBeLessThanOrEqual(NARROW);
-    expect(extent(6).w * perUnit, 'a full warband should need the pan')
-      .toBeGreaterThan(NARROW);
+    expect(extent(6).w * perUnit, 'a full six-a-side should frame itself too')
+      .toBeLessThanOrEqual(NARROW);
   });
 
   it('knows a man is wider than twice his radius', () => {
@@ -200,9 +222,9 @@ describe('tapping a man', () => {
     // The bug this function exists to prevent: tapping a man and hitting the
     // one behind him. Just inside the halfway line still belongs to rank 1.
     const one = standAt('warband', 1);
-    const nearlyTwo = { x: one.x - RANK_GAP * 0.49, y: one.y - FIGURE_LIFT };
+    const nearlyTwo = { x: one.x - RANK_STEP * 0.49, y: one.y - FIGURE_LIFT };
     expect(pick(LINE, nearlyTwo)?.rank).toBe(1);
-    const justPast = { x: one.x - RANK_GAP * 0.51, y: one.y - FIGURE_LIFT };
+    const justPast = { x: one.x - RANK_STEP * 0.51, y: one.y - FIGURE_LIFT };
     expect(pick(LINE, justPast)?.rank).toBe(2);
   });
 

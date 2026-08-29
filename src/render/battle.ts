@@ -131,6 +131,11 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
   );
 
   let latest: GameState | null = null;
+  // The aim the last paint was made with. The tap handler needs it to know
+  // which men are targets, and it arrives with `update` rather than with the
+  // pointer event. `strike` until told otherwise, which is the aim the fight
+  // opens on.
+  let latestAim: Aim = 'strike';
   /**
    * Where a zoomed field is looking, or null to follow whoever is acting.
    *
@@ -274,9 +279,21 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     const cx = w >= box.w
       ? box.x + box.w / 2
       : Math.min(Math.max(centre.x, box.x + w / 2), box.x + box.w - w / 2);
+    // THE VERTICAL IS NEVER PANNED, only framed. A drag can move the view
+    // along the line, because a deep fight can be longer than the screen;
+    // it must not move the view up and down, because there is nothing above
+    // the wall but sky and nothing below it but ground, and a player who
+    // drags into either has lost the fight off the screen for nothing.
+    //
+    // Caught by `scripts/pan.mjs` on a 320x568 screen, where the slot is
+    // short enough that the height binds: the view showed 689 of the field's
+    // 900 units and a drag slid it from y=210 to y=0 through empty sky. The
+    // horizontal was already still by then, so this was the last way left to
+    // lose sight of the fight.
+    const onTheWall = GROUND_Y - FIGURE_LIFT;
     const cy = h >= box.h
       ? box.y + box.h / 2
-      : Math.min(Math.max(centre.y, box.y + h / 2), box.y + box.h - h / 2);
+      : Math.min(Math.max(onTheWall, box.y + h / 2), box.y + box.h - h / 2);
     // The light, the vignette and the weather cover what is SHOWN, not what
     // the line happens to span — otherwise a view wider or taller than the
     // field paints sky onto part of it and bare page onto the rest.
@@ -285,6 +302,22 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
   }
 
   /** Where a zoomed field looks by default: whoever is taking their turn. */
+  /**
+   * The men the current aim can actually act on.
+   *
+   * One function, because the MARK under a man and the TAP that hits him
+   * have to agree about who is a target — the same discipline `standAt` and
+   * `pick` keep about where he stands. They were two expressions of the same
+   * thing until the tap needed it too.
+   */
+  function markedFor(state: GameState, aim: string | undefined): Combatant[] {
+    return aim === 'throw'
+      ? throwTargets(state)
+      : aim === 'reach'
+        ? reachTargets(state)
+        : strikeTargets(state);
+  }
+
   function focusOf(battle: Battle): { x: number; y: number } | undefined {
     const active = activeCombatant(battle);
     if (!active) return undefined;
@@ -294,6 +327,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
 
   function paint(state: GameState, aim: Aim): void {
     latest = state;
+    latestAim = aim;
     // A new turn drops the player's pan: on a narrow screen the fighter who
     // is acting may be off the edge of where they last dragged to, and a
     // field that will not show you whose turn it is is worse than one that
@@ -368,12 +402,7 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
       // there is nowhere to go — the line-shaped controls arrive with 8.1d.
 
       // Whoever the armed action can actually reach.
-      const marked =
-        aim === 'throw'
-          ? throwTargets(state)
-          : aim === 'reach'
-            ? reachTargets(state)
-            : strikeTargets(state);
+      const marked = markedFor(state, aim);
       for (const target of marked) {
         const p = standAt(target.side, target.rank);
         const ink = aim === 'throw' ? '#d3a441' : aim === 'reach' ? '#cfd8dc' : '#b23b2e';
@@ -596,7 +625,19 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
     // lives beside it so the two cannot disagree; it answers undefined for
     // bare ground rather than rounding to the nearest man, because since
     // 8.1c bare ground is not an order and must not become one.
-    const hit = pick(upright(latest.battle), worldUnder(e));
+    // A TARGET FIRST, and with a generous strip around him.
+    //
+    // Ranks overlap now (see `RANK_STEP`), so half a step is a 12px strip on
+    // a 390px screen — fine for asking "who is standing exactly here", far
+    // too mean for "which foe did they mean to hit". But there are at most
+    // two of those, `REACH` says so, and they stand a wall apart: giving
+    // each of them most of a man's width to be tapped in is what keeps the
+    // 44px rule true of the things that are actually targets, which is what
+    // it was always for.
+    const where = worldUnder(e);
+    const targets = markedFor(latest, latestAim);
+    const hit = (targets.length > 0 ? pick(targets, where, FIGURE_W * 0.75) : undefined)
+      ?? pick(upright(latest.battle), where);
     onTap(hit ? hit.personId : null);
   });
 
