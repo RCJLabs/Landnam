@@ -4150,11 +4150,90 @@ nice. Four groups, in the shape they were proposed and chosen from.
   control exactly is not evidence the feature is worthless — it is evidence
   the feature never ran. The tie had been asserted, with a comment explaining
   what it meant, for long enough to read as settled.
-- [ ] **9.2 The voyage home** — `0/40 sagas sailed, 0 crossings, 0 people
-  fetched`, and the probe prints its own diagnosis: on an eligible day the
-  hall HAD `food 64 wood 309`; the rule WANTS `food 120 wood 72`. The gate is
-  set above what the game produces. A design task was closed for this once
-  already and the probe still reads zero, which is the part worth noticing.
+- [~] **9.2 The voyage home** — **the item's premise is stale, and the answer
+  underneath it is worse.** Measured and stated 2026-08-30; whether to make it
+  pay or take it out is a ruling for Evan, below.
+
+  **The gate is no longer shut.** The item was written off `0/40 sagas sailed,
+  0 crossings, 0 people fetched` and a rule wanting `food 120`. Somebody
+  lowered it to 96, and the probe now reads **6/40 sagas sailed, 9 crossings,
+  15 people fetched**. That part is fixed.
+
+  **But the probe could not answer its own title, and its aggregates were
+  misleading.** Only six of forty sagas ever sail, so thirty-four rows of each
+  arm are the same run twice and every aggregate difference is six sagas wide.
+  Read straight, "205 souls against 200" looks like the crossing costing five
+  lives across forty landings. It is six sagas of noise. The probe now pairs
+  on the seeds that actually sailed and prints its own N.
+
+  **Asked properly — one run at 200 seeds, where the treatment fires thirty
+  times instead of six:**
+
+  | | sailed | crossings | fetched | standing at day 400 | souls |
+  |---|---|---|---|---|---|
+  | never sails | 0/200 | 0 | 0 | **26/200** | 1179 |
+  | may sail | 30/200 | 43 | 82 | 22/200 | 1169 |
+  | whenever | 32/200 | 47 | 91 | 24/200 | 1160 |
+
+  **Paired on the sagas that sailed: `may sail` saved 3 and KILLED 7; `whenever`
+  saved 4 and killed 6.** The crossing kills about two bands for every one it
+  saves, and brings home eighty-two people while leaving fewer alive at the end.
+
+  **The cause was already written down before this confirmed it.** The note at
+  the top of `src/sim/voyage.ts` records that shortening the crossing made
+  things WORSE, "because what comes home is not only hands. It is MOUTHS,
+  arriving sooner in a hall whose binding constraint was never labour."
+
+  **What ships: the card states the record**, as the door out does (9.14) and
+  for the same reason — it said when she was due back and "whoever will come",
+  which reads as an offer. It is stated and never refused: a band that has
+  banked a surplus and wants its kin is entitled to go and be wrong.
+
+  **EVAN RULED "she comes home with stores" — AND SHE ALREADY DOES, AND MORE
+  OF THEM IS THE WRONG DIRECTION.** Two corrections belong here, and the first
+  is mine: I offered that candidate as unbuilt. It has been built for some
+  time — `SETTLER_STORES` gives every person fetched a season's eating, with
+  the hull's share on top — and I should have read the return path before
+  putting it up as a choice.
+
+  Swept at 200 landings, against 26 of 200 still standing for a band that
+  never sails:
+
+  | settler's stores | sailed | crossings | standing | paired |
+  |---|---|---|---|---|
+  | **12 (today)** | 30/200 | 43 | **22/200** | saved 3, killed 7 |
+  | 24 | 30/200 | 45 | 20/200 | saved 5, killed 11 |
+  | 48 | 30/200 | 55 | **18/200** | saved 2, killed 10 |
+
+  **Monotonic, and worse the more she brings.** The mechanism is plain once
+  written down: what comes home does not gate what goes out, so stores landed
+  by one crossing pay for the NEXT one. The same thirty sagas go from 43
+  crossings to 55, and crossings are what cost.
+
+  **It also kills the diagnosis this file had been repeating.** The note atop
+  `src/sim/voyage.ts` explained a failed experiment by saying what comes home
+  "is MOUTHS", landing unfunded before a winter — and I repeated it here as
+  established. If unfunded mouths were the mechanism, funding them four times
+  as well would have helped. It did the opposite. **Two named causes for this
+  verb have now failed a test**, which is the part worth carrying forward:
+  what survives is duller and better supported — every arm that sails does
+  worse than the arm that does not, and the harm tracks the NUMBER OF
+  CROSSINGS rather than anything about what comes back.
+
+  **So nothing ships but the record**, and the remaining candidates are on the
+  departure side, unmeasured:
+  - **The 78-day absence itself** — shortening it was tried once and failed,
+    on reasoning now known to be wrong, so it deserves re-measuring rather
+    than dismissing.
+  - **The food gate that decides who may go.** With the season rule removed
+    entirely only 70 of 9750 settled days are clear and hunger blocks 2983:
+    the gate is the whole of the constraint, and it currently selects the
+    bands that can least afford to lose a season.
+
+  Also worth noting for whoever takes it: `may sail` and `whenever` both land
+  on the same six of forty, so the SEASON rule is doing nothing — with it
+  removed entirely, only 70 of 9750 settled days are clear to go and hunger
+  blocks 2983. The food gate is the whole of the constraint.
 - [ ] **9.3 Fishing grounds** — `3.2 on the coast, 1.9 ever known, 0.8 ever
   worked` per saga. A resource the player finds and then ignores: either it
   does not pay, or nothing ever tells them it does.
@@ -4583,6 +4662,22 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The voyage home, measured at a sample it fires in (9.2)** —
+  The item's premise was stale: the gate had already been lowered from 120 to
+  96 and six of forty sagas now sail. But the probe's aggregates could not
+  answer its own title, because only six rows of forty differ between arms and
+  the other thirty-four are the same run twice — "205 souls against 200" is six
+  sagas of noise wearing a sample of forty. Paired on the sagas that sail, and
+  run once at 200 seeds so the treatment fires thirty times, the crossing saved
+  3 bands and killed 7. The card now states that, as the door out states its
+  own record. Evan ruled for stores; swept, she already brings them and more
+  makes it worse — 22 of 200 standing at twelve, 18 at forty-eight — because
+  what comes home pays for the next crossing rather than gating this one. That
+  also kills the "unfunded mouths" diagnosis this repo had been repeating:
+  funding them four times as well did the opposite of helping. Two named
+  causes for the voyage have now failed a test, and what survives is that the
+  harm tracks crossings, not cargo.
 
 - **2026-08-30 — The shield was not a dead verb (9.1)** — `B_DEFEND` appeared
   zero times in 1165 battle actions and the arena's "defend only" arm tied

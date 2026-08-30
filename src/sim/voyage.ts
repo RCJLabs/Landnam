@@ -57,6 +57,28 @@ export const CROSSING_ROUGH = 0.35;
  * number is that a new arrival is not a mouth the hall has to find room for
  * on the day they land. They pay their own way until the next harvest, which
  * is what a person crossing an ocean to settle actually did.
+ *
+ * SWEPT 2026-08-30, AND RAISING IT MAKES THE CROSSING WORSE. Evan's ruling on
+ * 9.2 was "she comes home with stores", and the honest answer is that she
+ * already does and more of them is the wrong direction. Three arms, 200
+ * landings each, against 26 of 200 still standing for a band that never sails:
+ *
+ *   12 (this)  30 sagas sailed, 43 crossings, 22/200 standing — saved 3, killed 7
+ *   24         30 sagas sailed, 45 crossings, 20/200 standing — saved 5, killed 11
+ *   48         30 sagas sailed, 55 crossings, 18/200 standing — saved 2, killed 10
+ *
+ * Monotonic, and the mechanism is plain once it is written down: what comes
+ * home does not gate what goes out. Stores landed by one crossing pay for the
+ * NEXT one, so a richer return buys more sailing on the same thirty sagas —
+ * 43 to 55 — and sailing is the thing that costs.
+ *
+ * IT ALSO KILLS THE DIAGNOSIS AT THE TOP OF THIS FILE. That note explains the
+ * shortened crossing failing by saying what comes home "is MOUTHS", landing
+ * unfunded. If unfunded mouths were the mechanism, funding them four times as
+ * well would have helped; it did the opposite. Two named causes for this verb
+ * have now failed a test. What survives is duller and better supported: every
+ * arm that sails does worse than the arm that does not, and the harm tracks
+ * the number of CROSSINGS rather than anything about the return.
  */
 export const SETTLER_STORES = SEASON_LENGTH / 2;
 
@@ -257,3 +279,28 @@ export function voyageDay(state: GameState): boolean {
   state.voyage = undefined;
   return true;
 }
+
+/**
+ * What the launch card says about sending her home, under the day she is due.
+ *
+ * THE RECORD, AS THE DOOR OUT CARRIES ONE (9.2, and 9.14's argument). The card
+ * said when she would be back and "whoever will come", which reads as an
+ * offer. Measured over 200 landings, the crossing kills about two bands for
+ * every one it saves:
+ *
+ *   never sails  26/200 still standing at day 400
+ *   may sail     30 sagas sailed, 82 people fetched, 22/200 standing
+ *   paired on the 30 that sailed — saved 3, KILLED 7, ten fewer souls
+ *
+ * The cause is written at the top of this file and was found before the
+ * measurement confirmed it: what comes home is not only hands, it is MOUTHS,
+ * landing in a hall whose binding constraint was never labour. Shortening the
+ * crossing made it worse for exactly that reason.
+ *
+ * So the card states it, as the panel states the price of crowding and of a
+ * cold hall, and does not refuse it: a band that has banked a surplus and
+ * wants its kin is entitled to go and be wrong.
+ */
+export const VOYAGE_RECORD =
+  'Of the bands that sent her home, more died for it than were saved by it. '
+  + 'She comes back with mouths, and they land before the winter does.';

@@ -4083,6 +4083,16 @@ describe('the sea is reached', () => {
       hadWood: number[];
       wantFood: number[];
       wantWood: number[];
+      /**
+       * PER SEED, because the aggregates above cannot answer the question in
+       * this probe's own name.
+       *
+       * Only six of forty sagas ever sail, so thirty-four of the rows in each
+       * arm are the SAME RUN TWICE and every aggregate difference is driven
+       * by six. "205 souls against 200" reads like a finding and is six sagas
+       * of noise. Paired on the seeds that actually differ, it is a reading.
+       */
+      per: { sailed: boolean; lived: boolean; souls: number; days: number }[];
     }
     const arms: Record<string, Arm> = {};
 
@@ -4098,7 +4108,7 @@ describe('the sea is reached', () => {
       const arm: Arm = {
         sailed: 0, voyages: 0, returned: 0, brought: 0, rough: 0, lived: 0, days: 0, souls: 0,
         settledDays: 0, notSpring: 0, tooSoon: 0, tooPoor: 0, couldHaveGone: 0, blocked: {},
-        hadFood: [], hadWood: [], wantFood: [], wantWood: [],
+        hadFood: [], hadWood: [], wantFood: [], wantWood: [], per: [],
       };
       const was = policy;
       policy = { ...SETTLER, sails, sailAnySeason: anySeason };
@@ -4140,6 +4150,12 @@ describe('the sea is reached', () => {
           arm.days += state.day;
           arm.souls += living(state.party.people).length;
           if (!state.end) arm.lived += 1;
+          arm.per.push({
+            sailed: sentOne,
+            lived: !state.end,
+            souls: living(state.party.people).length,
+            days: state.day,
+          });
           await new Promise((resolve) => setTimeout(resolve, 0));
         }
       } finally {
@@ -4170,6 +4186,58 @@ describe('the sea is reached', () => {
     );
     // eslint-disable-next-line no-console
     console.log(`PROBE the voyage home — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
+
+    // PAIRED ON THE SEEDS THAT ACTUALLY SAILED, which is the only comparison
+    // in this probe that can answer its own title.
+    //
+    // Six of forty sagas ever send her, so thirty-four rows of each arm above
+    // are the same run twice and every aggregate difference is six sagas
+    // wide. Read straight, "205 souls against 200" looks like the crossing
+    // costing five lives; restricted to the sagas that differ, it is a
+    // reading about six of them and is reported with its own N attached so
+    // nobody mistakes it for forty.
+    // WHAT IT READ AT A SAMPLE THE TREATMENT ACTUALLY FIRES IN, 2026-08-30.
+    // Forty seeds gives six sailing sagas, which cannot answer anything; run
+    // once at 200 it gives thirty, and the answer is clear:
+    //
+    //   no voyage  0/200 sailed,                          26/200 standing, 1179 souls
+    //   may sail  30/200 sailed, 43 crossings, 82 fetched, 22/200 standing, 1169 souls
+    //   whenever  32/200 sailed, 47 crossings, 91 fetched, 24/200 standing, 1160 souls
+    //   paired on the 30 that sailed [may sail] — saved 3, KILLED 7, -10 souls
+    //   paired on the 32 that sailed [whenever] — saved 4, KILLED 6, -19 souls
+    //
+    // The crossing kills about two bands for every one it saves, and brings
+    // home eighty-two people while leaving fewer alive at the end. src/sim/
+    // voyage.ts already named the cause before this confirmed it: what comes
+    // home is not only hands, it is MOUTHS, and the hall's binding constraint
+    // was never labour.
+    //
+    // Left at 40 here because that is what the suite can afford every run;
+    // the number above is what it says when asked properly.
+    const control = arms['no voyage']!;
+    for (const label of ['may sail', 'whenever']) {
+      const arm = arms[label]!;
+      const idx = arm.per.map((r, i) => (r.sailed ? i : -1)).filter((i) => i >= 0);
+      if (idx.length === 0) continue;
+      let saved = 0;
+      let killed = 0;
+      let souls = 0;
+      let days = 0;
+      for (const i of idx) {
+        const a = arm.per[i]!;
+        const c = control.per[i]!;
+        if (!c.lived && a.lived) saved += 1;
+        if (c.lived && !a.lived) killed += 1;
+        souls += a.souls - c.souls;
+        days += a.days - c.days;
+      }
+      // eslint-disable-next-line no-console
+      console.log(
+        `  paired on the ${idx.length} sagas that sailed [${label}] — ` +
+        `saved ${saved}, killed ${killed}; ` +
+        `${souls >= 0 ? '+' : ''}${souls} souls, ${days >= 0 ? '+' : ''}${days} days`,
+      );
+    }
 
     // A probe: it asserts its instrument ran, not a rate. The bot has to be
     // ABLE to sail, or this measures nothing at all — which is the state it

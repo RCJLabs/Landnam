@@ -16,6 +16,8 @@ import { settled as settleSomewhere } from './fixtures/settle';
 import { PURPOSES } from '../src/sim/expedition';
 import { fieldCrew, homeCrew } from '../src/sim/expedition';
 import { foodPerDay } from '../src/sim/upkeep';
+import { VOYAGE_RECORD } from '../src/sim/voyage';
+import { ABANDON_RECORD } from '../src/data/retreat';
 import {
   CROSSING,
   MIN_ABOARD,
@@ -286,5 +288,30 @@ describe('what a voyage is worth, measured', () => {
     // ...and the sea has to have its say, or it is a vending machine.
     expect(rough).toBeGreaterThan(0);
     expect(rough).toBeLessThan(runs);
+  });
+});
+
+// 9.2: the crossing states its record, as the door out does.
+describe('the crossing says what became of the bands that took it', () => {
+  it('states an outcome and a cause, not advice', () => {
+    // Measured at saved 3 / killed 7 over 200 landings. The line has to
+    // survive being softened into nothing, so it must carry BOTH halves: what
+    // happened, and why — the "why" is the part a player can act on, because
+    // it names the season the mouths land in.
+    expect(VOYAGE_RECORD).toMatch(/more died|more were/i);
+    expect(VOYAGE_RECORD).toMatch(/mouths/i);
+    // And it must not instruct.
+    expect(VOYAGE_RECORD).not.toMatch(/\byou should\b|\bdo not\b|\bnever\b/i);
+  });
+
+  it('does not contradict the door out, which makes the same kind of claim', () => {
+    // Two records in the same voice. If one ever drifts into advice the other
+    // will not, and the pair reading differently on the same screen is the
+    // tell that somebody edited one without the measurement behind it.
+    expect(VOYAGE_RECORD).not.toBe(ABANDON_RECORD);
+    for (const line of [VOYAGE_RECORD, ABANDON_RECORD]) {
+      expect(line).toMatch(/more died|more were/i);
+      expect(line.trim().endsWith('.'), `${line} should be whole sentences`).toBe(true);
+    }
   });
 });

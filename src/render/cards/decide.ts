@@ -15,7 +15,7 @@ import { known } from '../../sim/lore';
 import { jobOf } from '../../sim/colony';
 import { LAUNCH_REASON, launchBlocker, provisionsFor, PURPOSES, wallReading } from '../../sim/expedition';
 import type { LaunchBlock } from '../../sim/expedition';
-import { CROSSING, SAIL_REASON, provisioning, sailBlocker, type SailBlock } from '../../sim/voyage';
+import { CROSSING, SAIL_REASON, VOYAGE_RECORD, provisioning, sailBlocker, type SailBlock } from '../../sim/voyage';
 import { FEUD_THRESHOLD } from '../../data/feuds';
 import { MEASURES, MEASURE_MAX } from '../../data/sites';
 import type { GameState, Person, Purpose } from '../../state/types';
@@ -167,10 +167,19 @@ export function renderLaunch(
   // road there is, and the fault this answers was a TRADING party of two
   // walking past one.
   if (!blocker) {
-    const wall = wallReading(state, [...picked]);
-    card.append(
-      el('p', { class: `outcome${wall.thin ? ' grim' : ''}` }, [wall.line]),
-    );
+    if (voyage) {
+      // THE RECORD ON THE CROSSING (9.2). The line above says when she is due
+      // back and "whoever will come", which reads as an offer; measured over
+      // 200 landings the crossing kills about two bands for every one it
+      // saves. Stated, never refused — see sim/voyage.ts for the numbers and
+      // for why: she comes home with mouths, not hands.
+      card.append(el('p', { class: 'outcome grim' }, [VOYAGE_RECORD]));
+    } else {
+      const wall = wallReading(state, [...picked]);
+      card.append(
+        el('p', { class: `outcome${wall.thin ? ' grim' : ''}` }, [wall.line]),
+      );
+    }
   }
 
   const choices = el('div', { class: 'choices' });
