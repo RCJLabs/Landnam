@@ -13,7 +13,7 @@ import { reportHere, scoreWord, strongestOf, verdictFor } from '../../sim/site';
 import { moodOf, MOOD_WORD } from '../../sim/minds';
 import { known } from '../../sim/lore';
 import { jobOf } from '../../sim/colony';
-import { LAUNCH_REASON, launchBlocker, provisionsFor, PURPOSES } from '../../sim/expedition';
+import { LAUNCH_REASON, launchBlocker, provisionsFor, PURPOSES, wallReading } from '../../sim/expedition';
 import type { LaunchBlock } from '../../sim/expedition';
 import { CROSSING, SAIL_REASON, provisioning, sailBlocker, type SailBlock } from '../../sim/voyage';
 import { FEUD_THRESHOLD } from '../../data/feuds';
@@ -156,6 +156,22 @@ export function renderLaunch(
             `${provisionsFor(going.length)} food provisioned.`,
     ]),
   );
+
+  // WHAT THEY ARE AS A WALL (9.15), and it belongs here because here is where
+  // the number is chosen. Until now its consequence surfaced only at the camp,
+  // as `fallOnReport`'s bare "so many of ours against so many of theirs" — a
+  // ratio that does not carry the cliff at all, since four against four wins
+  // about seven fights in ten and six against six about five.
+  //
+  // Shown for every purpose, not only for a raid: the camps are on the only
+  // road there is, and the fault this answers was a TRADING party of two
+  // walking past one.
+  if (!blocker) {
+    const wall = wallReading(state, [...picked]);
+    card.append(
+      el('p', { class: `outcome${wall.thin ? ' grim' : ''}` }, [wall.line]),
+    );
+  }
 
   const choices = el('div', { class: 'choices' });
   const go = button('Set out', () => dispatch({ type: 'LAUNCH', members: [...picked], purpose }), {

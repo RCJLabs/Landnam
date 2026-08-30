@@ -8,6 +8,9 @@ import { settled as settleSomewhere } from './fixtures/settle';
 import { goHome, walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
 import { KEPT_FOR, canKeepHall, keepHall, sinceKept } from '../src/sim/hall';
+import { WALL_ENOUGH, wallReading } from '../src/sim/expedition';
+import { SWORN_MAX, sworn } from '../src/sim/people';
+import { foeCount } from '../src/sim/battle';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -391,5 +394,90 @@ describe('expeditions through the game', () => {
     const { save } = migrate({ version: 11, party: { people: [] } });
     expect(save['version']).toBe(SAVE_VERSION);
     expect(save['expedition']).toBeUndefined();
+  });
+});
+
+// 9.15: the number that decides everything, said out loud where it is chosen.
+describe('the launch card says what the party is as a wall', () => {
+  const crewOf = (state: GameState, n: number): string[] =>
+    sworn(state.party.people).slice(0, n).map((p) => p.id);
+
+  it('counts the sworn and not the hands, because hands never reach the field', () => {
+    // THE HANDS HAVE TO EXIST. A landing band is all sworn, so the first cut
+    // of this filtered for hands, got an empty list, and passed on a party of
+    // nobody — it went green against a sabotage that counted hands as
+    // fighters. Four are made hands here, and the guard below insists on it.
+    const state = settleSomewhere('wall-hands');
+    const alive = state.party.people.filter((p) => p.alive);
+    for (const p of alive.slice(0, 4)) p.bond = 'hand';
+    const hands = alive.filter((p) => p.bond === 'hand');
+    expect(hands.length, 'there were no hands, so nothing was measured')
+      .toBeGreaterThanOrEqual(4);
+
+    // Four hands would be a wall if hands could hold one. They cannot.
+    const reading = wallReading(state, hands.map((p) => p.id));
+    expect(reading.sworn).toBe(0);
+    expect(reading.thin).toBe(true);
+    expect(reading.line).toMatch(/Nobody going is sworn/);
+
+    // And a mixed party is worth only its sworn. A landing band is six, so
+    // four hands leaves two sworn: SIX PEOPLE walk out of the gate and the
+    // card still says half a wall — which is the trading-party-of-two fault
+    // stated as plainly as it can be.
+    const swornIds = sworn(state.party.people).map((p) => p.id);
+    const mixed = wallReading(state, [...swornIds, ...hands.map((p) => p.id)]);
+    expect(swornIds.length, 'no sworn left to mix in').toBe(2);
+    expect(mixed.sworn).toBe(2);
+    expect(mixed.thin).toBe(true);
+  });
+
+  it('puts the wall at four, which is where the measurement puts it', () => {
+    // PINNED TO THE LITERAL, NOT TO THE CONSTANT. Written as a loop up to
+    // WALL_ENOUGH and a check at WALL_ENOUGH, this passed with the threshold
+    // moved to three — both goalposts were defined by the thing under test.
+    // Four is the measured cliff (3 stood won 9%, 4 stood won 72%), so four
+    // is what this asserts, and a change to it has to come here and say why.
+    expect(WALL_ENOUGH, 'the measured cliff is at four — see the sweep in expedition.ts')
+      .toBe(4);
+
+    const state = settleSomewhere('wall-count');
+    for (const n of [1, 2, 3]) {
+      const thin = wallReading(state, crewOf(state, n));
+      expect(thin.sworn).toBe(n);
+      expect(thin.thin, `${n} sworn should read as thin`).toBe(true);
+      expect(thin.line).toContain('half a wall');
+    }
+    const enough = wallReading(state, crewOf(state, 4));
+    expect(enough.sworn).toBe(4);
+    expect(enough.thin, 'four sworn is a wall').toBe(false);
+    expect(enough.line).toContain('shoulder to shoulder');
+  });
+
+  it('warns that going heavier only brings more of them out', () => {
+    // The half of the finding that is easy to drop. Past four the foe count
+    // scales with the warband, so a bigger party is not a safer one — and a
+    // line that only said "four is better than three" would send the player
+    // the wrong way at five and six.
+    const state = settleSomewhere('wall-heavy');
+    const big = wallReading(state, crewOf(state, 6));
+    expect(big.thin).toBe(false);
+    expect(big.line).toMatch(/more of them/i);
+  });
+
+  it('agrees with foeCount, which is what actually comes out to meet them', () => {
+    // The claim the wording rests on, checked against the arithmetic the
+    // fight is built from rather than against my memory of a console line.
+    const four = foeCount(WALL_ENOUGH, 2, false);
+    const six = foeCount(6, 2, false);
+    expect(six, 'a bigger party must actually draw a bigger enemy').toBeGreaterThan(four);
+  });
+
+  it('never counts more sworn than the field will hold', () => {
+    // A save that somehow carries more than SWORN_MAX must not be able to
+    // field a wider wall on this card than on the ground.
+    const state = settleSomewhere('wall-cap');
+    for (const p of state.party.people) p.bond = 'sworn';
+    const all = state.party.people.filter((p) => p.alive).map((p) => p.id);
+    expect(wallReading(state, all).sworn).toBeLessThanOrEqual(SWORN_MAX);
   });
 });

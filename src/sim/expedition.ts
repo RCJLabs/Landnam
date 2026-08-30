@@ -10,7 +10,7 @@ import { daysBetween } from './route';
 import { standingAt } from './coast';
 import { stream } from '../rng';
 import type { GameState, Person, Purpose } from '../state/types';
-import { effectiveStat, living } from './people';
+import { effectiveStat, living, sworn } from './people';
 import { chronicle } from './saga';
 import { note } from './tally';
 import { atHome } from './site';
@@ -329,4 +329,73 @@ export function permittedStep(state: GameState, to: number): boolean {
   const out = state.expedition;
   if (!out?.returning || !state.settlement) return true;
   return daysBetween(state.seed, to, state.settlement.stop ?? 0) <= distanceFromHome(state);
+}
+
+/**
+ * How many sworn make a wall rather than a gaggle.
+ *
+ * FOUR, AND IT IS A CLIFF RATHER THAN A SLOPE. Measured over 32 open-field
+ * fights a cell at difficulty 2, attacking:
+ *
+ *   3 stood — won  3/32 ( 9%) against 4.0 foes
+ *   4 stood — won 23/32 (72%) against 4.0 foes
+ *   5 stood — won 22/32 (69%) against 5.0 foes
+ *   6 stood — won 17/32 (53%) against 6.0 foes
+ *
+ * Three is half a shield wall walking into a fight. Four is a wall. And past
+ * four it gets WORSE rather than better, because `foeCount` scales what comes
+ * out to meet you with what you brought — six of yours meets six of theirs,
+ * and the wall bonus is already full.
+ */
+export const WALL_ENOUGH = 4;
+
+/**
+ * What the party being picked is worth as a fighting force.
+ *
+ * THE NUMBER THAT DECIDED EVERYTHING AND WAS NEVER SHOWN (9.15). Party size
+ * is chosen here, at the launch card, and until now its consequence appeared
+ * only at the camp — as `fallOnReport`'s bare "four of ours against four of
+ * theirs", which does not carry the cliff at all: four against four wins 72%
+ * and six against six wins 53%, so equal numbers are not equal odds.
+ *
+ * Counted in SWORN, because hands are mouths and bodies round the fire and
+ * are kept off the field entirely. Shown whatever the errand's purpose: the
+ * camp is on the only road there is, and the fault this is for was a TRADING
+ * party of two walking past one.
+ */
+export interface WallReading {
+  /** Sworn among those going. */
+  sworn: number;
+  /** Whether they are short of a wall. */
+  thin: boolean;
+  /** What that is worth, in the panel's voice. */
+  line: string;
+}
+
+export function wallReading(state: GameState, going: string[]): WallReading {
+  // Through `sworn()` rather than filtering on the bond here, so the cap it
+  // applies is applied once: a save that somehow holds more than SWORN_MAX
+  // must not be able to field a wider wall on this card than on the field.
+  const count = sworn(state.party.people).filter((p) => going.includes(p.id)).length;
+  if (count === 0) {
+    return {
+      sworn: 0,
+      thin: true,
+      line: 'Nobody going is sworn. They cannot hold a line if anything meets them.',
+    };
+  }
+  if (count < WALL_ENOUGH) {
+    return {
+      sworn: count,
+      thin: true,
+      line: `${count} sworn is half a wall — about one open fight in ten goes their way. `
+        + `${WALL_ENOUGH} stand shoulder to shoulder.`,
+    };
+  }
+  return {
+    sworn: count,
+    thin: false,
+    line: `${count} sworn stand shoulder to shoulder — about seven open fights in ten. `
+      + 'More than four only brings more of them out to meet you.',
+  };
 }

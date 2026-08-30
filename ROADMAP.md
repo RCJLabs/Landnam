@@ -4479,10 +4479,58 @@ nice. Four groups, in the shape they were proposed and chosen from.
   · ✅ the panel states what became of the bands that took the door · ✅ the
   wording lives with the numbers it comes from · ✅ the choice is still
   offered, and still not urged.
-- [ ] **9.15 The number that decides everything and is never shown** — three
-  sworn on an armed errand: `63% got there and never drew steel`. Five sworn:
-  `18%`. Party size flips the whole raiding experience and nothing tells the
-  player.
+- [x] **9.15 The number that decides everything and is never shown** —
+  **Done 2026-08-30, and THE ITEM'S OWN FIGURE WAS WRONG.**
+
+  It was written off "three sworn: 63% got there and never drew steel; five
+  sworn: 18%" — still reproducible (67% and 14% on the latest run) and still
+  meaningless. That gap is not a rule of the game. It is `outWith >= 4`, a
+  threshold in the HARNESS's raider policy: with three out the bot is below its
+  own bar and never falls on anything, with five it clears it and always does.
+  The game gates falling on a camp with `canFallOn`, which asks only whether
+  you are standing in it. Party size was never what decided whether steel came
+  out; the bot's own caution was.
+
+  **BUT THERE IS A REAL NUMBER UNDERNEATH, AND IT IS SHARPER.** Measured over
+  32 open-field fights a cell at difficulty 2, attacking:
+
+  | stood | won | foes faced |
+  |---|---|---|
+  | **3** | **3/32 (9%)** | 4.0 |
+  | **4** | **23/32 (72%)** | 4.0 |
+  | 5 | 22/32 (69%) | 5.0 |
+  | 6 | 17/32 (53%) | 6.0 |
+
+  **The cliff is 3 → 4, not 3 → 6, and past four it gets WORSE.** `foeCount`
+  scales what comes out to meet you with what you brought, so six of yours
+  meets six of theirs while the wall bonus is already full. The code comments
+  still repeated a stale "9% with three, 47% with six" from before that was
+  true; the live shape is 9% → 72% at four, then down.
+
+  **So four is the number, and nothing said so where it is chosen.** The
+  consequence surfaced only at the camp, as `fallOnReport`'s bare "so many of
+  ours against so many of theirs" — a ratio that cannot carry this, since four
+  against four wins 72% and six against six wins 53%. Equal numbers are not
+  equal odds.
+
+  `wallReading` now says it on the launch card, counted in SWORN because hands
+  are kept off the field entirely, and shown for every purpose rather than only
+  a raid: the camps are on the only road there is, and the fault it answers was
+  a trading party of two walking past one.
+
+  **TWO OF THE THREE SABOTAGES PASSED THE FIRST TIME**, and both faults are
+  ones this file has recorded before. The hands-don't-count claim built its
+  party by filtering a landing band for hands — a landing band is all sworn, so
+  it tested a party of nobody and went green against a version that counted
+  hands as fighters. And the threshold claim wrote both its loop bound and its
+  assertion in terms of `WALL_ENOUGH`, so moving the constant to three moved
+  both goalposts and it passed. It is pinned to the literal four now, with the
+  measurement named beside it.
+
+  **Done when:** ✅ the item's premise is checked rather than inherited · ✅
+  the real cliff is measured · ✅ it is said where the choice is made · ✅ the
+  half that is easy to drop — that heavier is not safer — is said too · ✅
+  every claim watched failing.
 
 ---
 
@@ -4491,6 +4539,19 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The number that decides everything, said where it is chosen
+  (9.15)** — The item's own figure turned out to be an artifact: "three sworn,
+  63% never drew steel" is `outWith >= 4` in the harness's raider policy, not a
+  rule of the game, which gates falling on a camp only by whether you are
+  standing in it. The real number is sharper and was never shown anywhere: of
+  32 open-field fights, three stood wins 9% and four stood wins 72% — a cliff,
+  not a slope — and past four it declines, because what comes out to meet you
+  scales with what you brought. The launch card now says so, counted in sworn,
+  for every errand and not only a raid. Two of the three sabotages against the
+  new claims passed on the first attempt and both are faults already recorded
+  in this file: a premise that never occurred, and an assertion written in
+  terms of the thing it was testing.
 
 - **2026-08-30 — Walking out is never right, and the panel now says so
   (9.14)** — Both existing measurements triggered the retreat on the day-40
