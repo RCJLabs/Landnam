@@ -142,3 +142,45 @@ export function doDash(state: GameState, by: -1 | 1 = -1): boolean {
   );
   return true;
 }
+
+/**
+ * Whether the shield is worth more than the swing for whoever is up.
+ *
+ * 9.1 — AND THE VERB WAS NOT DEAD, THE MEASUREMENT WAS. `B_DEFEND` appeared
+ * zero times in 1165 battle actions, and the arena's "defend only" arm tied
+ * never-defending EXACTLY, a tie that had been asserted for so long it read
+ * as a finding about the shield. It was a finding about a priority list: both
+ * harnesses put the verb last, below strike, reach, throw and dash, and on a
+ * line the front rank nearly always has somebody to hit, so the rule never
+ * fired.
+ *
+ * Measured with the shield taken FIRST, where a player would take it, over 60
+ * fights at difficulty 2:
+ *
+ *   swings always        46/60 wins, 172 standing
+ *   shield when hurt     49/60 wins, 189 standing   (paired: won 8, lost 5)
+ *   when outnumbered     39/60 wins, 158 standing   (paired: won 1, lost 8)
+ *   always, front rank   11/60 wins,  85 standing   (paired: won 0, lost 35)
+ *
+ * So it is a real verb with a narrow case, which is the shape a good verb
+ * has: worth taking when the man holding it is hurt, ruinous taken every
+ * turn. Three wins in sixty is thin on its own — the seventeen extra men
+ * standing is the sturdier half of it — and neither is a reason to press it
+ * blind, which is why this names the ONE case rather than scoring the choice.
+ *
+ * Stated as a fact for the hint to say, not as a rule the game enforces: the
+ * player is told when the shield is worth more, and can swing anyway.
+ */
+export const SHIELD_WHEN_UNDER = 0.5;
+
+export function shieldAdvised(state: GameState): boolean {
+  const battle = state.battle;
+  const active = battle ? activeCombatant(battle) : undefined;
+  if (!battle || !active || battle.outcome) return false;
+  if (active.hasActed || active.broken || active.defending) return false;
+  if (!canActFrom('defend', active.rank)) return false;
+  // Nothing to set a shield against is not a case for setting one.
+  if (!battle.combatants.some((c) => c.side !== active.side && !c.down && !c.fled)) return false;
+  const person = fighterPerson(state, active.personId);
+  return !!person && person.health <= person.maxHealth * SHIELD_WHEN_UNDER;
+}

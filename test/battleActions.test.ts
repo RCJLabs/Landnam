@@ -10,6 +10,8 @@ import { RANKS } from '../src/sim/ranks';
 import { DEFEND_BONUS, carrying, edge, evasion } from '../src/sim/swing';
 import { canThrowAt, doStrike, throwTargets } from '../src/sim/strike';
 import { isThreatened, threatCount } from '../src/sim/zoc';
+import { SHIELD_WHEN_UNDER, shieldAdvised } from '../src/sim/footwork';
+import { canActFrom } from '../src/sim/ranks';
 import { FOE_ARCHETYPES } from '../src/data/foes';
 import { PATIENCE_ROUNDS } from '../src/sim/battleAi';
 import { BALANCED_HARDSHIP, HARDSHIPS } from '../src/data/hardship';
@@ -679,5 +681,76 @@ describe('a fighter who has acted has nothing left to decide', () => {
     const state = fight('settled-spent');
     state.battle!.outcome = 'won';
     expect(turnIsSpent(state)).toBe(false);
+  });
+});
+
+// 9.1: the shield had a case all along, and nothing said so.
+describe('the shield names its one case', () => {
+  const hurt = (state: GameState, c: Combatant, share: number): void => {
+    const p = fighterPerson(state, c.personId)!;
+    p.health = Math.max(1, Math.round(p.maxHealth * share));
+  };
+
+  it('says nothing to a hale fighter, who should swing', () => {
+    const { state, us } = duel('shield-hale');
+    us.rank = 1;
+    expect(shieldAdvised(state)).toBe(false);
+  });
+
+  it('says it to a hurt fighter in the front rank with somebody to face', () => {
+    const { state, us } = duel('shield-hurt');
+    us.rank = 1;
+    hurt(state, us, 0.4);
+    expect(shieldAdvised(state)).toBe(true);
+  });
+
+  it('goes quiet once the shield is already set', () => {
+    // Advice to do what is already done is noise, and the hint has a line
+    // budget it has to spend on something else.
+    const { state, us } = duel('shield-set');
+    us.rank = 1;
+    hurt(state, us, 0.4);
+    us.defending = true;
+    expect(shieldAdvised(state)).toBe(false);
+  });
+
+  it('goes quiet where a shield cannot be set at all', () => {
+    // `defend` is a front-two verb. Advising it from the third rank would be
+    // pointing at a button the sim refuses.
+    const { state, us } = duel('shield-back');
+    hurt(state, us, 0.4);
+    us.rank = 3;
+    expect(canActFrom('defend', us.rank)).toBe(false);
+    expect(shieldAdvised(state)).toBe(false);
+  });
+
+  it('goes quiet when there is nobody left to set it against', () => {
+    const { state, us, them } = duel('shield-alone');
+    us.rank = 1;
+    hurt(state, us, 0.4);
+    them.down = true;
+    expect(shieldAdvised(state)).toBe(false);
+  });
+
+  it('goes quiet for a fighter who has already spent the turn', () => {
+    const { state, us } = duel('shield-spent');
+    us.rank = 1;
+    hurt(state, us, 0.4);
+    us.hasActed = true;
+    expect(shieldAdvised(state)).toBe(false);
+  });
+
+  it('sits exactly on the half the measurement was taken at', () => {
+    // Pinned to the literal, not to the constant: written as `maxHealth *
+    // SHIELD_WHEN_UNDER` on both sides this would pass at any threshold,
+    // which is the fault the party-size claim shipped with earlier today.
+    expect(SHIELD_WHEN_UNDER).toBe(0.5);
+    const { state, us } = duel('shield-edge');
+    us.rank = 1;
+    const p = fighterPerson(state, us.personId)!;
+    p.health = p.maxHealth / 2;
+    expect(shieldAdvised(state), 'half is hurt enough').toBe(true);
+    p.health = p.maxHealth / 2 + 1;
+    expect(shieldAdvised(state), 'above half is not').toBe(false);
   });
 });

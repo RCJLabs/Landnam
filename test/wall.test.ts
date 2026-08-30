@@ -18,6 +18,7 @@ import { startBattle } from '../src/sim/battleTurn';
 import { DEFEND_BONUS, evasion } from '../src/sim/swing';
 import { reachTargets, throwTargets } from '../src/sim/strike';
 import { shoveDestination } from '../src/sim/footwork';
+import { canActFrom } from '../src/sim/ranks';
 import { strikeTargets } from '../src/sim/battle';
 import {
   SHIELD_IN_WALL,
@@ -383,7 +384,23 @@ describe('formation play beats brawling', () => {
    * whole saga, not in a fight.) This arena is the right instrument, because
    * the survival curve only ends about one run in six on steel.
    */
-  const USE = { shove: true, defend: true, dash: false };
+  const USE = { shove: true, defend: true, dash: false, shieldFirst: 'never' as ShieldFirst };
+
+  /**
+   * When the band reaches for the shield BEFORE the swing.
+   *
+   * 9.1, and the whole reason it exists. `USE.defend` above puts the verb
+   * last, after strike, reach, throw and dash — so in a fight where the front
+   * rank always has somebody to hit, it never fires at all. The arena duly
+   * measured "defend only" as an EXACT TIE with never defending, and the tie
+   * was then asserted, which reads like a finding about the shield and is a
+   * finding about a priority list: the arm measured the rule not firing.
+   *
+   * A player does not put the shield last. They reach for it when the man in
+   * front of them is hurt, or when they are outnumbered — so those are the
+   * arms, and they go BEFORE the swing where a player would put them.
+   */
+  type ShieldFirst = 'never' | 'hurt' | 'outnumbered' | 'always';
 
   /** Same aggression, but never step out of the line to get it. */
   function formation(seed: string): GameState {
@@ -411,6 +428,22 @@ describe('formation play beats brawling', () => {
       // against 47 and 166 for a bot that never shoves at all. Kept to the
       // branch that actually does something: the last man of a line, hurt
       // enough that two guaranteed damage finishes what a swing might miss.
+      // THE SHIELD, TAKEN FIRST (9.1). Placed above every offensive verb so
+      // the arm actually exercises the shield rather than the priority list.
+      if (USE.shieldFirst !== 'never' && !active.hasActed
+        && canActFrom('defend', active.rank)) {
+        const mine = fighterPerson(state, active.personId);
+        const hurt = !!mine && mine.health <= mine.maxHealth / 2;
+        const outnumbered = foes.length > standing(battle, 'warband').length;
+        const want = USE.shieldFirst === 'always'
+          || (USE.shieldFirst === 'hurt' && hurt)
+          || (USE.shieldFirst === 'outnumbered' && outnumbered);
+        if (want) {
+          state = apply(state, { type: 'B_DEFEND' });
+          state = apply(state, { type: 'B_END_TURN' });
+          continue;
+        }
+      }
       if (USE.shove && !active.hasActed && adjacent.length > 0) {
         const hurt = (c: { personId: string }): number =>
           fighterPerson(state, c.personId)?.health ?? 99;
@@ -565,11 +598,11 @@ describe('formation play beats brawling', () => {
    */
   it('names what each verb is worth, and dash is a trap', { timeout: 900_000 }, async () => {
     const combos: [string, typeof USE][] = [
-      ['none', { shove: false, defend: false, dash: false }],
-      ['shove only', { shove: true, defend: false, dash: false }],
-      ['defend only', { shove: false, defend: true, dash: false }],
-      ['dash only', { shove: false, defend: false, dash: true }],
-      ['as we play', { shove: true, defend: true, dash: false }],
+      ['none', { shove: false, defend: false, dash: false, shieldFirst: 'never' }],
+      ['shove only', { shove: true, defend: false, dash: false, shieldFirst: 'never' }],
+      ['defend only', { shove: false, defend: true, dash: false, shieldFirst: 'never' }],
+      ['dash only', { shove: false, defend: false, dash: true, shieldFirst: 'never' }],
+      ['as we play', { shove: true, defend: true, dash: false, shieldFirst: 'never' }],
     ];
     const score: Record<string, { wins: number; alive: number }> = {};
     for (const [name, on] of combos) {
@@ -586,7 +619,7 @@ describe('formation play beats brawling', () => {
       // eslint-disable-next-line no-console
       console.log(`  ${name}: ${wins}/${SEEDS.length} wins, ${alive} standing`);
     }
-    Object.assign(USE, { shove: true, defend: true, dash: false });
+    Object.assign(USE, { shove: true, defend: true, dash: false, shieldFirst: 'never' });
 
     const none = score['none']!;
     // The verbs the bot actually uses must not cost it anything. A tolerance
@@ -619,6 +652,100 @@ describe('formation play beats brawling', () => {
       'walking up into the wall should still cost a few men',
     ).toBeLessThanOrEqual(none.alive);
   });
+
+  /**
+   * 9.1, and the question the arm above cannot answer about itself.
+   *
+   * "defend only" ties never-defending EXACTLY, and the tie is asserted — but
+   * the tie is not a finding about the shield. `USE.defend` puts the verb
+   * LAST, below strike, reach, throw and dash, and on a line the front rank
+   * nearly always has somebody to hit, so the rule simply never fires. The
+   * arm measures a priority list, not a verb, and reporting it as "defend is
+   * worth nothing" would be reporting the instrument.
+   *
+   * A player does not put the shield last. They reach for it when they are
+   * hurt, or when they are outnumbered, or — the extreme — whenever they are
+   * in the front rank at all. Those are the arms, taken BEFORE the swing.
+   */
+  it('says what the shield is worth to somebody who actually reaches for it',
+    { timeout: 900_000 }, async () => {
+      const arms: [string, typeof USE['shieldFirst']][] = [
+        ['never (swings always)', 'never'],
+        ['when hurt', 'hurt'],
+        ['when outnumbered', 'outnumbered'],
+        ['always, in the front rank', 'always'],
+      ];
+      const score: Record<string, { wins: number; alive: number; won: boolean[]; raised: number }> = {};
+      for (const [name, when] of arms) {
+        Object.assign(USE, { shove: false, defend: false, dash: false, shieldFirst: when });
+        let wins = 0;
+        let alive = 0;
+        let raised = 0;
+        const won: boolean[] = [];
+        for (const seed of SEEDS) {
+          const f = formation(seed);
+          const w = f.battle?.outcome === 'won';
+          won.push(w);
+          if (w) wins += 1;
+          alive += intact(f);
+          // HOW OFTEN A SHIELD WENT UP. Three wins in sixty is thin on its
+          // own, and an arm that raised none would be the control wearing a
+          // label — the fault this whole test exists to catch, so it is
+          // counted rather than assumed.
+          //
+          // BOTH SIDES' SHIELDS, and that is why the control reads 106
+          // rather than 0: the foe AI sets its own. So this is a floor, not
+          // a tally of ours — good enough for "did anything happen at all",
+          // which is the only question asked of it below.
+          raised += (f.battle?.log ?? []).filter((l) => /shield/i.test(l)).length;
+          await new Promise((r) => setTimeout(r, 0));
+        }
+        score[name] = { wins, alive, won, raised };
+        // eslint-disable-next-line no-console
+        console.log(
+          `  shield ${name.padEnd(26)} ${wins}/${SEEDS.length} wins, ${alive} standing, `
+            + `${raised} shields set`,
+        );
+      }
+      Object.assign(USE, { shove: true, defend: true, dash: false, shieldFirst: 'never' });
+
+      const base = score['never (swings always)']!;
+      // PAIRED, because the arms run the same seeds and only the fights where
+      // they disagree carry any information — 49 against 46 is three wins and
+      // could be three coin flips; which seeds flipped, and how many flipped
+      // back, is the reading that cannot be.
+      for (const [name] of arms.slice(1)) {
+        const arm = score[name]!;
+        let saved = 0;
+        let lost = 0;
+        for (let i = 0; i < SEEDS.length; i += 1) {
+          if (!base.won[i] && arm.won[i]) saved += 1;
+          if (base.won[i] && !arm.won[i]) lost += 1;
+        }
+        // eslint-disable-next-line no-console
+        console.log(`    paired vs swinging always — ${name}: won ${saved}, lost ${lost}`);
+      }
+
+      // THE INSTRUMENT FIRST, and it is the whole reason this test exists:
+      // an arm that never actually raised a shield is the control run again
+      // under a different name, which is exactly what "defend only" above
+      // turned out to be. `always` puts every front-ranker behind a shield
+      // every turn, so if IT still ties the control, nothing is firing.
+      expect(
+        score['always, in the front rank'],
+        'the shield-first arm changed nothing at all — the verb never fired, '
+          + 'so this measures a priority list and not a shield',
+      ).not.toEqual(base);
+      expect(
+        score['always, in the front rank']!.raised,
+        'no shield was ever set, so every arm here is the control run again',
+      ).toBeGreaterThan(0);
+
+      // NO BAR ON WHICH ARM WINS. Nobody is tuning toward a number here; the
+      // console line is the record, and the ruling it feeds — whether the
+      // shield gets a reason or comes off the bar — is a design decision and
+      // not a threshold.
+    });
 
   it('holding the line beats charging in', { timeout: 180_000 }, async () => {
     let brawlWins = 0;

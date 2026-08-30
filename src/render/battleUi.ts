@@ -6,6 +6,7 @@ import { activeCombatant, fighterPerson, isWarbandTurn, standing } from '../sim/
 import { throwTargets, reachTargets } from '../sim/strike';
 import { canWarCry, isLeader } from '../sim/warcry';
 import { wallBonus, wallLinks } from '../sim/wall';
+import { shieldAdvised } from '../sim/footwork';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';
 
@@ -140,6 +141,13 @@ export function renderBattleHint(state: GameState, aim: Aim): HTMLElement {
   // he is standing is change rank, which is the Run button, so the hint says
   // that instead of naming a control that does not exist.
   if (!active.hasActed) parts.push(AIM_HINT[aim]);
+  // THE SHIELD'S ONE CASE (9.1). Measured, a band that sets the shield when
+  // the man holding it is hurt wins 49 fights in 60 against 46 for one that
+  // always swings, and finishes with seventeen more men standing — and a band
+  // that sets it EVERY turn wins 11. So the hint names the case rather than
+  // the button, and only when it applies. It is said, never enforced: the
+  // player can swing anyway, and often should.
+  if (shieldAdvised(state)) parts.push('hurt — the shield is worth more than the swing');
   if (!active.hasActed && active.rank > 1) parts.push('or push forward a rank');
   // "nothing left this turn — end it" stood here, and 9.13 deleted the tap it
   // was asking for: the turn now ends itself. What is left to say is what is

@@ -4103,9 +4103,53 @@ nice. Four groups, in the shape they were proposed and chosen from.
 
 ### Things that exist and do not pay
 
-- [ ] **9.1 The dead verbs** — `B_SHOVE 6` of 1165 battle actions across 57
-  fights. Half a percent. `B_WARCRY 38`. Give each a reason to exist or take
-  it off the bar: a button nobody presses teaches the player the bar is noise.
+- [~] **9.1 The dead verbs** — **THE SHIELD WAS NOT DEAD. THE MEASUREMENT
+  WAS.** Done for defend 2026-08-30; shove and dash are a ruling for Evan,
+  below.
+
+  `B_DEFEND` appears **zero** times in 1165 battle actions — worse than the
+  item's own examples — and the arena's "defend only" arm tied never-defending
+  EXACTLY, a tie asserted in test/wall.test.ts with the words *"a verb nobody
+  can use is a hole in the design"*. It was not a hole in the design. Both
+  harnesses put the verb LAST, below strike, reach, throw and dash, and on a
+  line the front rank nearly always has somebody to hit — so the rule never
+  fired, and the arm measured a priority list.
+
+  Measured with the shield taken FIRST, where a player takes it, 60 fights at
+  difficulty 2:
+
+  | | wins | standing | paired vs swinging always |
+  |---|---|---|---|
+  | swings always | 46/60 | 172 | — |
+  | **shield when hurt** | **49/60** | **189** | **won 8, lost 5** |
+  | when outnumbered | 39/60 | 158 | won 1, lost 8 |
+  | always, front rank | 11/60 | 85 | won 0, lost 35 |
+
+  **So it is a real verb with a narrow case** — worth taking when the man
+  holding it is hurt, ruinous every turn — which is the shape a good verb has.
+  Three wins in sixty is thin on its own and is reported as thin; the
+  seventeen extra men standing is the sturdier half. `shieldAdvised` now names
+  that one case in the battle hint, stated and never enforced: the player is
+  told and can swing anyway.
+
+  **STILL OPEN, AND EVAN'S CALL — shove and dash.** Neither is fixed by
+  telling anybody anything:
+
+  - **Shove** is worth nothing even in its best case: 46/60 against 46/60,
+    one fewer man standing. `REACH.shove` is `{from:[1,2], at:[1,2]}` —
+    identical to strike — so it is never a different option positionally,
+    only ever an alternative to hitting somebody. Its one real effect, driving
+    the last man of a line against his own for 2 that cannot miss, fires 7
+    times in 1165 actions. Keep it as a rare finisher, or take it off the bar.
+  - **Dash** is a measured trap (42/60 against 46, 155 standing against 172)
+    and the harness has it switched off. But it is the only way to change
+    rank at all, so removing it removes the last positional choice in a
+    fight. It may want a reason rather than a removal.
+
+  **The lesson, and it is the fifth of its kind today:** an arm that ties its
+  control exactly is not evidence the feature is worthless — it is evidence
+  the feature never ran. The tie had been asserted, with a comment explaining
+  what it meant, for long enough to read as settled.
 - [ ] **9.2 The voyage home** — `0/40 sagas sailed, 0 crossings, 0 people
   fetched`, and the probe prints its own diagnosis: on an eligible day the
   hall HAD `food 64 wood 309`; the rule WANTS `food 120 wood 72`. The gate is
@@ -4539,6 +4583,18 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The shield was not a dead verb (9.1)** — `B_DEFEND` appeared
+  zero times in 1165 battle actions and the arena's "defend only" arm tied
+  never-defending exactly, a tie that had been asserted long enough to read as
+  a finding about the shield. It was a finding about a priority list: both
+  harnesses put the verb last, and on a line the front rank always has
+  somebody to hit, so it never fired. Taken first, where a player takes it,
+  the shield is worth 49 wins in 60 against 46 and seventeen more men
+  standing — when the man holding it is hurt. Taken every turn it wins 11.
+  The hint now names that one case. Shove and dash are left open with their
+  numbers written down: shove is worth nothing even at its best, and dash is a
+  trap that is also the only way to change rank.
 
 - **2026-08-30 — The number that decides everything, said where it is chosen
   (9.15)** — The item's own figure turned out to be an artifact: "three sworn,
