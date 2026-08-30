@@ -322,6 +322,22 @@ interface Policy {
    * saved nobody, killed two.
    */
   retreats: boolean;
+
+  /**
+   * Walk out EARLY, the moment it is legal, if the ground scores below this.
+   *
+   * 9.14. `retreats` above triggers on the VERDICT, which fires around day 40
+   * — so every measurement of walking out so far has measured a band leaving
+   * in autumn with its summer already spent. That is not the case the verb
+   * was shipped for. src/data/retreat.ts says in as many words that it is
+   * "a verb for the OTHER case: ground you took too fast and want to be off
+   * before the summer is spent", and that "the harness cannot measure that
+   * one". This knob is the harness learning how.
+   *
+   * Undefined means never. A number means: at the first legal day, read the
+   * ground the posts went into and leave if it is worse than this.
+   */
+  retreatsBelow?: number;
 }
 
 /**
@@ -1409,6 +1425,16 @@ function run(
   for (let i = 0; i < 6000 && !state.end && state.day <= maxDay; i += 1) {
     // WALKING OUT, and it is taken before anything else the day would do:
     // there is no sense crewing or queueing a steading the band is leaving.
+    // WALKING OUT EARLY (9.14), on the ground rather than on the verdict.
+    // Taken before the verdict branch below so a policy carrying both leaves
+    // on the reading it can act on soonest.
+    if (policy.retreatsBelow !== undefined && state.settlement && canAbandon(state)
+      && stopReport(state.seed, state.settlement.stop ?? 0).total < policy.retreatsBelow) {
+      abandonSteading(state);
+      walkedOut += 1;
+      walkOutHold = state.day + 6;
+    }
+
     if (policy.retreats && state.settlement && markVisible(state)
       && !reachable(state) && canAbandon(state)) {
       abandonSteading(state);
@@ -3572,6 +3598,119 @@ describe('PROBE: where a raid actually costs a band', () => {
           `${((arms.lost.n / Math.max(1, settledN)) * 100).toFixed(0)}% lost a raid`,
         );
       }
+    });
+});
+
+describe('PROBE: is there any moment at which walking out is right', () => {
+  /**
+   * 9.14, and the question the two existing measurements never asked.
+   *
+   * Both of them trigger the retreat on the VERDICT — "we will not reach
+   * spring on what this ground gives" — which fires around day 40. So both
+   * measured a band leaving in autumn with its summer already spent, and both
+   * found it lethal: saved 0 / killed 11 on the first, saved 1 / killed 18 on
+   * the arm that was supposed to be testing rash ground.
+   *
+   * BUT THAT IS NOT THE CASE THE VERB SHIPPED FOR. src/data/retreat.ts is
+   * explicit: it is "a verb for the OTHER case: ground you took too fast and
+   * want to be off before the summer is spent", and it says plainly that "the
+   * harness cannot measure that one, because the bot only ever settles on
+   * ground that already clears its site floor". The bot can now settle rashly
+   * — RASH exists — and it can now leave on the GROUND rather than on the
+   * verdict, at the first day the ten-day floor allows.
+   *
+   * So this sweeps the one thing that was never tried: how bad does the
+   * ground have to be before getting off it early is worth what it costs?
+   * If there is a threshold that pays, the panel should point at it. If there
+   * is not, then walking out is never right at any moment, and the game
+   * should say so rather than offer it in silence.
+   */
+  it('sweeps how bad the ground must be for leaving it early to pay',
+    { timeout: 900_000 }, () => {
+      const SEEDS = 120;
+      const SPRING_IN = SEASON_LENGTH * 3 + 1;
+      // Takes the first legal ground, which is the band this verb is for: one
+      // that settled in a hurry and has something to regret. Defined here as
+      // well as in the sibling below, because the two live far apart and a
+      // shared constant between them would tie two independent measurements
+      // together.
+      const RASH: Policy = { ...SETTLER, id: 'rash', siteFloor: 0 };
+
+      const sample = (p: Policy): { lived: boolean[]; left: number; ground: number } => {
+        policy = p;
+        const lived: boolean[] = [];
+        const scores: number[] = [];
+        let out = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          walkedOut = 0;
+          let noted = false;
+          const final = run(`winter-inside-${i}`, SPRING_IN, (before, after) => {
+            if (!noted && !before.settlement && after.settlement) {
+              noted = true;
+              scores.push(stopReport(after.seed, after.settlement.stop ?? 0).total);
+            }
+          }, 'even');
+          lived.push(!final.end && final.day >= SPRING_IN);
+          out += walkedOut;
+        }
+        const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+        return { lived, left: out, ground: mean(scores) };
+      };
+
+      const stay = sample(RASH);
+      // eslint-disable-next-line no-console
+      console.log(
+        `walking out EARLY, on the ground rather than the verdict — ${SEEDS} seeds, even:\n` +
+        `  floor 0, stays put — ${stay.lived.filter(Boolean).length}/${SEEDS} saw spring, ` +
+        `ground ${stay.ground.toFixed(1)} on average`,
+      );
+
+      let anyPaid = false;
+      let everLeft = 0;
+      for (const below of [12, 14, 16, 18]) {
+        const arm = sample({ ...RASH, retreatsBelow: below });
+        everLeft += arm.left;
+        let saved = 0;
+        let killed = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          if (!stay.lived[i] && arm.lived[i]) saved += 1;
+          if (stay.lived[i] && !arm.lived[i]) killed += 1;
+        }
+        if (saved > killed) anyPaid = true;
+        // eslint-disable-next-line no-console
+        console.log(
+          `  leaves ground under ${String(below).padStart(2)} — ` +
+          `${String(arm.lived.filter(Boolean).length).padStart(3)}/${SEEDS} saw spring, ` +
+          `${String(arm.left).padStart(3)} walked out ` +
+          `(saved ${saved}, killed ${killed})`,
+        );
+      }
+      policy = SETTLER;
+
+      // THE INSTRUMENT FIRST, and this file has shipped the mistake it
+      // guards against: an arm that never walked out is the control run
+      // again under a different name.
+      expect(everLeft, 'nobody ever walked out early — nothing was measured')
+        .toBeGreaterThan(0);
+      expect(stay.left, 'the control walked out too').toBe(0);
+
+      // READ THE FIRST ARM, AND DISCOUNT THE REST. Above a threshold of 12 the
+      // walk-out count runs past the seed count — 141, 246, 275 retreats over
+      // 120 landings — which is a band founding, leaving, founding on ground
+      // just as poor and leaving again. Those arms are measuring a loop, not a
+      // strategy, and their death tolls are inflated by it. The honest reading
+      // is `under 12`: 37 retreats over 120 seeds, at most one a band, a
+      // genuine "this ground is bad, get off it". It still saved 4 and killed
+      // 10.
+      //
+      // NO BAR ON THE OUTCOME, for the same reason the sibling above carries
+      // none: nobody is tuning toward a number here. What the console line is
+      // for is the ruling — whether the verb has a right moment anywhere, or
+      // whether the panel is offering a choice that is wrong at every hour.
+      // `anyPaid` is reported rather than asserted so that a future change
+      // which GIVES it a case shows up as a changed line and not a failure.
+      // eslint-disable-next-line no-console
+      console.log(`  a threshold that pays: ${anyPaid ? 'YES' : 'none of them'}`);
     });
 });
 

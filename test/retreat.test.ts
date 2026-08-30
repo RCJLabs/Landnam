@@ -24,9 +24,9 @@ import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { pushMode } from '../src/modes';
 import { canFound, foundSettlement } from '../src/sim/site';
-import { abandonBlocker, abandonSteading, canAbandon } from '../src/sim/retreat';
+import { ABANDON_REASON, abandonBlocker, abandonSteading, canAbandon, leaveNote } from '../src/sim/retreat';
 import { childrenOf } from '../src/sim/lineage';
-import { ABANDON_AFTER, ABANDON_HEART } from '../src/data/retreat';
+import { ABANDON_AFTER, ABANDON_HEART, ABANDON_RECORD } from '../src/data/retreat';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { walkOff } from './fixtures/stand';
 import type { GameState } from '../src/state/types';
@@ -180,3 +180,54 @@ function settled(seed: string): GameState {
   const state = settleSomewhere(seed);
   return state;
 }
+
+// 9.14: the door out says what happened to the bands that took it.
+describe('the door out states its record, not only its price', () => {
+  it('says nothing at all to a band with no steading', () => {
+    const state = newGame('leave-none');
+    expect(leaveNote(state)).toBeNull();
+  });
+
+  it('names which rule is refusing rather than going quietly grey', () => {
+    // Freshly founded: the ten-day floor is refusing, and it must say so.
+    const state = settled('leave-toosoon');
+    state.settlement!.foundedOn = state.day;
+    const note = leaveNote(state)!;
+    expect(note.open).toBe(false);
+    expect(note.reason).toBe(ABANDON_REASON.toosoon);
+    // A refusal carries no price and no record — there is nothing to weigh.
+    expect(note.price).toBeUndefined();
+    expect(note.record).toBeUndefined();
+  });
+
+  it('carries BOTH the price and the record when the door is open', () => {
+    // The bug this is for: the panel composed the price and forgot the
+    // record, so the screen named what leaving costs and never what it did.
+    const state = settled('leave-open');
+    state.settlement!.foundedOn = state.day - ABANDON_AFTER - 1;
+    const note = leaveNote(state)!;
+    expect(note.open).toBe(true);
+    expect(note.price).toContain(String(ABANDON_HEART));
+    expect(note.record).toBe(ABANDON_RECORD);
+  });
+
+  it('keeps the price honest about the heart it actually takes', () => {
+    // Named off the constant rather than typed, so a change to what leaving
+    // costs cannot leave the sentence behind saying the old number.
+    const state = settled('leave-price');
+    state.settlement!.foundedOn = state.day - ABANDON_AFTER - 1;
+    const heart = state.party.morale;
+    abandonSteading(state);
+    expect(heart - state.party.morale).toBe(ABANDON_HEART);
+  });
+
+  it('states the record as an outcome and an alternative, not as advice', () => {
+    // The line must survive being softened into nothing. It has to say that
+    // more were killed than saved, and it has to name the other door — a fact
+    // with no alternative in it is discouragement, which this game does not do.
+    expect(ABANDON_RECORD).toMatch(/more died|more were/i);
+    expect(ABANDON_RECORD).toMatch(/stayed/i);
+    // And it must not tell the player what to do.
+    expect(ABANDON_RECORD).not.toMatch(/\byou should\b|\bdo not\b|\bnever\b/i);
+  });
+});

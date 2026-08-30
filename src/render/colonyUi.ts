@@ -27,8 +27,7 @@ import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs
 import { CROWDING_BITE } from '../sim/minds';
 import { wallMark } from '../sim/raid';
 import { foodPerDay } from '../sim/upkeep';
-import { abandonBlocker, ABANDON_REASON } from '../sim/retreat';
-import { ABANDON_HEART } from '../data/retreat';
+import { leaveNote } from '../sim/retreat';
 import { HALF_RATION_HEART } from '../data/rations';
 import { forecast } from '../sim/winter';
 import { sickCount } from '../sim/cold';
@@ -216,28 +215,35 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
  * The door out, and it is deliberately the quietest control on the panel.
  *
  * Walking out measured at saved nobody and killed eleven over 120 paired
- * landings — see src/data/retreat.ts. So it is offered rather than urged: no
- * primary styling, the cost written on the face of it, and a refusal that
- * says WHICH rule is refusing rather than going grey with no explanation. A
- * player who wants to leave can leave; nothing here suggests they should.
+ * landings, and 9.14 then swept the one case it had been shipped for — off
+ * bad ground, early, before the summer is spent — and found it worse at every
+ * threshold: see src/data/retreat.ts. So it is offered rather than urged: no
+ * primary styling, the cost written on the face of it, THE RECORD written
+ * under the cost, and a refusal that says WHICH rule is refusing rather than
+ * going grey with no explanation. A player who wants to leave can leave;
+ * nothing here suggests they should, and nothing here hides what happened to
+ * the ones who did.
  */
 function renderLeaving(state: GameState, dispatch: Dispatch): HTMLElement {
-  const why = abandonBlocker(state);
-  if (why === 'nosteading' || why === 'ended') return el('span');
+  // Every word of this is `leaveNote`, in the sim, where a test can hold the
+  // three parts together without a browser. The panel used to compose them
+  // here and composed only two — the price and the refusal — so the RECORD
+  // was nowhere and a player could read the whole screen and still believe
+  // walking out was an escape.
+  const note = leaveNote(state);
+  if (!note) return el('span');
+  if (!note.open) return el('div', { class: 'leave-note' }, [note.reason ?? '']);
   const home = state.settlement!;
-  if (why !== null) {
-    return el('div', { class: 'leave-note' }, [ABANDON_REASON[why]]);
-  }
   return el('div', { class: 'leaving' }, [
     button(
       `Leave ${home.name} standing empty`,
       () => dispatch({ type: 'ABANDON' }),
       { class: 'action wide grim' },
     ),
-    el('div', { class: 'leave-note' }, [
-      `Everything raised here is lost, and ${ABANDON_HEART} off every heart. `
-        + 'The stores come with us.',
-    ]),
+    el('div', { class: 'leave-note' }, [note.price ?? '']),
+    // The record goes under the price, in the same quiet class: stated once,
+    // never urged.
+    el('div', { class: 'leave-note' }, [note.record ?? '']),
   ]);
 }
 

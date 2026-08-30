@@ -4425,9 +4425,60 @@ nice. Four groups, in the shape they were proposed and chosen from.
   broken fighter is neither asked nor shown controls that do nothing · ✅ the
   choice to decline is still offered · ✅ all twelve bars pass, `look`
   included, so no screen moved.
-- [ ] **9.14 Walking out is never right** — `paired: saved 0 that would have
-  died, killed 6 that would have lived`. The game offers a choice measurement
-  says is strictly wrong, and says nothing about it.
+- [x] **9.14 Walking out is never right** — **Done 2026-08-30, and the
+  premise is now proven rather than suspected.**
+
+  **THE CASE THE VERB WAS SHIPPED FOR HAD NEVER BEEN MEASURED.** Both existing
+  measurements trigger the retreat on the VERDICT — "we will not reach spring
+  on what this ground gives" — which fires around day 40, so both measured a
+  band leaving in autumn with its summer already spent. `src/data/retreat.ts`
+  says so in as many words: it is "a verb for the OTHER case, ground you took
+  too fast and want to be off before the summer is spent", and "the harness
+  cannot measure that one". The harness can now: the bot settles rashly, and
+  leaves on the GROUND at the first legal day rather than on the verdict.
+
+  Swept over 120 landings on even, against the same band staying put:
+
+  | | saw spring | walked out | saved | killed |
+  |---|---|---|---|---|
+  | stays put | **83**/120 | 0 | — | — |
+  | leaves ground under 12 | 77/120 | 37 | 4 | **10** |
+  | under 14 | 45/120 | 141 | 5 | **43** |
+  | under 16 | 13/120 | 246 | 3 | **73** |
+  | under 18 | 5/120 | 275 | 1 | **79** |
+
+  **Read the first line and discount the rest.** Above 12 the retreat count
+  runs past the seed count — 141, 246, 275 over 120 landings — which is a band
+  founding, leaving, founding on ground just as poor and leaving again: a loop,
+  not a strategy, with a death toll inflated by it. The honest arm is
+  `under 12`, at most one retreat a band, and it still killed ten to save four.
+
+  **So the verb is wrong at every hour** — late on the verdict, early on the
+  ground, and every threshold between.
+
+  **It is not withdrawn, and that is deliberate.** retreat.ts's argument
+  stands: the game refusing was never a balance decision, it was
+  `foundSettlement` never having been written to happen twice, and whether
+  leaving is wise is the player's to get wrong. What changes is the silence.
+
+  **The panel now states the record under the price.** It had the cost on the
+  face of the control and the OUTCOME nowhere, so a player could read the whole
+  screen and still believe walking out was an escape. A game that puts the
+  price of crowding, of short commons and of a cold hall on screen cannot offer
+  this one in silence and call that neutrality. Still not urged: same quiet
+  class, one sentence, and it names the alternative in the same breath because
+  a fact with no other door in it is only discouragement.
+
+  **Composed in the sim, like the hearth and wall marks.** `leaveNote` returns
+  the refusal, the price and the record together, so the panel cannot ship two
+  of the three again — which is exactly what it had been doing. Claimed against
+  three sabotages: the record dropped, the record attached to a refusal that
+  has nothing to weigh, and the record softened into advice.
+
+  **Done when:** ✅ the case the verb was defended on is measured, not assumed
+  · ✅ the panel states what became of the bands that took the door · ✅ the
+  wording lives with the numbers it comes from · ✅ the choice is still
+  offered, and still not urged.
 - [ ] **9.15 The number that decides everything and is never shown** — three
   sworn on an armed errand: `63% got there and never drew steel`. Five sworn:
   `18%`. Party size flips the whole raiding experience and nothing tells the
@@ -4440,6 +4491,19 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — Walking out is never right, and the panel now says so
+  (9.14)** — Both existing measurements triggered the retreat on the day-40
+  verdict, so both measured a band leaving in autumn with its summer already
+  spent; the case the verb was actually shipped for — off bad ground, early —
+  had never been measured, because the file that shipped it said the harness
+  could not. It can now, and that case fails too: against 83 of 120 seeing
+  spring by staying put, leaving the worst ground at the first legal day saved
+  4 and killed 10, and every harsher threshold is worse. The verb stays,
+  because a band that wants to leave should be able to and whether that is
+  wise is the player's to get wrong — but the panel stops being silent. The
+  record now sits under the price, composed in the sim beside the numbers it
+  comes from so the screen cannot ship the cost without the outcome again.
 
 - **2026-08-30 — The turn that ends itself (9.13)** — Once a fighter had
   acted, ending the turn was the only legal move, and the screen said so

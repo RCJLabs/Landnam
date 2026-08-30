@@ -32,6 +32,30 @@
 // because the bot only ever settles on ground that already clears its site
 // floor, and saying so is more useful than inventing a bot that would.
 //
+// THAT CASE HAS NOW BEEN MEASURED, 2026-08-30, AND IT FAILS TOO. The bot can
+// settle rashly now, and it can leave on the GROUND at the first legal day
+// rather than on the verdict at day forty. Swept over 120 landings on even,
+// against the same band staying put (83/120 saw spring):
+//
+//   leaves ground under 12 — 77/120, 37 walked out, saved 4, killed 10
+//   leaves ground under 14 — 45/120, 141 walked out, saved 5, killed 43
+//   leaves ground under 16 — 13/120, 246 walked out, saved 3, killed 73
+//   leaves ground under 18 —  5/120, 275 walked out, saved 1, killed 79
+//
+// Read the first line and discount the rest: above a threshold of 12 the
+// retreat count runs past the seed count, which is a band founding, leaving,
+// founding on ground just as poor and leaving again — a loop, not a strategy.
+// The honest arm is `under 12`, one retreat a band at most, and it still
+// killed ten to save four.
+//
+// SO THE VERB IS WRONG AT EVERY HOUR — late on the verdict, early on the
+// ground, and every threshold between. It is not withdrawn, because the
+// argument below still stands: a band that wants to leave should be able to,
+// and whether leaving is wise is the player's to get wrong. What changes is
+// that the panel stops being silent about it. A game that puts the price of
+// crowding, of short commons and of a cold hall on the screen cannot offer
+// this one in silence and call that neutrality.
+//
 // It ships anyway, and the reason is not "it might be good really". A band
 // that has read the verdict and wants to leave should be ABLE to leave: the
 // game refusing was never a balance decision, it was `foundSettlement` never
@@ -77,3 +101,20 @@ export const ABANDON_HEART = 12;
  * held there until the frost.
  */
 export const ABANDON_AFTER = 10;
+
+/**
+ * What the panel says about walking out, under the price.
+ *
+ * THE RECORD, NOT A WARNING. The game does not tell the player what to do
+ * anywhere else and it does not start here: this is the same kind of line as
+ * "5 off every heart" on the crowding mark — a fact the band would know,
+ * stated once, in the chronicle's voice. It names the alternative in the same
+ * breath because a fact with no other door in it is just discouragement.
+ *
+ * It lives beside the numbers it comes from so the two cannot drift: if the
+ * sweep above ever reverses, this sentence is in the same file as the reason
+ * it would have to change.
+ */
+export const ABANDON_RECORD =
+  'Of the bands that walked out, more died for it than were saved by it. '
+  + 'The ones that stayed and kept working saw more springs.';
