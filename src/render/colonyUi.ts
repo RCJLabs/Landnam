@@ -13,6 +13,7 @@ import {
   buildBlocker,
   capacity,
   crowding,
+  hearthMark,
   buildProgress,
   dayLabour,
   idlers,
@@ -127,6 +128,29 @@ export function renderRoom(state: GameState): HTMLElement {
       el('span', { class: 'mark-gap' }, [
         over > 0 ? `${over * CROWDING_BITE} off every heart` : 'enough',
       ]),
+    ]),
+  ]);
+}
+
+/**
+ * What the hall is paying, and how long since anybody fed it.
+ *
+ * The rule in sim/hall.ts takes up to seven heart a day off a big steading
+ * that has not held a feast, and a penalty the player cannot see is not
+ * difficulty — it is bad luck with a bill attached. That is the same argument
+ * the crowding mark above was written for, stated in the same shape. All the
+ * arithmetic and every word of it is `hearthMark`; this only sets it out.
+ */
+export function renderHearth(state: GameState): HTMLElement {
+  const mark = hearthMark(state);
+  if (!mark) return el('div');
+
+  return el('div', { class: `room-mark${mark.due ? ' short' : ''}` }, [
+    el('div', { class: 'mark-head' }, [mark.head]),
+    el('div', { class: 'mark-row' }, [
+      el('span', { class: 'mark-name' }, ['Since the feast']),
+      el('span', { class: 'mark-value' }, [`${mark.since} ${mark.since === 1 ? 'day' : 'days'}`]),
+      el('span', { class: 'mark-gap' }, [mark.gap]),
     ]),
   ]);
 }

@@ -13,6 +13,7 @@ import { atSea } from '../sim/road';
 import { canFish, canGather } from '../sim/gathering';
 import { thinWord, thinness, type Larder } from '../sim/abundance';
 import { canHoldBlot } from '../sim/blot';
+import { KEPT_FOR, canKeepHall, feastCost, sinceKept } from '../sim/hall';
 import { SAIL_ON_REASON, reckoningDue, sailOnBlocker } from '../sim/landnam';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
@@ -142,6 +143,28 @@ export function deedsFor(
         + 'swear something do it where the hall can hear.',
       tone: 'weighty',
       run: () => dispatch({ type: 'HOLD_BLOT' }),
+    });
+  }
+
+  // KEEPING THE HALL. The other half of the blót's argument: a hall is worth
+  // what it is worth because somebody keeps it, and keeping it is a thing the
+  // player does rather than a tax that happens to them. Only offered when
+  // there is something to keep and food to keep it with.
+  if (canKeepHall(state)) {
+    const due = sinceKept(state) > KEPT_FOR;
+    deeds.push({
+      id: 'feast',
+      label: 'Hold a feast',
+      blurb: due
+        ? `The hall has gone quiet. ${feastCost(state)} of food would fill it again.`
+        : `${feastCost(state)} of food, and the hall stays glad for a season.`,
+      // Gold, like the blót above it, and for the same reason: this is a
+      // rite the hall holds, not a chore off a list. What changes when it
+      // falls due is the blurb, not the styling — the tone marks WHAT a deed
+      // is, and a feast does not become a different kind of thing for being
+      // late.
+      tone: 'weighty',
+      run: () => dispatch({ type: 'KEEP_HALL' }),
     });
   }
 

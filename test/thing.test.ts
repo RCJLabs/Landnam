@@ -14,6 +14,7 @@
 //   4. It is reachable: a band that does the work gets there.
 
 import { describe, it, expect } from 'vitest';
+import { KEPT_FOR, canKeepHall, keepHall, sinceKept } from '../src/sim/hall';
 import { settled as settleSomewhere } from './fixtures/settle';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -568,6 +569,14 @@ describe('THE BAR — it is reachable by doing the work', () => {
         // is strictly HARDER than what was measured before — the band must
         // now survive its autumns as well as build its hall.
         state = holdTheGround(state);
+        // KEEPING THE HALL IS PART OF THE WORK NOW (9.12a). Same argument as
+        // the raid above: the bar is "a band that does the work gets there",
+        // and since a steading's heart is paid only while the hall is kept, a
+        // band that never holds a feast is not doing the work — it is a
+        // harness written before the verb existed. Without this the bar read
+        // 3 of 4. The food is pinned at 300 above, so this is never a question
+        // of affording it; it is a question of remembering.
+        if (canKeepHall(state) && sinceKept(state) > KEPT_FOR) keepHall(state);
         if (canCallThing(state)) break;
       }
       if (canCallThing(state)) reached += 1;

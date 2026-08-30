@@ -31,6 +31,13 @@ import { effectsOn } from './calendar';
 import { effectiveStat, living, SWORN_MAX } from './people';
 import { homeCrew } from './expedition';
 import { chronicle } from './saga';
+import {
+  HEARTH_FREE,
+  KEPT_FOR,
+  NEGLECTED_AFTER,
+  heartPaid,
+  sinceKept,
+} from './hall';
 import { bonus, learn } from './lore';
 import type { LoreId } from '../data/lore';
 
@@ -209,11 +216,66 @@ export function foodKeeping(state: GameState): number {
   return standing(home).reduce((n, b) => n * (b.foodKeep ?? 1), 1);
 }
 
+/** The heart everything standing WOULD give, before the hall is asked whether it has been kept. */
+export function heartRaised(state: GameState): number {
+  const home = state.settlement;
+  if (!home) return 0;
+  return standing(home).reduce((n, b) => n + (b.heart ?? 0), 0);
+}
+
 /** Standing daily heart from the buildings that give it. */
 export function heartFromBuildings(state: GameState): number {
   const home = state.settlement;
   if (!home) return 0;
-  return standing(home).reduce((n, b) => n + (b.heart ?? 0), 0);
+  // A HALL PAYS WHILE IT IS KEPT, not for having been built. This used to
+  // return the raised total whole, every day, for ever, and that annuity is
+  // what made a jarldom unkillable — see sim/hall.ts for the measurement. The
+  // first point is still free, so a young band with a longhouse and nothing
+  // else is exactly where it was.
+  return heartPaid(state, heartRaised(state));
+}
+
+/**
+ * What the hall is paying, in words, for the colony panel to say out loud.
+ *
+ * Here rather than in the renderer because it is arithmetic and a choice of
+ * wording, both of which can be got wrong and neither of which a screenshot
+ * would catch. It sits beside `heartFromBuildings` so the panel and the sim
+ * cannot come to different conclusions about the same hall.
+ *
+ * `null` when there is nothing to say: no steading, or nothing standing worth
+ * more than the free point, in which case the rule cannot cost the band
+ * anything and a line about it would only be noise on a young band's screen.
+ */
+export interface HearthMark {
+  /** The state of the hall, in the chronicle's voice. */
+  head: string;
+  /** Days since the last feast. */
+  since: number;
+  /** Heart a day being lost to neglect. Zero while the hall is kept. */
+  short: number;
+  /** The right-hand column: the shortfall, or what is being paid. */
+  gap: string;
+  /** Whether the feast is overdue — what colours the mark. */
+  due: boolean;
+}
+
+export function hearthMark(state: GameState): HearthMark | null {
+  const raised = heartRaised(state);
+  if (!state.settlement || raised <= HEARTH_FREE) return null;
+
+  const since = sinceKept(state);
+  const short = Math.round((raised - heartPaid(state, raised)) * 10) / 10;
+  const cold = since >= NEGLECTED_AFTER;
+  const due = since > KEPT_FOR;
+
+  return {
+    head: cold ? 'The hall is cold' : due ? 'The hall has gone quiet' : 'The hall is glad',
+    since,
+    short,
+    gap: short > 0 ? `${short} off every heart` : `${raised} to every heart`,
+    due,
+  };
 }
 
 // --- The build queue ---

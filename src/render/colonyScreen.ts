@@ -16,6 +16,7 @@ import {
   renderCrew,
   renderNeeds,
   renderRoom,
+  renderHearth,
   renderRations,
 } from './colonyUi';
 import {
@@ -73,6 +74,7 @@ export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
     hintSlot.replaceChildren(
       renderNeeds(state),
       renderRoom(state),
+      renderHearth(state),
       renderRations(state, colonyDispatch),
       renderBuilds(state, colonyDispatch),
     );

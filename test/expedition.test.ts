@@ -7,6 +7,7 @@
 import { settled as settleSomewhere } from './fixtures/settle';
 import { goHome, walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
+import { KEPT_FOR, canKeepHall, keepHall, sinceKept } from '../src/sim/hall';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -251,6 +252,14 @@ describe('sending parties out beats never leaving', () => {
           state.party.stop = step;
         }
       }
+      // KEEPING THE HALL, because a band that does the work keeps it (9.12a).
+      // Without this line the arms read never 16, trading 5, emptied 10 — the
+      // wheel looking like a trap, and the five-out arm beating the two-out
+      // arm, which is incoherent. It was not the wheel: it was a harness
+      // written before the verb existed, measuring a player who never noticed
+      // the rule. Holding the feast puts trading back to 13 and the ordering
+      // back the right way round, with every threshold below untouched.
+      if (canKeepHall(state) && sinceKept(state) > KEPT_FOR) keepHall(state);
       passDay(state);
     }
     return {

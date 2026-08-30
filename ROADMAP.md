@@ -46,6 +46,12 @@
 > than one author are one file now, and the children of the household stopped
 > keeping a wardrobe of their own. **THE ART QUEUE IS DONE.**
 >
+> **CURRENT MILESTONE (from 2026-08-30): Phase 9 — what a saga actually
+> feels like to play**, below. 9.6 (a bar that looks) and 9.12 (what a run's
+> shape actually is) are done; **9.12a — the hall must be kept — is done
+> too**, and it is the one that gave the game a third act. Next by weight:
+> 9.13, 9.14 and 9.15, the three that are about the moment-to-moment turn.
+>
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
 > build. Item 1 is DECIDED (C++), item 5 (parity CI) is BUILT on both sides,
@@ -4159,6 +4165,93 @@ nice. Four groups, in the shape they were proposed and chosen from.
   out of 120 and `hard` printed 360 — a number that only looks wrong if you
   add the row up.
 
+- [x] **9.12a The hall must be kept** — 9.12's answer, built 2026-08-30.
+  **DECIDED by Evan: the upkeep is a thing you DO, not a thing you spend** —
+  a deed each season that can be forgotten, the same shape as the blót, and
+  for the same reason: a rite you choose to hold is better than one that
+  happens to you.
+
+  A steading's heart is no longer paid for having been built. It is paid
+  while the hall is **kept** — a feast, one food a mouth, holding the hall
+  glad for a season (`KEPT_FOR = 24`), then fading across the season after
+  that (`NEGLECTED_AFTER = 48`) rather than falling off a cliff, because a
+  player one day late should not lose a jarldom for it. `src/sim/hall.ts`
+  owns the rule; `heartFromBuildings` asks it.
+
+  **The first year is protected by construction, not by a special case.**
+  `HEARTH_FREE = 1`: the first point of heart never needs earning, so a band
+  with a longhouse and nothing else is exactly where it was, and a jarl with
+  eight has seven riding on the feast. Nothing has to know how old a
+  steading is.
+
+  **The first-year guards held.** This was the whole condition on the item:
+
+  | | before | after |
+  |---|---|---|
+  | reached the first winter | 78% | 78% |
+  | saw spring | 52% | 53% |
+  | A Fair Country, spring | 83% | 83% |
+  | As It Lies, spring | 56% | 55% |
+  | A Hard Country, spring | 29% | 27% |
+
+  **And the third act now exists.** Past the third year, over 120 sagas an
+  arm:
+
+  | | before | after |
+  |---|---|---|
+  | even | 30 got there, **25 ruling** | 20 got there, **8 ruling** (starved 8, despair 3) |
+  | fair | 42 got there, **36 ruling** | 30 got there, **12 ruling** (starved 15) |
+  | hard | 11 got there, **11 ruling — every one** | 7 got there, **5 ruling** |
+
+  **The cost, stated rather than buried: the SECOND year got harder too**
+  — 22 deaths to 32 on even, and the average run fell from 175 days to 138
+  (fair 243 → 203). That is the mechanism working where the diagnosis said
+  morale kills, and it is more than the item asked for. The lever if it
+  should come back is `HEARTH_FREE`, which is a flat floor and would blunt
+  the third act by the same amount.
+
+  **TWO THINGS THE MEASUREMENT CAUGHT, and both were the instrument.**
+
+  1. **At two food a mouth it was a poverty trap, not a choice.** The bot
+     never once afforded a feast, every band past its third year read a
+     heart of ZERO, and ruling fell from 25 of 30 to 8 of 23 with the deaths
+     coming up `starved` — no feast, no heart, hands walk out, less labour,
+     less food, no feast. Cut to one a mouth, which is about a fortnight of
+     one person's eating for the whole hall. The failure this rule is for is
+     FORGETTING; a feast a band can never afford is a fine.
+  2. **The bot's own branch was dead.** It was written into the long-game
+     block near the bottom of `step()`, which `step` never reaches — every
+     branch above it returns. Zero feasts held, measured as if it were the
+     rule's fault.
+
+  **And the probe that decides it was itself wrong the first time.**
+  "Of all overdue days, how many had no food?" read **64%** and meant
+  nothing: a band with food feasts at once and never lands in that sample,
+  so every day in it is a day somebody was short *by construction*. Sampled
+  instead on the one moment every band reaches — **the day the feast falls
+  due** — the larder can meet it 85% of the time on even and 84% on fair,
+  and of the rest most had nothing at all, which is a starving band and
+  should miss its feast. That is `PROBE: can a band actually afford to keep
+  its hall`, barred at a third, and it is watched failing at two a mouth
+  (fair goes to 42%).
+
+  **AND TWO MORE HARNESSES WERE WRITTEN BEFORE THE VERB EXISTED.** Neither
+  failure was the game. `expedition.test.ts` read never 16, trading 5,
+  emptied 10 — the wheel looking like a trap, with the FIVE-out arm beating
+  the two-out arm, which is incoherent; holding the feast puts trading back
+  to 13 and the ordering the right way round. `thing.test.ts` read 3 of 4,
+  and it pins food at 300 a day, so affordability was never the question —
+  it simply never held a feast. Both now hold one, with every threshold in
+  both files untouched: a band that "does the work" keeps its hall.
+
+  **Done when:** ✅ the heart of a steading is paid only while it is kept
+  · ✅ keeping it is a deed the player takes, with the cost on its face
+  · ✅ the panel says what a cold hall is costing, in the sim where the
+  wording can be held to account (`hearthMark`) · ✅ the first winter and
+  all three hardship arms unmoved · ✅ a jarldom can end · ✅ old saves are
+  credited with the day they load on rather than punished (migration 56,
+  `SAVE_VERSION 57`).
+
 ### The play, moment to moment
 
 - [ ] **9.13 The turn that ends itself** — once a fighter has acted the only
@@ -4180,6 +4273,22 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The hall must be kept (9.12a)** — A steading's heart used
+  to be paid for having been built: +8 a day for ever, against a lost battle
+  costing −15, which is why nothing on the coast could kill a band three
+  years old. It is now paid only while the hall is KEPT — a feast, one food
+  a mouth, good for a season and fading across the next. The first point is
+  free for ever, so a band with a longhouse and nothing else is untouched
+  and the first winter is unmoved (78% reached, 53% saw spring; the three
+  hardship arms 83/55/27%). Past the third year, ruling fell from 25 of 30
+  to 8 of 20 on even and from 11 of 11 to 5 of 7 on hard: a jarldom can end.
+  Keeping it is a deed with the cost on its face, and the colony panel now
+  says what a cold hall is costing — the crowding mark's argument, that a
+  penalty the player cannot see is bad luck with a bill attached. Two false
+  readings on the way: the bot's feast branch sat below a return and never
+  fired, and the probe that judged affordability sampled only the days a
+  band was already short.
 
 - **2026-08-29 — A bar that looks, and what a run's shape actually is
   (9.6 and 9.12)** — Two halves of the same lesson: an instrument that cannot

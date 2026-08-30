@@ -62,13 +62,14 @@ import { abandonSteading, canAbandon } from '../src/sim/retreat';
 import { BAND_BASE, foodPerDay, firewoodPerNight, passDay } from '../src/sim/upkeep';
 import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
 import { wordOf } from '../src/sim/word';
+import { KEPT_FOR, NEGLECTED_AFTER, canKeepHall, feastCost, sinceKept } from '../src/sim/hall';
 import { OVER_ROOF, handsLeave, roomLeft, SETTLED_IN, takeIn, willAdmit } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { MAX_RAIDERS, MAX_RAIDERS_FAMED, fighterPerson, raiderCap } from '../src/sim/battle';
 import { RAID_CHANCE_MAX, SACK_TAKES, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
-import { capacity, crowding } from '../src/sim/colony';
+import { capacity, crowding, heartRaised } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
 import { isWarbandTurn } from '../src/sim/battle';
@@ -661,6 +662,26 @@ function step(state: GameState): Action {
     return state.event.outcome ? { type:'DISMISS_EVENT' } : { type:'CHOOSE', index:0 };
   }
   if (state.aftermath) return { type:'DISMISS_AFTERMATH' };
+
+  // KEEP THE HALL. A hall pays its heart while it is kept and fades when it
+  // is not (9.12, sim/hall.ts), so a bot that never feasts measures a player
+  // who never noticed the rule — the worst case, reported as the ordinary
+  // one.
+  //
+  // UP HERE, and that is the whole of why it works. It was first written
+  // down in the long-game block near the bottom of this function, which
+  // `step` never reaches: every branch above it returns, so the bot held
+  // exactly zero feasts and every band past its third year read a heart of
+  // ZERO. It costs one action a season; a player does it the day it falls
+  // due and gets on with the year.
+  if (
+    state.settlement
+    && sinceKept(state) > KEPT_FOR
+    && canKeepHall(state)
+    && state.party.food > feastCost(state) * 2
+  ) {
+    return { type: 'KEEP_HALL' };
+  }
   if (state.battle) {
     if (state.battle.outcome) return { type:'B_LEAVE' };
     if (!isWarbandTurn(state)) return { type:'B_END_TURN' };
@@ -3287,6 +3308,77 @@ describe('the long game', () => {
     // because it is worth seeing, and not barred because this sample cannot
     // carry a bar.
   });
+});
+
+
+describe('PROBE: can a band actually afford to keep its hall', () => {
+  /**
+   * The question 9.12a has to answer about itself: is this a rule you FORGET,
+   * or a rule you cannot afford? A fine on morale compounds — no feast, no
+   * heart, hands walk out, less labour, less food, no feast — and the first
+   * cut of this, at two food a mouth, built exactly that spiral.
+   *
+   * MEASURED ON THE DAY IT FALLS DUE, and that is not a detail. The obvious
+   * reading — "of all overdue days, how many had no food?" — cannot answer
+   * anything, because a band with food feasts at once and never lands in the
+   * sample. Every day in it is therefore a day somebody was short, and it
+   * duly read 64% with no bearing on whether the rule is fair. The day the
+   * season turns is the one moment every band reaches, rich or poor.
+   */
+  it('measures whether the larder can meet the feast on the day it falls due',
+    { timeout: 900_000 }, () => {
+      const SEEDS = 40;
+      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+        let due = 0;        // the day the feast fell due, sampled once each
+        let couldNot = 0;   // ... and the larder could not meet it
+        let bare = 0;       // ... of those, the band had nothing at all
+        let cold = 0;       // days the hall paid nothing above the free point
+        let days = 0;       // days with a hall worth keeping at all
+        let feasts = 0;
+        let sagas = 0;
+        for (let s = 0; s < SEEDS; s += 1) {
+          let held = 0;
+          let counted = false;
+          run(`curve-${s}`, 500, (before, after) => {
+            if (before.settlement?.kept !== after.settlement?.kept
+              && after.settlement?.kept !== undefined) held += 1;
+            const home = after.settlement;
+            if (!home || after.end) return;
+            if (heartRaised(after) <= 1) return;
+            counted = true;
+            days += 1;
+            const since = sinceKept(after);
+            if (since >= NEGLECTED_AFTER) cold += 1;
+            // The turn of the season, taken once. Not `canKeepHall`, which
+            // also refuses mid-battle and mid-card: the question is the
+            // LARDER and nothing else.
+            if (since !== KEPT_FOR + 1) return;
+            due += 1;
+            if (after.party.food < feastCost(after)) {
+              couldNot += 1;
+              if (after.party.food <= 0) bare += 1;
+            }
+          }, TERMS);
+          feasts += held;
+          if (counted) sagas += 1;
+        }
+        const share = due > 0 ? couldNot / due : 0;
+        // eslint-disable-next-line no-console
+        console.log(
+          `keeping the hall [${TERMS}] over ${SEEDS} sagas — ${sagas} ever had a hall worth ` +
+          `keeping, ${feasts} feasts held across ${days} such days:\n` +
+          `  fell due ${due} times; the larder could not meet it ${couldNot} ` +
+          `(${(share * 100).toFixed(0)}%), of which ${bare} had nothing at all\n` +
+          `  gone properly cold ${cold} days (${days > 0 ? ((cold / days) * 100).toFixed(0) : 'n/a'}%)`,
+        );
+        // THE BAR: on the day it falls due, a band should usually be able to
+        // pay. A rule you cannot meet is a fine, and a fine on morale is the
+        // spiral. Set at a third rather than at nothing, because a band that
+        // is genuinely starving SHOULD miss its feast — that is winter, and
+        // it is the game.
+        if (due > 0) expect(share).toBeLessThan(1 / 3);
+      }
+    });
 });
 
 describe('the raid gauntlet', () => {

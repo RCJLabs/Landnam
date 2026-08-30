@@ -18,6 +18,7 @@ import { strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
 import { callTheBlot } from './blot';
+import { feastLine, keepHall } from './hall';
 import { layDownSaga, sailOn } from './landnam';
 import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
@@ -32,6 +33,7 @@ export type TravelAction =
   | { type: 'WALK'; to: number }
   | { type: 'CAMP' }
   | { type: 'HOLD_BLOT' }
+  | { type: 'KEEP_HALL' }
   | { type: 'SAIL_ON' }
   | { type: 'LAY_DOWN_SAGA' }
   | { type: 'FORAGE' }
@@ -134,6 +136,15 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       // it does is put the card on the table, and the card is where the
       // choosing happens.
       if (!callTheBlot(state)) return prev;
+      return state;
+    }
+
+    case 'KEEP_HALL': {
+      // Spends no day of its own, like the blót: the feast is held in the
+      // middle of one. What it spends is food, and what it buys is that the
+      // hall goes on being worth something — see sim/hall.ts.
+      if (!keepHall(state)) return prev;
+      chronicle(state, feastLine(state), 'good');
       return state;
     }
 

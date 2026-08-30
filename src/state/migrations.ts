@@ -608,6 +608,26 @@ export const MIGRATIONS: Record<number, Migration> = {
     };
   },
 
+  /**
+   * 9.12: the hall must be kept.
+   *
+   * `Settlement.kept` is the day a feast was last held in the hall. An
+   * existing save has never held one, and reading that as "never" would
+   * strip a loaded jarldom of seven points of heart a day the moment it
+   * opened — a punishment for having saved before the rule existed. So it is
+   * credited with the day it is loaded on, and its first feast falls due a
+   * season later like everybody else's.
+   */
+  56: (save) => {
+    const home = save['settlement'] as Record<string, unknown> | undefined;
+    const day = typeof save['day'] === 'number' ? save['day'] : 1;
+    return {
+      ...save,
+      version: 57,
+      ...(home ? { settlement: { ...home, kept: day } } : {}),
+    };
+  },
+
 };
 
 export interface MigrationResult {

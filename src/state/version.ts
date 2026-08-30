@@ -178,7 +178,13 @@
 //            its own seed: the hall is re-sited on the landing stretch, and
 //            the places, the neighbours and the rival are re-derived. What it
 //            loses is where everything was, because that ground is gone.
-export const SAVE_VERSION = 56;
+// v57 (9.12): Settlement gained `kept` — the day the hall last held a feast.
+//             A hall's heart is paid while it is kept and fades when it is
+//             not, which is the third act; see sim/hall.ts. An old save is
+//             credited with having been kept on the day it is loaded, so
+//             nobody's jarldom collapses because they saved before this
+//             existed.
+export const SAVE_VERSION = 57;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

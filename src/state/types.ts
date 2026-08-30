@@ -509,6 +509,12 @@ export interface Settlement {
   /** Builder-days banked against the head of the queue. */
   works: number;
   /**
+   * The day the hall was last kept — a feast held in it. Undefined means
+   * never, and reads as the founding day. See sim/hall.ts: a steading's
+   * heart is paid while it is kept and fades when it is not.
+   */
+  kept?: number;
+  /**
    * Everyone born here.
    *
    * NOT `Person`s, and that is the load-bearing decision. A Person is
