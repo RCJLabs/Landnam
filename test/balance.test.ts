@@ -67,7 +67,7 @@ import { OVER_ROOF, handsLeave, roomLeft, SETTLED_IN, takeIn, willAdmit } from '
 import { migrate } from '../src/state/migrations';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { MAX_RAIDERS, MAX_RAIDERS_FAMED, fighterPerson, raiderCap } from '../src/sim/battle';
-import { RAID_CHANCE_MAX, SACK_TAKES, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
+import { RAID_CHANCE_MAX, SACK_TAKES, autumnChance, autumnRaidDay, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
 import { capacity, crowding, heartRaised, standsFor } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
@@ -3439,6 +3439,140 @@ describe('PROBE: does the wall ever actually protect the hall', () => {
       );
     }
   });
+});
+
+describe('PROBE: where a raid actually costs a band', () => {
+  /**
+   * WHICH LEVER, before building one. 6.5's goal is that fighting makes the
+   * WINTER worse rather than ending runs itself, and 6.5b established that
+   * which building burns is not it. There are three candidates left — how
+   * often a raid comes, how often it is lost, and what losing one takes —
+   * and they want opposite work, so guessing is not allowed.
+   *
+   * This is the diagnostic that picks between them, and it is deliberately
+   * NOT a sweep: it asks whether a band that loses a raid before its first
+   * winter dies more than one that holds. If it does, the sack already bites
+   * and the lever is the hold rate. If it does not, the sack is too cheap and
+   * the lever is what it takes.
+   *
+   * WHAT IT ANSWERED, 2026-08-30, and the answer was none of the three.
+   * Losing a raid is one of the sharpest things in the game — 92% of bands
+   * that held saw spring against 63% that did not, with half the larder at
+   * the frost — so severity is not loose. But swept, neither of the other two
+   * moves the total at all:
+   *
+   *   AUTUMN_WORTH_K  0.155 -> 0.80   roll 15% -> 57%, spring 74% -> 73%
+   *   RAID_PER_POINT  0.5   -> 1.0    spring 74% -> 76% (noise)
+   *
+   * Quadrupling how often raiders come costs ONE point of first-winter
+   * survival, and doubling how many they bring costs nothing. The reason is
+   * the same for both, and it is structural rather than a tuning miss: every
+   * term in the raid system is proportional to what a band HAS. `worth` is
+   * roofs and stores, so a first-year band is rarely worth coming for;
+   * `raidDifficulty` is roofs and stores, so the multiplier has almost
+   * nothing to multiply; and `SACK_SHARE` takes two fifths of a larder that
+   * holds 23. Raiders come for plunder, and in year one there is none.
+   *
+   * So autumn cannot be made to spoil the FIRST winter from inside this
+   * system, and that is a design fact worth keeping rather than a bug. What
+   * the sweep does buy cheaply is REACH: at K = 0.5 the never-raided share
+   * falls from 58% to 43% for one point of spring, so more bands get an
+   * autumn that is about fighting. Making it spoil year one needs a raider
+   * who wants something other than goods — the land, or people — which is
+   * new design and not a constant.
+   *
+   * THE CONFOUND, STATED. Raiders are drawn against `worth`, so a band that
+   * gets raided is a RICHER band, and richer bands see spring more often.
+   * That biases this AGAINST finding an effect — so an effect that shows up
+   * here is real and understated, and a null result is genuinely null.
+   * Reported as three arms rather than two so the confound is visible: if
+   * "raided and held" already beats "never raided", the bias is doing the
+   * talking and the arms cannot be compared naively.
+   */
+  it('splits the first winter by what autumn did, and says which lever is loose',
+    { timeout: 900_000 }, () => {
+      // 200 seeds to day 80, not 300 to day 500. The question is entirely
+      // about the FIRST winter, so every day after the thaw is spent
+      // measuring nothing — and at 500 the probe was killed for memory.
+      const SEEDS = 200;
+      const LAST = 80;
+      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+        const arms = {
+          none: { n: 0, spring: 0, food: 0 },
+          held: { n: 0, spring: 0, food: 0 },
+          lost: { n: 0, spring: 0, food: 0 },
+        };
+        const chances: number[] = [];
+        let settledN = 0;
+        let springN = 0;
+        let sacks = 0;
+        for (let s = 0; s < SEEDS; s += 1) {
+          let came = 0;
+          let held = 0;
+          let atWinter = 0;
+          let chance = -1;   // the autumn roll on the day it was decided
+          const state = run(`curve-${s}`, LAST, (before, after) => {
+            // Only what autumn did, so the arms are about the FIRST winter
+            // and not about a raid three years later.
+            if (after.day <= 48) {
+              if (after.tally.raids > before.tally.raids) came += 1;
+              if (after.tally.raidsHeld > before.tally.raidsHeld) held += 1;
+            }
+            // WHY it comes or does not: the chance itself, read on the day
+            // this autumn's raid would land. That is the number the frequency
+            // is made of, and without it "58% were never raided" has no cause
+            // attached to it.
+            //
+            // GATED ON THE FIRST AUTUMN — days 25 to 48 — and that gate is
+            // the whole reading. `autumnRaidDay` is derived from whatever
+            // season it is asked in, so without it this sampled the SUMMER
+            // roll of a band that had just come off the knarr, and duly
+            // reported a median of 0% with a confident wrong cause attached.
+            if (after.settlement && after.day >= 25 && after.day <= 48
+              && after.day === autumnRaidDay(after) && chance < 0) {
+              chance = autumnChance(after);
+            }
+            // The larder as the frost comes down, which is what winter eats.
+            if (before.day < 49 && after.day >= 49) atWinter = after.party.food;
+          }, TERMS);
+          // A band that never settled never had a steading to sack, and
+          // belongs in none of these arms.
+          if (!state.settlement) continue;
+          const arm = came === 0 ? 'none' : held >= came ? 'held' : 'lost';
+          if (arm === 'lost') sacks += 1;
+          if (chance >= 0) chances.push(chance);
+          const a = arms[arm];
+          a.n += 1;
+          a.food += atWinter;
+          settledN += 1;
+          if (state.day >= 73 || !state.end) springN += 1;
+          // Saw spring: alive past the thaw, which is day 73.
+          if (state.day >= 73 || !state.end) a.spring += 1;
+        }
+        const pct = (a: { n: number; spring: number }) =>
+          (a.n > 0 ? `${((a.spring / a.n) * 100).toFixed(0)}%` : 'n/a');
+        const mid = (a: { n: number; food: number }) =>
+          (a.n > 0 ? (a.food / a.n).toFixed(0) : 'n/a');
+        const sorted = [...chances].sort((a, b) => a - b);
+        const median = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)]! : 0;
+        // eslint-disable-next-line no-console
+        console.log(
+          `what autumn did [${TERMS}] over ${SEEDS} seeds — ${sacks} bands lost a raid ` +
+          `before their first winter:\n` +
+          `  never raided   ${String(arms.none.n).padStart(3)} bands, saw spring ${pct(arms.none)}, ` +
+          `${mid(arms.none)} food at the frost\n` +
+          `  raided, held   ${String(arms.held.n).padStart(3)} bands, saw spring ${pct(arms.held)}, ` +
+          `${mid(arms.held)} food at the frost\n` +
+          `  raided, lost   ${String(arms.lost.n).padStart(3)} bands, saw spring ${pct(arms.lost)}, ` +
+          `${mid(arms.lost)} food at the frost\n` +
+          `  the first autumn's roll, where a steading stood for it: ` +
+          `median ${(median * 100).toFixed(0)}% over ${chances.length} readings\n` +
+          `  ALL SETTLED: ${settledN} bands, saw spring ` +
+          `${settledN > 0 ? ((springN / settledN) * 100).toFixed(0) : 'n/a'}%, ` +
+          `${((arms.lost.n / Math.max(1, settledN)) * 100).toFixed(0)}% lost a raid`,
+        );
+      }
+    });
 });
 
 describe('the raid gauntlet', () => {

@@ -4027,6 +4027,71 @@ because by year two it has more labour than uses for it.
   who loses their endgame to a fire and never learns the wall was the answer
   is the crime the crowding and hearth marks exist to fix.
 
+- [x] **6.5c Which lever makes autumn bite — measured, and the answer is
+  none of them.** Asked 2026-08-30 after 6.5b turned out to be decoration.
+  `PROBE: where a raid actually costs a band` in test/balance.test.ts.
+
+  **The sack is not too cheap. It is one of the sharpest things in the game.**
+  Split by what autumn did, 200 seeds, first winter only:
+
+  | | bands | saw spring | food at the frost |
+  |---|---|---|---|
+  | never raided | 84 | 69% | 35 |
+  | raided, **held** | 38 | **92%** | 48 |
+  | raided, **lost** | 24 | **63%** | 23 |
+
+  Held against lost is the honest comparison — both arms were judged worth
+  raiding, so they are matched on the thing that confounds this. Losing costs
+  **29 points of first-winter survival and half the larder**. The confound is
+  visible in the table and worth keeping there: "raided, held" BEATS "never
+  raided", because raiders are drawn against `worth` and a raided band is a
+  richer band. Anyone comparing "lost" to "never" naively would read a
+  6-point effect instead of a 29-point one.
+
+  **But the other two levers are inert.** Swept on `even`:
+
+  | lever | from → to | what it did | overall spring |
+  |---|---|---|---|
+  | `AUTUMN_WORTH_K` | 0.155 → 0.80 | roll 15% → 57%, never-raided 58% → 36% | **74% → 73%** |
+  | `RAID_PER_POINT` | 0.5 → 1.0 | held 38 → 37, lost 24 → 25 | **74% → 76%** |
+
+  Quadrupling how often raiders come costs ONE point. Doubling how many they
+  bring costs nothing — it went up, which is noise.
+
+  **AND THE REASON IS THE SAME FOR BOTH, AND IT IS STRUCTURAL.** Every term in
+  the raid system is proportional to what a band HAS. `worth` is roofs and
+  stores, so a first-year band is rarely worth coming for. `raidDifficulty` is
+  roofs and stores, so `RAID_PER_POINT` has almost nothing to multiply. And
+  `SACK_SHARE` takes two fifths of a larder holding 23. **Raiders come for
+  plunder, and in the first year there is none.** Raising the frequency does
+  not raise the pressure because the extra raids land on bands too poor to be
+  hurt, and the never-raided pool it drains is the poorest bands, who were
+  dying anyway — the composition moves and the total does not.
+
+  **So 6.5's goal cannot be met from inside this system**, and that is worth
+  recording as a design fact rather than being tuned at again. The first
+  winter is the band against the land; fighting becomes the antagonist once
+  there is something to take, which the held/lost split says it already does.
+
+  **What IS cheap, if the goal is reach rather than pressure:** at
+  `AUTUMN_WORTH_K = 0.5` the never-raided share falls from 58% to 43% for one
+  point of spring — more bands get an autumn that is about fighting, at
+  nearly no cost to the curve. Not taken, because it is a change to how the
+  game FEELS and that is Evan's call, not a tuning fix.
+
+  **And making it spoil year one needs a raider who wants something other
+  than goods** — the land you are squatting on, or people rather than
+  property. That is new design, not a constant.
+
+  **The mistake this closes.** 6.5b was chosen on "1 of 4 reach the endgame
+  without a palisade, 4 of 4 with one", which is true of test/thing.test.ts —
+  a fixture that forces its build list — and misleading about the game, where
+  126 of 128 halls were already walled. Two selection-bias readings in one
+  day, the other being the feast-affordability probe that read 64% by
+  sampling only days a band was already short. **A number measured in a
+  fixture is not a number about the game, and a ratio is not a reading until
+  you know what selected its denominator.**
+
 ---
 
 ## Phase 9 — the audit of 2026-08-29
@@ -4319,6 +4384,19 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — Which lever makes autumn bite: none of them (6.5b, 6.5c)** —
+  The mead hall now burns unless a wall stands, which is right and nearly
+  never happens: 126 of 128 halls found by a raid were already behind a wall,
+  because bands raise the cheap early palisade long before the dear late
+  hall. So the question became which lever would actually work, and the sweep
+  says none inside the raid system. Losing a raid is already one of the
+  sharpest things in the game — 92% of bands that held saw spring against 63%
+  that did not — but quadrupling how often raiders come costs one point of
+  survival and doubling how many they bring costs nothing, because every term
+  in the system scales with what a band has and a first-year band has
+  nothing. Raiders come for plunder; in year one there is none. Recorded as a
+  design fact rather than tuned at again.
 
 - **2026-08-30 — The wall is what spares the mead hall (6.5b)** — Evan's
   ruling on the question 6.5 left open. Raiders fire the mead hall of a band
