@@ -24,7 +24,7 @@ import { ghostLine, isGhostRuin } from '../sim/haunt';
 import { yearOf } from '../sim/calendar';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
-import { autumnChance, autumnRaidDay, threatReading } from '../sim/raid';
+import { autumnChance, autumnRaidDay, threatReading, wallWorthLine } from '../sim/raid';
 import { beats, markOf } from '../sim/challenge';
 import { chaseLine } from '../sim/announce';
 import { WINTERS_TO_JARL } from '../data/thing';
@@ -291,7 +291,9 @@ export function renderWatchMark(state: GameState): HTMLElement {
       el('div', { class: 'mark-row short' }, [
         el('span', { class: 'mark-name wide' }, ['Nothing holds them']),
         el('span', { class: 'mark-value' }, ['—']),
-        el('span', { class: 'mark-gap' }, ['no wall, no watch']),
+        // The SIZE of the reason, not just its absence (9.4). All of it is
+        // `wallWorthLine`, beside the measurement it comes from.
+        el('span', { class: 'mark-gap' }, [wallWorthLine()]),
       ]),
     );
   }

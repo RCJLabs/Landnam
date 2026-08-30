@@ -511,3 +511,37 @@ export function wallMark(state: GameState): WallMark | null {
     open: !walled,
   };
 }
+
+/**
+ * What a wall is worth, for the watch panel to say instead of naming itself.
+ *
+ * 9.4, AND THE ITEM'S HEADLINE WAS AN ARTIFACT. It was written on the
+ * palisade being "the rarest of twelve buildings at 13 of 60" — which is
+ * `settlement.built` read at the END of a saga, and a tier that `replaces`
+ * its predecessor CONSUMES it. Every earthworks in that tally is a palisade
+ * that was raised and then buried. Counted as it happens: palisade 38 of 60,
+ * FIFTH of twelve, ahead of the storehouse, the mead hall and the great hall.
+ * The wall is not rare and it does not want a new incentive.
+ *
+ * WHAT SURVIVED THE CORRECTION IS THE TIMING. Measured over 120 seeds: 60
+ * sagas were raided, first on day 70, and a wall stood when it came in only
+ * 25 of them — 42%. Twenty-five more raised one immediately AFTERWARDS,
+ * which is the shape of a lesson learned the hard way.
+ *
+ * So what the panel was missing is not a reason, it is the SIZE of the
+ * reason. It already says "Nothing holds them — no wall, no watch" on
+ * exactly the screen an unwalled band is looking at; it just never said what
+ * a wall would buy. Measured in test/wall.test.ts, six men defending a
+ * steading: 47% of fights held without one, 91% with. Roughly doubles.
+ *
+ * One line of text in a row that already exists, deliberately: the water
+ * mark's first draft cost the 320-wide screen 89px and pushed two blessed
+ * pictures off their marks. This costs nothing.
+ */
+export const WALL_HOLDS_WITHOUT = 47;
+export const WALL_HOLDS_WITH = 91;
+
+export function wallWorthLine(): string {
+  return `no wall, no watch — a wall holds ${WALL_HOLDS_WITH} fights in 100 against `
+    + `${WALL_HOLDS_WITHOUT}`;
+}

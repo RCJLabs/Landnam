@@ -4284,10 +4284,54 @@ nice. Four groups, in the shape they were proposed and chosen from.
   · ✅ the player is told where the water is and what it is worth · ✅ it
   never names water the band has not found · ✅ it costs the 320-wide screen
   nothing.
-- [ ] **9.4 The palisade earns its place** — the largest single swing in the
-  game (six men defending: 47% to 91%; 118 stolen against 547) and the rarest
-  of twelve buildings at `13 of 60`. 6.5 gave it a deadline; it still has no
-  reason the player FEELS before their first raid.
+- [x] **9.4 The palisade earns its place** — **Done 2026-08-30, and HALF THE
+  ITEM WAS AN INSTRUMENT ARTIFACT.**
+
+  The swing is real and current: six men defending a steading hold **47** fights
+  in 100 without a wall and **91** with one, the largest single swing in the
+  game.
+
+  **But "the rarest of twelve buildings at 13 of 60" is not true.** That number
+  is `settlement.built` read at the END of a saga — and a tier that `replaces`
+  its predecessor CONSUMES it, so every earthworks in the tally is a palisade
+  that was raised and then buried. The variable holding it was even named
+  `raised`. Counted as it happens:
+
+  | | standing at the end | ever raised |
+  |---|---|---|
+  | palisade | **14** — last of twelve | **38** — fifth of twelve |
+  | longhouse | 17 | 45 |
+
+  Thirty-eight of sixty bands raise a wall, ahead of the storehouse, the mead
+  hall and the great hall. **It is not rare; it is the most upgraded thing on
+  the coast.** The counter now prints both lists, so the next reader cannot
+  make the same mistake.
+
+  **WHAT SURVIVED THE CORRECTION IS THE TIMING**, and it is a real finding.
+  Over 120 seeds (`PROBE: is the wall up before it is needed`):
+
+  | | ever walled | raided | **wall stood when it came** | walled only after |
+  |---|---|---|---|---|
+  | even | 62 (day 51) | 60 (day 70) | **25 (42%)** | 25 |
+  | fair | 100 (day 51) | 77 (day 81) | **42 (55%)** | 29 |
+
+  About half of raided bands meet their first raid unwalled, and half of those
+  raise one immediately afterwards — the shape of a lesson learned the hard
+  way. Bands that build do it on day 51 against a first raid on day 70, so the
+  ones who start are in time; the gap is the ones who never start.
+
+  **So the panel was not missing a reason, it was missing the SIZE of one.**
+  The watch mark already says "Nothing holds them — no wall, no watch" on
+  exactly the screen an unwalled band is looking at, and never said what a wall
+  would buy. It does now, in the row that already existed — **zero new lines**,
+  because the water mark's first draft cost the 320-wide screen 89px and pushed
+  two blessed pictures off their marks.
+
+  **Done when:** ✅ the headline is checked rather than inherited · ✅ the
+  counter reports raised as well as standing · ✅ the timing question is
+  measured · ✅ the size of the reason is on the screen that needs it, at no
+  cost in height · ✅ every claim watched failing, the threshold pinned to
+  literals rather than to itself.
 - [ ] **9.5 The named foe** — `named foes: 1 came back, 30 put down for good`.
   A recurring villain that recurs once in thirty-one.
 
@@ -4709,6 +4753,19 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The palisade was never rare (9.4)** — The item was written on
+  the palisade being the rarest of twelve buildings at 13 of 60. That is
+  `settlement.built` read at the end of a saga, and a tier that replaces its
+  predecessor consumes it: every earthworks in the tally is a palisade raised
+  and buried. Counted as it happens the palisade is 38 of 60, fifth of twelve,
+  ahead of the storehouse and the mead hall — the most upgraded thing on the
+  coast rather than the rarest. The counter now prints both lists. What
+  survived is the timing: a wall stood when the first raid came in only 42% of
+  raided sagas on even, and half the rest raised one immediately afterwards. So
+  the watch panel now names the size of the reason — 91 fights in 100 held
+  against 47 — in the row that already said "no wall, no watch", at no cost in
+  height.
 
 - **2026-08-30 — The good water, said out loud (9.3)** — The item asked
   whether fishing does not pay or whether nothing tells the player, and it is

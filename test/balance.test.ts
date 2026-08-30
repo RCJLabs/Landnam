@@ -3714,6 +3714,61 @@ describe('PROBE: is there any moment at which walking out is right', () => {
     });
 });
 
+describe('PROBE: is the wall up before it is needed', () => {
+  /**
+   * 9.4, AND THE ITEM'S HEADLINE IS AN ARTIFACT. It was written on "the
+   * rarest of twelve buildings at 13 of 60", which is `settlement.built` read
+   * at the END — and a tier that `replaces` its predecessor CONSUMES it, so
+   * every earthworks in the tally is a palisade that was raised and then
+   * buried. Counted as it happens: palisade 38 of 60, fifth of twelve, ahead
+   * of the storehouse and the mead hall. The wall is not rare.
+   *
+   * What survives of the item is the half about TIMING — "no reason the
+   * player feels before their first raid". That is a real question and this
+   * is the measurement for it: when the first raid lands, was there a wall?
+   *
+   * Reported, not barred. Whether the answer wants a change is a design call,
+   * and this file has shipped enough numbers that got read as verdicts.
+   */
+  it('says whether a wall stood when the first raid came', { timeout: 900_000 }, () => {
+    const SEEDS = 120;
+    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+      let raided = 0;        // sagas that saw a raid at all
+      let walled = 0;        // ... with a wall standing when the first came
+      let everWalled = 0;    // sagas that raised a wall at some point
+      let wallDay = 0;       // the day the wall went up, summed
+      let firstRaidDay = 0;  // the day the first raid came, summed
+      let lateWall = 0;      // raised a wall, but only AFTER the first raid
+      for (let s = 0; s < SEEDS; s += 1) {
+        let wallOn: number | null = null;
+        let firstRaid: number | null = null;
+        run(`curve-${s}`, 400, (before, after) => {
+          if (wallOn === null && standsFor(after, 'palisade')) wallOn = after.day;
+          if (firstRaid === null && after.tally.raids > before.tally.raids) {
+            firstRaid = after.day;
+          }
+        }, TERMS);
+        if (wallOn !== null) { everWalled += 1; wallDay += wallOn; }
+        if (firstRaid === null) continue;
+        raided += 1;
+        firstRaidDay += firstRaid;
+        if (wallOn !== null && wallOn <= firstRaid) walled += 1;
+        else if (wallOn !== null) lateWall += 1;
+      }
+      const pc = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : 'n/a');
+      // eslint-disable-next-line no-console
+      console.log(
+        `the wall and the first raid [${TERMS}] over ${SEEDS} seeds — ` +
+        `${everWalled} ever raised one (day ${everWalled ? Math.round(wallDay / everWalled) : 0} on average):\n` +
+        `  ${raided} sagas were raided, first on day ` +
+        `${raided ? Math.round(firstRaidDay / raided) : 0} on average\n` +
+        `  a wall stood when it came: ${walled} (${pc(walled, raided)}); ` +
+        `raised one only afterwards: ${lateWall}; never: ${raided - walled - lateWall}`,
+      );
+    }
+  });
+});
+
 describe('the raid gauntlet', () => {
   /** A standing steading with the store and walls a raid comes for. */
   function homestead(seed: string): GameState {
@@ -4723,6 +4778,23 @@ describe('every building gets built', () => {
    */
   it('reaches the whole list, including the tier that replaces things', { timeout: 900_000 }, async () => {
     const raised: Record<string, number> = {};
+    /**
+     * EVER RAISED, which is a different number from what is standing, and the
+     * difference is the whole of 9.4.
+     *
+     * `raised` below is `settlement.built` read at the END, and a tier that
+     * `replaces` its predecessor CONSUMES it — so an upgraded palisade
+     * vanishes from the list it was counted in. Read off the standing list
+     * the palisade is the rarest of twelve buildings at 14 of 60, which is
+     * what the audit item was written on. It is not rare. It is the most
+     * UPGRADED thing on the coast: earthworks cannot be raised without one
+     * standing, so every earthworks in the tally is a palisade that was
+     * built and then buried.
+     *
+     * Counted as it happens, so a building that is later replaced still
+     * counts as having been raised.
+     */
+    const everRaised: Record<string, number> = {};
     const late: Record<string, number> = {};
     let sagas = 0;
     let lateSagas = 0;
@@ -4731,7 +4803,12 @@ describe('every building gets built', () => {
 
     for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
       for (let s = 0; s < SEEDS; s += 1) {
-        const state = run(armSeed(arm, s, SEEDS), 400, undefined, terms);
+        const seen = new Set<string>();
+        const state = run(armSeed(arm, s, SEEDS), 400, (before, after) => {
+          const had = new Set(before.settlement?.built ?? []);
+          for (const id of after.settlement?.built ?? []) if (!had.has(id)) seen.add(id);
+        }, terms);
+        for (const id of seen) everRaised[id] = (everRaised[id] ?? 0) + 1;
         sagas += 1;
         const built = state.settlement?.built ?? [];
         for (const id of built) raised[id] = (raised[id] ?? 0) + 1;
@@ -4744,11 +4821,13 @@ describe('every building gets built', () => {
       }
     }
 
-    const never = BUILDINGS.filter((b) => !raised[b.id]).map((b) => b.id);
+    const never = BUILDINGS.filter((b) => !raised[b.id] && !everRaised[b.id]).map((b) => b.id);
     // eslint-disable-next-line no-console
     console.log(
-      `buildings over ${sagas} sagas — ` +
+      `buildings over ${sagas} sagas, STANDING at the end — ` +
         `${Object.entries(raised).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(', ')}\n` +
+        `  EVER RAISED (a tier that replaces one buries it, so these differ) — ` +
+        `${Object.entries(everRaised).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v}`).join(', ')}\n` +
         `  never raised: ${never.join(', ') || 'none'}; of the ${lateSagas} past day 169, ` +
         `avg ${(lateTotal / Math.max(1, lateSagas)).toFixed(1)} standing, ` +
         `greathall ${late['greathall'] ?? 0}, earthworks ${late['earthworks'] ?? 0}`,

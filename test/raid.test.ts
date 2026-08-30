@@ -34,7 +34,16 @@ import { RAID_FIELDS } from '../src/data/raidFields';
 import { MAX_RAIDERS_FAMED } from '../src/sim/battle';
 import { SWORN_MAX } from '../src/sim/people';
 import { makeRng } from '../src/rng';
-import { raidDifficulty, RAID_EARLIEST_DAY, SACK_SHARE, sackSteading, wallMark } from '../src/sim/raid';
+import {
+  RAID_EARLIEST_DAY,
+  SACK_SHARE,
+  WALL_HOLDS_WITH,
+  WALL_HOLDS_WITHOUT,
+  raidDifficulty,
+  sackSteading,
+  wallMark,
+  wallWorthLine,
+} from '../src/sim/raid';
 import { living } from '../src/sim/people';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
@@ -636,5 +645,33 @@ describe('the panel says whether the hall stands open', () => {
       expect(state.settlement!.built.includes('meadhall')).toBe(!open);
       if (open) expect(sack.burned).toBe('meadhall');
     }
+  });
+});
+
+// 9.4: the panel names the size of the reason, not only its absence.
+describe('the watch panel says what a wall is worth', () => {
+  it('names both numbers, so the player can weigh them', () => {
+    const line = wallWorthLine();
+    expect(line).toContain(String(WALL_HOLDS_WITH));
+    expect(line).toContain(String(WALL_HOLDS_WITHOUT));
+    // It still says what it used to say — the row is the one an unwalled
+    // band already sees, and the old words are what made it legible.
+    expect(line).toContain('no wall, no watch');
+  });
+
+  it('keeps the pair the arena actually measured', () => {
+    // Pinned to the literals, not to each other. Written as `WITH > WITHOUT`
+    // this passes at any pair, which is the tautology the party-size claim
+    // shipped with earlier today. These are the numbers in
+    // test/wall.test.ts — six men defending a steading at difficulty 2, 32
+    // fights a cell — and a change has to come here and say why.
+    expect(WALL_HOLDS_WITHOUT).toBe(47);
+    expect(WALL_HOLDS_WITH).toBe(91);
+  });
+
+  it('never sells the wall as worth less than it is', () => {
+    // The failure this guards is a well-meaning softening: the whole point
+    // of the line is that the swing is the largest in the game.
+    expect(WALL_HOLDS_WITH - WALL_HOLDS_WITHOUT).toBeGreaterThanOrEqual(40);
   });
 });
