@@ -4,8 +4,8 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { apply } from '../src/sim/actions';
-import { activeCombatant, fighterPerson, standing, strikeTargets } from '../src/sim/battle';
-import { startBattle } from '../src/sim/battleTurn';
+import { activeCombatant, fighterPerson, isWarbandTurn, standing, strikeTargets } from '../src/sim/battle';
+import { startBattle, turnIsSpent } from '../src/sim/battleTurn';
 import { RANKS } from '../src/sim/ranks';
 import { DEFEND_BONUS, carrying, edge, evasion } from '../src/sim/swing';
 import { canThrowAt, doStrike, throwTargets } from '../src/sim/strike';
@@ -13,6 +13,7 @@ import { isThreatened, threatCount } from '../src/sim/zoc';
 import { FOE_ARCHETYPES } from '../src/data/foes';
 import { PATIENCE_ROUNDS } from '../src/sim/battleAi';
 import { BALANCED_HARDSHIP, HARDSHIPS } from '../src/data/hardship';
+import type { Action } from '../src/sim/actions';
 import type { Combatant, GameState, HardshipId, Injury } from '../src/state/types';
 
 function fight(seed: string, difficulty = 0): GameState {
@@ -576,5 +577,107 @@ describe('fights are winnable and losable on purpose', () => {
 
   it('the whole fight stays reproducible with the new actions', () => {
     expect(encode(played('repro'))).toBe(encode(played('repro')));
+  });
+});
+
+// 9.13: the turn that ends itself. The item rests on one claim — that after a
+// fighter acts, ending the turn is the only legal move — and the claim is
+// made executable here rather than read off the guards, because reading a
+// guard is how you learn what a file SAYS about itself.
+describe('a fighter who has acted has nothing left to decide', () => {
+  /** Every verb the player has, each tried against a fresh fight. */
+  const VERBS: Array<[string, (state: GameState) => Action]> = [
+    ['strike', (s) => ({ type: 'B_STRIKE', targetId: strikeTargets(s)[0]!.personId })],
+    ['throw', (s) => ({ type: 'B_THROW', targetId: throwTargets(s)[0]?.personId ?? '' })],
+    ['shove', (s) => ({ type: 'B_SHOVE', targetId: strikeTargets(s)[0]!.personId })],
+    ['defend', () => ({ type: 'B_DEFEND' })],
+    ['dash', () => ({ type: 'B_DASH', by: -1 })],
+    ['war cry', () => ({ type: 'B_WARCRY' })],
+  ];
+
+  /** Everything else a player could try, to prove NONE of it gets through. */
+  const AFTER = (s: GameState): Action[] => [
+    { type: 'B_STRIKE', targetId: s.battle!.combatants.find((c) => c.side === 'foe')!.personId },
+    { type: 'B_REACH', targetId: s.battle!.combatants.find((c) => c.side === 'foe')!.personId },
+    { type: 'B_THROW', targetId: s.battle!.combatants.find((c) => c.side === 'foe')!.personId },
+    { type: 'B_SHOVE', targetId: s.battle!.combatants.find((c) => c.side === 'foe')!.personId },
+    { type: 'B_DEFEND' },
+    { type: 'B_WARCRY' },
+    { type: 'B_DASH', by: -1 },
+  ];
+
+  for (const [name, verb] of VERBS) {
+    it(`leaves nothing legal after ${name}, so the tap has one outcome`, () => {
+      // Several seeds, because a verb that is never legal on one of them
+      // would make this pass without ever having acted — the premise has to
+      // OCCUR for the claim to mean anything, and that is asserted below.
+      let acted = 0;
+      for (const seed of [`spent-${name}-a`, `spent-${name}-b`, `spent-${name}-c`]) {
+        // The file's own duel fixture, not a fresh field: at the opening of a
+        // real fight the walls are not yet in contact, so strike, shove and
+        // the war cry were never once legal and three of these claims passed
+        // having proved nothing. The `acted` guard below is what caught it.
+        const { state, us, them } = duel(seed);
+        // Each verb needs its own premise to be true, and setting them here
+        // is the point: a claim about "after X" is worth nothing on a board
+        // where X cannot happen.
+        if (name === 'throw') { us.rank = 2; them.rank = 2; }  // range, not contact
+        if (name === 'dash') us.rank = 2;                      // somewhere to go
+        if (!isWarbandTurn(state)) continue;
+        let action: Action;
+        try { action = verb(state); } catch { continue; }
+        const after = apply(state, action);
+        if (after === state) continue;   // the verb was not available here
+        const active = activeCombatant(after.battle!);
+        if (!active?.hasActed) continue; // e.g. a throw with none left
+        acted += 1;
+
+        expect(turnIsSpent(after)).toBe(true);
+        // Nothing else gets through, and `apply` returning the same object is
+        // the sim's own way of saying so.
+        for (const next of AFTER(after)) {
+          expect(apply(after, next)).toBe(after);
+        }
+        // And ending the turn is not a no-op — it is the one thing that works.
+        expect(apply(after, { type: 'B_END_TURN' })).not.toBe(after);
+      }
+      expect(acted, `${name} never actually happened, so this claim proved nothing`)
+        .toBeGreaterThan(0);
+    });
+  }
+
+  it('says a fighter who has NOT acted still has something to decide', () => {
+    // The other half, and the reason the End turn button stays: declining to
+    // act is a real choice, so the turn must not end itself before the blow.
+    const state = fight('unspent');
+    expect(isWarbandTurn(state)).toBe(true);
+    expect(turnIsSpent(state)).toBe(false);
+  });
+
+  it('counts a broken man as spent, because every verb refuses him', () => {
+    // He is not skipped — activeCombatant passes over the down and the fled
+    // and not the broken — so without this he would be handed a turn in which
+    // nothing at all is legal and asked to press a button about it.
+    const { state, us, them } = duel('broken-spent');
+    us.broken = true;
+    expect(isWarbandTurn(state)).toBe(true);
+    expect(us.hasActed).toBe(false);
+    expect(turnIsSpent(state)).toBe(true);
+    // And the premise: nothing he could try gets through.
+    for (const next of [
+      { type: 'B_STRIKE' as const, targetId: them.personId },
+      { type: 'B_SHOVE' as const, targetId: them.personId },
+      { type: 'B_DEFEND' as const },
+      { type: 'B_DASH' as const, by: -1 as const },
+      { type: 'B_WARCRY' as const },
+    ]) {
+      expect(apply(state, next)).toBe(state);
+    }
+  });
+
+  it('says nothing is spent once the field is settled', () => {
+    const state = fight('settled-spent');
+    state.battle!.outcome = 'won';
+    expect(turnIsSpent(state)).toBe(false);
   });
 });

@@ -8,6 +8,7 @@ import {
   activeCombatant,
   beginBattle,
   effective,
+  isWarbandTurn,
   refreshTurn,
   standing,
 } from './battle';
@@ -172,6 +173,45 @@ export function startRaid(state: GameState, difficulty = 0): void {
 }
 
 /** Ends the current fighter's turn and plays every foe turn that follows. */
+/**
+ * Whether the fighter whose turn it is has nothing left to decide.
+ *
+ * THE TAP THIS EXISTS TO DELETE. Every verb in the fight — strike, reach,
+ * throw, shove, defend, the war cry, and changing rank — is gated on
+ * `!hasActed` and sets it, so the moment a fighter acts the only legal action
+ * left is ending the turn. The screen said so out loud ("nothing left this
+ * turn — end it") and then made the player tap it anyway: one mandatory tap
+ * per fighter per round with exactly one outcome, which is ceremony rather
+ * than a decision.
+ *
+ * NOT true before acting, and that is why the button stays. A fighter who has
+ * not acted CAN end their turn — declining to do anything is a real choice,
+ * and on a rank that cannot reach anybody it is often the right one. Only the
+ * tap after the blow is dead.
+ *
+ * AND A BROKEN MAN IS SPENT BEFORE HE STARTS. `activeCombatant` skips the
+ * down and the fled but not the broken, so a fighter whose nerve has gone
+ * still gets a turn — and every verb refuses him, `broken` sitting in the
+ * same guard as `hasActed`. The roadmap's wording ("once a fighter has
+ * acted") did not reach him, which would have left the one player most
+ * likely to be panicking tapping a button with one outcome. He has nothing
+ * to decide either, so his turn ends itself too.
+ *
+ * A predicate rather than a rule inside the verbs, deliberately. Making
+ * `B_STRIKE` end the turn itself would rewrite what an action sequence means:
+ * every recorded `[strike, end turn]` pair — the golden runs, the port's
+ * parity fixtures, the fights in this suite — would spend the NEXT fighter's
+ * turn on the second action. The sim keeps its shape; the view stops asking
+ * for a tap it already knows the answer to.
+ */
+export function turnIsSpent(state: GameState): boolean {
+  const battle = state.battle;
+  if (!battle || battle.outcome) return false;
+  if (!isWarbandTurn(state)) return false;
+  const active = activeCombatant(battle);
+  return !!active && (active.hasActed || active.broken);
+}
+
 export function endTurn(state: GameState): boolean {
   const battle = state.battle;
   if (!battle || battle.outcome) return false;

@@ -4365,10 +4365,66 @@ nice. Four groups, in the shape they were proposed and chosen from.
 
 ### The play, moment to moment
 
-- [ ] **9.13 The turn that ends itself** — once a fighter has acted the only
-  legal move left is End turn; both of the screenshots that opened this audit
-  read "nothing left this turn — end it". One mandatory tap per fighter per
-  round with exactly one outcome.
+- [x] **9.13 The turn that ends itself** — **Done 2026-08-30.** Once a fighter
+  has acted the only legal move left was End turn; both of the screenshots
+  that opened this audit read "nothing left this turn — end it". One mandatory
+  tap per fighter per round with exactly one outcome. The turn now takes it.
+
+  **The premise was made executable rather than read off the guards**, which
+  is the whole reason to trust it: `test/battleActions.test.ts` tries every
+  verb the player has — strike, throw, shove, defend, dash, war cry — and
+  after each one asserts that all seven battle actions are refused and only
+  `B_END_TURN` gets through. Each arm carries an occurrence guard, and it
+  earned its place immediately: on a fresh field the walls are not yet in
+  contact, so strike, shove and the war cry were never once legal and three of
+  the six claims passed having proved nothing.
+
+  **The rule is a predicate in the sim; the view presses the button.** Making
+  `B_STRIKE` end the turn itself would rewrite what an action sequence means —
+  every recorded `[strike, end turn]` pair, in the golden runs, the port's
+  parity fixtures and this suite, would spend the NEXT fighter's turn on the
+  second action.
+
+  **Two things the work found that the item had not.**
+
+  1. **A broken man is spent before he starts.** `activeCombatant` skips the
+     down and the fled but not the broken, so a fighter whose nerve has gone
+     still gets a turn — and `broken` sits in the same guard as `hasActed`,
+     so every verb refuses him. He was being handed a turn with nothing legal
+     in it and asked to press a button about it. Worse, the action bar asked
+     only `hasActed`, so he was shown a **live Strike, Throw and Shove that
+     silently did nothing when tapped**. Both now count him as spent.
+  2. **End turn is not always ceremony, so the button stays** for a fighter
+     who has not acted — declining to act is a real choice, and on a rank
+     that reaches nobody it is often the right one. It keeps its label, too:
+     "Hold and end turn" reads better for what it now exclusively means and
+     is not worth breaking two browser bars that match the text exactly.
+
+  **The blow is left on screen for a beat** (`SPENT_GAP = 420ms`) before the
+  turn ends, because the tap being deleted was also where a player watched
+  their own blow land — end it on the same frame and the foes move over the
+  top of it. Booked against the turn key so a repaint cannot stack several,
+  re-checked against the live state when it fires so it cannot spend somebody
+  else's turn, and deferred even when motion is stilled so a dispatch never
+  re-enters a render.
+
+  **And it broke a bar honestly, which is the right kind of breakage.**
+  `scripts/pan.mjs` asked "did the tap order anything" by snapshotting
+  `round:turnIndex:down` before and after a tap on bare ground — fair only
+  while turns advanced solely because somebody pressed a button. It read
+  1:2 → 1:4 and called the clock a bare-ground order. Restated as the rule it
+  actually guards — *the active fighter must not act* — it is immune to the
+  clock and stronger than the snapshot, which could have matched by luck.
+  `scripts/look.mjs` needed the same correction: it clicked End turn after
+  striking and broke out of its loop when the button was missing, which after
+  this change would have sent it back to photographing round one — exactly the
+  blind spot that scene was written to close.
+
+  **Done when:** ✅ no tap is required that has one outcome · ✅ the premise
+  is proven against every verb, with a guard that the verb occurred · ✅ a
+  broken fighter is neither asked nor shown controls that do nothing · ✅ the
+  choice to decline is still offered · ✅ all twelve bars pass, `look`
+  included, so no screen moved.
 - [ ] **9.14 Walking out is never right** — `paired: saved 0 that would have
   died, killed 6 that would have lived`. The game offers a choice measurement
   says is strictly wrong, and says nothing about it.
@@ -4384,6 +4440,19 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The turn that ends itself (9.13)** — Once a fighter had
+  acted, ending the turn was the only legal move, and the screen said so
+  ("nothing left this turn — end it") and then made you tap it anyway: one
+  mandatory tap per fighter per round with exactly one outcome. It now takes
+  itself, after a beat so the blow is still on screen. The premise is proven
+  rather than read — every verb tried, every other action asserted refused —
+  and the occurrence guard caught three of the six claims passing without the
+  verb ever having been legal. Two things fell out that the item had not seen:
+  a broken man is spent before he starts, and he was being shown a live
+  Strike, Throw and Shove that did nothing when tapped. Two browser bars had
+  to be corrected too, both because they measured the clock rather than the
+  rule they were guarding.
 
 - **2026-08-30 — Which lever makes autumn bite: none of them (6.5b, 6.5c)** —
   The mead hall now burns unless a wall stands, which is right and nearly

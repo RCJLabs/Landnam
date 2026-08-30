@@ -95,6 +95,28 @@ const viewBoxOf = (page) =>
  * it read them from is gone — a fighter's place is his rank and nothing
  * else.
  */
+/**
+ * Waits for a warband fighter who has NOT yet acted to be up.
+ *
+ * `ourTurn` only asks whose side it is, and since 9.13 that is not enough for
+ * anything that needs the turn to stay put: a fighter who has already acted
+ * has their turn ended for them a fraction of a second later.
+ */
+async function waitUnacted(page) {
+  for (let i = 0; i < 40; i += 1) {
+    const who = await page.evaluate(() => {
+      const b = window.landnam.state()?.battle;
+      if (!b || b.outcome) return null;
+      const a = b.combatants.find((c) => c.personId === b.order[b.turnIndex]);
+      if (!a || a.side !== 'warband' || a.broken || a.down || a.hasActed) return null;
+      return { id: a.personId, rank: a.rank };
+    });
+    if (who) return who;
+    await page.waitForTimeout(150);
+  }
+  return null;
+}
+
 const activeAt = (page) =>
   page.evaluate(() => {
     const battle = window.landnam.state()?.battle;
@@ -293,26 +315,42 @@ for (const [w, h] of [[320, 568], [390, 844]]) {
   // took the tiles away it found none, skipped itself, and printed nothing
   // at all — a check that quietly stops running looks exactly like a check
   // that passes. The sky is bare ground that cannot stop existing.
-  check(await ourTurn(page), 'a warband fighter is up for the bare-ground tap');
-  const before = await activeAt(page);
+  // ASKED OF THE FIGHTER, NOT OF THE CLOCK. This used to snapshot
+  // `round:turnIndex:down` before and after the tap and demand they match,
+  // which was a fair way to ask "did the tap order anything" only while turns
+  // advanced solely because somebody pressed a button. Since 9.13 a turn ends
+  // itself once its fighter has acted, so the index moves on its own and the
+  // check read 1:2 -> 1:4 and called it a bare-ground order.
+  //
+  // The rule it is really guarding is that a tap on nothing makes the ACTIVE
+  // FIGHTER do nothing. Asked that way it is immune to the clock — an unacted
+  // fighter is exactly the one the turn will not end by itself — and it is a
+  // stronger statement than the snapshot was, because it names the fighter
+  // instead of a pair of counters that could match by luck.
+  const unacted = await waitUnacted(page);
+  check(!!unacted, 'a warband fighter who has not acted is up for the bare-ground tap');
   const sky = await page.evaluate(() => {
     const rect = document.querySelector('svg.field').getBoundingClientRect();
     // Well above the wall, and clear of the two round buttons top-right.
     return { x: rect.x + rect.width * 0.3, y: rect.y + rect.height * 0.18 };
   });
-  const wasTurn = await page.evaluate(() => {
-    const b = window.landnam.state()?.battle;
-    return `${b?.round}:${b?.turnIndex}:${b?.combatants.filter((c) => c.down).length}`;
-  });
+  const downBefore = await page.evaluate(
+    () => window.landnam.state()?.battle?.combatants.filter((c) => c.down).length ?? -1);
   await page.mouse.click(sky.x, sky.y);
   await page.waitForTimeout(300);
-  const nowTurn = await page.evaluate(() => {
+  const after = await page.evaluate((id) => {
     const b = window.landnam.state()?.battle;
-    return `${b?.round}:${b?.turnIndex}:${b?.combatants.filter((c) => c.down).length}`;
-  });
+    const c = b?.combatants.find((f) => f.personId === id);
+    return {
+      up: b?.order[b.turnIndex] === id,
+      acted: !!c?.hasActed,
+      down: b?.combatants.filter((f) => f.down).length ?? -1,
+    };
+  }, unacted?.id ?? '');
   check(
-    !!before && nowTurn === wasTurn,
-    `a tap on bare ground orders nothing (was ${wasTurn}, now ${nowTurn})`,
+    !!unacted && after.up && !after.acted && after.down === downBefore,
+    `a tap on bare ground orders nothing (still up ${after.up}, acted ${after.acted}, `
+      + `down ${downBefore} -> ${after.down})`,
   );
 
   check(errors.length === 0, `no page errors${errors.length ? `: ${errors[0]}` : ''}`);

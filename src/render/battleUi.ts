@@ -58,7 +58,12 @@ export function renderBattleActions(
   const active = activeCombatant(battle);
   if (!isWarbandTurn(state) || !active) return bar;
 
-  const spent = active.hasActed;
+  // Broken counts as spent, and until 9.13 it did not: every verb in the sim
+  // refuses a man whose nerve has gone — `broken` sits in the same guard as
+  // `hasActed` — but this line asked only whether he had acted, so he was
+  // shown a live Strike, Throw and Shove that silently did nothing when
+  // tapped. Controls that look able and are not are worse than absent ones.
+  const spent = active.hasActed || active.broken;
   const aimButton = (id: Aim, label: string, enabled: boolean) => {
     const node = button(label, () => setAim(id), {
       class: `action${aim === id ? ' primary' : ''}`,
@@ -95,9 +100,20 @@ export function renderBattleActions(
     if (!canWarCry(state)) cry.setAttribute('disabled', 'true');
     second.append(cry);
   }
-  second.append(
-    button('End turn', () => dispatch({ type: 'B_END_TURN' }), { class: 'action primary' }),
-  );
+  // END TURN IS A CHOICE ONLY BEFORE THE BLOW (9.13). Declining to act is a
+  // real decision — on a rank that reaches nobody it is often the right one —
+  // so the button stays for a fighter who has not acted. After acting it had
+  // exactly one outcome and the turn now takes it without being asked, so
+  // offering it would be offering to do what is already happening.
+  //
+  // It keeps the name it had. "Hold and end turn" reads better for what it
+  // now exclusively means, and it is not worth it: two browser bars match
+  // this label exactly, and "End turn" is still what the button does.
+  if (!spent) {
+    second.append(
+      button('End turn', () => dispatch({ type: 'B_END_TURN' }), { class: 'action primary' }),
+    );
+  }
 
   const wrap = el('div', { class: 'action-stack' }, [bar, second]);
   return wrap;
@@ -125,7 +141,10 @@ export function renderBattleHint(state: GameState, aim: Aim): HTMLElement {
   // that instead of naming a control that does not exist.
   if (!active.hasActed) parts.push(AIM_HINT[aim]);
   if (!active.hasActed && active.rank > 1) parts.push('or push forward a rank');
-  if (parts.length === 0) parts.push('nothing left this turn — end it');
+  // "nothing left this turn — end it" stood here, and 9.13 deleted the tap it
+  // was asking for: the turn now ends itself. What is left to say is what is
+  // HAPPENING, not what to press.
+  if (parts.length === 0) parts.push('the blow is struck');
   return el('div', { class: 'hint' }, [`${person.name}: ${parts.join(' · ')}`]);
 }
 

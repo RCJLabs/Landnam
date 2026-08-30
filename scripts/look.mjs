@@ -124,10 +124,21 @@ const SCENES = [
         await page.mouse.click(aim.x, aim.y).catch(() => {});
         await page.waitForTimeout(180);
       }
+      // THE TURN ENDS ITSELF NOW (9.13), so there is nothing to click after a
+      // blow lands — the End turn button is offered only to a fighter who has
+      // NOT acted. This used to click it and `break` when it was missing,
+      // which after 9.13 would have broken on the first strike and quietly
+      // gone back to photographing round one: exactly the blind spot the
+      // scene above was written to close.
+      //
+      // So: wait out the grace the screen leaves the blow on for, and only
+      // press End turn if the tap missed and the fighter is still holding.
+      await page.waitForTimeout(700);
       const end = page.locator('.action-slot button', { hasText: /^End turn$/ }).first();
-      if (!(await end.count())) break;
-      await end.click({ timeout: 1200 }).catch(() => {});
-      await page.waitForTimeout(260);
+      if (await end.count()) {
+        await end.click({ timeout: 1200 }).catch(() => {});
+        await page.waitForTimeout(260);
+      }
     }
   }],
   ['ending', '.end-card', async (page, w) => {

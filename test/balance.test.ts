@@ -6510,7 +6510,15 @@ describe('the first winter, from inside', () => {
    * survival is untouched by it — which makes his runs a clean test of
    * whether the verdict is TRUE, rather than a test of what believing it does.
    */
-  it('does not tell bands that go on to live that they are already dead', () => {
+  // 400 seconds, like the work-alikes above it. This is the heaviest run in
+  // the block — 300 seeds carried to spring — and it was the only one of the
+  // six with no declared budget, so it took the 60s default and passed only
+  // while the box was fast enough. It came in at 66s on a slow one and timed
+  // out having already printed its whole readout. The bar is the assertion
+  // below, which never got to run; what was missing was the cost, not the
+  // claim.
+  it('does not tell bands that go on to live that they are already dead',
+    { timeout: 400_000 }, () => {
     const SEEDS = 300;
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
