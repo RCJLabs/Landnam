@@ -31,6 +31,7 @@ import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
 import { placeHere } from '../sim/places';
 import { strandTarget } from '../sim/sea';
+import { waterMark } from '../sim/fishery';
 import { placeKind } from '../data/places';
 import { angriest, neighbourHere, neighbourLine, standingOf } from '../sim/neighbours';
 import { button, el } from './svg';
@@ -203,6 +204,32 @@ export function renderChaseMark(state: GameState): HTMLElement {
  *
  * Shown at the steading only, and only once the founding grace is over.
  */
+/**
+ * Where the good water is, and what it is worth (9.3).
+ *
+ * The one thing 9.3 turned out to need. Fishing is measured at roughly five
+ * times what foraging pays and the sea has been carrying that bar for a long
+ * time — but 3.2 grounds sit on a coast, 1.8 are ever known and 0.7 are ever
+ * rowed to, because the Fish deed only speaks once you are already floating
+ * over one. All the words and the arithmetic are `waterMark`, in the file that
+ * owns grounds, and it names only water the band has actually found.
+ */
+export function renderWaterMark(state: GameState): HTMLElement {
+  if (state.end || state.event || state.battle) return el('div');
+  const mark = waterMark(state);
+  if (!mark) return el('div');
+  // ONE LINE, and the look bar is why. Written first in the `room-mark` shape
+  // — a head and a row beneath it — this added 89px to the travel hint slot,
+  // which at 320x568 pushed the chronicle and the fight screens off their
+  // blessed pictures. Nothing else caught it: the field bar still measured a
+  // full battlefield, because the harm was upstream of the fight. The quiet
+  // one-line `watch-mark` is the idiom for a standing note on this panel, and
+  // it costs the shortest screen we support 25px instead of 89.
+  return el('div', { class: `watch-mark${mark.here ? '' : ' quiet'}` }, [
+    el('div', { class: 'mark-head' }, [`${mark.head} — ${mark.gap}`]),
+  ]);
+}
+
 export function renderWatchMark(state: GameState): HTMLElement {
   if (state.end || state.event || !state.settlement) return el('div');
   if (!atHome(state)) return el('div');

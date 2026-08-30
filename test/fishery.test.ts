@@ -17,11 +17,13 @@ import { abundance } from '../src/sim/abundance';
 import { PURPOSES } from '../src/sim/expedition';
 import {
   GROUND_SHARE,
+  GROUND_WORTH,
   GROUND_YIELD,
   fisheryYield,
   groundAtStop,
+  waterMark,
   } from '../src/sim/fishery';
-import { ROUTE_STOPS, stopAt } from '../src/sim/route';
+import { ROUTE_STOPS, daysBetween, stopAt } from '../src/sim/route';
 import { SHIP_REACH, markTrod } from '../src/sim/coast';
 import type { GameState } from '../src/state/types';
 
@@ -314,5 +316,94 @@ describe('THE BAR — the sea is worth rowing to', () => {
     expect(fishing, 'no fishing errand — a settled band cannot reach the water').toBeDefined();
     expect(fishing!.name.length).toBeGreaterThan(8);
     expect(fishing!.blurb.length).toBeGreaterThan(30);
+  });
+});
+
+// 9.3: the panel names the water the band has found, and what it is worth.
+describe('the coast says where the good water is', () => {
+  it('says nothing to a band that has found no ground', () => {
+    // The fault this guards is a divining rod: a mark that points at every
+    // ground on the seed turns exploring into a formality.
+    const state = fresh('water-none');
+    state.world.knownStops = [];
+    expect(waterMark(state)).toBeNull();
+  });
+
+  it('never names a ground the band has not found', () => {
+    const seed = 'water-unknown';
+    const state = fresh(seed);
+    const grounds = stops(seed, true);
+    expect(grounds.length, 'no ground on this coast — nothing measured').toBeGreaterThan(0);
+    // Every stretch known EXCEPT the ones with water off them.
+    state.world.knownStops = Array.from({ length: ROUTE_STOPS }, (_, i) => i)
+      .filter((i) => !groundAtStop(seed, i));
+    expect(waterMark(state)).toBeNull();
+  });
+
+  it('names the nearest one it does know, and how far off it is', () => {
+    const seed = 'water-far';
+    const state = fresh(seed);
+    const grounds = stops(seed, true);
+    expect(grounds.length).toBeGreaterThan(0);
+    const target = grounds[grounds.length - 1]!;
+    state.world.knownStops = [target];
+    standAt(state, 0, 30);
+    const mark = waterMark(state)!;
+    expect(mark.stop).toBe(target);
+    expect(mark.here).toBe(false);
+    expect(mark.days).toBe(daysBetween(seed, 0, target));
+    expect(mark.days, 'a ground underfoot is not the case this arm tests')
+      .toBeGreaterThan(0);
+    expect(mark.head).toContain(String(mark.days));
+  });
+
+  it('goes quiet when the water is underfoot, because the deed says it', () => {
+    // The Fish deed is already on the sheet when you are standing on a
+    // ground. A second line saying the same thing costs the 320-wide screen
+    // a line it has not got, which the look bar caught by way of the
+    // chronicle and the fight going off their blessed pictures.
+    const seed = 'water-here';
+    const state = fresh(seed);
+    const ground = stops(seed, true)[0]!;
+    state.world.knownStops = [ground];
+    standAt(state, ground, 30);
+    expect(waterMark(state)).toBeNull();
+  });
+
+  it('picks the nearest of several, not the first it finds', () => {
+    const seed = 'water-near';
+    const state = fresh(seed);
+    const grounds = stops(seed, true);
+    if (grounds.length < 2) return;
+    state.world.knownStops = [...grounds];
+    // Standing OFF a ground, because standing on one is deliberately silent
+    // now — and a stretch that is not itself a ground, or this measures the
+    // quiet case instead of the choosing one.
+    let from = -1;
+    for (let i = 0; i < ROUTE_STOPS; i += 1) {
+      if (!groundAtStop(seed, i)) { from = i; break; }
+    }
+    expect(from, 'every stretch is a ground — nothing to choose from').toBeGreaterThanOrEqual(0);
+    standAt(state, from, 30);
+    const mark = waterMark(state)!;
+    const best = grounds.reduce((a, g) =>
+      daysBetween(seed, from, g) < daysBetween(seed, from, a) ? g : a);
+    expect(mark.stop).toBe(best);
+  });
+
+  it('states the worth the measurement above actually found', () => {
+    // Pinned to the literal, not to the constant, for the reason the party
+    // size claim shipped without earlier today: written both sides in terms
+    // of GROUND_WORTH this passes at any value. The trip measured at 3.26 a
+    // day against 0.59 ashore — five and a half times — so five is the
+    // honest floor, and a change has to come here and say why.
+    expect(GROUND_WORTH).toBe(5);
+    const seed = 'water-worth';
+    const state = fresh(seed);
+    const ground = stops(seed, true)[0]!;
+    state.world.knownStops = [ground];
+    standAt(state, 0, 30);
+    if (ground === 0) return;
+    expect(waterMark(state)!.gap).toContain('5 days ashore');
   });
 });

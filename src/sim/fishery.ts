@@ -24,7 +24,8 @@
 
 import { stream } from '../rng';
 import type { GameState } from '../state/types';
-import { standingAt } from './coast';
+import { knowsStop, standingAt } from './coast';
+import { ROUTE_STOPS, daysBetween } from './route';
 
 /**
  * Share of the coast holding a ground.
@@ -80,4 +81,73 @@ export function fisheryYield(state: GameState): number {
  */
 export function groundAtStop(seed: string, stop: number): boolean {
   return stream(seed, 'worldgen').derive(`fishery:stop:${stop}`).next() < GROUND_SHARE;
+}
+
+/**
+ * What a trip to a fishing ground is worth against foraging where you stand.
+ *
+ * MEASURED, and it is the whole of 9.3. `test/fishery.test.ts` runs the
+ * arithmetic over every stretch of eight coasts: a day's upkeep is 3.00, a day
+ * on a ground nets 7.43, and the five-day trip — two days rowing plus what the
+ * ground gives before it thins — returns 3.26 a day against 0.59 for foraging
+ * where you stand. Five and a half times.
+ *
+ * The land is worse than that number makes it sound, because the mean hides
+ * which coast you are on: bog -0.47, hills -0.41, shore -0.45, meadow 0.69.
+ * On most of the coast, working the ground you are standing on LOSES food.
+ */
+export const GROUND_WORTH = 5;
+
+/**
+ * The nearest fishing ground the band actually knows about, and what it is
+ * worth, for the travel panel to say out loud.
+ *
+ * 9.3 ASKED WHETHER IT PAYS OR WHETHER NOBODY IS TOLD, AND IT IS THE SECOND.
+ * The bar in test/fishery.test.ts has asserted for a long time that the sea
+ * out-pays the land; the probe says 3.2 grounds sit on a coast, 1.8 are ever
+ * known, and 0.7 are ever so much as rowed to. Nothing on any screen names a
+ * ground the band has found, or says what a day there is worth: the Fish deed
+ * appears only once you are already standing on the water, and its blurb is
+ * flavour.
+ *
+ * `knowsStop` gates it, so this never points at a ground the band has not
+ * found — it is a memory, not a divining rod.
+ *
+ * `null` when there is nothing to say: no known ground anywhere on the route.
+ */
+export interface WaterMark {
+  /** The stretch the ground lies off. */
+  stop: number;
+  /** Days of walking to reach it, 0 when it is underfoot. */
+  days: number;
+  /** Whether the band is standing on it now. */
+  here: boolean;
+  head: string;
+  gap: string;
+}
+
+export function waterMark(state: GameState): WaterMark | null {
+  const at = standingAt(state);
+  let best: number | null = null;
+  let bestDays = Infinity;
+  for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+    if (!groundAtStop(state.seed, stop) || !knowsStop(state, stop)) continue;
+    const days = stop === at ? 0 : daysBetween(state.seed, at, stop);
+    if (days < bestDays) { best = stop; bestDays = days; }
+  }
+  if (best === null) return null;
+  const here = bestDays === 0;
+  // NOTHING WHEN THE WATER IS UNDERFOOT. The Fish deed is already on the sheet
+  // saying so, and a second line repeating it costs the shortest screen we
+  // support a line it has not got — see renderWaterMark for what that cost
+  // turned out to be. The gap this fills is a ground the band has FOUND and
+  // walked away from.
+  if (here) return null;
+  return {
+    stop: best,
+    days: bestDays,
+    here,
+    head: `Good water ${bestDays} days along`,
+    gap: `worth ${GROUND_WORTH} days ashore`,
+  };
 }

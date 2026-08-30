@@ -4234,9 +4234,56 @@ nice. Four groups, in the shape they were proposed and chosen from.
   on the same six of forty, so the SEASON rule is doing nothing — with it
   removed entirely, only 70 of 9750 settled days are clear to go and hunger
   blocks 2983. The food gate is the whole of the constraint.
-- [ ] **9.3 Fishing grounds** — `3.2 on the coast, 1.9 ever known, 0.8 ever
-  worked` per saga. A resource the player finds and then ignores: either it
-  does not pay, or nothing ever tells them it does.
+- [x] **9.3 Fishing grounds** — **Done 2026-08-30. The fork the item names
+  resolves to the second: it pays enormously, and nothing tells them.**
+
+  The arithmetic was already in `test/fishery.test.ts` and has been carrying a
+  bar for a long time: a day's upkeep is 3.00, a day on a ground nets 7.43,
+  and the five-day trip — two days rowing plus what the ground gives before it
+  thins — returns **3.26 a day against 0.59 for foraging where you stand**.
+  Five and a half times. The mean flatters the land, too: by country it is
+  `bog -0.47, hills -0.41, shore -0.45, meadow 0.69`. **On most of the coast,
+  working the ground under your feet loses food.**
+
+  Against that, 3.2 grounds sit on a coast, 1.8 are ever known, 0.7 are ever
+  so much as rowed to. The Fish deed only appears once you are already
+  floating over one, and its blurb is flavour. `waterMark` now names the
+  nearest ground the band has FOUND and what it is worth — gated on
+  `knowsStop`, so it is a memory rather than a divining rod, which is the
+  first thing a claim here has to guard.
+
+  **Two instrument notes, because the item's own numbers overstate the case.**
+  The probe counts a ground as "worked" when the band merely ROWED to that
+  stretch, so even 0.7 is generous. And the bot fishes only at `days < 6` —
+  a starvation rule, not a strategy — so the play figure is largely a
+  statement about the harness, not the player. The design finding survives
+  both, because it rests on the yield measurement rather than on the bot.
+
+  **THE LOOK BAR EARNED ITS KEEP, and this is the part worth keeping.** The
+  mark was written first in the `room-mark` idiom — a head and a row beneath
+  it — which added **89px** to the travel hint slot and pushed the CHRONICLE
+  and the FIGHT off their blessed pictures at 320x568. Nothing else caught it:
+  the `field` bar still measured a full battlefield, because the harm was
+  upstream of the fight. That is exactly the class of defect 9.6 built the bar
+  for after the shrinking-field bug.
+
+  Fixed by not repeating what the Fish deed already says — the mark is silent
+  when the water is underfoot, one short line otherwise. The travel slot is
+  back to 188px, identical to baseline, and all twelve bars pass **with
+  nothing blessed**.
+
+  **And a mistake of mine worth recording with it.** Chasing that failure I
+  captured the fight screen before and after, found the files byte-identical,
+  and reported it as a flake. `look.mjs` only rewrites a PNG when a scene
+  CHANGES, so the "before" file was a leftover from the previous failing run:
+  I compared a stale artifact with a fresh one and they matched because both
+  came from with-change runs. The same shape as a sabotage that silently does
+  nothing — checking the artifact without checking whether it was written.
+
+  **Done when:** ✅ the fork is settled with a measurement rather than a guess
+  · ✅ the player is told where the water is and what it is worth · ✅ it
+  never names water the band has not found · ✅ it costs the 320-wide screen
+  nothing.
 - [ ] **9.4 The palisade earns its place** — the largest single swing in the
   game (six men defending: 47% to 91%; 118 stolen against 547) and the rarest
   of twelve buildings at `13 of 60`. 6.5 gave it a deadline; it still has no
@@ -4662,6 +4709,18 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The good water, said out loud (9.3)** — The item asked
+  whether fishing does not pay or whether nothing tells the player, and it is
+  emphatically the second: the five-day trip returns 3.26 a day against 0.59
+  for foraging where you stand, and on bog, hills and shore the land is
+  negative. Yet the Fish deed only speaks once you are already floating over a
+  ground. The travel panel now names the nearest ground the band has found and
+  what it is worth, gated on what they actually know. The first cut of the
+  mark cost the 320-wide screen 89px and pushed the chronicle and the fight
+  off their blessed pictures — caught by the look bar and by nothing else,
+  since the harm was upstream of the fight — so it says nothing when the water
+  is already underfoot and the deed is on the sheet.
 
 - **2026-08-30 — The voyage home, measured at a sample it fires in (9.2)** —
   The item's premise was stale: the gate had already been lowered from 120 to
