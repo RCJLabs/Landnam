@@ -34,7 +34,7 @@ import { RAID_FIELDS } from '../src/data/raidFields';
 import { MAX_RAIDERS_FAMED } from '../src/sim/battle';
 import { SWORN_MAX } from '../src/sim/people';
 import { makeRng } from '../src/rng';
-import { raidDifficulty, RAID_EARLIEST_DAY, SACK_SHARE, sackSteading } from '../src/sim/raid';
+import { raidDifficulty, RAID_EARLIEST_DAY, SACK_SHARE, sackSteading, wallMark } from '../src/sim/raid';
 import { living } from '../src/sim/people';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
@@ -408,16 +408,79 @@ describe('a sacked steading', () => {
     expect(builtIn(state.settlement!)).toHaveLength(0);
   });
 
-  it('leaves a band its roof and its mead hall, however often they come', () => {
-    // Nothing to fire but the two that are spared, so nothing is fired. The
-    // stores and the people still go: a sacking is a loss, not a locked door.
-    const state = settled('burn-nothing');
+  // THE WALL IS WHAT SPARES THE MEAD HALL (Evan's ruling, 2026-08-30). The
+  // Thing has to be called in one, so burning it is a locked door rather than
+  // a loss — and a wall is what shuts raiders out of it. Sparing it outright
+  // gave back the whole of the pressure autumn was built to add; sparing it
+  // behind a palisade keeps both, and makes the wall guard the run's ending
+  // rather than only its grain.
+  it('fires the mead hall of a band that never walled up', () => {
+    const state = settled('burn-open');
     state.settlement!.built = ['longhouse', 'meadhall'];
     state.party.food = 200;
     const sack = sackSteading(state);
+    expect(sack.burned).toBe('meadhall');
+    expect(state.settlement!.built).toEqual(['longhouse']);
+  });
+
+  it('leaves the mead hall of a band that did, and its roof with it', () => {
+    // The palisade is the only other thing standing, so if the hall were
+    // burnable it would be one of two picks and this would flake rather than
+    // fail. It is asserted over four seeds for that reason.
+    for (const seed of ['walled-a', 'walled-b', 'walled-c', 'walled-d']) {
+      const state = settled(seed);
+      state.settlement!.built = ['longhouse', 'meadhall', 'palisade'];
+      state.party.food = 200;
+      const sack = sackSteading(state);
+      expect(sack.burned).not.toBe('meadhall');
+      expect(state.settlement!.built).toContain('meadhall');
+      expect(state.settlement!.built).toContain('longhouse');
+    }
+  });
+
+  it('counts the earthworks as the wall, because they replace the palisade', () => {
+    // The bug this is here for is `built.includes('palisade')`, which an
+    // upgrade makes false — a band that improved its wall would lose the
+    // protection the wall bought. data/buildings.ts warns about exactly this.
+    for (const seed of ['dug-a', 'dug-b', 'dug-c', 'dug-d']) {
+      const state = settled(seed);
+      state.settlement!.built = ['longhouse', 'meadhall', 'earthworks'];
+      state.party.food = 200;
+      const sack = sackSteading(state);
+      expect(sack.burned).not.toBe('meadhall');
+      expect(state.settlement!.built).toContain('meadhall');
+    }
+  });
+
+  it('leaves a band standing when there is nothing it may fire', () => {
+    // Nothing to fire but the roof, so nothing is fired. The stores and the
+    // people still go: a sacking is a loss, and never a band left in a field.
+    const state = settled('burn-nothing');
+    state.settlement!.built = ['greathall'];
+    state.party.food = 200;
+    const sack = sackSteading(state);
     expect(sack.burned).toBeUndefined();
-    expect(state.settlement!.built).toEqual(['longhouse', 'meadhall']);
+    expect(state.settlement!.built).toEqual(['greathall']);
     expect(sack.food).toBeGreaterThan(0);
+  });
+
+  it('can fire the wall itself, so what it buys is this autumn and not every one', () => {
+    // THE CONSEQUENCE OF MAKING THE WALL THE ANSWER, stated rather than left
+    // to be discovered. A palisade is not on the spared list — it never was —
+    // so a walled band with nothing else to lose has its wall fired, and the
+    // autumn after that the hall is open. That is the shape the ruling wants:
+    // they come through the wall first and the hall second, and a wall is a
+    // thing you keep rather than a thing you built once.
+    const state = settled('burn-wall');
+    state.settlement!.built = ['longhouse', 'meadhall', 'palisade'];
+    state.party.food = 200;
+    const first = sackSteading(state);
+    expect(first.burned).toBe('palisade');
+    expect(state.settlement!.built).toContain('meadhall');
+
+    state.day += 40;
+    const second = sackSteading(state);
+    expect(second.burned).toBe('meadhall');
   });
 
   it('losing a raid sacks the steading, and losing a field fight does not', () => {
@@ -518,5 +581,60 @@ describe('raids arrive', () => {
     const { save } = migrate({ version: 9, battle: { terrain: 'meadow' } });
     expect(save['version']).toBe(SAVE_VERSION);
     expect((save['battle'] as { raid?: boolean }).raid).toBeUndefined();
+  });
+});
+
+// The mark that makes the ruling fair. See wallMark in sim/raid.ts.
+describe('the panel says whether the hall stands open', () => {
+  it('says nothing to a band that has not raised a mead hall', () => {
+    const state = settled('mark-none');
+    state.settlement!.built = ['longhouse', 'palisade'];
+    expect(wallMark(state)).toBeNull();
+  });
+
+  it('says nothing to a band with no steading at all', () => {
+    const state = settled('mark-landless');
+    state.settlement = undefined;
+    expect(wallMark(state)).toBeNull();
+  });
+
+  it('warns the moment the hall goes up unwalled', () => {
+    const state = settled('mark-open');
+    state.settlement!.built = ['longhouse', 'meadhall'];
+    const mark = wallMark(state)!;
+    expect(mark.open).toBe(true);
+    expect(mark.head).toBe('The mead hall stands open');
+    // It must name BOTH stakes, because either alone understates it: the
+    // building burns, and the run's ending goes with it.
+    expect(mark.gap).toMatch(/fire it/);
+    expect(mark.gap).toMatch(/Thing/);
+  });
+
+  it('stops warning once the wall is up, at either tier', () => {
+    for (const wall of ['palisade', 'earthworks'] as const) {
+      const state = settled(`mark-${wall}`);
+      state.settlement!.built = ['longhouse', 'meadhall', wall];
+      const mark = wallMark(state)!;
+      expect(mark.open).toBe(false);
+      expect(mark.head).toBe('The wall is between them and the hall');
+    }
+  });
+
+  it('agrees with the sack itself, which is the whole point of it', () => {
+    // The bug this catches is a panel that decides on its own terms and
+    // drifts from `sackSteading`. Asserted by actually sacking the steading.
+    for (const built of [
+      ['longhouse', 'meadhall'],
+      ['longhouse', 'meadhall', 'palisade'],
+      ['longhouse', 'meadhall', 'earthworks'],
+    ]) {
+      const state = settled(`agree-${built.length}-${built[2] ?? 'open'}`);
+      state.settlement!.built = [...built];
+      state.party.food = 200;
+      const open = wallMark(state)!.open;
+      const sack = sackSteading(state);
+      expect(state.settlement!.built.includes('meadhall')).toBe(!open);
+      if (open) expect(sack.burned).toBe('meadhall');
+    }
   });
 });

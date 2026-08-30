@@ -69,7 +69,7 @@ import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { MAX_RAIDERS, MAX_RAIDERS_FAMED, fighterPerson, raiderCap } from '../src/sim/battle';
 import { RAID_CHANCE_MAX, SACK_TAKES, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
-import { capacity, crowding, heartRaised } from '../src/sim/colony';
+import { capacity, crowding, heartRaised, standsFor } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
 import { isWarbandTurn } from '../src/sim/battle';
@@ -3379,6 +3379,66 @@ describe('PROBE: can a band actually afford to keep its hall', () => {
         if (due > 0) expect(share).toBeLessThan(1 / 3);
       }
     });
+});
+
+describe('PROBE: does the wall ever actually protect the hall', () => {
+  /**
+   * The question the ruling of 2026-08-30 has to answer about itself.
+   *
+   * The mead hall burns unless a wall stands, and the reason that was chosen
+   * over sparing it outright is that sparing it gave back the whole of the
+   * pressure autumn was built to add. But the long game came back BYTE
+   * IDENTICAL to the run before the rule — same average days, same ends, same
+   * count past the third year, on all three arms. A rule that changes the
+   * burnable list changes which building `rng.pick` lands on, so identical
+   * numbers do not mean "no effect", they mean the list never changed: no
+   * sack ever found an unwalled mead hall standing.
+   *
+   * That is a claim about how often the rule is REACHED, and it is worth a
+   * number rather than a shrug — a rule that never fires is decoration, and
+   * the roadmap should say so either way.
+   */
+  it('counts the sacks that found a hall, and whether a wall was up', { timeout: 900_000 }, () => {
+    const SEEDS = 60;
+    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+      let raids = 0;        // raids that came
+      let withHall = 0;     // ... with a mead hall standing
+      let walled = 0;       // ... of those, behind a wall
+      let hallBurned = 0;   // ... and the hall actually fired
+      let everHall = 0;     // sagas that ever raised a mead hall
+      let everWall = 0;     // sagas that ever raised a wall
+      for (let s = 0; s < SEEDS; s += 1) {
+        let hall = false;
+        let wall = false;
+        run(`curve-${s}`, 500, (before, after) => {
+          if (standsFor(after, 'meadhall')) hall = true;
+          if (standsFor(after, 'palisade')) wall = true;
+          // A sack is a building list that shrank, or stores that went, on a
+          // day the band was at home. The cheap tell is the tally.
+          // A raid COMING, not a raid lost — a held raid sacks nothing, so
+          // this is the generous count and the finding below survives it.
+          if (after.tally.raids > before.tally.raids) {
+            raids += 1;
+            if (standsFor(before, 'meadhall')) {
+              withHall += 1;
+              if (standsFor(before, 'palisade')) walled += 1;
+              if (!standsFor(after, 'meadhall')) hallBurned += 1;
+            }
+          }
+        }, TERMS);
+        if (hall) everHall += 1;
+        if (wall) everWall += 1;
+      }
+      // eslint-disable-next-line no-console
+      console.log(
+        `the wall and the hall [${TERMS}] over ${SEEDS} sagas — ${everHall} ever raised a ` +
+        `mead hall, ${everWall} ever raised a wall\n` +
+        `  ${raids} raids came; ${withHall} of them found a mead hall standing ` +
+        `(${walled} behind a wall, ${withHall - walled} open)\n` +
+        `  mead halls fired: ${hallBurned}`,
+      );
+    }
+  });
 });
 
 describe('the raid gauntlet', () => {

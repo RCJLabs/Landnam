@@ -3974,12 +3974,58 @@ because by year two it has more labour than uses for it.
   faults it exposed — a sack burning the roof its own comment protects, and
   the mead hall being a locked door rather than a loss — are in the changelog.
 
-  **Open for Evan:** the mead hall is spared on my recommendation rather than
-  his ruling, and the measurement says that recommendation costs the whole of
-  the added pressure. The alternative, equally green, is that an unwalled hall
-  cannot hold the endgame — 1 of 4 without a palisade, 4 of 4 with one — which
-  keeps `starved` at 67 and makes the palisade load-bearing. One line either
-  way in `sackSteading`.
+- [x] **6.5b The wall is what spares the mead hall** — **RULED by Evan
+  2026-08-30, built the same day, and the measurement says it does not do
+  what it was chosen for.** Read this before citing it.
+
+  The rule itself is small and stands: `sackSteading` spares the roof always
+  and the mead hall only behind a wall, asked as `standsFor(state,
+  'palisade')` so upgrading to earthworks does not silently take the
+  protection away. A consequence worth naming: the palisade was never on the
+  spared list, so a walled band with nothing else to lose has its WALL fired
+  and the autumn after that the hall is open. They come through the wall
+  first and the hall second, and a wall becomes a thing you keep rather than
+  a thing you built once.
+
+  **THE NUMBER THE RULING WAS MADE ON WAS MEASURED IN A FIXTURE.** The
+  choice was put to Evan as "1 of 4 reach the endgame without a palisade, 4
+  of 4 with one", which is a true statement about `test/thing.test.ts` — a
+  harness that FORCES its build list — and a misleading one about the game.
+  In play, bands wall up long before they raise a mead hall: on even, 31
+  sagas of 60 ever raised a wall against 27 that ever raised a hall; on
+  fair, 51 against 44. The palisade is cheap, early, and answers a need the
+  panel surfaces; the mead hall is late and dear.
+
+  So the rule is very nearly unreachable. Over 120 sagas
+  (`PROBE: does the wall ever actually protect the hall`):
+
+  | | even | fair |
+  |---|---|---|
+  | raids that found a mead hall standing | 65 | 63 |
+  | ...of those, already behind a wall | **63** | **63** |
+  | ...standing open | 2 | 0 |
+  | **mead halls actually fired** | **0** | **0** |
+
+  And the long game came back BYTE IDENTICAL to the run before it — same
+  average days, same ends, same count past the third year, on all three
+  arms. That is not a small effect. Adding the hall to the burnable list
+  changes which building `rng.pick` lands on, so identical numbers mean the
+  list never changed.
+
+  **What it is worth, honestly stated.** It is correct, it is free, and it
+  bites for a player the bot never models: somebody racing the Thing who
+  skips the wall. It does NOT restore the pressure 6.5 was built for, and
+  the `starved` 67-against-62 delta this was sold on does not reproduce —
+  the baseline after 9.12a is 75 and the rule does not move it. **If autumn
+  should bite harder, the lever is elsewhere — most likely in what a lost
+  raid takes rather than in which building burns — and it wants measuring
+  before it is built.**
+
+  It ships with `wallMark`, in the file that owns the rule, so the build
+  panel says "The mead hall stands open — raiders would fire it, and the
+  Thing needs one" before the autumn it matters rather than after. A player
+  who loses their endgame to a fire and never learns the wall was the answer
+  is the crime the crowding and hearth marks exist to fix.
 
 ---
 
@@ -4273,6 +4319,22 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The wall is what spares the mead hall (6.5b)** — Evan's
+  ruling on the question 6.5 left open. Raiders fire the mead hall of a band
+  that never walled up, and the Thing cannot be called without one, so the
+  palisade stops guarding only the grain and starts guarding the run's
+  ending; `standsFor` rather than `built.includes`, so improving the wall to
+  earthworks does not silently take the protection away. The build panel says
+  it before the autumn it matters. **Measured, it almost never fires** — of
+  128 raids that found a mead hall standing across 120 sagas, 126 were
+  already behind a wall and none burned, because bands raise the cheap early
+  palisade long before the dear late hall. The long game came back byte
+  identical on all three arms. The figure the ruling was chosen on was true
+  of a fixture that forces its build list and not of the game, which is the
+  same selection bias the affordability probe had; both are written down.
+  The rule stands as a correctness fix that bites a player the bot never
+  models, and the pressure 6.5 wanted still needs a lever.
 
 - **2026-08-30 — The hall must be kept (9.12a)** — A steading's heart used
   to be paid for having been built: +8 a day for ever, against a lost battle

@@ -547,6 +547,16 @@ describe('THE BAR — it is reachable by doing the work', () => {
       queueBuild(state, 'meadhall');
       state.settlement!.works = 999;
       finishBuilds(state);
+      // AND THE WALL, because since 2026-08-30 raiders fire the mead hall of
+      // a band that never raised one, and the Thing cannot be called without
+      // a hall to call it in. That is the ruling, not a side effect: the wall
+      // stops guarding only the grain and starts guarding the run's ending.
+      // So walling up is part of "the work" this bar is named for. Without
+      // it the bar reads 1 of 4, which is the measurement the ruling was made
+      // on rather than a regression.
+      queueBuild(state, 'palisade');
+      state.settlement!.works = 999;
+      finishBuilds(state);
       const friend = state.neighbours[0];
       if (friend) shiftStanding(state, friend.id, 60);
 

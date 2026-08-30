@@ -7,7 +7,7 @@
 import { stream } from '../rng';
 import { buildingById } from '../data/buildings';
 import type { GameState } from '../state/types';
-import { effectiveReport } from './colony';
+import { effectiveReport, standsFor } from './colony';
 import { foeCapFor, foeCount, standing } from './battle';
 import { angerLevel, raidPressure } from './neighbours';
 import { hands, sworn } from './people';
@@ -369,23 +369,29 @@ export function sackSteading(state: GameState): Sack {
     );
   }
 
-  // Something burns. The longhouse is the last thing they fire, because it is
-  // full of people — everything else goes first.
-  // The roof over everyone survives a sacking, whichever tier it is.
   // THEY LOOT THE HALL AND FIRE THE OUTBUILDINGS. The roof over everyone is
-  // spared whichever tier it is, and so is the mead hall — not out of mercy
-  // but because burning it is a locked door rather than a loss. The Thing has
-  // to be called in a mead hall, so a band whose one hall keeps burning can
-  // never reach its own endgame however well it plays afterwards. Measured
-  // once autumn became a reckoning: `test/thing.test.ts` fell to 1 of 4, and
-  // every failure was blocked on "a mead hall to hold it in".
+  // spared whichever tier it is — it is full of people, and a band standing
+  // in a field is not a sacking, it is a different game.
   //
-  // The threat is not softened by this. They still carry off two fifths of
-  // the food and the firewood, they still take hands, the watch is still
-  // broken and the morale still goes. What they cannot do is take the run's
-  // ending away.
+  // THE MEAD HALL IS SPARED BY THE WALL, AND ONLY BY THE WALL. Evan's ruling,
+  // 2026-08-30. It was spared outright for one autumn, on my recommendation,
+  // because the Thing has to be called in a mead hall and burning it is a
+  // locked door rather than a loss: `test/thing.test.ts` fell to 1 of 4 with
+  // every failure blocked on "a mead hall to hold it in". But that mercy gave
+  // back the whole of the pressure 6.5 was built to add — `starved` went 63
+  // to 67 with autumn raids and straight back to 62 once the hall could not
+  // burn — so 6.5 shipped as the same difficulty, legibly timed.
+  //
+  // Making the wall the answer keeps both. Measured, the endgame is reached
+  // by 1 of 4 without a palisade and 4 of 4 with one, and `starved` stays at
+  // 67. That is what a wall is FOR: it stops guarding only the grain and
+  // starts guarding the run's ending. `standsFor` rather than `built
+  // .includes`, because earthworks replace the palisade and an upgrade must
+  // not silently take the wall away — see the note on `replaces` in
+  // data/buildings.ts.
+  const walled = standsFor(state, 'palisade');
   const burnable = home.built.filter((id) =>
-    id !== 'longhouse' && id !== 'greathall' && id !== 'meadhall');
+    id !== 'longhouse' && id !== 'greathall' && !(id === 'meadhall' && walled));
   // AND IF THERE IS NOTHING ELSE, NOTHING BURNS. This used to fall back to
   // `home.built[0]`, which is the longhouse — the one building the two lines
   // above say survives a sacking. The rule was written and then undone on
@@ -468,4 +474,40 @@ export function fallOnReport(
     foeCapFor(state),
   );
   return { ours, theirs };
+}
+
+/**
+ * Whether the mead hall is standing open, in words, for the colony panel.
+ *
+ * THE RULING NEEDS THIS TO BE FAIR. Raiders can fire the mead hall of a band
+ * that never walled up, and the Thing cannot be called without one — so a
+ * player who loses their endgame to a fire and never learns the wall was the
+ * answer has been handed bad luck with a bill attached, which is the exact
+ * crime the crowding mark and the hearth mark were written to fix. The mark
+ * says it before the autumn it matters, not after.
+ *
+ * `null` until there is a mead hall standing: before that the rule cannot
+ * take anything, and a warning about a building nobody has raised is noise on
+ * a panel that already has plenty to say.
+ */
+export interface WallMark {
+  /** The state of it, in the chronicle's voice. */
+  head: string;
+  /** What the wall is or is not doing, and what turns on it. */
+  gap: string;
+  /** Whether the hall can be fired — what colours the mark. */
+  open: boolean;
+}
+
+export function wallMark(state: GameState): WallMark | null {
+  const home = state.settlement;
+  if (!home || !standsFor(state, 'meadhall')) return null;
+  const walled = standsFor(state, 'palisade');
+  return {
+    head: walled ? 'The wall is between them and the hall' : 'The mead hall stands open',
+    gap: walled
+      ? 'They would have to come through the stakes first'
+      : 'Raiders would fire it, and the Thing needs one',
+    open: !walled,
+  };
 }

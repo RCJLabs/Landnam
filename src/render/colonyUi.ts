@@ -25,6 +25,7 @@ import {
 } from '../sim/colony';
 import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
 import { CROWDING_BITE } from '../sim/minds';
+import { wallMark } from '../sim/raid';
 import { foodPerDay } from '../sim/upkeep';
 import { abandonBlocker, ABANDON_REASON } from '../sim/retreat';
 import { ABANDON_HEART } from '../data/retreat';
@@ -150,6 +151,27 @@ export function renderHearth(state: GameState): HTMLElement {
     el('div', { class: 'mark-row' }, [
       el('span', { class: 'mark-name' }, ['Since the feast']),
       el('span', { class: 'mark-value' }, [`${mark.since} ${mark.since === 1 ? 'day' : 'days'}`]),
+      el('span', { class: 'mark-gap' }, [mark.gap]),
+    ]),
+  ]);
+}
+
+/**
+ * Whether the mead hall is standing open to a torch.
+ *
+ * Same argument as the hearth mark above, and the same shape. All the words
+ * are `wallMark`, in the file that owns the rule, so the panel and the raid
+ * cannot come to different conclusions about the same wall.
+ */
+export function renderWall(state: GameState): HTMLElement {
+  const mark = wallMark(state);
+  if (!mark) return el('div');
+
+  return el('div', { class: `room-mark${mark.open ? ' short' : ''}` }, [
+    el('div', { class: 'mark-head' }, [mark.head]),
+    el('div', { class: 'mark-row' }, [
+      el('span', { class: 'mark-name' }, ['The mead hall']),
+      el('span', { class: 'mark-value' }, [mark.open ? 'unwalled' : 'behind the wall']),
       el('span', { class: 'mark-gap' }, [mark.gap]),
     ]),
   ]);
