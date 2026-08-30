@@ -61,6 +61,7 @@ import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
 import { abandonSteading, canAbandon } from '../src/sim/retreat';
 import { BAND_BASE, foodPerDay, firewoodPerNight, passDay } from '../src/sim/upkeep';
 import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
+import { wordOf } from '../src/sim/word';
 import { OVER_ROOF, handsLeave, roomLeft, SETTLED_IN, takeIn, willAdmit } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
@@ -2863,6 +2864,11 @@ describe('the long game', () => {
     /** How far each saga got, and what stopped it there. See below. */
     const lengths: Record<string, number> = {};
     const byBand: Record<string, Record<string, number>> = {};
+    /** The state of every band that got past its third year. */
+    let margin: {
+      food: number; wood: number; winters: number; band: number;
+      sworn: number; built: number; word: number; morale: number;
+    }[] = [];
     // Pooled across both arms. The per-arm counters are reset at the top of
     // each loop, so asserting on them read ONLY the last arm — a bar that
     // measures half the sample and says nothing about the other half.
@@ -2907,6 +2913,7 @@ describe('the long game', () => {
     // wrong if you add the row up.
     for (const k of Object.keys(lengths)) delete lengths[k];
     for (const k of Object.keys(byBand)) delete byBand[k];
+    margin = [];
     for (let s = 0; s < LONG_SEEDS; s += 1) {
       let hall = false;
       let friend = false;
@@ -2984,6 +2991,26 @@ describe('the long game', () => {
             : state.day < 289 ? 'the third year'
               : 'past the third year';
       lengths[band] = (lengths[band] ?? 0) + 1;
+      // WHAT A JARL'S MARGIN ACTUALLY IS. "Nothing kills them" is a result;
+      // this is the size of the gap, and the gap decides whether the third
+      // act is a tuning job or a structural one. A jarldom pays tribute IN
+      // every season and draws newcomers at 1.7x against a cost of +3 word
+      // and +2 raiders, so the suspicion is that ruling compounds faster
+      // than the coast escalates — in which case no raid will ever matter.
+      if (band === 'past the third year') {
+        const mouths = living(state.party.people).length;
+        margin.push({
+          food: state.party.food,
+          wood: state.party.firewood,
+          // A winter is 24 days and a mouth eats a half share a day.
+          winters: state.party.food / Math.max(1, Math.ceil((mouths / 2)) * 24),
+          band: mouths,
+          sworn: sworn(state.party.people).length,
+          built: state.settlement?.built.length ?? 0,
+          word: wordOf(state),
+          morale: state.party.morale,
+        });
+      }
       const how = state.end?.cause ?? (state.jarl ? 'ruling' : 'still standing');
       byBand[band] = byBand[band] ?? {};
       byBand[band]![how] = (byBand[band]![how] ?? 0) + 1;
@@ -3003,6 +3030,10 @@ describe('the long game', () => {
     }
 
     const per = (n: number, of: number) => (of > 0 ? (n / of).toFixed(1) : 'n/a');
+    const mid = (k: keyof (typeof margin)[number]): number => {
+      const v = margin.map((m) => m[k]).sort((a, b) => a - b);
+      return v.length === 0 ? 0 : Math.round(v[Math.floor(v.length / 2)]! * 10) / 10;
+    };
     const BANDS = ['before the first winter', 'the first winter', 'the second year',
       'the third year', 'past the third year'];
     const shape = BANDS.map((b) => {
@@ -3019,6 +3050,11 @@ describe('the long game', () => {
     console.log(
       `the long game [${TERMS}] — ${LONG_SEEDS} sagas to day ${LAST_DAY} (avg ${Math.round(days / LONG_SEEDS)} days):\n` +
         `  how far they got, and what stopped them:\n${shape}\n` +
+        `  ${margin.length > 0
+          ? `what a band past its third year is holding: ${mid('winters').toFixed(1)} winters of ` +
+            `food (median), ${mid('band')} souls of whom ${mid('sworn')} sworn, ` +
+            `${mid('built')} raised, word ${mid('word')}, heart ${mid('morale')}`
+          : 'nobody got past a third year'}\n` +
         `  ${reachedJarl} became jarl, ${ruledYears} winters ruled between them; ` +
         `${alive} still standing at the end\n` +
         `  ends: ${Object.entries(ends).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}\n` +

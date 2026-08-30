@@ -4110,9 +4110,49 @@ nice. Four groups, in the shape they were proposed and chosen from.
   So the work is not "make runs longer" and not "move the content earlier".
   It is that the game has a first act and an epilogue and no third act: the
   place a long saga would live — established, not yet safe — is where 3% of
-  runs are. **The fork is Evan's:** put something in the third year that can
-  end a jarl, or accept the jarldom as the ending it already is in practice
-  and stop building past it.
+  runs are.
+
+  **DECIDED 2026-08-30: put something in the third year that can end a jarl.**
+  6.4's promise — a run goes on as long as it is held — becomes true or it
+  goes. So the next question was WHY nothing can end one, and the answer took
+  two goes.
+
+  The first guess was that ruling compounds: a jarldom takes tribute in food
+  and timber every season and draws newcomers at `JARL_DRAW = 1.7` against a
+  cost of only +3 word and +2 raiders. Plausible, and wrong. Measured, a band
+  past its third year holds:
+
+  | | even | fair | hard |
+  |---|---|---|---|
+  | winters of food in store | 0.3 | 0.3 | 0.2 |
+  | souls | 15 | 13 | 14 |
+  | **sworn** | **1** | **1** | **0** |
+  | raised | 10 | 10 | 10 |
+  | **heart** | **100** | **100** | **100** |
+
+  They are not fat. They live hand to mouth with **almost no warriors left**.
+  What is infinite is MORALE — pinned at 100, every arm, every difficulty —
+  and morale is precisely what kills bands in their second year (despair 10
+  of 22 on even, 19 of 45 on fair, 8 of 16 on hard).
+
+  **And the mechanism is one line.** `heartFromBuildings` adds the heart of
+  everything standing to morale EVERY DAY, unconditionally, forever: longhouse
+  1, meadhall 3, greathall 2, hof 2 — **+8 a day** for a full steading, plus
+  another +1 for having everybody employed. Against that a lost battle costs
+  −15, a man fleeing −4, a death in the cold −3. **A jarl recovers a lost
+  battle's whole morale cost in under two days.** A hall pays for having been
+  built once, forever, and the payment outruns every setback in the game.
+
+  So the third act does not need a new enemy. It needs the annuity to become
+  an upkeep: a mead hall cheers people when there is mead in it and a feast
+  held in it, a hof when the blót is kept, and an empty hall in a hard winter
+  is a big cold room. That reaches the late game through the door the mid
+  game already dies of, and it keeps winter as the antagonist.
+
+  **The care needed is that this must not bite the first year**, where 53%
+  of runs already end. The requirement has to scale with what is standing —
+  the bigger the hall, the more it costs to keep people glad in it — so a
+  one-building band is untouched and a ten-building jarl is not.
 
   The instrument needed fixing first and the fix is worth recording: the
   histogram was not reset between hardship arms, so `fair` printed 240 runs
