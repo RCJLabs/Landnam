@@ -4385,8 +4385,39 @@ nice. Four groups, in the shape they were proposed and chosen from.
   - **Stop making it** — soften the saga line to what actually happens, the
     way 9.14's door out now states its record.
 
-  The measurement ships; neither half of the fork does, because inventing the
-  answer is what went wrong on the voyage home earlier today.
+  **KEEPING THE PROMISE WAS TRIED ON 2026-08-31 AND REVERTED.** The
+  recommendation above was mine, it was acted on, and the bars refused it.
+  `AUTUMN_WORTH_K` 0.155 → 0.5, measured over the same three instruments:
+
+  | | 0.155 | 0.5 |
+  |---|---|---|
+  | led by a man who had led before [even] | 2 of 42 (5%) | **5 of 63 (8%)** |
+  | led by a man who had led before [fair] | 2 of 58 (3%) | **4 of 74 (5%)** |
+  | curve, saw spring (60 seeds) | 53% | **50%** |
+  | A Hard Country, saw spring (300 landings) | 27% | **25%** |
+
+  The villain comes back three points more often; the run gets three points
+  shorter; and **`A Hard Country` breaks a shipped bar** — its menu card
+  promises 31% see spring and the harness measured 25%, over the item's own
+  300-landing sample, which is a promise on a screen a player reads before
+  choosing. Three points of recurrence is not worth a false difficulty card.
+  Reverted to 0.155.
+
+  **AND THE PRICE I QUOTED FOR IT WAS READ OFF THE WRONG INSTRUMENT.** "One
+  point of spring" is repeated four times above and in 6.5c. It is not a
+  reading from the curve. It came from `PROBE: where a raid actually costs a
+  band` (74% → 73%), which samples **bands that had already settled** — the
+  population least able to be killed by another raid. The curve, which starts
+  at the landing, moves 53% → 50%: three times the price, on the sample the
+  question was actually about. This is the CLAUDE.md rule at the top of this
+  file — the one committed this same morning, citing a self-selecting
+  denominator — committed again by its author, within the day, on the same
+  kind of number.
+
+  So the fork stands, with one prong now priced honestly and closed:
+  **keeping the promise costs three points of spring and a broken difficulty
+  card. What remains open is softening the saga line** — which is 9.14's
+  shape and cheap. Evan's call.
 
 ### Things that are not there
 
@@ -4901,6 +4932,21 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — Keeping the villain's promise was tried and refused (9.5)** —
+  9.5 left a fork: raise the raid rate so the clan that carries the named foe
+  comes back, or soften the saga line that promises he will. The first prong
+  was recommended, implemented (`AUTUMN_WORTH_K` 0.155 → 0.5) and measured. It
+  buys three points of recurrence (5% → 8% even, 3% → 5% fair) and costs three
+  points of spring on the curve (53% → 50%) — and it drops `A Hard Country` to
+  25% against a menu card that promises 31%, which is a shipped bar and a
+  promise a player reads before choosing. Reverted. The price quoted for the
+  change four times in the item was also wrong: "about one point of spring"
+  came from `PROBE: where a raid actually costs a band`, which samples bands
+  that had ALREADY SETTLED — the ones a raid can least kill — and was written
+  down as the price on the curve, which starts at the landing. That is the
+  CLAUDE.md rule added this same morning, broken by its author within the day.
+  Both are recorded in the item; the second prong of the fork is still Evan's.
 
 - **2026-08-31 — The sea can kill now (9.8)** — Zero sea fights over 120 sagas
   turned out not to be a rate but a missing line: every caller of `startBattle`
