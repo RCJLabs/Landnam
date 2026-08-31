@@ -4332,8 +4332,61 @@ nice. Four groups, in the shape they were proposed and chosen from.
   measured · ✅ the size of the reason is on the screen that needs it, at no
   cost in height · ✅ every claim watched failing, the threshold pinned to
   literals rather than to itself.
-- [ ] **9.5 The named foe** — `named foes: 1 came back, 30 put down for good`.
-  A recurring villain that recurs once in thirty-one.
+- [~] **9.5 The named foe** — **MEASURED 2026-08-30, and the item's ratio is
+  wrong at both ends. The remaining decision is Evan's.**
+
+  It was written on `named foes: 1 came back, 30 put down for good` — read as
+  "he is always killed". Three faults in that reading, and the tally is in
+  `the rhythm of interruption`, which runs only to **day 169**:
+
+  - it counts clan-champion TRANSITIONS, not fights he led;
+  - it counts a return only when he carries SCARS, so a clan's newly anointed
+    second man — a real recurrence of the threat — is invisible to it;
+  - the bot hunts him with every verb it has (`step` picks the champion first
+    for the strike, the spear and the throw), which is an optimal player, not
+    an average one.
+
+  Counted as fates over a full run (`PROBE: what becomes of the named foe`):
+
+  | | even | fair |
+  |---|---|---|
+  | fights he led | **195** | 303 |
+  | of those, a clan's — the only ones that can ever return | **42 (22%)** | 58 (19%) |
+  | put down | 54% | 53% |
+  | ran | 1% | 0% |
+  | **still standing when it ended** | **46%** | **47%** |
+  | led by a man who had led before | 2 of 42 (5%) | 2 of 58 (3%) |
+
+  **HE IS NOT BEING WIPED OUT. He walks off the field alive nearly half the
+  time.** Two separate things were being read as one:
+
+  1. **Most named foes cannot return by construction.** Only 22% of the fights
+     he leads are a clan's; the rest are open-field champions who belong to
+     nobody, which `test/champion.test.ts` asserts as intended design.
+  2. **Recurrence is gated by how often a CLAN comes back, not by his death.**
+     He survives 46% of the time and still leads a repeat fight in 5% of clan
+     fights, because raids run at 0.84 per hundred days.
+
+  **AND THE GAME MAKES A PROMISE IT DOES NOT KEEP.** When he gets off the
+  field, the saga says *"He will have marked us for it."* Measured, he comes
+  back about one time in twenty. That is 9.14's fault exactly — a line that
+  reads as an offer against a record that does not support it.
+
+  **THIS CONVERGES WITH 6.5c, AND IS THE REASON THAT ITEM COULDN'T FIND.**
+  6.5c swept `AUTUMN_WORTH_K` and found raising it nearly free — 0.155 → 0.5
+  takes never-raided from 58% to 43% for one point of spring — but declined it
+  because it bought no difficulty. It buys THIS: a clan that comes back is the
+  only way the man who got away is ever seen again. The lever nobody could
+  justify on difficulty is justified on the villain.
+
+  **The fork, and it is a feel decision rather than a tuning one:**
+  - **Keep the promise** — raise the raid rate so the clan returns, which
+    6.5c already priced at about one point of first-winter survival.
+  - **Stop making it** — soften the saga line to what actually happens, the
+    way 9.14's door out now states its record.
+
+  The measurement ships; neither half of the fork does, because inventing the
+  answer is what went wrong on the voyage home earlier today.
 
 ### Things that are not there
 
@@ -4753,6 +4806,19 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-30 — The named foe is not being wiped out (9.5)** — The item read
+  "1 came back, 30 put down for good" as the villain always dying. That tally
+  runs to day 169, counts clan-champion transitions rather than fights, and
+  counts a return only when the man carries scars. Counted as fates over a full
+  run he leads 195 fights on even, walks off the field alive in 46% of them,
+  and only 22% of them are a clan's — the rest are open-field champions who
+  cannot return by design. So recurrence is gated by how often a clan comes
+  back, not by his death, which converges with 6.5c: raising the raid rate was
+  measured as nearly free and bought no difficulty, and this is what it would
+  buy instead. Meanwhile the saga promises "He will have marked us for it" and
+  delivers one time in twenty. The measurement ships; the fork between keeping
+  that promise and no longer making it is left open.
 
 - **2026-08-30 — The palisade was never rare (9.4)** — The item was written on
   the palisade being the rarest of twelve buildings at 13 of 60. That is

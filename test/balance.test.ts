@@ -3769,6 +3769,73 @@ describe('PROBE: is the wall up before it is needed', () => {
   });
 });
 
+describe('PROBE: what becomes of the named foe', () => {
+  /**
+   * 9.5, and the item's ratio needs three things checked before it is read as
+   * "the villain never recurs".
+   *
+   * ONE: the tally it comes from runs to DAY 169 — under two years. A
+   * champion put down on day 100 has sixty-nine days for his clan to anoint
+   * another and send him at us again, and most sagas are over before that.
+   *
+   * TWO: it counts a "return" only when the champion carries SCARS, so a
+   * newly anointed one — the clan's second man, a real recurrence of the
+   * threat if not of the person — is invisible to it.
+   *
+   * THREE: the bot hunts him with every verb it has. `step` picks the
+   * champion first for strike, for the spear and for the throw, which is an
+   * optimal player rather than an average one; a player who simply hits
+   * whoever is in front sees a different game.
+   *
+   * So this counts FATES over a full run: how a champion-led fight ended for
+   * the man with the pennant, and how often the same man came back.
+   */
+  it('counts how a champion leaves the field, and how often he comes back',
+    { timeout: 900_000 }, () => {
+      const SEEDS = 60;
+      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+        let led = 0;        // fights a named foe led
+        let ofClan = 0;     // ... of which a CLAN's, so he could return at all
+        let down = 0;       // he was put down
+        let fled = 0;       // he ran
+        let stood = 0;      // still standing when it ended
+        let scarred = 0;    // fights led by a man who had led before
+        for (let s = 0; s < SEEDS; s += 1) {
+          run(`curve-${s}`, 400, (before, after) => {
+            if (!before.battle && after.battle?.champion) {
+              led += 1;
+              if (after.battle.championOf) {
+                ofClan += 1;
+                const clan = before.neighbours.find((n) => n.id === after.battle!.championOf);
+                if ((clan?.champion?.scars ?? 0) > 0) scarred += 1;
+              }
+            }
+            // The moment the field settles, read what became of him.
+            if (before.battle && !before.battle.outcome && after.battle?.outcome
+              && after.battle.champion) {
+              const him = after.battle.combatants.find(
+                (c) => c.personId === after.battle!.champion);
+              if (!him) return;
+              if (him.down) down += 1;
+              else if (him.fled) fled += 1;
+              else stood += 1;
+            }
+          }, TERMS);
+        }
+        const pc = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : 'n/a');
+        // eslint-disable-next-line no-console
+        console.log(
+          `the named foe [${TERMS}] over ${SEEDS} sagas — ${led} fights he led, ` +
+          `${ofClan} of them a clan's (only those can ever return):\n` +
+          `  he was put down ${down} (${pc(down, down + fled + stood)}), ` +
+          `ran ${fled} (${pc(fled, down + fled + stood)}), ` +
+          `was still standing ${stood} (${pc(stood, down + fled + stood)})\n` +
+          `  led by a man who had led before: ${scarred} of ${ofClan} (${pc(scarred, ofClan)})`,
+        );
+      }
+    });
+});
+
 describe('the raid gauntlet', () => {
   /** A standing steading with the store and walls a raid comes for. */
   function homestead(seed: string): GameState {
