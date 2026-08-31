@@ -51,8 +51,8 @@
 > 9.9, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave the game a third
 > act. **Measured, with a decision left to Evan rather than invented:** 9.2
 > (the voyage home), 9.5 (soften the villain's promise or leave it), 9.7
-> (winter), 9.11 (the colony loop), 9.12 (the pacing arc), and the SHIELD,
-> which 9.1b's more lethal fights overturned within a day of 9.1 measuring it.
+> (winter), 9.11 (the colony loop), 9.12 (the pacing arc). The SHIELD is no
+> longer among them: 9.1c settled it by counting.
 > **What is left unstarted is 9.10 (the rival's saga).**
 >
 > **And a standing lesson from every item above.** Ten of them were opened on
@@ -4163,6 +4163,46 @@ nice. Four groups, in the shape they were proposed and chosen from.
   control exactly is not evidence the feature is worthless — it is evidence
   the feature never ran. The tie had been asserted, with a comment explaining
   what it meant, for long enough to read as settled.
+
+  **AND THE SHIELD IS SETTLED NOW — 2026-08-31, third reading, see 9.1c.**
+- [x] **9.1c The shield, settled on the third reading** — **Done 2026-08-31.
+  The fork 9.1 left open and 9.1b re-opened is closed by a count, not a
+  judgement.**
+
+  Three readings of one verb in three days, and the third is the one that
+  holds because it finally asked the right question:
+
+  | reading | swings always | shield when hurt |
+  |---|---|---|
+  | 9.1, 2026-08-30 | 46/60 wins, 172 standing | **49/60, 189** (paired won 8, lost 5) |
+  | 9.1b, 2026-08-31 | 42/60, 155 | **31/60, 120** (paired won 0, lost 11) |
+
+  **EVERY ARM EVER RUN TOOK THE SHIELD INSTEAD OF A SWING**, so all of them
+  were really measuring "give up your attack", which loses an attrition fight
+  whatever it buys. The arm nobody had tried is the FREE one: set the shield
+  only when there is nothing to attack. It reads **42/60 wins and 155
+  standing — an exact tie with swinging always, same log, paired won 0 lost
+  0.**
+
+  By this project's own rule that is not a finding, it is a tell. So it was
+  counted rather than read: **front-two turns with nothing to hit, over sixty
+  fights — ZERO.** The walls deploy in contact and `defend` is a front-two
+  verb, so the shield's free case does not exist on this battlefield. The verb
+  can only ever be bought with a blow, and every arm that buys it loses.
+
+  **What ships.** `shieldAdvised` and `SHIELD_WHEN_UNDER` are deleted with
+  their seven tests: a helper that recommends a move measured to lose eleven
+  fights in sixty is worse than no helper. `doDefend` and the Shield button
+  STAY — the foe AI reaches for it, a hurt cautious fighter setting his shield
+  is not measured as wrong, and a player is entitled to a defensive choice the
+  harness dislikes. The zero is asserted in `test/wall.test.ts` so the day the
+  front two have nothing to hit is a day somebody finds out.
+
+  **What is left for Evan, and it is a smaller question than it was:** the
+  shield costs a whole turn for a bonus that never outruns a blow. Whether it
+  should cost less — a free set on an approach turn, or a brace that persists
+  — is a design ruling about what a shield IS here. Nothing invented on it.
+
 - [x] **9.1b Drop the shove and the dash** — **Done 2026-08-31, on Evan's
   ruling, and the deletion turned out to be the small half of the job.**
 
@@ -5209,6 +5249,22 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — The shield, settled on the third reading (9.1c)** — 9.1
+  measured the shield as worth taking when hurt (49/60 wins against 46); 9.1b
+  inverted that on the same instrument the next day (31/60 against 42). Both
+  were arms that took the shield INSTEAD of a swing, so both were really
+  measuring "give up your attack". The arm nobody had run is the free one —
+  set it only when there is nothing to attack — and it ties swinging-always
+  EXACTLY, same wins, same men, same log. By this project's own rule that is a
+  tell rather than a finding, so it was counted: **front-two turns with
+  nothing to hit, over sixty fights, ZERO**. The walls deploy in contact and
+  `defend` is a front-two verb, so the shield has no free case here at all; it
+  can only be bought with a blow, and buying it loses. `shieldAdvised` and its
+  seven tests are deleted — a helper recommending a move measured to lose
+  eleven fights in sixty is worse than none — while `doDefend` and the Shield
+  button stay, because the foe AI uses it and nothing says that is wrong. The
+  zero is asserted so the day it stops being zero is a day somebody finds out.
 
 - **2026-08-31 — What the colony loop actually is (9.11, diagnosed)** — All
   four of the item's figures predate 9.12a, which was built because of them,

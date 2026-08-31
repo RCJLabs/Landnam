@@ -384,6 +384,10 @@ describe('formation play beats brawling', () => {
   // arms went with them; what replaced the dash is not a toggle, because the
   // line closing itself is the game rather than a policy.
   const USE = { defend: true, shieldFirst: 'never' as ShieldFirst };
+  /** How often the shield-first rule actually fired, per arm. Instrument. */
+  let shieldTook = 0;
+  /** Front-two turns with nothing at all to attack — the shield's free case. */
+  let idleFrontTurns = 0;
 
   /**
    * When the band reaches for the shield BEFORE the swing.
@@ -399,7 +403,7 @@ describe('formation play beats brawling', () => {
    * front of them is hurt, or when they are outnumbered — so those are the
    * arms, and they go BEFORE the swing where a player would put them.
    */
-  type ShieldFirst = 'never' | 'hurt' | 'outnumbered' | 'always';
+  type ShieldFirst = 'never' | 'hurt' | 'outnumbered' | 'always' | 'idle';
 
   /** Same aggression, but never step out of the line to get it. */
   function formation(seed: string): GameState {
@@ -434,12 +438,25 @@ describe('formation play beats brawling', () => {
         const mine = fighterPerson(state, active.personId);
         const hurt = !!mine && mine.health <= mine.maxHealth / 2;
         const outnumbered = foes.length > standing(battle, 'warband').length;
+        // IDLE — the arm that had never been run, and the only one that does
+        // not cost a blow. Every arm measured before it took the shield
+        // INSTEAD of swinging, so all of them were really measuring "give up
+        // your attack", and of course that loses an attrition fight. This one
+        // fires only when there is nothing to attack: the approach turns,
+        // before the walls touch, where the action is otherwise spent on
+        // nothing at all.
+        const nothingToHit = strikeTargets(state).length === 0
+          && reachTargets(state).length === 0
+          && throwTargets(state).length === 0;
         const want = USE.shieldFirst === 'always'
           || (USE.shieldFirst === 'hurt' && hurt)
-          || (USE.shieldFirst === 'outnumbered' && outnumbered);
+          || (USE.shieldFirst === 'outnumbered' && outnumbered)
+          || (USE.shieldFirst === 'idle' && nothingToHit);
+        if (nothingToHit) idleFrontTurns += 1;
         if (want) {
-          state = apply(state, { type: 'B_DEFEND' });
-          state = apply(state, { type: 'B_END_TURN' });
+          const set = apply(state, { type: 'B_DEFEND' });
+          if (set !== state) shieldTook += 1;
+          state = apply(set, { type: 'B_END_TURN' });
           continue;
         }
       }
@@ -706,6 +723,7 @@ describe('formation play beats brawling', () => {
     { timeout: 900_000 }, async () => {
       const arms: [string, typeof USE['shieldFirst']][] = [
         ['never (swings always)', 'never'],
+        ['when there is nothing to hit', 'idle'],
         ['when hurt', 'hurt'],
         ['when outnumbered', 'outnumbered'],
         ['always, in the front rank', 'always'],
@@ -713,6 +731,8 @@ describe('formation play beats brawling', () => {
       const score: Record<string, { wins: number; alive: number; won: boolean[]; raised: number }> = {};
       for (const [name, when] of arms) {
         Object.assign(USE, { defend: false, shieldFirst: when });
+        shieldTook = 0;
+        idleFrontTurns = 0;
         let wins = 0;
         let alive = 0;
         let raised = 0;
@@ -739,7 +759,8 @@ describe('formation play beats brawling', () => {
         // eslint-disable-next-line no-console
         console.log(
           `  shield ${name.padEnd(26)} ${wins}/${SEEDS.length} wins, ${alive} standing, `
-            + `${raised} shields set`,
+            + `${raised} shields in the log, rule fired ${shieldTook}, `
+            + `front-two turns with nothing to hit: ${idleFrontTurns}`,
         );
       }
       Object.assign(USE, { defend: true, shieldFirst: 'never' });
@@ -760,6 +781,31 @@ describe('formation play beats brawling', () => {
         // eslint-disable-next-line no-console
         console.log(`    paired vs swinging always — ${name}: won ${saved}, lost ${lost}`);
       }
+
+      // 9.1b's SECOND FINDING, and it is the one that settles the verb.
+      //
+      // The `idle` arm sets the shield ONLY when there is nothing to attack —
+      // the one case where it costs no blow, and the case no arm before it
+      // had ever tried. It ties `never` EXACTLY: same wins, same men, same
+      // log. Which by this file's own rule is not a finding about the shield,
+      // it is evidence the rule never fired — so it was counted rather than
+      // read, and the count is ZERO front-two turns with nothing to hit, over
+      // sixty fights.
+      //
+      // That is the whole answer. The walls deploy in contact, so a man in
+      // the front two always has somebody to swing at, and `defend` is a
+      // front-two verb. The shield's free case DOES NOT EXIST on this
+      // battlefield: it can only ever be bought with a blow, and every arm
+      // that buys it loses (paired against swinging always — hurt won 0 lost
+      // 11, outnumbered won 0 lost 12, always won 0 lost 42).
+      //
+      // Asserted as an exact zero rather than a tolerance, for the reason the
+      // tie above is asserted exactly: the day it stops being zero is the day
+      // the shield has a case, and somebody should find out.
+      expect(
+        idleFrontTurns,
+        'the front two now sometimes have nothing to hit — the shield has a free case, and this record is stale',
+      ).toBe(0);
 
       // THE INSTRUMENT FIRST, and it is the whole reason this test exists:
       // an arm that never actually raised a shield is the control run again

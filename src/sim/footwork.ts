@@ -50,67 +50,38 @@ export function doDefend(state: GameState): boolean {
   return true;
 }
 
-/**
- * Whether the shield is worth more than the swing for whoever is up.
+/*
+ * `SHIELD_WHEN_UNDER` and `shieldAdvised` stood here, and 9.1b's follow-up
+ * measurement settled the question they were asking. The record, because it
+ * cost three days and two reversals to get:
  *
- * 9.1 — AND THE VERB WAS NOT DEAD, THE MEASUREMENT WAS. `B_DEFEND` appeared
- * zero times in 1165 battle actions, and the arena's "defend only" arm tied
- * never-defending EXACTLY, a tie that had been asserted for so long it read
- * as a finding about the shield. It was a finding about a priority list: both
- * harnesses put the verb last, below strike, reach, throw and dash, and on a
- * line the front rank nearly always has somebody to hit, so the rule never
- * fired.
+ * 9.1 found the shield was NOT dead, only never reached — both harnesses put
+ * `B_DEFEND` last, and on a line the front rank always has somebody to hit.
+ * Taken FIRST, where a player takes it, it read 49/60 wins against 46 for
+ * swinging always, and the hint said so.
  *
- * Measured with the shield taken FIRST, where a player would take it, over 60
- * fights at difficulty 2:
+ * 9.1b INVERTED that the next day on the same instrument. Once the line began
+ * closing itself, fights got more crowded and more lethal, and the same arm
+ * read 31/60 against 42 — paired, won 0 and lost 11.
  *
- *   swings always        46/60 wins, 172 standing
- *   shield when hurt     49/60 wins, 189 standing   (paired: won 8, lost 5)
- *   when outnumbered     39/60 wins, 158 standing   (paired: won 1, lost 8)
- *   always, front rank   11/60 wins,  85 standing   (paired: won 0, lost 35)
+ * AND THE THIRD READING IS THE ONE THAT SETTLES IT. Every arm ever run took
+ * the shield INSTEAD of a swing, so all of them were really measuring "give
+ * up your attack". The arm that had never been tried is the free one: set the
+ * shield only when there is nothing to attack. It ties swinging-always
+ * EXACTLY — same wins, same men standing, same log — which by this project's
+ * own rule is evidence the rule never fired, not that it is worthless. So it
+ * was counted: **front-two turns with nothing to hit, over sixty fights,
+ * ZERO**. The walls deploy in contact and `defend` is a front-two verb, so
+ * the shield's free case does not exist on this battlefield. It can only ever
+ * be bought with a blow, and buying it loses.
  *
- * So it is a real verb with a narrow case, which is the shape a good verb
- * has: worth taking when the man holding it is hurt, ruinous taken every
- * turn. Three wins in sixty is thin on its own — the seventeen extra men
- * standing is the sturdier half of it — and neither is a reason to press it
- * blind, which is why this names the ONE case rather than scoring the choice.
- *
- * Stated as a fact for the hint to say, not as a rule the game enforces: the
- * player is told when the shield is worth more, and can swing anyway.
- *
- * AND 9.1b OVERTURNED IT, on the same instrument, the next day. Once the line
- * began closing itself the whole arena moved and this arm INVERTED:
- *
- *   swings always        42/60 wins, 155 standing
- *   shield when hurt     31/60 wins, 120 standing   (paired: won 0, lost 11)
- *   when outnumbered     30/60 wins, 125 standing
- *   always, front rank    0/60 wins,  51 standing
- *
- * The reason is legible rather than mysterious: a man who used to stand safe
- * in a back rank doing nothing now walks into the wall, so fights are more
- * crowded and more lethal, and a turn spent on the shield instead of the blow
- * costs more than it saves. Three wins in sixty was thin when it was in the
- * shield's favour, and this is not thin.
- *
- * So the hint that said it is GONE from render/battleUi.ts — a sentence the
- * harness calls false is worse than no sentence. This function is kept, and
- * kept tested, because the question it answers is still well posed and the
- * ruling is Evan's: give the shield a different rule, or take it off the bar.
- * Nothing reads it today.
+ * `doDefend` STAYS — the foe AI reaches for it, a cautious fighter who is
+ * hurt sets his shield rather than trading, and nothing measures that as
+ * wrong. What is gone is the function that ADVISED a player to do it, because
+ * a helper whose one true case does not exist is worse than no helper. See
+ * test/wall.test.ts, which asserts the zero so the day it stops being zero is
+ * a day somebody finds out.
  */
-export const SHIELD_WHEN_UNDER = 0.5;
-
-export function shieldAdvised(state: GameState): boolean {
-  const battle = state.battle;
-  const active = battle ? activeCombatant(battle) : undefined;
-  if (!battle || !active || battle.outcome) return false;
-  if (active.hasActed || active.broken || active.defending) return false;
-  if (!canActFrom('defend', active.rank)) return false;
-  // Nothing to set a shield against is not a case for setting one.
-  if (!battle.combatants.some((c) => c.side !== active.side && !c.down && !c.fled)) return false;
-  const person = fighterPerson(state, active.personId);
-  return !!person && person.health <= person.maxHealth * SHIELD_WHEN_UNDER;
-}
 
 // --- The line closing itself ---
 

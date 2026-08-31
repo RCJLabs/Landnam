@@ -146,10 +146,19 @@ export function renderBattleHint(state: GameState, aim: Aim): HTMLElement {
   // a turn spent on the shield instead of the blow costs more than it saves.
   //
   // The sentence is gone rather than left saying something the harness calls
-  // false. `shieldAdvised` is kept, with the new reading in its docstring:
-  // whether the shield gets a different rule or comes off the bar is a
-  // ruling, not a thing to invent here — the same fork 9.1 was careful to
-  // leave open the first time.
+  // false, and `shieldAdvised` has followed it. The arm that had never been
+  // run settled it: set the shield ONLY when there is nothing to attack — the
+  // one case that costs no blow — and it ties swinging-always exactly,
+  // because over sixty fights the front two had something to hit on EVERY
+  // turn. The walls deploy in contact and `defend` is a front-two verb, so
+  // the shield's free case does not exist here; it can only be bought with a
+  // blow, and buying it loses. A helper that advised buying it is worse than
+  // no helper. See sim/footwork.ts.
+  //
+  // The Shield BUTTON stays. The foe AI reaches for it, nothing measures that
+  // as wrong, and a player is entitled to a defensive choice the harness
+  // dislikes. Whether it should cost less than a whole turn is a design
+  // ruling and not a thing to invent here.
   //
   // "or push forward a rank" stood beside it and named the Run button, which
   // 9.1b deleted. The look bar caught it: `fight-late@320x568` still offered
