@@ -25,6 +25,19 @@ export interface Fallen {
   day: number;
   /** Which run, so two Ketils from different sagas are two people. */
   seed: string;
+  /**
+   * The named blade they bore, if they ever bore it.
+   *
+   * OPTIONAL, and it has to be: this key is written to localStorage and a
+   * wall carved before 9.9 has rows without it. `isFallen` therefore checks
+   * the type only when the field is present — a guard that demanded it would
+   * throw away every name a player has collected.
+   *
+   * This is the whole of 9.9's connection. Everything else the wall says is
+   * about one person alone; this is the one column where two rows can be
+   * about the same thing.
+   */
+  blade?: string;
 }
 
 const isFallenList = (value: unknown): value is Fallen[] =>
@@ -42,7 +55,8 @@ function isFallen(value: unknown): value is Fallen {
     typeof row.byname === 'string' &&
     typeof row.fate === 'string' &&
     typeof row.day === 'number' &&
-    typeof row.seed === 'string'
+    typeof row.seed === 'string' &&
+    (row.blade === undefined || typeof row.blade === 'string')
   );
 }
 

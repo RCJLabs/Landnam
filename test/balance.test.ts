@@ -7403,3 +7403,108 @@ describe('the market, and whether visiting it is worth anything', () => {
       .toBeLessThan(after.deals / 2);
   });
 });
+
+describe('PROBE: what a lineage actually amounts to', () => {
+  /**
+   * 9.9's premise, re-taken before anything is built on it. The item reads
+   * "the memorial, the lineage and the generations exist and do not talk to
+   * each other", and two of those three claims are checkable in the source
+   * without a harness at all:
+   *
+   * - `hallPasses` (sim/household.ts) imports `childrenOf` and names the dead
+   *   leader's children, so GENERATIONS talks to LINEAGE;
+   * - `maybeBirth` (sim/lineage.ts) reads `kinOf` to record a father, so
+   *   LINEAGE talks to the households `maybePair` makes.
+   *
+   * The one that is genuinely deaf is the MEMORIAL: `fallenOf` maps a person
+   * to `{name, byname, fate, day, seed}` and nothing else, so the wall cannot
+   * say whose husband, whose mother, or what anybody left.
+   *
+   * What no source reading can settle is the SIZE — whether a lineage is a
+   * thing that happens in a played saga or a feature the odds never reach. A
+   * bequest with nothing to bequeath and nobody to bequeath it to is 6.5b's
+   * mistake again: a rule that fires twice in a hundred and twenty runs.
+   *
+   * So this counts, over full runs: births, marriages made after the landing,
+   * children who got a father's name, deaths of a leader who left children,
+   * and how long the wall's rows are.
+   */
+  it('counts births, marriages and what the wall is given', { timeout: 900_000 }, () => {
+    const SEEDS = 60;
+    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+      let sagas = 0;
+      let withChild = 0;      // sagas that ever saw a birth
+      let births = 0;
+      let fathered = 0;       // children recorded with a father
+      let weddings = 0;       // households made after the landing
+      let withWedding = 0;
+      let heirlessLeader = 0; // a leader died leaving no child
+      let leaderWithChild = 0;
+      let deaths = 0;         // rows the wall would get
+      let deadWithKin = 0;    // ... of the dead, how many were bound to somebody
+      let deadWithChild = 0;  // ... and how many left a child behind
+      let bladeMoved = 0;     // sagas where the blade changed hands at all
+      let bladeHands = 0;     // hands it went through, all sagas
+      let bladeLaid = 0;      // sagas that ended with it in a chest for a child
+      let bladeRows = 0;      // wall rows that carry it
+      for (let s = 0; s < SEEDS; s += 1) {
+        const end = run(`curve-${s}`, 400, (before, after) => {
+          const was = before.settlement?.children.length ?? 0;
+          const now = after.settlement?.children.length ?? 0;
+          if (now > was) {
+            births += now - was;
+            for (const c of after.settlement!.children.slice(was)) {
+              if (c.father) fathered += 1;
+            }
+          }
+          if ((after.flags['lastPaired'] ?? -1) !== (before.flags['lastPaired'] ?? -1)) {
+            weddings += 1;
+          }
+        }, TERMS);
+        sagas += 1;
+        // 9.9: does the blade actually move in a played saga, or is it the
+        // 6.5b rule again — correct, tested, and fired twice in 128 runs?
+        const blade = end.party.blade;
+        if (blade) {
+          bladeHands += blade.borne.length;
+          if (blade.borne.length > 1) bladeMoved += 1;
+          if (blade.laidFor) bladeLaid += 1;
+          bladeRows += fallenOf(end).filter((row) => row.blade !== undefined).length;
+        }
+        const kids = end.settlement?.children ?? [];
+        if (kids.length > 0) withChild += 1;
+        if (end.flags['lastPaired'] !== undefined) withWedding += 1;
+        const wall = fallenOf(end);
+        deaths += wall.length;
+        for (const p of end.party.people) {
+          if (p.alive || p.left) continue;
+          if (p.kin) deadWithKin += 1;
+          if (kids.some((c) => c.mother === p.id || c.father === p.id)) deadWithChild += 1;
+          // Whether the hall passed through them: sworn, and nobody ahead.
+          if (p.bond !== 'sworn') continue;
+          const seat = end.party.people.findIndex((q) => q.id === p.id);
+          const ahead = end.party.people.slice(0, Math.max(0, seat))
+            .some((q) => q.alive && q.bond === 'sworn');
+          if (ahead) continue;
+          if (kids.some((c) => c.mother === p.id || c.father === p.id)) leaderWithChild += 1;
+          else heirlessLeader += 1;
+        }
+      }
+      const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
+      console.log(
+        `a lineage [${TERMS}] over ${sagas} sagas:\n`
+        + `  sagas that saw a child born: ${withChild} (${pc(withChild, sagas)}), `
+        + `${births} children in all, ${fathered} with a father named\n`
+        + `  sagas that saw a wedding after the landing: ${withWedding} `
+        + `(${pc(withWedding, sagas)}), ${weddings} weddings in all\n`
+        + `  the hall passed from a man who left a child ${leaderWithChild} times, `
+        + `from one who left none ${heirlessLeader}\n`
+        + `  the wall was given ${deaths} names; ${deadWithKin} (${pc(deadWithKin, deaths)}) `
+        + `were bound to somebody, ${deadWithChild} (${pc(deadWithChild, deaths)}) left a child\n`
+        + `  the blade changed hands in ${bladeMoved} sagas (${pc(bladeMoved, sagas)}), `
+        + `${bladeHands} hands in all, laid by for a child in ${bladeLaid}; `
+        + `${bladeRows} wall rows carry it (${pc(bladeRows, deaths)})`,
+      );
+    }
+  });
+});

@@ -47,10 +47,21 @@
 > keeping a wardrobe of their own. **THE ART QUEUE IS DONE.**
 >
 > **CURRENT MILESTONE (from 2026-08-30): Phase 9 — what a saga actually
-> feels like to play**, below. 9.6 (a bar that looks) and 9.12 (what a run's
-> shape actually is) are done; **9.12a — the hall must be kept — is done
-> too**, and it is the one that gave the game a third act. Next by weight:
-> 9.13, 9.14 and 9.15, the three that are about the moment-to-moment turn.
+> feels like to play**, below. **Built and closed:** 9.3, 9.4, 9.6, 9.8, 9.9,
+> 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave the game a third act.
+> **Measured, with a decision left to Evan rather than invented:** 9.1 (keep
+> or drop the shove and the dash), 9.2 (the voyage home), 9.5 (soften the
+> villain's promise or leave it), 9.7 (winter), 9.12 (the pacing arc).
+> **What is left unstarted is the two big ones: 9.10 (the rival's saga) and
+> 9.11 (the colony loop).**
+>
+> **And a standing lesson from every item above.** Ten of them were opened on
+> numbers that did not survive being re-taken, and two of the three most
+> recent closed as NEGATIVE results — 6.5b's hall-burning fired twice in 128
+> runs, and 9.5's raise of the raid rate bought three points of the villain
+> for three points of spring and a broken difficulty card. See "A number in
+> the roadmap is a reading, not a fact" at the top of CLAUDE.md before
+> building on anything measured here.
 >
 > **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
 > is kept here because nothing in it has been undone.** Phase 7 — the Unreal
@@ -4568,9 +4579,119 @@ nice. Four groups, in the shape they were proposed and chosen from.
   **0** and refusing to sell wood reads 14 against 91. The market's CONCLUSION
   was never at risk — the paired survival figures do not touch this counter —
   but the comparison meant to prove the arms differ at all did not work.
-- [ ] **9.9 Heirlooms** — the memorial, the lineage and the generations exist
-  and do not talk to each other. A blade with a name that outlives its owner
-  is the cheapest thing that would make them.
+- [x] **9.9 Heirlooms** — **Done 2026-08-31, and the premise was half wrong
+  before a line was written.**
+
+  The item read "the memorial, the lineage and the generations exist and do
+  not talk to each other". Two of those three already talk, and the source
+  says so without a harness: `hallPasses` imports `childrenOf` and names the
+  dead leader's children, and `maybeBirth` reads `kinOf` to record a father
+  that `maybePair` made. The system that is genuinely deaf is the **memorial**
+  — `fallenOf` mapped a person to a name, a byname, a fate, a day and a seed,
+  and to nothing about who they were to anybody.
+
+  **And it is deaf about something dense.** `PROBE: what a lineage actually
+  amounts to`, 60 sagas an arm, 2026-08-31:
+
+  | | even | fair |
+  |---|---|---|
+  | sagas that saw a child born | 19 (32%) | 34 (57%) |
+  | children in all / with a father named | 24 / 11 | 46 / 16 |
+  | sagas that saw a wedding after the landing | 17 (28%) | 30 (50%) |
+  | the hall passed leaving a child / leaving none | 10 / 148 | 9 / 94 |
+  | names the wall was given | **293** | 277 |
+  | **… of them bound to somebody** | **165 (56%)** | 151 (55%) |
+  | … of them leaving a child | 19 (6%) | 23 (8%) |
+
+  So there was plenty for a thing to be carried BY. There was simply no thing.
+
+  **WHAT SHIPPED IS THE BLADE** (`src/sim/heirloom.ts`, `src/data/blades.ts`).
+  One named sword a seed, off its own derived stream, in the leader's hand at
+  the landing. When the bearer dies it goes three ways in this order, and the
+  order is the feature: **to a child they left**, laid in a chest and never
+  moved again; else **to their kin**, if that person is alive; else **to
+  whoever leads now**. Every death site already funnels through `mourn`, so
+  the hand-off is one call beside `hallPasses` rather than six. `Fallen`
+  gained one optional field, and the wall row says `bore Fótbítr` inside the
+  fate line — no fourth column, because 9.3's water mark cost the 320-wide
+  screen 89px on a row that is drawn once and this one is drawn sixty times.
+
+  **Measured, same probe, same run:**
+
+  | | even | fair |
+  |---|---|---|
+  | sagas where it changed hands at all | **40 (67%)** | 40 (67%) |
+  | hands in all | 134 | 121 |
+  | **wall rows that carry it** | **96 (33%)** | 69 (25%) |
+  | laid by in a chest for a child | **2** | **4** |
+
+  A third of the memorial now has a column that two rows can share, which is
+  the whole of what "outlives its owner" means on a wall that outlives the
+  run.
+
+  **THE RARE BRANCH IS NAMED RATHER THAN CLAIMED.** Laying the blade by for a
+  child fires in 2 of 60 even sagas and 4 of 60 fair — 6.5b's shape, and 6.5b
+  was recorded as a negative result for exactly that. The difference is
+  stated rather than assumed: there the ONLY thing the rule did fired twice in
+  128 runs, so the rule was the rare event; here the rule's common path runs
+  in 67% of sagas and marks a third of the wall, and the chest is its grace
+  note. If a later reading wants the branch to bite it needs a wider trigger,
+  and the obvious one — laying it by for any child of the steading rather than
+  the bearer's own — was declined because it would put the sword in a box in
+  a third of sagas and stop the thing circulating, which is the event.
+
+  **The bar: the curve does not move, and it did not.** Both readings are the
+  same to the point after the change — `winter 78%, spring 53%, two winters
+  22%, settled by winter 43`, and `A Fair Country 83% · As It Lies 55% · A
+  Hard Country 27%`. That is deliberate: the second-year killer is morale
+  (9.12), and a heart term on a death would soften exactly the pressure that
+  diagnosis found, in a feature whose job is to connect three systems rather
+  than tune one. The blade touches no stat, no roll and no wound.
+
+  **A HOLE THE TESTS DID NOT FIND, AND READING THE DIFF DID.** `passBlade`
+  hangs off `mourn`, and `mourn` is only called for the DEAD. `handsLeave` and
+  `driveOut` set `alive: false` with `left: true` and deliberately never mourn
+  — the saga should not bury a man who is fine — so a bearer who walked out or
+  was driven out left `holder` pointing at somebody `bearerOf` refuses to
+  return, and no later death could ever move the blade again, because every
+  one of them fails the `holder !== dead.id` guard. The band's heirloom would
+  have silently ceased to exist in a saga that never mentioned it again.
+  `bladeLeftBehind` now runs at both sites: the sword is on the PARTY, and a
+  hand who leaves in the night does not carry off what the hall owns.
+
+  **Fourteen sabotages, and THREE of them caught nothing on the first pass.**
+  That is the headline, not the eleven that worked. All three were the same
+  fault in three costumes — a check written so that it could not fail:
+
+  1. *Taking the blade off its derived stream failed nothing*, because
+     `stream()` builds a fresh `Rng` on every call, so no call site can
+     consume another's numbers whatever label it uses. The test compared the
+     sabotaged code against itself. It pins the real guarantee now — a
+     memoised stream cache fails it — and says in the file that the
+     `derive('blade')` label is convention rather than load-bearing, because
+     the only test that could claim otherwise is the one just deleted.
+  2. *Deleting the call in `handsLeave` failed nothing*, because the test
+     called `bladeLeftBehind` directly instead of walking the band until
+     somebody actually left. It tested the function and not the wiring. It
+     goes through `handsLeave` now, and asserts the hand really left before
+     asserting anything about the sword.
+  3. *Dropping the `holder !== gone.id` guard failed nothing*, because the
+     fixture had the blade in the LEADER's hand — so handing it back to the
+     leader read as no movement at all. The blade starts in a non-leader's
+     grip now, and the fixture asserts that before it measures.
+
+  **Cost in pictures: one blessed change.** The chronicle grew by one entry —
+  the blade is named on the landing, once, with its meaning — moving
+  `chronicle@320x568` by 5.3 and `chronicle@390x844` by 2.7. Both were looked
+  at before they were blessed.
+
+  **Done when:** ✅ the premise re-taken in the source before anything was
+  built · ✅ the size of what the memorial was missing measured, not assumed ·
+  ✅ the blade passes in the order the design claims, watched failing on each
+  branch · ✅ it fires in play rather than in a fixture · ✅ the rare branch
+  named as rare · ✅ both balance readings unmoved · ✅ the departure hole
+  found by reading the diff and closed at both sites · ✅ all three checks
+  that could not fail found and replaced.
 - [ ] **9.10 The rival's saga** — there is a rival landnamsmadr with his own
   ambitions and no way to watch him. His run as a chronicle you can read: a
   race you can lose without being killed.
@@ -4932,6 +5053,31 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — A sword with a name, and a wall that can say so (9.9)** — The
+  item's premise was half wrong and the source settled it before a harness
+  ran: `hallPasses` already names the dead leader's children and `maybeBirth`
+  already reads the household `maybePair` made, so the generations and the
+  lineage talk. The MEMORIAL was the deaf one — a name, a byname, a fate, a
+  day, a seed, and nothing about who anybody was to anybody — and 56% of the
+  293 names it is handed over 60 even sagas belonged to somebody who was bound
+  to another person. So the band comes ashore with one named blade, it passes
+  when its bearer dies — to a child they left, else their kin, else whoever
+  leads now — and the wall carries it. It changes hands in 67% of sagas, 134
+  hands over 60, and marks a third of the memorial's rows, which is the first
+  column on that wall two rows can share. The chest branch fires 2 times in 60
+  and is recorded as rare rather than sold as a feature. Both balance readings
+  are unmoved to the point (78/53/22 and 83/55/27): the blade touches no stat,
+  no roll and no wound, because the second-year killer is morale and a heart
+  term on a death would soften the exact pressure 9.12 found. Fourteen sabotages,
+  eleven caught — and the three that caught nothing were the same fault in
+  three costumes, a check written so that it could not fail: one comparing
+  the sabotaged code against itself, one calling the hook instead of running
+  it, one whose fixture handed the sword back to the same man. All three
+  replaced. And a hole no test had: a bearer who WALKS OUT rather than dies
+  stranded the blade forever, because `mourn` is only called for the dead.
+  That one was found by reading the diff, not by a red bar, and is closed at
+  both departure sites.
 
 - **2026-08-31 — Keeping the villain's promise was tried and refused (9.5)** —
   9.5 left a fork: raise the raid rate so the clan that carries the named foe

@@ -32,7 +32,13 @@ export function renderWall(dead: Fallen[], onClose: () => void): HTMLElement {
       list.append(
         el('div', { class: 'wall-row' }, [
           el('span', { class: 'wall-name' }, [`${person.name} ${person.byname}`]),
-          el('span', { class: 'wall-fate' }, [person.fate]),
+          // The blade rides in the FATE line rather than in a column of its
+          // own. A fourth column on a 320-wide screen is what the water mark
+          // cost the travel panel in 9.3 — 89px of height and two blessed
+          // pictures — and this row is repeated sixty times.
+          el('span', { class: 'wall-fate' }, [
+            person.blade ? `${person.fate} · bore ${person.blade}` : person.fate,
+          ]),
           el('span', { class: 'wall-day' }, [`day ${person.day}`]),
         ]),
       );

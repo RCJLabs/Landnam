@@ -46,7 +46,13 @@ describe('new game', () => {
     expect(state.party.stop ?? 0).toBe(0);
     expect(state.party.food).toBe(START_FOOD);
     expect(state.party.firewood).toBe(START_FIREWOOD);
-    expect(state.saga).toHaveLength(1);
+    // TWO lines on the landing since 9.9, not one: the knarr grounding, and
+    // the blade coming up the sand with a name. Kept as a count AND as what
+    // the two lines are — a bare number would let a third line in silently,
+    // which is what this assertion was for in the first place.
+    expect(state.saga).toHaveLength(2);
+    expect(state.saga[0]!.text).toContain('grounded at');
+    expect(state.saga[1]!.text).toContain(state.party.blade!.name);
   });
 
 

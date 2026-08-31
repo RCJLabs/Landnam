@@ -184,7 +184,15 @@
 //             credited with having been kept on the day it is loaded, so
 //             nobody's jarldom collapses because they saved before this
 //             existed.
-export const SAVE_VERSION = 57;
+// v58 (9.9): Party gained `blade` — a sword with a name, whose hand it is in,
+//             and everyone who has borne it. The one possession in the game
+//             that outlives its owner: it passes on death, it is laid by for
+//             a child when the dead left one, and the memorial carries it, so
+//             two rows on the wall can be about the same thing. An old save is
+//             given the blade its own seed would have produced, held by
+//             whoever leads it now — the hands before cannot be recovered and
+//             are not invented. See sim/heirloom.ts.
+export const SAVE_VERSION = 58;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

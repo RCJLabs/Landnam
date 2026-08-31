@@ -15,6 +15,7 @@ import { seedPlaces } from '../sim/places';
 import { placeNeighbours } from '../sim/neighbours';
 import { makeRival } from '../sim/rival';
 import { stream } from '../rng';
+import { BLADES } from '../data/blades';
 
 /** Migrates a save from version N to version N+1. */
 export type Migration = (save: Record<string, unknown>) => Record<string, unknown>;
@@ -626,6 +627,34 @@ export const MIGRATIONS: Record<number, Migration> = {
       version: 57,
       ...(home ? { settlement: { ...home, kept: day } } : {}),
     };
+  },
+
+  // v58 (9.9): the band gets its named blade.
+  //
+  // Derived from the seed like everything else, so a saga loaded from before
+  // there were blades carries the SAME sword it would have come ashore with,
+  // not a different one — a player who reloads does not find the heirloom
+  // renamed. `borne` starts at whoever holds the high seat now: the hands it
+  // went through before this existed cannot be recovered, and inventing a
+  // chain would be a lie in the one place the feature is meant to be honest.
+  //
+  // A band with nobody left alive gets a blade with no holder, which is the
+  // truth about it.
+  57: (save) => {
+    const party = save['party'] as Record<string, unknown> | undefined;
+    if (!party) return { ...save, version: 58 };
+    const seed = typeof save['seed'] === 'string' ? save['seed'] : '';
+    const people = (Array.isArray(party['people']) ? party['people'] : []) as
+      Record<string, unknown>[];
+    const heir = people.find((p) => p['alive'] === true && p['bond'] === 'sworn')
+      ?? people.find((p) => p['alive'] === true);
+    const pick = stream(seed, 'worldgen').derive('blade').pick(BLADES);
+    const blade = {
+      name: pick.name,
+      ...(heir ? { holder: heir['id'] as string } : {}),
+      borne: heir ? [heir['name'] as string] : [],
+    };
+    return { ...save, version: 58, party: { ...party, blade } };
   },
 
 };

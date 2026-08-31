@@ -2,6 +2,8 @@
 // coast, same warband, same weather in the bones of the world.
 
 import { makeShip } from '../sim/ship';
+import { makeBlade, meaningOf } from '../sim/heirloom';
+import { leaderOf } from '../sim/people';
 import { stream } from '../rng';
 import { makeRival } from '../sim/rival';
 import { LANDING_NAMES } from '../data/names';
@@ -33,6 +35,7 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
   world.places = seedPlaces(seed);
 
   const ship = makeShip(seed);
+  const blade = makeBlade(seed, leaderOf(people)!);
 
   const state: GameState = {
     version: SAVE_VERSION,
@@ -49,11 +52,19 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
       firewood: Math.round(START_FIREWOOD * terms.stores),
       morale: 70,
       hasCamped: false,
+      // The one thing they brought that is worth naming. It is on the party
+      // and not on the man because it will outlive him — see sim/heirloom.ts.
+      blade,
     },
     saga: [
       {
         day: 1,
         text: `${ship.name} grounded at ${landingName} on a grey morning, and six of us stepped down into water to the knee. Behind us, open sea. Ahead, a country with no name we knew.`,
+        tone: 'saga',
+      },
+      {
+        day: 1,
+        text: `${leaderOf(people)!.name} came up the sand with ${blade.name} at the hip — ${meaningOf(blade.name)}, and older than anybody who could say where it came from.`,
         tone: 'saga',
       },
     ],

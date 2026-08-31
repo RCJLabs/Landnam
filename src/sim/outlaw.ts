@@ -15,6 +15,7 @@ import { stream } from '../rng';
 import { OUTLAW_LIE_LOW, OUTLAW_MORALE } from '../data/feuds';
 import type { GameState, Outlaw, Person } from '../state/types';
 import { worldBeat } from './beats';
+import { bladeLeftBehind } from './heirloom';
 import { chronicle } from './saga';
 import { startBattle } from './battleTurn';
 import { atSea } from './road';
@@ -43,6 +44,10 @@ export function driveOut(state: GameState, person: Person): void {
   person.left = true;
   person.fate = 'was made outlaw and went into the country';
   person.diedOn = state.day;
+
+  // Whatever else he takes into the country, he does not take the hall's
+  // sword. Same reason as `handsLeave`: this site does not mourn.
+  bladeLeftBehind(state, person);
 
   if (!state.outlaws) state.outlaws = [];
   state.outlaws.push({

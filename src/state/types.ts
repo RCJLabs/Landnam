@@ -260,6 +260,32 @@ export interface Party {
    * `data/rations.ts` for why the numbers are what they are.
    */
   rations?: Rations;
+  /**
+   * The named blade, and whose hand it is in. See sim/heirloom.ts.
+   *
+   * On the PARTY rather than on a Person for the reason the ship is on the
+   * root: a thing that outlives the hand holding it cannot be stored on the
+   * hand. Optional only because a save written before there were blades has
+   * none, and a band whose blade has been laid by in a chest still carries
+   * the record of it.
+   */
+  blade?: Blade;
+}
+
+/**
+ * A sword with a name, and the hands it has been through.
+ *
+ * `borne` holds NAMES, not ids. Ids are meaningless the moment the run ends,
+ * and the whole point of the thing is that the memorial outlives the run.
+ */
+export interface Blade {
+  name: string;
+  /** Whose hand it is in. Absent means it is in a chest — see `laidFor`. */
+  holder?: string;
+  /** The child it waits for, when nobody is bearing it. */
+  laidFor?: string;
+  /** Everyone who has borne it, first hand first. */
+  borne: string[];
 }
 
 export type Rations = 'full' | 'half';

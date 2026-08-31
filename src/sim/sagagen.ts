@@ -16,6 +16,7 @@ import { terrainDef } from '../data/terrain';
 import { clanKind, standingFor } from '../data/clans';
 import { known } from './lore';
 import { fullName, living } from './people';
+import { bladeStanding } from './heirloom';
 import { tallyOf } from './tally';
 import { verdictFor } from './site';
 import { buildingById } from '../data/buildings';
@@ -289,6 +290,12 @@ export function composeSaga(state: GameState): Saga {
   } else if (tally.battles > 0) {
     blood.push(rng.derive('whole').pick(NONE_FELL));
   }
+  // What the sword did, when it did anything. In `Blood` because that is
+  // where the dead are named and the blade only ever moves because somebody
+  // died — see sim/heirloom.ts, which is silent for a saga where it stayed
+  // on one hip.
+  const sword = bladeStanding(state);
+  if (sword) blood.push(sword);
   if (blood.length > 0) chapters.push({ heading: 'Blood', text: blood.join(' ') });
 
   // --- The end ---
