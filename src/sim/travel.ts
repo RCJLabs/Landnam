@@ -14,7 +14,7 @@ import {
   placeById, sackBlocker, settlePlace, tellOfPlace, tradeAt, tradeBlocker,
 } from './places';
 import { placeKind } from '../data/places';
-import { strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
+import { metAtSea, strandTarget, STRAND_FEWER, STRAND_SHAKEN } from './sea';
 import { note } from './tally';
 import { startBattle } from './battleTurn';
 import { callTheBlot } from './blot';
@@ -117,6 +117,27 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
       if (found) {
         const def = placeKind(found);
         chronicle(state, `Along the shore stood ${def.name}. ${def.blurb}`, 'saga');
+      }
+
+      // MET ON THE WATER (9.8). Last in the day, after the crossing has been
+      // narrated and the shore named, so the fight interrupts an arrival
+      // rather than replacing it.
+      //
+      // This is the one line the sea fight was missing. `pickSeaField`, the
+      // `case 'ocean'` in the battlefield generator, `isSeaFight` and
+      // `settleSeaFight` were all built and none could ever run, because every
+      // other caller of `startBattle` passes `countryHere(state)` — a land
+      // country, always. Nothing was rare; nothing was reachable.
+      if (rowed) {
+        const met = metAtSea(state, days);
+        if (met !== null) {
+          chronicle(
+            state,
+            'A sail came up out of the haze on our quarter and did not turn away.',
+            'grim',
+          );
+          startBattle(state, 'ocean', met);
+        }
       }
       return state;
     }

@@ -4466,9 +4466,8 @@ nice. Four groups, in the shape they were proposed and chosen from.
   a mechanic that was already built. Worth noting first that the two existing
   levers are enormous and were both invisible, which is evidence that winter's
   problem is legibility rather than emptiness.
-- [~] **9.8 The sea fight** — **DIAGNOSED 2026-08-31, and for once the item's
-  number is right. It is not rare; it is UNREACHABLE.** The trigger is Evan's
-  to authorise.
+- [x] **9.8 The sea fight** — **Done 2026-08-31. For once the item's number was
+  right: it was not rare, it was UNREACHABLE, and the fix was one roll.**
 
   `0 sea fights over 120 sagas` against 1308 days afloat, and the cause is not
   a rate, a bot policy or a counter reading the wrong field. **No code path can
@@ -4500,11 +4499,44 @@ nice. Four groups, in the shape they were proposed and chosen from.
   in the hold — which is the item's own idea, and the one threat the sea can
   make that the land cannot.
 
-  **NOT BUILT, because it is a new hazard and it changes difficulty**, and
-  every difficulty change this phase has been Evan's ruling. It can be priced
-  the way `AUTUMN_WORTH_K` was — built in the harness, swept, and reverted —
-  before anything ships. The measurement is the cheap part; what needs deciding
-  is whether the sea should be allowed to kill.
+  **BUILT 2026-08-31 on Evan's ruling, and it costs the tuned game nothing.**
+
+  `metAtSea` rolls once per rowed leg, drawn against what is IN THE HOLD — the
+  item's own idea, and the one threat the sea can make that the land cannot.
+  An empty knarr is not worth rowing after; a fat one is. Same saturating shape
+  as `autumnChance`, capped at 5% a day so the sea is a hazard and not a toll,
+  and a fat hold draws a bigger crew out.
+
+  | | before | after |
+  |---|---|---|
+  | sea fights over 120 sagas | **0** | **20** |
+  | curve: winter / spring / two winters | 78% / 53% / 22% | **78% / 53% / 22%** |
+  | A Fair Country · As It Lies · A Hard Country, spring | 83 / 55 / 27% | **83 / 55 / 27%** |
+
+  **Nothing in the first winter moved**, and the reason is structural rather
+  than lucky: a sea fight needs a band that is settled, rowing, and carrying
+  something worth taking, which is a description of the game after the part
+  that is tuned.
+
+  **THE FIRST CUT SATURATED, exactly as `AUTUMN_WORTH_K` did at 0.5.** At
+  `SEA_FIGHT_K = 0.0016` the cap bound at about thirty of stores aboard, so
+  every band that had ever eaten sat at the ceiling and the cargo weighting —
+  the whole point of the design — meant nothing. At 0.00009 a lean crossing
+  reads 0.4% a day, an ordinary one 2.7%, and the cap binds around 600, which
+  is a laden ship.
+
+  **AND IT KNOCKED OVER A CONTROL ARM THAT HAD NEVER CONTROLLED ANYTHING.**
+  The market probe's placebo — "goes, deals nothing" — was striking about 250
+  bargains. `deals` counted `tally.bargains`, and `note(state, 'bargains')`
+  fires in `places.ts` AND `neighbours.ts` while `tradesNothing` gates only the
+  first: the placebo was bargaining with NEIGHBOURS and counting it. The bar
+  held on slack alone — trader 550 against a threshold of 275, placebo 257 —
+  and when rowed legs gained something to interrupt, the trader fell to 343,
+  the threshold to 171, and it finally said so. Gated on standing at a place,
+  the way `the place economy` already asks the same question, the placebo reads
+  **0** and refusing to sell wood reads 14 against 91. The market's CONCLUSION
+  was never at risk — the paired survival figures do not touch this counter —
+  but the comparison meant to prove the arms differ at all did not work.
 - [ ] **9.9 Heirlooms** — the memorial, the lineage and the generations exist
   and do not talk to each other. A blade with a name that outlives its owner
   is the cheapest thing that would make them.
@@ -4869,6 +4901,21 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — The sea can kill now (9.8)** — Zero sea fights over 120 sagas
+  turned out not to be a rate but a missing line: every caller of `startBattle`
+  passed `countryHere`, a land country, so `terrain: 'ocean'` was unreachable
+  while `pickSeaField`, the `case 'ocean'` battlefield and `isSeaFight` all sat
+  built and dead. `metAtSea` now rolls once a rowed leg against what is in the
+  hold — an empty knarr is not worth rowing after, a fat one draws a bigger
+  crew — and the count goes 0 to 20 over 120 sagas with the first winter and
+  all three hardship arms byte-identical, because a sea fight needs a band that
+  is settled, rowing and laden. The first cut saturated at thirty of stores
+  aboard and made the cargo weighting meaningless, which is the same fault
+  `AUTUMN_WORTH_K` had at 0.5. It also knocked over the market probe's placebo,
+  which had been striking 250 bargains with neighbours while claiming to deal
+  nothing — a control arm that passed for a long time on slack, and reads 0 now
+  that it counts only deals struck at a place.
 
 - **2026-08-31 — The sea fight is unreachable, not rare (9.8), and a rule
   about numbers (CLAUDE.md)** — For once the item's figure is right: 0 sea

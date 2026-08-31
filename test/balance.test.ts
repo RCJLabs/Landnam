@@ -7311,11 +7311,24 @@ describe('the market, and whether visiting it is worth anything', () => {
       for (let s = 0; s < SEEDS; s += 1) {
         const final = run(`curve-${s}`, LAST_DAY, (before, after) => {
           if (!before.expedition && after.expedition?.purpose === 'trade') errands += 1;
-          // A deal is a bargain, which is the tally the sim keeps itself —
-          // `note(state, 'bargains')` in both places.ts and neighbours.ts.
+          // A deal is a bargain the sim tallied AT A PLACE, and the last
+          // clause is the whole of it.
+          //
+          // `note(state, 'bargains')` fires in places.ts AND neighbours.ts,
+          // and `tradesNothing` gates only the first — so the placebo, whose
+          // entire job is to go to the market and strike nothing, was
+          // striking about 250 bargains with NEIGHBOURS and counting them.
+          // The bar held for a long time on slack alone: the trader read 550
+          // against a threshold of 275, and the placebo 257. When 9.8 gave
+          // rowed legs something to interrupt, the trader fell to 343, the
+          // threshold to 171, and a control arm that had never controlled
+          // anything finally said so.
+          //
+          // Gated on standing at a place, which is the idiom this file
+          // already uses for the same question in `the place economy`.
           const was = before.tally?.bargains ?? 0;
           const now = after.tally?.bargains ?? 0;
-          if (now > was) deals += now - was;
+          if (now > was && placeHere(after)) deals += now - was;
           if (after.settlement) settledDays += 1;
         }, 'even');
         lived.push(!final.end && final.day >= LAST_DAY);

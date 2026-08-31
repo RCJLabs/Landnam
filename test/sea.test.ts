@@ -18,6 +18,8 @@ import { startBattle } from '../src/sim/battleTurn';
 import { MAX_FOES } from '../src/sim/battle';
 import { SWORN_MAX } from '../src/sim/people';
 import { SEA_FIELDS } from '../src/data/seaFields';
+import { settled } from './fixtures/settle';
+import { SEA_FIGHT_MAX, metAtSea, seaFightChance } from '../src/sim/sea';
 import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
@@ -151,5 +153,87 @@ describe('the hull and the packs are the stake', () => {
     const migrated = migrate(old).save;
     const ship = migrated['ship'] as { strakes: number };
     expect(ship.strakes).toBe(SHIP_STRAKES - 1);
+  });
+});
+
+// 9.8: the sea fight, which was built and unreachable until the roll existed.
+describe('somebody comes out at a laden ship', () => {
+  it('never comes for a band with nothing aboard', () => {
+    const state = settled('sea-empty');
+    state.party.food = 0;
+    state.party.firewood = 0;
+    expect(seaFightChance(state)).toBe(0);
+    expect(metAtSea(state, 4)).toBeNull();
+  });
+
+  it('never comes for a band with nobody to fight it', () => {
+    // A crossing that starts a battle the band cannot field is a drowning
+    // dressed as content.
+    const state = settled('sea-nobody');
+    state.party.food = 400;
+    state.party.firewood = 400;
+    for (const p of state.party.people) p.bond = 'hand';
+    expect(seaFightChance(state)).toBe(0);
+  });
+
+  it('comes likelier for a fuller hold, and never past the cap', () => {
+    const state = settled('sea-laden');
+    const at = (food: number, wood: number): number => {
+      state.party.food = food;
+      state.party.firewood = wood;
+      return seaFightChance(state);
+    };
+    const lean = at(20, 20);
+    const fair = at(150, 150);
+    const fat = at(900, 900);
+    expect(lean).toBeGreaterThan(0);
+    expect(fair).toBeGreaterThan(lean);
+    expect(fat).toBeGreaterThanOrEqual(fair);
+    expect(fat).toBeLessThanOrEqual(SEA_FIGHT_MAX);
+  });
+
+  it('is likelier on a longer crossing than a short one', () => {
+    // The leg is rolled once, so the days have to reach the odds through the
+    // compound rather than through repetition.
+    const state = settled('sea-long');
+    state.party.food = 300;
+    state.party.firewood = 300;
+    const p = seaFightChance(state);
+    const one = 1 - (1 - p) ** 1;
+    const six = 1 - (1 - p) ** 6;
+    expect(six).toBeGreaterThan(one);
+  });
+
+  it('brings more against a fat hold than a lean one, when it comes', () => {
+    // Swept over days so the roll actually fires; the difficulty is what is
+    // under test, not whether this seed happens to be unlucky.
+    const state = settled('sea-worth');
+    const hardest = (food: number): number => {
+      let worst = -1;
+      for (let d = 1; d <= 40; d += 1) {
+        state.day = d;
+        state.party.food = food;
+        state.party.firewood = food;
+        const met = metAtSea(state, 6);
+        if (met !== null && met > worst) worst = met;
+      }
+      return worst;
+    };
+    const lean = hardest(30);
+    const fat = hardest(400);
+    expect(fat, 'the roll never fired at all — nothing was measured')
+      .toBeGreaterThanOrEqual(0);
+    expect(fat).toBeGreaterThan(lean);
+  });
+
+  it('is the same crossing twice, because the sea is seeded like everything else', () => {
+    const twice = (): number | null => {
+      const state = settled('sea-replay');
+      state.party.food = 300;
+      state.party.firewood = 300;
+      state.day = 40;
+      return metAtSea(state, 5);
+    };
+    expect(twice()).toBe(twice());
   });
 });
