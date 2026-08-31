@@ -48,6 +48,17 @@ lines, a threshold test written in terms of the constant it was testing, and a
 "byte-identical" PNG comparison against a file the tool had not rewritten. A
 check that cannot fail looks exactly like a check that passes.
 
+**The next day was worse, and it is the reason this section is worth its
+length.** One probe for 9.11 carried three instrument faults in a row —
+classifying turns by the HARNESS's mode stack and reporting "colony 0%";
+merging two reasons for "nothing to build" so a pressed band and a finished
+one read alike; and asking `home.built.includes(id)` where the codebase has
+`standsFor`, which reported "the build list is never finished" when the true
+figure is 74% by year four. **That last one is trap 1 above, committed again
+by the hand that wrote trap 1.** Knowing the rule is not the same as applying
+it, so apply it to the reading in front of you, every time, including when you
+are the one who wrote the warning.
+
 ## Commands
 
 - `npm run dev` — dev server

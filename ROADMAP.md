@@ -51,9 +51,9 @@
 > 9.9, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave the game a third
 > act. **Measured, with a decision left to Evan rather than invented:** 9.2
 > (the voyage home), 9.5 (soften the villain's promise or leave it), 9.7
-> (winter), 9.12 (the pacing arc).
-> **What is left unstarted is the two big ones: 9.10 (the rival's saga) and
-> 9.11 (the colony loop).**
+> (winter), 9.11 (the colony loop), 9.12 (the pacing arc), and the SHIELD,
+> which 9.1b's more lethal fights overturned within a day of 9.1 measuring it.
+> **What is left unstarted is 9.10 (the rival's saga).**
 >
 > **And a standing lesson from every item above.** Ten of them were opened on
 > numbers that did not survive being re-taken, and two of the three most
@@ -4802,10 +4802,62 @@ nice. Four groups, in the shape they were proposed and chosen from.
 
 ### Overhauls
 
-- [ ] **9.11 The colony loop** — 53% of a saga's actions, and by year two the
-  band has more labour than uses for it. The largest system in the game and
-  the least pressured: `33 of 60` bands ever passed six people, and the hall
-  runs `9.0 souls to 14.2 of roof` — never full.
+- [~] **9.11 The colony loop** — **DIAGNOSED 2026-08-31. The item's headline
+  claim is RIGHT, one of its three supporting numbers is wrong, and the fault
+  is not where any of them point.**
+
+  Re-taken before opening the largest item in the phase, because all four
+  figures predate 9.12a — and 9.12a exists BECAUSE of them. `PROBE: what the
+  colony loop actually is`, 60 sagas, even:
+
+  | the item said | re-taken |
+  |---|---|
+  | 53% of a saga's actions | **47%** of turns are spent standing at the steading — holds |
+  | 33 of 60 ever passed six people | **23 of 60** — the figure was ten too high |
+  | 9.0 souls to 14.2 of roof, never full | never full HOLDS; crowding fires on 0–6% of settled days |
+  | by year two, more labour than uses for it | **confirmed, and it is not about labour** |
+
+  **THE SINGLE AVERAGED PAIR HID THE ONLY INTERESTING THING ABOUT IT.** Year
+  by year, souls against roof: 5.5/9.1, **6.5/15.6**, 9.8/18.0, 12.5/18.0,
+  10.5/18.5. The gap is worst in the SECOND year and closes by the fourth — a
+  band builds roof far faster than it grows into it, and then catches up. One
+  mean across all five years reports none of that.
+
+  **AND THE REAL FINDING IS THE BUILD LIST, NOT THE PEOPLE.** Days on which
+  the steading has nothing left it could raise:
+
+  | | year 1 | year 2 | year 3 | year 4 | year 5 |
+  |---|---|---|---|---|---|
+  | **list finished** | 1% | **26%** | **63%** | **74%** | 77% |
+  | blocked (wants something it cannot start) | 21% | 13% | 16% | 16% | 12% |
+  | idle hands | 0.2 | 0.7 | 1.5 | 1.3 | 0.4 |
+  | **wood in store** | 43 | 236 | 521 | **1072** | **1613** |
+
+  Nobody is idle — everybody keeps a job. What runs out is somewhere to spend
+  what the jobs produce: by the second year a quarter of settled days offer
+  nothing to build, by the third nearly two thirds, and the band goes on
+  cutting wood it will never spend until sixteen hundred of it sits in the
+  store. **So 9.11 is not "give the band more to do with its people". It is
+  "give the steading somewhere for its output to go past year two".**
+
+  **THREE INSTRUMENT FAULTS IN ONE PROBE, and they are the point of this
+  entry.** The first draft classified turns by `currentMode(before) ===
+  'COLONY'` and reported **colony 0%** — a reading of the HARNESS's mode
+  stack, because the bot calls `assign` and `queueBuild` on the state and
+  never opens the colony screen. The second merged two reasons for "nothing to
+  build" into one count, so a band pressed for timber and a band that has
+  finished the list read identically — split, and the answer inverted. The
+  third asked `home.built.includes(id)` and read **"list finished 0%" in every
+  year**, because a tier that has been UPGRADED leaves `built` — which is
+  **9.4's finding exactly, made again by the same hand that wrote it up, and
+  the first trap named in CLAUDE.md**. `standsFor` is what the codebase has
+  for this, and it turns 0% into 74%.
+
+  **The fork, and it is Evan's:** what the output should buy. A trade good
+  worth carrying to the places and the neighbours; a second tier of buildings
+  that costs a year rather than a week; or a reason to send it away — the
+  knarr already exists and 9.2 says the voyage home has no cargo worth
+  putting in it. Nothing built here on a guess.
 - [~] **9.12 The pacing arc** — **DIAGNOSED 2026-08-29, and the diagnosis
   says the item was asking the wrong question.**
 
@@ -5157,6 +5209,24 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — What the colony loop actually is (9.11, diagnosed)** — All
+  four of the item's figures predate 9.12a, which was built because of them,
+  so they were re-taken before the largest item in the phase got opened on
+  them. The headline holds and one support does not: 47% of turns are spent at
+  the steading (said 53%), the hall is genuinely never full, but only **23 of
+  60** bands ever pass six people rather than 33. The averaged pair "9.0 souls
+  to 14.2 of roof" hid the only interesting thing in it — the gap is worst in
+  YEAR TWO (6.5 to 15.6) and closes by year four (12.5 to 18.0). And the real
+  fault is not the people at all: nobody is idle, but the steading has nothing
+  left to raise on **26% of settled days in year two, 63% in year three and
+  74% in year four**, while the wood it goes on cutting piles to 1072 and then
+  1613 in the store. 9.11 is not "give the band more to do with its people",
+  it is "give the steading somewhere for its output to go". Three instrument
+  faults were found and fixed inside the one probe — a mode-stack reading that
+  reported colony 0%, a merged denominator that hid pressed bands among
+  finished ones, and `home.built.includes` instead of `standsFor`, which is
+  9.4's own finding made again by the hand that wrote it up.
 
 - **2026-08-31 — The shove and the dash come off the bar (9.1b)** — Evan's
   ruling on the fork 9.1 left open. Both verbs are gone from the sim, the

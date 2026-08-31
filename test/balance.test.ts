@@ -47,7 +47,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { effectsOn, SEASON_LENGTH, seasonOf, winterDepth } from '../src/sim/calendar';
+import { effectsOn, SEASON_LENGTH, YEAR_LENGTH, seasonOf, winterDepth } from '../src/sim/calendar';
 import { markHaze } from '../src/sim/winter';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply, type Action } from '../src/sim/actions';
@@ -69,7 +69,7 @@ import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { MAX_RAIDERS, MAX_RAIDERS_FAMED, raiderCap } from '../src/sim/battle';
 import { RAID_CHANCE_MAX, SACK_TAKES, autumnChance, autumnRaidDay, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
-import { capacity, crowding, heartRaised, standsFor } from '../src/sim/colony';
+import { buildBlocker, capacity, crowding, heartRaised, standsFor } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
 import { isWarbandTurn } from '../src/sim/battle';
@@ -7501,4 +7501,141 @@ describe('PROBE: what a lineage actually amounts to', () => {
       );
     }
   });
+});
+
+describe('PROBE: what the colony loop actually is', () => {
+  /**
+   * 9.11's three numbers, re-taken before the largest item in the phase is
+   * opened on them. All three date from before 9.12a, and 9.12a exists
+   * BECAUSE of them — "the hall must be kept" was built as the answer to
+   * "the colony is the least pressured system in the game". A premise that
+   * has already been half-answered is exactly the kind this project has been
+   * caught inheriting all week.
+   *
+   * The item reads: 53% of a saga's actions, 33 of 60 bands ever passed six
+   * people, the hall runs 9.0 souls to 14.2 of roof and is never full, and by
+   * year two the band has more labour than uses for it.
+   *
+   * The LOAD-BEARING claim is the last one, and it is the only one the other
+   * three are evidence for. So this measures it directly rather than by
+   * proxy: on a settled day, is there anything left the band could build, and
+   * is anybody standing about with no job.
+   */
+  it('counts the actions, the roster, the roof and the idle hands',
+    { timeout: 1_800_000 }, async () => {
+      const SEEDS = 60;
+      let colony = 0;
+      let travel = 0;
+      let battle = 0;
+      let everPastSix = 0;
+      let sagas = 0;
+      const whyBlocked = new Map<string, number>();
+      // Settled days, split by year, so "by year two" can be checked rather
+      // than assumed.
+      const byYear = new Map<number, {
+        days: number; souls: number; roof: number; crowded: number;
+        idle: number; nothingLeft: number; cantAfford: number; queueEmpty: number;
+        wood: number;
+      }>();
+      const bump = (y: number) => {
+        if (!byYear.has(y)) {
+          byYear.set(y, {
+            days: 0, souls: 0, roof: 0, crowded: 0,
+            idle: 0, nothingLeft: 0, cantAfford: 0, queueEmpty: 0, wood: 0,
+          });
+        }
+        return byYear.get(y)!;
+      };
+
+      for (let s = 0; s < SEEDS; s += 1) {
+        let peak = 0;
+        let lastDay = 0;
+        run(`curve-${s}`, 400, (before, after) => {
+          // WHERE THE SAGA'S TIME GOES, and the first cut of this counter read
+          // a flat 0% for the colony — because it asked `currentMode(before)
+          // === 'COLONY'` and this harness never opens the colony screen: the
+          // bot calls `assign` and `queueBuild` on the state directly. That is
+          // a reading of the BOT's mode stack, not of the game, and it is the
+          // same fault as every other one this file has caught.
+          //
+          // So it asks where the band is standing instead, which is what "how
+          // much of a saga is the colony" actually means.
+          if (before.battle) battle += 1;
+          else if (before.settlement && atHome(before)) colony += 1;
+          else travel += 1;
+
+          const alive = after.party.people.filter((p) => p.alive).length;
+          if (alive > peak) peak = alive;
+
+          const home = after.settlement;
+          if (!home || after.day === lastDay) return;
+          lastDay = after.day;
+          const row = bump(Math.floor((after.day - 1) / YEAR_LENGTH) + 1);
+          row.days += 1;
+          row.souls += alive;
+          row.roof += capacity(after);
+          if (crowding(after) > 0) row.crowded += 1;
+          row.idle += after.party.people.filter((p) => p.alive && !p.job).length;
+          if (home.queue.length === 0) row.queueEmpty += 1;
+          // THE TWO REASONS THERE IS NOTHING TO START, kept apart, because a
+          // count that merges them is a ratio whose denominator selected
+          // itself. `buildBlocker` answers 'timber' for a band that is simply
+          // out of wood — which is the colony being PRESSED, the opposite of
+          // the item's claim — and answers something else when the list is
+          // genuinely finished.
+          // `standsFor`, NOT `home.built.includes` — and the first cut of this
+          // probe used the latter and read "list finished 0%" in every year.
+          // A tier that has been UPGRADED is not in `built` any more, so a
+          // longhouse replaced by a great hall counted as still to build, and
+          // `buildBlocker` duly answered 'built' 5208 times. That is 9.4's
+          // finding exactly, made again by the person who wrote it up, and it
+          // is the first trap named in CLAUDE.md.
+          const unbuilt = BUILDINGS.filter((b) => !standsFor(after, b.id));
+          const couldStart = unbuilt.filter((b) => buildBlocker(after, b) === null);
+          row.wood += after.party.firewood;
+          if (unbuilt.length === 0) row.nothingLeft += 1;
+          else if (couldStart.length === 0) {
+            row.cantAfford += 1;
+            // WHICH refusal, per building, on a day when nothing can start.
+            // "Blocked" with a thousand wood in the store is not a store
+            // problem, and naming the blocker is the only way to know what it
+            // is instead.
+            for (const b of unbuilt) {
+              const why = buildBlocker(after, b) ?? 'none';
+              whyBlocked.set(`${why}`, (whyBlocked.get(`${why}`) ?? 0) + 1);
+            }
+          }
+        }, 'even');
+        sagas += 1;
+        if (peak > 6) everPastSix += 1;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      const acts = colony + travel + battle;
+      const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
+      const rows = [...byYear.entries()].sort((a, b) => a[0] - b[0]).map(([y, r]) =>
+        `  year ${y}: ${r.days} settled days, ${(r.souls / r.days).toFixed(1)} souls to `
+        + `${(r.roof / r.days).toFixed(1)} of roof, crowded ${pc(r.crowded, r.days)}, `
+        + `${(r.idle / r.days).toFixed(1)} idle hands, `
+        + `${(r.wood / r.days).toFixed(0)} wood in store, `
+        + `list finished ${pc(r.nothingLeft, r.days)}, `
+        + `blocked ${pc(r.cantAfford, r.days)}, `
+        + `queue empty ${pc(r.queueEmpty, r.days)}`);
+      // eslint-disable-next-line no-console
+      console.log(
+        `the colony loop over ${sagas} sagas — ${acts} turns: `
+        + `colony ${pc(colony, acts)}, travel ${pc(travel, acts)}, battle ${pc(battle, acts)}\n`
+        + `  bands that ever passed six people: ${everPastSix} of ${sagas}\n`
+        + rows.join('\n')
+        + `\n  why nothing could start, per building per blocked day: `
+        + [...whyBlocked.entries()].sort((a, b) => b[1] - a[1])
+          .map(([k, v]) => `${k} ${v}`).join(', '),
+      );
+
+      // THE INSTRUMENT FIRST. A probe that never sees a settled day, or never
+      // sees a second year, measures nothing about a colony loop.
+      expect([...byYear.keys()], 'no settled days at all').not.toHaveLength(0);
+      expect(byYear.get(2)?.days ?? 0, 'no band reached a second year — nothing to say')
+        .toBeGreaterThan(0);
+    });
 });
