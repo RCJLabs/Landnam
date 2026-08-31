@@ -268,6 +268,9 @@ export function meetRival(state: GameState): void {
   // thing on this coast you see from the next headland.
   if (Math.abs(rival.stop - standingAt(state)) > 1) return;
   rival.met = true;
+  // For the ending to name (9.10). Recorded here rather than derived later
+  // because nothing else in the save remembers when sight first fell.
+  rival.metOn = state.day;
   chronicle(
     state,
     `We came in sight of ${rival.hall}. ${rival.leader}'s hall, smoke going up, `

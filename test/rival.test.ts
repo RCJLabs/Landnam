@@ -20,6 +20,7 @@ import {
   rivalHolds,
   rivalSettled,
   rivalStops,
+  meetRival,
 } from '../src/sim/rival';
 import { currentMode } from '../src/modes';
 import { learnStop } from '../src/sim/coast';
@@ -147,6 +148,44 @@ describe('there is a second landnam on this island', () => {
         `stretch ${stop} is a flag on its own`,
       ).toBe(true);
     }
+  });
+});
+
+describe('coming in sight of him', () => {
+  /**
+   * 9.10. The saga names the day sight first fell on his hall, and it can only
+   * do that because `meetRival` writes it down.
+   *
+   * THROUGH `meetRival`, not by setting the field. The sagagen tests build
+   * their rival by hand, so deleting the one line that records the day failed
+   * NOTHING there — a test of a field is not a test of the code that fills it.
+   * Second time this session that fault has been caught by sabotage.
+   */
+  it('writes down the day, and only the first day', () => {
+    const state = newGame('rival-metday');
+    const rival = state.rival!;
+    expect(rival.met).toBe(false);
+    expect(rival.metOn, 'a fresh rival already carries a day').toBeUndefined();
+
+    // Standing anywhere else must not count as meeting him.
+    state.party.stop = (rival.stop ?? 0) + 4;
+    state.day = 30;
+    meetRival(state);
+    expect(rival.met, 'he was met from four stretches away').toBe(false);
+    expect(rival.metOn).toBeUndefined();
+
+    // In sight of the hall.
+    state.party.stop = rival.stop;
+    state.day = 45;
+    meetRival(state);
+    expect(rival.met).toBe(true);
+    expect(rival.metOn, 'the day sight fell on him was not recorded').toBe(45);
+
+    // And it is the FIRST sight, not the latest — walking past again on a
+    // later day must not rewrite the saga's date.
+    state.day = 200;
+    meetRival(state);
+    expect(rival.metOn, 'a later visit overwrote the first sight').toBe(45);
   });
 });
 

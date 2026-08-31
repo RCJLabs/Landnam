@@ -47,13 +47,15 @@
 > keeping a wardrobe of their own. **THE ART QUEUE IS DONE.**
 >
 > **CURRENT MILESTONE (from 2026-08-30): Phase 9 — what a saga actually
-> feels like to play**, below. **Built and closed:** 9.1b, 9.3, 9.4, 9.6, 9.8,
-> 9.9, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave the game a third
-> act. **Measured, with a decision left to Evan rather than invented:** 9.2
-> (the voyage home), 9.5 (soften the villain's promise or leave it), 9.7
-> (winter), 9.11 (the colony loop), 9.12 (the pacing arc). The SHIELD is no
-> longer among them: 9.1c settled it by counting.
-> **What is left unstarted is 9.10 (the rival's saga).**
+> feels like to play**, below. **Built and closed:** 9.1b, 9.1c, 9.3, 9.4,
+> 9.6, 9.8, 9.9, 9.10, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave
+> the game a third act.
+>
+> **Measured, with a decision left to Evan rather than invented:** 9.2 (the
+> voyage home), 9.5 (soften the villain's promise or leave it), 9.7 (winter),
+> 9.11 (the colony loop), 9.12 (the pacing arc). The SHIELD is no longer among
+> them: 9.1c settled it by counting.
+> **Nothing in Phase 9 is unstarted now.** What remains is rulings.
 >
 > **And a standing lesson from every item above.** Ten of them were opened on
 > numbers that did not survive being re-taken, and two of the three most
@@ -4836,9 +4838,77 @@ nice. Four groups, in the shape they were proposed and chosen from.
   named as rare · ✅ both balance readings unmoved · ✅ the departure hole
   found by reading the diff and closed at both sites · ✅ all three checks
   that could not fail found and replaced.
-- [ ] **9.10 The rival's saga** — there is a rival landnamsmadr with his own
-  ambitions and no way to watch him. His run as a chronicle you can read: a
-  race you can lose without being killed.
+- [x] **9.10 The rival's saga** — **Done 2026-08-31. Half the premise was
+  already false and the other half was worse than it said.**
+
+  "No way to watch him" is not quite true: `render/strip.ts` has marked his
+  hall and every stretch he has fenced for some time, and `render/procession
+  .ts` draws the hall. What is true is that **`sagagen.ts` did not mention him
+  at all** — he was real in every run and vanished at the retelling, which is
+  the one place a run is actually told back to the player.
+
+  **And every one of those marks is gated on `rival.met`.** `PROBE: is the
+  rival ever actually seen`, 60 sagas an arm:
+
+  | | even | fair |
+  |---|---|---|
+  | he exists | 60/60 | 60/60 |
+  | **ever came in sight of his hall** | **19 (32%)** | 24 (40%) |
+  | first sight, average day | 45 | 51 |
+  | his fences refused our posts | 18 (30%) | 22 (37%) |
+
+  So for two runs in three he was one chronicle line on day nine and then
+  silence. The marks were real and almost nobody saw them.
+
+  **AND `rival.ts`'s OWN DOCSTRING IS A HORIZON FIGURE.** It records that he
+  "ends up holding a median of six stretches of a possible seven", measured
+  over 150 coasts walked to the horizon. In a PLAYED saga:
+
+  | | held at the end |
+  |---|---|
+  | the 8 sagas in 60 that ran all 400 days | **5.1** |
+  | the 52 that ended sooner | **2.0** |
+
+  Both numbers are true of different things and only one is about the game.
+
+  **What ships is the chapter.** `The Other Landnám` is in every ending that
+  has a rival, and it tells the two runs apart because they are two different
+  sagas — the band that stood in his yard and the band that only ever heard
+  the rumour. It names the day sight fell on him (a new optional `metOn`,
+  `SAVE_VERSION` 60, deliberately NOT backfilled: an old save met him on a day
+  nothing recorded, and a guessed date is a small lie told in the one place
+  the run gets retold). It counts his coast against ours once his hand has
+  closed on more than the stretch he landed on, and it says when his fences
+  shut on ground the band had walked — derived from `trodStops`, not stored.
+
+  > The other landnám was Gizur the Lucky's, at Hvalgarth. They saw it for
+  > themselves, and it was further along than anybody wanted to say out loud.
+  > That was day 45. By the end he had fenced 4 stretches of that coast to the
+  > 3 they had walked. Some of it was ground they had walked first, and there
+  > was nothing to be done about that.
+
+  **WHAT IS DELIBERATELY NOT BUILT is the item's second half.** "A race you
+  can lose without being killed" wants an ending where he beats you, and the
+  measurement refuses it: he reaches the ~5 stretches that would make a race
+  look close only in the 8 runs of 60 that go the whole 400 days — and 9.12
+  says a band past its third year has already won. An ending that fires in
+  13% of sagas, on bands nothing can kill, is the decoration this project
+  keeps catching. The comparison is stated instead, in the sentence above, and
+  a real race would need him to matter EARLIER — which is a design decision
+  about his clock, not a line of prose.
+
+  **Nine sabotages, eight caught first time.** The ninth — deleting the line
+  in `meetRival` that records the day — failed nothing, because the saga tests
+  build their rival by hand and a test of a FIELD is not a test of the code
+  that fills it. Second time in one session that exact fault has been caught
+  by sabotage rather than by reading. It now runs through `meetRival`, and
+  asserts the day is the FIRST sight rather than the latest.
+
+  **Done when:** ✅ premise re-taken, and the half that was false said so ·
+  ✅ the gate measured before anything was written · ✅ the docstring's stale
+  figure split into the two things it was conflating · ✅ every claim watched
+  failing, including the wiring · ✅ the half the measurement will not support
+  declined and the reason given.
 
 ### Overhauls
 
@@ -5249,6 +5319,25 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — The other landnám reaches the ending (9.10)** — Half the
+  item's premise was already false: the strip map has marked the rival's hall
+  and his fences for some time. What was true is that the SAGA never mentioned
+  him, so he was real in every run and vanished at the retelling. And every
+  mark is gated on `rival.met`, which the harness puts at **32% of sagas** —
+  for two runs in three he was one line on day nine and then silence. His own
+  docstring's "median of six stretches of seven" turned out to be a horizon
+  figure: played sagas end with him holding **2.0**, and only the 8 runs in 60
+  that go the whole 400 days see 5.1. So `The Other Landnám` is now a chapter
+  in every ending that has one, telling the band that stood in his yard apart
+  from the band that only heard the rumour, naming the day sight fell on him
+  (new optional `metOn`, `SAVE_VERSION` 60, not backfilled — a guessed date is
+  a lie in the one place a run is retold), counting his coast against ours, and
+  saying when his fences shut on ground the band had walked. The item's second
+  half — a race you can lose — is declined and the reason recorded: he only
+  looks like a race in the 13% of sagas that reach a point 9.12 calls already
+  won. Nine sabotages, eight caught; the ninth proved the saga tests were
+  testing a field rather than the code that fills it.
 
 - **2026-08-31 — The shield, settled on the third reading (9.1c)** — 9.1
   measured the shield as worth taking when hurt (49/60 wins against 46); 9.1b

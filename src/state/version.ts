@@ -203,7 +203,12 @@
 //             sim/footwork.ts, and the 19% of turns that measured as having
 //             nothing legal in them when the dash was taken and nothing put
 //             in its place.
-export const SAVE_VERSION = 59;
+// v60 (9.10): Rival gained the optional `metOn` — the day sight first fell on
+//             the other landnám's hall, so the ending can name it. NOT
+//             backfilled: a save that already met him met him on a day nothing
+//             recorded, and the saga says nothing rather than guessing a date.
+//             Absent is the honest answer for every saga played before this.
+export const SAVE_VERSION = 60;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

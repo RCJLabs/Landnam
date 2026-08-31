@@ -103,6 +103,7 @@ import { drawOdds, swordOdds } from '../src/sim/joining';
 import { DRAW_ANGER, DRAW_LARDER_DAYS, SWORD_DEEDS, WHY_SWORDS_COME, WHY_THEY_COME } from '../src/data/folk';
 import { forecast, markVisible } from '../src/sim/winter';
 import { reachable } from '../src/sim/reach';
+import { rivalBlocks } from '../src/sim/rival';
 import { eventChance, isEligible } from '../src/sim/events';
 import { currentMode } from '../src/modes';
 import { stream } from '../src/rng';
@@ -7637,5 +7638,78 @@ describe('PROBE: what the colony loop actually is', () => {
       expect([...byYear.keys()], 'no settled days at all').not.toHaveLength(0);
       expect(byYear.get(2)?.days ?? 0, 'no band reached a second year — nothing to say')
         .toBeGreaterThan(0);
+    });
+});
+
+describe('PROBE: is the rival ever actually seen', () => {
+  /**
+   * 9.10's premise, re-taken. The item says there is "no way to watch him",
+   * and that is not quite true: `render/strip.ts` marks his hall and every
+   * stretch he has fenced, and `render/procession.ts` draws the hall. What is
+   * genuinely absent is the SAGA — `sagagen.ts` does not mention him at all,
+   * so a run ends without ever saying what the other boat did.
+   *
+   * But every one of those marks, and every chronicle line he has, is gated
+   * on `rival.met` — which needs the band to stand within one stretch of his
+   * hall. So the question that decides what 9.10 should build is not "is he
+   * drawn" but "is he ever MET". A rival nobody meets is invisible whatever
+   * the renderer would have done.
+   */
+  it('counts how often a band meets him, and how much coast he ends up holding',
+    { timeout: 900_000 }, async () => {
+      const SEEDS = 60;
+      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+        let sagas = 0;
+        let exists = 0;
+        let met = 0;
+        let metBy = 0;          // day of first sight, summed over those met
+        let heldSum = 0;        // stretches he holds at the end
+        let oursSum = 0;        // stretches the band has trodden
+        let blockedEver = 0;    // sagas where his ground ever refused our posts
+        let far = 0;            // sagas that ran the whole 400 days
+        let farHeld = 0;
+        let short = 0;          // sagas that ended first
+        let shortHeld = 0;
+        for (let s = 0; s < SEEDS; s += 1) {
+          let sawOn = 0;
+          let blocked = false;
+          const end = run(`curve-${s}`, 400, (before, after) => {
+            if (!sawOn && !before.rival?.met && after.rival?.met) sawOn = after.day;
+            if (!blocked && after.rival && rivalBlocks(after)) blocked = true;
+          }, TERMS);
+          sagas += 1;
+          // Breathe: sixty full sagas twice over is long enough to starve the
+          // runner's RPC heartbeat, which fails the run with every test green.
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          if (!end.rival) continue;
+          exists += 1;
+          const held = (end.rival.claimStops ?? []).length;
+          heldSum += held;
+          oursSum += Object.keys(end.world.trodStops ?? {}).length;
+          // SPLIT BY WHETHER THE SAGA RAN ITS COURSE. `rival.ts` records that
+          // he ends holding "a median of six of a possible seven" — measured
+          // over 150 coasts walked to the horizon. A played saga mostly ends
+          // long before that, so the two numbers are about different things
+          // and only one of them is about the game.
+          const wentFar = !end.end && end.day >= 400;
+          if (wentFar) { far += 1; farHeld += held; }
+          else { short += 1; shortHeld += held; }
+          if (end.rival.met) { met += 1; metBy += sawOn; }
+          if (blocked) blockedEver += 1;
+        }
+        const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
+        // eslint-disable-next-line no-console
+        console.log(
+          `the rival [${TERMS}] over ${sagas} sagas — he exists on ${exists}:\n`
+          + `  ever came in sight of his hall: ${met} (${pc(met, exists)}), `
+          + `first on day ${met ? (metBy / met).toFixed(0) : '-'} on average\n`
+          + `  at the end he held ${(heldSum / Math.max(1, exists)).toFixed(1)} stretches; `
+          + `we had walked ${(oursSum / Math.max(1, exists)).toFixed(1)}\n`
+          + `  his ground refused our posts in ${blockedEver} sagas (${pc(blockedEver, exists)})\n`
+          + `  held at the end — ${far} sagas that ran all 400 days: `
+          + `${far ? (farHeld / far).toFixed(1) : '-'}; `
+          + `${short} that ended sooner: ${short ? (shortHeld / short).toFixed(1) : '-'}`,
+        );
+      }
     });
 });

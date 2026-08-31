@@ -73,6 +73,15 @@ export interface Rival {
   lastClaim: number;
   /** True once we have laid eyes on the hall. */
   met: boolean;
+  /**
+   * The day sight first fell on it, for the saga to name.
+   *
+   * Optional and it has to be: a save written before 9.10 may already have
+   * `met` true with no record of when, and the saga would rather say nothing
+   * than name a day it is guessing at. `metOn` absent means "we met him, and
+   * this saga does not know the day".
+   */
+  metOn?: number;
   /** True once the saga has recorded that they landed at all. */
   told: boolean;
 }

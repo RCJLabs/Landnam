@@ -543,6 +543,6 @@ namespace Tables
 		{ "watchpost", { "warrior" } },
 	};
 
-	constexpr int32_t SaveVersion = 59;
+	constexpr int32_t SaveVersion = 60;
 }
 }

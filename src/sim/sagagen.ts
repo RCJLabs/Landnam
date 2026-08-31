@@ -41,6 +41,11 @@ import {
   NEIGHBOURS_COLD,
   NEIGHBOURS_WARM,
   NONE_FELL,
+  RIVAL_FENCED,
+  RIVAL_HELD,
+  RIVAL_MET,
+  RIVAL_MET_DAY,
+  RIVAL_UNMET,
   RAISED,
   TITLES,
   TRADED,
@@ -200,6 +205,62 @@ export function composeSaga(state: GameState): Saga {
       parts.push(fill(rng.derive('raised').pick(RAISED), { built: list(built) }));
     }
     chapters.push({ heading: 'The Land-Taking', text: parts.join(' ') });
+  }
+
+  // --- The other landnám (9.10) ---
+  //
+  // The rival was real in every run and vanished at the ending, which is the
+  // one place a run is actually retold: `sagagen.ts` did not mention him at
+  // all. The strip map has marked his hall and his fences for some time, but
+  // every one of those marks is gated on `rival.met`, and measured over 60
+  // sagas a band comes in sight of his hall in only **32%** of them (40% on
+  // fair). So for two runs in three he was a single line on day nine and then
+  // silence.
+  //
+  // Both cases are told, because they are different sagas. What is NOT told
+  // is a verdict: he ends a played saga holding 2.0 stretches, and reaches
+  // the ~5 his own docstring advertises only in the 8 runs of 60 that go the
+  // whole 400 days. A "he beat us" ending would fire almost never and would
+  // fire on bands that have already won — see the item.
+  //
+  // GATED ON `told`, not on his existence. `rivalDay` sets it when the word
+  // reaches the band on day nine, and a saga that ends before that never heard
+  // of him — so telling it would break this file's second rule, which is that
+  // it never claims what did not happen. Caught by looking at a blessed
+  // picture of an eleven-day run, not by a test.
+  const rival = state.rival;
+  if (rival?.told) {
+    const held = (rival.claimStops ?? []).length;
+    const walked = Object.keys(world.trodStops ?? {}).length;
+    const parts = [
+      fill(rng.derive('rival').pick(rival.met ? RIVAL_MET : RIVAL_UNMET), {
+        leader: rival.leader,
+        hall: rival.hall,
+      }),
+    ];
+    // The day, only when the save remembers it. An old saga knows it met him
+    // and not when, and a guess printed as a date is the kind of small lie
+    // this file exists to avoid.
+    if (rival.met && rival.metOn !== undefined) {
+      parts.push(fill(rng.derive('metday').pick(RIVAL_MET_DAY), { day: `${rival.metOn}` }));
+    }
+    // Only worth a sentence once his hand has actually closed on something
+    // past the stretch he landed on — one claim is where he starts.
+    if (held > 1) {
+      parts.push(fill(rng.derive('held').pick(RIVAL_HELD), {
+        his: `${held}`,
+        ours: `${walked}`,
+      }));
+      // Derived, not stored: the ground he fenced that we had stood on. It is
+      // the game's own phrase — `rivalDay` says "a fence on ground we had
+      // walked" — and it is the only part of him that ever cost the band
+      // anything, which the harness puts at 30% of sagas.
+      const trod = new Set(Object.keys(world.trodStops ?? {}).map(Number));
+      if ((rival.claimStops ?? []).some((c) => trod.has(c))) {
+        parts.push(rng.derive('fenced').pick(RIVAL_FENCED));
+      }
+    }
+    chapters.push({ heading: 'The Other Landnám', text: parts.join(' ') });
   }
 
   // --- The neighbours ---

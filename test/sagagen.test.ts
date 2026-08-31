@@ -343,3 +343,99 @@ describe('the shareable form', () => {
     expect(whole).toContain(s.world.landingName);
   });
 });
+
+// 9.10: the other landnám reaches the ending.
+//
+// He was real in every run and vanished at the retelling. The strip map has
+// marked his hall and his fences for a while, but every one of those marks is
+// gated on `rival.met`, and the harness puts that at 32% of sagas — so for two
+// runs in three he was one line on day nine and then silence.
+describe('the other landnám', () => {
+  /** A run with a rival who has taken ground, met or not. */
+  function withRival(seed: string, opts: { met?: boolean; metOn?: number; claims?: number[] } = {}) {
+    const state = settled(seed);
+    state.rival = {
+      leader: 'Thorvald the Lame',
+      hall: 'Grimsted',
+      stop: 12,
+      claimStops: opts.claims ?? [12],
+      lastClaim: 9,
+      met: opts.met ?? false,
+      ...(opts.metOn !== undefined ? { metOn: opts.metOn } : {}),
+      told: true,
+    };
+    return state;
+  }
+
+  const chapter = (state: GameState) =>
+    composeSaga(state).chapters.find((c) => c.heading === 'The Other Landnám');
+
+  it('tells the run that never found him that he was there', () => {
+    const c = chapter(withRival('rival-unmet'));
+    expect(c, 'the chapter was left out entirely').toBeDefined();
+    expect(c!.text).toContain('Grimsted');
+    expect(c!.text).toContain('Thorvald the Lame');
+    // The distinction the whole chapter exists to make.
+    expect(c!.text.toLowerCase()).toMatch(/never/);
+  });
+
+  it('tells the run that stood in sight of him a different story', () => {
+    const unmet = chapter(withRival('rival-both'))!.text;
+    const met = chapter(withRival('rival-both', { met: true }))!.text;
+    expect(met).not.toBe(unmet);
+    expect(met.toLowerCase()).not.toMatch(/never stood close enough/);
+  });
+
+  it('names the day sight fell on him, when the save remembers it', () => {
+    const c = chapter(withRival('rival-day', { met: true, metOn: 45 }));
+    expect(c!.text).toContain('day 45');
+  });
+
+  it('says nothing about the day when the save does not know it', () => {
+    // An old save has `met` with no `metOn`. A guessed date is a small lie in
+    // the one place the run gets retold, so the sentence is simply absent —
+    // and this is the assertion that keeps it absent.
+    const c = chapter(withRival('rival-noday', { met: true }));
+    expect(c!.text).not.toMatch(/\bday \d+/);
+  });
+
+  it('counts the coast only once his hand has closed on something', () => {
+    // One claim is where he starts, not a land-taking worth a sentence.
+    const one = chapter(withRival('rival-one', { claims: [12] }))!.text;
+    const many = chapter(withRival('rival-many', { claims: [10, 11, 12, 13] }))!.text;
+    expect(one).not.toMatch(/stretches/);
+    expect(many).toMatch(/4 stretches/);
+  });
+
+  it('says he fenced ground we had walked, and only when he did', () => {
+    const away = withRival('rival-away', { claims: [10, 11, 12] });
+    away.world.trodStops = { '0': 1, '1': 2 };
+    const onto = withRival('rival-onto', { claims: [10, 11, 12] });
+    onto.world.trodStops = { '0': 1, '11': 2 };
+    expect(chapter(away)!.text.toLowerCase()).not.toMatch(/ground they had walked/);
+    expect(chapter(onto)!.text.toLowerCase()).toMatch(/ground they had walked/);
+  });
+
+  it('is left out entirely when there is no other boat', () => {
+    const none = settled('rival-none');
+    none.rival = undefined;
+    expect(chapter(none)).toBeUndefined();
+  });
+
+  it('says nothing about him to a band that died before word reached them', () => {
+    // `rivalDay` tells the band on day nine. A saga that ends sooner never
+    // heard of him, and this file's second rule is that it never claims what
+    // did not happen — so the chapter is gated on `told`, not on his
+    // existence. Found by looking at a blessed picture of an eleven-day run.
+    const early = withRival('rival-early');
+    early.rival!.told = false;
+    expect(chapter(early)).toBeUndefined();
+  });
+
+  it('leaves no unfilled token, met or unmet', () => {
+    for (const opts of [{}, { met: true }, { met: true, metOn: 3 }]) {
+      const c = chapter(withRival('rival-tokens', opts))!;
+      expect(c.text, `unfilled token in ${JSON.stringify(opts)}`).not.toMatch(/\{\w+\}/);
+    }
+  });
+});

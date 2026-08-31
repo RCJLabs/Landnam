@@ -679,6 +679,17 @@ export const MIGRATIONS: Record<number, Migration> = {
     return { ...save, version: 59 };
   },
 
+  // v60 (9.10): Rival gains the optional `metOn` — the day sight first fell
+  // on his hall, for the ending to name.
+  //
+  // DELIBERATELY NOT BACKFILLED. A save that already has `met: true` met him
+  // on some day this file cannot know, and the alternatives were to guess one
+  // or to leave it absent. The saga reads `metOn === undefined` as "we met him
+  // and this saga does not know when" and simply says nothing about the day,
+  // which is true; a guessed date would be a small lie told in the one place
+  // the run gets retold. See sim/sagagen.ts.
+  59: (save) => ({ ...save, version: 60 }),
+
 };
 
 export interface MigrationResult {
