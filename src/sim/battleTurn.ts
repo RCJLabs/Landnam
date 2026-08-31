@@ -15,6 +15,7 @@ import {
 import { SCAR_MAX } from './battle';
 import { takeFoeTurn } from './battleAi';
 import { beat } from './beats';
+import { stepUp } from './footwork';
 import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
@@ -121,6 +122,17 @@ function playUntilOurTurn(state: GameState): void {
       continue;
     }
 
+    // THE LINE CLOSES ITSELF (9.1b). Both sides, at the top of the turn,
+    // after the nerve check and before anybody is handed orders: a fighter
+    // with no legal verb from where he stands shoulders forward one rank and
+    // that is his turn. Without it, taking the dash off the bar left 19% of
+    // warband turns with nothing legal in them at all — measured over the
+    // arena's 60 fights before the cut. See sim/footwork.ts.
+    //
+    // Before the warband return, so the player is handed a man who has
+    // already stepped rather than one who is about to.
+    stepUp(state, active);
+
     if (active.side === 'warband') return;
 
     takeFoeTurn(state);
@@ -177,9 +189,10 @@ export function startRaid(state: GameState, difficulty = 0): void {
  * Whether the fighter whose turn it is has nothing left to decide.
  *
  * THE TAP THIS EXISTS TO DELETE. Every verb in the fight — strike, reach,
- * throw, shove, defend, the war cry, and changing rank — is gated on
- * `!hasActed` and sets it, so the moment a fighter acts the only legal action
- * left is ending the turn. The screen said so out loud ("nothing left this
+ * throw, defend and the war cry — is gated on `!hasActed` and sets it, so the
+ * moment a fighter acts the only legal action left is ending the turn. Since
+ * 9.1b the line closing itself sets it too, which is the one case where a
+ * fighter is handed over already spent without having chosen anything. The screen said so out loud ("nothing left this
  * turn — end it") and then made the player tap it anyway: one mandatory tap
  * per fighter per round with exactly one outcome, which is ceremony rather
  * than a decision.

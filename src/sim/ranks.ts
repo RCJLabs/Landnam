@@ -27,13 +27,23 @@
  * NOT a cap on how deep a line can stand. A warband is six sworn and a foe
  * band can be more, so a real line runs past this — which is a bug this file
  * shipped with for exactly one afternoon: the tables listed ranks 1 to 4, so
- * the fifth and sixth men could not strike, throw, defend OR dash. They stood
- * in the wall with nothing they were allowed to do. See `deep` below.
+ * the fifth and sixth men could not strike, throw or defend. They stood in
+ * the wall with nothing they were allowed to do. See `deep` below — and see
+ * `stepUp` in sim/footwork.ts, which is the same bug's second visit: 9.1b
+ * took the dash away, and without a line that closes itself that alone put
+ * 19% of warband turns back into having no legal verb.
  */
 export const RANKS = 4;
 
-/** The verbs that care where you are standing. `warcry` does not, so it is absent. */
-export type RankVerb = 'strike' | 'reach' | 'throw' | 'shove' | 'defend' | 'dash';
+/**
+ * The verbs that care where you are standing.
+ *
+ * `warcry` does not, so it is absent. `shove` and `dash` were here until
+ * 9.1b and are gone with them — changing rank is no longer something anybody
+ * SPENDS an action on, it is what the line does by itself when a man has
+ * nothing left he is allowed to do. See `stepUp` in sim/footwork.ts.
+ */
+export type RankVerb = 'strike' | 'reach' | 'throw' | 'defend';
 
 export interface Reach {
   /** Ranks this can be done FROM. */
@@ -66,20 +76,20 @@ export interface Reach {
  *   standing second is worth anything.
  * - `throw` is a hand-axe. It reaches anybody, which is what makes the back
  *   rank useful, but you carry only so many.
- * - `shove` is shield to shoulder. Small damage; the point is that it drives
- *   a man back a rank and puts somebody else in front of him.
  * - `defend` is setting the shield, and only the front two have anything to
  *   set it against.
- * - `dash` is no longer movement across ground. It is changing rank — the
- *   spearman who has been shoved to the front buying his way back.
+ *
+ * `shove` and `dash` sat in this table until 9.1b. Shove was `{from:[1,2],
+ * at:[1,2]}` — the same reach as `strike`, so it was never a different
+ * option positionally, only ever an alternative to hitting somebody, and it
+ * measured as worth nothing. Dash was the only way to change rank, and is
+ * now the line closing itself rather than a verb.
  */
 export const REACH: Record<RankVerb, Reach> = {
   strike: { from: [1, 2], at: [1, 2] },
   reach: { from: [2, 3], at: [1, 2, 3] },
   throw: { from: [2, 3, 4], at: [1, 2, 3, 4], deep: true },
-  shove: { from: [1, 2], at: [1, 2] },
   defend: { from: [1, 2], at: [] },
-  dash: { from: [1, 2, 3, 4], at: [], deep: true },
 };
 
 /**
@@ -129,8 +139,10 @@ export function depth(line: readonly Ranked[], side: string): number {
  * does not leave a hole where he was — everyone behind steps forward, and
  * whoever was second is suddenly first. That is what makes losing a
  * front-rank man cost more than his own health bar, and it is the trap the
- * whole tactical layer rests on: a spearman shoved into rank 1 has nothing
- * to do there.
+ * whole tactical layer rests on: a spearman who ends up in rank 1 has nothing
+ * to do there. That used to say "shoved into rank 1" and the shove is gone
+ * (9.1b) — the line itself puts him there now, every time somebody in front
+ * of him falls.
  *
  * Relative order is preserved, so this is stable: closing up twice changes
  * nothing, and it never reshuffles a line that has lost nobody.
@@ -156,7 +168,7 @@ export function canLandOn(verb: RankVerb, rank: number): boolean {
 /**
  * Everyone on the other side this verb can actually touch.
  *
- * Returns nothing for `defend` and `dash`, which are done to yourself — the
+ * Returns nothing for `defend`, which is done to yourself — the
  * caller asks `canActFrom` for those.
  */
 export function targetsFor<T extends Ranked>(
@@ -171,26 +183,14 @@ export function targetsFor<T extends Ranked>(
 }
 
 /**
- * Drive a fighter back one rank, swapping with whoever was behind them.
- *
- * Returns the one who came forward, or null when the shoved man was already
- * at the back of his line and had nowhere to go — a shove into the last rank
- * still lands its blow, it just does not move anybody.
- */
-export function shoveBack<T extends Ranked>(line: readonly T[], target: T): T | null {
-  const behind = atRank(line, target.side, target.rank + 1);
-  if (!behind) return null;
-  const was = target.rank;
-  target.rank = behind.rank;
-  behind.rank = was;
-  return behind;
-}
-
-/**
  * Step a rank forward (`-1`) or back (`+1`), swapping with whoever is there.
  *
  * Stepping into an empty rank is allowed only when it is inside the line —
- * you cannot dash off the back of your own wall into open ground.
+ * nobody steps off the back of their own wall into open ground.
+ *
+ * This was `dash`'s mechanism and outlived the verb. Since 9.1b the only
+ * caller is `stepUp` (sim/footwork.ts): the line closing on a man who has
+ * nothing left he may legally do, rather than an action anybody spends.
  */
 export function shift<T extends Ranked>(line: readonly T[], actor: T, by: -1 | 1): boolean {
   const want = actor.rank + by;

@@ -49,7 +49,6 @@ function onFieldTap(personId: string | null): void {
   const target = state.battle.combatants.find((c) => c.personId === personId);
   if (!target || target.side !== 'foe' || target.down || target.fled) return;
   if (ui.aim === 'throw') dispatch({ type: 'B_THROW', targetId: personId });
-  else if (ui.aim === 'shove') dispatch({ type: 'B_SHOVE', targetId: personId });
   else if (ui.aim === 'reach') dispatch({ type: 'B_REACH', targetId: personId });
   else dispatch({ type: 'B_STRIKE', targetId: personId });
 }

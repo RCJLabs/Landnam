@@ -657,6 +657,28 @@ export const MIGRATIONS: Record<number, Migration> = {
     return { ...save, version: 58, party: { ...party, blade } };
   },
 
+  // v59 (9.1b): the shove and the dash come off the bar.
+  //
+  // Two beat kinds go with them, and beats are a PRESENTATION stream — capped,
+  // drained and disposable — so a save caught mid-fight drops the `shoved` and
+  // `dashed` beats it is holding rather than having them translated into
+  // something they were not. Exactly what v46 did when the `moved` beats
+  // stopped meaning hexes.
+  //
+  // Nothing else in a saved fight moves: every man keeps his rank, his wounds,
+  // his nerve and his hand-axes. What changes is that from the next turn on,
+  // a man with no legal verb left shoulders forward by himself instead of
+  // being offered a Run button — see `stepUp` in sim/footwork.ts.
+  58: (save) => {
+    const battle = save['battle'] as { beats?: Record<string, unknown>[] } | undefined;
+    if (battle?.beats) {
+      battle.beats = battle.beats.filter(
+        (b) => b['kind'] !== 'shoved' && b['kind'] !== 'dashed',
+      );
+    }
+    return { ...save, version: 59 };
+  },
+
 };
 
 export interface MigrationResult {

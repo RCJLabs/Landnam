@@ -192,7 +192,18 @@
 //             given the blade its own seed would have produced, held by
 //             whoever leads it now — the hands before cannot be recovered and
 //             are not invented. See sim/heirloom.ts.
-export const SAVE_VERSION = 58;
+// v59 (9.1b): the shove and the dash come off the bar, and the `shoved` and
+//             `dashed` beats go with them. Beats are a presentation stream —
+//             capped, drained, disposable — so a fight caught mid-swing drops
+//             the ones it is holding rather than having them translated, the
+//             way v46 dropped hex-shaped `moved` beats. Every man keeps his
+//             rank, wounds, nerve and hand-axes. What changes from the next
+//             turn is that a man with no legal verb shoulders forward by
+//             himself instead of being offered a Run button — see `stepUp` in
+//             sim/footwork.ts, and the 19% of turns that measured as having
+//             nothing legal in them when the dash was taken and nothing put
+//             in its place.
+export const SAVE_VERSION = 59;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

@@ -505,7 +505,8 @@ export function beginBattle(
 /** Hexes the active fighter can still reach this turn, zone of control included. */
 // `reachableHexes` and `reachCosts` stood here. They answered "where can this
 // fighter walk, and what does each step cost", and since 8.1c there is nowhere
-// to walk — a fighter's place is their rank, and changing it is `dash`.
+// to walk — a fighter's place is their rank, and since 9.1b nobody spends an
+// action changing it: the line closes itself (see `stepUp` in footwork.ts).
 //
 /** Enemies the active fighter could strike right now. */
 export function strikeTargets(state: GameState): Combatant[] {

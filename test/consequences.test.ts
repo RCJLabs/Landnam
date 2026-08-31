@@ -46,8 +46,9 @@ function fightAndLeave(state: GameState): GameState {
       continue;
     }
     if (foes.length > 0) {
-      const pushed = apply(cur, { type: 'B_DASH', by: -1 });
-      cur = pushed === cur ? apply(cur, { type: 'B_END_TURN' }) : pushed;
+      // Was a `B_DASH` to push up the line. 9.1b took the verb; the line
+      // closes itself at the top of the turn now.
+      cur = apply(cur, { type: 'B_END_TURN' });
       continue;
     }
     cur = apply(cur, { type: 'B_END_TURN' });

@@ -52,7 +52,7 @@ describe('the emitter', () => {
   it('numbers every beat, in order', () => {
     const battle = empty();
     beat(battle, { kind: 'defended', who: 'a' });
-    beat(battle, { kind: 'dashed', who: 'b' });
+    beat(battle, { kind: 'broke', who: 'b' });
     expect(battle.beats?.map((b) => b.n)).toEqual([1, 2]);
   });
 
@@ -69,7 +69,7 @@ describe('the emitter', () => {
     // It is only safe because `n` survives the trimming — a consumer holding
     // a mark can still tell what it has and has not seen.
     const battle = empty();
-    for (let i = 0; i < BEATS_MAX + 50; i += 1) beat(battle, { kind: 'dashed', who: 'a' });
+    for (let i = 0; i < BEATS_MAX + 50; i += 1) beat(battle, { kind: 'defended', who: 'a' });
     expect(battle.beats).toHaveLength(BEATS_MAX);
     expect(battle.beats?.[0]?.n).toBe(51);
     expect(battle.beats?.[BEATS_MAX - 1]?.n).toBe(BEATS_MAX + 50);
@@ -78,7 +78,7 @@ describe('the emitter', () => {
   it('drains for a consumer that holds nothing but a mark', () => {
     const battle = empty();
     beat(battle, { kind: 'defended', who: 'a' });
-    beat(battle, { kind: 'dashed', who: 'b' });
+    beat(battle, { kind: 'warcry', who: 'b' });
     const first = beatsSince(battle, 0);
     expect(first.beats).toHaveLength(2);
     expect(first.mark).toBe(2);
@@ -141,7 +141,6 @@ function brawl(state: GameState, cap = 3000): GameState {
             (fighterPerson(cur, a.personId)?.health ?? 99) -
             (fighterPerson(cur, b.personId)?.health ?? 99),
         )[0]!;
-        if (turn % 5 === 0) order.push(() => apply(cur, { type: 'B_SHOVE', targetId: weakest.personId }));
         if (turn % 7 === 0) order.push(() => apply(cur, { type: 'B_DEFEND' }));
         order.push(() => apply(cur, { type: 'B_STRIKE', targetId: weakest.personId }));
       }
@@ -160,20 +159,10 @@ function brawl(state: GameState, cap = 3000): GameState {
       if (acted) continue;
     }
 
-    // Nothing to hit. Close the distance — and now and then break into a run
-    // to do it, which is the only way `dashed` is ever emitted.
-    if (!active.hasActed && (battle.round + i) % 4 === 0) {
-      const ran = apply(cur, { type: 'B_DASH' });
-      if (ran !== cur) {
-        cur = ran;
-        continue;
-      }
-    }
-    if (foes.length > 0) {
-      const pushed = apply(cur, { type: 'B_DASH', by: -1 });
-      cur = pushed === cur ? apply(cur, { type: 'B_END_TURN' }) : pushed;
-      continue;
-    }
+    // Nothing to hit. Closing the distance was a `B_DASH` here, and the only
+    // way `dashed` was ever emitted; 9.1b took both. The line closes itself
+    // inside `endTurn` now and reports it as a `moved` beat, so passing the
+    // turn is what produces one.
     cur = apply(cur, { type: 'B_END_TURN' });
   }
   return cur;
@@ -208,9 +197,7 @@ describe('the stream reaches the field', () => {
     'struck',
     'reached',
     'threw',
-    'shoved',
     'defended',
-    'dashed',
     'warcry',
     'fell',
     'leaderFell',

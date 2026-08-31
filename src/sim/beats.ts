@@ -27,9 +27,7 @@ export type BeatKind =
   | 'struck'
   | 'reached'
   | 'threw'
-  | 'shoved'
   | 'defended'
-  | 'dashed'
   | 'warcry'
   | 'fell'
   | 'leaderFell'
@@ -99,35 +97,19 @@ export interface BlowBeat extends BeatBase {
 }
 
 /**
- * How a shove finished. Three of these four kill nobody and the fourth kills
- * without a blow being struck, which is exactly why a shove needs its own
- * beat rather than being a strike that does no damage.
- */
-export type ShoveResult = 'held' | 'pushed' | 'crushed';
-
-/**
- * `'drowned'` stood in this list until 8.1d. A shove could put a man in the
- * water, and the sea finished him for nothing — the best thing the verb
- * did. There is no water on a line and no ground to be pushed into, so
- * `doShove` has not been able to produce it since 8.1c and it is off the
- * list rather than left as a result nothing returns.
+ * `ShoveResult` and `ShovedBeat` stood here until 9.1b, and `'drowned'` was
+ * on the result list until 8.1d before that — a shove could put a man in the
+ * water and the sea finished him for nothing, which was the best thing the
+ * verb ever did. The line took the water away, and 9.1b took the verb.
  *
- * Worth having on the record as something the conversion COST, not just
- * something it tidied. Whether a line gets its own version of "the ground
- * itself kills him" is an open question for 8.1d's design notes.
+ * Worth keeping on the record as something two conversions COST rather than
+ * tidied. Whether a line gets its own version of "the ground itself kills
+ * him" is still open.
  */
 
-export interface ShovedBeat extends BeatBase {
-  kind: 'shoved';
-  who: string;
-  target: string;
-  result: ShoveResult;
-  damage?: number;
-}
-
-/** Shield up, a run, or the leader's cry. Nobody else is involved. */
+/** Shield up, or the leader's cry. Nobody else is involved. */
 export interface SoloBeat extends BeatBase {
-  kind: 'defended' | 'dashed' | 'warcry' | 'broke' | 'fled';
+  kind: 'defended' | 'warcry' | 'broke' | 'fled';
   who: string;
 }
 
@@ -167,7 +149,6 @@ export type Beat =
   | OpenedBeat
   | MovedBeat
   | BlowBeat
-  | ShovedBeat
   | SoloBeat
   | RalliedBeat
   | FellBeat

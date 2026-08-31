@@ -113,11 +113,10 @@ function defend(state: GameState): GameState {
     if (foes.length > 0) {
       // The bot used to score ground: stay near your mates, keep a gap, and
       // above all do not climb out over your own palisade. On a line none of
-      // that is a choice about WHERE to stand — the only place to go is up
-      // the ranks — so it pushes forward and the palisade rule is carried by
-      // the line itself rather than by refusing to leave a row.
-      const pushed = apply(cur, { type: 'B_DASH', by: -1 });
-      cur = pushed === cur ? apply(cur, { type: 'B_END_TURN' }) : pushed;
+      // that is a choice about WHERE to stand, and since 9.1b it is not a
+      // choice at all — the line shoulders forward by itself, and the
+      // palisade rule is carried by the line rather than by refusing a row.
+      cur = apply(cur, { type: 'B_END_TURN' });
       continue;
     }
     cur = apply(cur, { type: 'B_END_TURN' });

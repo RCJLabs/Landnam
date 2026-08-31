@@ -53,10 +53,10 @@ function fightItOut(start: GameState, limit = 400): GameState {
     const active = activeCombatant(battle)!;
     const foes = standing(battle, 'foe');
     if (foes.length === 0) break;
-    // Nothing in reach. There is no ground to close across since 8.1c, so
-    // the bot pushes up the line instead of walking at the nearest foe.
-    const pushed = apply(state, { type: 'B_DASH', by: -1 });
-    state = pushed === state ? apply(state, { type: 'B_END_TURN' }) : pushed;
+    // Nothing in reach. There is no ground to close across since 8.1c, and
+    // since 9.1b nobody spends an action closing either — the line shoulders
+    // forward by itself at the top of the turn, so this just passes.
+    state = apply(state, { type: 'B_END_TURN' });
     void active;
   }
   return state;
@@ -168,46 +168,59 @@ describe('turns', () => {
   // is their RANK, and the claims about how a line behaves live in
   // test/ranks.test.ts, which can make them without a battle existing at all.
   //
-  // What belongs HERE is the one thing ranks.test.ts cannot see: that the
-  // verb reaches the line through `apply`, like every other action.
+  // What belongs HERE is the one thing ranks.test.ts cannot see: that a rank
+  // change reaches the line through the real stack. Until 9.1b that was the
+  // `B_DASH` verb; it is now the line closing itself inside `endTurn`.
 
-  it('a dash changes rank, and swaps with whoever was there', () => {
-    let cur = battleState('dash-swap');
-    for (let i = 0; i < 12 && !isWarbandTurn(cur); i++) cur = apply(cur, { type: 'B_END_TURN' });
-    if (!isWarbandTurn(cur)) return;
+  it('the line closes on a man with nothing to do, through the whole stack', () => {
+    // This was `a dash changes rank, and swaps with whoever was there` and it
+    // makes the same claim: a rank change reaches the line for real, with a
+    // swap and not a stack. What changed in 9.1b is WHO asks for it — nobody
+    // does. `stepUp` runs inside `endTurn`'s own loop, so the only way to see
+    // it from out here is to pass turns and watch the line tighten.
+    let cur = battleState('close-swap');
+    // Somebody deep with no hand-axes left is the case the whole rule exists
+    // for, and it has to be arranged: at the opening of a fight everybody
+    // still has axes and nobody is stranded.
+    const deep = cur.battle!.combatants
+      .filter((c) => c.side === 'warband' && c.rank > 2)
+      .sort((a, b) => b.rank - a.rank)[0];
+    if (!deep) return;
+    for (const c of cur.battle!.combatants) c.throwsLeft = 0;
+    const was = deep.rank;
 
-    // Find a warband turn where the active fighter has somebody in front.
-    for (let i = 0; i < 20; i++) {
-      const active = activeCombatant(cur.battle!)!;
-      const ahead = cur.battle!.combatants.find(
-        (c) => c.side === active.side && !c.down && !c.fled && c.rank === active.rank - 1,
-      );
-      if (ahead && isWarbandTurn(cur)) {
-        const was = active.rank;
-        const aheadWas = ahead.rank;
-        const next = apply(cur, { type: 'B_DASH', by: -1 });
-        expect(next, 'the dash was refused').not.toBe(cur);
-        const after = next.battle!.combatants.find((c) => c.personId === active.personId)!;
-        const swapped = next.battle!.combatants.find((c) => c.personId === ahead.personId)!;
-        expect(after.rank).toBe(aheadWas);
-        expect(swapped.rank).toBe(was);
+    for (let i = 0; i < 40; i++) {
+      cur = apply(cur, { type: 'B_END_TURN' });
+      if (cur.battle?.outcome) break;
+      const now = cur.battle!.combatants.find((c) => c.personId === deep.personId);
+      if (!now || now.down || now.fled) return;
+      if (now.rank < was) {
+        // He came forward, and nobody is sharing a rank with him.
+        const here = cur.battle!.combatants.filter(
+          (c) => c.side === 'warband' && !c.down && !c.fled && c.rank === now.rank,
+        );
+        expect(here, 'two men ended up standing in one rank').toHaveLength(1);
         return;
       }
-      cur = apply(cur, { type: 'B_END_TURN' });
-      if (cur.battle?.outcome) return;
     }
+    // Not reached on this seed is not a failure — the fight can end first —
+    // but it must not be reached by the line NEVER closing, which the arena
+    // measures separately (test/wall.test.ts).
   });
 
-  it('refuses a dash off the front of the wall', () => {
-    let cur = battleState('dash-edge');
-    for (let i = 0; i < 20; i++) {
-      if (isWarbandTurn(cur) && activeCombatant(cur.battle!)!.rank === 1) {
-        // Nobody in front to swap with, and no ground beyond the line.
-        expect(apply(cur, { type: 'B_DASH', by: -1 })).toBe(cur);
-        return;
-      }
-      cur = apply(cur, { type: 'B_END_TURN' });
-      if (cur.battle?.outcome) return;
+  it('nobody can ask for a rank change any more', () => {
+    // 9.1b, asserted from outside the sim: the two verbs are off the action
+    // list entirely, so `apply` does not know them and hands back the state
+    // it was given. Kept as a test rather than trusted to the type, because
+    // the type is what a JSON-shaped action from a save or a port does not
+    // have to satisfy.
+    const cur = battleState('no-rank-verbs');
+    const them = cur.battle!.combatants.find((c) => c.side === 'foe')!;
+    for (const gone of [
+      { type: 'B_DASH', by: -1 },
+      { type: 'B_SHOVE', targetId: them.personId },
+    ]) {
+      expect(apply(cur, gone as unknown as Action)).toBe(cur);
     }
   });
 

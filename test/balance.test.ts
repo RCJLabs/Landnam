@@ -66,7 +66,7 @@ import { KEPT_FOR, NEGLECTED_AFTER, canKeepHall, feastCost, sinceKept } from '..
 import { OVER_ROOF, handsLeave, roomLeft, SETTLED_IN, takeIn, willAdmit } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
-import { MAX_RAIDERS, MAX_RAIDERS_FAMED, fighterPerson, raiderCap } from '../src/sim/battle';
+import { MAX_RAIDERS, MAX_RAIDERS_FAMED, raiderCap } from '../src/sim/battle';
 import { RAID_CHANCE_MAX, SACK_TAKES, autumnChance, autumnRaidDay, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
 import { capacity, crowding, heartRaised, standsFor } from '../src/sim/colony';
@@ -74,8 +74,7 @@ import { moodTarget } from '../src/sim/minds';
 import { foundSettlement } from '../src/sim/site';
 import { isWarbandTurn } from '../src/sim/battle';
 import { reachTargets, throwTargets } from '../src/sim/strike';
-import { shoveDestination } from '../src/sim/footwork';
-import { REACH, canActFrom } from '../src/sim/ranks';
+import { canActFrom } from '../src/sim/ranks';
 import { WARCRY_RANGE } from '../src/sim/warcry';
 import { strikeTargets } from '../src/sim/battle';
 import { offersAt, placeHere, tradeBlocker } from '../src/sim/places';
@@ -670,7 +669,9 @@ let settleNotBefore = 0;
  * arriving alone and arriving having already acted. Kept as a toggle so the
  * claim stays executable.
  */
-const VERBS = { throw: true, shove: true, defend: true, dash: false };
+// `shove` and `dash` were toggles here until 9.1b took both verbs. What is
+// left is the two the bot chooses between.
+const VERBS = { throw: true, defend: true };
 
 
 function step(state: GameState): Action {
@@ -723,31 +724,18 @@ function step(state: GameState): Action {
     // and in nobody's measurement: over sixty sagas the bot produced not one
     // of them. Every claim this repo makes about combat balance was a claim
     // about a bot playing two thirds of the game — and by its own oldest
-    // rule, a capability the bot cannot use is measured as worthless.
+    // rule, a capability the bot cannot use is measured as worthless. Two of
+    // the four were measured and then REMOVED (9.1b); the rules for them are
+    // gone from below, and the record of what they were worth is in
+    // sim/footwork.ts.
     //
     // Each rule below is the narrow case where an average player reaches for
     // the verb, not the case that flatters it.
 
-    // SHOVE, for the one thing a shove does that a blow cannot: put a man in
-    // the water, where the sea finishes him for nothing. Checked BEFORE the
-    // strike because both spend the turn's action, and a drowning is worth
-    // more than a hit.
-    if (VERBS.shove && !me.hasActed && strikeTargets(state).length > 0) {
-      // Same correction as test/wall.test.ts, and for the same reason. A
-      // shove that moves somebody deals NO damage on a line, and moves them
-      // between two ranks an axe already reaches — the whole worth of the
-      // verb is the other branch, where the last man of a line is driven
-      // against his own for 2 that cannot miss. The ported rule fired on
-      // exactly the half that does nothing.
-      const health = (id: string): number => fighterPerson(state, id)?.health ?? 99;
-      const shoveWorth = (f: typeof foes[number]): boolean => {
-        if (!REACH.shove.at.includes(f.rank) || !canActFrom('shove', me.rank)) return false;
-        return !shoveDestination(b, f) && health(f.personId) <= 2;
-      };
-      const shoved = foes.find(shoveWorth);
-      if (shoved) return { type:'B_SHOVE', targetId: shoved.personId };
-    }
-
+    // A SHOVE rule stood here, and 9.1b took the verb. It had been corrected
+    // once already — the ported hex rule fired on the half of the verb that
+    // does nothing on a line — and even corrected it fired 6 times in 30
+    // sagas and the arena priced it at 47/60 wins against 47/60 without it.
     // Everything below used to be gated on `distance(near.at, me.at)`, and
     // since 8.1c that number means nothing: `Combatant.at` is frozen at
     // wherever a fighter deployed and never moves again, so the gates were
@@ -798,25 +786,13 @@ function step(state: GameState): Action {
       return { type:'B_STRIKE', targetId: (marked ?? inReach[0] ?? near).personId };
     }
 
-    // On DASH, which the measurement changed my mind about twice on hexes
-    // and once more on the line.
-    //
-    // The obvious hex rule — "out of the fight, action unspent, so run" —
-    // was a TRAP: over forty seeds it took the balanced country from 11
-    // bands seeing spring to 8, because spending the action to arrive sooner
-    // means the fastest man arrives ALONE and having already acted, which is
-    // exactly the charge `test/wall.test.ts` measures as losing. A shield
-    // wall does not sprint.
-    //
-    // On a line there is nowhere to sprint TO, and the trap inverts: a band
-    // that shuffles ranks never closes with anybody at all. So the rule is
-    // the narrow honest one — a man who can reach nothing with any verb has
-    // an unspent action and one place to spend it, which is forward.
-    if (VERBS.dash && !me.hasActed && inReach.length === 0
-      && reachTargets(state).length === 0 && throwTargets(state).length === 0) {
-      return { type:'B_DASH', by: -1 };
-    }
-
+    // A DASH rule stood here, and it changed my mind three times: a trap on
+    // hexes (11 bands seeing spring became 8, because spending the action to
+    // arrive sooner means arriving ALONE and already spent), not a trap on a
+    // line, and then not a verb at all. 9.1b took it, and what it did — a man
+    // who can reach nothing with anything shoulders forward — is now the line
+    // closing itself at the top of the turn, for both sides, whether or not
+    // any bot thinks to ask.
     // The move scorer stood here. It weighed ground — closing at 4 a hex
     // against shoulders at 3 a mate, and never standing on your own
     // palisade — and there is no ground left to weigh: a fighter's only
@@ -4736,11 +4712,11 @@ describe('the whole of a fight is played', () => {
     // has gone back to being unmeasured content.
     //
     // `B_MOVE` was on this list and is not a verb any more: 8.1c took the
-    // ground away, so there is nowhere to walk and the action is gone from
-    // `actions.ts` entirely. Measured after the conversion, over 30 sagas and
-    // 65 fights: B_STRIKE 386, B_REACH 207, B_THROW 124, B_WARCRY 45,
-    // B_SHOVE 6.
-    for (const verb of ['B_STRIKE', 'B_REACH', 'B_WARCRY', 'B_THROW', 'B_SHOVE']) {
+    // ground away. `B_SHOVE` and `B_DASH` left it the same way in 9.1b, and
+    // the reading that convicted the shove is right here — measured over 30
+    // sagas and 65 fights it was B_STRIKE 386, B_REACH 207, B_THROW 124,
+    // B_WARCRY 45, and B_SHOVE 6.
+    for (const verb of ['B_STRIKE', 'B_REACH', 'B_WARCRY', 'B_THROW']) {
       expect(used[verb] ?? 0, `${verb} never issued in thirty sagas`).toBeGreaterThan(0);
     }
 
@@ -4756,11 +4732,11 @@ describe('the whole of a fight is played', () => {
       used['B_DEFEND'] ?? 0,
       'defend became reachable — good news, and this record is now stale',
     ).toBe(0);
-    // Dash was deliberately absent because it was priced at a third of the
-    // wins. It is NOT priced there any more — on a line it costs one win in
-    // sixty (see wall.test.ts) — but the bot still does not spend an action
-    // shuffling ranks, so this stays a zero until somebody makes the case.
-    expect(used['B_DASH'] ?? 0, 'the bot dashed — see the price in wall.test.ts').toBe(0);
+    // And the two verbs 9.1b took must not come back by the side door. A
+    // JSON-shaped action does not have to satisfy the type, so this is
+    // asserted rather than left to the compiler.
+    expect(used['B_SHOVE'] ?? 0, 'B_SHOVE was issued — the verb is gone').toBe(0);
+    expect(used['B_DASH'] ?? 0, 'B_DASH was issued — the verb is gone').toBe(0);
   });
 });
 
@@ -6871,8 +6847,8 @@ describe('the first winter, from inside', () => {
   // below, which never got to run; what was missing was the cost, not the
   // claim.
   it('does not tell bands that go on to live that they are already dead',
-    { timeout: 400_000 }, () => {
-    const SEEDS = 300;
+    { timeout: 900_000 }, async () => {
+    const SEEDS = 900;
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
     policy = SETTLER;
@@ -6928,6 +6904,10 @@ describe('the first winter, from inside', () => {
         at.rightHands += hands;
         at.rightBuilt += built;
       }
+      // Breathe. Nine hundred sagas is over two minutes of synchronous work,
+      // and a synchronous minute starves the runner's RPC heartbeat: the run
+      // fails with every test green, which is how this one first came back.
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
 
     const wrong = condemned === 0 ? 0 : condemnedAndLived / condemned;
@@ -6960,18 +6940,32 @@ describe('the first winter, from inside', () => {
     // between 33% and 50% for it to give, so a bar at 40% was being decided
     // by one band either way. It read 50% and looked like a regression.
     //
-    // Three hundred seeds condemn 62 bands and the reading is 27%, which is
-    // BETTER than the 33% this bar was written against. The answer to a
-    // sample too thin to resolve a figure is a bigger sample, not a wider
-    // bound — the same lesson the jarldom odds in data/hardship.ts learned
-    // twice, and it cost 40 seconds of suite time to apply here.
+    // AND THREE HUNDRED WAS STILL TOO THIN, found the same way when 9.1b
+    // nudged it — the second time this file has learned one lesson. Three
+    // hundred seeds condemn about seventy bands, so the ratio carries a 95%
+    // interval of roughly ±11 points and the bar at 40 sits inside it. The
+    // reading went 32% before 9.1b to 41% after, which looked like a
+    // regression and is not one: on those counts (21/66 against 30/74) the
+    // difference is z = 1.07, p ≈ 0.28. Two verdicts either way decided it.
+    //
+    // Nine hundred seeds condemn 229 bands and the reading is 38%. THIS IS
+    // NOT A CLEAN PASS AND IS NOT REPORTED AS ONE: ±6 points at this size, so
+    // the bar is still inside the interval. What this bar can do is tell the
+    // 46% defect it was written for from a repair in the low thirties; what
+    // it cannot do is tell 38 from 40, and nobody should read a move inside
+    // that band as a change to the game.
+    //
+    // TWO FIXES WERE TRIED AND BOTH REJECTED, on measurement rather than
+    // taste. The note in `walkWinter` says taking the max over every
+    // producing job reads 29% — RE-TAKEN, it reads 44% and breaks
+    // `cliff.test`'s pivot band, so that figure is one more number that did
+    // not survive being asked again. A cheaper variant that ranks food jobs
+    // by the first crewman's output reads 39% and would have scraped this bar
+    // by a point on arithmetic nobody could defend. Neither shipped.
     //
     // The remaining wrong verdicts are still bands that reach spring on
-    // nothing: 1 of 17 with food to spare, and 8 of 17 got there by losing a
-    // mouth. Taking the max over every producing job in `walkWinter` reads
-    // 29% and is written up there — it is left out because it flips a
-    // difficulty statement in `cliff.test`, which is a design call rather
-    // than a measurement one.
+    // nothing, and mostly by shedding a mouth — which is what a projection
+    // that holds the roster constant cannot credit, and should not.
     expect(wrong, `the panel told ${condemnedAndLived} surviving bands they were dead`)
       .toBeLessThan(0.4);
   });

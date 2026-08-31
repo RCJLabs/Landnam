@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   RANKS, REACH, atRank, canActFrom, closeUp, depth, engaged, linked,
-  shift, shoveBack, standing, targetsFor, type Ranked,
+  shift, standing, targetsFor, type Ranked,
 } from '../src/sim/ranks';
 
 /** A line of `n` on a side, ranked 1..n, all of them on their feet. */
@@ -27,9 +27,11 @@ describe('the reach table', () => {
     // PAST `RANKS`, deliberately. A warband is six sworn and a foe band can
     // be larger, so a real line runs deeper than the tables name — and when
     // this only checked as far as RANKS it missed exactly that: the fifth and
-    // sixth men could not strike, throw, defend or dash. They stood in the
-    // wall with nothing they were allowed to do, and a played battle found
-    // it rather than this did.
+    // sixth men could not strike, throw or defend. They stood in the wall
+    // with nothing they were allowed to do, and a played battle found it
+    // rather than this did. It happened AGAIN in 9.1b, from the other
+    // direction — taking the dash away put 19% of warband turns back into
+    // having no legal verb — which is why `stepUp` exists.
     for (let r = 1; r <= RANKS + 4; r++) {
       const verbs = (Object.keys(REACH) as (keyof typeof REACH)[]).filter((v) => canActFrom(v, r));
       expect(verbs.length, `rank ${r} can do nothing at all`).toBeGreaterThan(0);
@@ -61,11 +63,12 @@ describe('the reach table', () => {
       }
     }
     // An axe and a spear have a length and stop where the list stops. A
-    // thrown axe and a man shouldering forward do not.
+    // thrown axe does not. (`dash` was the fourth line here and is gone with
+    // the verb — what keeps a deep man from being stuck is now `stepUp`,
+    // which is tested in battleActions.test.ts because it needs a battle.)
     expect(canActFrom('strike', RANKS + 2), 'an axe grew longer').toBe(false);
     expect(canActFrom('reach', RANKS + 2), 'a spear grew longer').toBe(false);
     expect(canActFrom('throw', RANKS + 2), 'the back rank cannot throw').toBe(true);
-    expect(canActFrom('dash', RANKS + 2), 'the back rank is stuck').toBe(true);
   });
 });
 
@@ -92,11 +95,10 @@ describe('who a verb can touch', () => {
     expect(targetsFor(f, front, 'strike', 'foes')).toEqual([]);
   });
 
-  it('offers nobody for the verbs done to yourself', () => {
+  it('offers nobody for a verb done to yourself', () => {
     const f = field();
     const front = atRank(f, 'warband', 1)!;
     expect(targetsFor(f, front, 'defend', 'foes')).toEqual([]);
-    expect(targetsFor(f, front, 'dash', 'foes')).toEqual([]);
   });
 });
 
@@ -153,35 +155,17 @@ describe('the line closes up', () => {
   });
 });
 
-describe('a shove', () => {
-  it('drives a man back and brings the one behind him forward', () => {
-    const f = field();
-    const front = atRank(f, 'foes', 1)!;
-    const second = atRank(f, 'foes', 2)!;
-    const came = shoveBack(f, front);
-    expect(came).toBe(second);
-    expect(front.rank).toBe(2);
-    expect(second.rank).toBe(1);
-  });
+// `describe('a shove')` stood here, over `shoveBack` — a man driven back a
+// rank with the one behind him coming forward, nobody moved when he was the
+// last of his line, and a corpse never swapped with. All three were true.
+// 9.1b took the verb and the helper with it: `REACH.shove` was the same reach
+// as `strike`, so a shove was never a different option positionally, and the
+// arena priced it at 47/60 wins against 47/60 for never shoving.
 
-  it('moves nobody when there is nobody behind to swap with', () => {
-    const f = field(4, 1);
-    const alone = atRank(f, 'foes', 1)!;
-    expect(shoveBack(f, alone)).toBeNull();
-    expect(alone.rank).toBe(1);
-  });
-
-  it('steps over the fallen rather than swapping with a corpse', () => {
-    const f = field();
-    atRank(f, 'foes', 2)!.down = true;
-    const front = atRank(f, 'foes', 1)!;
-    const came = shoveBack(f, front);
-    // Rank 2 is not standing, so nobody is there to come forward.
-    expect(came).toBeNull();
-  });
-});
-
-describe('a dash changes rank', () => {
+describe('shifting rank', () => {
+  // This was `a dash changes rank`. The verb is gone (9.1b) and `shift` is
+  // not: it is how the line closes itself on a man with nothing left to do.
+  // The claims are unchanged because the movement is unchanged.
   it('swaps forward with whoever is in front', () => {
     const f = field();
     const third = atRank(f, 'warband', 3)!;
@@ -205,16 +189,17 @@ describe('a dash changes rank', () => {
     expect(back.rank).toBe(2);
   });
 
-  it('lets the shoved spearman buy his way back', () => {
-    // The whole reason dash survives the conversion: it is the answer to
-    // being driven somewhere your weapon is no use.
+  it('walks a man out of a rank his weapon is no use in', () => {
+    // The whole reason the MOVEMENT survives 9.1b even though the verb did
+    // not: it is the answer to standing somewhere you cannot fight from. The
+    // fixture used to arrange that with a shove; a fourth-rank man says the
+    // same thing without one.
     const f = field();
-    const spear = atRank(f, 'warband', 2)!;
-    shoveBack(f, spear);            // driven back to 3
-    expect(spear.rank).toBe(3);
-    expect(shift(f, spear, -1)).toBe(true);
-    expect(spear.rank).toBe(2);
-    expect(canActFrom('reach', spear.rank)).toBe(true);
+    const deep = atRank(f, 'warband', 4)!;
+    expect(canActFrom('reach', deep.rank), 'the fixture put him in reach').toBe(false);
+    expect(shift(f, deep, -1)).toBe(true);
+    expect(deep.rank).toBe(3);
+    expect(canActFrom('reach', deep.rank)).toBe(true);
   });
 });
 

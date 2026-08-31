@@ -12,7 +12,6 @@
 import type { Battle, Combatant, GameState } from '../state/types';
 import { activeCombatant, fighterPerson, strikeTargets } from '../sim/battle';
 import { reachTargets, throwTargets } from '../sim/strike';
-import { shoveDestination } from '../sim/footwork';
 import { isLeader } from '../sim/warcry';
 import { beatsSince } from '../sim/beats';
 import { atThePalisade, wallPairs } from '../sim/wall';
@@ -454,25 +453,6 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
             'stroke-dasharray': aim === 'throw' ? '6 4' : aim === 'reach' ? '3 3' : '',
           }),
         );
-        // Show who a shove would put in front instead — the whole worth of
-        // the verb is which man ends up holding their line.
-        if (aim === 'shove') {
-          const came = shoveDestination(battle, target);
-          if (came) {
-            const q = standAt(came.side, came.rank);
-            layers.overlay.append(
-              svgEl('path', {
-                d: `M ${q.x} ${q.y - FIGURE_LIFT} L ${p.x} ${p.y - FIGURE_LIFT}`,
-                stroke: GOLD, 'stroke-width': 2.5, fill: 'none',
-                'stroke-dasharray': '5 4', opacity: 0.9,
-              }),
-              svgEl('ellipse', {
-                cx: q.x, cy: q.y, rx: RANK_GAP * 0.34, ry: RANK_GAP * 0.1,
-                fill: 'none', stroke: GOLD, 'stroke-width': 2, opacity: 0.9,
-              }),
-            );
-          }
-        }
       }
     }
 

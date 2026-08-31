@@ -333,29 +333,22 @@ export function showBeat(
     return;
   }
 
-  if (b.kind === 'shoved') {
-    // The beat still carries the hexes it was shoved between; they describe a
-    // field that no longer exists, so the effect plays where the men now
-    // stand instead. The dead fields go with `Combatant.at`.
-    const at = spotOf(battle, b.target);
+  if (b.kind === 'moved') {
+    // THE LINE MOVING, and it is two different things wearing one beat.
+    // `flight` is a broken man giving ground down the line; without it, it is
+    // the wall closing on somebody with nothing left to do (9.1b's `stepUp`).
+    //
+    // These streaks were the shove's, and they are kept rather than deleted
+    // with the verb: the picture "a man crossing the gap between two ranks"
+    // is exactly as true of this, and it was the one part of that verb doing
+    // visible work.
+    const at = spotOf(battle, b.who);
     if (!at) return;
-    if (b.result === 'held') {
-      // Nobody moved: the brace flash where the shove was refused.
-      spawn(burst(at.x, at.y - R * 0.4, STEEL, 7, 4), 380);
-      return;
-    }
-    if (b.result === 'crushed') {
-      // Driven into what was behind them: rock dust, and the heavy flash.
-      spawn(burst(at.x, at.y, '#a89f90', 12, 7), 500);
-      spawn(svgEl('circle', { cx: at.x, cy: at.y, r: HEX * 0.5, class: 'hit-flash' }), 450);
-      return;
-    }
-    // Pushed. `at` is where he is NOW, a rank further back; the ground he
-    // gave runs from one gap nearer the meeting to here. A shove always
-    // drives a man away from where the walls meet, so the direction falls
-    // out of which side of x = 0 he is on and needs nobody looked up.
-    const was = { x: at.x - (at.x < 0 ? -RANK_GAP : RANK_GAP), y: at.y };
-    // Motion streaks along the yard of ground they gave.
+    // Rank grows away from where the walls meet, so the ground he covered
+    // runs `from - to` gaps outward from where he now stands. Which way that
+    // is falls out of which side of x = 0 he is on and needs nobody looked up.
+    const side = at.x < 0 ? -1 : 1;
+    const was = { x: at.x + side * RANK_GAP * (b.from - b.to), y: at.y };
     const dx = at.x - was.x;
     const dy = at.y - was.y;
     const d = Math.hypot(dx, dy) || 1;

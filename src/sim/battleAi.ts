@@ -5,10 +5,9 @@ import type { Combatant, GameState } from '../state/types';
 import type { Temperament } from '../data/foes';
 import { activeCombatant, archetypeOf, fighterPerson, standing, strikeTargets } from './battle';
 import { canThrowAt, doReach, doStrike, doThrow, reachTargets } from './strike';
-import { doDash, doDefend, doShove } from './footwork';
+import { doDefend } from './footwork';
 import { evasion } from './swing';
 import { threatCount } from './zoc';
-import { effectiveStat } from './people';
 
 /**
  * Past this round nobody is being clever any more. Cautious and flanking
@@ -46,34 +45,20 @@ function bestMeleeTarget(state: GameState): Combatant | undefined {
  * whole difference between the archetypes.
  */
 /**
- * Take a better place in the line, if there is one.
+ * `takeRank` stood here. It read: if you cannot reach anybody from where you
+ * are, shoulder forward until you can — with temperament deciding who bothers.
  *
- * This was a search over reachable hexes scored by gap, shoulder-mates and
- * temperament. A line has no such geography — the only choice about where to
- * be is WHICH RANK, so the whole thing collapses to: if you cannot reach
- * anybody from here, shoulder forward until you can.
+ * 9.1b took the dash off the bar, and the same movement is now the line
+ * closing itself (`stepUp`, sim/footwork.ts), run for BOTH sides at the top of
+ * a turn. Every rule this function carried survives in that one:
  *
- * Temperament still shows, but in what a fighter does rather than where they
- * walk: the aggressive push up, the cautious hold what they have, and the
- * flanker keeps to the back where a thrown axe still reaches.
+ * - "the cautious do not shoulder into the front rank" — `nothingToDo` is
+ *   false for anybody in ranks 1 or 2, because they may always set a shield;
+ * - "a flanker with axes left is where it wants to be" — a man with axes and
+ *   somebody to throw at has something to do, so the line does not close on
+ *   him;
+ * - and it still spends the turn, as the dash did.
  */
-function takeRank(state: GameState, active: Combatant, temperament: Temperament): void {
-  const battle = state.battle!;
-  if (active.hasActed || active.broken) return;
-
-  const canHitSomething =
-    strikeTargets(state).length > 0
-    || reachTargets(state).length > 0
-    || (active.throwsLeft > 0 && standing(battle, 'warband').some((c) => canThrowAt(state, active, c)));
-  if (canHitSomething) return;
-
-  // A flanker with axes left is exactly where it wants to be.
-  if (temperament === 'flanker' && active.throwsLeft > 0) return;
-  // The cautious do not shoulder into the front rank to make something happen.
-  if (temperament === 'cautious' && active.rank <= 2) return;
-
-  doDash(state, -1);
-}
 
 /** One foe's whole turn. */
 export function takeFoeTurn(state: GameState): void {
@@ -93,8 +78,6 @@ export function takeFoeTurn(state: GameState): void {
       return;
     }
   }
-
-  takeRank(state, active, temperament);
 
   const target = bestMeleeTarget(state);
   if (!target) {
@@ -133,18 +116,10 @@ export function takeFoeTurn(state: GameState): void {
     return;
   }
 
-  const attacker = fighterPerson(state, active.personId);
-  const defender = fighterPerson(state, target.personId);
 
-  // A shove is worth more than a swing when it puts them in the water, or
-  // when their shield is up and a blow would just rattle it.
-  if (attacker && defender) {
-    const strongEnough = effectiveStat(attacker, 'might') >= effectiveStat(defender, 'might');
-    if (target.defending && strongEnough) {
-      doShove(state, target.personId);
-      return;
-    }
-  }
-
+  // A shove stood here, for a foe strong enough to lean on a raised shield.
+  // 9.1b took the verb: on a line it had the same reach as a strike and the
+  // arena priced it at nothing (47/60 wins either way), so the foe simply
+  // swings at the shield now, which is what DEFEND_BONUS is there to answer.
   doStrike(state, target.personId);
 }

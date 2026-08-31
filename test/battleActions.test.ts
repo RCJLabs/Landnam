@@ -10,7 +10,7 @@ import { RANKS } from '../src/sim/ranks';
 import { DEFEND_BONUS, carrying, edge, evasion } from '../src/sim/swing';
 import { canThrowAt, doStrike, throwTargets } from '../src/sim/strike';
 import { isThreatened, threatCount } from '../src/sim/zoc';
-import { SHIELD_WHEN_UNDER, shieldAdvised } from '../src/sim/footwork';
+import { SHIELD_WHEN_UNDER, nothingToDo, shieldAdvised, stepUp } from '../src/sim/footwork';
 import { canActFrom } from '../src/sim/ranks';
 import { FOE_ARCHETYPES } from '../src/data/foes';
 import { PATIENCE_ROUNDS } from '../src/sim/battleAi';
@@ -256,40 +256,81 @@ describe('the country is worth a point on the dice', () => {
   });
 });
 
-describe('dash', () => {
-  it('trades the action for a place in the line', () => {
-    // It used to trade the action for MOVEMENT. There is no ground to buy
-    // since 8.1c, so what it buys is the rank — and it still costs the turn.
-    const { state, us: me } = duel('dash');
+describe('the line closes itself', () => {
+  /**
+   * 9.1b. These two claims were `dash`'s and they survive it, because the
+   * MOVEMENT survives it: what is gone is the button, not the shouldering
+   * forward. `stepUp` runs at the top of a turn for anybody with no legal
+   * verb from where he is standing.
+   */
+  it('takes the turn, exactly as the verb it replaces did', () => {
+    const { state, us: me } = duel('stepup');
     const battle = state.battle!;
-    battle.combatants.push({ ...me, personId: 'mate', rank: 1 });
-    me.rank = 2;
-    const after = apply(state, { type: 'B_DASH', by: -1 });
-    const us = activeCombatant(after.battle!)!;
-    expect(us.rank).toBe(1);
-    expect(us.hasActed).toBe(true);
-    // Having run, there is no swing left in the turn.
-    const them = after.battle!.combatants.find((c) => c.side === 'foe')!;
-    expect(apply(after, { type: 'B_STRIKE', targetId: them.personId })).toBe(after);
+    // A REAL LINE, and the first cut of this fixture was not one: it stood a
+    // two-man warband with one of them at rank 4, and `shift` rightly refused
+    // to move him into a rank his own line does not reach — `depth` is the
+    // COUNT of men standing, not the deepest number anybody carries. A
+    // fixture the game cannot produce is not a failing test, it is no test.
+    for (let r = 1; r <= 3; r += 1) {
+      battle.combatants.push({ ...me, personId: `mate-${r}`, rank: r });
+    }
+    // Fourth rank and no hand-axes: strike and reach are out of the table,
+    // throw is out of ammunition, the shield is a front-two verb. Nothing.
+    me.rank = 4;
+    me.throwsLeft = 0;
+    expect(nothingToDo(state, me), 'the fixture left him something to do').toBe(true);
+
+    expect(stepUp(state, me)).toBe(true);
+    expect(me.rank).toBe(3);
+    expect(me.hasActed, 'the step must cost the turn, or standing deep is free')
+      .toBe(true);
+    const them = battle.combatants.find((c) => c.side === 'foe')!;
+    expect(apply(state, { type: 'B_STRIKE', targetId: them.personId })).toBe(state);
   });
 
-  it('lets a fighter buy their way out of a rank their weapon is no use in', () => {
-    // The old claim was about disengaging: a dash bought you out of a line
-    // you had no movement left to leave. On the line it buys the same thing
-    // in the only currency there is — the spearman driven to the front, or
-    // the thrower out of axes, walks himself somewhere he can fight again.
-    const { state, us } = duel('dash-escape');
-    const battle = state.battle!;
-    const mate = { ...us, personId: 'mate', rank: 1 };
-    battle.combatants.push(mate);
-    us.rank = 2;
+  it('never closes on a man who still has something to do', () => {
+    // The whole safety of the rule. A fighter who can act is never moved by
+    // it — being shuffled out of a rank you were about to fight from would
+    // be the game playing itself.
+    const { state, us } = duel('stepup-busy');
+    us.rank = 1;
+    expect(nothingToDo(state, us)).toBe(false);
+    expect(stepUp(state, us)).toBe(false);
+    expect(us.rank).toBe(1);
+    expect(us.hasActed).toBe(false);
+  });
 
-    const dashed = apply(state, { type: 'B_DASH', by: -1 });
-    expect(dashed, 'the dash was refused').not.toBe(state);
-    const after = dashed.battle!.combatants.find((c) => c.personId === us.personId)!;
-    const swapped = dashed.battle!.combatants.find((c) => c.personId === 'mate')!;
-    expect(after.rank).toBe(1);
-    expect(swapped.rank).toBe(2);
+  it('swaps with whoever was in front, rather than stacking two men in a rank', () => {
+    const { state, us } = duel('stepup-swap');
+    const battle = state.battle!;
+    for (let r = 1; r <= 3; r += 1) {
+      battle.combatants.push({ ...us, personId: `mate-${r}`, rank: r });
+    }
+    us.rank = 4;
+    us.throwsLeft = 0;
+    expect(stepUp(state, us)).toBe(true);
+    expect(us.rank).toBe(3);
+    expect(battle.combatants.find((c) => c.personId === 'mate-3')!.rank).toBe(4);
+  });
+
+  it('reports itself as a move rather than a rout', () => {
+    // `moved` carries `flight` for a broken man giving ground. The line
+    // tightening and the line coming apart are the same swap and nothing
+    // like the same thing to watch, so the flag is what tells them apart.
+    const { state, us } = duel('stepup-beat');
+    const battle = state.battle!;
+    for (let r = 1; r <= 3; r += 1) {
+      battle.combatants.push({ ...us, personId: `mate-${r}`, rank: r });
+    }
+    us.rank = 4;
+    us.throwsLeft = 0;
+    expect(stepUp(state, us), 'the line did not close').toBe(true);
+    const moved = (state.battle!.beats ?? []).filter((b) => b.kind === 'moved');
+    expect(moved.length).toBeGreaterThan(0);
+    const last = moved.at(-1)!;
+    expect(last.kind === 'moved' && last.flight).toBeUndefined();
+    expect(last.kind === 'moved' && last.from).toBe(4);
+    expect(last.kind === 'moved' && last.to).toBe(3);
   });
 });
 
@@ -342,66 +383,14 @@ describe('throw', () => {
   });
 });
 
-describe('shove', () => {
-  it('drives a foe back a rank, and puts the man behind him in front', () => {
-    const { state, us, them } = duel('shove-rank');
-    const battle = state.battle!;
-    // A foe line two deep, so there is somebody to come forward.
-    const second = { ...them, personId: 'foe-second', rank: 2 };
-    battle.combatants.push(second);
-    battle.foes.push({ ...battle.foes[0]!, id: 'foe-second', name: 'The Second' });
-    us.rank = 1;
-    them.rank = 1;
-
-    // Make the shove certain: overwhelming might against none.
-    fighterPerson(state, us.personId)!.stats.might = 6;
-    fighterPerson(state, them.personId)!.stats.might = 1;
-
-    const after = apply(state, { type: 'B_SHOVE', targetId: them.personId });
-    const shoved = after.battle!.combatants.find((c) => c.personId === them.personId)!;
-    const came = after.battle!.combatants.find((c) => c.personId === 'foe-second')!;
-    // Either he was driven back and they swapped, or he held. Never anything else.
-    if (shoved.rank === 1) {
-      expect(came.rank, 'he held, so nobody should have moved').toBe(2);
-    } else {
-      expect(shoved.rank).toBe(2);
-      expect(came.rank, 'somebody had to come forward').toBe(1);
-    }
-  });
-
-  it('with nowhere to give, a man is crushed against his own line', () => {
-    // The old test put him in the water and let the sea do it. There is no
-    // water on a line and no sideways to be driven — the equivalent is being
-    // the last of your rank with your own men at your back.
-    const { state, us, them } = duel('shove-crush');
-    us.rank = 1;
-    them.rank = 1;
-    fighterPerson(state, us.personId)!.stats.might = 6;
-    fighterPerson(state, them.personId)!.stats.might = 1;
-    fighterPerson(state, them.personId)!.health = 2;
-
-    let after = state;
-    for (let i = 0; i < 12; i++) {
-      const attempt = apply(after, { type: 'B_SHOVE', targetId: them.personId });
-      if (attempt === after) break;
-      after = attempt;
-      const target = after.battle!.combatants.find((c) => c.personId === them.personId)!;
-      if (target.down) {
-        expect(after.battle!.log.some((l) => /own line|own men/i.test(l))).toBe(true);
-        return;
-      }
-      // Reset the turn and try again — the contest can be lost.
-      activeCombatant(after.battle!)!.hasActed = false;
-    }
-  });
-
-  it('a shove is refused from the back of the line', () => {
-    const { state, us, them } = duel('shove-range');
-    us.rank = 3;
-    them.rank = 1;
-    expect(apply(state, { type: 'B_SHOVE', targetId: them.personId })).toBe(state);
-  });
-});
+// `describe('shove')` stood here until 9.1b took the verb off the bar. It
+// held three claims — a foe driven back a rank with the man behind him coming
+// forward, a man with nowhere to give crushed against his own line for 2 that
+// cannot miss, and a shove refused from the third rank. All three were true
+// and none of them was worth an action: `REACH.shove` was `{from:[1,2],
+// at:[1,2]}`, the same reach as `strike`, so a shove was never a different
+// option positionally, and the arena priced it at 47/60 wins against 47/60
+// for never shoving at all.
 
 describe('foe temperaments', () => {
   it('every archetype declares one, and all three are represented', () => {
@@ -538,12 +527,8 @@ describe('fights are winnable and losable on purpose', () => {
         state = apply(state, { type: 'B_END_TURN' });
         continue;
       }
-      const foes = standing(battle, 'foe');
-      if (foes.length > 0) {
-        const pushed = apply(state, { type: 'B_DASH', by: -1 });
-        state = pushed === state ? apply(state, { type: 'B_END_TURN' }) : pushed;
-        continue;
-      }
+      // Closing up used to be a `B_DASH` here. Since 9.1b the line does it
+      // by itself at the top of the turn, so all this arm has to do is pass.
       state = apply(state, { type: 'B_END_TURN' });
     }
     return state;
@@ -591,9 +576,7 @@ describe('a fighter who has acted has nothing left to decide', () => {
   const VERBS: Array<[string, (state: GameState) => Action]> = [
     ['strike', (s) => ({ type: 'B_STRIKE', targetId: strikeTargets(s)[0]!.personId })],
     ['throw', (s) => ({ type: 'B_THROW', targetId: throwTargets(s)[0]?.personId ?? '' })],
-    ['shove', (s) => ({ type: 'B_SHOVE', targetId: strikeTargets(s)[0]!.personId })],
     ['defend', () => ({ type: 'B_DEFEND' })],
-    ['dash', () => ({ type: 'B_DASH', by: -1 })],
     ['war cry', () => ({ type: 'B_WARCRY' })],
   ];
 
@@ -602,10 +585,8 @@ describe('a fighter who has acted has nothing left to decide', () => {
     { type: 'B_STRIKE', targetId: s.battle!.combatants.find((c) => c.side === 'foe')!.personId },
     { type: 'B_REACH', targetId: s.battle!.combatants.find((c) => c.side === 'foe')!.personId },
     { type: 'B_THROW', targetId: s.battle!.combatants.find((c) => c.side === 'foe')!.personId },
-    { type: 'B_SHOVE', targetId: s.battle!.combatants.find((c) => c.side === 'foe')!.personId },
     { type: 'B_DEFEND' },
     { type: 'B_WARCRY' },
-    { type: 'B_DASH', by: -1 },
   ];
 
   for (const [name, verb] of VERBS) {
@@ -616,16 +597,15 @@ describe('a fighter who has acted has nothing left to decide', () => {
       let acted = 0;
       for (const seed of [`spent-${name}-a`, `spent-${name}-b`, `spent-${name}-c`]) {
         // The file's own duel fixture, not a fresh field: at the opening of a
-        // real fight the walls are not yet in contact, so strike, shove and
-        // the war cry were never once legal and three of these claims passed
+        // real fight the walls are not yet in contact, so strike and the war
+        // cry were never once legal and three of these claims passed
         // having proved nothing. The `acted` guard below is what caught it.
         const { state, us, them } = duel(seed);
         // Each verb needs its own premise to be true, and setting them here
         // is the point: a claim about "after X" is worth nothing on a board
         // where X cannot happen.
         if (name === 'throw') { us.rank = 2; them.rank = 2; }  // range, not contact
-        if (name === 'dash') us.rank = 2;                      // somewhere to go
-        if (!isWarbandTurn(state)) continue;
+            if (!isWarbandTurn(state)) continue;
         let action: Action;
         try { action = verb(state); } catch { continue; }
         const after = apply(state, action);
@@ -668,9 +648,8 @@ describe('a fighter who has acted has nothing left to decide', () => {
     // And the premise: nothing he could try gets through.
     for (const next of [
       { type: 'B_STRIKE' as const, targetId: them.personId },
-      { type: 'B_SHOVE' as const, targetId: them.personId },
+      { type: 'B_REACH' as const, targetId: them.personId },
       { type: 'B_DEFEND' as const },
-      { type: 'B_DASH' as const, by: -1 as const },
       { type: 'B_WARCRY' as const },
     ]) {
       expect(apply(state, next)).toBe(state);

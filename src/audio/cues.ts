@@ -94,7 +94,6 @@ export function cuesFor(before: GameState, after: GameState, action: Action): Cu
   // --- On the field ---
 
   if (wasFighting) {
-    if (action.type === 'B_DASH') cues.push('step');
     cues.push(...fieldCues(before, after, action));
     if (!before.battle?.outcome && after.battle?.outcome) {
       cues.push(after.battle.outcome === 'won' ? 'won' : 'lost');

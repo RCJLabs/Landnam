@@ -6,7 +6,6 @@ import { activeCombatant, fighterPerson, isWarbandTurn, standing } from '../sim/
 import { throwTargets, reachTargets } from '../sim/strike';
 import { canWarCry, isLeader } from '../sim/warcry';
 import { wallBonus, wallLinks } from '../sim/wall';
-import { shieldAdvised } from '../sim/footwork';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';
 
@@ -44,7 +43,7 @@ export function renderBattleBar(state: GameState): HTMLElement {
 }
 
 /** Which tap-target action the player has armed. */
-export type Aim = 'strike' | 'throw' | 'shove' | 'reach';
+export type Aim = 'strike' | 'throw' | 'reach';
 
 export function renderBattleActions(
   state: GameState,
@@ -62,7 +61,7 @@ export function renderBattleActions(
   // Broken counts as spent, and until 9.13 it did not: every verb in the sim
   // refuses a man whose nerve has gone — `broken` sits in the same guard as
   // `hasActed` — but this line asked only whether he had acted, so he was
-  // shown a live Strike, Throw and Shove that silently did nothing when
+  // shown a live Strike and Throw that silently did nothing when
   // tapped. Controls that look able and are not are worse than absent ones.
   const spent = active.hasActed || active.broken;
   const aimButton = (id: Aim, label: string, enabled: boolean) => {
@@ -81,16 +80,17 @@ export function renderBattleActions(
     aimButton('strike', 'Strike', !spent),
     aimButton('throw', `Throw${active.throwsLeft > 0 ? ` ${active.throwsLeft}` : ''}`,
       !spent && active.throwsLeft > 0 && throwTargets(state).length > 0),
-    aimButton('shove', 'Shove', !spent),
   );
   if (canSpear) bar.append(aimButton('reach', 'Spear', true));
 
   const second = el('div', { class: 'actionbar' });
   const defend = button('Shield', () => dispatch({ type: 'B_DEFEND' }), { class: 'action' });
   if (spent) defend.setAttribute('disabled', 'true');
-  const dash = button('Run', () => dispatch({ type: 'B_DASH' }), { class: 'action' });
-  if (spent) dash.setAttribute('disabled', 'true');
-  second.append(defend, dash);
+  // The Run button stood beside the shield until 9.1b. Changing rank is not
+  // something anybody spends an action on any more — the line closes itself
+  // on a man with nothing legal left (see sim/footwork.ts) — so there is
+  // nothing here to press.
+  second.append(defend);
   // The leader's button, and only the leader's: its absence on everyone
   // else's turn is what makes leading mean something.
   if (isLeader(state, active)) {
@@ -123,7 +123,6 @@ export function renderBattleActions(
 const AIM_HINT: Record<Aim, string> = {
   strike: 'tap a marked foe to strike',
   throw: 'tap a marked foe to throw',
-  shove: 'tap a marked foe to shove them back',
   reach: 'tap a marked foe to thrust past your shield-brother',
 };
 
@@ -136,19 +135,27 @@ export function renderBattleHint(state: GameState, aim: Aim): HTMLElement {
   if (!person || !active) return el('div', { class: 'hint' }, ['Waiting']);
 
   const parts: string[] = [];
-  // "tap a dashed hex to move" stood here and had been a lie since 8.1c:
-  // there is no hex and there is no move. What a fighter can do about WHERE
-  // he is standing is change rank, which is the Run button, so the hint says
-  // that instead of naming a control that does not exist.
   if (!active.hasActed) parts.push(AIM_HINT[aim]);
-  // THE SHIELD'S ONE CASE (9.1). Measured, a band that sets the shield when
-  // the man holding it is hurt wins 49 fights in 60 against 46 for one that
-  // always swings, and finishes with seventeen more men standing — and a band
-  // that sets it EVERY turn wins 11. So the hint names the case rather than
-  // the button, and only when it applies. It is said, never enforced: the
-  // player can swing anyway, and often should.
-  if (shieldAdvised(state)) parts.push('hurt — the shield is worth more than the swing');
-  if (!active.hasActed && active.rank > 1) parts.push('or push forward a rank');
+  // THE SHIELD'S ONE CASE (9.1) STOOD HERE, AND 9.1b OVERTURNED IT.
+  //
+  // The line said "hurt — the shield is worth more than the swing", on a
+  // measurement of 49 wins in 60 against 46 for always swinging. Re-taken on
+  // the same instrument after the line began closing itself, the arm INVERTS:
+  // 31 in 60 against 42, paired won 0 and lost 11. Fights are more crowded
+  // now — men who used to stand safe in the back rank walk into the wall — so
+  // a turn spent on the shield instead of the blow costs more than it saves.
+  //
+  // The sentence is gone rather than left saying something the harness calls
+  // false. `shieldAdvised` is kept, with the new reading in its docstring:
+  // whether the shield gets a different rule or comes off the bar is a
+  // ruling, not a thing to invent here — the same fork 9.1 was careful to
+  // leave open the first time.
+  //
+  // "or push forward a rank" stood beside it and named the Run button, which
+  // 9.1b deleted. The look bar caught it: `fight-late@320x568` still offered
+  // a control that was no longer on the screen. Third lie in this one slot,
+  // after "tap a dashed hex to move" — so the hint now names no control for
+  // where a man stands, because there is nothing to name.
   // "nothing left this turn — end it" stood here, and 9.13 deleted the tap it
   // was asking for: the turn now ends itself. What is left to say is what is
   // HAPPENING, not what to press.

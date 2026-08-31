@@ -47,11 +47,11 @@
 > keeping a wardrobe of their own. **THE ART QUEUE IS DONE.**
 >
 > **CURRENT MILESTONE (from 2026-08-30): Phase 9 — what a saga actually
-> feels like to play**, below. **Built and closed:** 9.3, 9.4, 9.6, 9.8, 9.9,
-> 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave the game a third act.
-> **Measured, with a decision left to Evan rather than invented:** 9.1 (keep
-> or drop the shove and the dash), 9.2 (the voyage home), 9.5 (soften the
-> villain's promise or leave it), 9.7 (winter), 9.12 (the pacing arc).
+> feels like to play**, below. **Built and closed:** 9.1b, 9.3, 9.4, 9.6, 9.8,
+> 9.9, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave the game a third
+> act. **Measured, with a decision left to Evan rather than invented:** 9.2
+> (the voyage home), 9.5 (soften the villain's promise or leave it), 9.7
+> (winter), 9.12 (the pacing arc).
 > **What is left unstarted is the two big ones: 9.10 (the rival's saga) and
 > 9.11 (the colony loop).**
 >
@@ -4143,7 +4143,9 @@ nice. Four groups, in the shape they were proposed and chosen from.
   that one case in the battle hint, stated and never enforced: the player is
   told and can swing anyway.
 
-  **STILL OPEN, AND EVAN'S CALL — shove and dash.** Neither is fixed by
+  **RULED 2026-08-31: BOTH DROPPED (9.1b, below).**
+
+  **The fork as it stood — shove and dash.** Neither was fixed by
   telling anybody anything:
 
   - **Shove** is worth nothing even in its best case: 46/60 against 46/60,
@@ -4161,6 +4163,108 @@ nice. Four groups, in the shape they were proposed and chosen from.
   control exactly is not evidence the feature is worthless — it is evidence
   the feature never ran. The tie had been asserted, with a comment explaining
   what it meant, for long enough to read as settled.
+- [x] **9.1b Drop the shove and the dash** — **Done 2026-08-31, on Evan's
+  ruling, and the deletion turned out to be the small half of the job.**
+
+  Both verbs are gone from the sim, the actions, the AI, the UI, the audio
+  cues and the beat stream. `REACH` is four verbs now; `shoveBack` went with
+  the shove; `SAVE_VERSION` is 59 and drops the `shoved` and `dashed` beats a
+  fight caught mid-swing is holding, the way v46 dropped hex-shaped `moved`
+  beats.
+
+  **AND THE CUT COULD NOT BE MADE AS WRITTEN.** Measured before touching
+  anything, over the arena's 60 fights: with both verbs gone, **269 of 1427
+  warband turns — 19% — had NO legal verb at all**, at ranks 4, 5 and 6.
+  `throw` is the only verb a back-rank man has, `throwsLeft` runs out, and the
+  dash was how he walked up into the wall afterwards. That is the exact bug
+  `ranks.ts` says it shipped for one afternoon, arriving a second time by
+  deletion instead of by a table.
+
+  **So the movement outlived the verb.** `stepUp` (sim/footwork.ts) closes the
+  line at the top of a turn on anybody with nothing he may legally do — one
+  rank, both sides, and it spends the turn exactly as the dash did, because
+  leaving the action unspent would let a man walk up and swing in the same
+  turn and make standing deep free. The player sees him shoulder forward and
+  the turn pass, with nothing to press. Measured after: **0 stranded turns**,
+  374 of 1494 spent by the line closing.
+
+  **WHAT IT COST, stated rather than buried.** Closing is not free — a man who
+  used to stand safe in the back rank doing nothing now walks into the wall
+  where he can be hit:
+
+  | | before | after |
+  |---|---|---|
+  | arena, formation bot | 47/60 wins, 166 standing | **42/60, 155** |
+  | curve, saw spring | 53% | **53%** |
+  | curve, two winters | 22% | **28%** |
+  | A Fair Country, saw spring (300) | 83% | **81%** |
+  | As It Lies / A Hard Country | 55% / 27% | 55% / 27% |
+
+  The shipped survival bar does not move and the long game gets longer. The
+  arena drops five wins, in the same direction the old `dash only` arm already
+  measured (46/60, 157) — that arm was this behaviour as an option, and it is
+  now the game. **`A Fair Country`'s menu card was restated 86 → 81**: it was
+  three points optimistic before this and five after, and a card that lies to
+  the player before they choose is the thing that bar exists to catch. The
+  other two cards were inside their slack and were left alone.
+
+  **AND IT OVERTURNED 9.1's SHIELD FINDING, which shipped yesterday.** Same
+  instrument, same 60 fights, re-taken after the line began closing itself:
+
+  | | 9.1 (2026-08-30) | after 9.1b |
+  |---|---|---|
+  | swings always | 46/60, 172 standing | 42/60, 155 |
+  | **shield when hurt** | **49/60, 189** (paired won 8, lost 5) | **31/60, 120** (paired **won 0, lost 11**) |
+  | when outnumbered | 39/60, 158 | 30/60, 125 |
+  | always, front rank | 11/60, 85 | **0/60**, 51 |
+
+  The reason is legible: fights are more crowded and more lethal now, so a
+  turn spent on the shield instead of the blow costs more than it saves.
+  **The hint that said "hurt — the shield is worth more than the swing" is
+  gone from the battle screen** — a sentence the harness calls false is worse
+  than no sentence — and `shieldAdvised` is kept, tested and unread, with the
+  new numbers in its docstring. Whether the shield gets a different rule or
+  comes off the bar is the same fork 9.1 was careful to leave open, and it is
+  open again, on Evan's desk.
+
+  **AND ONE BAR FAILED THAT TURNED OUT NOT TO BE A REGRESSION.** The winter
+  panel's verdict — "we will not reach spring on what this ground gives" — is
+  held to being wrong about fewer than 40% of the bands it condemns. It read
+  32% before this change and 41% after, and failed. Chased rather than
+  accepted, and the answer is that **300 seeds cannot resolve that bar**: the
+  condemned subset is only ~70 bands, so the ratio carries ±11 points, and on
+  the actual counts (21/66 against 30/74) the move is **z = 1.07, p ≈ 0.28**.
+  Two verdicts either way decided it.
+
+  Re-sampled at 900 seeds it reads **38%, and that is reported as a pass and
+  not as a clean one** — ±6 points at that size, so 40 is still inside the
+  interval. This bar can tell the 46% defect it was written for from a repair
+  in the low thirties; it cannot tell 38 from 40. That is the second time this
+  one test has been caught with a sample too thin for its own threshold, and
+  the file now says so.
+
+  **Two fixes were tried on it and both rejected, on measurement.** The note
+  in `walkWinter` has said since 8.5 that taking the max over every producing
+  job reads 29% — re-taken, it reads **44%** and breaks `cliff.test`'s pivot
+  band, so that is one more inherited figure that did not survive being asked
+  again. A cheaper variant ranking food jobs by the first crewman's output
+  reads 39% and would have scraped the bar by a point on arithmetic nobody
+  could defend. Neither shipped.
+
+  **Two dead controls the look bar caught, not a test.** `fight-late@320x568`
+  still offered "or push forward a rank" after the Run button was deleted —
+  the third lie in that one hint slot, after "tap a dashed hex to move". And
+  the title screen moved by 0.2, which turned out to be the difficulty card
+  itself: 81% renders as "Four bands in five saw the first spring", so the
+  restatement is visible exactly where a player reads it before choosing.
+
+  **Done when:** ✅ both verbs gone from every layer, save shape included ·
+  ✅ the hole the deletion opens measured BEFORE the cut, not after ·
+  ✅ closed, and the closing proved by an instrument that fails when nobody
+  throws or nobody closes · ✅ the price stated on all three instruments ·
+  ✅ the one card that stopped being true restated rather than left to
+  flatter · ✅ the shipped claim this change falsified taken off the screen
+  and the fork handed back rather than re-invented.
 - [~] **9.2 The voyage home** — **the item's premise is stale, and the answer
   underneath it is worse.** Measured and stated 2026-08-30; whether to make it
   pay or take it out is a ruling for Evan, below.
@@ -5053,6 +5157,30 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — The shove and the dash come off the bar (9.1b)** — Evan's
+  ruling on the fork 9.1 left open. Both verbs are gone from the sim, the
+  actions, the AI, the UI, the cues and the beat stream; `SAVE_VERSION` 59
+  drops the two beat kinds a fight caught mid-swing is holding. **The deletion
+  was the small half.** Measured over the arena's 60 fights BEFORE the cut,
+  taking both verbs away left 269 of 1427 warband turns — 19% — with no legal
+  verb at all, at ranks 4, 5 and 6: `throw` is all a back-rank man has,
+  `throwsLeft` runs out, and the dash was how he walked up into the wall. That
+  is the bug `ranks.ts` says it shipped for one afternoon, arriving again by
+  deletion instead of by a table. So the movement outlived the verb — `stepUp`
+  closes the line on anybody with nothing he may legally do, one rank, both
+  sides, spending the turn exactly as the dash did. After: 0 stranded turns,
+  374 of 1494 spent by the line closing. The price is stated rather than
+  buried: the arena's formation bot goes 47/60 wins and 166 standing to 42 and
+  155, the curve's spring is unchanged at 53% and its two-winter mark improves
+  22% → 28%, and `A Fair Country` falls 83% → 81%, so its menu card is
+  restated 86 → 81 rather than left three-then-five points optimistic. Closing
+  is not free: a man who used to stand safe in the back rank doing nothing now
+  walks into the wall where he can be hit. **It also overturned 9.1's shield
+  finding of the day before** — "shield when hurt" goes 49/60 to 31/60, paired
+  won 8 / lost 5 to won 0 / lost 11 — so the hint that told the player the
+  shield was worth more than the swing is off the screen, and whether the
+  shield gets a different rule or comes off the bar is open again.
 
 - **2026-08-31 — A sword with a name, and a wall that can say so (9.9)** — The
   item's premise was half wrong and the source settled it before a harness

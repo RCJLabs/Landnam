@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
-    odds: { spring: 0.86, ruled: 0.30 },
+    odds: { spring: 0.81, ruled: 0.30 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -162,7 +162,8 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * Where the numbers above came from, so nobody has to guess later.
  *
  * THREE HUNDRED landings a setting, not sixty, and that is the whole lesson
- * of this figure's history. Latest: 86% / 53% / 25% seeing the first spring.
+ * of this figure's history. Latest: 81% / 53% / 31% published, measured at
+ * 81% / 55% / 27% on 2026-08-31.
  *
  * RE-MEASURED ON THE COAST, 2026-08-28, and twice in the same day — which is
  * the honest record and worth keeping as one. The flag flipped in the morning
@@ -176,6 +177,18 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * against a published 86% — and As It Lies moved three points. Neither was
  * tuned to agree; they simply describe a game whose shape survived being
  * rebuilt underneath them, which is the most reassuring thing in this note.
+ *
+ * RE-MEASURED AFTER 9.1b, 2026-08-31, and A Fair Country moved for the first
+ * time since it was written: 83% -> 81%, over the same 300 landings. Taking
+ * the dash off the bar means the line closes ITSELF on a man with nothing
+ * left to do (sim/footwork.ts), and closing is not free — a back-rank man out
+ * of hand-axes used to stand safe doing nothing, and now he walks into the
+ * wall where he can be hit. The arena reads the same direction and larger: a
+ * formation bot goes 47/60 wins and 166 standing to 42 and 155.
+ *
+ * The published 86% was already three points optimistic and is now five, so
+ * it is RESTATED to 81 rather than left to flatter the card. The other two did
+ * not move: As It Lies 55%, A Hard Country 27%, both inside the slack.
  *
  * A Hard Country moved twice, 17% -> 25% -> 31%, and the direction has one
  * cause: a hard country's band dies to the ground it settled on, and on a
