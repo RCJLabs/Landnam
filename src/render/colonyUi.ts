@@ -28,7 +28,7 @@ import { CROWDING_BITE } from '../sim/minds';
 import { wallMark } from '../sim/raid';
 import { foodPerDay } from '../sim/upkeep';
 import { leaveNote } from '../sim/retreat';
-import { HALF_RATION_HEART } from '../data/rations';
+import { HALF_RATION_HEART, tighteningWorth } from '../data/rations';
 import { forecast } from '../sim/winter';
 import { sickCount } from '../sim/cold';
 import { reachable, readiness } from '../sim/reach';
@@ -199,7 +199,14 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
       el('span', { class: 'mark-name' }, ['The larder']),
       el('span', { class: 'mark-value' }, [`${mouths} a day`]),
       el('span', { class: 'mark-gap' }, [
-        half ? `${HALF_RATION_HEART} off every heart` : 'nobody goes short',
+        // WORTH, NOT ONLY PRICE (9.7). On full shares this said "nobody goes
+        // short", which is reassurance on the one screen where tightening is
+        // the largest thing the player can do — measured at 22 bands saved in
+        // 120 against 1 lost. Said only when the larder will not reach spring,
+        // so it is a fact about THIS winter and not a standing lecture.
+        half
+          ? `${HALF_RATION_HEART} off every heart`
+          : forecast(state).foodGap < 0 ? tighteningWorth() : 'nobody goes short',
       ]),
     ]),
     button(

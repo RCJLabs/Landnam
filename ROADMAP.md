@@ -4436,9 +4436,36 @@ nice. Four groups, in the shape they were proposed and chosen from.
   What it cannot do is tell a good drawing from a bad one, and it fails on
   every deliberate art change: `npm run look:bless` is the human act, and it
   now prints what it is blessing, because for a while it printed only a count.
-- [ ] **9.7 Winter as a season you play** — winter ends over half of all runs
-  (`starved` 53 to 76 per 120 sagas) and offers almost no decisions. Rations,
-  who sleeps under which roof, what gets burned when the wood runs low.
+- [~] **9.7 Winter as a season you play** — **THE PREMISE IS FALSE. Winter
+  already holds the two largest decisions in the game.** Half done 2026-08-31;
+  what remains is new content and is Evan's to authorise.
+
+  It was written on winter "offering almost no decisions". Measured, over 120
+  seeds on As It Lies:
+
+  | lever | without | with | paired |
+  |---|---|---|---|
+  | short commons | 44/120 | **65/120** | **saved 22, killed 1** |
+  | crewing to the winter mark, daily | 20/120 | **65/120** | **saved 45, killed 0** |
+
+  **Nothing else this repo has measured comes near saved 45 and killed
+  nobody.** Winter is the most decision-dense part of the game by outcome; the
+  item had it exactly backwards.
+
+  **So it is the 9.3 and 9.4 fault again — the panel names the PRICE and never
+  the worth.** The rations control says "2 off every heart", and on full shares
+  it says "nobody goes short", which is reassurance on the one screen where
+  tightening is the largest thing the player could do. It now states the
+  record instead, and only when the larder will not reach spring, so it is a
+  fact about this winter rather than a standing lecture. Zero new lines.
+
+  **STILL OPEN, AND EVAN'S CALL.** The item also proposed content that does not
+  exist — who sleeps under which roof, what gets burned when the wood runs low.
+  Those are new mechanics rather than a correction, and this phase has one
+  clear lesson about inventing them unasked: the voyage home spent a ruling on
+  a mechanic that was already built. Worth noting first that the two existing
+  levers are enormous and were both invisible, which is evidence that winter's
+  problem is legibility rather than emptiness.
 - [ ] **9.8 The sea fight** — `0 sea fights over 120 sagas` against `1523 days
   afloat` and a whole cargo system. Being caught on the water with a full hold
   is the one threat the sea can make that the land cannot.
@@ -4806,6 +4833,17 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — Winter already had the biggest decisions in the game (9.7)** —
+  The item said winter "offers almost no decisions". Measured, short commons
+  saves 22 bands in 120 against 1 lost, and crewing to the winter mark daily
+  saves 45 and kills nobody — the largest measured decision anywhere in this
+  game. The fault was the one 9.3 and 9.4 both turned out to be: the panel
+  names the price and never the worth. On full shares the rations control said
+  "nobody goes short", which is reassurance on exactly the screen where
+  tightening would save the band; it now states the record, and only when the
+  larder will not reach spring. The rest of the item — who sleeps where, what
+  gets burned — is new content and is left open.
 
 - **2026-08-30 — The named foe is not being wiped out (9.5)** — The item read
   "1 came back, 30 put down for good" as the villain always dying. That tally
