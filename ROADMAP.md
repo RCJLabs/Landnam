@@ -4466,9 +4466,45 @@ nice. Four groups, in the shape they were proposed and chosen from.
   a mechanic that was already built. Worth noting first that the two existing
   levers are enormous and were both invisible, which is evidence that winter's
   problem is legibility rather than emptiness.
-- [ ] **9.8 The sea fight** — `0 sea fights over 120 sagas` against `1523 days
-  afloat` and a whole cargo system. Being caught on the water with a full hold
-  is the one threat the sea can make that the land cannot.
+- [~] **9.8 The sea fight** — **DIAGNOSED 2026-08-31, and for once the item's
+  number is right. It is not rare; it is UNREACHABLE.** The trigger is Evan's
+  to authorise.
+
+  `0 sea fights over 120 sagas` against 1308 days afloat, and the cause is not
+  a rate, a bot policy or a counter reading the wrong field. **No code path can
+  ever put `terrain: 'ocean'` on a battle.** Every call into `startBattle`
+  passes `countryHere(state)`, which is `stopAt(seed, standingAt(state))
+  .country` — a land country, always:
+
+  | caller | terrain |
+  |---|---|
+  | `events.ts:359` (a card's fight) | `countryHere` |
+  | `outlaw.ts:101` (the man we drove out) | `countryHere` |
+  | `travel.ts:212` (falling on a camp) | `countryHere` |
+  | `travel.ts:225` (taking a place) | `countryHere` |
+
+  **And the machinery for the fight it would be is already built, and dead:**
+
+  - `battle.ts:317` — `pickSeaField` is called when `terrain === 'ocean'`;
+  - `battlefield.ts:311` — a whole `case 'ocean'` that lays out the ground;
+  - `sea.ts:85` — a predicate asking whether this battle is on the water.
+
+  So the game can already generate, lay out and fight a sea battle. Nothing
+  ever asks for one. That is precisely the fault `every building gets built`
+  recorded for the earthworks and the great hall — *"the bot's want list simply
+  did not name them, so nothing ever asked"* — and the bar under that test says
+  content play cannot reach is content that does not exist.
+
+  **WHAT IS MISSING IS ONE TRIGGER**: a roll on a rowed day that starts a
+  battle with `'ocean'` rather than the country underfoot, weighted by what is
+  in the hold — which is the item's own idea, and the one threat the sea can
+  make that the land cannot.
+
+  **NOT BUILT, because it is a new hazard and it changes difficulty**, and
+  every difficulty change this phase has been Evan's ruling. It can be priced
+  the way `AUTUMN_WORTH_K` was — built in the harness, swept, and reverted —
+  before anything ships. The measurement is the cheap part; what needs deciding
+  is whether the sea should be allowed to kill.
 - [ ] **9.9 Heirlooms** — the memorial, the lineage and the generations exist
   and do not talk to each other. A blade with a name that outlives its owner
   is the cheapest thing that would make them.
@@ -4833,6 +4869,18 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — The sea fight is unreachable, not rare (9.8), and a rule
+  about numbers (CLAUDE.md)** — For once the item's figure is right: 0 sea
+  fights over 120 sagas, because no code path can put `terrain: 'ocean'` on a
+  battle. Every `startBattle` caller passes `countryHere`, which is always a
+  land country — while `pickSeaField`, a whole `case 'ocean'` in the
+  battlefield generator and a predicate in `sea.ts` all exist and can never
+  run. The game can already fight a sea battle; nothing asks for one. The
+  trigger is left unbuilt because it is a new hazard that changes difficulty.
+  Alongside it, the lesson of ten straight Phase 9 items is now a rule in
+  CLAUDE.md: a number in the roadmap is a reading from an instrument on a date
+  at some N, not a property of the game — re-take it before building on it.
 
 - **2026-08-31 — Winter already had the biggest decisions in the game (9.7)** —
   The item said winter "offers almost no decisions". Measured, short commons

@@ -10,6 +10,44 @@ Travel runs along a ROUTE — one coast of 26 stops, walked out and back (`src/s
 2. Work ONLY on that milestone unless told otherwise. Propose a plan before multi-file changes.
 3. When the milestone's "Done when" criteria pass: update its status in ROADMAP.md, add a changelog line, advance the CURRENT MILESTONE marker, and commit.
 
+## A number in the roadmap is a reading, not a fact
+
+ROADMAP.md is full of measurements, and every one is a reading taken from an
+instrument, on a date, at some N. None of them is a property of the game.
+
+**Ten Phase 9 items in a row were opened on numbers that did not survive being
+re-taken** (2026-08-30/31). Not one was carelessness; each was a measurement
+written down as a conclusion and then inherited:
+
+- **two counters measured something other than their own name** — a variable
+  called `raised` holding what was STANDING at the end, which made the
+  palisade look like the rarest building in the game when it is the fifth
+  most raised and merely the most upgraded; and a champion tally counting
+  clan transitions to day 169 rather than fights;
+- **two bot policies were read as rules of the game** — `outWith >= 4` in the
+  harness became "party size decides whether steel comes out", and a priority
+  list that put `B_DEFEND` last became "the shield is worth nothing";
+- **a tie was asserted as a finding** when it only meant the code never ran;
+- **a figure from a fixture that forces its own build list** was offered as a
+  fact about play, and a decision was made on it;
+- **a ratio's denominator selected itself** — "64% of overdue days had no
+  food", on a sample that could only contain days a band was short.
+
+So: **before building on a number in the roadmap, re-take it.** When writing
+one down, put the instrument, the date and the N beside it. Three traps are
+worth naming because each cost real time:
+
+1. A figure measured in a fixture is not a figure about the game.
+2. A ratio is not a reading until you know what selected its denominator.
+3. An arm that ties its control exactly is usually evidence the feature never
+   ran, not that it is worthless.
+
+**And this applies to your own verification, not only to inherited claims.**
+The same day produced a sabotage that hit the wrong one of two identical
+lines, a threshold test written in terms of the constant it was testing, and a
+"byte-identical" PNG comparison against a file the tool had not rewritten. A
+check that cannot fail looks exactly like a check that passes.
+
 ## Commands
 
 - `npm run dev` — dev server
