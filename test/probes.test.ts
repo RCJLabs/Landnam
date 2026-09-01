@@ -1,0 +1,1611 @@
+// The PROBES: the sweeps that were run to answer a question, not to hold a
+// line. They print tables and assert almost nothing.
+//
+// They are here rather than in balance.test.ts because the two files are read
+// for opposite reasons. A BAR is a claim the game must keep meeting, and it
+// fails when the game changes under it. A PROBE is an instrument that was
+// pointed at the game once, on a date, at some N — and CLAUDE.md's rule that a
+// number is a reading and not a fact is the reason they are kept at all rather
+// than deleted after their answer was written down: the way to honour that rule
+// is to be able to RE-TAKE the reading, which means the instrument has to
+// survive. What it must not do is sit among the bars looking like one.
+//
+// Almost every finding these produced is already recorded in ROADMAP.md next
+// to the instrument, the date and the N. Read that first; run these when you
+// mean to take the reading again.
+//
+// The scripted player they all measure with is test/fixtures/harness.ts, which
+// balance.test.ts shares. That sharing is the whole reason this split is safe:
+// there is still exactly one bot, so a probe and a bar cannot drift apart.
+
+import { describe, it, expect } from 'vitest';
+import { newGame } from '../src/state/create';
+import { SEASON_LENGTH, YEAR_LENGTH, seasonOf } from '../src/sim/calendar';
+import { ailingCount, careToday } from '../src/sim/sickness';
+import { sprung } from '../src/sim/ship';
+import { foodPerDay } from '../src/sim/upkeep';
+import { living, sworn } from '../src/sim/people';
+import { KEPT_FOR, NEGLECTED_AFTER, feastCost, sinceKept } from '../src/sim/hall';
+import { takeIn } from '../src/sim/joining';
+import { autumnChance, autumnRaidDay } from '../src/sim/raid';
+import { fallenOf } from '../src/sim/fallen';
+import { buildBlocker, capacity, crowding, heartRaised, standsFor } from '../src/sim/colony';
+import { CROSSING, provisioning, sailBlocker } from '../src/sim/voyage';
+import { wintersStood } from '../src/sim/calendar';
+import { type JobId } from '../src/data/jobs';
+import { type HardshipId } from '../src/data/hardship';
+import { BUILDINGS } from '../src/data/buildings';
+import { rivalBlocks } from '../src/sim/rival';
+import { ROUTE_STOPS } from '../src/sim/route';
+import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
+import { groundAtStop } from '../src/sim/fishery';
+import { atHome, stopReport } from '../src/sim/site';
+import {
+  CREW,
+  Policy,
+  RAIDER,
+  SETTLER,
+  armSeed,
+  nearestStop,
+  policy,
+  run,
+  setPolicy,
+  setWalkedOut,
+  walkedOut,
+} from './fixtures/harness';
+
+describe('PROBE: can a band actually afford to keep its hall', () => {
+  /**
+   * The question 9.12a has to answer about itself: is this a rule you FORGET,
+   * or a rule you cannot afford? A fine on morale compounds — no feast, no
+   * heart, hands walk out, less labour, less food, no feast — and the first
+   * cut of this, at two food a mouth, built exactly that spiral.
+   *
+   * MEASURED ON THE DAY IT FALLS DUE, and that is not a detail. The obvious
+   * reading — "of all overdue days, how many had no food?" — cannot answer
+   * anything, because a band with food feasts at once and never lands in the
+   * sample. Every day in it is therefore a day somebody was short, and it
+   * duly read 64% with no bearing on whether the rule is fair. The day the
+   * season turns is the one moment every band reaches, rich or poor.
+   */
+  it('measures whether the larder can meet the feast on the day it falls due',
+    { timeout: 900_000 }, () => {
+      const SEEDS = 40;
+      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+        let due = 0;        // the day the feast fell due, sampled once each
+        let couldNot = 0;   // ... and the larder could not meet it
+        let bare = 0;       // ... of those, the band had nothing at all
+        let cold = 0;       // days the hall paid nothing above the free point
+        let days = 0;       // days with a hall worth keeping at all
+        let feasts = 0;
+        let sagas = 0;
+        for (let s = 0; s < SEEDS; s += 1) {
+          let held = 0;
+          let counted = false;
+          run(`curve-${s}`, 500, (before, after) => {
+            if (before.settlement?.kept !== after.settlement?.kept
+              && after.settlement?.kept !== undefined) held += 1;
+            const home = after.settlement;
+            if (!home || after.end) return;
+            if (heartRaised(after) <= 1) return;
+            counted = true;
+            days += 1;
+            const since = sinceKept(after);
+            if (since >= NEGLECTED_AFTER) cold += 1;
+            // The turn of the season, taken once. Not `canKeepHall`, which
+            // also refuses mid-battle and mid-card: the question is the
+            // LARDER and nothing else.
+            if (since !== KEPT_FOR + 1) return;
+            due += 1;
+            if (after.party.food < feastCost(after)) {
+              couldNot += 1;
+              if (after.party.food <= 0) bare += 1;
+            }
+          }, TERMS);
+          feasts += held;
+          if (counted) sagas += 1;
+        }
+        const share = due > 0 ? couldNot / due : 0;
+        // eslint-disable-next-line no-console
+        console.log(
+          `keeping the hall [${TERMS}] over ${SEEDS} sagas — ${sagas} ever had a hall worth ` +
+          `keeping, ${feasts} feasts held across ${days} such days:\n` +
+          `  fell due ${due} times; the larder could not meet it ${couldNot} ` +
+          `(${(share * 100).toFixed(0)}%), of which ${bare} had nothing at all\n` +
+          `  gone properly cold ${cold} days (${days > 0 ? ((cold / days) * 100).toFixed(0) : 'n/a'}%)`,
+        );
+        // THE BAR: on the day it falls due, a band should usually be able to
+        // pay. A rule you cannot meet is a fine, and a fine on morale is the
+        // spiral. Set at a third rather than at nothing, because a band that
+        // is genuinely starving SHOULD miss its feast — that is winter, and
+        // it is the game.
+        if (due > 0) expect(share).toBeLessThan(1 / 3);
+      }
+    });
+});
+
+describe('PROBE: does the wall ever actually protect the hall', () => {
+  /**
+   * The question the ruling of 2026-08-30 has to answer about itself.
+   *
+   * The mead hall burns unless a wall stands, and the reason that was chosen
+   * over sparing it outright is that sparing it gave back the whole of the
+   * pressure autumn was built to add. But the long game came back BYTE
+   * IDENTICAL to the run before the rule — same average days, same ends, same
+   * count past the third year, on all three arms. A rule that changes the
+   * burnable list changes which building `rng.pick` lands on, so identical
+   * numbers do not mean "no effect", they mean the list never changed: no
+   * sack ever found an unwalled mead hall standing.
+   *
+   * That is a claim about how often the rule is REACHED, and it is worth a
+   * number rather than a shrug — a rule that never fires is decoration, and
+   * the roadmap should say so either way.
+   */
+  it('counts the sacks that found a hall, and whether a wall was up', { timeout: 900_000 }, () => {
+    const SEEDS = 60;
+    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+      let raids = 0;        // raids that came
+      let withHall = 0;     // ... with a mead hall standing
+      let walled = 0;       // ... of those, behind a wall
+      let hallBurned = 0;   // ... and the hall actually fired
+      let everHall = 0;     // sagas that ever raised a mead hall
+      let everWall = 0;     // sagas that ever raised a wall
+      for (let s = 0; s < SEEDS; s += 1) {
+        let hall = false;
+        let wall = false;
+        run(`curve-${s}`, 500, (before, after) => {
+          if (standsFor(after, 'meadhall')) hall = true;
+          if (standsFor(after, 'palisade')) wall = true;
+          // A sack is a building list that shrank, or stores that went, on a
+          // day the band was at home. The cheap tell is the tally.
+          // A raid COMING, not a raid lost — a held raid sacks nothing, so
+          // this is the generous count and the finding below survives it.
+          if (after.tally.raids > before.tally.raids) {
+            raids += 1;
+            if (standsFor(before, 'meadhall')) {
+              withHall += 1;
+              if (standsFor(before, 'palisade')) walled += 1;
+              if (!standsFor(after, 'meadhall')) hallBurned += 1;
+            }
+          }
+        }, TERMS);
+        if (hall) everHall += 1;
+        if (wall) everWall += 1;
+      }
+      // eslint-disable-next-line no-console
+      console.log(
+        `the wall and the hall [${TERMS}] over ${SEEDS} sagas — ${everHall} ever raised a ` +
+        `mead hall, ${everWall} ever raised a wall\n` +
+        `  ${raids} raids came; ${withHall} of them found a mead hall standing ` +
+        `(${walled} behind a wall, ${withHall - walled} open)\n` +
+        `  mead halls fired: ${hallBurned}`,
+      );
+    }
+  });
+});
+
+describe('PROBE: where a raid actually costs a band', () => {
+  /**
+   * WHICH LEVER, before building one. 6.5's goal is that fighting makes the
+   * WINTER worse rather than ending runs itself, and 6.5b established that
+   * which building burns is not it. There are three candidates left — how
+   * often a raid comes, how often it is lost, and what losing one takes —
+   * and they want opposite work, so guessing is not allowed.
+   *
+   * This is the diagnostic that picks between them, and it is deliberately
+   * NOT a sweep: it asks whether a band that loses a raid before its first
+   * winter dies more than one that holds. If it does, the sack already bites
+   * and the lever is the hold rate. If it does not, the sack is too cheap and
+   * the lever is what it takes.
+   *
+   * WHAT IT ANSWERED, 2026-08-30, and the answer was none of the three.
+   * Losing a raid is one of the sharpest things in the game — 92% of bands
+   * that held saw spring against 63% that did not, with half the larder at
+   * the frost — so severity is not loose. But swept, neither of the other two
+   * moves the total at all:
+   *
+   *   AUTUMN_WORTH_K  0.155 -> 0.80   roll 15% -> 57%, spring 74% -> 73%
+   *   RAID_PER_POINT  0.5   -> 1.0    spring 74% -> 76% (noise)
+   *
+   * Quadrupling how often raiders come costs ONE point of first-winter
+   * survival, and doubling how many they bring costs nothing. The reason is
+   * the same for both, and it is structural rather than a tuning miss: every
+   * term in the raid system is proportional to what a band HAS. `worth` is
+   * roofs and stores, so a first-year band is rarely worth coming for;
+   * `raidDifficulty` is roofs and stores, so the multiplier has almost
+   * nothing to multiply; and `SACK_SHARE` takes two fifths of a larder that
+   * holds 23. Raiders come for plunder, and in year one there is none.
+   *
+   * So autumn cannot be made to spoil the FIRST winter from inside this
+   * system, and that is a design fact worth keeping rather than a bug. What
+   * the sweep does buy cheaply is REACH: at K = 0.5 the never-raided share
+   * falls from 58% to 43% for one point of spring, so more bands get an
+   * autumn that is about fighting. Making it spoil year one needs a raider
+   * who wants something other than goods — the land, or people — which is
+   * new design and not a constant.
+   *
+   * THE CONFOUND, STATED. Raiders are drawn against `worth`, so a band that
+   * gets raided is a RICHER band, and richer bands see spring more often.
+   * That biases this AGAINST finding an effect — so an effect that shows up
+   * here is real and understated, and a null result is genuinely null.
+   * Reported as three arms rather than two so the confound is visible: if
+   * "raided and held" already beats "never raided", the bias is doing the
+   * talking and the arms cannot be compared naively.
+   */
+  it('splits the first winter by what autumn did, and says which lever is loose',
+    { timeout: 900_000 }, () => {
+      // 200 seeds to day 80, not 300 to day 500. The question is entirely
+      // about the FIRST winter, so every day after the thaw is spent
+      // measuring nothing — and at 500 the probe was killed for memory.
+      const SEEDS = 200;
+      const LAST = 80;
+      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+        const arms = {
+          none: { n: 0, spring: 0, food: 0 },
+          held: { n: 0, spring: 0, food: 0 },
+          lost: { n: 0, spring: 0, food: 0 },
+        };
+        const chances: number[] = [];
+        let settledN = 0;
+        let springN = 0;
+        let sacks = 0;
+        for (let s = 0; s < SEEDS; s += 1) {
+          let came = 0;
+          let held = 0;
+          let atWinter = 0;
+          let chance = -1;   // the autumn roll on the day it was decided
+          const state = run(`curve-${s}`, LAST, (before, after) => {
+            // Only what autumn did, so the arms are about the FIRST winter
+            // and not about a raid three years later.
+            if (after.day <= 48) {
+              if (after.tally.raids > before.tally.raids) came += 1;
+              if (after.tally.raidsHeld > before.tally.raidsHeld) held += 1;
+            }
+            // WHY it comes or does not: the chance itself, read on the day
+            // this autumn's raid would land. That is the number the frequency
+            // is made of, and without it "58% were never raided" has no cause
+            // attached to it.
+            //
+            // GATED ON THE FIRST AUTUMN — days 25 to 48 — and that gate is
+            // the whole reading. `autumnRaidDay` is derived from whatever
+            // season it is asked in, so without it this sampled the SUMMER
+            // roll of a band that had just come off the knarr, and duly
+            // reported a median of 0% with a confident wrong cause attached.
+            if (after.settlement && after.day >= 25 && after.day <= 48
+              && after.day === autumnRaidDay(after) && chance < 0) {
+              chance = autumnChance(after);
+            }
+            // The larder as the frost comes down, which is what winter eats.
+            if (before.day < 49 && after.day >= 49) atWinter = after.party.food;
+          }, TERMS);
+          // A band that never settled never had a steading to sack, and
+          // belongs in none of these arms.
+          if (!state.settlement) continue;
+          const arm = came === 0 ? 'none' : held >= came ? 'held' : 'lost';
+          if (arm === 'lost') sacks += 1;
+          if (chance >= 0) chances.push(chance);
+          const a = arms[arm];
+          a.n += 1;
+          a.food += atWinter;
+          settledN += 1;
+          if (state.day >= 73 || !state.end) springN += 1;
+          // Saw spring: alive past the thaw, which is day 73.
+          if (state.day >= 73 || !state.end) a.spring += 1;
+        }
+        const pct = (a: { n: number; spring: number }) =>
+          (a.n > 0 ? `${((a.spring / a.n) * 100).toFixed(0)}%` : 'n/a');
+        const mid = (a: { n: number; food: number }) =>
+          (a.n > 0 ? (a.food / a.n).toFixed(0) : 'n/a');
+        const sorted = [...chances].sort((a, b) => a - b);
+        const median = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)]! : 0;
+        // eslint-disable-next-line no-console
+        console.log(
+          `what autumn did [${TERMS}] over ${SEEDS} seeds — ${sacks} bands lost a raid ` +
+          `before their first winter:\n` +
+          `  never raided   ${String(arms.none.n).padStart(3)} bands, saw spring ${pct(arms.none)}, ` +
+          `${mid(arms.none)} food at the frost\n` +
+          `  raided, held   ${String(arms.held.n).padStart(3)} bands, saw spring ${pct(arms.held)}, ` +
+          `${mid(arms.held)} food at the frost\n` +
+          `  raided, lost   ${String(arms.lost.n).padStart(3)} bands, saw spring ${pct(arms.lost)}, ` +
+          `${mid(arms.lost)} food at the frost\n` +
+          `  the first autumn's roll, where a steading stood for it: ` +
+          `median ${(median * 100).toFixed(0)}% over ${chances.length} readings\n` +
+          `  ALL SETTLED: ${settledN} bands, saw spring ` +
+          `${settledN > 0 ? ((springN / settledN) * 100).toFixed(0) : 'n/a'}%, ` +
+          `${((arms.lost.n / Math.max(1, settledN)) * 100).toFixed(0)}% lost a raid`,
+        );
+      }
+    });
+});
+
+describe('PROBE: is there any moment at which walking out is right', () => {
+  /**
+   * 9.14, and the question the two existing measurements never asked.
+   *
+   * Both of them trigger the retreat on the VERDICT — "we will not reach
+   * spring on what this ground gives" — which fires around day 40. So both
+   * measured a band leaving in autumn with its summer already spent, and both
+   * found it lethal: saved 0 / killed 11 on the first, saved 1 / killed 18 on
+   * the arm that was supposed to be testing rash ground.
+   *
+   * BUT THAT IS NOT THE CASE THE VERB SHIPPED FOR. src/data/retreat.ts is
+   * explicit: it is "a verb for the OTHER case: ground you took too fast and
+   * want to be off before the summer is spent", and it says plainly that "the
+   * harness cannot measure that one, because the bot only ever settles on
+   * ground that already clears its site floor". The bot can now settle rashly
+   * — RASH exists — and it can now leave on the GROUND rather than on the
+   * verdict, at the first day the ten-day floor allows.
+   *
+   * So this sweeps the one thing that was never tried: how bad does the
+   * ground have to be before getting off it early is worth what it costs?
+   * If there is a threshold that pays, the panel should point at it. If there
+   * is not, then walking out is never right at any moment, and the game
+   * should say so rather than offer it in silence.
+   */
+  it('sweeps how bad the ground must be for leaving it early to pay',
+    { timeout: 900_000 }, () => {
+      const SEEDS = 120;
+      const SPRING_IN = SEASON_LENGTH * 3 + 1;
+      // Takes the first legal ground, which is the band this verb is for: one
+      // that settled in a hurry and has something to regret. Defined here as
+      // well as in the sibling below, because the two live far apart and a
+      // shared constant between them would tie two independent measurements
+      // together.
+      const RASH: Policy = { ...SETTLER, id: 'rash', siteFloor: 0 };
+
+      const sample = (p: Policy): { lived: boolean[]; left: number; ground: number } => {
+        setPolicy(p);
+        const lived: boolean[] = [];
+        const scores: number[] = [];
+        let out = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          setWalkedOut(0);
+          let noted = false;
+          const final = run(`winter-inside-${i}`, SPRING_IN, (before, after) => {
+            if (!noted && !before.settlement && after.settlement) {
+              noted = true;
+              scores.push(stopReport(after.seed, after.settlement.stop ?? 0).total);
+            }
+          }, 'even');
+          lived.push(!final.end && final.day >= SPRING_IN);
+          out += walkedOut;
+        }
+        const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+        return { lived, left: out, ground: mean(scores) };
+      };
+
+      const stay = sample(RASH);
+      // eslint-disable-next-line no-console
+      console.log(
+        `walking out EARLY, on the ground rather than the verdict — ${SEEDS} seeds, even:\n` +
+        `  floor 0, stays put — ${stay.lived.filter(Boolean).length}/${SEEDS} saw spring, ` +
+        `ground ${stay.ground.toFixed(1)} on average`,
+      );
+
+      let anyPaid = false;
+      let everLeft = 0;
+      for (const below of [12, 14, 16, 18]) {
+        const arm = sample({ ...RASH, retreatsBelow: below });
+        everLeft += arm.left;
+        let saved = 0;
+        let killed = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          if (!stay.lived[i] && arm.lived[i]) saved += 1;
+          if (stay.lived[i] && !arm.lived[i]) killed += 1;
+        }
+        if (saved > killed) anyPaid = true;
+        // eslint-disable-next-line no-console
+        console.log(
+          `  leaves ground under ${String(below).padStart(2)} — ` +
+          `${String(arm.lived.filter(Boolean).length).padStart(3)}/${SEEDS} saw spring, ` +
+          `${String(arm.left).padStart(3)} walked out ` +
+          `(saved ${saved}, killed ${killed})`,
+        );
+      }
+      setPolicy(SETTLER);
+
+      // THE INSTRUMENT FIRST, and this file has shipped the mistake it
+      // guards against: an arm that never walked out is the control run
+      // again under a different name.
+      expect(everLeft, 'nobody ever walked out early — nothing was measured')
+        .toBeGreaterThan(0);
+      expect(stay.left, 'the control walked out too').toBe(0);
+
+      // READ THE FIRST ARM, AND DISCOUNT THE REST. Above a threshold of 12 the
+      // walk-out count runs past the seed count — 141, 246, 275 retreats over
+      // 120 landings — which is a band founding, leaving, founding on ground
+      // just as poor and leaving again. Those arms are measuring a loop, not a
+      // strategy, and their death tolls are inflated by it. The honest reading
+      // is `under 12`: 37 retreats over 120 seeds, at most one a band, a
+      // genuine "this ground is bad, get off it". It still saved 4 and killed
+      // 10.
+      //
+      // NO BAR ON THE OUTCOME, for the same reason the sibling above carries
+      // none: nobody is tuning toward a number here. What the console line is
+      // for is the ruling — whether the verb has a right moment anywhere, or
+      // whether the panel is offering a choice that is wrong at every hour.
+      // `anyPaid` is reported rather than asserted so that a future change
+      // which GIVES it a case shows up as a changed line and not a failure.
+      // eslint-disable-next-line no-console
+      console.log(`  a threshold that pays: ${anyPaid ? 'YES' : 'none of them'}`);
+    });
+});
+
+describe('PROBE: is the wall up before it is needed', () => {
+  /**
+   * 9.4, AND THE ITEM'S HEADLINE IS AN ARTIFACT. It was written on "the
+   * rarest of twelve buildings at 13 of 60", which is `settlement.built` read
+   * at the END — and a tier that `replaces` its predecessor CONSUMES it, so
+   * every earthworks in the tally is a palisade that was raised and then
+   * buried. Counted as it happens: palisade 38 of 60, fifth of twelve, ahead
+   * of the storehouse and the mead hall. The wall is not rare.
+   *
+   * What survives of the item is the half about TIMING — "no reason the
+   * player feels before their first raid". That is a real question and this
+   * is the measurement for it: when the first raid lands, was there a wall?
+   *
+   * Reported, not barred. Whether the answer wants a change is a design call,
+   * and this file has shipped enough numbers that got read as verdicts.
+   */
+  it('says whether a wall stood when the first raid came', { timeout: 900_000 }, () => {
+    const SEEDS = 120;
+    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+      let raided = 0;        // sagas that saw a raid at all
+      let walled = 0;        // ... with a wall standing when the first came
+      let everWalled = 0;    // sagas that raised a wall at some point
+      let wallDay = 0;       // the day the wall went up, summed
+      let firstRaidDay = 0;  // the day the first raid came, summed
+      let lateWall = 0;      // raised a wall, but only AFTER the first raid
+      for (let s = 0; s < SEEDS; s += 1) {
+        let wallOn: number | null = null;
+        let firstRaid: number | null = null;
+        run(`curve-${s}`, 400, (before, after) => {
+          if (wallOn === null && standsFor(after, 'palisade')) wallOn = after.day;
+          if (firstRaid === null && after.tally.raids > before.tally.raids) {
+            firstRaid = after.day;
+          }
+        }, TERMS);
+        if (wallOn !== null) { everWalled += 1; wallDay += wallOn; }
+        if (firstRaid === null) continue;
+        raided += 1;
+        firstRaidDay += firstRaid;
+        if (wallOn !== null && wallOn <= firstRaid) walled += 1;
+        else if (wallOn !== null) lateWall += 1;
+      }
+      const pc = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : 'n/a');
+      // eslint-disable-next-line no-console
+      console.log(
+        `the wall and the first raid [${TERMS}] over ${SEEDS} seeds — ` +
+        `${everWalled} ever raised one (day ${everWalled ? Math.round(wallDay / everWalled) : 0} on average):\n` +
+        `  ${raided} sagas were raided, first on day ` +
+        `${raided ? Math.round(firstRaidDay / raided) : 0} on average\n` +
+        `  a wall stood when it came: ${walled} (${pc(walled, raided)}); ` +
+        `raised one only afterwards: ${lateWall}; never: ${raided - walled - lateWall}`,
+      );
+    }
+  });
+});
+
+describe('PROBE: what becomes of the named foe', () => {
+  /**
+   * 9.5, and the item's ratio needs three things checked before it is read as
+   * "the villain never recurs".
+   *
+   * ONE: the tally it comes from runs to DAY 169 — under two years. A
+   * champion put down on day 100 has sixty-nine days for his clan to anoint
+   * another and send him at us again, and most sagas are over before that.
+   *
+   * TWO: it counts a "return" only when the champion carries SCARS, so a
+   * newly anointed one — the clan's second man, a real recurrence of the
+   * threat if not of the person — is invisible to it.
+   *
+   * THREE: the bot hunts him with every verb it has. `step` picks the
+   * champion first for strike, for the spear and for the throw, which is an
+   * optimal player rather than an average one; a player who simply hits
+   * whoever is in front sees a different game.
+   *
+   * So this counts FATES over a full run: how a champion-led fight ended for
+   * the man with the pennant, and how often the same man came back.
+   */
+  it('counts how a champion leaves the field, and how often he comes back',
+    { timeout: 900_000 }, () => {
+      const SEEDS = 60;
+      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+        let led = 0;        // fights a named foe led
+        let ofClan = 0;     // ... of which a CLAN's, so he could return at all
+        let down = 0;       // he was put down
+        let fled = 0;       // he ran
+        let stood = 0;      // still standing when it ended
+        let scarred = 0;    // fights led by a man who had led before
+        for (let s = 0; s < SEEDS; s += 1) {
+          run(`curve-${s}`, 400, (before, after) => {
+            if (!before.battle && after.battle?.champion) {
+              led += 1;
+              if (after.battle.championOf) {
+                ofClan += 1;
+                const clan = before.neighbours.find((n) => n.id === after.battle!.championOf);
+                if ((clan?.champion?.scars ?? 0) > 0) scarred += 1;
+              }
+            }
+            // The moment the field settles, read what became of him.
+            if (before.battle && !before.battle.outcome && after.battle?.outcome
+              && after.battle.champion) {
+              const him = after.battle.combatants.find(
+                (c) => c.personId === after.battle!.champion);
+              if (!him) return;
+              if (him.down) down += 1;
+              else if (him.fled) fled += 1;
+              else stood += 1;
+            }
+          }, TERMS);
+        }
+        const pc = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : 'n/a');
+        // eslint-disable-next-line no-console
+        console.log(
+          `the named foe [${TERMS}] over ${SEEDS} sagas — ${led} fights he led, ` +
+          `${ofClan} of them a clan's (only those can ever return):\n` +
+          `  he was put down ${down} (${pc(down, down + fled + stood)}), ` +
+          `ran ${fled} (${pc(fled, down + fled + stood)}), ` +
+          `was still standing ${stood} (${pc(stood, down + fled + stood)})\n` +
+          `  led by a man who had led before: ${scarred} of ${ofClan} (${pc(scarred, ofClan)})`,
+        );
+      }
+    });
+});
+
+describe('the sea is reached — the probes', () => {
+  /**
+   * PROBE: what is a pair of hands worth?
+   *
+   * Written for the voyage, because every lever that would make a crossing
+   * pay runs through this one number. She brings back three people; if three
+   * people are worth little, no amount of them makes the season back.
+   *
+   * Three extra hands landed on the same day, same seeds, against nothing.
+   * `takeIn` over the roof, which is what the voyage itself does.
+   */
+  it('PROBE: what a pair of hands is worth', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 40;
+    const rows: string[] = [];
+    for (const extra of [0, 3, 6]) {
+      let lived = 0;
+      let days = 0;
+      let souls = 0;
+      let food = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        let landed = false;
+        const state = run(`hands-${s}`, 400, (_before, after) => {
+          // On the first settled day past the first winter, so the gift lands
+          // on a going concern rather than on a band still walking.
+          if (!landed && extra > 0 && after.settlement && after.day > 100 && !after.end) {
+            landed = true;
+            takeIn(after, extra, 'a probe put them there', true);
+          }
+        }, 'even');
+        days += state.day;
+        souls += living(state.party.people).length;
+        food += state.party.food;
+        if (!state.end) lived += 1;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      rows.push(
+        `  +${extra} hands  ${lived}/${SEEDS} standing at day 400, ${days} days lived, ` +
+        `${souls} souls between them, ${food} food in store`,
+      );
+    }
+    // eslint-disable-next-line no-console
+    console.log(`PROBE what a pair of hands is worth — ${SEEDS} landings each:\n${rows.join('\n')}`);
+    expect(rows).toHaveLength(3);
+  });
+
+  /**
+   * PROBE, for queue item 27: does anybody ever sail home, and does it pay?
+   *
+   * Item 27 proposes two elaborations of the voyage — a cargo manifest so
+   * loading is a decision, and a season of cards at sea so the crossing is
+   * lived through rather than waited out. Both assume there is a voyage to
+   * elaborate. There was not: `sailForHome` has existed since the ship became
+   * a place and no bot had ever issued it, so the crossing, what she brings
+   * back and the season without those hands were all unmeasured.
+   *
+   * Unlike the sea before the fishing errand, the door was never shut —
+   * 'home' rides the same picker as trade and raid. The bot simply never
+   * reached for it, so the first thing this needed was a bot that does.
+   *
+   * The A/B runs the same landings with the voyage available and with it
+   * refused, which is what separates "the voyage pays" from "bands that can
+   * afford a voyage were doing well anyway".
+   *
+   * WHAT IT FOUND, and neither half of item 27 was built on the strength of
+   * it: the voyage is a bad bargain, not merely a rare one.
+   *
+   * Under a sane gate she sails about five times in forty sagas and changes
+   * nothing — spring only, because 78 days away means she must be back before
+   * the mark matters, and spring is the leanest the store ever is. Of 2527
+   * spring days past the first winter, 2471 were simply too poor to spare a
+   * season. Loosening the purse from thirty days of food to ten moved that
+   * to five crossings and left survival flat.
+   *
+   * The forced arm is the one that answers it. Told to take every crossing
+   * `sailBlocker` allowed, bands sailed 26 times, fetched 40 people across
+   * the ocean — and went from 5 of 40 standing at day 400 to 3, living a
+   * fifth fewer days. There is no setting at which the voyage is both common
+   * and good. Two hands gone through a growing season cost more than twenty
+   * food and three people return.
+   *
+   * Which makes sense of a note left in sim/voyage.ts when it was written.
+   * Gated on `roomLeft` the voyage brought back nobody and was called "a
+   * trap, not a decision"; the fix was to land people over the roof, on the
+   * grounds that "crowding is what makes a hall sick". Item 25 then measured
+   * `crowding` returning zero on every settled day of sixty sagas. So the
+   * extra people cost the hall nothing AND buy it too little, and the fix
+   * for the trap was resting on a mechanic that never fires.
+   *
+   * A cargo manifest and a season of cards at sea would both be elaborations
+   * of that. The crossing has to be worth taking before it is worth
+   * decorating.
+   *
+   * AND THEN IT WAS MADE WORTH TAKING, on 2026-08-24, and this probe is what
+   * drove it. Two changes, both of which this readout argued for:
+   *
+   *   - `provisioning` — a season of food and a season of wood banked before
+   *     she may sail at all. Not a tax: the store is what decides whether the
+   *     people she brings are hands or mouths.
+   *   - settlers arrive with a season's eating each (`SETTLER_STORES`). The
+   *     hold used to return a flat share of itself whoever was aboard, and
+   *     twenty food feeds three arrivals for two days.
+   *
+   * The second is the one that mattered, and the first cut of the fix was a
+   * different change that made things WORSE: shortening the crossing to two
+   * seasons, on the theory that the problem was a payback period. It read 3
+   * of 40 standing against 4, because what comes home sooner is not only
+   * hands, it is mouths. The band is food-limited, not hand-limited, and
+   * every measurement taken this day says so from a different direction.
+   *
+   * Where it landed: 6 of 40 standing at day 400 against 5 with the voyage
+   * refused, 138 souls against 127. The forced arm — every crossing she can
+   * take, any season — reads 6 and 141, which is the part that says it is no
+   * longer a trap. It was 3 and 108 before.
+   */
+  it('PROBE: whether the voyage home pays for the season it costs', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 40;
+    interface Arm {
+      sailed: number;      // sagas that ever sent her
+      voyages: number;     // crossings begun
+      returned: number;    // crossings that came home
+      brought: number;     // people fetched across the ocean
+      rough: number;       // crossings the sea took a strake out of
+      lived: number;
+      days: number;
+      souls: number;       // living at the end, summed
+      settledDays: number;
+      notSpring: number;
+      tooSoon: number;
+      tooPoor: number;
+      couldHaveGone: number;
+      blocked: Record<string, number>;
+      hadFood: number[];
+      hadWood: number[];
+      wantFood: number[];
+      wantWood: number[];
+      /**
+       * PER SEED, because the aggregates above cannot answer the question in
+       * this probe's own name.
+       *
+       * Only six of forty sagas ever sail, so thirty-four of the rows in each
+       * arm are the SAME RUN TWICE and every aggregate difference is driven
+       * by six. "205 souls against 200" reads like a finding and is six sagas
+       * of noise. Paired on the seeds that actually differ, it is a reading.
+       */
+      per: { sailed: boolean; lived: boolean; souls: number; days: number }[];
+    }
+    const arms: Record<string, Arm> = {};
+
+    for (const [label, sails, anySeason] of [
+      ['no voyage', false, false],
+      ['may sail', true, false],
+      // THE FORCED ARM, kept from the measurement that found the voyage was a
+      // trap: sails in any season the moment `sailBlocker` allows. It is not
+      // a strategy, it is the control that separates "the gate never opens"
+      // from "the crossing is not worth taking".
+      ['whenever', true, true],
+    ] as const) {
+      const arm: Arm = {
+        sailed: 0, voyages: 0, returned: 0, brought: 0, rough: 0, lived: 0, days: 0, souls: 0,
+        settledDays: 0, notSpring: 0, tooSoon: 0, tooPoor: 0, couldHaveGone: 0, blocked: {},
+        hadFood: [], hadWood: [], wantFood: [], wantWood: [], per: [],
+      };
+      const was = policy;
+      setPolicy({ ...SETTLER, sails, sailAnySeason: anySeason });
+      try {
+        for (let s = 0; s < SEEDS; s += 1) {
+          let sentOne = false;
+          const state = run(`sail-${s}`, 400, (before, after) => {
+            // WHY SHE DOES NOT GO, counted at the moment of the choice. The
+            // gate has six clauses and "she rarely sails" says nothing about
+            // which one is doing the refusing.
+            if (before.settlement && !before.end) {
+              arm.settledDays += 1;
+              const crew = sworn(before.party.people).slice(0, 2).map(p => p.id);
+              if (seasonOf(before.day) !== 'autumn' && !anySeason) arm.notSpring += 1;
+              else if (wintersStood(before.day) < 1) arm.tooSoon += 1;
+              else {
+                const why = sailBlocker(before, crew);
+                if (why) arm.blocked[why] = (arm.blocked[why] ?? 0) + 1;
+                else arm.couldHaveGone += 1;
+                // What a band ACTUALLY has standing on an eligible day,
+                // against what the rule asks of it. A threshold picked
+                // without this is a threshold picked by feel.
+                const need = provisioning(before);
+                arm.hadFood.push(before.party.food);
+                arm.hadWood.push(before.party.firewood);
+                arm.wantFood.push(need.food);
+                arm.wantWood.push(need.firewood);
+              }
+            }
+            if (!before.voyage && after.voyage) { arm.voyages += 1; sentOne = true; }
+            if (before.voyage && !after.voyage) {
+              arm.returned += 1;
+              const home = living(after.party.people).length - living(before.party.people).length;
+              if (home > 0) arm.brought += home;
+              if (sprung(after.ship) > sprung(before.ship)) arm.rough += 1;
+            }
+          }, 'even');
+          if (sentOne) arm.sailed += 1;
+          arm.days += state.day;
+          arm.souls += living(state.party.people).length;
+          if (!state.end) arm.lived += 1;
+          arm.per.push({
+            sailed: sentOne,
+            lived: !state.end,
+            souls: living(state.party.people).length,
+            days: state.day,
+          });
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      } finally {
+        setPolicy(was);
+      }
+      arms[label] = arm;
+    }
+
+    const pct = (xs: number[], p: number): string => {
+      if (xs.length === 0) return '-';
+      const sorted = [...xs].sort((x, y) => x - y);
+      return String(Math.round(sorted[Math.floor((sorted.length - 1) * p)]!));
+    };
+    const med = (xs: number[]): string => pct(xs, 0.5);
+    void med;
+    const rows = Object.entries(arms).map(([label, a]) =>
+      `  ${label.padEnd(10)} ${a.sailed}/${SEEDS} sagas sailed, ${a.voyages} crossings ` +
+      `(${a.returned} came home, ${a.rough} rough), ${a.brought} people fetched; ` +
+      `${a.lived}/${SEEDS} still standing at day 400, ${a.souls} souls between them, ` +
+      `${a.days} days lived\n` +
+      `             of ${a.settledDays} settled days: ${a.notSpring} not spring, ${a.tooSoon} ` +
+      `before the first winter, ${a.tooPoor} too poor to spare a season, ` +
+      `${a.couldHaveGone} clear to go; blocked ` +
+      `${Object.entries(a.blocked).map(([k, v]) => `${k} ${v}`).join(', ') || 'never'}\n` +
+      `             on an eligible day the hall HAD food ${med(a.hadFood)} wood ${med(a.hadWood)}; ` +
+      `the rule WANTS food ${med(a.wantFood)} wood ${med(a.wantWood)} ` +
+      `(food 90th pct ${pct(a.hadFood, 0.9)}, wood 90th pct ${pct(a.hadWood, 0.9)})`,
+    );
+    // eslint-disable-next-line no-console
+    console.log(`PROBE the voyage home — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
+
+    // PAIRED ON THE SEEDS THAT ACTUALLY SAILED, which is the only comparison
+    // in this probe that can answer its own title.
+    //
+    // Six of forty sagas ever send her, so thirty-four rows of each arm above
+    // are the same run twice and every aggregate difference is six sagas
+    // wide. Read straight, "205 souls against 200" looks like the crossing
+    // costing five lives; restricted to the sagas that differ, it is a
+    // reading about six of them and is reported with its own N attached so
+    // nobody mistakes it for forty.
+    // WHAT IT READ AT A SAMPLE THE TREATMENT ACTUALLY FIRES IN, 2026-08-30.
+    // Forty seeds gives six sailing sagas, which cannot answer anything; run
+    // once at 200 it gives thirty, and the answer is clear:
+    //
+    //   no voyage  0/200 sailed,                          26/200 standing, 1179 souls
+    //   may sail  30/200 sailed, 43 crossings, 82 fetched, 22/200 standing, 1169 souls
+    //   whenever  32/200 sailed, 47 crossings, 91 fetched, 24/200 standing, 1160 souls
+    //   paired on the 30 that sailed [may sail] — saved 3, KILLED 7, -10 souls
+    //   paired on the 32 that sailed [whenever] — saved 4, KILLED 6, -19 souls
+    //
+    // The crossing kills about two bands for every one it saves, and brings
+    // home eighty-two people while leaving fewer alive at the end. src/sim/
+    // voyage.ts already named the cause before this confirmed it: what comes
+    // home is not only hands, it is MOUTHS, and the hall's binding constraint
+    // was never labour.
+    //
+    // Left at 40 here because that is what the suite can afford every run;
+    // the number above is what it says when asked properly.
+    const control = arms['no voyage']!;
+    for (const label of ['may sail', 'whenever']) {
+      const arm = arms[label]!;
+      const idx = arm.per.map((r, i) => (r.sailed ? i : -1)).filter((i) => i >= 0);
+      if (idx.length === 0) continue;
+      let saved = 0;
+      let killed = 0;
+      let souls = 0;
+      let days = 0;
+      for (const i of idx) {
+        const a = arm.per[i]!;
+        const c = control.per[i]!;
+        if (!c.lived && a.lived) saved += 1;
+        if (c.lived && !a.lived) killed += 1;
+        souls += a.souls - c.souls;
+        days += a.days - c.days;
+      }
+      // eslint-disable-next-line no-console
+      console.log(
+        `  paired on the ${idx.length} sagas that sailed [${label}] — ` +
+        `saved ${saved}, killed ${killed}; ` +
+        `${souls >= 0 ? '+' : ''}${souls} souls, ${days >= 0 ? '+' : ''}${days} days`,
+      );
+    }
+
+    // A probe: it asserts its instrument ran, not a rate. The bot has to be
+    // ABLE to sail, or this measures nothing at all — which is the state it
+    // was written to end.
+    expect(arms['may sail']!.voyages, 'the bot still never sails — this probe measures nothing')
+      .toBeGreaterThan(0);
+    expect(arms['no voyage']!.voyages).toBe(0);
+  });
+
+  /**
+   * PROBE, for queue item 25: what is illness worth, and what is a healer?
+   *
+   * Item 25 proposes herbs as the healer's input — a stock gathered in summer
+   * that tending draws on. Its own framing carries the doubt worth measuring
+   * first: does gating care behind a stock make the healer a DECISION, or
+   * just a chore? A resource nobody gathers, feeding a job nobody crews, to
+   * answer a problem nobody has, would be three layers of decoration.
+   *
+   * So this measures the layers underneath before anything is built on them:
+   * how much illness a saga actually carries, how much of it is the spread
+   * rule rather than the cold nights that were always there, and what
+   * crewing a healer is worth against the same landings crewed without one.
+   *
+   * The A/B is the point. "The bot never crews a healer" is not evidence the
+   * healer is worthless — the default crew simply has no healer in it, which
+   * is a fact about the harness. Running the same seeds both ways is what
+   * separates the two.
+   *
+   * WHAT IT FOUND, in two passes, and the first pass was WRONG.
+   *
+   * It read "a healer crewed for 364 days took illness from 0.48 person-days
+   * per day lived to 0.46 and changed survival by nothing at all — 17 of 30
+   * saw spring in both arms", and concluded the healer was a job with no
+   * measurable output. That conclusion was the INSTRUMENT, and it is exactly
+   * the error this file has caught three times before in other clothes.
+   *
+   * `saw spring` was the outcome being counted, and nearly every band sees a
+   * first spring — so the number could not separate two arms and read 17 of
+   * 30 whatever happened downstream of it. Counting bands STILL STANDING when
+   * the harness stops, on the same seeds and the same code, the two arms are
+   * 4 of 30 against 7, and the days lived between them differ by an eighth:
+   * 4570 against 5147. The healer was never worthless. The measure was blunt.
+   *
+   * So item 25's verdict stands only in its narrow part — herbs would have
+   * been a chore — and its stated reason was false. The job pays.
+   *
+   * The mechanism is the second line of the readout. `crowding` returned
+   * zero on EVERY settled day of sixty sagas, because the roof runs a long
+   * way ahead of the band: 8.1 souls to 14.6 of room on the average settled
+   * day, and the most crowded moment any saga ever reached was 19 souls to
+   * 19 of roof. So `CROWD_BITE` never multiplies anything, spread runs at
+   * its floor rate of `CATCHING * down`, and `CARE_GUARD` is a guard against
+   * a floor. The crowding tradeoff item 8 was built around — another pair of
+   * hands is more work and one more chest by the fire — cannot happen.
+   *
+   * Kept as an instrument. Any work that means to make crowding bite has to
+   * move the second line — it is still zero, and still means `CROWD_BITE`
+   * multiplies nothing.
+   *
+   * A LESSON ABOUT THIS PROBE ITSELF, since it has now misled once: an A/B
+   * is only as sharp as the thing it counts. Pick an outcome most bands do
+   * not reach, or the arms will agree no matter what the code does.
+   *
+   * The first cut of this measured neither, and its error is worth keeping:
+   * it swapped the BUILDER out for the healer and read the healer arm as
+   * twice as ill per day lived. That is what losing the builder does — no
+   * builder, no shelter, and shelter is what stops the cold nights that hand
+   * out `ill_`. An A/B is only an A/B if one thing changed.
+   */
+  it('PROBE: what illness costs, and what a healer buys', { timeout: 900_000 }, async () => {
+    const SEEDS = 30;
+    // A FARMER's place, not the builder's. The first cut of this swapped the
+    // builder out and read the healer arm as more than twice as ill per day
+    // lived — which is not what care does, it is what losing the builder
+    // does: no builder means no shelter, and shelter is what stops the cold
+    // nights that hand out `ill_` in the first place. The arm was measuring
+    // the hole, not the healer.
+    const HEALER: JobId[] = ['farmer','healer','woodcutter','hunter','builder','warrior'];
+
+    interface Arm {
+      illDays: number;   // person-days spent carrying something
+      newlyIll: number;  // new illnesses of any cause, cold nights included
+      crowdDays: number; // settled days with more bodies than roof
+      lived: number;     // still standing when the harness stopped
+      settled: number;
+      days: number;
+      careDays: number;  // settled days with any tending at all
+      mostSouls: number; // the largest the band ever got
+      mostRoom: number;  // and the most roof it ever had
+      settledDays: number;
+      soulSum: number;
+      roomSum: number;
+      roofFrom: Record<string, number>;
+      slack: number[];
+    }
+    const arms: Record<string, Arm> = {};
+
+    for (const [label, crew] of [['no healer', CREW], ['a healer', HEALER]] as const) {
+      const arm: Arm = {
+        illDays: 0, newlyIll: 0, crowdDays: 0, lived: 0, settled: 0, days: 0, careDays: 0,
+        mostSouls: 0, mostRoom: 0, settledDays: 0, soulSum: 0, roomSum: 0, roofFrom: {}, slack: [],
+      };
+      const was = policy;
+      setPolicy({ ...SETTLER, crew });
+      try {
+        for (let s = 0; s < SEEDS; s += 1) {
+          const state = run(`ill-${s}`, 400, (before, after) => {
+            const down = ailingCount(after);
+            arm.illDays += down;
+            // New illness of ANY cause. Not the spread rule's own count —
+            // cold nights hand out `ill_` too, and most of this is them.
+            if (down > ailingCount(before)) arm.newlyIll += 1;
+            if (after.settlement) {
+              if (crowding(after) > 0) arm.crowdDays += 1;
+              if (careToday(after) > 0) arm.careDays += 1;
+              const souls = living(after.party.people).length;
+              if (souls > arm.mostSouls) arm.mostSouls = souls;
+              const room = capacity(after);
+              if (room > arm.mostRoom) arm.mostRoom = room;
+              // WHAT THE ROOF IS MADE OF. Item 30's question: the roof runs
+              // far ahead of the band, and whether that is fixable depends
+              // entirely on whether the room was BUILT FOR or came free with
+              // something the band wanted anyway.
+              for (const id of after.settlement.built) {
+                const def = BUILDINGS.find((b) => b.id === id);
+                if (!def?.room) continue;
+                arm.roofFrom[id] = (arm.roofFrom[id] ?? 0) + def.room;
+              }
+              // HOW CLOSE IT EVER COMES. "Never crowded" is a fact about a
+              // threshold; the slack is a fact about the shape, and it says
+              // whether crowding is a near miss or was never in the running.
+              arm.slack.push(room - souls);
+              arm.settledDays += 1;
+              arm.soulSum += souls;
+              arm.roomSum += room;
+            }
+          }, 'even');
+          arm.days += state.day;
+          if (state.settlement) arm.settled += 1;
+          // STILL STANDING, not "saw spring". Nearly every band sees a first
+          // spring, so that number cannot separate two arms — it read 17 of
+          // 30 both ways while the days lived between them differed by an
+          // eighth.
+          if (!state.end) arm.lived += 1;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      } finally {
+        setPolicy(was);
+      }
+      arms[label] = arm;
+    }
+
+    const pct = (xs: number[], p: number): string => {
+      if (xs.length === 0) return '-';
+      const sorted = [...xs].sort((x, y) => x - y);
+      return String(Math.round(sorted[Math.floor((sorted.length - 1) * p)]!));
+    };
+    const med = (xs: number[]): string => pct(xs, 0.5);
+    void med;
+    const sortPct = (xs: number[], p: number): number => {
+      const sorted = [...xs].sort((x, y) => x - y);
+      return sorted[Math.floor((sorted.length - 1) * p)] ?? 0;
+    };
+    const rows = Object.entries(arms).map(([label, a]) =>
+      `  ${label.padEnd(10)} ${a.illDays} person-days ill (${(a.illDays / Math.max(1, a.days)).toFixed(2)} ` +
+      `per day lived), ${a.newlyIll} new illnesses, ${a.crowdDays} crowded days, ` +
+      `${a.careDays} days tended; ${a.lived}/${SEEDS} still standing at day 400, over ${a.days} days lived\n` +
+      `             band ${(a.soulSum / Math.max(1, a.settledDays)).toFixed(1)} souls to ` +
+      `${(a.roomSum / Math.max(1, a.settledDays)).toFixed(1)} of roof on the average settled day ` +
+      `(most ever ${a.mostSouls} souls, ${a.mostRoom} roof)\n` +
+      `             the roof came from: ${Object.entries(a.roofFrom)
+        .sort((x, y) => y[1] - x[1])
+        .map(([k, v]) => `${k} ${Math.round((v / Math.max(1, a.roomSum)) * 100)}%`)
+        .join(', ') || 'nothing'}\n` +
+      `             spare beds on a settled day: tightest ${Math.min(...a.slack)}, ` +
+      `10th pct ${sortPct(a.slack, 0.1)}, median ${sortPct(a.slack, 0.5)}`,
+    );
+    // eslint-disable-next-line no-console
+    console.log(`PROBE illness and the healer — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
+
+    // A probe: it asserts its instrument ran, not a rate.
+    expect(arms['no healer']!.settled).toBeGreaterThan(0);
+    expect(arms['a healer']!.settled).toBeGreaterThan(0);
+  });
+
+  /**
+   * PROBE, for queue item 23: how much water does a saga actually touch?
+   *
+   * Named waters and tidal races are both bets on the same premise — that
+   * the sea is a place the band moves AROUND in, with stretches distinct
+   * enough to be worth a name and pinches narrow enough to be worth a cost.
+   * The world's geometry says that premise is plausible: 12 worlds measured
+   * 123 coastal-water hexes each in 4.6 connected bodies, 2.7 of them eight
+   * hexes or more, and 5.2 gates — water with land on four sides and its two
+   * wet neighbours not touching, so a hull must pass THROUGH rather than
+   * around.
+   *
+   * But geometry is the map, not the saga. What decides whether either
+   * feature is content or decoration is how much of that water a band ever
+   * enters, and the answer was no: 0.0 true gates entered in forty sagas,
+   * 0.0 waters ever a third uncovered. Neither feature was built.
+   *
+   * The line that says WHY is the last one, and it is the reason this probe
+   * is kept rather than deleted with the idea it killed. The sea is not
+   * refused — it is OFFERED, on a fifth of every band's moving days, a third
+   * of the menu on those days — and declined 94 times in a hundred. Nothing
+   * on the water is worth going to, so nobody goes, so every feature laid on
+   * top of the water is content behind a door nobody opens.
+   *
+   * Measured on the RAIDER, deliberately: it is the most sea-inclined band
+   * the harness has, the only policy that leaves under arms at all. The
+   * settler does not sail by identity rather than by gap. So this is the
+   * GENEROUS reading, and it still reads 5.6%.
+   *
+   * Kept as a probe rather than a bar because it is an instrument, not a
+   * promise: any future work that means to give the sea a reason should move
+   * these numbers, and this is what it will be read against.
+   */
+  it('PROBE: how much of the coast a saga actually rows', { timeout: 900_000 }, async () => {
+    // The hex version of this probe measured water BODIES: coastal hexes,
+    // gates, pinches, and how much of each named water a saga uncovered. A
+    // line has none of that — rowing is a step, not a state, and the sea is
+    // off every stretch — so what is left to ask is the only question the
+    // original was really for: does the band ever spend a day at the oars,
+    // and does it ever work a fishing ground.
+    const SEEDS = 40;
+    let sagas = 0;
+    let wetSagas = 0;
+    let stretchesRowed = 0;
+    let groundsOnCoast = 0;
+    let groundsKnown = 0;
+    let groundsWorked = 0;
+    let sagasSeeingOne = 0;
+    let dayGroundNear = 0;
+    let dayNearButFed = 0;
+    let dayNearButSettled = 0;
+    let dayNearButStuck = 0;
+    let dayNearAndFree = 0;
+    let daysWithAChoice = 0;
+    const spans: number[] = [];
+
+    setPolicy(RAIDER);
+    try {
+      for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
+        for (let s = 0; s < SEEDS / 2; s += 1) {
+          const wet = new Set<number>();
+          const state = run(armSeed(arm, s, SEEDS / 2), 400, (before, after) => {
+            if (walkOptions(before).length > 0) daysWithAChoice += 1;
+            // A ground the band knows of and could reach in a day or two: the
+            // number that says whether reach or reward is the binding thing.
+            const here = standingAt(before);
+            const near = nearestStop(before, (st) => groundAtStop(before.seed, st), 3);
+            if (near !== null || groundAtStop(before.seed, here)) {
+              dayGroundNear += 1;
+              const fed = before.party.food / Math.max(1, foodPerDay(before));
+              if (fed >= 6) dayNearButFed += 1;
+              else if (before.settlement && !before.expedition) dayNearButSettled += 1;
+              else if (walkOptions(before).length === 0) dayNearButStuck += 1;
+              else dayNearAndFree += 1;
+            }
+            const to = standingAt(after);
+            const span = Math.abs(to - here);
+            // A day that covered more than one stretch was rowed, and how far
+            // it covered is what the ship bought.
+            if (span > 1) { wet.add(to); spans.push(span); }
+          }, terms);
+          sagas += 1;
+          if (wet.size > 0) wetSagas += 1;
+          stretchesRowed += wet.size;
+          let onCoast = 0;
+          let known = 0;
+          for (let st = 0; st < ROUTE_STOPS; st += 1) {
+            if (!groundAtStop(state.seed, st)) continue;
+            onCoast += 1;
+            if (knowsStop(state, st)) known += 1;
+            if (wet.has(st)) groundsWorked += 1;
+          }
+          groundsOnCoast += onCoast;
+          groundsKnown += known;
+          if (known > 0) sagasSeeingOne += 1;
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+      }
+    } finally {
+      setPolicy(SETTLER);
+    }
+
+    const per = (n: number) => (n / Math.max(1, sagas)).toFixed(1);
+    const reach = spans.reduce((a, b) => a + b, 0) / Math.max(1, spans.length);
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE the water a saga touches — ${sagas} raider sagas to day 400:\n` +
+        `  ${wetSagas} ever rowed; ${per(stretchesRowed)} stretches reached by oar per saga\n` +
+        `  mean stretches per rowed day: ${reach.toFixed(2)}\n` +
+        `  fishing grounds: ${per(groundsOnCoast)} on the coast, ${per(groundsKnown)} ever known ` +
+        `(${sagasSeeingOne}/${sagas} sagas knew one), ${per(groundsWorked)} ever worked\n` +
+        `  days with a ground within three: ${dayGroundNear} — ${dayNearButFed} well fed, ` +
+        `${dayNearButSettled} settled and cannot move, ${dayNearButStuck} no move at all, ` +
+        `${dayNearAndFree} hungry and free to go`,
+    );
+
+    // The probe asserts only that its instrument still works — that the
+    // sample ran, and that the game is still OFFERING what it is being
+    // measured for declining. Pinning the take-rate would pin the bot rather
+    // than the sea, and the take-rate is the finding, not the promise.
+    expect(sagas).toBe(SEEDS);
+    expect(daysWithAChoice, 'the band never had a step to choose — this probe measures nothing')
+      .toBeGreaterThan(200);
+  });
+});
+
+describe('PROBE: what the settling floor is worth', () => {
+  it('measures holding out, taking anything, and giving way as winter nears',
+    { timeout: 900_000 }, () => {
+    const SEEDS = 120;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    const sample = (p: Policy) => {
+      setPolicy(p);
+      const lived: boolean[] = [];
+      let settled = 0;
+      let ground = 0;
+      let day = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        let noted = false;
+        const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
+          if (!noted && !before.settlement && after.settlement) {
+            noted = true;
+            // The ground the posts actually went into — see the note on the
+            // same read in the settling probe above.
+            ground += stopReport(after.seed, after.settlement.stop ?? 0).total;
+            day += after.day;
+            settled += 1;
+          }
+        }, 'even');
+        lived.push(!final.end && final.day >= SPRING_IN);
+      }
+      return {
+        saw: lived.filter(Boolean).length,
+        lived,
+        settled,
+        ground: settled ? ground / settled : 0,
+        day: settled ? day / settled : 0,
+      };
+    };
+
+    // The old bot is named explicitly rather than spelled `SETTLER`, because
+    // SETTLER now RELAXES — this measurement is why. Pairing is against the
+    // old one, so the table reads as "what the change bought".
+    const arms: [string, Policy][] = [
+      ['the old bot (fixed floor 9)', { ...SETTLER, id: 'fixed', relaxFrom: undefined }],
+      ['today (gives way from 14)', { ...SETTLER }],
+      ['takes anything (floor 0)', { ...SETTLER, id: 'rash', siteFloor: 0 }],
+    ];
+    const out = arms.map(([label, p]) => ({ label, r: sample(p) }));
+    setPolicy(SETTLER);
+
+    for (const { label, r } of out) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[floor] ${String(label).padEnd(26)} settled ${String(r.settled).padStart(3)}/${SEEDS}, ` +
+          `ground ${r.ground.toFixed(1)}, day ${r.day.toFixed(0)}, ` +
+          `saw spring ${r.saw}/${SEEDS}`,
+      );
+    }
+    // Paired against the OLD bot, so the table reads as what the change
+    // bought; the seeds where the two agree carry no information either way.
+    const base = out[0]!.r;
+    for (const { label, r } of out.slice(1)) {
+      let saved = 0;
+      let killed = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        if (!base.lived[s] && r.lived[s]) saved += 1;
+        if (base.lived[s] && !r.lived[s]) killed += 1;
+      }
+      // eslint-disable-next-line no-console
+      console.log(`[floor]   ${String(label).padEnd(24)} vs the old bot: `
+        + `saved ${saved}, killed ${killed}`);
+    }
+  });
+});
+
+describe('PROBE: what a lineage actually amounts to', () => {
+  /**
+   * 9.9's premise, re-taken before anything is built on it. The item reads
+   * "the memorial, the lineage and the generations exist and do not talk to
+   * each other", and two of those three claims are checkable in the source
+   * without a harness at all:
+   *
+   * - `hallPasses` (sim/household.ts) imports `childrenOf` and names the dead
+   *   leader's children, so GENERATIONS talks to LINEAGE;
+   * - `maybeBirth` (sim/lineage.ts) reads `kinOf` to record a father, so
+   *   LINEAGE talks to the households `maybePair` makes.
+   *
+   * The one that is genuinely deaf is the MEMORIAL: `fallenOf` maps a person
+   * to `{name, byname, fate, day, seed}` and nothing else, so the wall cannot
+   * say whose husband, whose mother, or what anybody left.
+   *
+   * What no source reading can settle is the SIZE — whether a lineage is a
+   * thing that happens in a played saga or a feature the odds never reach. A
+   * bequest with nothing to bequeath and nobody to bequeath it to is 6.5b's
+   * mistake again: a rule that fires twice in a hundred and twenty runs.
+   *
+   * So this counts, over full runs: births, marriages made after the landing,
+   * children who got a father's name, deaths of a leader who left children,
+   * and how long the wall's rows are.
+   */
+  it('counts births, marriages and what the wall is given', { timeout: 900_000 }, () => {
+    const SEEDS = 60;
+    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+      let sagas = 0;
+      let withChild = 0;      // sagas that ever saw a birth
+      let births = 0;
+      let fathered = 0;       // children recorded with a father
+      let weddings = 0;       // households made after the landing
+      let withWedding = 0;
+      let heirlessLeader = 0; // a leader died leaving no child
+      let leaderWithChild = 0;
+      let deaths = 0;         // rows the wall would get
+      let deadWithKin = 0;    // ... of the dead, how many were bound to somebody
+      let deadWithChild = 0;  // ... and how many left a child behind
+      let bladeMoved = 0;     // sagas where the blade changed hands at all
+      let bladeHands = 0;     // hands it went through, all sagas
+      let bladeLaid = 0;      // sagas that ended with it in a chest for a child
+      let bladeRows = 0;      // wall rows that carry it
+      for (let s = 0; s < SEEDS; s += 1) {
+        const end = run(`curve-${s}`, 400, (before, after) => {
+          const was = before.settlement?.children.length ?? 0;
+          const now = after.settlement?.children.length ?? 0;
+          if (now > was) {
+            births += now - was;
+            for (const c of after.settlement!.children.slice(was)) {
+              if (c.father) fathered += 1;
+            }
+          }
+          if ((after.flags['lastPaired'] ?? -1) !== (before.flags['lastPaired'] ?? -1)) {
+            weddings += 1;
+          }
+        }, TERMS);
+        sagas += 1;
+        // 9.9: does the blade actually move in a played saga, or is it the
+        // 6.5b rule again — correct, tested, and fired twice in 128 runs?
+        const blade = end.party.blade;
+        if (blade) {
+          bladeHands += blade.borne.length;
+          if (blade.borne.length > 1) bladeMoved += 1;
+          if (blade.laidFor) bladeLaid += 1;
+          bladeRows += fallenOf(end).filter((row) => row.blade !== undefined).length;
+        }
+        const kids = end.settlement?.children ?? [];
+        if (kids.length > 0) withChild += 1;
+        if (end.flags['lastPaired'] !== undefined) withWedding += 1;
+        const wall = fallenOf(end);
+        deaths += wall.length;
+        for (const p of end.party.people) {
+          if (p.alive || p.left) continue;
+          if (p.kin) deadWithKin += 1;
+          if (kids.some((c) => c.mother === p.id || c.father === p.id)) deadWithChild += 1;
+          // Whether the hall passed through them: sworn, and nobody ahead.
+          if (p.bond !== 'sworn') continue;
+          const seat = end.party.people.findIndex((q) => q.id === p.id);
+          const ahead = end.party.people.slice(0, Math.max(0, seat))
+            .some((q) => q.alive && q.bond === 'sworn');
+          if (ahead) continue;
+          if (kids.some((c) => c.mother === p.id || c.father === p.id)) leaderWithChild += 1;
+          else heirlessLeader += 1;
+        }
+      }
+      const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
+      console.log(
+        `a lineage [${TERMS}] over ${sagas} sagas:\n`
+        + `  sagas that saw a child born: ${withChild} (${pc(withChild, sagas)}), `
+        + `${births} children in all, ${fathered} with a father named\n`
+        + `  sagas that saw a wedding after the landing: ${withWedding} `
+        + `(${pc(withWedding, sagas)}), ${weddings} weddings in all\n`
+        + `  the hall passed from a man who left a child ${leaderWithChild} times, `
+        + `from one who left none ${heirlessLeader}\n`
+        + `  the wall was given ${deaths} names; ${deadWithKin} (${pc(deadWithKin, deaths)}) `
+        + `were bound to somebody, ${deadWithChild} (${pc(deadWithChild, deaths)}) left a child\n`
+        + `  the blade changed hands in ${bladeMoved} sagas (${pc(bladeMoved, sagas)}), `
+        + `${bladeHands} hands in all, laid by for a child in ${bladeLaid}; `
+        + `${bladeRows} wall rows carry it (${pc(bladeRows, deaths)})`,
+      );
+    }
+  });
+});
+
+describe('PROBE: what the colony loop actually is', () => {
+  /**
+   * 9.11's three numbers, re-taken before the largest item in the phase is
+   * opened on them. All three date from before 9.12a, and 9.12a exists
+   * BECAUSE of them — "the hall must be kept" was built as the answer to
+   * "the colony is the least pressured system in the game". A premise that
+   * has already been half-answered is exactly the kind this project has been
+   * caught inheriting all week.
+   *
+   * The item reads: 53% of a saga's actions, 33 of 60 bands ever passed six
+   * people, the hall runs 9.0 souls to 14.2 of roof and is never full, and by
+   * year two the band has more labour than uses for it.
+   *
+   * The LOAD-BEARING claim is the last one, and it is the only one the other
+   * three are evidence for. So this measures it directly rather than by
+   * proxy: on a settled day, is there anything left the band could build, and
+   * is anybody standing about with no job.
+   */
+  it('counts the actions, the roster, the roof and the idle hands',
+    { timeout: 1_800_000 }, async () => {
+      const SEEDS = 60;
+      let colony = 0;
+      let travel = 0;
+      let battle = 0;
+      let everPastSix = 0;
+      let sagas = 0;
+      const whyBlocked = new Map<string, number>();
+      // Settled days, split by year, so "by year two" can be checked rather
+      // than assumed.
+      const byYear = new Map<number, {
+        days: number; souls: number; roof: number; crowded: number;
+        idle: number; nothingLeft: number; cantAfford: number; queueEmpty: number;
+        wood: number;
+      }>();
+      const bump = (y: number) => {
+        if (!byYear.has(y)) {
+          byYear.set(y, {
+            days: 0, souls: 0, roof: 0, crowded: 0,
+            idle: 0, nothingLeft: 0, cantAfford: 0, queueEmpty: 0, wood: 0,
+          });
+        }
+        return byYear.get(y)!;
+      };
+
+      for (let s = 0; s < SEEDS; s += 1) {
+        let peak = 0;
+        let lastDay = 0;
+        run(`curve-${s}`, 400, (before, after) => {
+          // WHERE THE SAGA'S TIME GOES, and the first cut of this counter read
+          // a flat 0% for the colony — because it asked `currentMode(before)
+          // === 'COLONY'` and this harness never opens the colony screen: the
+          // bot calls `assign` and `queueBuild` on the state directly. That is
+          // a reading of the BOT's mode stack, not of the game, and it is the
+          // same fault as every other one this file has caught.
+          //
+          // So it asks where the band is standing instead, which is what "how
+          // much of a saga is the colony" actually means.
+          if (before.battle) battle += 1;
+          else if (before.settlement && atHome(before)) colony += 1;
+          else travel += 1;
+
+          const alive = after.party.people.filter((p) => p.alive).length;
+          if (alive > peak) peak = alive;
+
+          const home = after.settlement;
+          if (!home || after.day === lastDay) return;
+          lastDay = after.day;
+          const row = bump(Math.floor((after.day - 1) / YEAR_LENGTH) + 1);
+          row.days += 1;
+          row.souls += alive;
+          row.roof += capacity(after);
+          if (crowding(after) > 0) row.crowded += 1;
+          row.idle += after.party.people.filter((p) => p.alive && !p.job).length;
+          if (home.queue.length === 0) row.queueEmpty += 1;
+          // THE TWO REASONS THERE IS NOTHING TO START, kept apart, because a
+          // count that merges them is a ratio whose denominator selected
+          // itself. `buildBlocker` answers 'timber' for a band that is simply
+          // out of wood — which is the colony being PRESSED, the opposite of
+          // the item's claim — and answers something else when the list is
+          // genuinely finished.
+          // `standsFor`, NOT `home.built.includes` — and the first cut of this
+          // probe used the latter and read "list finished 0%" in every year.
+          // A tier that has been UPGRADED is not in `built` any more, so a
+          // longhouse replaced by a great hall counted as still to build, and
+          // `buildBlocker` duly answered 'built' 5208 times. That is 9.4's
+          // finding exactly, made again by the person who wrote it up, and it
+          // is the first trap named in CLAUDE.md.
+          const unbuilt = BUILDINGS.filter((b) => !standsFor(after, b.id));
+          const couldStart = unbuilt.filter((b) => buildBlocker(after, b) === null);
+          row.wood += after.party.firewood;
+          if (unbuilt.length === 0) row.nothingLeft += 1;
+          else if (couldStart.length === 0) {
+            row.cantAfford += 1;
+            // WHICH refusal, per building, on a day when nothing can start.
+            // "Blocked" with a thousand wood in the store is not a store
+            // problem, and naming the blocker is the only way to know what it
+            // is instead.
+            for (const b of unbuilt) {
+              const why = buildBlocker(after, b) ?? 'none';
+              whyBlocked.set(`${why}`, (whyBlocked.get(`${why}`) ?? 0) + 1);
+            }
+          }
+        }, 'even');
+        sagas += 1;
+        if (peak > 6) everPastSix += 1;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+
+      const acts = colony + travel + battle;
+      const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
+      const rows = [...byYear.entries()].sort((a, b) => a[0] - b[0]).map(([y, r]) =>
+        `  year ${y}: ${r.days} settled days, ${(r.souls / r.days).toFixed(1)} souls to `
+        + `${(r.roof / r.days).toFixed(1)} of roof, crowded ${pc(r.crowded, r.days)}, `
+        + `${(r.idle / r.days).toFixed(1)} idle hands, `
+        + `${(r.wood / r.days).toFixed(0)} wood in store, `
+        + `list finished ${pc(r.nothingLeft, r.days)}, `
+        + `blocked ${pc(r.cantAfford, r.days)}, `
+        + `queue empty ${pc(r.queueEmpty, r.days)}`);
+      // eslint-disable-next-line no-console
+      console.log(
+        `the colony loop over ${sagas} sagas — ${acts} turns: `
+        + `colony ${pc(colony, acts)}, travel ${pc(travel, acts)}, battle ${pc(battle, acts)}\n`
+        + `  bands that ever passed six people: ${everPastSix} of ${sagas}\n`
+        + rows.join('\n')
+        + `\n  why nothing could start, per building per blocked day: `
+        + [...whyBlocked.entries()].sort((a, b) => b[1] - a[1])
+          .map(([k, v]) => `${k} ${v}`).join(', '),
+      );
+
+      // THE INSTRUMENT FIRST. A probe that never sees a settled day, or never
+      // sees a second year, measures nothing about a colony loop.
+      expect([...byYear.keys()], 'no settled days at all').not.toHaveLength(0);
+      expect(byYear.get(2)?.days ?? 0, 'no band reached a second year — nothing to say')
+        .toBeGreaterThan(0);
+    });
+});
+
+describe('PROBE: is the rival ever actually seen', () => {
+  /**
+   * 9.10's premise, re-taken. The item says there is "no way to watch him",
+   * and that is not quite true: `render/strip.ts` marks his hall and every
+   * stretch he has fenced, and `render/procession.ts` draws the hall. What is
+   * genuinely absent is the SAGA — `sagagen.ts` does not mention him at all,
+   * so a run ends without ever saying what the other boat did.
+   *
+   * But every one of those marks, and every chronicle line he has, is gated
+   * on `rival.met` — which needs the band to stand within one stretch of his
+   * hall. So the question that decides what 9.10 should build is not "is he
+   * drawn" but "is he ever MET". A rival nobody meets is invisible whatever
+   * the renderer would have done.
+   */
+  it('counts how often a band meets him, and how much coast he ends up holding',
+    { timeout: 900_000 }, async () => {
+      const SEEDS = 60;
+      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
+        let sagas = 0;
+        let exists = 0;
+        let met = 0;
+        let metBy = 0;          // day of first sight, summed over those met
+        let heldSum = 0;        // stretches he holds at the end
+        let oursSum = 0;        // stretches the band has trodden
+        let blockedEver = 0;    // sagas where his ground ever refused our posts
+        let far = 0;            // sagas that ran the whole 400 days
+        let farHeld = 0;
+        let short = 0;          // sagas that ended first
+        let shortHeld = 0;
+        for (let s = 0; s < SEEDS; s += 1) {
+          let sawOn = 0;
+          let blocked = false;
+          const end = run(`curve-${s}`, 400, (before, after) => {
+            if (!sawOn && !before.rival?.met && after.rival?.met) sawOn = after.day;
+            if (!blocked && after.rival && rivalBlocks(after)) blocked = true;
+          }, TERMS);
+          sagas += 1;
+          // Breathe: sixty full sagas twice over is long enough to starve the
+          // runner's RPC heartbeat, which fails the run with every test green.
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          if (!end.rival) continue;
+          exists += 1;
+          const held = (end.rival.claimStops ?? []).length;
+          heldSum += held;
+          oursSum += Object.keys(end.world.trodStops ?? {}).length;
+          // SPLIT BY WHETHER THE SAGA RAN ITS COURSE. `rival.ts` records that
+          // he ends holding "a median of six of a possible seven" — measured
+          // over 150 coasts walked to the horizon. A played saga mostly ends
+          // long before that, so the two numbers are about different things
+          // and only one of them is about the game.
+          const wentFar = !end.end && end.day >= 400;
+          if (wentFar) { far += 1; farHeld += held; }
+          else { short += 1; shortHeld += held; }
+          if (end.rival.met) { met += 1; metBy += sawOn; }
+          if (blocked) blockedEver += 1;
+        }
+        const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
+        // eslint-disable-next-line no-console
+        console.log(
+          `the rival [${TERMS}] over ${sagas} sagas — he exists on ${exists}:\n`
+          + `  ever came in sight of his hall: ${met} (${pc(met, exists)}), `
+          + `first on day ${met ? (metBy / met).toFixed(0) : '-'} on average\n`
+          + `  at the end he held ${(heldSum / Math.max(1, exists)).toFixed(1)} stretches; `
+          + `we had walked ${(oursSum / Math.max(1, exists)).toFixed(1)}\n`
+          + `  his ground refused our posts in ${blockedEver} sagas (${pc(blockedEver, exists)})\n`
+          + `  held at the end — ${far} sagas that ran all 400 days: `
+          + `${far ? (farHeld / far).toFixed(1) : '-'}; `
+          + `${short} that ended sooner: ${short ? (shortHeld / short).toFixed(1) : '-'}`,
+        );
+      }
+    });
+});
+
+describe('PROBE: 9.2 sweep — the two levers on the departure side', () => {
+  /**
+   * 9.2 left three prongs and priced only one. What shipped was the record;
+   * what remains is a choice between two levers that the item itself marks
+   * UNMEASURED — and a fork nobody can price is a coin flip, not a decision.
+   *
+   * The finding this has to move: every arm that sails does worse than the
+   * arm that never does, and the harm tracks the NUMBER OF CROSSINGS rather
+   * than anything about what comes back. Two named causes have already failed
+   * a test here (unfunded mouths, and stores landed too late), so the bar for
+   * a third explanation is that it survives being swept.
+   *
+   * The arm is `whenever` — sails the moment `sailBlocker` allows, in any
+   * season. Not a strategy: the control that separates "the gate never opens"
+   * from "the crossing is not worth taking". Paired against never sailing on
+   * the same seeds, because only the seeds that differ carry information.
+   *
+   * Driven from OUTSIDE: `CROSSING` and `provisioning` are module constants,
+   * so the sweep patches src between runs and this probe reports whatever it
+   * is handed. It prints the two constants it actually ran under, so a row
+   * can never be attributed to the wrong setting.
+   */
+  it('prices sailing against never sailing, at whatever the constants say',
+    { timeout: 1_800_000 }, async () => {
+      const SEEDS = 200;
+      const outcome = (sails: boolean, anySeason: boolean) => {
+        const was = policy;
+        setPolicy({ ...SETTLER, sails, sailAnySeason: anySeason });
+        const per: { lived: boolean; sailed: boolean }[] = [];
+        let voyages = 0;
+        let souls = 0;
+        try {
+          for (let s = 0; s < SEEDS; s += 1) {
+            let sent = false;
+            const end = run(`sail-${s}`, 400, (before, after) => {
+              if (!before.voyage && after.voyage) { voyages += 1; sent = true; }
+            });
+            per.push({ lived: !end.end && end.day >= 400, sailed: sent });
+            souls += end.party.people.filter((p) => p.alive).length;
+          }
+        } finally { setPolicy(was); }
+        return { per, voyages, souls };
+      };
+
+      const base = outcome(false, false);
+      const arm = outcome(true, true);
+      let saved = 0;
+      let killed = 0;
+      let sailed = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        if (arm.per[i]!.sailed) sailed += 1;
+        if (!base.per[i]!.lived && arm.per[i]!.lived) saved += 1;
+        if (base.per[i]!.lived && !arm.per[i]!.lived) killed += 1;
+      }
+      const stood = (r: typeof base) => r.per.filter((p) => p.lived).length;
+      // eslint-disable-next-line no-console
+      console.log(
+        `9.2 sweep — CROSSING=${CROSSING}, a season's provisioning is `
+        + `${provisioning(structuredClone(newGame('sail-0'))).food} food:\n`
+        + `  never sails: ${stood(base)}/${SEEDS} standing at day 400, ${base.souls} souls\n`
+        + `  whenever:    ${stood(arm)}/${SEEDS} standing, ${arm.souls} souls, `
+        + `${sailed} sagas sailed, ${arm.voyages} crossings\n`
+        + `  PAIRED: sailing saved ${saved} and killed ${killed}`,
+      );
+      // THE INSTRUMENT FIRST. An arm that never sails is the control twice
+      // over, and this file has shipped that mistake before.
+      expect(sailed, 'nobody sailed — the sweep measured nothing').toBeGreaterThan(0);
+    });
+});

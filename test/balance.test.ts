@@ -1,98 +1,51 @@
-// 5.3: the difficulty curve, measured rather than felt.
+// 5.3: the difficulty curve, measured rather than felt — the BARS.
 //
-// The roadmap's line is "Difficulty curves, animation polish, dead-warrior
-// memorial wall". A curve is the one part of that which can be asserted, so
-// this file ships the harness that measures it: a scripted player of roughly
-// average competence — it walks toward timber when short, goes and looks for
-// ground it can settle, heeds the winter mark, and fights back when steel
-// comes out — played across many seeds.
+// The scripted player every measurement is taken with lives in
+// test/fixtures/harness.ts; the diagnostic sweeps that answer a question once
+// live in test/probes.test.ts. What stays here is what must remain TRUE.
 //
-// The bar is deliberately a WIDE BAND rather than a number. The point is not
-// to freeze today's balance, it is to catch the two failures that matter and
-// that are otherwise invisible: a change that makes the game unwinnable, and
-// a change that makes it a walkover.
-//
-// Every number in the changelog for this milestone came out of this file,
-// and writing it caught two things nothing else would have.
-//
-// The first was in the harness itself: its earliest draft did not fight back
-// on the battlefield, it only passed turns until somebody died. That put
-// "slain" at the top of the death table and made the game look far crueller
-// than it is — teaching the bot to swing moved survival to the second winter
-// from 0% to 51%. A harness is code, and it can be wrong in exactly the
-// direction that flatters or damns whatever it is measuring. A later rewrite
-// of this file disagreed with itself by forty points for the same reason.
-//
-// The second was tried, measured, and REJECTED. The landing is chosen for
-// loneliness alone — the westernmost quiet beach — with no regard for whether
-// anywhere behind it can be lived in, which puts settleable ground a median 5
-// and as much as 11 hexes from the sand. Choosing a beach with somewhere to
-// live behind it takes the worst case from 11 hexes to 4 and looked like a
-// clear win. It is not: where you land decides where you fight, and on the
-// worlds it produces the shield wall stops paying for itself. Over sixty
-// seeds the line went from 33 wins and 157 people standing to 32 and 158 —
-// dead level with charging in, which is a Phase 2 milestone bar erased.
-// Battlefield generation has to stop being that sensitive to the terrain it
-// is handed before the landing can be touched. See test/wall.test.ts.
-//
-// The third was the largest, and it was found teaching the bot to form a
-// shield wall. The run loop below treated ANY refused action as the end of
-// the saga, and the old bot proposed battle moves without costing the ground
-// or the disengage — so doMove refused them, and THIRTY of sixty runs were
-// cut off mid-battle, one as early as day 7, every one counted as alive at
-// every milestone thereafter. The 83/55/50 curve this file used to print was
-// those thirty truncated sagas. Played out legally, the same charge-in bot
-// reads 78/22/2; the wall-forming bot that replaced it reads 78/30/7 with
-// zero refusals — better at every mark, on fights that actually get fought.
+// THE SPLIT WAS MEASURED BEFORE IT WAS MADE, and what it bought is not what
+// it looks like. balance.test.ts was 43.9 of the suite's 45.0 minutes; of its
+// own tests the fifteen named PROBE were 21.9 minutes and everything else
+// 22.8. So the probes were HALF THE CLOCK while being fifteen of the 103
+// tests and thirteen of the 225 assertions — which is the whole argument for
+// the split, and also the reason not to expect the run to get much shorter.
+// The slowest things left are bars and have to be: `plays to day 500` at
+// 240s, the market at 167s, the winter verdict at 136s, the hardship arms at
+// 105s. What is left here is 88 tests carrying 212 assertions.
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { effectsOn, SEASON_LENGTH, YEAR_LENGTH, seasonOf, winterDepth } from '../src/sim/calendar';
+import { effectsOn, SEASON_LENGTH, seasonOf, winterDepth } from '../src/sim/calendar';
 import { markHaze } from '../src/sim/winter';
 import { bumped, makeWatch } from '../src/render/motion';
-import { apply, type Action } from '../src/sim/actions';
+import { apply } from '../src/sim/actions';
 import { atSea } from '../src/sim/road';
-import { canGather, canFish } from '../src/sim/gathering';
-import { abundance } from '../src/sim/abundance';
-import { ailingCount, careToday } from '../src/sim/sickness';
-import { canFound } from '../src/sim/site';
-import { holed, sprung } from '../src/sim/ship';
-import { assign, availableJobs, output, queueBuild } from '../src/sim/colony';
-import { abandonSteading, canAbandon } from '../src/sim/retreat';
+import { ailingCount } from '../src/sim/sickness';
+import { assign, queueBuild } from '../src/sim/colony';
 import { BAND_BASE, foodPerDay, firewoodPerNight, passDay } from '../src/sim/upkeep';
-import { SWORN_MAX, hands, leaderOf, living, sworn } from '../src/sim/people';
+import { SWORN_MAX, hands, living, sworn } from '../src/sim/people';
 import { wordOf } from '../src/sim/word';
-import { KEPT_FOR, NEGLECTED_AFTER, canKeepHall, feastCost, sinceKept } from '../src/sim/hall';
 import { OVER_ROOF, handsLeave, roomLeft, SETTLED_IN, takeIn, willAdmit } from '../src/sim/joining';
 import { migrate } from '../src/state/migrations';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { MAX_RAIDERS, MAX_RAIDERS_FAMED, raiderCap } from '../src/sim/battle';
-import { RAID_CHANCE_MAX, SACK_TAKES, autumnChance, autumnRaidDay, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
+import { RAID_CHANCE_MAX, SACK_TAKES, raidDifficulty, raidOdds, sackSteading } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
-import { buildBlocker, capacity, crowding, heartRaised, standsFor } from '../src/sim/colony';
+import { capacity, crowding } from '../src/sim/colony';
 import { moodTarget } from '../src/sim/minds';
-import { foundSettlement } from '../src/sim/site';
-import { isWarbandTurn } from '../src/sim/battle';
-import { reachTargets, throwTargets } from '../src/sim/strike';
-import { canActFrom } from '../src/sim/ranks';
-import { WARCRY_RANGE } from '../src/sim/warcry';
-import { strikeTargets } from '../src/sim/battle';
 import { offersAt, placeHere, tradeBlocker } from '../src/sim/places';
 import { campStores } from '../src/sim/plunder';
 import { strandTarget } from '../src/sim/sea';
-import { atSea as _atSea } from '../src/sim/road';
 import { placeKind, PLACE_KINDS } from '../src/data/places';
-import { angerLevel, bargainBlocker, canFallOn, neighbourHere } from '../src/sim/neighbours';
+import { angerLevel, neighbourHere } from '../src/sim/neighbours';
 import { canCallThing, hasSpeakers, thingNeeds, yearsRuled } from '../src/sim/thing';
 import type { NeedId } from '../src/data/thing';
 import { SPEAKER_STANDING } from '../src/data/thing';
-import { fieldCrew, launchBlocker, provisionsFor } from '../src/sim/expedition';
-import { CROSSING, provisioning, sailBlocker } from '../src/sim/voyage';
-import { BARTER_FOOD, CLAN_KINDS } from '../src/data/clans';
+import { launchBlocker, provisionsFor } from '../src/sim/expedition';
+import { CLAN_KINDS } from '../src/data/clans';
 import { wintersStood } from '../src/sim/calendar';
-import { terrainDef } from '../src/data/terrain';
 import type { GameState } from '../src/state/types';
-import { jobById, type JobId } from '../src/data/jobs';
 import { DEFAULT_HARDSHIP, HARDSHIPS, type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
 import { EVENTS } from '../src/data/events';
@@ -101,1579 +54,37 @@ import { TRAITS } from '../src/data/traits';
 import { kinPairs } from '../src/sim/kin';
 import { drawOdds, swordOdds } from '../src/sim/joining';
 import { DRAW_ANGER, DRAW_LARDER_DAYS, SWORD_DEEDS, WHY_SWORDS_COME, WHY_THEY_COME } from '../src/data/folk';
-import { forecast, markVisible } from '../src/sim/winter';
+import { markVisible } from '../src/sim/winter';
 import { reachable } from '../src/sim/reach';
-import { rivalBlocks } from '../src/sim/rival';
 import { eventChance, isEligible } from '../src/sim/events';
 import { currentMode } from '../src/modes';
 import { stream } from '../src/rng';
 import { GHOST_RUIN_ID, haunt, theRuin } from '../src/sim/haunt';
-
-import { ROUTE_STOPS, daysBetween, stopAt } from '../src/sim/route';
-import { hasTrod, knowsStop, learnStop, standingAt, walkOptions } from '../src/sim/coast';
-import { groundAtStop } from '../src/sim/fishery';
+import { knowsStop, standingAt } from '../src/sim/coast';
 import { atHome, stopReport } from '../src/sim/site';
-
-const CREW: JobId[] = ['farmer','farmer','woodcutter','hunter','builder','warrior'];
-
-/**
- * AUDIT ITEM 7: how this band decides to live.
- *
- * Every number this repo carries describes ONE strategy — settle early, work
- * the jobs, hold the line, trade until somebody will speak for you. Whether
- * the game supports a SECOND way of playing has never been tested, and
- * "there is more than one way to play" is a claim it has been making since
- * phase 4 without evidence either way.
- *
- * So the bot's opinions are a parameter now instead of constants scattered
- * through it. The settler is exactly what the harness has always been and
- * every figure in ROADMAP.md still means what it meant; the other two are
- * the honest alternatives a player would actually try.
- */
-interface Policy {
-  id: string;
-  /** How good a site has to be before the posts go in. */
-  siteFloor: number;
-  /**
-   * The day the band starts lowering that bar, or undefined to never lower it.
-   *
-   * OPT-IN, and undefined on every policy that existed before it, so no
-   * measurement in this file moves by adding it. A fixed floor is the one
-   * thing the settling bot does that no player does: winter comes on day 49,
-   * and a band still walking on day 40 does not hold out for good soil, it
-   * takes what it can get. Measured, the fixed floor of 9 fails to settle AT
-   * ALL in 45 of 120 seeds — the band dies on the road with the posts still
-   * in the boat.
-   */
-  relaxFrom?: number;
-  /** Last day a band still looking for a home turns aside for plunder. */
-  plunderWindow: number;
-  /** How far out it goes under arms once settled. Zero: it never does. */
-  raidReach: number;
-  /**
-   * How many of the sworn go out on an armed errand.
-   *
-   * Three was hard-coded, and it was never chosen: `raidTarget` only puts a
-   * CAMP on the list when the roster is five or more, so the bot picked
-   * targets sized for a full band and then sent half of one at them. Whether
-   * that is what breaks raiding or merely how this harness raids is the
-   * whole of task 31's first question, so it is a knob now.
-   */
-  raidParty: number;
-  /**
-   * Winters the band must have stood before it will go out under arms, and
-   * whether it only goes in the raiding season.
-   *
-   * Both were hard-coded in the bot and neither is a rule of the GAME —
-   * `launchBlocker` asks for a steading, a crew and provisions, and nothing
-   * else. So a measurement of "how often can the raider go" was more than
-   * half a measurement of the harness's own scruples: 53% of settled days
-   * failed on `wintersStood >= 1` alone. Knobs, so the question can be put
-   * to the game instead of to the bot.
-   */
-  raidAfterWinters: number;
-  raidInSeasonOnly: boolean;
-  /** Whether it will carry food out to make a friend on the coast. */
-  trades: boolean;
-  /**
-   * And whether it will do so as a matter of course rather than as a means to
-   * the Thing. OPT-IN, undefined everywhere it existed before.
-   *
-   * The bot's trade errand is gated on `!hasSpeakers` and a winter stood,
-   * because it goes to market to find somebody who will SPEAK for it, not to
-   * buy anything. That is a strategy, not a rule of the game — the only rule
-   * is `launchBlocker`, which still applies. So "the market is under-visited"
-   * has always been a statement about this file, and this flag is what lets
-   * the other reading be measured.
-   */
-  tradesFreely?: boolean;
-  /**
-   * And whether it will do so before it has stood a winter. Separate from
-   * `tradesFreely` on purpose: dropping both gates at once measures "trades
-   * more" and "trades earlier" as one number, and they are not the same
-   * claim — the first winter is exactly when a steading can least afford to
-   * send two of its hands away.
-   */
-  tradesEarly?: boolean;
-  /**
-   * A PLACEBO errand: walks to the counter and comes home having dealt
-   * nothing. It exists to separate the two ways a trade errand could cost a
-   * band — the goods it swaps, or simply the two pairs of hands that are not
-   * at home cutting wood while it is away. Those imply different fixes, so
-   * measuring them as one number answers neither.
-   */
-  tradesNothing?: boolean;
-  /**
-   * Trades, but never gives FIREWOOD away.
-   *
-   * The last thing that needs separating. The bot sells wood whenever it
-   * holds more than twelve nights of it, and twelve nights is a thin hedge
-   * against a winter — so "trading hurts" may be "this bot sells the wrong
-   * thing" rather than anything about the market. A player who reads the
-   * winter mark would not make that trade, and the harness should not be
-   * allowed to answer a design question on the strength of a bad habit.
-   */
-  keepsWood?: boolean;
-  /** Whether it falls on neighbours' camps as a matter of course. */
-  robsCamps: boolean;
-  /** What it raises, in the order it wants it. */
-  want: readonly string[];
-  /** What everyone does with their days. */
-  crew: readonly JobId[];
-  /**
-   * Whether this band will send the knarr back across the open sea.
-   *
-   * A policy flag rather than a hard rule so item 27's probe can run the same
-   * landings both ways — which is what separates "the voyage pays" from
-   * "bands that could afford one were doing well anyway".
-   *
-   * FALSE on every policy here, and that is a finding rather than an
-   * oversight. The bot models an average player, and item 27's probe measured
-   * an average player who sails doing WORSE: forced to take every crossing
-   * she could, a band went from 5 of 40 standing at day 400 to 3, and lived
-   * a fifth fewer days. A bot that sailed would be modelling bad play, and
-   * every published figure in this file would inherit it.
-   */
-  sails: boolean;
-  /**
-   * Sail in any season, not only spring. Not a strategy anybody should play —
-   * it is the FORCED arm of item 27's probe, which measures what a crossing
-   * is worth when the gate is not what is deciding.
-   */
-  sailAnySeason: boolean;
-  /**
-   * Days of food the steading keeps back before an armed errand goes out.
-   *
-   * Mine, not the game's — the game charges `provisionsFor(3)`, which is
-   * nine. The first cut of the raid errand added ten days of the steading's
-   * own eating on top as a safety buffer, and measured across three policies
-   * that buffer was met on ZERO target-days out of a thousand: a settled
-   * band in this game never has that much spare, so going out under arms
-   * could not happen for anybody. A settler keeps a cushion because he has a
-   * steading to feed. A raider does not: eating what you take is the whole
-   * of the strategy, and testing him with a farmer's caution measures the
-   * caution.
-   */
-  errandBuffer: number;
-  /**
-   * Whether the band drops its scruples once the game has told it, in so many
-   * words, that it cannot reach spring.
-   *
-   * `readiness()` ends a hopeless forecast with "What is left is taking it
-   * from somebody else, or walking out and wintering elsewhere" — and no
-   * policy here could do either before the first winter, because the trade
-   * gate wanted a winter already stood and the raid gate wanted both a reach
-   * and a food surplus a short band cannot have. So "the first winter is
-   * decided by the frost" was measured on a bot with no move to make, which
-   * is the harness's scruples again rather than the game's rules.
-   *
-   * When this is set, and only while the winter mark is visible AND
-   * `reachable` says no, the gates that are the BOT's caution come off. The
-   * gates that are the GAME's — `launchBlocker`, somebody left to keep the
-   * fire — stay exactly where they are.
-   */
-  desperate: boolean;
-  /**
-   * Whether the band goes onto short commons when the winter mark says it is
-   * short of food.
-   *
-   * A knob, so the lever can be measured against itself on the same seeds
-   * rather than argued about. `readiness()`'s two named ways out were
-   * measured this way and saved nobody; a lever that cannot beat that is not
-   * worth the save version it costs.
-   */
-  tightensBelt: boolean;
-  /**
-   * Whether the band ever moves a pair of hands off a job the season has
-   * emptied.
-   *
-   * AUDIT ITEM 7, and it started as an instrument fault rather than a design
-   * question. `ASSIGN` is a verb the player holds every day of the saga;
-   * until this knob existed the harness issued it ONCE, on settling day, and
-   * never again — the `jobsSet` one-shot below. So "is there anything to do
-   * in winter" could not be answered from any measurement this repo has
-   * ever taken, because the bot doing the measuring never did any.
-   *
-   * That matters most in the season it was never checked in. Winter forage
-   * is 0.15, so `seasonFactor` pays a farmer 0.15 of a day's work and a
-   * fisher 0.575 — and the settler crew is two farmers. Twenty-four days of
-   * two people standing in a frozen field, with the water right there.
-   */
-  recrews: boolean;
-  /**
-   * Whether the band moves hands onto whatever the winter mark says it is
-   * short of, day by day.
-   *
-   * A knob as of audit item 7, and it should have been one years ago. This
-   * is the loop the bot has run since the mark existed — everyone onto wood
-   * or onto food according to the forecast gap — and because it was
-   * unconditional, NOTHING in this file has ever measured what it is worth.
-   * It is the most consequential thing the harness does between settling and
-   * the frost and it sat below the bars, not on them.
-   */
-  crewsToNeed: boolean;
-  /**
-   * Whether the band walks out on a steading the verdict has written off.
-   *
-   * AUDIT ITEM 6. `readiness()` named this as a way out for a long time while
-   * it was not a verb, and when the promise was withdrawn the note said
-   * whether it SHOULD be one was a live question nothing had measured. This
-   * knob is how it gets measured, against the standard the escape hatch set:
-   * saved nobody, killed two.
-   */
-  retreats: boolean;
-
-  /**
-   * Walk out EARLY, the moment it is legal, if the ground scores below this.
-   *
-   * 9.14. `retreats` above triggers on the VERDICT, which fires around day 40
-   * — so every measurement of walking out so far has measured a band leaving
-   * in autumn with its summer already spent. That is not the case the verb
-   * was shipped for. src/data/retreat.ts says in as many words that it is
-   * "a verb for the OTHER case: ground you took too fast and want to be off
-   * before the summer is spent", and that "the harness cannot measure that
-   * one". This knob is the harness learning how.
-   *
-   * Undefined means never. A number means: at the first legal day, read the
-   * ground the posts went into and leave if it is worse than this.
-   */
-  retreatsBelow?: number;
-}
-
-/**
- * Move every food-hand onto whatever food job this site and this season
- * actually pay for.
- *
- * DELIBERATELY the smallest move a player could make from the panel they
- * already have, rather than an optimiser. It does not rebalance food against
- * firewood, does not touch the builder or the watch, and does not know
- * anything the steading screen does not show — it is one person noticing
- * that the fields are frozen and the fish are not. If a change this small
- * moves survival, the game has a lever nobody is told about; if it moves
- * nothing, winter genuinely has no work in it and item 7 stands.
- */
-/**
- * How good a site has to be TODAY.
- *
- * A flat `policy.siteFloor` unless the policy says to start lowering it, in
- * which case it gives up a point a week and never falls below the bottom of
- * "Hard ground" — the verdict the game itself writes as "it could be held, by
- * people with nothing better". Below that the game says "a place to die in,
- * slowly", and a band that would take THAT is not a player, it is a strawman.
- */
-/**
- * The two floors are on DIFFERENT SCALES, because the two countries were.
- *
- * `policy.siteFloor` was 9 of 25 and the hard floor 6, both read off the hex
- * map, where a foundable site totalled a mean of 7.6. A foundable stretch of
- * coast totals a mean of 13.4 — not because a coast is better ground but
- * because a coast is all HARBOUR, and only about one foundable hex site in
- * fifty is coastal at all. Carried over unchanged, a floor of 9 is met by
- * every stretch that will take posts and the bot's whole "hold out for good
- * ground" policy stops existing.
- *
- * Set at the same PERCENTILES of foundable ground, which is what the floor
- * actually means — 9 of 25 is about the 70th percentile of hex sites and 6 is
- * about the 20th. On 428 foundable stretches those land at 14 and 12.
- */
-const COAST_FLOOR = { site: 14, hard: 12 };
-
-
-function floorOn(day: number): number {
-  // A floor of nought is not a scale reading, it is the ABSENCE of a floor —
-  // "take the first legal ground" — and it means that on either map. Shifting
-  // it up with the rest turned the harness's rash arm into a band holding out
-  // for a 5, which is why its two arms measured the same run twice.
-  if (policy.siteFloor <= 0) return 0;
-  const base = policy.siteFloor + (COAST_FLOOR.site - 9);
-  const hard = COAST_FLOOR.hard;
-  if (policy.relaxFrom === undefined || day <= policy.relaxFrom) return base;
-  const given = Math.floor((day - policy.relaxFrom) / 7);
-  return Math.max(hard, base - given);
-}
-
-// --- Walking a line, for every bot below ---
-//
-// The harness's bots were written against `moveOptions` and `distance` and
-// there was nothing wrong with that until the coast became the default build
-// on 2026-08-28 — at which point every one of them stood still, because
-// `MOVE` is the hex map's verb and a line travels by `WALK` to a stop. What
-// they measured then was a band that never went anywhere: 14 of this file's
-// claims failed, and about half of those failures were the bot rather than
-// the game.
-//
-// Three helpers, so each rule below converts by swapping "nearest hex" for
-// "nearest stretch" and keeps its own reasoning intact.
-
-/** The stretch the band is on, or the steading's if they are settled at home. */
-function whereOn(state: GameState): number {
-  return standingAt(state);
-}
-
-/**
- * One step of the walk toward a stretch, or null if there is nowhere to go.
- *
- * `walkOptions` already knows what a day buys — one stretch on foot, up to
- * `SHIP_REACH` of them at the oars — so picking the option that ends nearest
- * the target IS the line's version of "move toward it".
- */
-function stepToward(state: GameState, target: number): Action | null {
-  const opts = walkOptions(state);
-  if (opts.length === 0) return null;
-  const best = opts.reduce((a, b) =>
-    daysBetween(state.seed, b, target) < daysBetween(state.seed, a, target) ? b : a);
-  return { type: 'WALK', to: best };
-}
-
-/** The nearest stretch the band knows of that answers `want`, within `days`. */
-function nearestStop(
-  state: GameState,
-  want: (stop: number) => boolean,
-  days: number,
-  from?: number,
-): number | null {
-  const here = from ?? whereOn(state);
-  let best: number | null = null;
-  let far = days;
-  for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-    if (stop === here || !knowsStop(state, stop) || !want(stop)) continue;
-    const d = daysBetween(state.seed, here, stop);
-    if (d < far) { far = d; best = stop; }
-  }
-  return best;
-}
-
-function recrew(state: GameState): number {
-  let moved = 0;
-  for (const p of state.party.people) {
-    if (!p.alive || !p.job) continue;
-    const current = jobById(p.job);
-    if (!current || current.produces !== 'food') continue;
-    let best = current;
-    for (const j of availableJobs(state)) {
-      if (j.produces !== 'food') continue;
-      if (output(state, p, j) > output(state, p, best)) best = j;
-    }
-    if (best.id !== p.job && assign(state, p.id, best.id)) moved += 1;
-  }
-  return moved;
-}
-
-/**
- * What the harness has always been, and every figure in ROADMAP.md still
- * describes: settle early, work the jobs, hold the line, trade until
- * somebody on the coast will speak for you.
- *
- * `raidReach: 0` — it does not go out under arms, and that is its IDENTITY
- * rather than a limitation. The raiding work of 2026-08-09 briefly gave it
- * armed sorties, and the long game answered immediately: jarldoms fell from
- * five in forty sagas to none, because a steading-first band that spends its
- * late summers away from the steading is not a steading-first band. Going
- * out under arms belongs to the policy built for it.
- */
-const SETTLER: Policy = {
-  id: 'settler',
-  siteFloor: 9,
-  /**
-   * And gives way as winter closes, which is the whole difference between a
-   * player and a search. Measured 2026-08-22: a FIXED floor of 9 never
-   * settled at all in 45 of 120 seeds and saw spring in 48; giving way from
-   * day 14 settles 98 and sees spring in 67, saved 20 against killed 1.
-   */
-  relaxFrom: 14,
-  plunderWindow: 24,
-  raidReach: 0,
-  raidParty: 0,
-  raidAfterWinters: 1,
-  raidInSeasonOnly: true,
-  trades: true,
-  robsCamps: false,
-  want: [
-    'longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade',
-    'storehouse', 'watchtower', 'meadhall', 'greathall', 'earthworks',
-    'hof', 'dock',
-    // The late work (9.11), last because it is: nothing reaches it in a
-    // first winter, and a bot that wanted it early would be measuring a
-    // strategy nobody can play.
-    'stonedyke', 'greathof', 'shiphowe',
-  ],
-  crew: CREW,
-  sails: true,
-  sailAnySeason: false,
-  errandBuffer: 6,
-  desperate: false,
-  // TIGHTENS. The lever measured saved 32 bands and killed 3 over 240 seeds,
-  // and it is signposted on the steading panel the moment the mark says the
-  // stores are short — so a competent player presses it, and a bot that
-  // represents competent play has to press it too or every figure in this
-  // file describes a game nobody plays. The cost of the flip is that the
-  // difficulty menu's spring odds are now the odds of the game AS PLAYED
-  // (Fair 73%, Even 45%) rather than a floor for a band that never reads its
-  // own winter mark, and `src/data/hardship.ts` was restated to match.
-  tightensBelt: true,
-  recrews: false,
-  crewsToNeed: true,
-  retreats: false,
-};
-
-/**
- * Takes what he needs. Holds out for better ground because he is in no
- * hurry, robs everything within reach on the way, and goes out under arms
- * all his life instead of carrying food to anybody.
- */
-const RAIDER: Policy = {
-  id: 'raider',
-  // Seven, not eleven. The first cut had him holding out for good ground,
-  // which is a strawman of his own strategy — a man who means to live off
-  // what he takes does not care what the soil is like, and `the first
-  // winter` has said since 6.1 that settling late is close to fatal. Testing
-  // him with a settler's site standards measured the delay, not the raiding.
-  siteFloor: 7,
-  plunderWindow: 40,
-  raidReach: 10,
-  raidParty: 6,
-  raidAfterWinters: 1,
-  raidInSeasonOnly: true,
-  trades: false,
-  robsCamps: true,
-  want: [
-    'longhouse', 'palisade', 'smokehouse', 'storehouse', 'watchtower',
-    'farmplots', 'bud', 'earthworks', 'meadhall', 'greathall', 'hof', 'dock',
-    // The late work (9.11), last because it is: nothing reaches it in a
-    // first winter, and a bot that wanted it early would be measuring a
-    // strategy nobody can play.
-    'stonedyke', 'greathof', 'shiphowe',
-  ],
-  // Two warriors, one hunter and a farmer could not feed six people, and it
-  // showed: TWENTY-EIGHT of twenty-eight raider deaths were hunger. A man
-  // who lives by taking still has to eat between takings, and the first cut
-  // of this policy was the site-floor strawman all over again — a strategy
-  // measured with a spec that could not carry it.
-  crew: ['warrior','hunter','hunter','farmer','woodcutter','builder'],
-  sails: true,
-  sailAnySeason: false,
-  errandBuffer: 2,
-  desperate: false,
-  tightensBelt: false,
-  recrews: false,
-  crewsToNeed: true,
-  retreats: false,
-};
-
-/**
- * Never leaves the palisade. Settles on the first thing that will take the
- * posts, builds walls before comforts, and answers everything with work.
- */
-const TURTLE: Policy = {
-  id: 'turtle',
-  siteFloor: 7,
-  plunderWindow: 0,
-  raidReach: 0,
-  raidParty: 0,
-  raidAfterWinters: 1,
-  raidInSeasonOnly: true,
-  trades: false,
-  robsCamps: false,
-  want: [
-    'longhouse', 'farmplots', 'palisade', 'smokehouse', 'watchtower',
-    'storehouse', 'earthworks', 'bud', 'meadhall', 'greathall', 'hof', 'dock',
-    // The late work (9.11), last for the same reason as the others.
-    'stonedyke', 'greathof', 'shiphowe',
-  ],
-  crew: ['farmer','farmer','farmer','woodcutter','builder','warrior'],
-  sails: true,
-  sailAnySeason: false,
-  errandBuffer: 0,
-  desperate: false,
-  tightensBelt: false,
-  recrews: false,
-  crewsToNeed: true,
-  retreats: false,
-};
-
-/**
- * The settler, exactly — until the winter mark tells him he is dead.
- *
- * Every field is SETTLER's but two, so a difference between the two runs is
- * the escape hatch and nothing else. He does not raid on principle, does not
- * hold out for better ground, does not trade earlier; he simply takes the
- * out the game itself names, at the moment the game names it.
- */
-const DESPERATE: Policy = {
-  ...SETTLER,
-  id: 'desperate',
-  // Four, because #34 measured that three is half a shield wall walking into
-  // a fight. A last throw that loses the sworn is not a lever.
-  raidParty: 4,
-  desperate: true,
-};
-
-const POLICIES = [SETTLER, RAIDER, TURTLE];
-
-/**
- * Which one is playing. Module-level for the same reason `settleNotBefore`
- * is — step() is called from a dozen places and only the policy sweep cares
- * — and reset in a finally, because a leaked value would silently rewrite
- * every figure in this file.
- */
-let policy: Policy = SETTLER;
-/**
- * How many hands the bot has moved between jobs since a test last zeroed it.
- *
- * The instrument bar for audit item 7: a re-crewing arm that never actually
- * re-crewed is the same run twice, and this file has shipped that mistake
- * before.
- */
-let recrewed = 0;
-/** How many steadings the bot has walked out on since a test zeroed it. */
-let walkedOut = 0;
-/**
- * The day the bot may settle again after walking out. PER RUN — reset at the
- * top of `run()`, unlike `settleNotBefore`, which a sweep sets deliberately
- * and holds across a whole sample.
- */
-let walkOutHold = 0;
-// NOTE: 'farmplots' has no hyphen. The first version of this list wrote
-// 'farm-plots', which matches no building, so that entry silently never
-// queued and the measured bot had been building three things while this file
-// claimed four. A búð is on the list because 6.2 gave the band a way to grow
-// and a harness that cannot grow reports growth as worthless — the same
-// mistake as the bot that would not fight back.
-/**
- * What an average player raises, in the order they want it.
- *
- * `greathall` and `earthworks` were missing until audit item 4, and that is
- * the whole of why sixty sagas never built one: the upgrade tier shipped
- * with `standsFor()` written for it, `replaces` enforced in `buildBlocker`,
- * and a bot that was never told the two buildings existed. The game side was
- * sound throughout — the measurement simply never asked. Same-commit rule,
- * broken quietly, and only visible once something counted what was reached.
- *
- * The upgrades sit after the basics they replace, which is also the order
- * `buildBlocker` enforces: a great hall needs a longhouse standing to
- * replace, and earthworks need a palisade.
- */
-
-
-/**
- * A competent-but-not-clairvoyant player: walks toward timber when the
- * woodpile is low, settles on the best ground it has actually seen, and
- * otherwise explores outward from the landing.
- */
-/**
- * Item 2's instrument: hold the band off settling until this day.
- *
- * Module-level rather than threaded through every call site because step()
- * is called from five places in this file and only one experiment cares.
- * Always reset in a finally — a leaked value would silently change the
- * curve, which is exactly the class of harness bug this file's header is
- * a monument to.
- */
-let settleNotBefore = 0;
-
-/**
- * Item 2's instrument: which of the four verbs the bot is allowed.
- *
- * `dash` is off, and that is a measured decision rather than an oversight —
- * see `test/wall.test.ts`, which prices it at a third of the wins and a
- * third of the survivors. Spending the turn's action to arrive sooner means
- * arriving alone and arriving having already acted. Kept as a toggle so the
- * claim stays executable.
- */
-// `shove` and `dash` were toggles here until 9.1b took both verbs. What is
-// left is the two the bot chooses between.
-const VERBS = { throw: true, defend: true };
-
-
-function step(state: GameState): Action {
-  if (state.event) {
-    return state.event.outcome ? { type:'DISMISS_EVENT' } : { type:'CHOOSE', index:0 };
-  }
-  if (state.aftermath) return { type:'DISMISS_AFTERMATH' };
-
-  // KEEP THE HALL. A hall pays its heart while it is kept and fades when it
-  // is not (9.12, sim/hall.ts), so a bot that never feasts measures a player
-  // who never noticed the rule — the worst case, reported as the ordinary
-  // one.
-  //
-  // UP HERE, and that is the whole of why it works. It was first written
-  // down in the long-game block near the bottom of this function, which
-  // `step` never reaches: every branch above it returns, so the bot held
-  // exactly zero feasts and every band past its third year read a heart of
-  // ZERO. It costs one action a season; a player does it the day it falls
-  // due and gets on with the year.
-  if (
-    state.settlement
-    && sinceKept(state) > KEPT_FOR
-    && canKeepHall(state)
-    && state.party.food > feastCost(state) * 2
-  ) {
-    return { type: 'KEEP_HALL' };
-  }
-  if (state.battle) {
-    if (state.battle.outcome) return { type:'B_LEAVE' };
-    if (!isWarbandTurn(state)) return { type:'B_END_TURN' };
-    const b = state.battle;
-    const me = b.combatants.find(c => c.personId === b.order[b.turnIndex]);
-    if (!me) return { type:'B_END_TURN' };
-    const foes = b.combatants.filter(c => c.side === 'foe' && !c.down && !c.fled);
-    if (foes.length === 0) return { type:'B_END_TURN' };
-    // Nearest is no longer a distance. The man you meet first is the one
-    // furthest up his own line, which on a line that closes up is rank 1.
-    const near = foes.reduce((a, c) => (c.rank < a.rank ? c : a), foes[0]!);
-    // The game gained the war-cry, so the bot cries it in the same commit.
-    // The average player spends the leader's action on it when the press is
-    // real — two or more foes in earshot — and never on a stray skirmisher.
-    if (!me.hasActed && !b.warCried && !me.broken
-      && me.personId === leaderOf(state.party.people)?.id
-      && foes.filter(f => Math.abs(f.rank - me.rank) <= WARCRY_RANGE).length >= 2) {
-      return { type:'B_WARCRY' };
-    }
-    // --- Audit item 2: the four verbs this harness had never issued. ---
-    //
-    // B_THROW, B_SHOVE, B_DEFEND and B_DASH were in the engine, in the UI
-    // and in nobody's measurement: over sixty sagas the bot produced not one
-    // of them. Every claim this repo makes about combat balance was a claim
-    // about a bot playing two thirds of the game — and by its own oldest
-    // rule, a capability the bot cannot use is measured as worthless. Two of
-    // the four were measured and then REMOVED (9.1b); the rules for them are
-    // gone from below, and the record of what they were worth is in
-    // sim/footwork.ts.
-    //
-    // Each rule below is the narrow case where an average player reaches for
-    // the verb, not the case that flatters it.
-
-    // A SHOVE rule stood here, and 9.1b took the verb. It had been corrected
-    // once already — the ported hex rule fired on the half of the verb that
-    // does nothing on a line — and even corrected it fired 6 times in 30
-    // sagas and the arena priced it at 47/60 wins against 47/60 without it.
-    // Everything below used to be gated on `distance(near.at, me.at)`, and
-    // since 8.1c that number means nothing: `Combatant.at` is frozen at
-    // wherever a fighter deployed and never moves again, so the gates were
-    // reading a hex that no longer describes where anybody is. The verbs
-    // themselves had already been converted, which made this worse rather
-    // than better — a rank-aware `reachTargets` behind a gate measuring
-    // stale geometry is a harness that measures noise and reports it as
-    // balance. So the gates ask the same question the game asks now: what
-    // can I actually touch from where I am standing?
-    //
-    // The priority ORDER is deliberately unchanged, so the numbers this file
-    // holds move because the battlefield moved and not because the bot
-    // started playing a different game. "At arm's length" was the old gate's
-    // real meaning, and its rank spelling is simply `strikeTargets`.
-    const inReach = strikeTargets(state);
-
-    // The game gained the second rank, so the bot fights from it in the same
-    // commit. Nothing at arm's length and a mate in front of a foe: thrust.
-    // A harness that cannot use a formation reports the formation as
-    // worthless, which is the oldest lesson in this file.
-    if (!me.hasActed && inReach.length === 0) {
-      const spear = reachTargets(state);
-      if (spear.length > 0) {
-        const marked = spear.find(f => f.personId === b.champion) ?? spear[0]!;
-        return { type:'B_REACH', targetId: marked.personId };
-      }
-    }
-
-    // THROW. Out of arm's length with nothing to thrust past, the turn's
-    // action is otherwise spent on nothing at all — so a spear that is
-    // carried once and thrown once goes now. Strictly free on an approach
-    // turn, which is exactly why never issuing it was a measurement bug
-    // rather than a strategy.
-    if (VERBS.throw && !me.hasActed && inReach.length === 0) {
-      const shots = throwTargets(state);
-      if (shots.length > 0) {
-        const marked = shots.find(f => f.personId === b.champion) ?? shots[0]!;
-        return { type:'B_THROW', targetId: marked.personId };
-      }
-    }
-    if (!me.hasActed && inReach.length > 0) {
-      // The game gained named leaders, so the bot hunts them in the same
-      // commit: dropping the champion shakes his whole band, and now that he
-      // SURVIVES a field he did not die on, killing him is the only way he
-      // stops coming back. An average player goes for the man with the
-      // pennant when he is in reach.
-      const marked = inReach.find(f => f.personId === b.champion);
-      return { type:'B_STRIKE', targetId: (marked ?? inReach[0] ?? near).personId };
-    }
-
-    // A DASH rule stood here, and it changed my mind three times: a trap on
-    // hexes (11 bands seeing spring became 8, because spending the action to
-    // arrive sooner means arriving ALONE and already spent), not a trap on a
-    // line, and then not a verb at all. 9.1b took it, and what it did — a man
-    // who can reach nothing with anything shoulders forward — is now the line
-    // closing itself at the top of the turn, for both sides, whether or not
-    // any bot thinks to ask.
-    // The move scorer stood here. It weighed ground — closing at 4 a hex
-    // against shoulders at 3 a mate, and never standing on your own
-    // palisade — and there is no ground left to weigh: a fighter's only
-    // choice about where to be is which rank, and changing it is the dash
-    // above. What the scorer was really buying, a band that arrives
-    // together rather than one man at a time, the line now gives for free.
-
-    // DEFEND. In position, nothing left to do, and they are coming — which
-    // is the whole case for a shield. The bot used to end this turn having
-    // done nothing at all, and "nothing" is strictly worse than "set the
-    // shield", so this rule cannot cost anything and can only have been
-    // missing because nobody looked. On the line "they are coming" is not a
-    // distance: it is standing where there is something to set a shield
-    // against, which is the front two and nowhere else.
-    if (VERBS.defend && !me.hasActed && canActFrom('defend', me.rank)) {
-      return { type:'B_DEFEND' };
-    }
-
-    return { type:'B_END_TURN' };
-  }
-
-  const days = state.party.food / Math.max(1, foodPerDay(state));
-  const nights = state.party.firewood / Math.max(1, firewoodPerNight(state));
-
-  // The game gained the ship's way in, so the bot takes it in the same
-  // commit. Off the water it is strictly the better approach when you mean
-  // to win — fewer of them, shaken, and a bigger hold — so an average
-  // player afloat beside a place takes it from the boat.
-  if (strandTarget(state) && sworn(state.party.people).length >= 4) {
-    return { type:'STRANDHOGG' };
-  }
-
-  // A counter under our feet and a hole in the stores: deal rather than
-  // draw. The town and the house will trade as often as you like and only
-  // once you have not robbed them, so an average player short of one thing
-  // and long on the other buys what he needs and leaves them standing.
-  const dealHere = placeHere(state);
-  if (dealHere && dealHere.sackedOn === undefined) {
-    for (const offer of offersAt(state, dealHere.id)) {
-      if (tradeBlocker(state, dealHere.id, offer.id) !== null) continue;
-      // Standing at a counter with something to spare, an average player
-      // deals — the first cut also demanded they be SHORT of what was on
-      // offer, which is narrower than anyone actually is, and left the whole
-      // market system firing twice in sixty sagas.
-      if (policy.keepsWood && offer.give === 'firewood') continue;
-      const spare = offer.give === 'food' ? days > 12 : nights > 12;
-      if (spare && !policy.tradesNothing) {
-        return { type:'TRADE_AT', id: dealHere.id, offer: offer.id };
-      }
-    }
-  }
-
-  // A place worth taking, under our feet, still standing: take it. The rule
-  // that put this here is the same one that taught the bot to swing — the
-  // game gained raidable places, so the bot raids them in the same commit,
-  // or the measurement reports them as worthless. Soft targets always; the
-  // garrisoned town only with a full-strength band and food to fight on —
-  // item 10's offensive half, because a bot that never fights FOR anything
-  // measures the whole plunder game as worthless.
-  const mighty = sworn(state.party.people).length >= 5 && days >= 3;
-  const here2 = placeHere(state);
-  if (here2 && here2.sackedOn === undefined) {
-    const def = placeKind(here2.kind);
-    if (def.garrison === null || def.garrison <= 1 || mighty) {
-      return { type:'SACK_PLACE', id: here2.id };
-    }
-  }
-
-  // Standing on a camp with something in it, under arms, strong enough to
-  // take it: take it. This is what "living by raiding" MEANS, and until now
-  // the bot only ever fell on anybody when it was three days from starving
-  // — a desperation rule wearing a strategy's name, which is why even the
-  // raider policy sacked 0.3 camps a saga.
-  const host = neighbourHere(state);
-  // WHO IS ACTUALLY THERE, not who is on the roster.
-  //
-  // `sworn(state.party.people)` counts the whole band, including everyone
-  // sitting at home — so a TRADING party of two, walking past a camp on its
-  // way to a counter, passed a test about six people and stormed the place
-  // with two. This file's own launch rule says what that is worth: 9% won
-  // with three, 47% with six, "half a shield wall walking into a fight".
-  //
-  // It hardly bit on the hex map, where an errand rarely passes a camp at
-  // all. A coast puts every camp on the only road there is, so the raider
-  // measured 3.1 of ours against 3.3 of theirs and won 30%, against 5.1 and
-  // 63% on the map — both sides scaling together, so it was never the odds.
-  // It was the wall.
-  const outWith = sworn(fieldCrew(state)).length;
-  if (host && policy.robsCamps && canFallOn(state, host.id)
-      && outWith >= 4
-      && campStores(state, host.sackedOn) >= CAMP_WORTH) {
-    return { type:'FALL_ON', id: host.id };
-  }
-
-  // Starving on a cold doorstep: the average player robs it before they die.
-  // Friends stay friends — this only fires on a camp that already dislikes
-  // the band, when there are under three days of food left.
-  if (host && days < 3 && host.standing < 10 && canFallOn(state, host.id)) {
-    return { type:'FALL_ON', id: host.id };
-  }
-
-  // --- The long game, which this harness could not previously reach ---
-  //
-  // Everything below is the endgame the bot had never once played: it never
-  // bartered, never called a Thing, never ruled. Item 9 measures the years
-  // after the second winter, and a harness that cannot GET there measures
-  // nothing — the same lesson as the bot that would not swing.
-
-  // Proclaimed: keep the rule rather than closing the saga. A bot that lays
-  // it down is a bot that ends its own run, which is the opposite of what
-  // the long game is for.
-  if (state.jarl && state.flags['ruleTaken'] === undefined) return { type:'RULE_ON' };
-
-  // The claim, the moment it is takeable. It costs three days and a feast,
-  // and the bot walks into whatever odds it has, as an ordinary player does.
-  if (canCallThing(state)) return { type:'CALL_THING' };
-
-  if (state.settlement) {
-    // Out on an errand. Which errand decides everything below, because the
-    // two are opposites: one carries food in to make a friend, the other
-    // takes a place off the coast and is remembered for it.
-    const out = state.expedition;
-    if (out) {
-      if (out.purpose === 'explore') {
-        // Walking the country to find out what is in it. Aims at the
-        // nearest ground nobody has stood on, which is what turns fog into
-        // a place worth coming back for.
-        if (!out.returning && (raidWorth(state, policy.raidReach)
-            || state.day - out.launchedOn >= RAID_DAYS)) {
-          return { type:'TURN_HOME' };
-        }
-        const homeStop = state.settlement.stop ?? 0;
-        const stops = walkOptions(state);
-        if (stops.length === 0) return { type:'CAMP' };
-        const fresh = (stop: number) => (knowsStop(state, stop) ? 0 : 1);
-        const pick = out.returning
-          ? stops.reduce((a, b) =>
-              daysBetween(state.seed, b, homeStop) < daysBetween(state.seed, a, homeStop) ? b : a)
-          : stops.reduce((a, b) => {
-              const sa = fresh(a) * 6 + daysBetween(state.seed, a, homeStop);
-              const sb = fresh(b) * 6 + daysBetween(state.seed, b, homeStop);
-              return sb > sa ? b : a;
-            });
-        return { type: 'WALK', to: pick };
-      }
-
-      if (out.purpose === 'fish') {
-        // Out to the fishing. Three things, in order: work the ground under
-        // us while it is worth working, come home when it is not, and
-        // otherwise row for the nearest one we know.
-        // A line is never "at sea" — the sea is off every stretch — so
-        // what the crew is standing on is a stretch with a ground off it.
-        const at = whereOn(state);
-        if (!out.returning && groundAtStop(state.seed, at)
-          && abundance(state, 'fish') > 0.5 && canFish(state)) {
-          return { type: 'FISH' };
-        }
-        const near = nearestStop(state, (stop) => groundAtStop(state.seed, stop), 40);
-        if (!out.returning && (near === null || state.day - out.launchedOn >= FISH_DAYS)) {
-          return { type: 'TURN_HOME' };
-        }
-        const aim = out.returning ? (state.settlement.stop ?? 0) : near!;
-        return stepToward(state, aim) ?? { type: 'CAMP' };
-      }
-
-      if (out.purpose === 'raid') {
-        // Standing on the prize: take it. (Afloat BESIDE it is handled far
-        // above, by the strandhögg rule, which fires wherever it is legal.)
-        const under = placeHere(state);
-        if (under && under.sackedOn === undefined) return { type:'SACK_PLACE', id: under.id };
-        // A holed hull rows at half pace and is mended by a night ashore.
-        // A bot that will not mend her measures the sea at half speed and
-        // reports the sea as slow.
-        if (holed(state.ship) && !atSea(state)) return { type:'CAMP' };
-        const mark = raidTargetOn(state);
-        if (!out.returning && (!mark || state.day - out.launchedOn >= RAID_DAYS)) {
-          return { type: 'TURN_HOME' };
-        }
-        const aim = out.returning ? (state.settlement.stop ?? 0) : mark!.stop;
-        return stepToward(state, aim) ?? { type: 'CAMP' };
-      }
-
-      const host = neighbourHere(state);
-      if (host && bargainBlocker(state, host.id) === null) return { type:'BARTER', id: host.id };
-      // Standing at a counter: deal. This is the other half of the errand
-      // and it did not exist — the bot could reach a market only by walking
-      // over one on its way to a camp, and would then walk past it.
-      const counter = placeHere(state);
-      if (counter) {
-        for (const offer of offersAt(state, counter.id)) {
-          if (tradeBlocker(state, counter.id, offer.id) === null) {
-            if (policy.keepsWood && offer.give === 'firewood') continue;
-            if (!policy.tradesNothing) {
-              return { type:'TRADE_AT', id: counter.id, offer: offer.id };
-            }
-          }
-        }
-      }
-      if (!out.returning && state.day - out.launchedOn >= 20) return { type:'TURN_HOME' };
-      const homeStop = state.settlement.stop ?? 0;
-      const aimStop = out.returning ? homeStop : (counterStopOn(state) ?? homeStop);
-      return stepToward(state, aimStop) ?? { type: 'CAMP' };
-    }
-
-    // A jarldom needs somebody on this coast who will speak for us, and
-    // nobody makes a friend from indoors. Sends two out with food to spare,
-    // and only when there is genuinely a surplus to carry. First, because
-    // the Thing is what a run is FOR and raiding is what costs you it.
-    // Cornered: the mark is on screen and `reachable` has said no. Only the
-    // bot's own caution comes off here — `launchBlocker` still rules.
-    const cornered = policy.desperate
-      && !!state.settlement
-      && markVisible(state)
-      && !reachable(state);
-
-    // A band that trades freely wants the counter itself, so neither the
-    // speakers it already has nor the winter it has not yet stood stops it.
-    const stoodOne = wintersStood(state.day) >= 1 || cornered;
-    const wantsMarket = policy.tradesFreely
-      ? (policy.tradesEarly || stoodOne)
-      : (!hasSpeakers(state) && stoodOne);
-    if (policy.trades && wantsMarket && counterStopOn(state) !== null) {
-      const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
-      // A band that has been told it will not see spring does not keep a
-      // fortnight's eating back before going to buy food with it.
-      const spare = cornered ? provisionsFor(2) : provisionsFor(2) + BARTER_FOOD * 3 + foodPerDay(state) * 7;
-      if (crew.length === 2
-        && state.party.food > spare
-        && launchBlocker(state, crew) === null) {
-        return { type:'LAUNCH', members: crew, purpose: 'trade' };
-      }
-    }
-
-    // Going out under arms — the errand this harness had NEVER once run.
-    //
-    // The audit's first finding: `moveOptions` returns nothing for a settled
-    // band, so an expedition is the only door back onto the map, and behind
-    // it lay three sea days, one sea fight and zero strandhöggs in sixty
-    // sagas. Hull damage, cargo over the side, the authored sea decks and
-    // the strandhögg itself were all shipped unmeasured — the same-commit
-    // rule broken by the very feature that named it.
-    //
-    // An average player with a full band, a full store and a fat monastery
-    // still standing down the coast goes and takes it. Gated behind the
-    // trade errand above, because a friend is what the Thing needs and
-    // steel is what costs you one.
-    //
-    // Two constraints that are right whatever they do to the numbers, and
-    // the first cut of this had neither. It sent three of six away for up
-    // to twenty-four days whenever a target was known — including through
-    // autumn, with the winter mark unmet — and the curve fell 67/30/8 to
-    // 60/27/7 while the fair country's long game went 161 days to 115. That
-    // is not the sea being a bad bargain; that is a bot doing something no
-    // average player does. The expedition harness has said since 4.2 that
-    // emptying the steading kills.
-    //
-    // So: only in the growing half of the year, when there is time to be
-    // back before the mark matters, and only for something close enough to
-    // be a raid rather than a voyage.
-    const season = seasonOf(state.day);
-
-    // THE VOYAGE HOME, which no bot has ever taken.
-    //
-    // `sailForHome` has existed since the ship became a place and the harness
-    // has never once issued it, so everything behind it — the crossing, what
-    // she brings back, the season without those hands — is unmeasured. The
-    // door is not shut, unlike the sea before the fishing errand: 'home'
-    // rides the same picker as trade and raid. The bot simply never reached
-    // for it.
-    //
-    // An average player sends her when the hall is established and there is
-    // food enough to feed it through a season two hands short. In SPRING, so
-    // she is back before the year turns — CROSSING is 78 days, and a keel
-    // that leaves in autumn is a keel that is somewhere else when the mark
-    // matters.
-    // AUTUMN, not spring, and the season is the bot's tactic rather than the
-    // game's rule. Two measurements decided it. The store is at its thinnest
-    // in spring — a median of 13 food on a day she could otherwise have gone
-    // — and at its fullest after the harvest. And a crew at sea is off the
-    // ration, so sending two away over winter sheds two mouths through the
-    // season that kills, and gets them back in summer with the growing still
-    // to come. Spring departure does the opposite of both.
-    if (policy.sails
-        && (season === 'autumn' || policy.sailAnySeason)
-        && wintersStood(state.day) >= 1) {
-      const crew = sworn(state.party.people).slice(0, 2).map(p => p.id);
-      if (crew.length >= 2 && sailBlocker(state, crew) === null) {
-        return { type:'LAUNCH', members: crew, purpose: 'home' };
-      }
-    }
-
-    // THE FISHING ERRAND, and it is asked before every other errand because
-    // it answers the thing that actually kills bands.
-    //
-    // The diagnostic that produced it: on 4492 days a settled band had a
-    // known fishing ground within two hexes, and worked one on almost none
-    // of them — 2747 of those days it was well fed, and on 1617 it was
-    // SETTLED AND COULD NOT MOVE. `moveOptions` returns nothing once the
-    // posts are in, so the sea is not declined by a settled band, it is
-    // unreachable to one. Starvation is the cause of eleven endings in
-    // twenty. The larder was out there and the door was shut.
-    //
-    // Small crew, and only while genuinely short. The lesson written above
-    // holds and is not weakened here: emptying the steading kills, and a
-    // fishing trip that costs the hall its hands through harvest would be a
-    // worse bargain than the hunger it answers.
-    //
-    // The two constraints written above for the raid errand apply here and
-    // the first cut of this had NEITHER — it launched whenever the store fell
-    // under eight days, in any season, for a ground up to seven hexes out.
-    // Measured, that cost As It Lies thirteen points of its spring odds
-    // (63% to 50%), which is the same failure the raid errand had and the
-    // same one the expedition harness has been saying since 4.2: emptying
-    // the steading kills. A larder on the water does not repeal it.
-    //
-    // So: genuinely short rather than merely not full, close enough to be a
-    // day's row rather than a voyage, and not in the half of the year when
-    // the hands are what stands between the hall and the mark.
-    const fedDays = state.party.food / Math.max(1, foodPerDay(state));
-    const growing = season === 'spring' || season === 'summer';
-    if (fedDays < 5 && growing) {
-      const ground = nearestStop(
-        state,
-        (s) => groundAtStop(state.seed, s),
-        5,
-        state.settlement!.stop ?? 0,
-      );
-      const boat = sworn(state.party.people).slice(0, 2).map(p => p.id);
-      if (ground !== null && boat.length >= 2 && launchBlocker(state, boat) === null) {
-        return { type:'LAUNCH', members: boat, purpose: 'fish' };
-      }
-    }
-
-    const inSeason = growing;
-    // Nothing known worth taking, and a band that lives by taking. The
-    // knowledge economy from item 1 hands the country out over a TRADING
-    // counter, so a policy that will not trade is blind — measured, the
-    // raider knew 0.11 of four places against the settler's 0.47 and could
-    // not launch a single armed errand in a thousand target-days. The game
-    // has had an `explore` purpose since 4.2 and no bot ever used it.
-    const oldEnough = wintersStood(state.day) >= policy.raidAfterWinters || cornered;
-    const seasonOk = inSeason || !policy.raidInSeasonOnly || cornered;
-    // A settler's reach is zero because he does not go out under arms. A
-    // settler who has been told he is dead by spring has a reach.
-    const reach = cornered ? Math.max(policy.raidReach, 8) : policy.raidReach;
-    const buffer = cornered ? 0 : policy.errandBuffer;
-    if (reach > 0 && oldEnough && seasonOk
-        && !raidWorth(state, reach)) {
-      const scouts = sworn(state.party.people).slice(0, 2).map(p => p.id);
-      if (scouts.length === 2
-        && state.party.food > provisionsFor(2) + foodPerDay(state) * buffer
-        && launchBlocker(state, scouts) === null) {
-        return { type:'LAUNCH', members: scouts, purpose: 'explore' };
-      }
-    }
-
-    if (reach > 0 && oldEnough && seasonOk
-        && raidWorth(state, reach)) {
-      // The band takes its WALL now, not a detachment of it. Hands hold the
-      // yard (see `standAtHome`), so the sworn are free to go — and #34 says
-      // the width of the line is the whole of whether the errand is worth
-      // flying: 9% won with three, 47% with six. Three was never a raiding
-      // party, it was half a shield wall walking into a fight.
-      const want = policy.raidParty;
-      const crew = sworn(state.party.people).slice(0, want).map(p => p.id);
-      // The surplus that funds the errand, counted in DAYS the steading can
-      // feed itself rather than in sacks. A flat "+55" was calibrated for a
-      // band of exactly six, and item 3's growth broke it silently: more
-      // mouths meant the threshold was never met, the errand stopped
-      // launching, and the sea went back to nought — the exact content item
-      // 1 had just made reachable, undone by a constant in the bot.
-      // Take as many as will go rather than an exact count: `launchBlocker`
-      // owns the "somebody has to keep the fire" rule, and a band down to
-      // four sworn should still be able to raid with four.
-      if (crew.length >= Math.min(3, want)
-        && state.party.food > provisionsFor(crew.length) + foodPerDay(state) * buffer
-        && launchBlocker(state, crew) === null) {
-        return { type:'LAUNCH', members: crew, purpose: 'raid' };
-      }
-    }
-    return { type:'CAMP' };
-  }
-
-  // Settle on anything workable rather than holding out for perfection.
-  if (canFound(state) && state.day >= settleNotBefore
-    && state.day >= walkOutHold) {
-    // READ THE GROUND THE SIM IS STANDING ON. This asked `siteReport` of
-    // `party.at` until the coast arrived, and on a line that was the frozen
-    // landing hex — so the bot's whole settling floor was being applied to a
-    // stretch it was nowhere near.
-    const r = stopReport(state.seed, whereOn(state));
-    if (r.total >= floorOn(state.day)) return { type:'FOUND' };
-  }
-
-  const at = whereOn(state);
-  const country = stopAt(state.seed, at).country;
-  if (nights < 6 && (country === 'forest' || country === 'hills' || country === 'valley')) {
-    return { type:'CAMP' };
-  }
-
-  // THE FISHING GROUND, asked before the land verbs for the reason the hex
-  // arm gives below: the order was the constraint, not the reach. On a line
-  // there is no "at sea" to be in — the sea is off every stretch — so what
-  // is worth walking to is a stretch with a GROUND off it.
-  const shortOfFood = days < 6;
-  if (shortOfFood && groundAtStop(state.seed, at) && canFish(state)) return { type:'FISH' };
-  if (shortOfFood) {
-    const ground = nearestStop(state, (s) => groundAtStop(state.seed, s), 8);
-    if (ground !== null) {
-      const go = stepToward(state, ground);
-      if (go) return go;
-    }
-  }
-  if (days < 4 && canGather(state)) return { type:'FORAGE' };
-  if (days < 4 && canFish(state)) return { type:'FISH' };
-
-  if (walkOptions(state).length === 0) return { type:'CAMP' };
-
-  // Short on food with a soft larder in sight: the average player robs it.
-  if (days < 5) {
-    const larder = nearestStop(state, (s) => state.world.places.some((p) => {
-      if ((p.stop ?? 0) !== s || p.sackedOn !== undefined) return false;
-      const def = placeKind(p.kind);
-      return !(def.garrison !== null && def.garrison > 1) && def.loot.food > 0;
-    }), 14);
-    if (larder !== null) {
-      const go = stepToward(state, larder);
-      if (go) return go;
-    }
-  }
-
-  // Wealth in sight and the strength to take it, on the same clock as the
-  // hex arm: an average player plunders ON THE WAY to a steading.
-  if (!state.settlement && mighty && state.day < policy.plunderWindow) {
-    const mark = nearestStop(state, (s) => state.world.places.some(
-      (p) => (p.stop ?? 0) === s && p.sackedOn === undefined,
-    ), 12);
-    if (mark !== null) {
-      const go = stepToward(state, mark);
-      if (go) return go;
-    }
-  }
-
-  // Actually go and look for somewhere to live: among coast we have SEEN,
-  // the nearest stretch that would take the posts and reads above the hard
-  // floor.
-  const site = nearestStop(state, (s) => {
-    const probe = { ...state, party: { ...state.party, stop: s } } as GameState;
-    return canFound(probe)
-      && stopReport(state.seed, s).total >= COAST_FLOOR.hard;
-  }, 40);
-  if (site !== null) {
-    const go = stepToward(state, site);
-    if (go) return go;
-  }
-
-  // Nothing worth stopping for yet: push ON UP THE COAST, which is the
-  // line's version of pushing into the dark, favouring wood when short.
-  // Outward rather than either way, because a stretch already walked has
-  // been read and going back over it learns nothing.
-  const opts = walkOptions(state);
-  const score = (stop: number) =>
-    (nights < 8 ? terrainDef(stopAt(state.seed, stop).country).wood * 6 : 0)
-    + stop
-    + (hasTrod(state, stop) ? -4 : 0);
-  return { type: 'WALK', to: opts.reduce((a, b) => (score(b) > score(a) ? b : a)) };
-}
-
-/**
- * How full a camp's stores must be before it is worth the walk and the
- * reprisal. Below this they were robbed too recently to have put anything
- * back — see CAMP_REGROW.
- */
-const CAMP_WORTH = 0.6;
-
-
-/**
- * And how long they give the errand before turning for home regardless.
- *
- * Ten, not twenty. At twenty a sortie ran TWENTY-FOUR days door to door with
- * half the band away — a season, not a raid — and the expedition harness has
- * said since 4.2 that emptying the steading kills. Shortening it took trips
- * from 23.9 days to 15.7 and doubled how many a band manages.
- *
- * Worth recording that it did NOT fix raiding: sackings stayed at 1.9 a
- * saga either way, because most sorties come home empty. Trip length was
- * not the binding constraint, and the thing that is has not been found yet.
- */
-const RAID_DAYS = 10;
-/** A fishing trip is an errand of days, not a fortnight. See the fish case. */
-const FISH_DAYS = 6;
-
-/**
- * WHERE TO GO, ADDRESSED BY STRETCH.
- *
- * Three finders stood here — `raidTarget`, `nearestFriendable` and
- * `nearestMarket` — all ranking by `distance(x.at, ...)` and gating on
- * `world.seen[key(x.at)]`. On a line every one of those `at`s was the
- * placeholder hex, so every distance was zero, every `seen` lookup was
- * undefined, and all three returned null. That is why the raider never went
- * out under arms and the trader struck no deals at all: not a game with
- * nothing in it, a bot asking for a coordinate the game had stopped using.
- * The hex three went with the hexes in 8.5.
- *
- * `within` carried over unchanged, and it is the same number in the same
- * unit: a hex WAS a day's walk, and `daysBetween` is days.
- */
-function raidTargetOn(
-  state: GameState,
-  within = policy.raidReach + 4,
-): { id: string; stop: number } | null {
-  const home = state.settlement;
-  if (!home) return null;
-  const from = home.stop ?? 0;
-  const strong = sworn(state.party.people).length >= 5;
-  let best: { id: string; stop: number } | null = null;
-  let bestScore = within;
-  if (strong) {
-    for (const n of state.neighbours) {
-      if (!n.found || n.stop === undefined) continue;
-      if (campStores(state, n.sackedOn) < CAMP_WORTH) continue;
-      const d = daysBetween(state.seed, n.stop, from);
-      if (d < bestScore) { bestScore = d; best = { id: n.id, stop: n.stop }; }
-    }
-  }
-  for (const p of state.world.places) {
-    if (p.sackedOn !== undefined) continue;
-    const stop = p.stop ?? 0;
-    if (!knowsStop(state, stop)) continue;
-    const def = placeKind(p.kind);
-    if (def.loot.food <= 0 && def.loot.firewood <= 0) continue;
-    if (def.garrison !== null && def.garrison > 1 && !strong) continue;
-    const d = daysBetween(state.seed, stop, from);
-    if (d >= within) continue;
-    // No `seaApproach` bonus: on a line there is no water to come out of.
-    // Rowing is a STEP, not a state, so every prize on this coast is already
-    // reachable by ship if the hull is sound — `walkOptions` says so.
-    if (d < bestScore) { bestScore = d; best = { id: p.id, stop }; }
-  }
-  return best;
-}
-
-/**
- * Is there a prize worth going out for? Asked of whichever country this is.
- *
- * The three gates that gate LAUNCHING a raid all called `raidTarget`, which
- * returns null on a line for the reason above — so the harness reported "the
- * raider never went out under arms at all" and read a whole way of playing as
- * unreachable.
- */
-function raidWorth(state: GameState, within?: number): boolean {
-  return raidTargetOn(state, within) !== null;
-}
-
-/** Where a trade errand should go, as a stretch. */
-function counterStopOn(state: GameState): number | null {
-  const here = whereOn(state);
-  let best: number | null = null;
-  let bestD = 99;
-  const weigh = (stop: number) => {
-    const d = daysBetween(state.seed, stop, here);
-    if (d < bestD) { bestD = d; best = stop; }
-  };
-  for (const n of state.neighbours) {
-    if (n.standing >= 25 || !n.found || n.stop === undefined) continue;
-    weigh(n.stop);
-  }
-  for (const p of state.world.places) {
-    if (p.sackedOn !== undefined) continue;
-    const stop = p.stop ?? 0;
-    if (!knowsStop(state, stop)) continue;
-    if ((placeKind(p.kind).market ?? []).length === 0) continue;
-    weigh(stop);
-  }
-  return best;
-}
-
-/**
- * Plays one seed until it dies or reaches `maxDay`, and hands back the state.
- *
- * Deliberately a fresh run per milestone rather than one pass with snapshots.
- * The snapshot version was written first and disagreed with this one by forty
- * points, which is a good reminder that a harness is code and can be wrong in
- * exactly the direction that flatters whatever it is measuring.
- */
-function run(
-  seed: string,
-  maxDay: number,
-  /** Called with every state transition, for measurements the tally misses. */
-  watch?: (before: GameState, after: GameState) => void,
-  hardship: HardshipId = 'even',
-  /**
-   * Run once on the fresh world, before the first turn. For planting the
-   * things a challenge code carries — a ghost's ruin — which `newGame` cannot
-   * know about because they come from somebody else's saga.
-   */
-  prepare?: (state: GameState) => void,
-): GameState {
-  let state = structuredClone(newGame(seed, hardship));
-  if (prepare) prepare(state);
-  let jobsSet = false;
-  walkOutHold = 0;
-  /** Which season the current crew was picked for. */
-  let crewedFor = '';
-
-  for (let i = 0; i < 6000 && !state.end && state.day <= maxDay; i += 1) {
-    // WALKING OUT, and it is taken before anything else the day would do:
-    // there is no sense crewing or queueing a steading the band is leaving.
-    // WALKING OUT EARLY (9.14), on the ground rather than on the verdict.
-    // Taken before the verdict branch below so a policy carrying both leaves
-    // on the reading it can act on soonest.
-    if (policy.retreatsBelow !== undefined && state.settlement && canAbandon(state)
-      && stopReport(state.seed, state.settlement.stop ?? 0).total < policy.retreatsBelow) {
-      abandonSteading(state);
-      walkedOut += 1;
-      walkOutHold = state.day + 6;
-    }
-
-    if (policy.retreats && state.settlement && markVisible(state)
-      && !reachable(state) && canAbandon(state)) {
-      abandonSteading(state);
-      walkedOut += 1;
-      // And it walks. Without this the bot re-founds on the hex it just
-      // abandoned the following morning — `foundBlocker` does not care that
-      // there is a ruin on it — which is not "wintering elsewhere", it is a
-      // loop that pays the cost and moves nowhere. Six days is roughly the
-      // week of walking the sentence implies, and it is the BOT's strategy
-      // rather than a rule of the game.
-      //
-      // ITS OWN VARIABLE, NOT `settleNotBefore`, and the first cut used that
-      // one. `settleNotBefore` is module-level and shared by every seed in a
-      // sample, so one band walking out on day 54 barred all 119 landings
-      // after it from ever settling: the arm read 2/120 against 48/120 and
-      // "killed 46" off THREE retreats, which is arithmetic that cannot
-      // happen and was the tell. Reset per run, below.
-      walkOutHold = state.day + 6;
-    }
-
-    if (state.settlement && !jobsSet) {
-      state.party.people
-        .filter((p) => p.alive)
-        .forEach((p, ix) => assign(state, p.id, policy.crew[ix % policy.crew.length]!));
-      jobsSet = true;
-      crewedFor = seasonOf(state.day);
-    }
-    // And the season is allowed to change that opinion, which until audit
-    // item 7 it never was. Once per turn of the year, not per day: this is a
-    // player looking up when the weather changes, not an optimiser running
-    // every morning.
-    if (policy.recrews && state.settlement && jobsSet && seasonOf(state.day) !== crewedFor) {
-      crewedFor = seasonOf(state.day);
-      recrewed += recrew(state);
-    }
-    // Keep the queue fed. The old one-shot queued the whole list on settle
-    // day and never came back — anything unaffordable that day was silently
-    // never built. Now: whenever the queue is empty, take the first thing on
-    // the list that will queue, and once nothing on it will, keep raising
-    // búðs while the steading is over-full. The first roof goes up whatever
-    // the woodpile says; after that a winter's burn stays in hand first —
-    // firewood spent on posts is firewood not spent on nights.
-    if (state.settlement && state.settlement.queue.length === 0) {
-      const buffer = state.settlement.built.length === 0 ? 0 : 16;
-      if (state.party.firewood >= buffer) {
-        // The game puts a checklist on the steading wall after the first
-        // thaw naming exactly what a jarl still lacks, so an average player
-        // who wants one builds THAT next. Without this the bot worked the
-        // list in order and never reached the mead hall at all: fourteen
-        // long sagas, four of them past the second winter, and not one hall
-        // — which is why nobody ever called a Thing.
-        const want = wintersStood(state.day) >= 1
-          ? ['meadhall', ...policy.want.filter(b => b !== 'meadhall')]
-          : policy.want;
-        for (const b of want) {
-          // One of each off the list — the repeatable búð would otherwise
-          // win this loop forever and the late tier would never be reached.
-          if (state.settlement.built.includes(b as never)) continue;
-          if (queueBuild(state, b as never)) break;
-        }
-        if (state.settlement.queue.length === 0 && crowding(state) > 0) {
-          queueBuild(state, 'bud');
-        }
-      }
-    }
-    // Heed the mark: the game states what the stores must reach, so a
-    // competent player moves people onto whatever is short.
-    //
-    // But it KEEPS A BUILDER while anything is on the stocks, and that line
-    // is not a nicety — without it this block reassigned every last person
-    // every day the mark was visible, which is most of the year, so the
-    // builder was wiped before ever finishing anything. The long-game run
-    // found it: sagas reaching day 259 with a hundred and sixty firewood in
-    // the pile and NOTHING built, and therefore no mead hall, and therefore
-    // no Thing, and therefore an endgame no measurement had ever reached.
-    // A real player with wood to spare does not put the whole hall on the
-    // woodpile.
-    // The winter lever, worked the way a player would: short commons while
-    // the mark says the food will not last, full shares the moment it will.
-    // Heeded BEFORE the jobs below, because what the band eats changes the
-    // number those jobs are being set against.
-    if (policy.tightensBelt && state.settlement && markVisible(state)) {
-      const short = forecast(state).foodGap < 0;
-      const want = short ? 'half' : 'full';
-      if ((state.party.rations ?? 'full') !== want) state.party.rations = want;
-    }
-
-    if (policy.crewsToNeed && state.settlement && markVisible(state)) {
-      const need = forecast(state);
-      const shortWood = state.party.firewood < need.firewood;
-      const shortFood = state.party.food < need.food;
-      const keepBuilder = state.settlement.queue.length > 0;
-      state.party.people
-        .filter((p) => p.alive)
-        .forEach((p, ix) => {
-          if (keepBuilder && ix === 0) {
-            assign(state, p.id, 'builder');
-            return;
-          }
-          if (shortWood && shortFood) assign(state, p.id, ix % 2 ? 'woodcutter' : 'hunter');
-          else if (shortWood) assign(state, p.id, ix < 4 ? 'woodcutter' : 'hunter');
-          else if (shortFood) assign(state, p.id, ix < 4 ? 'hunter' : 'woodcutter');
-        });
-    }
-
-    let next = apply(state, step(state));
-    if (next === state && state.battle) {
-      // A refused battle action must never end the saga — a player whose tap
-      // is refused is still in the fight, and the turn can always be ended.
-      // The old break here ate half of every sample: see the header.
-      next = apply(state, { type: 'B_END_TURN' });
-    }
-    if (next === state) break;
-    if (watch) watch(state, next);
-    state = next;
-  }
-  return state;
-}
-
-
-/**
- * The seed for arm `arm` of a sweep that plays every seed under two terms.
- *
- * `state.seed` carries no hardship, and neither does any RNG label, so
- * `curve-7` on 'even' and `curve-7` on 'fair' are the same country, the same
- * landing hex, and the same card drawn on the same day. Running both arms
- * over one seed list is thirty landings played twice, reported as sixty —
- * every count doubled and every deviation with it.
- *
- * Found by the content-reach probe, where it mattered most: coverage of a
- * hundred-card deck was being measured against half the sample it claimed.
- */
-function armSeed(arm: number, s: number, seeds: number): string {
-  return `curve-${s + arm * seeds}`;
-}
-
-/**
- * Founds at the landing if the landing will take posts, else wherever the
- * world will. The wider sea margin (52x36 worldgen) made foundable LANDINGS
- * rare, and a fixture that only ever tried the landing started failing on
- * ground that exists eight hexes away.
- */
-function foundAnywhere(state: GameState): boolean {
-  if (foundSettlement(state)) return true;
-  // Walked, not scanned. `foundBlocker` reads the stretch underfoot and
-  // ignores the hex it is handed, so assigning `party.at` asked the landing
-  // twenty-six hundred times over — and since fresh water became the
-  // settling gate the landing usually says no. Two of this file's fixtures
-  // failed with "nothing foundable" on a coast that has a dozen sites on it.
-  for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
-    learnStop(state, stop);
-    state.party.stop = stop;
-    if (canFound(state) && foundSettlement(state)) return true;
-  }
-  return false;
-}
-
-// --- The bars ---
-
-/**
- * Sixty, not thirty.
- *
- * Thirty was enough to be a tripwire and not enough to tune on, and an audit
- * proved it: sweeping the base event chance through 0.28, 0.34 and 0.40 gave
- * 53%, 30% and 43% at the two-winter mark — a fourteen-point swing that went
- * the WRONG WAY in the middle. That is not a response curve, it is noise
- * being read as signal. At a fixed setting the same measurement moved five
- * points between thirty seeds and sixty, so anything smaller than about ten
- * points is below what this harness can see.
- *
- * The bars below are deliberately wide for the same reason. They exist to
- * catch "unwinnable" and "walkover", not to pin a number.
- *
- * `LANDNAM_SEEDS=300 npx vitest run test/balance.test.ts -t 'each setting'`
- * widens the sample when a reading needs to be trusted rather than watched.
- * Sixty is the working default because the whole file runs on it; it is NOT
- * enough to resolve a difference of under about ten points, and item 26 was
- * a whole afternoon spent on a nine-point one.
- */
-const SEEDS = Number(
-  (globalThis as { process?: { env: Record<string, string | undefined> } })
-    .process?.env?.['LANDNAM_SEEDS'] ?? 60,
-);
-
-interface Curve {
-  reachedWinter: number;
-  sawSpring: number;
-  twoWinters: number;
-  settledByWinter: number;
-  /**
-   * Item 4 of the audit: WHAT kills bands in the wall window (day 40-73,
-   * where the curve falls from ~78% to ~25%). Keyed by the person's own
-   * fate string, raw and uninterpreted — the instrument counts, it does
-   * not editorialise. Run-endings over the same window count beside it.
-   */
-  deaths: Record<string, number>;
-  ends: Record<string, number>;
-}
-
-let cached: Curve | null = null;
-
-/**
- * Measured once, read by every bar below.
- *
- * Async for one reason: the loop is minutes of solid computation, and a
- * worker whose event loop never yields cannot answer the test runner's RPC
- * heartbeat — CI then fails the run with "[vitest-worker]: Timeout calling
- * onTaskUpdate" under 560 green tests. One yielded macrotask per seed keeps the
- * loop breathing and costs nothing anyone can measure.
- */
-async function measured(): Promise<Curve> {
-  if (cached) return cached;
-  const total: Curve = {
-    reachedWinter: 0, sawSpring: 0, twoWinters: 0, settledByWinter: 0,
-    deaths: {}, ends: {},
-  };
-  for (let s = 0; s < SEEDS; s += 1) {
-    const atWinter = run(`curve-${s}`, 49);
-    if (!atWinter.end) {
-      total.reachedWinter += 1;
-      if (atWinter.settlement) total.settledByWinter += 1;
-    }
-    const atSpring = run(`curve-${s}`, 73);
-    if (!atSpring.end) total.sawSpring += 1;
-    // The wall window: who died between the first frost and the thaw, and of
-    // what. `left` is excluded — walking out is not a death, per item 2 of
-    // the LAST audit, and this table must not repeat that lie.
-    for (const p of atSpring.party.people) {
-      if (p.alive || p.left) continue;
-      if ((p.diedOn ?? 0) < 40 || (p.diedOn ?? 0) > 73) continue;
-      const fate = p.fate ?? 'unrecorded';
-      total.deaths[fate] = (total.deaths[fate] ?? 0) + 1;
-    }
-    if (atSpring.end) total.ends[atSpring.end.cause] = (total.ends[atSpring.end.cause] ?? 0) + 1;
-    if (!run(`curve-${s}`, 169).end) total.twoWinters += 1;
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  }
-  cached = total;
-  return total;
-}
-
-// Playing thirty seeds three times over is not a five-second job, and the
-// default timeout is the only thing here that has any opinion about that.
-/**
- * Two minutes was enough while this file held one sixty-seed sweep. It now
- * holds several, and they share a worker pool with everything else in the
- * run — so tests that pass comfortably on their own timed out in the full
- * suite, which is a scheduling fact rather than a slow test. Generous, and
- * a real hang still ends the run.
- */
-const CURVE_TIMEOUT = 600_000;
-
+import {
+  CURVE_TIMEOUT,
+  DESPERATE,
+  POLICIES,
+  Policy,
+  RAIDER,
+  SEEDS,
+  SETTLER,
+  TURTLE,
+  armSeed,
+  foundAnywhere,
+  measured,
+  policy,
+  raidTargetOn,
+  recrewed,
+  run,
+  setPolicy,
+  setRecrewed,
+  setSettleNotBefore,
+  setWalkedOut,
+  step,
+  walkedOut,
+} from './fixtures/harness';
 describe('the difficulty curve', () => {
   const pct = (n: number) => Math.round((100 * n) / SEEDS);
 
@@ -2693,7 +1104,7 @@ describe('the first winter', () => {
     let untoldAndDied = 0;
     try {
       for (const hold of HELD) {
-        settleNotBefore = hold;
+        setSettleNotBefore(hold);
         let settled = 0;
         let settleDays = 0;
         let sawSpring = 0;
@@ -2746,7 +1157,7 @@ describe('the first winter', () => {
         if (rate === 0 && firstDoomed < 0) firstDoomed = hold;
       }
     } finally {
-      settleNotBefore = 0;
+      setSettleNotBefore(0);
     }
     // eslint-disable-next-line no-console
     console.log(`the first winter, by how long the posts were left in the boat:\n  ${rows.join('\n  ')}`);
@@ -3324,504 +1735,11 @@ describe('the long game', () => {
 });
 
 
-describe('PROBE: can a band actually afford to keep its hall', () => {
-  /**
-   * The question 9.12a has to answer about itself: is this a rule you FORGET,
-   * or a rule you cannot afford? A fine on morale compounds — no feast, no
-   * heart, hands walk out, less labour, less food, no feast — and the first
-   * cut of this, at two food a mouth, built exactly that spiral.
-   *
-   * MEASURED ON THE DAY IT FALLS DUE, and that is not a detail. The obvious
-   * reading — "of all overdue days, how many had no food?" — cannot answer
-   * anything, because a band with food feasts at once and never lands in the
-   * sample. Every day in it is therefore a day somebody was short, and it
-   * duly read 64% with no bearing on whether the rule is fair. The day the
-   * season turns is the one moment every band reaches, rich or poor.
-   */
-  it('measures whether the larder can meet the feast on the day it falls due',
-    { timeout: 900_000 }, () => {
-      const SEEDS = 40;
-      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
-        let due = 0;        // the day the feast fell due, sampled once each
-        let couldNot = 0;   // ... and the larder could not meet it
-        let bare = 0;       // ... of those, the band had nothing at all
-        let cold = 0;       // days the hall paid nothing above the free point
-        let days = 0;       // days with a hall worth keeping at all
-        let feasts = 0;
-        let sagas = 0;
-        for (let s = 0; s < SEEDS; s += 1) {
-          let held = 0;
-          let counted = false;
-          run(`curve-${s}`, 500, (before, after) => {
-            if (before.settlement?.kept !== after.settlement?.kept
-              && after.settlement?.kept !== undefined) held += 1;
-            const home = after.settlement;
-            if (!home || after.end) return;
-            if (heartRaised(after) <= 1) return;
-            counted = true;
-            days += 1;
-            const since = sinceKept(after);
-            if (since >= NEGLECTED_AFTER) cold += 1;
-            // The turn of the season, taken once. Not `canKeepHall`, which
-            // also refuses mid-battle and mid-card: the question is the
-            // LARDER and nothing else.
-            if (since !== KEPT_FOR + 1) return;
-            due += 1;
-            if (after.party.food < feastCost(after)) {
-              couldNot += 1;
-              if (after.party.food <= 0) bare += 1;
-            }
-          }, TERMS);
-          feasts += held;
-          if (counted) sagas += 1;
-        }
-        const share = due > 0 ? couldNot / due : 0;
-        // eslint-disable-next-line no-console
-        console.log(
-          `keeping the hall [${TERMS}] over ${SEEDS} sagas — ${sagas} ever had a hall worth ` +
-          `keeping, ${feasts} feasts held across ${days} such days:\n` +
-          `  fell due ${due} times; the larder could not meet it ${couldNot} ` +
-          `(${(share * 100).toFixed(0)}%), of which ${bare} had nothing at all\n` +
-          `  gone properly cold ${cold} days (${days > 0 ? ((cold / days) * 100).toFixed(0) : 'n/a'}%)`,
-        );
-        // THE BAR: on the day it falls due, a band should usually be able to
-        // pay. A rule you cannot meet is a fine, and a fine on morale is the
-        // spiral. Set at a third rather than at nothing, because a band that
-        // is genuinely starving SHOULD miss its feast — that is winter, and
-        // it is the game.
-        if (due > 0) expect(share).toBeLessThan(1 / 3);
-      }
-    });
-});
 
-describe('PROBE: does the wall ever actually protect the hall', () => {
-  /**
-   * The question the ruling of 2026-08-30 has to answer about itself.
-   *
-   * The mead hall burns unless a wall stands, and the reason that was chosen
-   * over sparing it outright is that sparing it gave back the whole of the
-   * pressure autumn was built to add. But the long game came back BYTE
-   * IDENTICAL to the run before the rule — same average days, same ends, same
-   * count past the third year, on all three arms. A rule that changes the
-   * burnable list changes which building `rng.pick` lands on, so identical
-   * numbers do not mean "no effect", they mean the list never changed: no
-   * sack ever found an unwalled mead hall standing.
-   *
-   * That is a claim about how often the rule is REACHED, and it is worth a
-   * number rather than a shrug — a rule that never fires is decoration, and
-   * the roadmap should say so either way.
-   */
-  it('counts the sacks that found a hall, and whether a wall was up', { timeout: 900_000 }, () => {
-    const SEEDS = 60;
-    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
-      let raids = 0;        // raids that came
-      let withHall = 0;     // ... with a mead hall standing
-      let walled = 0;       // ... of those, behind a wall
-      let hallBurned = 0;   // ... and the hall actually fired
-      let everHall = 0;     // sagas that ever raised a mead hall
-      let everWall = 0;     // sagas that ever raised a wall
-      for (let s = 0; s < SEEDS; s += 1) {
-        let hall = false;
-        let wall = false;
-        run(`curve-${s}`, 500, (before, after) => {
-          if (standsFor(after, 'meadhall')) hall = true;
-          if (standsFor(after, 'palisade')) wall = true;
-          // A sack is a building list that shrank, or stores that went, on a
-          // day the band was at home. The cheap tell is the tally.
-          // A raid COMING, not a raid lost — a held raid sacks nothing, so
-          // this is the generous count and the finding below survives it.
-          if (after.tally.raids > before.tally.raids) {
-            raids += 1;
-            if (standsFor(before, 'meadhall')) {
-              withHall += 1;
-              if (standsFor(before, 'palisade')) walled += 1;
-              if (!standsFor(after, 'meadhall')) hallBurned += 1;
-            }
-          }
-        }, TERMS);
-        if (hall) everHall += 1;
-        if (wall) everWall += 1;
-      }
-      // eslint-disable-next-line no-console
-      console.log(
-        `the wall and the hall [${TERMS}] over ${SEEDS} sagas — ${everHall} ever raised a ` +
-        `mead hall, ${everWall} ever raised a wall\n` +
-        `  ${raids} raids came; ${withHall} of them found a mead hall standing ` +
-        `(${walled} behind a wall, ${withHall - walled} open)\n` +
-        `  mead halls fired: ${hallBurned}`,
-      );
-    }
-  });
-});
 
-describe('PROBE: where a raid actually costs a band', () => {
-  /**
-   * WHICH LEVER, before building one. 6.5's goal is that fighting makes the
-   * WINTER worse rather than ending runs itself, and 6.5b established that
-   * which building burns is not it. There are three candidates left — how
-   * often a raid comes, how often it is lost, and what losing one takes —
-   * and they want opposite work, so guessing is not allowed.
-   *
-   * This is the diagnostic that picks between them, and it is deliberately
-   * NOT a sweep: it asks whether a band that loses a raid before its first
-   * winter dies more than one that holds. If it does, the sack already bites
-   * and the lever is the hold rate. If it does not, the sack is too cheap and
-   * the lever is what it takes.
-   *
-   * WHAT IT ANSWERED, 2026-08-30, and the answer was none of the three.
-   * Losing a raid is one of the sharpest things in the game — 92% of bands
-   * that held saw spring against 63% that did not, with half the larder at
-   * the frost — so severity is not loose. But swept, neither of the other two
-   * moves the total at all:
-   *
-   *   AUTUMN_WORTH_K  0.155 -> 0.80   roll 15% -> 57%, spring 74% -> 73%
-   *   RAID_PER_POINT  0.5   -> 1.0    spring 74% -> 76% (noise)
-   *
-   * Quadrupling how often raiders come costs ONE point of first-winter
-   * survival, and doubling how many they bring costs nothing. The reason is
-   * the same for both, and it is structural rather than a tuning miss: every
-   * term in the raid system is proportional to what a band HAS. `worth` is
-   * roofs and stores, so a first-year band is rarely worth coming for;
-   * `raidDifficulty` is roofs and stores, so the multiplier has almost
-   * nothing to multiply; and `SACK_SHARE` takes two fifths of a larder that
-   * holds 23. Raiders come for plunder, and in year one there is none.
-   *
-   * So autumn cannot be made to spoil the FIRST winter from inside this
-   * system, and that is a design fact worth keeping rather than a bug. What
-   * the sweep does buy cheaply is REACH: at K = 0.5 the never-raided share
-   * falls from 58% to 43% for one point of spring, so more bands get an
-   * autumn that is about fighting. Making it spoil year one needs a raider
-   * who wants something other than goods — the land, or people — which is
-   * new design and not a constant.
-   *
-   * THE CONFOUND, STATED. Raiders are drawn against `worth`, so a band that
-   * gets raided is a RICHER band, and richer bands see spring more often.
-   * That biases this AGAINST finding an effect — so an effect that shows up
-   * here is real and understated, and a null result is genuinely null.
-   * Reported as three arms rather than two so the confound is visible: if
-   * "raided and held" already beats "never raided", the bias is doing the
-   * talking and the arms cannot be compared naively.
-   */
-  it('splits the first winter by what autumn did, and says which lever is loose',
-    { timeout: 900_000 }, () => {
-      // 200 seeds to day 80, not 300 to day 500. The question is entirely
-      // about the FIRST winter, so every day after the thaw is spent
-      // measuring nothing — and at 500 the probe was killed for memory.
-      const SEEDS = 200;
-      const LAST = 80;
-      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
-        const arms = {
-          none: { n: 0, spring: 0, food: 0 },
-          held: { n: 0, spring: 0, food: 0 },
-          lost: { n: 0, spring: 0, food: 0 },
-        };
-        const chances: number[] = [];
-        let settledN = 0;
-        let springN = 0;
-        let sacks = 0;
-        for (let s = 0; s < SEEDS; s += 1) {
-          let came = 0;
-          let held = 0;
-          let atWinter = 0;
-          let chance = -1;   // the autumn roll on the day it was decided
-          const state = run(`curve-${s}`, LAST, (before, after) => {
-            // Only what autumn did, so the arms are about the FIRST winter
-            // and not about a raid three years later.
-            if (after.day <= 48) {
-              if (after.tally.raids > before.tally.raids) came += 1;
-              if (after.tally.raidsHeld > before.tally.raidsHeld) held += 1;
-            }
-            // WHY it comes or does not: the chance itself, read on the day
-            // this autumn's raid would land. That is the number the frequency
-            // is made of, and without it "58% were never raided" has no cause
-            // attached to it.
-            //
-            // GATED ON THE FIRST AUTUMN — days 25 to 48 — and that gate is
-            // the whole reading. `autumnRaidDay` is derived from whatever
-            // season it is asked in, so without it this sampled the SUMMER
-            // roll of a band that had just come off the knarr, and duly
-            // reported a median of 0% with a confident wrong cause attached.
-            if (after.settlement && after.day >= 25 && after.day <= 48
-              && after.day === autumnRaidDay(after) && chance < 0) {
-              chance = autumnChance(after);
-            }
-            // The larder as the frost comes down, which is what winter eats.
-            if (before.day < 49 && after.day >= 49) atWinter = after.party.food;
-          }, TERMS);
-          // A band that never settled never had a steading to sack, and
-          // belongs in none of these arms.
-          if (!state.settlement) continue;
-          const arm = came === 0 ? 'none' : held >= came ? 'held' : 'lost';
-          if (arm === 'lost') sacks += 1;
-          if (chance >= 0) chances.push(chance);
-          const a = arms[arm];
-          a.n += 1;
-          a.food += atWinter;
-          settledN += 1;
-          if (state.day >= 73 || !state.end) springN += 1;
-          // Saw spring: alive past the thaw, which is day 73.
-          if (state.day >= 73 || !state.end) a.spring += 1;
-        }
-        const pct = (a: { n: number; spring: number }) =>
-          (a.n > 0 ? `${((a.spring / a.n) * 100).toFixed(0)}%` : 'n/a');
-        const mid = (a: { n: number; food: number }) =>
-          (a.n > 0 ? (a.food / a.n).toFixed(0) : 'n/a');
-        const sorted = [...chances].sort((a, b) => a - b);
-        const median = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)]! : 0;
-        // eslint-disable-next-line no-console
-        console.log(
-          `what autumn did [${TERMS}] over ${SEEDS} seeds — ${sacks} bands lost a raid ` +
-          `before their first winter:\n` +
-          `  never raided   ${String(arms.none.n).padStart(3)} bands, saw spring ${pct(arms.none)}, ` +
-          `${mid(arms.none)} food at the frost\n` +
-          `  raided, held   ${String(arms.held.n).padStart(3)} bands, saw spring ${pct(arms.held)}, ` +
-          `${mid(arms.held)} food at the frost\n` +
-          `  raided, lost   ${String(arms.lost.n).padStart(3)} bands, saw spring ${pct(arms.lost)}, ` +
-          `${mid(arms.lost)} food at the frost\n` +
-          `  the first autumn's roll, where a steading stood for it: ` +
-          `median ${(median * 100).toFixed(0)}% over ${chances.length} readings\n` +
-          `  ALL SETTLED: ${settledN} bands, saw spring ` +
-          `${settledN > 0 ? ((springN / settledN) * 100).toFixed(0) : 'n/a'}%, ` +
-          `${((arms.lost.n / Math.max(1, settledN)) * 100).toFixed(0)}% lost a raid`,
-        );
-      }
-    });
-});
 
-describe('PROBE: is there any moment at which walking out is right', () => {
-  /**
-   * 9.14, and the question the two existing measurements never asked.
-   *
-   * Both of them trigger the retreat on the VERDICT — "we will not reach
-   * spring on what this ground gives" — which fires around day 40. So both
-   * measured a band leaving in autumn with its summer already spent, and both
-   * found it lethal: saved 0 / killed 11 on the first, saved 1 / killed 18 on
-   * the arm that was supposed to be testing rash ground.
-   *
-   * BUT THAT IS NOT THE CASE THE VERB SHIPPED FOR. src/data/retreat.ts is
-   * explicit: it is "a verb for the OTHER case: ground you took too fast and
-   * want to be off before the summer is spent", and it says plainly that "the
-   * harness cannot measure that one, because the bot only ever settles on
-   * ground that already clears its site floor". The bot can now settle rashly
-   * — RASH exists — and it can now leave on the GROUND rather than on the
-   * verdict, at the first day the ten-day floor allows.
-   *
-   * So this sweeps the one thing that was never tried: how bad does the
-   * ground have to be before getting off it early is worth what it costs?
-   * If there is a threshold that pays, the panel should point at it. If there
-   * is not, then walking out is never right at any moment, and the game
-   * should say so rather than offer it in silence.
-   */
-  it('sweeps how bad the ground must be for leaving it early to pay',
-    { timeout: 900_000 }, () => {
-      const SEEDS = 120;
-      const SPRING_IN = SEASON_LENGTH * 3 + 1;
-      // Takes the first legal ground, which is the band this verb is for: one
-      // that settled in a hurry and has something to regret. Defined here as
-      // well as in the sibling below, because the two live far apart and a
-      // shared constant between them would tie two independent measurements
-      // together.
-      const RASH: Policy = { ...SETTLER, id: 'rash', siteFloor: 0 };
 
-      const sample = (p: Policy): { lived: boolean[]; left: number; ground: number } => {
-        policy = p;
-        const lived: boolean[] = [];
-        const scores: number[] = [];
-        let out = 0;
-        for (let i = 0; i < SEEDS; i += 1) {
-          walkedOut = 0;
-          let noted = false;
-          const final = run(`winter-inside-${i}`, SPRING_IN, (before, after) => {
-            if (!noted && !before.settlement && after.settlement) {
-              noted = true;
-              scores.push(stopReport(after.seed, after.settlement.stop ?? 0).total);
-            }
-          }, 'even');
-          lived.push(!final.end && final.day >= SPRING_IN);
-          out += walkedOut;
-        }
-        const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-        return { lived, left: out, ground: mean(scores) };
-      };
 
-      const stay = sample(RASH);
-      // eslint-disable-next-line no-console
-      console.log(
-        `walking out EARLY, on the ground rather than the verdict — ${SEEDS} seeds, even:\n` +
-        `  floor 0, stays put — ${stay.lived.filter(Boolean).length}/${SEEDS} saw spring, ` +
-        `ground ${stay.ground.toFixed(1)} on average`,
-      );
-
-      let anyPaid = false;
-      let everLeft = 0;
-      for (const below of [12, 14, 16, 18]) {
-        const arm = sample({ ...RASH, retreatsBelow: below });
-        everLeft += arm.left;
-        let saved = 0;
-        let killed = 0;
-        for (let i = 0; i < SEEDS; i += 1) {
-          if (!stay.lived[i] && arm.lived[i]) saved += 1;
-          if (stay.lived[i] && !arm.lived[i]) killed += 1;
-        }
-        if (saved > killed) anyPaid = true;
-        // eslint-disable-next-line no-console
-        console.log(
-          `  leaves ground under ${String(below).padStart(2)} — ` +
-          `${String(arm.lived.filter(Boolean).length).padStart(3)}/${SEEDS} saw spring, ` +
-          `${String(arm.left).padStart(3)} walked out ` +
-          `(saved ${saved}, killed ${killed})`,
-        );
-      }
-      policy = SETTLER;
-
-      // THE INSTRUMENT FIRST, and this file has shipped the mistake it
-      // guards against: an arm that never walked out is the control run
-      // again under a different name.
-      expect(everLeft, 'nobody ever walked out early — nothing was measured')
-        .toBeGreaterThan(0);
-      expect(stay.left, 'the control walked out too').toBe(0);
-
-      // READ THE FIRST ARM, AND DISCOUNT THE REST. Above a threshold of 12 the
-      // walk-out count runs past the seed count — 141, 246, 275 retreats over
-      // 120 landings — which is a band founding, leaving, founding on ground
-      // just as poor and leaving again. Those arms are measuring a loop, not a
-      // strategy, and their death tolls are inflated by it. The honest reading
-      // is `under 12`: 37 retreats over 120 seeds, at most one a band, a
-      // genuine "this ground is bad, get off it". It still saved 4 and killed
-      // 10.
-      //
-      // NO BAR ON THE OUTCOME, for the same reason the sibling above carries
-      // none: nobody is tuning toward a number here. What the console line is
-      // for is the ruling — whether the verb has a right moment anywhere, or
-      // whether the panel is offering a choice that is wrong at every hour.
-      // `anyPaid` is reported rather than asserted so that a future change
-      // which GIVES it a case shows up as a changed line and not a failure.
-      // eslint-disable-next-line no-console
-      console.log(`  a threshold that pays: ${anyPaid ? 'YES' : 'none of them'}`);
-    });
-});
-
-describe('PROBE: is the wall up before it is needed', () => {
-  /**
-   * 9.4, AND THE ITEM'S HEADLINE IS AN ARTIFACT. It was written on "the
-   * rarest of twelve buildings at 13 of 60", which is `settlement.built` read
-   * at the END — and a tier that `replaces` its predecessor CONSUMES it, so
-   * every earthworks in the tally is a palisade that was raised and then
-   * buried. Counted as it happens: palisade 38 of 60, fifth of twelve, ahead
-   * of the storehouse and the mead hall. The wall is not rare.
-   *
-   * What survives of the item is the half about TIMING — "no reason the
-   * player feels before their first raid". That is a real question and this
-   * is the measurement for it: when the first raid lands, was there a wall?
-   *
-   * Reported, not barred. Whether the answer wants a change is a design call,
-   * and this file has shipped enough numbers that got read as verdicts.
-   */
-  it('says whether a wall stood when the first raid came', { timeout: 900_000 }, () => {
-    const SEEDS = 120;
-    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
-      let raided = 0;        // sagas that saw a raid at all
-      let walled = 0;        // ... with a wall standing when the first came
-      let everWalled = 0;    // sagas that raised a wall at some point
-      let wallDay = 0;       // the day the wall went up, summed
-      let firstRaidDay = 0;  // the day the first raid came, summed
-      let lateWall = 0;      // raised a wall, but only AFTER the first raid
-      for (let s = 0; s < SEEDS; s += 1) {
-        let wallOn: number | null = null;
-        let firstRaid: number | null = null;
-        run(`curve-${s}`, 400, (before, after) => {
-          if (wallOn === null && standsFor(after, 'palisade')) wallOn = after.day;
-          if (firstRaid === null && after.tally.raids > before.tally.raids) {
-            firstRaid = after.day;
-          }
-        }, TERMS);
-        if (wallOn !== null) { everWalled += 1; wallDay += wallOn; }
-        if (firstRaid === null) continue;
-        raided += 1;
-        firstRaidDay += firstRaid;
-        if (wallOn !== null && wallOn <= firstRaid) walled += 1;
-        else if (wallOn !== null) lateWall += 1;
-      }
-      const pc = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : 'n/a');
-      // eslint-disable-next-line no-console
-      console.log(
-        `the wall and the first raid [${TERMS}] over ${SEEDS} seeds — ` +
-        `${everWalled} ever raised one (day ${everWalled ? Math.round(wallDay / everWalled) : 0} on average):\n` +
-        `  ${raided} sagas were raided, first on day ` +
-        `${raided ? Math.round(firstRaidDay / raided) : 0} on average\n` +
-        `  a wall stood when it came: ${walled} (${pc(walled, raided)}); ` +
-        `raised one only afterwards: ${lateWall}; never: ${raided - walled - lateWall}`,
-      );
-    }
-  });
-});
-
-describe('PROBE: what becomes of the named foe', () => {
-  /**
-   * 9.5, and the item's ratio needs three things checked before it is read as
-   * "the villain never recurs".
-   *
-   * ONE: the tally it comes from runs to DAY 169 — under two years. A
-   * champion put down on day 100 has sixty-nine days for his clan to anoint
-   * another and send him at us again, and most sagas are over before that.
-   *
-   * TWO: it counts a "return" only when the champion carries SCARS, so a
-   * newly anointed one — the clan's second man, a real recurrence of the
-   * threat if not of the person — is invisible to it.
-   *
-   * THREE: the bot hunts him with every verb it has. `step` picks the
-   * champion first for strike, for the spear and for the throw, which is an
-   * optimal player rather than an average one; a player who simply hits
-   * whoever is in front sees a different game.
-   *
-   * So this counts FATES over a full run: how a champion-led fight ended for
-   * the man with the pennant, and how often the same man came back.
-   */
-  it('counts how a champion leaves the field, and how often he comes back',
-    { timeout: 900_000 }, () => {
-      const SEEDS = 60;
-      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
-        let led = 0;        // fights a named foe led
-        let ofClan = 0;     // ... of which a CLAN's, so he could return at all
-        let down = 0;       // he was put down
-        let fled = 0;       // he ran
-        let stood = 0;      // still standing when it ended
-        let scarred = 0;    // fights led by a man who had led before
-        for (let s = 0; s < SEEDS; s += 1) {
-          run(`curve-${s}`, 400, (before, after) => {
-            if (!before.battle && after.battle?.champion) {
-              led += 1;
-              if (after.battle.championOf) {
-                ofClan += 1;
-                const clan = before.neighbours.find((n) => n.id === after.battle!.championOf);
-                if ((clan?.champion?.scars ?? 0) > 0) scarred += 1;
-              }
-            }
-            // The moment the field settles, read what became of him.
-            if (before.battle && !before.battle.outcome && after.battle?.outcome
-              && after.battle.champion) {
-              const him = after.battle.combatants.find(
-                (c) => c.personId === after.battle!.champion);
-              if (!him) return;
-              if (him.down) down += 1;
-              else if (him.fled) fled += 1;
-              else stood += 1;
-            }
-          }, TERMS);
-        }
-        const pc = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : 'n/a');
-        // eslint-disable-next-line no-console
-        console.log(
-          `the named foe [${TERMS}] over ${SEEDS} sagas — ${led} fights he led, ` +
-          `${ofClan} of them a clan's (only those can ever return):\n` +
-          `  he was put down ${down} (${pc(down, down + fled + stood)}), ` +
-          `ran ${fled} (${pc(fled, down + fled + stood)}), ` +
-          `was still standing ${stood} (${pc(stood, down + fled + stood)})\n` +
-          `  led by a man who had led before: ${scarred} of ${ofClan} (${pc(scarred, ofClan)})`,
-        );
-      }
-    });
-});
 
 describe('the raid gauntlet', () => {
   /** A standing steading with the store and walls a raid comes for. */
@@ -3974,7 +1892,7 @@ describe('the sea is reached', () => {
     // settler does not leave under arms at all — that is its identity, not a
     // gap — so asking it whether anybody reaches the sea was asking the
     // wrong band.
-    policy = RAIDER;
+    setPolicy(RAIDER);
     try {
     for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
       for (let s = 0; s < SEEDS; s += 1) {
@@ -4002,7 +1920,7 @@ describe('the sea is reached', () => {
       }
     }
     } finally {
-      policy = SETTLER;
+      setPolicy(SETTLER);
     }
 
     // eslint-disable-next-line no-console
@@ -4058,604 +1976,9 @@ describe('the sea is reached', () => {
     expect(placesKnown / Math.max(1, samples)).toBeGreaterThan(0.4);
   });
 
-  /**
-   * PROBE: what is a pair of hands worth?
-   *
-   * Written for the voyage, because every lever that would make a crossing
-   * pay runs through this one number. She brings back three people; if three
-   * people are worth little, no amount of them makes the season back.
-   *
-   * Three extra hands landed on the same day, same seeds, against nothing.
-   * `takeIn` over the roof, which is what the voyage itself does.
-   */
-  it('PROBE: what a pair of hands is worth', { timeout: 1_800_000 }, async () => {
-    const SEEDS = 40;
-    const rows: string[] = [];
-    for (const extra of [0, 3, 6]) {
-      let lived = 0;
-      let days = 0;
-      let souls = 0;
-      let food = 0;
-      for (let s = 0; s < SEEDS; s += 1) {
-        let landed = false;
-        const state = run(`hands-${s}`, 400, (_before, after) => {
-          // On the first settled day past the first winter, so the gift lands
-          // on a going concern rather than on a band still walking.
-          if (!landed && extra > 0 && after.settlement && after.day > 100 && !after.end) {
-            landed = true;
-            takeIn(after, extra, 'a probe put them there', true);
-          }
-        }, 'even');
-        days += state.day;
-        souls += living(state.party.people).length;
-        food += state.party.food;
-        if (!state.end) lived += 1;
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
-      rows.push(
-        `  +${extra} hands  ${lived}/${SEEDS} standing at day 400, ${days} days lived, ` +
-        `${souls} souls between them, ${food} food in store`,
-      );
-    }
-    // eslint-disable-next-line no-console
-    console.log(`PROBE what a pair of hands is worth — ${SEEDS} landings each:\n${rows.join('\n')}`);
-    expect(rows).toHaveLength(3);
-  });
 
-  /**
-   * PROBE, for queue item 27: does anybody ever sail home, and does it pay?
-   *
-   * Item 27 proposes two elaborations of the voyage — a cargo manifest so
-   * loading is a decision, and a season of cards at sea so the crossing is
-   * lived through rather than waited out. Both assume there is a voyage to
-   * elaborate. There was not: `sailForHome` has existed since the ship became
-   * a place and no bot had ever issued it, so the crossing, what she brings
-   * back and the season without those hands were all unmeasured.
-   *
-   * Unlike the sea before the fishing errand, the door was never shut —
-   * 'home' rides the same picker as trade and raid. The bot simply never
-   * reached for it, so the first thing this needed was a bot that does.
-   *
-   * The A/B runs the same landings with the voyage available and with it
-   * refused, which is what separates "the voyage pays" from "bands that can
-   * afford a voyage were doing well anyway".
-   *
-   * WHAT IT FOUND, and neither half of item 27 was built on the strength of
-   * it: the voyage is a bad bargain, not merely a rare one.
-   *
-   * Under a sane gate she sails about five times in forty sagas and changes
-   * nothing — spring only, because 78 days away means she must be back before
-   * the mark matters, and spring is the leanest the store ever is. Of 2527
-   * spring days past the first winter, 2471 were simply too poor to spare a
-   * season. Loosening the purse from thirty days of food to ten moved that
-   * to five crossings and left survival flat.
-   *
-   * The forced arm is the one that answers it. Told to take every crossing
-   * `sailBlocker` allowed, bands sailed 26 times, fetched 40 people across
-   * the ocean — and went from 5 of 40 standing at day 400 to 3, living a
-   * fifth fewer days. There is no setting at which the voyage is both common
-   * and good. Two hands gone through a growing season cost more than twenty
-   * food and three people return.
-   *
-   * Which makes sense of a note left in sim/voyage.ts when it was written.
-   * Gated on `roomLeft` the voyage brought back nobody and was called "a
-   * trap, not a decision"; the fix was to land people over the roof, on the
-   * grounds that "crowding is what makes a hall sick". Item 25 then measured
-   * `crowding` returning zero on every settled day of sixty sagas. So the
-   * extra people cost the hall nothing AND buy it too little, and the fix
-   * for the trap was resting on a mechanic that never fires.
-   *
-   * A cargo manifest and a season of cards at sea would both be elaborations
-   * of that. The crossing has to be worth taking before it is worth
-   * decorating.
-   *
-   * AND THEN IT WAS MADE WORTH TAKING, on 2026-08-24, and this probe is what
-   * drove it. Two changes, both of which this readout argued for:
-   *
-   *   - `provisioning` — a season of food and a season of wood banked before
-   *     she may sail at all. Not a tax: the store is what decides whether the
-   *     people she brings are hands or mouths.
-   *   - settlers arrive with a season's eating each (`SETTLER_STORES`). The
-   *     hold used to return a flat share of itself whoever was aboard, and
-   *     twenty food feeds three arrivals for two days.
-   *
-   * The second is the one that mattered, and the first cut of the fix was a
-   * different change that made things WORSE: shortening the crossing to two
-   * seasons, on the theory that the problem was a payback period. It read 3
-   * of 40 standing against 4, because what comes home sooner is not only
-   * hands, it is mouths. The band is food-limited, not hand-limited, and
-   * every measurement taken this day says so from a different direction.
-   *
-   * Where it landed: 6 of 40 standing at day 400 against 5 with the voyage
-   * refused, 138 souls against 127. The forced arm — every crossing she can
-   * take, any season — reads 6 and 141, which is the part that says it is no
-   * longer a trap. It was 3 and 108 before.
-   */
-  it('PROBE: whether the voyage home pays for the season it costs', { timeout: 1_800_000 }, async () => {
-    const SEEDS = 40;
-    interface Arm {
-      sailed: number;      // sagas that ever sent her
-      voyages: number;     // crossings begun
-      returned: number;    // crossings that came home
-      brought: number;     // people fetched across the ocean
-      rough: number;       // crossings the sea took a strake out of
-      lived: number;
-      days: number;
-      souls: number;       // living at the end, summed
-      settledDays: number;
-      notSpring: number;
-      tooSoon: number;
-      tooPoor: number;
-      couldHaveGone: number;
-      blocked: Record<string, number>;
-      hadFood: number[];
-      hadWood: number[];
-      wantFood: number[];
-      wantWood: number[];
-      /**
-       * PER SEED, because the aggregates above cannot answer the question in
-       * this probe's own name.
-       *
-       * Only six of forty sagas ever sail, so thirty-four of the rows in each
-       * arm are the SAME RUN TWICE and every aggregate difference is driven
-       * by six. "205 souls against 200" reads like a finding and is six sagas
-       * of noise. Paired on the seeds that actually differ, it is a reading.
-       */
-      per: { sailed: boolean; lived: boolean; souls: number; days: number }[];
-    }
-    const arms: Record<string, Arm> = {};
 
-    for (const [label, sails, anySeason] of [
-      ['no voyage', false, false],
-      ['may sail', true, false],
-      // THE FORCED ARM, kept from the measurement that found the voyage was a
-      // trap: sails in any season the moment `sailBlocker` allows. It is not
-      // a strategy, it is the control that separates "the gate never opens"
-      // from "the crossing is not worth taking".
-      ['whenever', true, true],
-    ] as const) {
-      const arm: Arm = {
-        sailed: 0, voyages: 0, returned: 0, brought: 0, rough: 0, lived: 0, days: 0, souls: 0,
-        settledDays: 0, notSpring: 0, tooSoon: 0, tooPoor: 0, couldHaveGone: 0, blocked: {},
-        hadFood: [], hadWood: [], wantFood: [], wantWood: [], per: [],
-      };
-      const was = policy;
-      policy = { ...SETTLER, sails, sailAnySeason: anySeason };
-      try {
-        for (let s = 0; s < SEEDS; s += 1) {
-          let sentOne = false;
-          const state = run(`sail-${s}`, 400, (before, after) => {
-            // WHY SHE DOES NOT GO, counted at the moment of the choice. The
-            // gate has six clauses and "she rarely sails" says nothing about
-            // which one is doing the refusing.
-            if (before.settlement && !before.end) {
-              arm.settledDays += 1;
-              const crew = sworn(before.party.people).slice(0, 2).map(p => p.id);
-              if (seasonOf(before.day) !== 'autumn' && !anySeason) arm.notSpring += 1;
-              else if (wintersStood(before.day) < 1) arm.tooSoon += 1;
-              else {
-                const why = sailBlocker(before, crew);
-                if (why) arm.blocked[why] = (arm.blocked[why] ?? 0) + 1;
-                else arm.couldHaveGone += 1;
-                // What a band ACTUALLY has standing on an eligible day,
-                // against what the rule asks of it. A threshold picked
-                // without this is a threshold picked by feel.
-                const need = provisioning(before);
-                arm.hadFood.push(before.party.food);
-                arm.hadWood.push(before.party.firewood);
-                arm.wantFood.push(need.food);
-                arm.wantWood.push(need.firewood);
-              }
-            }
-            if (!before.voyage && after.voyage) { arm.voyages += 1; sentOne = true; }
-            if (before.voyage && !after.voyage) {
-              arm.returned += 1;
-              const home = living(after.party.people).length - living(before.party.people).length;
-              if (home > 0) arm.brought += home;
-              if (sprung(after.ship) > sprung(before.ship)) arm.rough += 1;
-            }
-          }, 'even');
-          if (sentOne) arm.sailed += 1;
-          arm.days += state.day;
-          arm.souls += living(state.party.people).length;
-          if (!state.end) arm.lived += 1;
-          arm.per.push({
-            sailed: sentOne,
-            lived: !state.end,
-            souls: living(state.party.people).length,
-            days: state.day,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 0));
-        }
-      } finally {
-        policy = was;
-      }
-      arms[label] = arm;
-    }
 
-    const pct = (xs: number[], p: number): string => {
-      if (xs.length === 0) return '-';
-      const sorted = [...xs].sort((x, y) => x - y);
-      return String(Math.round(sorted[Math.floor((sorted.length - 1) * p)]!));
-    };
-    const med = (xs: number[]): string => pct(xs, 0.5);
-    void med;
-    const rows = Object.entries(arms).map(([label, a]) =>
-      `  ${label.padEnd(10)} ${a.sailed}/${SEEDS} sagas sailed, ${a.voyages} crossings ` +
-      `(${a.returned} came home, ${a.rough} rough), ${a.brought} people fetched; ` +
-      `${a.lived}/${SEEDS} still standing at day 400, ${a.souls} souls between them, ` +
-      `${a.days} days lived\n` +
-      `             of ${a.settledDays} settled days: ${a.notSpring} not spring, ${a.tooSoon} ` +
-      `before the first winter, ${a.tooPoor} too poor to spare a season, ` +
-      `${a.couldHaveGone} clear to go; blocked ` +
-      `${Object.entries(a.blocked).map(([k, v]) => `${k} ${v}`).join(', ') || 'never'}\n` +
-      `             on an eligible day the hall HAD food ${med(a.hadFood)} wood ${med(a.hadWood)}; ` +
-      `the rule WANTS food ${med(a.wantFood)} wood ${med(a.wantWood)} ` +
-      `(food 90th pct ${pct(a.hadFood, 0.9)}, wood 90th pct ${pct(a.hadWood, 0.9)})`,
-    );
-    // eslint-disable-next-line no-console
-    console.log(`PROBE the voyage home — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
-
-    // PAIRED ON THE SEEDS THAT ACTUALLY SAILED, which is the only comparison
-    // in this probe that can answer its own title.
-    //
-    // Six of forty sagas ever send her, so thirty-four rows of each arm above
-    // are the same run twice and every aggregate difference is six sagas
-    // wide. Read straight, "205 souls against 200" looks like the crossing
-    // costing five lives; restricted to the sagas that differ, it is a
-    // reading about six of them and is reported with its own N attached so
-    // nobody mistakes it for forty.
-    // WHAT IT READ AT A SAMPLE THE TREATMENT ACTUALLY FIRES IN, 2026-08-30.
-    // Forty seeds gives six sailing sagas, which cannot answer anything; run
-    // once at 200 it gives thirty, and the answer is clear:
-    //
-    //   no voyage  0/200 sailed,                          26/200 standing, 1179 souls
-    //   may sail  30/200 sailed, 43 crossings, 82 fetched, 22/200 standing, 1169 souls
-    //   whenever  32/200 sailed, 47 crossings, 91 fetched, 24/200 standing, 1160 souls
-    //   paired on the 30 that sailed [may sail] — saved 3, KILLED 7, -10 souls
-    //   paired on the 32 that sailed [whenever] — saved 4, KILLED 6, -19 souls
-    //
-    // The crossing kills about two bands for every one it saves, and brings
-    // home eighty-two people while leaving fewer alive at the end. src/sim/
-    // voyage.ts already named the cause before this confirmed it: what comes
-    // home is not only hands, it is MOUTHS, and the hall's binding constraint
-    // was never labour.
-    //
-    // Left at 40 here because that is what the suite can afford every run;
-    // the number above is what it says when asked properly.
-    const control = arms['no voyage']!;
-    for (const label of ['may sail', 'whenever']) {
-      const arm = arms[label]!;
-      const idx = arm.per.map((r, i) => (r.sailed ? i : -1)).filter((i) => i >= 0);
-      if (idx.length === 0) continue;
-      let saved = 0;
-      let killed = 0;
-      let souls = 0;
-      let days = 0;
-      for (const i of idx) {
-        const a = arm.per[i]!;
-        const c = control.per[i]!;
-        if (!c.lived && a.lived) saved += 1;
-        if (c.lived && !a.lived) killed += 1;
-        souls += a.souls - c.souls;
-        days += a.days - c.days;
-      }
-      // eslint-disable-next-line no-console
-      console.log(
-        `  paired on the ${idx.length} sagas that sailed [${label}] — ` +
-        `saved ${saved}, killed ${killed}; ` +
-        `${souls >= 0 ? '+' : ''}${souls} souls, ${days >= 0 ? '+' : ''}${days} days`,
-      );
-    }
-
-    // A probe: it asserts its instrument ran, not a rate. The bot has to be
-    // ABLE to sail, or this measures nothing at all — which is the state it
-    // was written to end.
-    expect(arms['may sail']!.voyages, 'the bot still never sails — this probe measures nothing')
-      .toBeGreaterThan(0);
-    expect(arms['no voyage']!.voyages).toBe(0);
-  });
-
-  /**
-   * PROBE, for queue item 25: what is illness worth, and what is a healer?
-   *
-   * Item 25 proposes herbs as the healer's input — a stock gathered in summer
-   * that tending draws on. Its own framing carries the doubt worth measuring
-   * first: does gating care behind a stock make the healer a DECISION, or
-   * just a chore? A resource nobody gathers, feeding a job nobody crews, to
-   * answer a problem nobody has, would be three layers of decoration.
-   *
-   * So this measures the layers underneath before anything is built on them:
-   * how much illness a saga actually carries, how much of it is the spread
-   * rule rather than the cold nights that were always there, and what
-   * crewing a healer is worth against the same landings crewed without one.
-   *
-   * The A/B is the point. "The bot never crews a healer" is not evidence the
-   * healer is worthless — the default crew simply has no healer in it, which
-   * is a fact about the harness. Running the same seeds both ways is what
-   * separates the two.
-   *
-   * WHAT IT FOUND, in two passes, and the first pass was WRONG.
-   *
-   * It read "a healer crewed for 364 days took illness from 0.48 person-days
-   * per day lived to 0.46 and changed survival by nothing at all — 17 of 30
-   * saw spring in both arms", and concluded the healer was a job with no
-   * measurable output. That conclusion was the INSTRUMENT, and it is exactly
-   * the error this file has caught three times before in other clothes.
-   *
-   * `saw spring` was the outcome being counted, and nearly every band sees a
-   * first spring — so the number could not separate two arms and read 17 of
-   * 30 whatever happened downstream of it. Counting bands STILL STANDING when
-   * the harness stops, on the same seeds and the same code, the two arms are
-   * 4 of 30 against 7, and the days lived between them differ by an eighth:
-   * 4570 against 5147. The healer was never worthless. The measure was blunt.
-   *
-   * So item 25's verdict stands only in its narrow part — herbs would have
-   * been a chore — and its stated reason was false. The job pays.
-   *
-   * The mechanism is the second line of the readout. `crowding` returned
-   * zero on EVERY settled day of sixty sagas, because the roof runs a long
-   * way ahead of the band: 8.1 souls to 14.6 of room on the average settled
-   * day, and the most crowded moment any saga ever reached was 19 souls to
-   * 19 of roof. So `CROWD_BITE` never multiplies anything, spread runs at
-   * its floor rate of `CATCHING * down`, and `CARE_GUARD` is a guard against
-   * a floor. The crowding tradeoff item 8 was built around — another pair of
-   * hands is more work and one more chest by the fire — cannot happen.
-   *
-   * Kept as an instrument. Any work that means to make crowding bite has to
-   * move the second line — it is still zero, and still means `CROWD_BITE`
-   * multiplies nothing.
-   *
-   * A LESSON ABOUT THIS PROBE ITSELF, since it has now misled once: an A/B
-   * is only as sharp as the thing it counts. Pick an outcome most bands do
-   * not reach, or the arms will agree no matter what the code does.
-   *
-   * The first cut of this measured neither, and its error is worth keeping:
-   * it swapped the BUILDER out for the healer and read the healer arm as
-   * twice as ill per day lived. That is what losing the builder does — no
-   * builder, no shelter, and shelter is what stops the cold nights that hand
-   * out `ill_`. An A/B is only an A/B if one thing changed.
-   */
-  it('PROBE: what illness costs, and what a healer buys', { timeout: 900_000 }, async () => {
-    const SEEDS = 30;
-    // A FARMER's place, not the builder's. The first cut of this swapped the
-    // builder out and read the healer arm as more than twice as ill per day
-    // lived — which is not what care does, it is what losing the builder
-    // does: no builder means no shelter, and shelter is what stops the cold
-    // nights that hand out `ill_` in the first place. The arm was measuring
-    // the hole, not the healer.
-    const HEALER: JobId[] = ['farmer','healer','woodcutter','hunter','builder','warrior'];
-
-    interface Arm {
-      illDays: number;   // person-days spent carrying something
-      newlyIll: number;  // new illnesses of any cause, cold nights included
-      crowdDays: number; // settled days with more bodies than roof
-      lived: number;     // still standing when the harness stopped
-      settled: number;
-      days: number;
-      careDays: number;  // settled days with any tending at all
-      mostSouls: number; // the largest the band ever got
-      mostRoom: number;  // and the most roof it ever had
-      settledDays: number;
-      soulSum: number;
-      roomSum: number;
-      roofFrom: Record<string, number>;
-      slack: number[];
-    }
-    const arms: Record<string, Arm> = {};
-
-    for (const [label, crew] of [['no healer', CREW], ['a healer', HEALER]] as const) {
-      const arm: Arm = {
-        illDays: 0, newlyIll: 0, crowdDays: 0, lived: 0, settled: 0, days: 0, careDays: 0,
-        mostSouls: 0, mostRoom: 0, settledDays: 0, soulSum: 0, roomSum: 0, roofFrom: {}, slack: [],
-      };
-      const was = policy;
-      policy = { ...SETTLER, crew };
-      try {
-        for (let s = 0; s < SEEDS; s += 1) {
-          const state = run(`ill-${s}`, 400, (before, after) => {
-            const down = ailingCount(after);
-            arm.illDays += down;
-            // New illness of ANY cause. Not the spread rule's own count —
-            // cold nights hand out `ill_` too, and most of this is them.
-            if (down > ailingCount(before)) arm.newlyIll += 1;
-            if (after.settlement) {
-              if (crowding(after) > 0) arm.crowdDays += 1;
-              if (careToday(after) > 0) arm.careDays += 1;
-              const souls = living(after.party.people).length;
-              if (souls > arm.mostSouls) arm.mostSouls = souls;
-              const room = capacity(after);
-              if (room > arm.mostRoom) arm.mostRoom = room;
-              // WHAT THE ROOF IS MADE OF. Item 30's question: the roof runs
-              // far ahead of the band, and whether that is fixable depends
-              // entirely on whether the room was BUILT FOR or came free with
-              // something the band wanted anyway.
-              for (const id of after.settlement.built) {
-                const def = BUILDINGS.find((b) => b.id === id);
-                if (!def?.room) continue;
-                arm.roofFrom[id] = (arm.roofFrom[id] ?? 0) + def.room;
-              }
-              // HOW CLOSE IT EVER COMES. "Never crowded" is a fact about a
-              // threshold; the slack is a fact about the shape, and it says
-              // whether crowding is a near miss or was never in the running.
-              arm.slack.push(room - souls);
-              arm.settledDays += 1;
-              arm.soulSum += souls;
-              arm.roomSum += room;
-            }
-          }, 'even');
-          arm.days += state.day;
-          if (state.settlement) arm.settled += 1;
-          // STILL STANDING, not "saw spring". Nearly every band sees a first
-          // spring, so that number cannot separate two arms — it read 17 of
-          // 30 both ways while the days lived between them differed by an
-          // eighth.
-          if (!state.end) arm.lived += 1;
-          await new Promise((resolve) => setTimeout(resolve, 0));
-        }
-      } finally {
-        policy = was;
-      }
-      arms[label] = arm;
-    }
-
-    const pct = (xs: number[], p: number): string => {
-      if (xs.length === 0) return '-';
-      const sorted = [...xs].sort((x, y) => x - y);
-      return String(Math.round(sorted[Math.floor((sorted.length - 1) * p)]!));
-    };
-    const med = (xs: number[]): string => pct(xs, 0.5);
-    void med;
-    const sortPct = (xs: number[], p: number): number => {
-      const sorted = [...xs].sort((x, y) => x - y);
-      return sorted[Math.floor((sorted.length - 1) * p)] ?? 0;
-    };
-    const rows = Object.entries(arms).map(([label, a]) =>
-      `  ${label.padEnd(10)} ${a.illDays} person-days ill (${(a.illDays / Math.max(1, a.days)).toFixed(2)} ` +
-      `per day lived), ${a.newlyIll} new illnesses, ${a.crowdDays} crowded days, ` +
-      `${a.careDays} days tended; ${a.lived}/${SEEDS} still standing at day 400, over ${a.days} days lived\n` +
-      `             band ${(a.soulSum / Math.max(1, a.settledDays)).toFixed(1)} souls to ` +
-      `${(a.roomSum / Math.max(1, a.settledDays)).toFixed(1)} of roof on the average settled day ` +
-      `(most ever ${a.mostSouls} souls, ${a.mostRoom} roof)\n` +
-      `             the roof came from: ${Object.entries(a.roofFrom)
-        .sort((x, y) => y[1] - x[1])
-        .map(([k, v]) => `${k} ${Math.round((v / Math.max(1, a.roomSum)) * 100)}%`)
-        .join(', ') || 'nothing'}\n` +
-      `             spare beds on a settled day: tightest ${Math.min(...a.slack)}, ` +
-      `10th pct ${sortPct(a.slack, 0.1)}, median ${sortPct(a.slack, 0.5)}`,
-    );
-    // eslint-disable-next-line no-console
-    console.log(`PROBE illness and the healer — ${SEEDS} landings each, same seeds:\n${rows.join('\n')}`);
-
-    // A probe: it asserts its instrument ran, not a rate.
-    expect(arms['no healer']!.settled).toBeGreaterThan(0);
-    expect(arms['a healer']!.settled).toBeGreaterThan(0);
-  });
-
-  /**
-   * PROBE, for queue item 23: how much water does a saga actually touch?
-   *
-   * Named waters and tidal races are both bets on the same premise — that
-   * the sea is a place the band moves AROUND in, with stretches distinct
-   * enough to be worth a name and pinches narrow enough to be worth a cost.
-   * The world's geometry says that premise is plausible: 12 worlds measured
-   * 123 coastal-water hexes each in 4.6 connected bodies, 2.7 of them eight
-   * hexes or more, and 5.2 gates — water with land on four sides and its two
-   * wet neighbours not touching, so a hull must pass THROUGH rather than
-   * around.
-   *
-   * But geometry is the map, not the saga. What decides whether either
-   * feature is content or decoration is how much of that water a band ever
-   * enters, and the answer was no: 0.0 true gates entered in forty sagas,
-   * 0.0 waters ever a third uncovered. Neither feature was built.
-   *
-   * The line that says WHY is the last one, and it is the reason this probe
-   * is kept rather than deleted with the idea it killed. The sea is not
-   * refused — it is OFFERED, on a fifth of every band's moving days, a third
-   * of the menu on those days — and declined 94 times in a hundred. Nothing
-   * on the water is worth going to, so nobody goes, so every feature laid on
-   * top of the water is content behind a door nobody opens.
-   *
-   * Measured on the RAIDER, deliberately: it is the most sea-inclined band
-   * the harness has, the only policy that leaves under arms at all. The
-   * settler does not sail by identity rather than by gap. So this is the
-   * GENEROUS reading, and it still reads 5.6%.
-   *
-   * Kept as a probe rather than a bar because it is an instrument, not a
-   * promise: any future work that means to give the sea a reason should move
-   * these numbers, and this is what it will be read against.
-   */
-  it('PROBE: how much of the coast a saga actually rows', { timeout: 900_000 }, async () => {
-    // The hex version of this probe measured water BODIES: coastal hexes,
-    // gates, pinches, and how much of each named water a saga uncovered. A
-    // line has none of that — rowing is a step, not a state, and the sea is
-    // off every stretch — so what is left to ask is the only question the
-    // original was really for: does the band ever spend a day at the oars,
-    // and does it ever work a fishing ground.
-    const SEEDS = 40;
-    let sagas = 0;
-    let wetSagas = 0;
-    let stretchesRowed = 0;
-    let groundsOnCoast = 0;
-    let groundsKnown = 0;
-    let groundsWorked = 0;
-    let sagasSeeingOne = 0;
-    let dayGroundNear = 0;
-    let dayNearButFed = 0;
-    let dayNearButSettled = 0;
-    let dayNearButStuck = 0;
-    let dayNearAndFree = 0;
-    let daysWithAChoice = 0;
-    const spans: number[] = [];
-
-    policy = RAIDER;
-    try {
-      for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
-        for (let s = 0; s < SEEDS / 2; s += 1) {
-          const wet = new Set<number>();
-          const state = run(armSeed(arm, s, SEEDS / 2), 400, (before, after) => {
-            if (walkOptions(before).length > 0) daysWithAChoice += 1;
-            // A ground the band knows of and could reach in a day or two: the
-            // number that says whether reach or reward is the binding thing.
-            const here = standingAt(before);
-            const near = nearestStop(before, (st) => groundAtStop(before.seed, st), 3);
-            if (near !== null || groundAtStop(before.seed, here)) {
-              dayGroundNear += 1;
-              const fed = before.party.food / Math.max(1, foodPerDay(before));
-              if (fed >= 6) dayNearButFed += 1;
-              else if (before.settlement && !before.expedition) dayNearButSettled += 1;
-              else if (walkOptions(before).length === 0) dayNearButStuck += 1;
-              else dayNearAndFree += 1;
-            }
-            const to = standingAt(after);
-            const span = Math.abs(to - here);
-            // A day that covered more than one stretch was rowed, and how far
-            // it covered is what the ship bought.
-            if (span > 1) { wet.add(to); spans.push(span); }
-          }, terms);
-          sagas += 1;
-          if (wet.size > 0) wetSagas += 1;
-          stretchesRowed += wet.size;
-          let onCoast = 0;
-          let known = 0;
-          for (let st = 0; st < ROUTE_STOPS; st += 1) {
-            if (!groundAtStop(state.seed, st)) continue;
-            onCoast += 1;
-            if (knowsStop(state, st)) known += 1;
-            if (wet.has(st)) groundsWorked += 1;
-          }
-          groundsOnCoast += onCoast;
-          groundsKnown += known;
-          if (known > 0) sagasSeeingOne += 1;
-          await new Promise((resolve) => setTimeout(resolve, 0));
-        }
-      }
-    } finally {
-      policy = SETTLER;
-    }
-
-    const per = (n: number) => (n / Math.max(1, sagas)).toFixed(1);
-    const reach = spans.reduce((a, b) => a + b, 0) / Math.max(1, spans.length);
-    // eslint-disable-next-line no-console
-    console.log(
-      `PROBE the water a saga touches — ${sagas} raider sagas to day 400:\n` +
-        `  ${wetSagas} ever rowed; ${per(stretchesRowed)} stretches reached by oar per saga\n` +
-        `  mean stretches per rowed day: ${reach.toFixed(2)}\n` +
-        `  fishing grounds: ${per(groundsOnCoast)} on the coast, ${per(groundsKnown)} ever known ` +
-        `(${sagasSeeingOne}/${sagas} sagas knew one), ${per(groundsWorked)} ever worked\n` +
-        `  days with a ground within three: ${dayGroundNear} — ${dayNearButFed} well fed, ` +
-        `${dayNearButSettled} settled and cannot move, ${dayNearButStuck} no move at all, ` +
-        `${dayNearAndFree} hungry and free to go`,
-    );
-
-    // The probe asserts only that its instrument still works — that the
-    // sample ran, and that the game is still OFFERING what it is being
-    // measured for declining. Pinning the take-rate would pin the bot rather
-    // than the sea, and the take-rate is the finding, not the promise.
-    expect(sagas).toBe(SEEDS);
-    expect(daysWithAChoice, 'the band never had a step to choose — this probe measures nothing')
-      .toBeGreaterThan(200);
-  });
 });
 
 describe('the whole of a fight is played', () => {
@@ -5374,7 +2697,7 @@ describe('more than one way to play', () => {
 
     try {
       for (const p of POLICIES) {
-        policy = p;
+        setPolicy(p);
         let sawWinter = 0;
         let sawSpring = 0;
         let secondWinter = 0;
@@ -5449,7 +2772,7 @@ describe('more than one way to play', () => {
         );
       }
     } finally {
-      policy = SETTLER;
+      setPolicy(SETTLER);
     }
 
     // eslint-disable-next-line no-console
@@ -5549,7 +2872,7 @@ describe('where an armed sortie dies', () => {
     };
 
     try {
-      policy = { ...RAIDER, raidParty: PARTY };
+      setPolicy({ ...RAIDER, raidParty: PARTY });
       for (const [arm, terms] of [[0, 'even'], [1, 'fair']] as [number, HardshipId][]) {
         for (let s = 0; s < SEEDS / 2; s += 1) {
           const state = run(armSeed(arm, s, SEEDS / 2), 400, (before, after) => {
@@ -5673,7 +2996,7 @@ describe('where an armed sortie dies', () => {
         }
       }
     } finally {
-      policy = SETTLER;
+      setPolicy(SETTLER);
       open = null;
     }
 
@@ -5757,7 +3080,7 @@ describe('can a raider actually live by it', () => {
 
     try {
       for (const [name, p] of arms) {
-        policy = p;
+        setPolicy(p);
         let winter = 0, spring = 0, second = 0, days = 0, sacked = 0, alive = 0, built = 0;
         const fates: Record<string, number> = {};
         for (let s = 0; s < SEEDS; s += 1) {
@@ -5798,7 +3121,7 @@ describe('can a raider actually live by it', () => {
         );
       }
     } finally {
-      policy = SETTLER;
+      setPolicy(SETTLER);
     }
 
     // eslint-disable-next-line no-console
@@ -5866,7 +3189,7 @@ describe('what a haul would have to be worth', () => {
         ['raider x4', RAIDER, 4],
         ['raider x8', RAIDER, 8],
       ] as [string, Policy, number][]) {
-        policy = p;
+        setPolicy(p);
         setScale(scale);
         let winter = 0, spring = 0, secondW = 0, days = 0, sacked = 0, alive = 0;
         let morale = 0, anger = 0, stores = 0;
@@ -5910,7 +3233,7 @@ describe('what a haul would have to be worth', () => {
         );
       }
     } finally {
-      policy = SETTLER;
+      setPolicy(SETTLER);
       // Put the shipped numbers back, or every test after this one in the
       // file is measuring a game that does not exist.
       CLAN_KINDS.forEach((k, i) => { k.plunder = { ...baseClan[i]! }; });
@@ -5963,7 +3286,7 @@ describe('falling on a camp is a fight the band loses', () => {
     const ours: number[] = [];
     let lastFight = 0;
     try {
-      policy = RAIDER;
+      setPolicy(RAIDER);
       for (let s = 0; s < SEEDS; s += 1) {
         lastFight = 0;
         run(`curve-${s}`, 200, (before, after) => {
@@ -5988,7 +3311,7 @@ describe('falling on a camp is a fight the band loses', () => {
         await new Promise((r) => setTimeout(r, 0));
       }
     } finally {
-      policy = SETTLER;
+      setPolicy(SETTLER);
     }
 
     const pc = (w: number, n: number) => `${w}/${n} (${Math.round((w / Math.max(1, n)) * 100)}%)`;
@@ -6172,7 +3495,7 @@ describe('the strandhogg, and why it does not happen', () => {
     let seaDays = 0, oppDays = 0, done = 0, sagas = 0;
     let aimedCamp = 0, aimedPlace = 0, aimedPlaceBySea = 0;
     try {
-      policy = RAIDER;
+      setPolicy(RAIDER);
       for (let s = 0; s < 30; s += 1) {
         const state = run(`curve-${s}`, 400, (before, after) => {
           if (after.day !== before.day) {
@@ -6196,7 +3519,7 @@ describe('the strandhogg, and why it does not happen', () => {
         void state;
         await new Promise((r) => setTimeout(r, 0));
       }
-    } finally { policy = SETTLER; }
+    } finally { setPolicy(SETTLER); }
     // eslint-disable-next-line no-console
     console.log(
       `${sagas} raider sagas: ${seaDays} days afloat, ${oppDays} days beside a strandable place, ` +
@@ -6238,7 +3561,7 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
         sagas: 0, days: 0, settledDays: 0, knownMarketDays: 0, tradeErrands: 0, deals: 0 };
       life[p.id] = L;
       try {
-        policy = p;
+        setPolicy(p);
         for (let s = 0; s < 30; s += 1) {
           // First day each place was SEEN, so the window can be measured
           // against the day it was emptied.
@@ -6299,7 +3622,7 @@ describe('the place economy — what a coast’s four prizes actually do', () =>
           }
           await new Promise((r) => setTimeout(r, 0));
         }
-      } finally { policy = SETTLER; }
+      } finally { setPolicy(SETTLER); }
     }
 
     const say = (id: string): string => {
@@ -6445,7 +3768,7 @@ describe('the first winter, from inside', () => {
       sawSpring: boolean;
     }
 
-    policy = SETTLER;
+    setPolicy(SETTLER);
     const lives: Life[] = [];
     for (let s = 0; s < SEEDS; s++) {
       const life: Life = {
@@ -6545,7 +3868,7 @@ describe('the first winter, from inside', () => {
     // 12 of sixty is only borderline read as two independent samples, while
     // the seeds that actually CHANGED are the real evidence.
     const sample = (p: Policy): { lived: boolean[]; sorties: number } => {
-      policy = p;
+      setPolicy(p);
       const lived: boolean[] = [];
       let sorties = 0;
       for (let s = 0; s < SEEDS; s++) {
@@ -6562,7 +3885,7 @@ describe('the first winter, from inside', () => {
 
     const held = sample(SETTLER);
     const tried = sample(DESPERATE);
-    policy = SETTLER;
+    setPolicy(SETTLER);
 
     const springHeld = held.lived.filter(Boolean).length;
     const springTried = tried.lived.filter(Boolean).length;
@@ -6616,7 +3939,7 @@ describe('the first winter, from inside', () => {
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
     const sample = (p: Policy): { lived: boolean[]; leanDays: number } => {
-      policy = p;
+      setPolicy(p);
       const lived: boolean[] = [];
       let leanDays = 0;
       for (let s = 0; s < SEEDS; s += 1) {
@@ -6636,7 +3959,7 @@ describe('the first winter, from inside', () => {
     // check rather than an outcome check.
     const full = sample({ ...SETTLER, id: 'loose', tightensBelt: false });
     const lean = sample(SETTLER);
-    policy = SETTLER;
+    setPolicy(SETTLER);
 
     let saved = 0;
     let killed = 0;
@@ -6705,8 +4028,8 @@ describe('the first winter, from inside', () => {
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
     const sample = (p: Policy): { lived: boolean[]; moves: number } => {
-      policy = p;
-      recrewed = 0;
+      setPolicy(p);
+      setRecrewed(0);
       const lived: boolean[] = [];
       for (let s = 0; s < SEEDS; s += 1) {
         const final = run(`winter-inside-${s}`, SPRING_IN, undefined, 'even');
@@ -6723,7 +4046,7 @@ describe('the first winter, from inside', () => {
     const need = sample(SETTLER);
     // And the calendar on top of it.
     const season = sample({ ...SETTLER, id: 'recrew', recrews: true });
-    policy = SETTLER;
+    setPolicy(SETTLER);
 
     const pair = (a: boolean[], b: boolean[]) => {
       let saved = 0;
@@ -6785,8 +4108,8 @@ describe('the first winter, from inside', () => {
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
     const sample = (p: Policy): { lived: boolean[]; left: number } => {
-      policy = p;
-      walkedOut = 0;
+      setPolicy(p);
+      setWalkedOut(0);
       const lived: boolean[] = [];
       for (let s = 0; s < SEEDS; s += 1) {
         const final = run(`winter-inside-${s}`, SPRING_IN, undefined, 'even');
@@ -6797,7 +4120,7 @@ describe('the first winter, from inside', () => {
 
     const stayed = sample(SETTLER);
     const walked = sample({ ...SETTLER, id: 'retreat', retreats: true });
-    policy = SETTLER;
+    setPolicy(SETTLER);
 
     let saved = 0;
     let killed = 0;
@@ -6862,7 +4185,7 @@ describe('the first winter, from inside', () => {
     const SEEDS = 900;
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
-    policy = SETTLER;
+    setPolicy(SETTLER);
     let condemned = 0;
     let condemnedAndLived = 0;
     let firstCallDay = 0;
@@ -7016,11 +4339,11 @@ describe('the coast remembering the ghost', () => {
       for (let s = 0; s < SEEDS; s += 1) {
         // The sender: a real saga on another coast, played until it has posts
         // in the ground. Its steading is what the code carries.
-        policy = { ...SETTLER };
+        setPolicy({ ...SETTLER });
         const sender = run(`ghost-${s}`, 90);
         if (sender.settlement) fromSteading += 1;
 
-        policy = { ...pol };
+        setPolicy({ ...pol });
         let ruinStop: number | null = null;
 
         const state = run(
@@ -7069,7 +4392,7 @@ describe('the coast remembering the ghost', () => {
     }
     // This file's convention: hand the shared policy back the way it was
     // found, so an added test cannot change the meaning of one after it.
-    policy = SETTLER;
+    setPolicy(SETTLER);
   });
 });
 
@@ -7109,8 +4432,8 @@ describe('walking out, for a band that took its ground too fast', () => {
     const RASH: Policy = { ...SETTLER, id: 'rash', siteFloor: 0 };
 
     const sample = (p: Policy) => {
-      policy = p;
-      walkedOut = 0;
+      setPolicy(p);
+      setWalkedOut(0);
       const lived: boolean[] = [];
       const scores: number[] = [];
       const days: number[] = [];
@@ -7153,7 +4476,7 @@ describe('walking out, for a band that took its ground too fast', () => {
     const fair = sample(SETTLER);
     const rash = sample(RASH);
     const rashOut = sample({ ...RASH, retreats: true });
-    policy = SETTLER;
+    setPolicy(SETTLER);
 
     let saved = 0;
     let killed = 0;
@@ -7211,76 +4534,6 @@ describe('walking out, for a band that took its ground too fast', () => {
 // What a player actually does is hold out, and then stop holding out as
 // winter closes. This measures that third thing against both extremes before
 // anything is decided, because changing the bot restates the whole document.
-describe('PROBE: what the settling floor is worth', () => {
-  it('measures holding out, taking anything, and giving way as winter nears',
-    { timeout: 900_000 }, () => {
-    const SEEDS = 120;
-    const SPRING_IN = SEASON_LENGTH * 3 + 1;
-
-    const sample = (p: Policy) => {
-      policy = p;
-      const lived: boolean[] = [];
-      let settled = 0;
-      let ground = 0;
-      let day = 0;
-      for (let s = 0; s < SEEDS; s += 1) {
-        let noted = false;
-        const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
-          if (!noted && !before.settlement && after.settlement) {
-            noted = true;
-            // The ground the posts actually went into — see the note on the
-            // same read in the settling probe above.
-            ground += stopReport(after.seed, after.settlement.stop ?? 0).total;
-            day += after.day;
-            settled += 1;
-          }
-        }, 'even');
-        lived.push(!final.end && final.day >= SPRING_IN);
-      }
-      return {
-        saw: lived.filter(Boolean).length,
-        lived,
-        settled,
-        ground: settled ? ground / settled : 0,
-        day: settled ? day / settled : 0,
-      };
-    };
-
-    // The old bot is named explicitly rather than spelled `SETTLER`, because
-    // SETTLER now RELAXES — this measurement is why. Pairing is against the
-    // old one, so the table reads as "what the change bought".
-    const arms: [string, Policy][] = [
-      ['the old bot (fixed floor 9)', { ...SETTLER, id: 'fixed', relaxFrom: undefined }],
-      ['today (gives way from 14)', { ...SETTLER }],
-      ['takes anything (floor 0)', { ...SETTLER, id: 'rash', siteFloor: 0 }],
-    ];
-    const out = arms.map(([label, p]) => ({ label, r: sample(p) }));
-    policy = SETTLER;
-
-    for (const { label, r } of out) {
-      // eslint-disable-next-line no-console
-      console.log(
-        `[floor] ${String(label).padEnd(26)} settled ${String(r.settled).padStart(3)}/${SEEDS}, ` +
-          `ground ${r.ground.toFixed(1)}, day ${r.day.toFixed(0)}, ` +
-          `saw spring ${r.saw}/${SEEDS}`,
-      );
-    }
-    // Paired against the OLD bot, so the table reads as what the change
-    // bought; the seeds where the two agree carry no information either way.
-    const base = out[0]!.r;
-    for (const { label, r } of out.slice(1)) {
-      let saved = 0;
-      let killed = 0;
-      for (let s = 0; s < SEEDS; s += 1) {
-        if (!base.lived[s] && r.lived[s]) saved += 1;
-        if (base.lived[s] && !r.lived[s]) killed += 1;
-      }
-      // eslint-disable-next-line no-console
-      console.log(`[floor]   ${String(label).padEnd(24)} vs the old bot: `
-        + `saved ${saved}, killed ${killed}`);
-    }
-  });
-});
 
 // --- Is the market worth visiting? ---
 //
@@ -7306,7 +4559,7 @@ describe('the market, and whether visiting it is worth anything', () => {
     const LAST_DAY = 400;
 
     const sample = (p: Policy) => {
-      policy = p;
+      setPolicy(p);
       const lived: boolean[] = [];
       let errands = 0;
       let deals = 0;
@@ -7356,7 +4609,7 @@ describe('the market, and whether visiting it is worth anything', () => {
     const placebo = sample({
       ...SETTLER, id: 'market-placebo', tradesFreely: true, tradesNothing: true,
     });
-    policy = SETTLER;
+    setPolicy(SETTLER);
 
     const pair = (r: typeof gated) => {
       let saved = 0;
@@ -7407,389 +4660,4 @@ describe('the market, and whether visiting it is worth anything', () => {
     expect(keepsWood.deals, 'refusing to sell wood changed nothing')
       .toBeLessThan(after.deals / 2);
   });
-});
-
-describe('PROBE: what a lineage actually amounts to', () => {
-  /**
-   * 9.9's premise, re-taken before anything is built on it. The item reads
-   * "the memorial, the lineage and the generations exist and do not talk to
-   * each other", and two of those three claims are checkable in the source
-   * without a harness at all:
-   *
-   * - `hallPasses` (sim/household.ts) imports `childrenOf` and names the dead
-   *   leader's children, so GENERATIONS talks to LINEAGE;
-   * - `maybeBirth` (sim/lineage.ts) reads `kinOf` to record a father, so
-   *   LINEAGE talks to the households `maybePair` makes.
-   *
-   * The one that is genuinely deaf is the MEMORIAL: `fallenOf` maps a person
-   * to `{name, byname, fate, day, seed}` and nothing else, so the wall cannot
-   * say whose husband, whose mother, or what anybody left.
-   *
-   * What no source reading can settle is the SIZE — whether a lineage is a
-   * thing that happens in a played saga or a feature the odds never reach. A
-   * bequest with nothing to bequeath and nobody to bequeath it to is 6.5b's
-   * mistake again: a rule that fires twice in a hundred and twenty runs.
-   *
-   * So this counts, over full runs: births, marriages made after the landing,
-   * children who got a father's name, deaths of a leader who left children,
-   * and how long the wall's rows are.
-   */
-  it('counts births, marriages and what the wall is given', { timeout: 900_000 }, () => {
-    const SEEDS = 60;
-    for (const TERMS of ['even', 'fair'] as HardshipId[]) {
-      let sagas = 0;
-      let withChild = 0;      // sagas that ever saw a birth
-      let births = 0;
-      let fathered = 0;       // children recorded with a father
-      let weddings = 0;       // households made after the landing
-      let withWedding = 0;
-      let heirlessLeader = 0; // a leader died leaving no child
-      let leaderWithChild = 0;
-      let deaths = 0;         // rows the wall would get
-      let deadWithKin = 0;    // ... of the dead, how many were bound to somebody
-      let deadWithChild = 0;  // ... and how many left a child behind
-      let bladeMoved = 0;     // sagas where the blade changed hands at all
-      let bladeHands = 0;     // hands it went through, all sagas
-      let bladeLaid = 0;      // sagas that ended with it in a chest for a child
-      let bladeRows = 0;      // wall rows that carry it
-      for (let s = 0; s < SEEDS; s += 1) {
-        const end = run(`curve-${s}`, 400, (before, after) => {
-          const was = before.settlement?.children.length ?? 0;
-          const now = after.settlement?.children.length ?? 0;
-          if (now > was) {
-            births += now - was;
-            for (const c of after.settlement!.children.slice(was)) {
-              if (c.father) fathered += 1;
-            }
-          }
-          if ((after.flags['lastPaired'] ?? -1) !== (before.flags['lastPaired'] ?? -1)) {
-            weddings += 1;
-          }
-        }, TERMS);
-        sagas += 1;
-        // 9.9: does the blade actually move in a played saga, or is it the
-        // 6.5b rule again — correct, tested, and fired twice in 128 runs?
-        const blade = end.party.blade;
-        if (blade) {
-          bladeHands += blade.borne.length;
-          if (blade.borne.length > 1) bladeMoved += 1;
-          if (blade.laidFor) bladeLaid += 1;
-          bladeRows += fallenOf(end).filter((row) => row.blade !== undefined).length;
-        }
-        const kids = end.settlement?.children ?? [];
-        if (kids.length > 0) withChild += 1;
-        if (end.flags['lastPaired'] !== undefined) withWedding += 1;
-        const wall = fallenOf(end);
-        deaths += wall.length;
-        for (const p of end.party.people) {
-          if (p.alive || p.left) continue;
-          if (p.kin) deadWithKin += 1;
-          if (kids.some((c) => c.mother === p.id || c.father === p.id)) deadWithChild += 1;
-          // Whether the hall passed through them: sworn, and nobody ahead.
-          if (p.bond !== 'sworn') continue;
-          const seat = end.party.people.findIndex((q) => q.id === p.id);
-          const ahead = end.party.people.slice(0, Math.max(0, seat))
-            .some((q) => q.alive && q.bond === 'sworn');
-          if (ahead) continue;
-          if (kids.some((c) => c.mother === p.id || c.father === p.id)) leaderWithChild += 1;
-          else heirlessLeader += 1;
-        }
-      }
-      const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
-      console.log(
-        `a lineage [${TERMS}] over ${sagas} sagas:\n`
-        + `  sagas that saw a child born: ${withChild} (${pc(withChild, sagas)}), `
-        + `${births} children in all, ${fathered} with a father named\n`
-        + `  sagas that saw a wedding after the landing: ${withWedding} `
-        + `(${pc(withWedding, sagas)}), ${weddings} weddings in all\n`
-        + `  the hall passed from a man who left a child ${leaderWithChild} times, `
-        + `from one who left none ${heirlessLeader}\n`
-        + `  the wall was given ${deaths} names; ${deadWithKin} (${pc(deadWithKin, deaths)}) `
-        + `were bound to somebody, ${deadWithChild} (${pc(deadWithChild, deaths)}) left a child\n`
-        + `  the blade changed hands in ${bladeMoved} sagas (${pc(bladeMoved, sagas)}), `
-        + `${bladeHands} hands in all, laid by for a child in ${bladeLaid}; `
-        + `${bladeRows} wall rows carry it (${pc(bladeRows, deaths)})`,
-      );
-    }
-  });
-});
-
-describe('PROBE: what the colony loop actually is', () => {
-  /**
-   * 9.11's three numbers, re-taken before the largest item in the phase is
-   * opened on them. All three date from before 9.12a, and 9.12a exists
-   * BECAUSE of them — "the hall must be kept" was built as the answer to
-   * "the colony is the least pressured system in the game". A premise that
-   * has already been half-answered is exactly the kind this project has been
-   * caught inheriting all week.
-   *
-   * The item reads: 53% of a saga's actions, 33 of 60 bands ever passed six
-   * people, the hall runs 9.0 souls to 14.2 of roof and is never full, and by
-   * year two the band has more labour than uses for it.
-   *
-   * The LOAD-BEARING claim is the last one, and it is the only one the other
-   * three are evidence for. So this measures it directly rather than by
-   * proxy: on a settled day, is there anything left the band could build, and
-   * is anybody standing about with no job.
-   */
-  it('counts the actions, the roster, the roof and the idle hands',
-    { timeout: 1_800_000 }, async () => {
-      const SEEDS = 60;
-      let colony = 0;
-      let travel = 0;
-      let battle = 0;
-      let everPastSix = 0;
-      let sagas = 0;
-      const whyBlocked = new Map<string, number>();
-      // Settled days, split by year, so "by year two" can be checked rather
-      // than assumed.
-      const byYear = new Map<number, {
-        days: number; souls: number; roof: number; crowded: number;
-        idle: number; nothingLeft: number; cantAfford: number; queueEmpty: number;
-        wood: number;
-      }>();
-      const bump = (y: number) => {
-        if (!byYear.has(y)) {
-          byYear.set(y, {
-            days: 0, souls: 0, roof: 0, crowded: 0,
-            idle: 0, nothingLeft: 0, cantAfford: 0, queueEmpty: 0, wood: 0,
-          });
-        }
-        return byYear.get(y)!;
-      };
-
-      for (let s = 0; s < SEEDS; s += 1) {
-        let peak = 0;
-        let lastDay = 0;
-        run(`curve-${s}`, 400, (before, after) => {
-          // WHERE THE SAGA'S TIME GOES, and the first cut of this counter read
-          // a flat 0% for the colony — because it asked `currentMode(before)
-          // === 'COLONY'` and this harness never opens the colony screen: the
-          // bot calls `assign` and `queueBuild` on the state directly. That is
-          // a reading of the BOT's mode stack, not of the game, and it is the
-          // same fault as every other one this file has caught.
-          //
-          // So it asks where the band is standing instead, which is what "how
-          // much of a saga is the colony" actually means.
-          if (before.battle) battle += 1;
-          else if (before.settlement && atHome(before)) colony += 1;
-          else travel += 1;
-
-          const alive = after.party.people.filter((p) => p.alive).length;
-          if (alive > peak) peak = alive;
-
-          const home = after.settlement;
-          if (!home || after.day === lastDay) return;
-          lastDay = after.day;
-          const row = bump(Math.floor((after.day - 1) / YEAR_LENGTH) + 1);
-          row.days += 1;
-          row.souls += alive;
-          row.roof += capacity(after);
-          if (crowding(after) > 0) row.crowded += 1;
-          row.idle += after.party.people.filter((p) => p.alive && !p.job).length;
-          if (home.queue.length === 0) row.queueEmpty += 1;
-          // THE TWO REASONS THERE IS NOTHING TO START, kept apart, because a
-          // count that merges them is a ratio whose denominator selected
-          // itself. `buildBlocker` answers 'timber' for a band that is simply
-          // out of wood — which is the colony being PRESSED, the opposite of
-          // the item's claim — and answers something else when the list is
-          // genuinely finished.
-          // `standsFor`, NOT `home.built.includes` — and the first cut of this
-          // probe used the latter and read "list finished 0%" in every year.
-          // A tier that has been UPGRADED is not in `built` any more, so a
-          // longhouse replaced by a great hall counted as still to build, and
-          // `buildBlocker` duly answered 'built' 5208 times. That is 9.4's
-          // finding exactly, made again by the person who wrote it up, and it
-          // is the first trap named in CLAUDE.md.
-          const unbuilt = BUILDINGS.filter((b) => !standsFor(after, b.id));
-          const couldStart = unbuilt.filter((b) => buildBlocker(after, b) === null);
-          row.wood += after.party.firewood;
-          if (unbuilt.length === 0) row.nothingLeft += 1;
-          else if (couldStart.length === 0) {
-            row.cantAfford += 1;
-            // WHICH refusal, per building, on a day when nothing can start.
-            // "Blocked" with a thousand wood in the store is not a store
-            // problem, and naming the blocker is the only way to know what it
-            // is instead.
-            for (const b of unbuilt) {
-              const why = buildBlocker(after, b) ?? 'none';
-              whyBlocked.set(`${why}`, (whyBlocked.get(`${why}`) ?? 0) + 1);
-            }
-          }
-        }, 'even');
-        sagas += 1;
-        if (peak > 6) everPastSix += 1;
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
-
-      const acts = colony + travel + battle;
-      const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
-      const rows = [...byYear.entries()].sort((a, b) => a[0] - b[0]).map(([y, r]) =>
-        `  year ${y}: ${r.days} settled days, ${(r.souls / r.days).toFixed(1)} souls to `
-        + `${(r.roof / r.days).toFixed(1)} of roof, crowded ${pc(r.crowded, r.days)}, `
-        + `${(r.idle / r.days).toFixed(1)} idle hands, `
-        + `${(r.wood / r.days).toFixed(0)} wood in store, `
-        + `list finished ${pc(r.nothingLeft, r.days)}, `
-        + `blocked ${pc(r.cantAfford, r.days)}, `
-        + `queue empty ${pc(r.queueEmpty, r.days)}`);
-      // eslint-disable-next-line no-console
-      console.log(
-        `the colony loop over ${sagas} sagas — ${acts} turns: `
-        + `colony ${pc(colony, acts)}, travel ${pc(travel, acts)}, battle ${pc(battle, acts)}\n`
-        + `  bands that ever passed six people: ${everPastSix} of ${sagas}\n`
-        + rows.join('\n')
-        + `\n  why nothing could start, per building per blocked day: `
-        + [...whyBlocked.entries()].sort((a, b) => b[1] - a[1])
-          .map(([k, v]) => `${k} ${v}`).join(', '),
-      );
-
-      // THE INSTRUMENT FIRST. A probe that never sees a settled day, or never
-      // sees a second year, measures nothing about a colony loop.
-      expect([...byYear.keys()], 'no settled days at all').not.toHaveLength(0);
-      expect(byYear.get(2)?.days ?? 0, 'no band reached a second year — nothing to say')
-        .toBeGreaterThan(0);
-    });
-});
-
-describe('PROBE: is the rival ever actually seen', () => {
-  /**
-   * 9.10's premise, re-taken. The item says there is "no way to watch him",
-   * and that is not quite true: `render/strip.ts` marks his hall and every
-   * stretch he has fenced, and `render/procession.ts` draws the hall. What is
-   * genuinely absent is the SAGA — `sagagen.ts` does not mention him at all,
-   * so a run ends without ever saying what the other boat did.
-   *
-   * But every one of those marks, and every chronicle line he has, is gated
-   * on `rival.met` — which needs the band to stand within one stretch of his
-   * hall. So the question that decides what 9.10 should build is not "is he
-   * drawn" but "is he ever MET". A rival nobody meets is invisible whatever
-   * the renderer would have done.
-   */
-  it('counts how often a band meets him, and how much coast he ends up holding',
-    { timeout: 900_000 }, async () => {
-      const SEEDS = 60;
-      for (const TERMS of ['even', 'fair'] as HardshipId[]) {
-        let sagas = 0;
-        let exists = 0;
-        let met = 0;
-        let metBy = 0;          // day of first sight, summed over those met
-        let heldSum = 0;        // stretches he holds at the end
-        let oursSum = 0;        // stretches the band has trodden
-        let blockedEver = 0;    // sagas where his ground ever refused our posts
-        let far = 0;            // sagas that ran the whole 400 days
-        let farHeld = 0;
-        let short = 0;          // sagas that ended first
-        let shortHeld = 0;
-        for (let s = 0; s < SEEDS; s += 1) {
-          let sawOn = 0;
-          let blocked = false;
-          const end = run(`curve-${s}`, 400, (before, after) => {
-            if (!sawOn && !before.rival?.met && after.rival?.met) sawOn = after.day;
-            if (!blocked && after.rival && rivalBlocks(after)) blocked = true;
-          }, TERMS);
-          sagas += 1;
-          // Breathe: sixty full sagas twice over is long enough to starve the
-          // runner's RPC heartbeat, which fails the run with every test green.
-          await new Promise((resolve) => setTimeout(resolve, 0));
-          if (!end.rival) continue;
-          exists += 1;
-          const held = (end.rival.claimStops ?? []).length;
-          heldSum += held;
-          oursSum += Object.keys(end.world.trodStops ?? {}).length;
-          // SPLIT BY WHETHER THE SAGA RAN ITS COURSE. `rival.ts` records that
-          // he ends holding "a median of six of a possible seven" — measured
-          // over 150 coasts walked to the horizon. A played saga mostly ends
-          // long before that, so the two numbers are about different things
-          // and only one of them is about the game.
-          const wentFar = !end.end && end.day >= 400;
-          if (wentFar) { far += 1; farHeld += held; }
-          else { short += 1; shortHeld += held; }
-          if (end.rival.met) { met += 1; metBy += sawOn; }
-          if (blocked) blockedEver += 1;
-        }
-        const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
-        // eslint-disable-next-line no-console
-        console.log(
-          `the rival [${TERMS}] over ${sagas} sagas — he exists on ${exists}:\n`
-          + `  ever came in sight of his hall: ${met} (${pc(met, exists)}), `
-          + `first on day ${met ? (metBy / met).toFixed(0) : '-'} on average\n`
-          + `  at the end he held ${(heldSum / Math.max(1, exists)).toFixed(1)} stretches; `
-          + `we had walked ${(oursSum / Math.max(1, exists)).toFixed(1)}\n`
-          + `  his ground refused our posts in ${blockedEver} sagas (${pc(blockedEver, exists)})\n`
-          + `  held at the end — ${far} sagas that ran all 400 days: `
-          + `${far ? (farHeld / far).toFixed(1) : '-'}; `
-          + `${short} that ended sooner: ${short ? (shortHeld / short).toFixed(1) : '-'}`,
-        );
-      }
-    });
-});
-
-describe('PROBE: 9.2 sweep — the two levers on the departure side', () => {
-  /**
-   * 9.2 left three prongs and priced only one. What shipped was the record;
-   * what remains is a choice between two levers that the item itself marks
-   * UNMEASURED — and a fork nobody can price is a coin flip, not a decision.
-   *
-   * The finding this has to move: every arm that sails does worse than the
-   * arm that never does, and the harm tracks the NUMBER OF CROSSINGS rather
-   * than anything about what comes back. Two named causes have already failed
-   * a test here (unfunded mouths, and stores landed too late), so the bar for
-   * a third explanation is that it survives being swept.
-   *
-   * The arm is `whenever` — sails the moment `sailBlocker` allows, in any
-   * season. Not a strategy: the control that separates "the gate never opens"
-   * from "the crossing is not worth taking". Paired against never sailing on
-   * the same seeds, because only the seeds that differ carry information.
-   *
-   * Driven from OUTSIDE: `CROSSING` and `provisioning` are module constants,
-   * so the sweep patches src between runs and this probe reports whatever it
-   * is handed. It prints the two constants it actually ran under, so a row
-   * can never be attributed to the wrong setting.
-   */
-  it('prices sailing against never sailing, at whatever the constants say',
-    { timeout: 1_800_000 }, async () => {
-      const SEEDS = 200;
-      const outcome = (sails: boolean, anySeason: boolean) => {
-        const was = policy;
-        policy = { ...SETTLER, sails, sailAnySeason: anySeason };
-        const per: { lived: boolean; sailed: boolean }[] = [];
-        let voyages = 0;
-        let souls = 0;
-        try {
-          for (let s = 0; s < SEEDS; s += 1) {
-            let sent = false;
-            const end = run(`sail-${s}`, 400, (before, after) => {
-              if (!before.voyage && after.voyage) { voyages += 1; sent = true; }
-            });
-            per.push({ lived: !end.end && end.day >= 400, sailed: sent });
-            souls += end.party.people.filter((p) => p.alive).length;
-          }
-        } finally { policy = was; }
-        return { per, voyages, souls };
-      };
-
-      const base = outcome(false, false);
-      const arm = outcome(true, true);
-      let saved = 0;
-      let killed = 0;
-      let sailed = 0;
-      for (let i = 0; i < SEEDS; i += 1) {
-        if (arm.per[i]!.sailed) sailed += 1;
-        if (!base.per[i]!.lived && arm.per[i]!.lived) saved += 1;
-        if (base.per[i]!.lived && !arm.per[i]!.lived) killed += 1;
-      }
-      const stood = (r: typeof base) => r.per.filter((p) => p.lived).length;
-      // eslint-disable-next-line no-console
-      console.log(
-        `9.2 sweep — CROSSING=${CROSSING}, a season's provisioning is `
-        + `${provisioning(structuredClone(newGame('sail-0'))).food} food:\n`
-        + `  never sails: ${stood(base)}/${SEEDS} standing at day 400, ${base.souls} souls\n`
-        + `  whenever:    ${stood(arm)}/${SEEDS} standing, ${arm.souls} souls, `
-        + `${sailed} sagas sailed, ${arm.voyages} crossings\n`
-        + `  PAIRED: sailing saved ${saved} and killed ${killed}`,
-      );
-      // THE INSTRUMENT FIRST. An arm that never sails is the control twice
-      // over, and this file has shipped that mistake before.
-      expect(sailed, 'nobody sailed — the sweep measured nothing').toBeGreaterThan(0);
-    });
 });

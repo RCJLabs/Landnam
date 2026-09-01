@@ -5436,6 +5436,56 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-31 — The balance file is split into a harness, its bars and its
+  probes** — `balance.test.ts` had grown to 6,300 lines holding three
+  different kinds of thing, and it was 43.9 of the suite's 45.0 minutes. The
+  split was measured before it was made, and the measurement CHANGED the
+  argument for it: moving the fifteen named PROBE tests out cuts the file by a
+  quarter and the clock by half, because the probes were half the runtime
+  while being fifteen of 105 tests and thirteen of 225 assertions. That ratio
+  is the case — not file size. The slowest things left are bars and have to
+  be (`plays to day 500` 240s, the market 167s, the winter verdict 136s, the
+  hardship arms 105s), so the suite does not get much shorter; what it gets is
+  a file where every test is a claim the game must keep meeting.
+  - `test/fixtures/harness.ts` — the scripted player, lifted whole. Not a
+    `.test.ts`: importing one test file from another would register every bar
+    twice.
+  - `test/balance.test.ts` — the BARS. 212 assertions over 88 tests.
+  - `test/probes.test.ts` — the INSTRUMENTS. 13 assertions over 15 tests. Kept
+    rather than deleted for the reason CLAUDE.md gives: a number is a reading,
+    and honouring that means being able to RE-TAKE it, which means the
+    instrument has to survive. What it must not do is sit among the bars
+    looking like one.
+  - **Exactly two things changed in the move**, and both were forced: the
+    harness's `../src/` imports became `../../src/`, and four mutable knobs
+    (`policy`, `walkedOut`, `recrewed`, `settleNotBefore`) grew setters,
+    because a test in another module reads an imported binding LIVE but cannot
+    assign to one. 51 call sites. Every read is the line it always was.
+  - **How it was verified, since a refactor is exactly where an assertion goes
+    missing quietly.** Structurally first: every non-comment line of the old
+    file is present in the three new ones verbatim, with an `export` in front
+    of it, or as the setter form of a knob assignment — zero unexplained
+    losses — and the test names, the 105 `it`s, the 225 assertions and the 57
+    printed tables all still exist. Then behaviourally, which is the check
+    that could actually fail: the curve read `winter 77%, spring 53%, two
+    winters 27%, settled by winter 42` and the hardship arms `81/55/27`,
+    both identical to the pre-split readings. A harness that behaved
+    differently would print different numbers.
+  - **A note on the instrument fault this turned up in my own hands.** The
+    first extraction left every `../src/` import in the harness wrong by one
+    directory, and TypeScript reported that as ~60 "implicitly has an `any`
+    type" errors on unrelated callback parameters. It reads as a typing
+    problem and is a resolution problem; the sixty errors were one error.
+    Worth remembering next time a refactor produces a wall of TS7006.
+  - **One thing left open**: the run now prints `Errors 1 error —
+    [vitest-worker]: Timeout calling "onTaskUpdate"`, which is the exact
+    hazard `vite.config.ts` documents (it once failed a CI run with every
+    test green). Exit code was still 0 and all 1,557 tests passed. Whether
+    the split caused it — two 22-minute CPU-pegging files now run at the same
+    time where one used to — or whether it was already there is NOT yet
+    measured, and saying either without the control run would be the mistake
+    this file is full of warnings about.
+
 - **2026-08-31 — The `standsFor` bug is fixed as a class, not an instance** —
   9.11 tripped over one of these and fixed the one it tripped over, which left
   the class alive. Audited: `built.includes` appeared in three more places
