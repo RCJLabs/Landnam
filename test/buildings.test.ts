@@ -309,6 +309,15 @@ describe('buildings change the steading', () => {
       for (const id of building.after ?? []) {
         if (!home.built.includes(id)) home.built.push(id);
       }
+      // AND WHAT IT REPLACES, which this fixture did not grant until 9.11
+      // added a tier whose predecessor is nobody's `after`. It passed for
+      // greathall and earthworks by luck: their predecessors happened to have
+      // been pushed as somebody else's prerequisite earlier in the loop. A
+      // fixture that only works in list order is a fixture that will lie the
+      // next time the list changes.
+      if (building.replaces && !home.built.includes(building.replaces)) {
+        home.built.push(building.replaces);
+      }
       expect(buildBlocker(state, building), building.id).toBeNull();
     }
   });
@@ -698,5 +707,79 @@ describe('building through the action layer', () => {
     expect(buildable(state)).toHaveLength(0);
     expect(standing({ built: [] } as never)).toEqual([]);
     expect(queueBuild(state, 'longhouse')).toBe(false);
+  });
+});
+
+// 9.11: the late work, and the gate that could not see past an upgrade.
+describe('the work that costs a year', () => {
+  /** A steading with timber to burn and a named list already standing. */
+  function withBuilt(seed: string, ids: BuildingId[]): GameState {
+    const state = stocked(seed, 400);
+    state.settlement!.built.push(...ids);
+    return state;
+  }
+
+  /**
+   * THE BUG THIS FOUND, and it was in shipped content before it was in mine.
+   *
+   * `buildBlocker` checked `after` against `home.built.includes(id)`. An
+   * upgrade REMOVES what it replaces, so the moment earthworks go up the
+   * palisade leaves `built` — and the watchtower, which is `after:
+   * ['palisade']`, became unbuildable for the rest of the run. Nothing caught
+   * it because every bot policy wants the watchtower before the earthworks.
+   */
+  it('lets a walled steading raise a watchtower after the wall is upgraded', () => {
+    const palisade = withBuilt('gate-pal', ['longhouse', 'palisade']);
+    expect(buildBlocker(palisade, buildingById('watchtower')!)).toBeNull();
+
+    // Same steading, wall upgraded. `built` no longer contains 'palisade'.
+    const upgraded = withBuilt('gate-earth', ['longhouse', 'earthworks']);
+    expect(upgraded.settlement!.built).not.toContain('palisade');
+    expect(
+      buildBlocker(upgraded, buildingById('watchtower')!),
+      'the upgraded wall stopped counting as a wall',
+    ).toBeNull();
+  });
+
+  it('still refuses a building whose prerequisite was never raised at all', () => {
+    // The other half: the gate has to keep refusing, or the fix is just a
+    // hole. Nothing replaces the mead hall, so the hof has no back door.
+    const bare = withBuilt('gate-none', ['longhouse']);
+    expect(buildBlocker(bare, buildingById('hof')!)).toBe('after');
+  });
+
+  it('gates the howe on a god-house, by whichever one is standing', () => {
+    const none = withBuilt('howe-none', ['longhouse', 'meadhall']);
+    expect(buildBlocker(none, buildingById('shiphowe')!)).toBe('after');
+    const hof = withBuilt('howe-hof', ['longhouse', 'meadhall', 'hof']);
+    expect(buildBlocker(hof, buildingById('shiphowe')!)).toBeNull();
+    // And by the tier above it, which is the case the engine fix is for.
+    const great = withBuilt('howe-great', ['longhouse', 'meadhall', 'greathof']);
+    expect(great.settlement!.built).not.toContain('hof');
+    expect(buildBlocker(great, buildingById('shiphowe')!)).toBeNull();
+  });
+
+  it('costs more than everything raised before it', () => {
+    // The whole point of the tier. Pinned to literals rather than to the
+    // constants being tested, so it cannot pass by tautology.
+    const late = ['stonedyke', 'greathof', 'shiphowe'] as const;
+    const lateTimber = late.reduce((n, id) => n + buildingById(id)!.timber, 0);
+    const earlyTimber = BUILDINGS
+      .filter((b) => !late.includes(b.id as never))
+      .reduce((n, b) => n + b.timber, 0);
+    expect(lateTimber).toBe(92);
+    expect(earlyTimber).toBe(84);
+    expect(lateTimber, 'the late work stopped being the dear half').toBeGreaterThan(earlyTimber);
+  });
+
+  it('cannot be reached by a band in its first winter', () => {
+    // A sink that a starving band can pour its timber into is not a sink, it
+    // is a trap. Each of the three sits behind something a first winter has
+    // no time for.
+    const fresh = stocked('late-fresh', 400);
+    for (const id of ['stonedyke', 'greathof', 'shiphowe'] as const) {
+      expect(buildBlocker(fresh, buildingById(id)!), `${id} was open on day one`)
+        .not.toBeNull();
+    }
   });
 });

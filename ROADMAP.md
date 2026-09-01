@@ -48,13 +48,13 @@
 >
 > **CURRENT MILESTONE (from 2026-08-30): Phase 9 — what a saga actually
 > feels like to play**, below. **Built and closed:** 9.1b, 9.1c, 9.3, 9.4,
-> 9.6, 9.8, 9.9, 9.10, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave
+> 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave
 > the game a third act.
 >
 > **Measured, with a decision left to Evan rather than invented:** 9.2 (the
 > voyage home), 9.5 (soften the villain's promise or leave it), 9.7 (winter),
-> 9.11 (the colony loop), 9.12 (the pacing arc). The SHIELD is no longer among
-> them: 9.1c settled it by counting.
+> 9.12 (the pacing arc). The SHIELD left this list when 9.1c settled it by
+> counting; 9.11 left it when the fork closed by elimination.
 > **Nothing in Phase 9 is unstarted now.** What remains is rulings.
 >
 > **And a standing lesson from every item above.** Ten of them were opened on
@@ -4912,7 +4912,7 @@ nice. Four groups, in the shape they were proposed and chosen from.
 
 ### Overhauls
 
-- [~] **9.11 The colony loop** — **DIAGNOSED 2026-08-31. The item's headline
+- [x] **9.11 The colony loop** — **DIAGNOSED AND BUILT 2026-08-31. The item's headline
   claim is RIGHT, one of its three supporting numbers is wrong, and the fault
   is not where any of them point.**
 
@@ -4963,11 +4963,64 @@ nice. Four groups, in the shape they were proposed and chosen from.
   the first trap named in CLAUDE.md**. `standsFor` is what the codebase has
   for this, and it turns 0% into 74%.
 
-  **The fork, and it is Evan's:** what the output should buy. A trade good
-  worth carrying to the places and the neighbours; a second tier of buildings
-  that costs a year rather than a week; or a reason to send it away — the
-  knarr already exists and 9.2 says the voyage home has no cargo worth
-  putting in it. Nothing built here on a guess.
+  **The fork was Evan's and he took it: the second tier, built 2026-08-31.**
+
+  Cargo for the knarr was the recommendation and **reading 9.2 killed it**:
+  every arm that sails does worse than the arm that never does, the harm
+  tracks the NUMBER OF CROSSINGS, and sweeping more stores onto the return
+  measured monotonically worse. Cargo adds crossings. The trade good goes the
+  same way — every way of visiting more measured at worse. What was left is
+  work the band does at home.
+
+  **Three late works, pure data** (`src/data/buildings.ts`): the **stone
+  dyke** on top of the earthworks, the **great hof** on top of the hof, and
+  the **ship-howe** — a mound raised over the dead with a boat under it, which
+  feeds nobody and keeps nobody warm and is the first thing anyone coming up
+  that coast will see. 92 timber and 124 builder-days between them, against 84
+  for the whole list that existed before.
+
+  | | year 1 | year 2 | year 3 | year 4 | year 5 |
+  |---|---|---|---|---|---|
+  | queue empty, before | 37% | 41% | 74% | 85% | 89% |
+  | **queue empty, after** | 36% | **10%** | **19%** | **30%** | **51%** |
+  | list finished, before | 1% | 26% | 63% | 74% | 77% |
+  | **list finished, after** | 0% | **0%** | **15%** | **28%** | **49%** |
+  | wood in store, before | 43 | 236 | 521 | 1072 | 1613 |
+  | **wood in store, after** | 43 | 229 | 460 | **793** | **1241** |
+
+  **The curve does not move**: `winter 77%, spring 53%, two winters 27%,
+  settled by winter 42` against 77/53/28/42 before, which is one seed.
+
+  **WHAT IT DOES NOT DO, said plainly.** 92 timber against a surplus growing
+  by ~500 a year still leaves a pile — 793 by year four. The dead window is
+  filled, the overrun is not. Production outrunning every use the game has is
+  the deeper finding and it is left standing rather than papered over. Year
+  five still empties out at 51%.
+
+  **AND IT FOUND A SHIPPED ENGINE BUG.** The ship-howe measured NEVER RAISED
+  in sixty sagas — the 6.5b shape — and the cause was not its cost.
+  `buildBlocker` checked `after` against `home.built.includes(id)`, and an
+  upgrade REMOVES what it replaces, so a great hof standing meant "there is no
+  hof here" to every gate that asked. **It was latent in shipped content, not
+  just in mine: the watchtower is `after: ['palisade']` and earthworks replaces
+  the palisade**, so a band that walled up before towering could never raise a
+  watchtower again — masked only by every bot policy wanting the tower first.
+  Fixed to `standsFor`, which is the rule `data/buildings.ts` states in the
+  `replaces` docstring, applied where it was not. Regression test ships with
+  it.
+
+  **One test fixture was completing rather than a bar lowering.** `every
+  building is reachable` grants a building's `after` list and never what it
+  `replaces` — it passed for greathall and earthworks by luck, because their
+  predecessors happened to be somebody else's prerequisite earlier in the same
+  loop. A fixture that only works in list order will lie the next time the
+  list changes.
+
+  **Done when:** ✅ the fork closed on measurement rather than taste, with the
+  two rejected prongs named · ✅ the sink is content, not engine · ✅ the dead
+  window measured before and after · ✅ the curve unmoved · ✅ what it does
+  NOT fix stated · ✅ the never-raised finding chased to a real bug rather than
+  tuned away · ✅ four sabotages, all caught.
 - [~] **9.12 The pacing arc** — **DIAGNOSED 2026-08-29, and the diagnosis
   says the item was asking the wrong question.**
 
@@ -5319,6 +5372,25 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — The steading gets somewhere to put the work (9.11)** — The
+  fork this item left open is closed by elimination: cargo for the knarr died
+  on 9.2's own numbers (every arm that sails does worse, and the harm tracks
+  crossings), the trade good on the market's (every way of visiting more
+  measured at worse), so what is left is work done at home. Three late
+  works — a stone dyke on the earthworks, a great hof on the hof, and a
+  ship-howe raised over the dead — cost 92 timber against 84 for the entire
+  list that existed before. The dead window closes: queue-empty days go 74% →
+  **19%** in year three and 85% → **30%** in year four, and the wood pile falls
+  1072 → **793**. The curve does not move. What it does NOT do is fix the
+  overrun — 92 timber against ~500 a year still piles up, and year five still
+  empties out at 51%; production outrunning every use the game has is the
+  deeper finding and it is left standing. **And it found a shipped engine
+  bug**: the howe measured never-raised in sixty sagas because `buildBlocker`
+  checked `after` against `built.includes` rather than `standsFor`, so an
+  upgrade erased its own predecessor from every gate that asked — latent in
+  shipped content too, since the watchtower waits on a palisade the earthworks
+  replace. Four sabotages, all caught.
 
 - **2026-08-31 — The other landnám reaches the ending (9.10)** — Half the
   item's premise was already false: the strip map has marked the rival's hall

@@ -300,8 +300,20 @@ export function buildBlocker(state: GameState, building: BuildingDef): BlockReas
     if (crowding(state) <= 0) return 'room';
   }
   if (home.queue.includes(building.id)) return 'queued';
+  // `standsFor`, NOT `built.includes` — and this was a real bug, found when
+  // 9.11's ship-howe was gated on the hof and turned out to be UNRAISEABLE in
+  // sixty sagas. An upgrade removes what it replaces, so `built` stops
+  // containing the predecessor the moment the tier goes up: a great hof
+  // standing meant "there is no hof here" to every gate that asked this way.
+  //
+  // It was latent in shipped content rather than absent from it. The
+  // watchtower is `after: ['palisade']` and earthworks REPLACES the palisade,
+  // so a band that raised earthworks first could never raise a watchtower
+  // again — masked only by every bot policy wanting the watchtower first.
+  // This is the rule the `replaces` docstring states in data/buildings.ts,
+  // applied where it was not.
   for (const id of building.after ?? []) {
-    if (!home.built.includes(id)) return 'after';
+    if (!standsFor(state, id)) return 'after';
   }
   // An upgrade needs the thing it replaces actually standing.
   if (building.replaces && !home.built.includes(building.replaces)) return 'after';

@@ -525,6 +525,9 @@ namespace Tables
 		{ "greathall", 14, 11, 5, 2, 12, {  }, {  }, {  }, 1, "longhouse", "", "" },
 		{ "earthworks", 12, 10, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 4 } }, 1, "palisade", "", "" },
 		{ "hof", 7, 7, 0, 2, 0, { "meadhall" }, {  }, {  }, 1, "", "", "" },
+		{ "stonedyke", 30, 34, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 7 } }, 1, "earthworks", "", "" },
+		{ "greathof", 26, 30, 0, 4, 0, {  }, {  }, {  }, 1, "hof", "", "" },
+		{ "shiphowe", 36, 40, 0, 3, 0, { "hof" }, {  }, {  }, 1, "", "", "" },
 	};
 	inline const FBuildingRow* BuildingById(const std::string& Id)
 	{

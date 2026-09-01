@@ -22,7 +22,10 @@ export type BuildingId =
   | 'watchtower'
   | 'hof'
   | 'greathall'
-  | 'earthworks';
+  | 'earthworks'
+  | 'stonedyke'
+  | 'greathof'
+  | 'shiphowe';
 
 /** The need a building is the answer to. Drives the panel's suggestion. */
 export type Answers = 'warmth' | 'food' | 'rest' | 'heart' | 'safety';
@@ -226,6 +229,66 @@ export const BUILDINGS: BuildingDef[] = [
     works: 7,
     after: ['meadhall'],
     heart: 2,
+  },
+
+  // --- THE LATE WORK (9.11) ---
+  //
+  // Measured over 60 sagas: nobody in a settled band is ever idle — 0.2 to 1.5
+  // hands with no job, all five years — but the steading has NOTHING LEFT IT
+  // COULD RAISE on 26% of settled days in year two, 63% in year three and 74%
+  // in year four, while the wood those jobs keep cutting piles to 1072 and
+  // then 1613 in the store. Every building above costs 84 timber between
+  // them; a year-four band has twelve times that.
+  //
+  // So the item's framing — "more labour than uses for it" — points at idle
+  // hands, and hands are busy. What ran out is somewhere to PUT the work.
+  //
+  // These three are that: one more tier on each of the two chains that
+  // already upgrade, and one thing built for no reason but memory. They cost
+  // 101 timber and 119 builder-days between them — more than the whole list
+  // above — and they gate late enough that nothing can reach them in a first
+  // winter. WHAT THEY DO NOT DO is balance the wood: 101 against a surplus
+  // that grows by ~500 a year still leaves a pile, and that is a deeper
+  // finding about production outrunning every use the game has, recorded
+  // rather than papered over.
+
+  {
+    id: 'stonedyke',
+    name: 'Stone dyke',
+    blurb: 'The turf rampart faced and topped in drystone, a man and a half high, with the ditch cut back to bedrock. It will be standing when the hall is a green mound.',
+    answers: 'safety',
+    timber: 30,
+    works: 34,
+    replaces: 'earthworks',
+    needs: { timber: 1 },
+    raises: { defence: 7 },
+  },
+
+  {
+    id: 'greathof',
+    name: 'Great hof',
+    blurb: 'The god-house rebuilt with carved posts and a roof that does not leak on the high seat. People come from up the coast for the blót now, and go home saying whose hof it was.',
+    answers: 'heart',
+    timber: 26,
+    works: 30,
+    replaces: 'hof',
+    heart: 4,
+  },
+
+  {
+    id: 'shiphowe',
+    name: 'Ship-howe',
+    blurb: 'A mound raised over the dead with a boat under it, out where the land falls to the water. It feeds nobody and keeps nobody warm. It is the first thing anyone coming up that coast will see, and it will outlast every roof here.',
+    answers: 'heart',
+    timber: 36,
+    works: 40,
+    // THE GATE, AND IT WAS WRONG THE FIRST TIME. `after: ['greathall','hof']`
+    // with 45 timber and 55 builder-days put this past the window a band
+    // actually has: `every building gets built` reported it NEVER RAISED in
+    // sixty sagas, which is the 6.5b shape — a rule that cannot fire. Gated on
+    // the hof alone it is reachable and still the dearest thing on the list.
+    after: ['hof'],
+    heart: 3,
   },
 ];
 

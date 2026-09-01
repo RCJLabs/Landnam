@@ -492,6 +492,10 @@ const SETTLER: Policy = {
     'longhouse', 'farmplots', 'bud', 'smokehouse', 'palisade',
     'storehouse', 'watchtower', 'meadhall', 'greathall', 'earthworks',
     'hof', 'dock',
+    // The late work (9.11), last because it is: nothing reaches it in a
+    // first winter, and a bot that wanted it early would be measuring a
+    // strategy nobody can play.
+    'stonedyke', 'greathof', 'shiphowe',
   ],
   crew: CREW,
   sails: true,
@@ -535,6 +539,10 @@ const RAIDER: Policy = {
   want: [
     'longhouse', 'palisade', 'smokehouse', 'storehouse', 'watchtower',
     'farmplots', 'bud', 'earthworks', 'meadhall', 'greathall', 'hof', 'dock',
+    // The late work (9.11), last because it is: nothing reaches it in a
+    // first winter, and a bot that wanted it early would be measuring a
+    // strategy nobody can play.
+    'stonedyke', 'greathof', 'shiphowe',
   ],
   // Two warriors, one hunter and a farmer could not feed six people, and it
   // showed: TWENTY-EIGHT of twenty-eight raider deaths were hunger. A man
@@ -569,6 +577,8 @@ const TURTLE: Policy = {
   want: [
     'longhouse', 'farmplots', 'palisade', 'smokehouse', 'watchtower',
     'storehouse', 'earthworks', 'bud', 'meadhall', 'greathall', 'hof', 'dock',
+    // The late work (9.11), last for the same reason as the others.
+    'stonedyke', 'greathof', 'shiphowe',
   ],
   crew: ['farmer','farmer','farmer','woodcutter','builder','warrior'],
   sails: true,
