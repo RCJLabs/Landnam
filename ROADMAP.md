@@ -51,9 +51,10 @@
 > 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
 > that gave the game a third act.
 >
-> **Measured, with a decision left to Evan rather than invented:** 9.2 (the
-> voyage home, narrowed to remove-or-keep), 9.7 (winter), 9.12 (the pacing
-> arc).
+> **Measured, with a decision left to Evan rather than invented:** 9.7
+> (winter) and 9.12 (the pacing arc). **9.2 closed 2026-09-01** — the verb
+> stays, on 9.1c's precedent: an honestly-labelled bad choice is kept and the
+> thing that recommends it is deleted.
 >
 > Three items have LEFT that list rather than been ruled on: the SHIELD when
 > 9.1c settled it by counting, 9.11 when its fork closed by elimination, and
@@ -4328,10 +4329,15 @@ nice. Four groups, in the shape they were proposed and chosen from.
   ✅ the one card that stopped being true restated rather than left to
   flatter · ✅ the shipped claim this change falsified taken off the screen
   and the fork handed back rather than re-invented.
-- [~] **9.2 The voyage home** — **the item's premise is stale, and the answer
-  underneath it is worse.** Measured and stated 2026-08-30; **both remaining
-  levers swept and refuted 2026-08-31**, which narrows the ruling to two
-  options. See the sweep below.
+- [x] **9.2 The voyage home** — **CLOSED 2026-09-01: THE VERB STAYS.** Evan
+  ruled on the recommendation below; nothing in `src/` changed to close it,
+  because everything the item decided to ship had already shipped and was
+  re-verified in the code on the day it closed (see *Done when*).
+
+  The item's premise was stale and the answer underneath it was worse.
+  Measured and stated 2026-08-30; **both remaining levers swept and refuted
+  2026-08-31**, which narrowed the ruling to two options. See the sweep
+  below.
 
   **The gate is no longer shut.** The item was written off `0/40 sagas sailed,
   0 crossings, 0 people fetched` and a rule wanting `food 120`. Somebody
@@ -4450,10 +4456,42 @@ nice. Four groups, in the shape they were proposed and chosen from.
   from a choice the game already prices to their face — but it is Evan's call,
   and it is now a call between two options rather than four.
 
-  Also worth noting for whoever takes it: `may sail` and `whenever` both land
-  on the same six of forty, so the SEASON rule is doing nothing — with it
-  removed entirely, only 70 of 9750 settled days are clear to go and hunger
-  blocks 2983. The food gate is the whole of the constraint.
+  **A correction to this item, made while closing it, and it is trap 2 of
+  CLAUDE.md committed inside the item that cites it.** This entry used to end:
+  *"`may sail` and `whenever` both land on the same six of forty, so the
+  SEASON rule is doing nothing."* There is no season rule. `sailBlocker` has
+  no season check and `sim/voyage.ts` does not import `seasonOf`;
+  `sailAnySeason` exists only in `test/fixtures/harness.ts`, where it is one
+  of the BOT's policy knobs. So the sentence read a harness policy as a rule
+  of the game — the exact fault CLAUDE.md names — and read straight it invites
+  somebody to go and delete a game rule that does not exist. What is true and
+  survives: **the food gate is the whole of the constraint**, and with the
+  bot's autumn preference removed only 70 of 9750 settled days are clear to
+  go while hunger blocks 2983.
+
+  **The ruling, and why it is *keep* rather than *remove*.** The two levers
+  are gone and the fork was remove-the-verb or leave-it. This project's own
+  precedent is 9.1c: an honestly-labelled bad choice is kept, and the thing
+  that RECOMMENDS it is deleted. All three of those are in place — the panel
+  no longer recommends the crossing, the card states its record in the same
+  grim voice as the door out, and `test/voyage.test.ts` pins the surviving
+  cause while pinning the disproved one OUT. Taking the verb out would delete
+  a whole subsystem to save players from a choice the game already prices to
+  their face. A band that has banked a surplus and wants its kin is entitled
+  to go and be wrong.
+
+  **What was NOT done, stated so it is not mistaken for an oversight:** the
+  crossing is still net-negative — about one band in seven, every time she
+  goes — and that is left standing on purpose. It is a priced choice, not a
+  balance bug, and no arm that was measured made it better.
+
+  *Done when:* ✅ the gate opens at all (6/40 sagas sail, was 0/40)
+  · ✅ the probe pairs on the seeds that actually sailed and prints its own N
+  · ✅ the panel states the record instead of recommending the voyage
+  (`VOYAGE_RECORD`, rendered by `render/cards/decide.ts`)
+  · ✅ the card's stated cause is one that survived a sweep, with the
+  disproved cause pinned out by a bar · ✅ both remaining levers priced
+  rather than guessed · ✅ ruled.
 - [x] **9.3 Fishing grounds** — **Done 2026-08-30. The fork the item names
   resolves to the second: it pays enormously, and nothing tells them.**
 
@@ -5453,6 +5491,28 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — 9.2 is closed: the voyage home stays** — the last fork was
+  remove the verb or leave it, and it is left, on 9.1c's precedent: an
+  honestly-labelled bad choice is kept and the thing that RECOMMENDS it is
+  deleted. No `src/` change was needed to close it — everything the item
+  decided to ship had already shipped, and each piece was re-verified in the
+  code rather than taken from the entry: `VOYAGE_RECORD` names the crossing
+  and its price, `render/cards/decide.ts` renders it as a grim outcome rather
+  than advice, and `test/voyage.test.ts` pins the surviving cause while
+  pinning `/mouths/i` OUT so the disproved one cannot return.
+  - **Closing it turned up trap 2 committed inside the item that cites it.**
+    The entry ended by saying "the SEASON rule is doing nothing", which reads
+    as a dead rule waiting to be deleted. **There is no season rule.**
+    `sailBlocker` has no season check, `sim/voyage.ts` never imports
+    `seasonOf`, and `sailAnySeason` exists only in `test/fixtures/harness.ts`
+    as one of the bot's policy knobs. A harness policy had been written down
+    as a rule of the game — the exact fault CLAUDE.md names — and acting on it
+    would have meant hunting for code that does not exist. Corrected in place;
+    what survives is that the food gate is the whole of the constraint.
+  - **The crossing stays net-negative on purpose**, about one band in seven
+    every time she goes. That is a priced choice rather than a balance bug,
+    and it is recorded as *not done* so it cannot look like an oversight.
 
 - **2026-09-01 — The dead-state-field class is audited, and the instrument
   failed three times before it could be trusted** — `battle.width` was found
