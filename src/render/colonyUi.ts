@@ -21,8 +21,7 @@ import {
   offerable,
   output,
   underway,
-  type BlockReason,
-} from '../sim/colony';
+  type BlockReason, standsFor } from '../sim/colony';
 import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
 import { CROWDING_BITE } from '../sim/minds';
 import { wallMark } from '../sim/raid';
@@ -91,9 +90,17 @@ const BLOCK_WORD: Record<BlockReason, string> = {
  */
 function blockWord(state: GameState, building: BuildingDef, reason: BlockReason): string {
   if (reason !== 'after') return BLOCK_WORD[reason];
-  const missing = (building.after ?? []).find(
-    (id) => !state.settlement?.built.includes(id),
-  );
+  // `standsFor`, NOT `built.includes` — the EXPLANATION has to ask the same
+  // question as the GATE. `buildBlocker` answers 'after' when `standsFor` is
+  // false, so a panel searching `built` can name a prerequisite the gate is
+  // perfectly happy with: a band with a great hof has no 'hof' in `built`,
+  // and would have been told it needs one.
+  //
+  // Unreachable today only because every `after` list happens to hold one id
+  // — if the one is satisfied, the gate never says 'after' and this never
+  // runs. That is precisely how the watchtower bug hid for a whole tier (see
+  // sim/colony.ts), so it is fixed as a class rather than waited for.
+  const missing = (building.after ?? []).find((id) => !standsFor(state, id));
   const name = missing ? buildingById(missing)?.name : undefined;
   return name ? `needs a ${name.toLowerCase()} first` : BLOCK_WORD.after;
 }

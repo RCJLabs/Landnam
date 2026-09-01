@@ -5436,6 +5436,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-08-31 — The `standsFor` bug is fixed as a class, not an instance** —
+  9.11 tripped over one of these and fixed the one it tripped over, which left
+  the class alive. Audited: `built.includes` appeared in three more places
+  that ask what a steading HAS, and all three are the same fault. The colony
+  panel's `blockWord` names which prerequisite is missing using a different
+  predicate than the gate that refused it, so a band with a great hof could be
+  told it needs a hof; `debug.build` would stack a longhouse beside the great
+  hall that replaced it, and the browser bars drive that; `reach.ts` had a
+  fast path disagreeing with the slow one beneath it. None of the three is
+  reachable TODAY — every `after` list happens to hold one id — which is
+  exactly how the watchtower bug hid for a whole tier. **The audit itself
+  needed re-taking once**: its first pass read `after: ['greathall','hof']`
+  out of a COMMENT quoting the old gate and reported a two-entry list for a
+  field that says one. `test/standsfor.test.ts` now fails on any file outside
+  `sim/colony.ts` that asks `built.includes`, in the spirit of
+  `test/palette.test.ts` — and carries a check that the pattern it bans still
+  occurs somewhere, so the lint cannot pass by having a stale regex. Five
+  sabotages, all caught. The rule is in CLAUDE.md's load-bearing section now.
+
 - **2026-08-31 — The named foe stops promising a return (9.5, closed)** — The
   saga said *"He will have marked us for it"* when a champion walked off the
   field. Measured, he leads a repeat fight in 5% of clan fights on even and 3%

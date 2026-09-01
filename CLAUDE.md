@@ -93,6 +93,18 @@ the two cannot drift. A tile is a PAINT, not a tree: a rule of any length
 costs the document no nodes. Ornament that is drawn as shapes instead is the
 thing art queue item 8 measured, declined, and was right to decline.
 
+**One question about what stands.** A steading's `built` list is not the
+answer to "is there a wall here?" — an upgrade REMOVES what it replaces, so
+the palisade leaves the list the day earthworks go up. `standsFor` walks the
+`replaces` chain and is the right call whenever a building's ROLE is what
+matters; `hasBuilt` is right only when the exact building is. This shipped as
+a real bug: `buildBlocker` checked prerequisites with `built.includes`, so a
+band that raised earthworks before a watchtower could never raise the
+watchtower at all — invisible because every bot policy happens to want the
+tower first. `test/standsfor.test.ts` is what makes this a rule rather than a
+comment: it fails on any file outside `sim/colony.ts` that asks `built
+.includes`, the same way `test/palette.test.ts` makes the ink rule a rule.
+
 **One data model, three renderers.** All game state lives in one serializable `GameState` object (`src/state/`). A `Person` is a single object used by all three modes — never duplicate character data per mode. Renderers (`src/render/processionView.ts`, `battle.ts`, `steadingView.ts`) are pure views: they read state and draw SVG; they never own state. The two they replaced — the hex map and the hex colony ring — went with the hexes in 8.5, and the contract they both met lives in `src/render/views.ts`.
 
 **Everything is turn-based.** Travel advances in day turns, battle in initiative turns, colony in day/season ticks. No `requestAnimationFrame` game loops, no real-time simulation. Animation/tweening for visual polish only.

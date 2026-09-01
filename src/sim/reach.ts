@@ -13,7 +13,7 @@
 
 import type { GameState } from '../state/types';
 import { nextThaw } from './calendar';
-import { availableJobs, buildBlocker, output, shelterSaving } from './colony';
+import { availableJobs, buildBlocker, output, shelterSaving, standsFor } from './colony';
 import { SHELTER_SAVES } from '../data/jobs';
 import { BUILDINGS, buildingById } from '../data/buildings';
 import { living } from './people';
@@ -122,7 +122,11 @@ function bestSteading(state: GameState): GameState {
   for (let pass = 0; pass < BUILDINGS.length; pass += 1) {
     let added = false;
     for (const b of order) {
-      if (built.includes(b.id)) continue;
+      // Same question as the gate below it asks. Equivalent today — the
+      // blocker answers 'built' for a superseded tier anyway — but a fast
+      // path that disagrees with the slow one is how this class of bug gets
+      // in.
+      if (standsFor(probe, b.id)) continue;
       // Null only — 'timber' means the wood is not there, and this ceiling
       // does not conjure wood.
       if (buildBlocker(probe, b) !== null) continue;

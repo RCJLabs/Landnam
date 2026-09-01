@@ -10,6 +10,7 @@
 // main.ts was six hundred lines and every milestone added to it. This is the
 // part with no business being in a boot router at all.
 
+import { standsFor } from './sim/colony';
 import { cloneState } from './state/clone';
 import { currentMode } from './modes';
 import { wantPainting } from './render/oilFlag';
@@ -154,7 +155,11 @@ export function installDebug(hooks: DebugHooks): void {
       if (!state?.settlement || !buildingById(id as BuildingId)) return false;
       const next = cloneState(state);
       const home = next.settlement!;
-      if (home.built.includes(id)) return true;
+      // `standsFor`, so `build('longhouse')` on a steading with a great hall
+      // is a no-op rather than a hall standing beside the thing that replaced
+      // it. The browser bars drive this, and a bar that builds a nonsense
+      // steading measures a game nobody plays.
+      if (standsFor(next, id as BuildingId)) return true;
       home.built.push(id);
       home.queue = home.queue.filter((q) => q !== id);
       hooks.commit(next);
