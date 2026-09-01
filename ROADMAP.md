@@ -4308,8 +4308,9 @@ nice. Four groups, in the shape they were proposed and chosen from.
   flatter · ✅ the shipped claim this change falsified taken off the screen
   and the fork handed back rather than re-invented.
 - [~] **9.2 The voyage home** — **the item's premise is stale, and the answer
-  underneath it is worse.** Measured and stated 2026-08-30; whether to make it
-  pay or take it out is a ruling for Evan, below.
+  underneath it is worse.** Measured and stated 2026-08-30; **both remaining
+  levers swept and refuted 2026-08-31**, which narrows the ruling to two
+  options. See the sweep below.
 
   **The gate is no longer shut.** The item was written off `0/40 sagas sailed,
   0 crossings, 0 people fetched` and a rule wanting `food 120`. Somebody
@@ -4377,15 +4378,56 @@ nice. Four groups, in the shape they were proposed and chosen from.
   worse than the arm that does not, and the harm tracks the NUMBER OF
   CROSSINGS rather than anything about what comes back.
 
-  **So nothing ships but the record**, and the remaining candidates are on the
-  departure side, unmeasured:
-  - **The 78-day absence itself** — shortening it was tried once and failed,
-    on reasoning now known to be wrong, so it deserves re-measuring rather
-    than dismissing.
-  - **The food gate that decides who may go.** With the season rule removed
-    entirely only 70 of 9750 settled days are clear and hunger blocks 2983:
-    the gate is the whole of the constraint, and it currently selects the
-    bands that can least afford to lose a season.
+  **THE TWO REMAINING CANDIDATES WERE SWEPT 2026-08-31, AND BOTH ARE
+  REFUTED.** They had stood in this item marked UNMEASURED, which made the
+  fork a coin flip rather than a decision. `whenever` — sails the moment
+  `sailBlocker` allows, in any season, which is the control that separates
+  "the gate never opens" from "the crossing is not worth taking" — paired
+  against never sailing on the same 200 seeds:
+
+  | | standing at day 400 | sagas sailed | crossings | paired |
+  |---|---|---|---|---|
+  | **never sails** | **29/200** | — | — | — |
+  | today: 78 days, 72 food | 24/200 | 28 | 40 | saved 4, killed 9 |
+  | crossing 48 days | 23/200 | 28 | 38 | saved 2, killed 8 |
+  | crossing 30 days | 22/200 | 28 | 44 | saved 3, killed 10 |
+  | **gate halved: 36 food** | **14/200** | **68** | **105** | **saved 6, killed 21** |
+
+  **Shortening the absence is inert.** 78 → 48 → 30 days moves standing 24 →
+  23 → 22 and every arm stays net-negative. The attempt that failed once
+  before was right, even though the reasoning offered for it was wrong.
+
+  **Loosening the gate is much worse.** Halving what must be provisioned more
+  than doubles the sagas that sail and the crossings they make, and standing
+  collapses to 14 of 200. The gate is not badly chosen — it is LOAD-BEARING,
+  and it is the only thing holding the damage down. That it selects bands who
+  can least afford a season is true and is not the problem.
+
+  **AND THE MECHANISM IS CONFIRMED, for the first time by varying the thing
+  it names.** Every previous attempt varied what comes HOME. This varied how
+  many crossings happen, and the harm tracked it almost linearly — net bands
+  lost per crossing across the four settings: **0.125, 0.158, 0.159, 0.143**.
+  About one band in seven, every time she goes, whatever the constants say.
+
+  **What ships is the card, again, and for 9.1b's reason.** Its second
+  sentence read "She comes back with mouths, and they land before the winter
+  does" — the unfunded-mouths cause, which has now failed two sweeps: funding
+  the mouths four times as well made things monotonically worse, and
+  shortening the crossing is exactly what changes when they land relative to
+  winter and moved nothing. A card that explains a real cost with a disproved
+  cause is a sentence the harness calls false. It now names the crossing and
+  the price. `test/voyage.test.ts` was pinning `/mouths/i` — a bar enforcing
+  the disproved half — and now pins what survived, and pins the old cause OUT.
+
+  **THE VERB STAYS, and that is the recommendation rather than a ruling.**
+  Three prongs, and the two levers are gone; what is left is remove it or
+  leave it. This project's own precedent is 9.1c: an honestly-labelled bad
+  choice is kept and the thing that RECOMMENDS it is deleted. The panel
+  stopped recommending the voyage in 9.2, the card now states the true price,
+  and a band that has banked a surplus and wants its kin is entitled to go and
+  be wrong. Taking the verb out would delete a whole subsystem to save players
+  from a choice the game already prices to their face — but it is Evan's call,
+  and it is now a call between two options rather than four.
 
   Also worth noting for whoever takes it: `may sail` and `whenever` both land
   on the same six of forty, so the SEASON rule is doing nothing — with it
@@ -5372,6 +5414,24 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — Both levers on the voyage are refuted (9.2, swept)** — The
+  item left three prongs and priced one, leaving the other two marked
+  UNMEASURED, which makes a fork a coin flip. Swept at 200 paired seeds with
+  the forced arm: shortening the crossing 78 → 48 → 30 days is **inert**
+  (24, 23, 22 of 200 standing against 29 for never sailing), and halving the
+  food gate is **much worse** — it doubles the crossings to 105 and collapses
+  standing to 14 of 200. The gate is not badly chosen, it is load-bearing.
+  **And the mechanism is confirmed for the first time by varying the thing it
+  names**: every earlier attempt varied what comes home, this varied how many
+  crossings happen, and net bands lost per crossing came out 0.125, 0.158,
+  0.159, 0.143 — about one in seven, every time she goes, whatever the
+  constants say. What ships is the card: its second sentence named the
+  unfunded-mouths cause, which has now failed two sweeps, so it names the
+  crossing and the price instead — and `test/voyage.test.ts`, which was
+  pinning `/mouths/i` and so enforcing the disproved half, now pins what
+  survived and pins the old cause out. The ruling narrows from four options to
+  two: remove the verb, or leave it honestly labelled.
 
 - **2026-08-31 — The steading gets somewhere to put the work (9.11)** — The
   fork this item left open is closed by elimination: cargo for the knarr died

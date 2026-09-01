@@ -301,6 +301,26 @@ export function voyageDay(state: GameState): boolean {
  * cold hall, and does not refuse it: a band that has banked a surplus and
  * wants its kin is entitled to go and be wrong.
  */
+/**
+ * What the crossing has actually cost, for the card to say.
+ *
+ * THE SECOND SENTENCE USED TO NAME A CAUSE THAT HAS NOW FAILED A TEST TWICE.
+ * It read "She comes back with mouths, and they land before the winter does"
+ * — the unfunded-mouths theory. Sweeping `SETTLER_STORES` 12 → 24 → 48 made
+ * things monotonically WORSE, which is the opposite of what that cause
+ * predicts; and 9.2b swept the crossing itself, 78 → 48 → 30 days, which is
+ * precisely what changes when they land relative to winter, and it moved
+ * nothing: 24, 23, 22 of 200 standing against 29 for never sailing.
+ *
+ * What survived the sweep is duller and much better supported. The harm is in
+ * the CROSSING, and it is close to linear in the number of them — net bands
+ * lost per crossing across four settings: 0.125, 0.158, 0.159, 0.143. About
+ * one band in seven, every time she goes, whatever the constants say.
+ *
+ * A card that explains a real cost with a disproved cause is the shield hint
+ * again (9.1b): a sentence the harness calls false is worse than no sentence.
+ */
 export const VOYAGE_RECORD =
   'Of the bands that sent her home, more died for it than were saved by it. '
-  + 'She comes back with mouths, and they land before the winter does.';
+  + 'It is the crossing itself that costs — about one band in seven, every '
+  + 'time she goes — and not what she brings back.';

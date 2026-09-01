@@ -294,12 +294,19 @@ describe('what a voyage is worth, measured', () => {
 // 9.2: the crossing states its record, as the door out does.
 describe('the crossing says what became of the bands that took it', () => {
   it('states an outcome and a cause, not advice', () => {
-    // Measured at saved 3 / killed 7 over 200 landings. The line has to
-    // survive being softened into nothing, so it must carry BOTH halves: what
-    // happened, and why — the "why" is the part a player can act on, because
-    // it names the season the mouths land in.
+    // Measured at saved 4 / killed 9 over 200 landings, re-taken 2026-08-31.
+    // The line has to carry BOTH halves: what happened, and why.
+    //
+    // THIS TEST USED TO PIN THE WRONG WHY. It asserted /mouths/i, which
+    // enforced the unfunded-mouths cause — and that cause has since failed
+    // two sweeps: funding the mouths four times as well made things worse,
+    // and shortening the crossing (which is what changes when they land
+    // relative to winter) moved nothing at all. A bar that holds a card to a
+    // disproved explanation is worse than no bar, so it pins what survived
+    // instead, and pins the disproved half OUT so it cannot quietly return.
     expect(VOYAGE_RECORD).toMatch(/more died|more were/i);
-    expect(VOYAGE_RECORD).toMatch(/mouths/i);
+    expect(VOYAGE_RECORD).toMatch(/crossing/i);
+    expect(VOYAGE_RECORD, 'the disproved cause came back').not.toMatch(/mouths/i);
     // And it must not instruct.
     expect(VOYAGE_RECORD).not.toMatch(/\byou should\b|\bdo not\b|\bnever\b/i);
   });
