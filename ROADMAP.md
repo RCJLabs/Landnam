@@ -5437,11 +5437,12 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 ## Changelog
 
 - **2026-08-31 — The balance file is split into a harness, its bars and its
-  probes** — `balance.test.ts` had grown to 6,300 lines holding three
+  probes** — `balance.test.ts` had grown to 7,795 lines holding three
   different kinds of thing, and it was 43.9 of the suite's 45.0 minutes. The
   split was measured before it was made, and the measurement CHANGED the
-  argument for it: moving the fifteen named PROBE tests out cuts the file by a
-  quarter and the clock by half, because the probes were half the runtime
+  argument for it: moving the fifteen named PROBE tests out cuts the file that
+  is left to 4,660 lines — 60% of what it was — and the clock by half, because
+  the probes were half the runtime
   while being fifteen of 105 tests and thirteen of 225 assertions. That ratio
   is the case — not file size. The slowest things left are bars and have to
   be (`plays to day 500` 240s, the market 167s, the winter verdict 136s, the
@@ -5477,6 +5478,14 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
     type" errors on unrelated callback parameters. It reads as a typing
     problem and is a resolution problem; the sixty errors were one error.
     Worth remembering next time a refactor produces a wall of TS7006.
+  - **And the first version of this entry got a number wrong in the way this
+    file keeps warning about.** It said the old file was 6,300 lines. 6,209
+    was its length AFTER the harness had already been cut out of it — a
+    reading taken off a half-finished refactor and written down as a fact
+    about the thing before it started. The real figure is 7,795, and the only
+    reason it surfaced is that the control worktree checked out the pre-split
+    commit and the count did not match. Trap 1, at small scale, on the same
+    day and in the same commit as an entry citing trap 1.
   - **One thing left open**: the run now prints `Errors 1 error —
     [vitest-worker]: Timeout calling "onTaskUpdate"`, which is the exact
     hazard `vite.config.ts` documents (it once failed a CI run with every
