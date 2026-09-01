@@ -51,11 +51,18 @@
 > 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
 > that gave the game a third act.
 >
-> **Measured, with a decision left to Evan rather than invented:** 9.12 (the
-> pacing arc). **9.2 and 9.7 closed 2026-09-01** — the voyage stays, on
-> 9.1c's precedent; winter's proposed content is declined, because warmth ends
-> about 4% of runs against starvation's 62% and the two levers winter already
-> has are the largest in the game.
+> **PHASE 9 IS CLOSED — every item ruled, 2026-09-01.** The last three went
+> the same way they all did: the voyage STAYS, on 9.1c's precedent; winter's
+> proposed content is DECLINED, because warmth ends about 4% of runs against
+> starvation's 62%; and `HEARTH_FREE` STAYS AT 1, because paired at 200 seeds
+> the floor is inert on the arm whose cost it was meant to pay and merely
+> hands twelve jarldoms back on the arm where it acts.
+>
+> **The shape of the whole phase, worth carrying into the next one:** of the
+> items that arrived as a fork for Evan, not one survived being measured as a
+> fork. Six closed by elimination — the shield, 9.11, both of 9.2's levers,
+> winter's content, and this floor — and the recurring cause was that the
+> number which opened the item had never been re-taken.
 >
 > Three items have LEFT that list rather than been ruled on: the SHIELD when
 > 9.1c settled it by counting, 9.11 when its fork closed by elimination, and
@@ -4139,9 +4146,10 @@ nice. Four groups, in the shape they were proposed and chosen from.
 
 ### Things that exist and do not pay
 
-- [~] **9.1 The dead verbs** — **THE SHIELD WAS NOT DEAD. THE MEASUREMENT
-  WAS.** Done for defend 2026-08-30; shove and dash are a ruling for Evan,
-  below.
+- [x] **9.1 The dead verbs** — **THE SHIELD WAS NOT DEAD. THE MEASUREMENT
+  WAS.** Done for defend 2026-08-30. **Ticked 2026-09-01: both forks it left
+  open were ruled and the box simply never moved** — shove and dash dropped in
+  9.1b, the shield settled by counting in 9.1c.
 
   `B_DEFEND` appears **zero** times in 1165 battle actions — worse than the
   item's own examples — and the arena's "defend only" arm tied never-defending
@@ -5171,8 +5179,14 @@ nice. Four groups, in the shape they were proposed and chosen from.
   window measured before and after · ✅ the curve unmoved · ✅ what it does
   NOT fix stated · ✅ the never-raised finding chased to a real bug rather than
   tuned away · ✅ four sabotages, all caught.
-- [~] **9.12 The pacing arc** — **DIAGNOSED 2026-08-29, and the diagnosis
-  says the item was asking the wrong question.**
+- [x] **9.12 The pacing arc** — **CLOSED 2026-09-01: `HEARTH_FREE` STAYS AT 1
+  AND 9.12a's COST STANDS.** The one thing left open was whether to buy back
+  the second year with the flat floor. Swept and paired below: the floor
+  cannot buy it back, and where it acts at all it hands the endgame back
+  instead. Nothing in `src/` changed.
+
+  **DIAGNOSED 2026-08-29, and the diagnosis says the item was asking the wrong
+  question.**
 
   It was written off "average run 172 days against a 500-day horizon", which
   is a mean of a distribution nobody had looked at. Looked at — 120 sagas an
@@ -5259,6 +5273,64 @@ nice. Four groups, in the shape they were proposed and chosen from.
   out of 120 and `hard` printed 360 — a number that only looks wrong if you
   add the row up.
 
+  **THE RULING, 2026-09-01: LEAVE `HEARTH_FREE` AT 1.**
+
+  Unpaired first, 120 landings an arm, settler policy, four values of the
+  floor. Spring is IDENTICAL at every value on both arms — 64/120 on even and
+  99/120 on fair — which is the first-year guard behaving exactly as 9.12a
+  designed it, since a floor of 1 already covers a one-building band:
+
+  | `HEARTH_FREE` | 1 | 2 | 3 | 4 |
+  |---|---|---|---|---|
+  | even — died in year two | 30 | 29 | 30 | 28 |
+  | even — past the third year (of which ruling) | 19 (11) | 19 (12) | 18 (11) | 18 (12) |
+  | fair — died in year two | 47 | 46 | 41 | 42 |
+  | fair — past the third year (of which ruling) | 26 (19) | 28 (21) | 33 (25) | **33 (28)** |
+
+  **Those are unpaired aggregates and are six or seven sagas wide, which is
+  the width of the noise** — the same trap 9.2 records, where thirty-four
+  rows of forty were the same run twice. So it was re-taken PAIRED, 200 seeds
+  an arm, every seed run at 1 and at 3 and compared to itself:
+
+  | | runs identical | saved / killed | still RULING at the end: gained / lost |
+  |---|---|---|---|
+  | even | 183/200 (92%) | 2 / 2 | 2 / 1 |
+  | fair | 158/200 (79%) | **17 / 1** | **12 / 1** |
+
+  **It is inert on the arm the cost was measured on.** The second-year cost
+  that opened this question was 22 deaths to 32 ON EVEN. On even, raising the
+  floor leaves 92% of runs bit-identical and comes out saved 2, killed 2. The
+  lever proposed to buy back year two does not touch year two.
+
+  **And where it does act, it hands the endgame back rather than easing the
+  middle.** On fair it saves 17 bands and gives twelve more of them a jarldom
+  at day 400 — and a jarldom nothing can end is precisely what 9.12a was built
+  to remove. Raising the floor would undo the third act on the arm where the
+  third act exists, in exchange for nothing on the arm that got harder.
+
+  So the trade the entry assumed — soften year two, blunt the third act by the
+  same amount — is not the trade on offer. There is no dial here, and 9.12a's
+  cost stands because the only named way to pay it down does not work.
+
+  **What is NOT established:** that year two SHOULD be softened. Nothing has
+  measured a lever that eases the middle without giving back the end, and none
+  is proposed here rather than invented — this phase spent two rulings on
+  mechanics that turned out to be already built or to answer a question the
+  game was not asking.
+
+  **How to re-take it**, because it cannot live as a test: `HEARTH_FREE` is a
+  module constant, so the sweep edits it. It was run in a throwaway `git
+  worktree` with the constant `sed`-ed per value and per-seed outcomes dumped
+  to JSON, then joined for the pairing — never in the working tree, because
+  the 9.2 sweep once timed out mid-run and left `CROSSING = 48` sitting in
+  `src/`.
+
+  *Done when:* ✅ the "average run" premise re-taken and found to describe a
+  length hardly any saga is · ✅ the mechanism found (`heartFromBuildings` as
+  an annuity) · ✅ a third act built that can end a jarl (9.12a) · ✅ its cost
+  stated rather than buried · ✅ the one named lever for that cost priced,
+  paired, and refuted · ✅ ruled.
+
 - [x] **9.12a The hall must be kept** — 9.12's answer, built 2026-08-30.
   **DECIDED by Evan: the upkeep is a thing you DO, not a thing you spend** —
   a deed each season that can be forgotten, the same shape as the blót, and
@@ -5303,6 +5375,10 @@ nice. Four groups, in the shape they were proposed and chosen from.
   morale kills, and it is more than the item asked for. The lever if it
   should come back is `HEARTH_FREE`, which is a flat floor and would blunt
   the third act by the same amount.
+
+  **THAT LAST SENTENCE WAS AN ASSERTION AND IT IS NOW MEASURED — AND WRONG.
+  See the ruling at the head of 9.12: the floor does not trade the third act
+  for the second year, it simply gives the third act back.**
 
   **TWO THINGS THE MEASUREMENT CAUGHT, and both were the instrument.**
 
@@ -5522,6 +5598,34 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — 9.12 is closed, and Phase 9 with it: `HEARTH_FREE` stays at
+  1** — the last open question in the phase was whether to buy back 9.12a's
+  second-year cost with the flat morale floor. The entry asserted the floor
+  "would blunt the third act by the same amount", which was never measured.
+  Measured now, and the assertion is wrong in a way that decides it.
+  - **Unpaired, 120 landings an arm across four values of the floor**, the
+    first-year guard never moves at all (spring identical at 64/120 even and
+    99/120 fair, every value) — which is 9.12a's design working, since a floor
+    of 1 already covers a one-building band.
+  - **Paired at 200 seeds, every seed run at 1 and at 3 against itself**,
+    because the unpaired differences were six or seven sagas wide and that is
+    the width of the noise — 9.2's own trap. On **even**, the arm whose cost
+    (22 deaths to 32) opened the question, 92% of runs come out
+    bit-identical and the tally is saved 2 / killed 2: **the lever does not
+    touch the year it was proposed to buy back.** On **fair** it saves 17 and
+    kills 1 — but it also hands **twelve more bands a jarldom at day 400**,
+    and a jarldom nothing can end is exactly what 9.12a was built to remove.
+  - So there is no dial: the floor does not trade the endgame for the middle,
+    it just gives the endgame back. 9.12a's cost stands because the only named
+    way to pay it down does not work. Recorded as NOT established: that year
+    two should be softened at all — no lever for that has been measured, and
+    none is invented here.
+  - The sweep cannot live as a test (`HEARTH_FREE` is a module constant), so
+    the method is written into the entry: a throwaway `git worktree`, the
+    constant `sed`-ed per value, per-seed outcomes dumped to JSON and joined
+    for the pairing. Never in the working tree — the 9.2 sweep once timed out
+    mid-run and left `CROSSING = 48` sitting in `src/`.
 
 - **2026-09-01 — 9.7 is closed: winter's proposed content is declined on a
   measurement** — the item's remaining half proposed two WARMTH mechanics (who
