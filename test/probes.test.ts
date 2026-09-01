@@ -23,13 +23,13 @@ import { newGame } from '../src/state/create';
 import { SEASON_LENGTH, YEAR_LENGTH, seasonOf } from '../src/sim/calendar';
 import { ailingCount, careToday } from '../src/sim/sickness';
 import { sprung } from '../src/sim/ship';
-import { foodPerDay } from '../src/sim/upkeep';
+import { foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
 import { living, sworn } from '../src/sim/people';
 import { KEPT_FOR, NEGLECTED_AFTER, feastCost, sinceKept } from '../src/sim/hall';
 import { takeIn } from '../src/sim/joining';
 import { autumnChance, autumnRaidDay } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
-import { buildBlocker, capacity, crowding, heartRaised, standsFor } from '../src/sim/colony';
+import { buildBlocker, capacity, crowding, heartRaised, shelterSaving, standsFor } from '../src/sim/colony';
 import { CROSSING, provisioning, sailBlocker } from '../src/sim/voyage';
 import { wintersStood } from '../src/sim/calendar';
 import { type JobId } from '../src/data/jobs';
@@ -1608,4 +1608,114 @@ describe('PROBE: 9.2 sweep — the two levers on the departure side', () => {
       // over, and this file has shipped that mistake before.
       expect(sailed, 'nobody sailed — the sweep measured nothing').toBeGreaterThan(0);
     });
+});
+
+describe('PROBE: 9.7 — is warmth ever the thing that decides a winter', () => {
+  /**
+   * What 9.7 has left to authorise is two WARMTH mechanics — who sleeps under
+   * which roof, and what gets burned when the wood runs low. Both are new
+   * content, and this phase's lesson is that a mechanic gets measured for a
+   * gap before it gets built.
+   *
+   * EVERY COUNT HERE COMES FROM THE DAY TICK'S OWN BEATS, and the first draft
+   * did not. It asked `party.firewood < need` on the state before the tick,
+   * which is a second copy of arithmetic the sim already does — and a wrong
+   * one, because the fire is banked AFTER the day's labour lands, so wood cut
+   * that morning is invisible to it. It read 632 cold nights against the
+   * sim's 518: a 22% overcount, in a probe whose whole job is to say whether
+   * cold is rare. The naive figure is still taken and printed beside the real
+   * one, because the size of that gap is the useful part.
+   *
+   * The denominator is every night the band banked a fire — not the nights it
+   * was short, which could only ever report that bands were short (trap 2).
+   */
+  it('counts cold nights, hungry nights and what actually ended the run', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 120;
+    const rows: string[] = [];
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      let nights = 0;
+      let winterNights = 0;
+      let coldNights = 0;
+      let coldWinterNights = 0;
+      let hungryNights = 0;
+      let naiveCold = 0;
+      let anyNights = 0;
+      let anyCold = 0;
+      let bandsEverCold = 0;
+      const ends: Record<string, number> = {};
+      let frozenFolk = 0;
+
+      setPolicy(SETTLER);
+      for (let i = 0; i < SEEDS; i += 1) {
+        let sawCold = false;
+        let mark = 0;
+        const end = run(armSeed(0, i, SEEDS), 400, (before, after) => {
+          if (after.day <= before.day) return;
+          const home = Boolean(before.settlement) && atHome(before);
+          // The naive reading, kept only to price the trap it fell into.
+          if (home) {
+            const need = Math.max(0, firewoodPerNight(before) - shelterSaving(before));
+            if (before.party.firewood < need) naiveCold += 1;
+          }
+          for (const b of after.beats ?? []) {
+            if (b.n <= mark) continue;
+            mark = b.n;
+            const winter = seasonOf(b.day) === 'winter';
+            if (b.kind === 'burned') {
+              const short = (b as { short: number }).short > 0;
+              anyNights += 1;
+              if (short) anyCold += 1;
+              // The home-scoped counters are the ones the naive reading can be
+              // compared with, and the ones 9.7's roofs would touch. Keeping
+              // both populations apart is not fussiness: the first pass at
+              // this scanned every beat and compared it against a home-only
+              // predicate, which made the sim look like it was UNDER-counting
+              // by a hundred nights when the two were simply not the same
+              // nights.
+              if (!home) continue;
+              nights += 1;
+              if (winter) winterNights += 1;
+              if (short) {
+                coldNights += 1;
+                sawCold = true;
+                if (winter) coldWinterNights += 1;
+              }
+            } else if (b.kind === 'ate' && (b as { short: number }).short > 0 && home) {
+              hungryNights += 1;
+            }
+          }
+        }, terms);
+        if (sawCold) bandsEverCold += 1;
+        const cause = end.end?.cause ?? 'still going';
+        ends[cause] = (ends[cause] ?? 0) + 1;
+        frozenFolk += end.party.people.filter((p) => p.fate === 'the cold').length;
+      }
+
+      const pct = (n: number, d: number) => (d === 0 ? '—' : `${Math.round((100 * n) / d)}%`);
+      rows.push(
+        `  ${terms.padEnd(5)} nights with a fire to bank ${nights}, of them winter ${winterNights}\n`
+        + `        cold nights ${coldNights} (${pct(coldNights, nights)} of all, `
+        + `${pct(coldWinterNights, winterNights)} of winter ones)\n`
+        + `        hungry nights ${hungryNights} (${pct(hungryNights, nights)})\n`
+        + `        bands that ever had one cold night: ${bandsEverCold}/${SEEDS}\n`
+        + `        people dead of the cold: ${frozenFolk}\n`
+        + `        endings: ${Object.entries(ends).map(([k, v]) => `${k} ${v}`).join(', ')}\n`
+        + `        away from the steading too: ${anyCold} cold of ${anyNights} nights banked anywhere\n`
+        + `        (the naive before-the-tick count would have said ${naiveCold})`,
+      );
+
+      // The instrument fires. Without this a broken detector and a game where
+      // nobody is ever cold print the same zero.
+      expect(coldNights, 'no cold night was seen at all — suspect the probe').toBeGreaterThan(0);
+      // And the naive count's bias has the sign the docstring explains. If it
+      // ever came in LOWER, the explanation above is wrong.
+      expect(naiveCold, 'the naive count was not the overcount it is documented as')
+        .toBeGreaterThanOrEqual(coldNights);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 9.7 does warmth bind — ${SEEDS} landings an arm:\n${rows.join('\n')}`);
+    expect(rows.length).toBe(2);
+  });
 });

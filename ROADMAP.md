@@ -51,10 +51,11 @@
 > 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
 > that gave the game a third act.
 >
-> **Measured, with a decision left to Evan rather than invented:** 9.7
-> (winter) and 9.12 (the pacing arc). **9.2 closed 2026-09-01** — the verb
-> stays, on 9.1c's precedent: an honestly-labelled bad choice is kept and the
-> thing that recommends it is deleted.
+> **Measured, with a decision left to Evan rather than invented:** 9.12 (the
+> pacing arc). **9.2 and 9.7 closed 2026-09-01** — the voyage stays, on
+> 9.1c's precedent; winter's proposed content is declined, because warmth ends
+> about 4% of runs against starvation's 62% and the two levers winter already
+> has are the largest in the game.
 >
 > Three items have LEFT that list rather than been ruled on: the SHIELD when
 > 9.1c settled it by counting, 9.11 when its fork closed by elimination, and
@@ -4743,9 +4744,10 @@ nice. Four groups, in the shape they were proposed and chosen from.
   What it cannot do is tell a good drawing from a bad one, and it fails on
   every deliberate art change: `npm run look:bless` is the human act, and it
   now prints what it is blessing, because for a while it printed only a count.
-- [~] **9.7 Winter as a season you play** — **THE PREMISE IS FALSE. Winter
-  already holds the two largest decisions in the game.** Half done 2026-08-31;
-  what remains is new content and is Evan's to authorise.
+- [x] **9.7 Winter as a season you play** — **CLOSED 2026-09-01. THE PREMISE
+  IS FALSE, and the new content it proposed is DECLINED on a measurement.**
+  Winter already holds the two largest decisions in the game. Legibility half
+  done 2026-08-31; the content half measured and declined below.
 
   It was written on winter "offering almost no decisions". Measured, over 120
   seeds on As It Lies:
@@ -4766,13 +4768,42 @@ nice. Four groups, in the shape they were proposed and chosen from.
   record instead, and only when the larder will not reach spring, so it is a
   fact about this winter rather than a standing lecture. Zero new lines.
 
-  **STILL OPEN, AND EVAN'S CALL.** The item also proposed content that does not
-  exist — who sleeps under which roof, what gets burned when the wood runs low.
-  Those are new mechanics rather than a correction, and this phase has one
-  clear lesson about inventing them unasked: the voyage home spent a ruling on
-  a mechanic that was already built. Worth noting first that the two existing
-  levers are enormous and were both invisible, which is evidence that winter's
-  problem is legibility rather than emptiness.
+  **BOTH LEGIBILITY FIXES ARE IN, and were re-verified in the code on the day
+  this closed** rather than taken from this entry: `tighteningWorth()` states
+  the rations record in `render/colonyUi.ts`, and `counselSpan()` names the
+  MOVE beside the winter mark — the crewing lever, which is the largest single
+  effect this repo has measured.
+
+  **THE PROPOSED CONTENT IS DECLINED, and this is the measurement that decides
+  it.** The item proposed two mechanics that do not exist — who sleeps under
+  which roof, what gets burned when the wood runs low. Both are about WARMTH.
+  So the question is whether warmth ever decides anything, and it had never
+  been asked. `PROBE: 9.7 — is warmth ever the thing that decides a winter`,
+  120 landings an arm, settler policy, counted from the day tick's own beats:
+
+  | | cold nights at home | of winter nights | bands ever cold | dead of cold | how runs ended |
+  |---|---|---|---|---|---|
+  | even | 436 / 12,455 (4%) | 9% | 34/120 | 42 | starved 74, despair 26, **frozen 5**, slain 3 |
+  | fair | 128 / 17,607 (1%) | 1% | 13/120 | 13 | starved 63, despair 30, **frozen 4**, slain 3 |
+
+  **Warmth is real, and it is not what decides a saga.** It is not inert — a
+  quarter of bands on the harder arm meet a cold night and 42 people die of it
+  — but it ends about 4% of runs against starvation's 62%, and 9.12a already
+  established that most of the despair column is starvation wearing another
+  label. Roof allocation and a burn order would add decisions on the axis that
+  matters LEAST, against two existing winter levers worth saved 22 / killed 1
+  and saved 45 / killed 0. That is the whole case for declining.
+
+  **What would change the answer**, stated so this is a decision and not a
+  door closed: make warmth bind harder first — the cold column has to be worth
+  deciding about before there is any point deciding it in more detail. The
+  mechanics are not bad; they are answers to a question the game is not
+  currently asking.
+
+  *Done when:* ✅ the premise re-taken and found false · ✅ both existing
+  levers made legible, and the fixes verified in the code · ✅ the proposed
+  content measured for a gap rather than built or refused on taste
+  · ✅ declined, with the condition that would reopen it written down.
 - [x] **9.8 The sea fight** — **Done 2026-08-31. For once the item's number was
   right: it was not rare, it was UNREACHABLE, and the fix was one roll.**
 
@@ -5492,6 +5523,43 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-09-01 — 9.7 is closed: winter's proposed content is declined on a
+  measurement** — the item's remaining half proposed two WARMTH mechanics (who
+  sleeps under which roof, what gets burned when the wood runs low). Nobody
+  had ever asked whether warmth decides anything. Measured over 120 landings
+  an arm: cold nights are **4% of nights at home on even and 1% on fair**, and
+  `frozen` ends **5 and 4 runs of 120** against starvation's 74 and 63. Warmth
+  is not inert — 42 people die of it on even — but it is the axis that matters
+  least, and winter's two existing levers are worth saved 22/killed 1 and
+  saved 45/killed 0. Declined, with the condition that would reopen it written
+  into the entry: make warmth bind first.
+  - **The probe was wrong twice before it was right, both times by comparing
+    populations that were not the same.** First it asked
+    `party.firewood < need` on the state BEFORE the tick — a second copy of
+    arithmetic the sim already does, and wrong, because the fire is banked
+    after the day's labour lands, so wood cut that morning is invisible to it:
+    632 cold nights against the sim's own 518. Then, counting from the sim's
+    beats instead, it scanned every beat and compared the total against a
+    home-only predicate, which made the sim look like it was UNDERcounting by
+    a hundred nights when the two were simply not the same nights. It also
+    left `mark` unadvanced on days away from the steading, so a backlog of
+    road nights was counted as home nights the moment the band walked back in.
+    The cross-check that caught all of it is kept in the probe: two counts of
+    the same event from two sides, asserted equal, plus an assertion that the
+    detector fires at all — because "cold is rare" and "the detector is
+    broken" print the same zero.
+- **2026-09-01 — The worker-error mechanism recorded yesterday is refuted** —
+  "two CPU-pegged forks starve the main process" fitted the evidence and is
+  wrong: `test/probes.test.ts` run ALONE, one file and one fork, reproduces
+  `[vitest-worker]: Timeout calling "onTaskUpdate"` twice over. Concurrency is
+  not necessary for it, which also explains why capping forks did not help.
+  The correlation stands (3 of 3 split runs, 0 of 1 pre-split); the mechanism
+  is now UNKNOWN rather than known, and the file that reproduces it alone is a
+  long single test printing a large table, which points at the reporter rather
+  than the scheduler. Left unchased — it has never failed a run — but the
+  paragraph claiming a known cause would have sent the next person after fork
+  counts.
+
 - **2026-09-01 — 9.2 is closed: the voyage home stays** — the last fork was
   remove the verb or leave it, and it is left, on 9.1c's precedent: an
   honestly-labelled bad choice is kept and the thing that RECOMMENDS it is
@@ -5690,6 +5758,18 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
       `VITEST_MAX_FORKS=2`, 2026-09-01: **2,280s against 1,264s — 80% slower —
       and the error still appeared.** It buys nothing and costs the whole gain
       of the split, so it is off the table rather than open.
+    - **THE MECHANISM STATED ABOVE IS REFUTED, 2026-09-01.** "Two CPU-pegged
+      forks starve the main process" was a story that fit the evidence, and it
+      is wrong: running `test/probes.test.ts` ALONE — one file, one fork —
+      produced the same error twice. Concurrency is not necessary for it, so
+      the `maxForks=2` result stops being a puzzle (capping forks cannot fix
+      something forks do not cause). What survives is the correlation, 3 of 3
+      split runs against 0 of 1 pre-split, plus this: the file that reproduces
+      it alone is a long single test printing a large table, which points at
+      the reporter rather than the scheduler. **Not chased further** — it has
+      never failed a run — but the mechanism is now UNKNOWN rather than known,
+      and the paragraph that claimed otherwise would have sent the next person
+      after fork counts.
     - **AND CI IS PROBABLY NOT EXPOSED AT ALL — but the number that decides it
       was inherited, so it is now printed.** vitest sizes its pool as
       `max(cpus - 1, 1)` for a non-watch run (`getDefaultThreadsCount`). On a
