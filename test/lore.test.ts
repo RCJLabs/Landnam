@@ -76,8 +76,6 @@ function duel(base: GameState, side: 'warband' | 'foe'): GameState {
   const attacker = side === 'warband' ? ours.id : foe.id;
   s.battle = {
     terrain: 'meadow',
-    width: 3,
-    height: 3,
     grid: [{ ground: 'open' }, { ground: 'open' }],
     foes: [foe],
     combatants: [

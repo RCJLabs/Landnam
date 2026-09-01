@@ -208,7 +208,17 @@
 //             backfilled: a save that already met him met him on a day nothing
 //             recorded, and the saga says nothing rather than guessing a date.
 //             Absent is the honest answer for every saga played before this.
-export const SAVE_VERSION = 60;
+// v61 (8.1): `battle.width` and `battle.height` go. 8.1 listed them to leave
+//             with `src/hex/` — "none of it is load-bearing" — and 8.5 took
+//             everything else on that list. They were written once from
+//             `FIELD_WIDTH`/`FIELD_HEIGHT` and read by NOTHING: `cell(col,
+//             row)` indexes off the constants, so the pair in the save could
+//             only ever agree with them. Their one reader was a test
+//             asserting each constant against itself. A save caught mid-fight
+//             keeps its ground — only the two numbers describing its shape
+//             are dropped, and the shape they described is the only shape
+//             there has ever been.
+export const SAVE_VERSION = 61;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

@@ -65,6 +65,35 @@ describe('migration registry', () => {
     expect(result.save['version']).toBe(SAVE_VERSION);
   });
 
+  /**
+   * v61 dropped `battle.width` and `battle.height`. A save caught mid-fight
+   * is the only kind that has a battle at all, so both shapes are checked:
+   * the one that carries the fields, and the one that has no battle to carry
+   * them. Written against the v60 entry directly rather than through the
+   * whole walk, so it names the step that is supposed to do the work.
+   */
+  it('drops the battle shape a v60 save was still carrying', () => {
+    const v60 = {
+      version: 60,
+      battle: { terrain: 'meadow', width: 7, height: 9, grid: [], foes: [] },
+    };
+    const out = MIGRATIONS[60]!(v60) as Record<string, unknown>;
+    const battle = out['battle'] as Record<string, unknown>;
+    expect(out['version']).toBe(61);
+    expect('width' in battle).toBe(false);
+    expect('height' in battle).toBe(false);
+    // Everything else about the fight is untouched — the ground it is being
+    // fought on is not what was dropped.
+    expect(battle['terrain']).toBe('meadow');
+  });
+
+  it('carries a v60 save with no battle in progress straight through', () => {
+    const out = MIGRATIONS[60]!({ version: 60, day: 12 }) as Record<string, unknown>;
+    expect(out['version']).toBe(61);
+    expect(out['day']).toBe(12);
+    expect('battle' in out).toBe(false);
+  });
+
   it('refuses saves from the future', () => {
     expect(() => migrate({ version: SAVE_VERSION + 1 })).toThrow(/newer version/);
   });

@@ -132,8 +132,22 @@ describe('the steading under attack', () => {
     startRaid(state, 0);
     const battle = state.battle!;
     expect(battle.raid).toBe(true);
-    expect(battle.width).toBe(FIELD_WIDTH);
-    expect(battle.height).toBe(FIELD_HEIGHT);
+    // The ground is a rectangle of the field's own size.
+    //
+    // This replaces `battle.width === FIELD_WIDTH`, read off a battle that
+    // was ASSIGNED FIELD_WIDTH a line after it was generated — the constant
+    // compared with itself, the shape of a check that cannot fail.
+    //
+    // What the replacement is worth, stated rather than assumed, because
+    // three sabotages were run at it and only one landed: it catches
+    // `blankField` handing back the wrong number of cells. It does NOT catch
+    // a build loop that skips rows, and it does not catch a SHORT
+    // `blankField` — the first because every cell is pre-filled 'open', the
+    // second because writing the last index grows the array back. So the
+    // rectangle's size is really guaranteed by `blankField` alone, and this
+    // watches that one thing. A narrow check that is known to be narrow beats
+    // the wide one that was here and checked nothing.
+    expect(battle.grid.length).toBe(FIELD_WIDTH * FIELD_HEIGHT);
 
     // The hall stands in the yard. Authored fields place it where they like
     // along the yard row and there is exactly one of it.

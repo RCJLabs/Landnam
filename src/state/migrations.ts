@@ -690,6 +690,25 @@ export const MIGRATIONS: Record<number, Migration> = {
   // the run gets retold. See sim/sagagen.ts.
   59: (save) => ({ ...save, version: 60 }),
 
+  /**
+   * v61: the last two hex-era fields leave the battle.
+   *
+   * Only a save caught mid-fight carries a `battle` at all; every other save
+   * passes through untouched. The two numbers are dropped rather than
+   * migrated because there is nothing to migrate them to — `cell(col, row)`
+   * has indexed off `FIELD_WIDTH`/`FIELD_HEIGHT` since 8.1c, so a battle's
+   * ground has always been that one shape and the copy in the save could
+   * only ever repeat it.
+   */
+  60: (save) => {
+    const battle = save['battle'];
+    if (!battle || typeof battle !== 'object') return { ...save, version: 61 };
+    const next = { ...(battle as Record<string, unknown>) };
+    delete next['width'];
+    delete next['height'];
+    return { ...save, battle: next, version: 61 };
+  },
+
 };
 
 export interface MigrationResult {

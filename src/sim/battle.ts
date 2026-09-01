@@ -29,8 +29,6 @@ import { startingNerve } from './morale';
 import { weightFor, wordBump, wordOf } from './word';
 import { standingAt } from './coast';
 import {
-  FIELD_HEIGHT,
-  FIELD_WIDTH,
   generateBattlefield,
   groundName,
   pickRaidField,
@@ -386,8 +384,6 @@ export function beginBattle(
     ...(raid ? { raid: true } : {}),
     ...(champion ? { champion: champion.id } : {}),
     ...(champion && sender ? { championOf: sender.id } : {}),
-    width: FIELD_WIDTH,
-    height: FIELD_HEIGHT,
     grid,
     foes,
     combatants: [],

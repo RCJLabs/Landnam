@@ -462,10 +462,14 @@ export interface Battle {
   champion?: string;
   /** Which neighbour's man he is, when he belongs to one and can come back. */
   championOf?: string;
-  width: number;
-  height: number;
   /**
    * The ground, as a rectangle read by `sim/battlefield.ts`'s `cell(col, row)`.
+   *
+   * Its shape is not stored beside it. `width` and `height` sat here until
+   * v61, written once from `FIELD_WIDTH`/`FIELD_HEIGHT` and read by nothing:
+   * `cell` indexes off the constants, so the copy in the save could only ever
+   * agree with them. 8.1 listed them to go with `src/hex/` and 8.5 took
+   * everything else on the list.
    *
    * A hex-keyed record until v55. Nothing had walked it since 8.1c put the
    * fight on ranks, and the one question left of it — is there a palisade on

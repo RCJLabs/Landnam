@@ -1741,7 +1741,17 @@ is written so the choice is made with both arcs visible, not by drift.
   not about the fight. The loop was not prototyped first — that option was
   offered and passed over in favour of writing the phases down and starting.
 
-- [~] **8.1 The wall replaces the grid** — `sim/ranks.ts` (position, close-up,
+- [x] **8.1 The wall replaces the grid** — **CLOSED 2026-09-01, and the box
+  was the last thing about it that was still wrong.** The two decisions it
+  left open were both taken elsewhere: shove and defend went to 9.1b and 9.1c
+  (shove dropped, the shield kept on a measured narrow case). Its bookkeeping
+  list — `battle.grid`, `warbandSpots`/`foeSpots`, `Combatant.at`,
+  `battle.width`/`height` — was worked through by 8.5 EXCEPT the last pair,
+  which is retired below. Of the rest: `grid` became a plain rectangle and is
+  read by `wall.ts`, the spots are read as field invariants by three test
+  files, and `at` went with the hexes.
+
+  `sim/ranks.ts` (position, close-up,
   legal from-rank and target-rank) replaces hex geometry in battle. Rewrite
   `battlefield.ts`; `wall.ts` becomes rank adjacency. Existing verbs map onto
   rank restrictions — and they map almost one for one onto the verbs that
@@ -1866,8 +1876,16 @@ is written so the choice is made with both arcs visible, not by drift.
       somebody finds out. Whether they earn a place on a side-on field, or
       change, or go, is a decision for this item.
 
-- [ ] **8.2 The coast becomes a line** — Worldgen from 2D island to a 1D route
-  of places with distances between them. Behind a flag.
+- [x] **8.2 The coast becomes a line** — **DONE, and the checkbox simply never
+  moved.** Its *Done when* — a saga walked end to end on the route, the travel
+  decision nameable in one sentence — has been true since 8.5: `ROUTE_STOPS`
+  is 26, `src/hex/` does not exist, and the suite plays sagas to day 500 along
+  it on every run. "Behind a flag" is stale too; the flag became the default
+  and then 8.5 deleted the other side of it. Ticked 2026-09-01 on a read of
+  the code, not a memory of the work.
+
+  Worldgen from 2D island to a 1D route
+  of places with distances between them.
 
   **DESIGNED 2026-08-25.** The roadmap said answer the "six directions"
   question before building, so it was answered — and the measurement that
@@ -5436,6 +5454,44 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-09-01 — `battle.width` and `battle.height` are retired, and two
+  checkboxes stop lying** — 8.1 listed the pair to leave with `src/hex/`
+  ("none of it is load-bearing"), 8.5 took everything else on that list, and
+  these two stayed for a year of milestones. Measured before removing:
+  **written once** each, from `FIELD_WIDTH`/`FIELD_HEIGHT`, and **read
+  nowhere** in `src/` or `scripts/` — `cell(col, row)` indexes off the
+  constants, so the copy in the save could only ever agree with them.
+  - **Their only reader was a check that cannot fail.**
+    `test/raid.test.ts` asserted `battle.width === FIELD_WIDTH` on a battle
+    assigned `FIELD_WIDTH` a line after it was generated. Replaced with the
+    grid's own length, which is a claim about the field builder.
+  - **And the replacement is reported as narrow, because three sabotages were
+    run at it and only one landed.** It catches `blankField` handing back the
+    wrong number of cells. It does NOT catch a build loop that skips rows
+    (every cell is pre-filled `'open'`) and does NOT catch a SHORT
+    `blankField` (writing the last index grows the array back). The first
+    draft of its comment claimed it caught holes; that claim was written
+    before the sabotage that disproved it, and is the reason the sabotage is
+    worth running even on a check you just wrote.
+  - **The dead fields were visibly dead and nobody could see it.**
+    `test/lore.test.ts` built a fixture battle declaring `width: 3, height: 3`
+    over a **two-cell** grid. Nonsense, harmless, and unnoticed for as long as
+    it took nothing to read it.
+  - `SAVE_VERSION 61` + migration 60, which strips the pair from a save caught
+    mid-fight and passes every other save through. Watched failing.
+  - **The suite caught the change's one real consequence**, which is the kind
+    of thing a generated file is for: `port/LandnamPartyTables.gen.h` embeds
+    `SaveVersion`, so bumping to 61 made it stale and `test/tables.test.ts`
+    said so. Regenerated with `npm run party-tables` — a one-line diff. The
+    port contract stays FROZEN and was NOT synced: that hand-over is Evan's,
+    in the Unreal editor, and the party table was already drifting from the
+    port before this change anyway.
+  - **8.1 and 8.2 are ticked.** 8.1's open decisions were taken by 9.1b/9.1c
+    and its bookkeeping is now done. 8.2's *Done when* has been true since
+    8.5. Both were verified by reading the code — `ROUTE_STOPS = 26`, no
+    `src/hex/`, `grid` read by `wall.ts`, the spots read by three test files —
+    rather than by remembering the work.
+
 - **2026-08-31 — The balance file is split into a harness, its bars and its
   probes** — `balance.test.ts` had grown to 7,795 lines holding three
   different kinds of thing, and it was 43.9 of the suite's 45.0 minutes. The
@@ -5510,6 +5566,13 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
       so contention there is worse than what produced the error here. One run
       each, so this is n=1 against n=1; the mechanism is what makes it
       credible, not the sample.
+    - **RE-TAKEN 2026-09-01, and it is not a flake: three for three.** Two
+      further full runs on the split tree each printed the same single
+      `onTaskUpdate` error. The tally is 3 occurrences in 3 split runs against
+      0 in 1 pre-split run, so the "one run each" caveat above is retired: it
+      is reproducible, and it is the split's. What is still n=1 is the
+      CONTROL, so the honest statement is that the split reliably produces it
+      and the pre-split tree was seen clean once.
     - **The ruling is open, and it is a real trade rather than a bug to fix.**
       Half the wall clock against one RPC warning under load. vitest 3.2.7
       exposes no knob for that timeout — the only lever is concurrency
