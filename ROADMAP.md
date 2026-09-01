@@ -5454,6 +5454,58 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-09-01 — The dead-state-field class is audited, and the instrument
+  failed three times before it could be trusted** — `battle.width` was found
+  by reading 8.1's own note, not by looking, so the obvious question was how
+  many more there are. Answer, over all 175 fields of `GameState`: **three**,
+  and the instrument is the story.
+  - **`Tile` and `Visibility` are deleted.** Both hex-era types — a tile's
+    terrain, whether a river ran through it, whether it had been seen — left
+    behind when 8.5 deleted everything that referenced them. Zero references
+    in `src/`, `test/` or `scripts/`. Nothing wrote them, so no save carried
+    them and no migration was needed.
+  - **`Plot.at` is written and never read** (`makePlots` sets a slot index;
+    its only reader is `test/colony.test.ts` asserting the values are
+    distinct). It IS in the save, so removing it costs a migration. Left for
+    Evan: the plots are an array and the index is the position, so `at` looks
+    like the last of the ring coordinate — but the colony view may be the
+    thing that SHOULD read it.
+  - **`Champion.lastSeen` is written twice and never read, and its own comment
+    says what it was for**: *"The day he was last seen, so the log can say how
+    long it has been."* The log never says it. Its only reader is a test
+    asserting it equals `state.day` — the same shape as the `battle.width`
+    check that could not fail. Left for Evan, because it is a design question
+    and not a cleanup: write the line the field promises (it is 9.5's named
+    foe, and cheap), or drop the field and the promise together.
+  - **THE INSTRUMENT WAS WRONG THREE TIMES, AND EVERY ONE WOULD HAVE SHIPPED
+    A FALSE REPORT.** This is the value of the run, more than the three fields.
+    1. **A word-count scan said "no dead fields anywhere."** Pointed at the
+       commit where `width`/`height` were provably dead, it flagged neither —
+       `width` collides with `rect.width` throughout `render/battle.ts`. A
+       scan that cannot find the case you already know is not evidence of
+       absence.
+    2. **The first real oracle DELETED the field, which hides exactly this
+       rot.** Deleting makes the WRITE sites error too, so a write-only field
+       reads as used. Renaming the declaration instead makes reads and writes
+       both error, and TypeScript separates them by code: TS2339 read,
+       TS2353 object-literal write.
+    3. **The batched version reported all 170 fields dead, `grid` and
+       `terrain` among them** — both proven live minutes earlier. TypeScript
+       names the ORIGINAL property in its message (`Property 'grid' does not
+       exist`), never `grid_probe`; the parser searched for the suffix,
+       matched nothing, and recorded zero reads for everything. The
+       single-field validation had passed because it counted error codes
+       without parsing names — **it did not exercise the part that broke.**
+    4. And after all that, the fixed parser still called `craft`, `wits` and
+       `battlesWon` dead, because a read written as a string literal is
+       reported as `'"wits"'` — quotes inside quotes — which the name regex
+       could not match. `craft` has 30 reads, `wits` 51.
+  - **The rule this earns, and it is narrower than "validate your
+    instrument":** a validation must exercise the part you are about to
+    change. Steps 2 and 3 were validated on the same four fields; the
+    validation passed both times, and the second one was reporting the whole
+    state as dead.
+
 - **2026-09-01 — `battle.width` and `battle.height` are retired, and two
   checkboxes stop lying** — 8.1 listed the pair to leave with `src/hex/`
   ("none of it is load-bearing"), 8.5 took everything else on that list, and
@@ -5573,14 +5625,30 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
       is reproducible, and it is the split's. What is still n=1 is the
       CONTROL, so the honest statement is that the split reliably produces it
       and the pre-split tree was seen clean once.
-    - **The ruling is open, and it is a real trade rather than a bug to fix.**
-      Half the wall clock against one RPC warning under load. vitest 3.2.7
-      exposes no knob for that timeout — the only lever is concurrency
-      (`poolOptions.forks.maxForks`), which costs back exactly the parallelism
-      that bought the 47%. Options: leave it (fastest, and CI passes today);
-      cap forks (safe, gives the time back); or split the two heavy files
-      further so no single fork runs for 22 minutes. Not decided here, because
-      it changes CI behaviour for the whole project.
+    - **THE CHEAP LEVER WAS PRICED, AND IT IS REFUTED.** "Cap the forks" was
+      the obvious fix and it is strictly worse on both axes. Full suite at
+      `VITEST_MAX_FORKS=2`, 2026-09-01: **2,280s against 1,264s — 80% slower —
+      and the error still appeared.** It buys nothing and costs the whole gain
+      of the split, so it is off the table rather than open.
+    - **AND CI IS PROBABLY NOT EXPOSED AT ALL — but the number that decides it
+      was inherited, so it is now printed.** vitest sizes its pool as
+      `max(cpus - 1, 1)` for a non-watch run (`getDefaultThreadsCount`). On a
+      TWO-core runner that is ONE fork: files run serially, two heavy files
+      never overlap, and the error cannot happen. On a four-core runner it is
+      three forks and CI is exposed exactly as this box is. `vite.config.ts`
+      has asserted "a two-core CI runner" since Phase 5 and nothing has
+      re-taken it; `ubuntu-latest` gives two cores to some repos and four to
+      others, and it cannot be read off the workflow file. So `ci.yml` now
+      prints `availableParallelism()` and the maxForks it implies. **The next
+      CI run answers this**, and the answer decides whether there is anything
+      to rule on.
+    - **The recommendation, pending that reading: leave it.** Three split runs
+      have printed the warning and all three exited 0 with 1,559 tests
+      passing; the only measured alternative is slower AND still warns. If CI
+      prints two cores, the local warning is a four-core artifact and the item
+      closes. If it prints four, the remaining lever is serialising the two
+      heavy files against each other, which is the pre-split runtime — and
+      that is Evan's call, not a cleanup.
     - **Also confirmed by the control**: pre-split vitest counted 107 tests in
       `balance.test.ts`; post-split it counts 92 + 15 = 107.
 

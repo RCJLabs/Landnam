@@ -25,13 +25,13 @@ export type Terrain =
   | 'bog'
   | 'valley';
 
-export type Visibility = 'unseen' | 'seen' | 'visible';
-
-export interface Tile {
-  terrain: Terrain;
-  /** A river runs through this hex — fresh water, harder to cross. */
-  river: boolean;
-}
+// `Visibility` and `Tile` stood here until 2026-09-01. Both were hex-era
+// types — a tile's terrain, whether a river ran through it, and whether it
+// had been seen — and 8.5 deleted everything that referenced them without
+// deleting them. Nothing in src/, test/ or scripts/ named either one; the
+// only mentions left were two comments in landmark.ts and version.ts
+// recounting what `Tile` used to carry, and those are history and stay.
+// Found by the probe described in the changelog, not by reading.
 
 /**
  * Somebody the band drove out, still in the country.
