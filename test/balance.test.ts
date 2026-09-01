@@ -87,7 +87,7 @@ import { canCallThing, hasSpeakers, thingNeeds, yearsRuled } from '../src/sim/th
 import type { NeedId } from '../src/data/thing';
 import { SPEAKER_STANDING } from '../src/data/thing';
 import { fieldCrew, launchBlocker, provisionsFor } from '../src/sim/expedition';
-import { provisioning, sailBlocker } from '../src/sim/voyage';
+import { CROSSING, provisioning, sailBlocker } from '../src/sim/voyage';
 import { BARTER_FOOD, CLAN_KINDS } from '../src/data/clans';
 import { wintersStood } from '../src/sim/calendar';
 import { terrainDef } from '../src/data/terrain';
@@ -7721,5 +7721,75 @@ describe('PROBE: is the rival ever actually seen', () => {
           + `${short} that ended sooner: ${short ? (shortHeld / short).toFixed(1) : '-'}`,
         );
       }
+    });
+});
+
+describe('PROBE: 9.2 sweep — the two levers on the departure side', () => {
+  /**
+   * 9.2 left three prongs and priced only one. What shipped was the record;
+   * what remains is a choice between two levers that the item itself marks
+   * UNMEASURED — and a fork nobody can price is a coin flip, not a decision.
+   *
+   * The finding this has to move: every arm that sails does worse than the
+   * arm that never does, and the harm tracks the NUMBER OF CROSSINGS rather
+   * than anything about what comes back. Two named causes have already failed
+   * a test here (unfunded mouths, and stores landed too late), so the bar for
+   * a third explanation is that it survives being swept.
+   *
+   * The arm is `whenever` — sails the moment `sailBlocker` allows, in any
+   * season. Not a strategy: the control that separates "the gate never opens"
+   * from "the crossing is not worth taking". Paired against never sailing on
+   * the same seeds, because only the seeds that differ carry information.
+   *
+   * Driven from OUTSIDE: `CROSSING` and `provisioning` are module constants,
+   * so the sweep patches src between runs and this probe reports whatever it
+   * is handed. It prints the two constants it actually ran under, so a row
+   * can never be attributed to the wrong setting.
+   */
+  it('prices sailing against never sailing, at whatever the constants say',
+    { timeout: 1_800_000 }, async () => {
+      const SEEDS = 200;
+      const outcome = (sails: boolean, anySeason: boolean) => {
+        const was = policy;
+        policy = { ...SETTLER, sails, sailAnySeason: anySeason };
+        const per: { lived: boolean; sailed: boolean }[] = [];
+        let voyages = 0;
+        let souls = 0;
+        try {
+          for (let s = 0; s < SEEDS; s += 1) {
+            let sent = false;
+            const end = run(`sail-${s}`, 400, (before, after) => {
+              if (!before.voyage && after.voyage) { voyages += 1; sent = true; }
+            });
+            per.push({ lived: !end.end && end.day >= 400, sailed: sent });
+            souls += end.party.people.filter((p) => p.alive).length;
+          }
+        } finally { policy = was; }
+        return { per, voyages, souls };
+      };
+
+      const base = outcome(false, false);
+      const arm = outcome(true, true);
+      let saved = 0;
+      let killed = 0;
+      let sailed = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        if (arm.per[i]!.sailed) sailed += 1;
+        if (!base.per[i]!.lived && arm.per[i]!.lived) saved += 1;
+        if (base.per[i]!.lived && !arm.per[i]!.lived) killed += 1;
+      }
+      const stood = (r: typeof base) => r.per.filter((p) => p.lived).length;
+      // eslint-disable-next-line no-console
+      console.log(
+        `9.2 sweep — CROSSING=${CROSSING}, a season's provisioning is `
+        + `${provisioning(structuredClone(newGame('sail-0'))).food} food:\n`
+        + `  never sails: ${stood(base)}/${SEEDS} standing at day 400, ${base.souls} souls\n`
+        + `  whenever:    ${stood(arm)}/${SEEDS} standing, ${arm.souls} souls, `
+        + `${sailed} sagas sailed, ${arm.voyages} crossings\n`
+        + `  PAIRED: sailing saved ${saved} and killed ${killed}`,
+      );
+      // THE INSTRUMENT FIRST. An arm that never sails is the control twice
+      // over, and this file has shipped that mistake before.
+      expect(sailed, 'nobody sailed — the sweep measured nothing').toBeGreaterThan(0);
     });
 });
