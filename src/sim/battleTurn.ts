@@ -271,7 +271,26 @@ function settleChampion(state: GameState, battle: Battle): void {
     scars: Math.min(SCAR_MAX, clan.champion.scars + 1),
     lastSeen: state.day,
   };
-  chronicle(state, `${name} got off the field alive. He will have marked us for it.`, 'grim');
+  // 9.5, AND THE CHANGE IS ONE WORD OF CERTAINTY RATHER THAN THE WHOLE LINE.
+  //
+  // It read "He will have marked us for it." Measured over full runs, a
+  // champion who walks away leads a repeat fight in 5% of clan fights on even
+  // and 3% on fair — about one time in twenty — and most named foes cannot
+  // return AT ALL: only 22% of the fights he leads are a clan's, the rest
+  // being open-field champions who belong to nobody, which
+  // test/champion.test.ts asserts as intended design. So the old line
+  // promised a return the game delivers one time in twenty.
+  //
+  // The other prong of 9.5's fork was to make the promise TRUE by raising the
+  // raid rate so clans come back. That was tried and reverted: it bought three
+  // points of recurrence for three points of spring and a difficulty card that
+  // stopped being true.
+  //
+  // What is wrong is the CERTAINTY, not the menace. A chronicle is allowed to
+  // be more afraid than the odds — this is past tense, after the fight, and
+  // nothing acts on it — so the line keeps its dread and stops asserting a
+  // return. It says what is certainly true of a man who got away.
+  chronicle(state, `${name} got off the field alive. He will not have forgotten it.`, 'grim');
 }
 
 export function leaveBattle(state: GameState): Aftermath | undefined {

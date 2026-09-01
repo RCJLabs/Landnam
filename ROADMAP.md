@@ -48,13 +48,16 @@
 >
 > **CURRENT MILESTONE (from 2026-08-30): Phase 9 — what a saga actually
 > feels like to play**, below. **Built and closed:** 9.1b, 9.1c, 9.3, 9.4,
-> 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one that gave
-> the game a third act.
+> 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
+> that gave the game a third act.
 >
 > **Measured, with a decision left to Evan rather than invented:** 9.2 (the
-> voyage home), 9.5 (soften the villain's promise or leave it), 9.7 (winter),
-> 9.12 (the pacing arc). The SHIELD left this list when 9.1c settled it by
-> counting; 9.11 left it when the fork closed by elimination.
+> voyage home, narrowed to remove-or-keep), 9.7 (winter), 9.12 (the pacing
+> arc).
+>
+> Three items have LEFT that list rather than been ruled on: the SHIELD when
+> 9.1c settled it by counting, 9.11 when its fork closed by elimination, and
+> 9.5 when its line stopped promising a return.
 > **Nothing in Phase 9 is unstarted now.** What remains is rulings.
 >
 > **And a standing lesson from every item above.** Ten of them were opened on
@@ -4531,8 +4534,9 @@ nice. Four groups, in the shape they were proposed and chosen from.
   measured · ✅ the size of the reason is on the screen that needs it, at no
   cost in height · ✅ every claim watched failing, the threshold pinned to
   literals rather than to itself.
-- [~] **9.5 The named foe** — **MEASURED 2026-08-30, and the item's ratio is
-  wrong at both ends. The remaining decision is Evan's.**
+- [x] **9.5 The named foe** — **MEASURED 2026-08-30, and the item's ratio is
+  wrong at both ends. Ruled and closed 2026-08-31: the promise the line made
+  is gone, the menace stayed.**
 
   It was written on `named foes: 1 came back, 30 put down for good` — read as
   "he is always killed". Three faults in that reading, and the tally is in
@@ -4613,10 +4617,27 @@ nice. Four groups, in the shape they were proposed and chosen from.
   denominator — committed again by its author, within the day, on the same
   kind of number.
 
-  So the fork stands, with one prong now priced honestly and closed:
-  **keeping the promise costs three points of spring and a broken difficulty
-  card. What remains open is softening the saga line** — which is 9.14's
-  shape and cheap. Evan's call.
+  **RULED AND CLOSED 2026-08-31 — the middle option.** Keeping the promise was
+  priced and refused above. Softening the line wholesale, the way 9.14's door
+  out states its record, was the other prong and was NOT taken either: 9.14's
+  record sits on a DECISION CARD, read before a choice, where a false claim
+  changes what a player does. This is a past-tense chronicle entry after the
+  fight is over, and nothing acts on it — a saga is allowed to be more afraid
+  than the odds.
+
+  **What was wrong was the certainty, not the menace.** So one clause changed:
+
+  > *"He got off the field alive. ~~He will have marked us for it.~~
+  > **He will not have forgotten it.**"*
+
+  The dread survives, the promise does not. `test/champion.test.ts` pins the
+  old clause OUT so it cannot drift back, and three sabotages — the promise
+  returning, the menace draining away, the line vanishing — all fail loudly.
+
+  **What this item leaves behind is the better half anyway:** the reading that
+  he is NOT wiped out (he walks off alive 46% of the time), that most named
+  foes cannot return by construction, and that recurrence is gated by how
+  often a clan comes back rather than by his death.
 
 ### Things that are not there
 
@@ -5414,6 +5435,20 @@ nice. Four groups, in the shape they were proposed and chosen from.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-08-31 — The named foe stops promising a return (9.5, closed)** — The
+  saga said *"He will have marked us for it"* when a champion walked off the
+  field. Measured, he leads a repeat fight in 5% of clan fights on even and 3%
+  on fair, and most named foes cannot return at all — only 22% of the fights
+  he leads are a clan's. The other prong, making the promise TRUE by raising
+  the raid rate, was tried and reverted: three points of recurrence for three
+  points of spring and a difficulty card that stopped being true. And
+  softening it wholesale was declined too — 9.14's record sits on a decision
+  card read BEFORE a choice, where a false claim changes what a player does,
+  while this is past tense after the fight and nothing acts on it. What was
+  wrong was the certainty, not the menace, so one clause moved: **"He will not
+  have forgotten it."** The dread survives, the promise does not, and the old
+  clause is pinned out of the test so it cannot drift back.
 
 - **2026-08-31 — Both levers on the voyage are refuted (9.2, swept)** — The
   item left three prongs and priced one, leaving the other two marked

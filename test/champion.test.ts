@@ -234,6 +234,12 @@ describe('the man who comes back', () => {
     expect(clan.champion?.scars).toBe(1);
     expect(clan.champion?.lastSeen).toBe(state.day);
     expect(state.saga.some((e) => e.text.includes('got off the field alive'))).toBe(true);
+    // 9.5: the line keeps its dread and stops PROMISING a return. He comes
+    // back one time in twenty, so "he will have marked us for it" was an
+    // offer the game does not keep — pinned out here so it cannot drift back.
+    const line = state.saga.find((e) => e.text.includes('got off the field alive'))!.text;
+    expect(line, 'the line went back to promising a return').not.toMatch(/marked us for it/i);
+    expect(line).toMatch(/not have forgotten/i);
   });
 
   it('putting him down is final — the clan loses him', () => {
