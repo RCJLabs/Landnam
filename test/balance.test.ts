@@ -4,15 +4,23 @@
 // test/fixtures/harness.ts; the diagnostic sweeps that answer a question once
 // live in test/probes.test.ts. What stays here is what must remain TRUE.
 //
-// THE SPLIT WAS MEASURED BEFORE IT WAS MADE, and what it bought is not what
-// it looks like. balance.test.ts was 43.9 of the suite's 45.0 minutes; of its
-// own tests the fifteen named PROBE were 21.9 minutes and everything else
-// 22.8. So the probes were HALF THE CLOCK while being fifteen of the 103
-// tests and thirteen of the 225 assertions — which is the whole argument for
-// the split, and also the reason not to expect the run to get much shorter.
-// The slowest things left are bars and have to be: `plays to day 500` at
-// 240s, the market at 167s, the winter verdict at 136s, the hardship arms at
-// 105s. What is left here is 88 tests carrying 212 assertions.
+// THE SPLIT WAS MEASURED BEFORE IT WAS MADE, AND AGAIN AFTER, and the second
+// measurement corrected the first. balance.test.ts was 43.9 of the suite's
+// 45.0 minutes; of its own tests the fifteen named PROBE were 21.9 minutes
+// and everything else 22.8 — so the probes were half the clock while being
+// fifteen of 105 tests and thirteen of 225 assertions, which is the argument
+// for the split.
+//
+// What that argument got WRONG was the payoff. It predicted the run would not
+// get much shorter, reasoning from CPU-time; measured against the pre-split
+// commit, the suite went 2,484s → 1,317s. The gain is parallelism — two files
+// run at once where one file cannot run against itself — and total test
+// CPU-time barely moved (2,541s → 2,688s). Measuring a change in the wrong
+// unit is the same class of fault as reading the wrong counter.
+//
+// What is left here is 88 tests carrying 212 assertions, and the slowest of
+// them are bars and have to be: `plays to day 500` at 240s, the market at
+// 167s, the winter verdict at 136s, the hardship arms at 105s.
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';

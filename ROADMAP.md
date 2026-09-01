@@ -5486,14 +5486,40 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
     reason it surfaced is that the control worktree checked out the pre-split
     commit and the count did not match. Trap 1, at small scale, on the same
     day and in the same commit as an entry citing trap 1.
-  - **One thing left open**: the run now prints `Errors 1 error —
-    [vitest-worker]: Timeout calling "onTaskUpdate"`, which is the exact
-    hazard `vite.config.ts` documents (it once failed a CI run with every
-    test green). Exit code was still 0 and all 1,557 tests passed. Whether
-    the split caused it — two 22-minute CPU-pegging files now run at the same
-    time where one used to — or whether it was already there is NOT yet
-    measured, and saying either without the control run would be the mistake
-    this file is full of warnings about.
+  - **THE CONTROL RUN WAS TAKEN, AND IT CORRECTED THE ENTRY ABOVE.** The
+    pre-split commit was checked out into a worktree and the whole suite run
+    against it, which answered two things at once.
+    - **The split HALVES the suite. The claim above that it would not is
+      wrong.** Wall clock went 2,484s → 1,317s, a 47% cut. The reasoning that
+      produced the wrong claim is worth keeping because it is a specific,
+      repeatable mistake: the probes' 21.9 minutes are CPU-TIME, and total
+      test CPU-time barely moved (2,541s → 2,688s, up 6% — two files pay two
+      collects and instantiate the harness twice). What the split actually
+      buys is PARALLELISM: two files run at once where one file could not run
+      against itself. Measuring a change in the wrong unit is the same class
+      of fault as measuring the wrong counter, and it went the flattering
+      direction only by luck.
+    - **And the split does cause the worker error.** The run now prints
+      `Errors 1 error — [vitest-worker]: Timeout calling "onTaskUpdate"`, the
+      exact hazard `vite.config.ts` documents as having once failed CI with
+      every test green. The control run has ZERO occurrences of it. The
+      mechanism fits: `onTaskUpdate` is a call the worker awaits from the main
+      process, and the main process now coordinates two CPU-pegged forks where
+      it coordinated one. Exit code was still 0 and all 1,557 tests passed, so
+      CI is not red today — but this box has 4 cores and the CI runner has 2,
+      so contention there is worse than what produced the error here. One run
+      each, so this is n=1 against n=1; the mechanism is what makes it
+      credible, not the sample.
+    - **The ruling is open, and it is a real trade rather than a bug to fix.**
+      Half the wall clock against one RPC warning under load. vitest 3.2.7
+      exposes no knob for that timeout — the only lever is concurrency
+      (`poolOptions.forks.maxForks`), which costs back exactly the parallelism
+      that bought the 47%. Options: leave it (fastest, and CI passes today);
+      cap forks (safe, gives the time back); or split the two heavy files
+      further so no single fork runs for 22 minutes. Not decided here, because
+      it changes CI behaviour for the whole project.
+    - **Also confirmed by the control**: pre-split vitest counted 107 tests in
+      `balance.test.ts`; post-split it counts 92 + 15 = 107.
 
 - **2026-08-31 — The `standsFor` bug is fixed as a class, not an instance** —
   9.11 tripped over one of these and fixed the one it tripped over, which left
