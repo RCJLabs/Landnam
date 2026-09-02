@@ -1908,3 +1908,140 @@ describe('PROBE: 10.1 — is starvation one ending or several', () => {
     expect(out.length).toBe(2);
   });
 });
+
+describe('PROBE: 10.3 — is it the raiding that loses, or the bundle', () => {
+  /**
+   * 10.3 opened on "the raider settles more often and dies sooner, 2 bands
+   * standing against the settler's 12". That compares two POLICIES, and the
+   * two policies differ on at least six axes: `siteFloor` 7 against 9, no
+   * `relaxFrom` at all (the settler's is worth saved 20 / killed 1 by its own
+   * comment), `plunderWindow` 40 against 24, `trades: false`, a different
+   * build order, and a different CREW — `warrior,hunter,hunter,farmer,...`
+   * against `farmer,farmer,woodcutter,...`.
+   *
+   * So the opening reading cannot say anything about raiding. It is the same
+   * fault as testing the raider with a settler's site floor, which this
+   * harness already made once and wrote down: "a strategy measured with a
+   * spec that could not carry it".
+   *
+   * ONE VARIABLE. The settler, with raiding switched on and NOTHING else
+   * changed — same crew, same site rule, same build order, same trading, same
+   * seeds. Paired, because the aggregate difference between two arms is only
+   * ever as wide as the sagas that actually differ.
+   */
+  it('turns raiding on for the settler and changes nothing else', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 200;
+    const RAIDING: Policy = { ...SETTLER, raidReach: 10, raidParty: 6, robsCamps: true };
+
+    const take = (pol: Policy) => {
+      setPolicy(pol);
+      const rows: { day: number; end: string; jarl: boolean; falls: number; foundedOn: number }[] = [];
+      for (let i = 0; i < SEEDS; i += 1) {
+        let falls = 0;
+        const s = run(armSeed(0, i, SEEDS), 400, (before, after) => {
+          const was = before.tally?.sackings ?? 0;
+          const now = after.tally?.sackings ?? 0;
+          if (now <= was) return;
+          const b = (before.world.places ?? []).filter((pl) => pl.sackedOn !== undefined).length;
+          const a = (after.world.places ?? []).filter((pl) => pl.sackedOn !== undefined).length;
+          if (a <= b) falls += now - was;
+        });
+        rows.push({
+          day: s.day,
+          end: s.end?.cause ?? 'still standing',
+          jarl: Boolean(s.jarl),
+          falls,
+          // -1 for a band that never got a roof at all. Needed because an arm
+          // that ties its control EXACTLY is usually a knob that never fired,
+          // and `relaxFrom` cannot fire for a band already settled by day 14.
+          foundedOn: s.settlement?.foundedOn ?? -1,
+        });
+      }
+      return rows;
+    };
+
+    // The obvious defence of raiding is that the settler's crew cannot carry
+    // it -- two farmers and one warrior. This harness has made that mistake in
+    // the other direction and written it down twice ("a strategy measured with
+    // a spec that could not carry it"), so the war-crew is a third arm rather
+    // than an objection left hanging. Raiding is held ON across B and C, so
+    // C-against-B isolates the CREW exactly as B-against-A isolates raiding.
+    const WARCREW: Policy = {
+      ...RAIDING,
+      crew: ['warrior', 'hunter', 'hunter', 'farmer', 'woodcutter', 'builder'],
+    };
+
+    // And the rest of the bundle. Arm B is the settler raiding at 7%; the full
+    // RAIDER policy came in at 1.7%, so something outside raiding costs more
+    // than raiding does. The prime suspect is `relaxFrom`, which RAIDER does
+    // not set at all: the settler's own comment prices that rule at saved 20 /
+    // killed 1, because a FIXED site floor never settles in 45 of 120 seeds.
+    // If E recovers most of the gap, the raider's collapse is a harness rule
+    // it was never given rather than the game punishing raiding.
+    const RAIDER_RELAXED: Policy = { ...RAIDER, relaxFrom: 14 };
+
+    const off = take(SETTLER);
+    const on = take(RAIDING);
+    const war = take(WARCREW);
+    const raider = take(RAIDER);
+    const relaxed = take(RAIDER_RELAXED);
+
+    let saved = 0, killed = 0, same = 0, longer = 0, shorter = 0;
+    for (let i = 0; i < SEEDS; i += 1) {
+      const a = off[i]!, b = on[i]!;
+      if (a.day === b.day && a.end === b.end) same += 1;
+      const as = a.end === 'still standing', bs = b.end === 'still standing';
+      if (bs && !as) saved += 1;
+      if (as && !bs) killed += 1;
+      if (b.day > a.day) longer += 1;
+      if (b.day < a.day) shorter += 1;
+    }
+    const standing = (r: typeof off) => r.filter((x) => x.end === 'still standing').length;
+    const avg = (r: typeof off) => Math.round(r.reduce((t, x) => t + x.day, 0) / r.length);
+    const falls = (r: typeof off) => r.reduce((t, x) => t + x.falls, 0);
+    const settling = (r: typeof off) => {
+      const got = r.filter((x) => x.foundedOn >= 0);
+      const late = got.filter((x) => x.foundedOn >= 14).length;
+      return got.length === 0 ? 'never settled'
+        : `settled ${got.length}/${r.length} on day ${Math.round(got.reduce((t, x) => t + x.foundedOn, 0) / got.length)}`
+          + `, still searching at day 14: ${late}`;
+    };
+
+    let rSaved = 0, rKilled = 0;
+    for (let i = 0; i < SEEDS; i += 1) {
+      const d = raider[i]!, e = relaxed[i]!;
+      const ds = d.end === 'still standing', es = e.end === 'still standing';
+      if (es && !ds) rSaved += 1;
+      if (ds && !es) rKilled += 1;
+    }
+
+    let wSaved = 0, wKilled = 0;
+    for (let i = 0; i < SEEDS; i += 1) {
+      const b = on[i]!, c = war[i]!;
+      const bs = b.end === 'still standing', cs = c.end === 'still standing';
+      if (cs && !bs) wSaved += 1;
+      if (bs && !cs) wKilled += 1;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 10.3 raiding as ONE knob on the settler — ${SEEDS} seeds, paired:\n`
+      + `  A raiding off        : ${standing(off)}/${SEEDS} standing, avg ${avg(off)} days, ${falls(off)} fallen on\n`
+      + `  B raiding on         : ${standing(on)}/${SEEDS} standing, avg ${avg(on)} days, ${falls(on)} fallen on\n`
+      + `  C raiding + war crew : ${standing(war)}/${SEEDS} standing, avg ${avg(war)} days, ${falls(war)} fallen on\n`
+      + `  B against A (raiding): ${same}/${SEEDS} identical, saved ${saved}, killed ${killed}, longer ${longer}, shorter ${shorter}\n`
+      + `  C against B (the crew): saved ${wSaved}, killed ${wKilled}\n`
+      + `  D RAIDER as it stands: ${standing(raider)}/${SEEDS} standing, avg ${avg(raider)} days\n`
+      + `  E RAIDER + relaxFrom : ${standing(relaxed)}/${SEEDS} standing, avg ${avg(relaxed)} days\n`
+      + `  E against D (the relax rule): saved ${rSaved}, killed ${rKilled}\n`
+      + `  WHY: D ${settling(raider)}\n`
+      + `       A ${settling(off)}`,
+    );
+
+    // The knob has to actually DO something, or the arms are the same run
+    // twice and every number above is noise wearing a table. This is the
+    // check 9.1 needed and did not have.
+    expect(falls(on), 'raiding was switched on and nobody was fallen on')
+      .toBeGreaterThan(falls(off));
+  });
+});

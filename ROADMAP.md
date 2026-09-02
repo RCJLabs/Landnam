@@ -5735,13 +5735,57 @@ bad numbers came from reading one bot's habits as a rule of the game:
   right. It does not rescue battle from being a feeder; it shows the feeder
   running in both directions.
 
-- [ ] **10.3 The raider is a play style that loses.** Same seeds, same coast:
-  the raider settles MORE often (104/120 against 88) and dies SOONER (95 days
-  against 137), finishing with **2 bands standing against the settler's 12**.
-  It is not close. UNMEASURED, and it is the whole item: whether that is the
-  bot playing the raider badly or the game paying raiding badly. Phase 9 made
-  this mistake twice — `outWith >= 4` and the shield — so the first job is a
-  harness question, not a balance change.
+- [~] **10.3 The raider is a play style that loses** — **DECOMPOSED
+  2026-09-01. IT IS BOTH, AND THEY ARE NOW SEPARATED: raiding costs about half
+  the survivors, and the rest of the raider policy costs about as much again.**
+
+  The opening reading compared two POLICIES, which cannot say anything about
+  raiding: `RAIDER` differs from `SETTLER` on at least six axes — `siteFloor`
+  7 against 9, no `relaxFrom` at all, `plunderWindow` 40 against 24,
+  `trades: false`, a different build order, and a different crew. That is the
+  same fault this harness already wrote down twice, "a strategy measured with
+  a spec that could not carry it".
+
+  `PROBE: 10.3`, 200 seeds, every arm paired against the one above it:
+
+  | | standing at day 400 | avg days | against the arm above |
+  |---|---|---|---|
+  | **A** settler | **27/200** | 141 | — |
+  | **B** settler + raiding, nothing else changed | **14/200** | 121 | saved 9, **killed 22** |
+  | **C** B + the raider's war crew | 17/200 | 117 | saved 9, killed 6 |
+  | **D** the full `RAIDER` policy | **4/200** | 97 | — |
+  | **E** D + `relaxFrom: 14` | 4/200 | 97 | saved 0, killed 0 |
+
+  **1. Raiding itself loses, and that is the GAME.** One knob on the settler,
+  everything else held — same crew, same site rule, same build order, same
+  trading, same seeds — halves the bands standing at day 400 and comes out
+  saved 9, killed 22. The knob is checked to have fired: neighbours fallen on
+  goes 234 → 432, which is the check 9.1 needed and did not have.
+
+  **2. Equipping for it does not rescue it.** The obvious defence is that the
+  settler's two-farmer crew cannot carry a raiding strategy. Given the war
+  crew, arm C recovers +3 net (saved 9, killed 6) — real, and nowhere near
+  arm A's 27.
+
+  **3. More than half the raider's disadvantage is NOT raiding.** The settler
+  who raids stands 14 of 200; the full raider policy stands 4. So whatever
+  else is in that bundle costs about as much as raiding does.
+
+  **4. And the first suspect in the bundle came back an EXACT tie, which is
+  trap 3 and not a finding.** `relaxFrom` is the rule the raider never got,
+  and the settler's own comment prices it at saved 20 / killed 1. Added to the
+  raider it changed *nothing* — same standing, same average day, saved 0 and
+  killed 0. **The knob had no work to do:** at `siteFloor: 7` the raider
+  settles 170 of 200 bands on day 6, with only 14 still searching when the
+  rule would begin to relax, against the settler's 69. A rule that relaxes a
+  floor nobody is stuck behind cannot do anything. This is NOT evidence that
+  the rule is worthless.
+
+  **UNMEASURED, and it is what is left of the item:** which of `trades:
+  false`, `plunderWindow: 40` and the build order carries the rest of the
+  bundle's cost. Worth noting for whoever takes it that the raider settles
+  MORE often and EARLIER than the settler (170/200 on day 6 against 148/200 on
+  day 14), so it is not a settling problem — which was the obvious guess.
 
 - [ ] **10.4 The content is reached; the endings are not.** At least 15 of 15
   building kinds are standing somewhere at the end and a settled band holds
@@ -5772,6 +5816,29 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — 10.3 decomposed: raiding costs half the survivors, and the
+  raider policy costs as much again** — the item opened by comparing two
+  POLICIES that differ on six axes, which cannot say anything about raiding.
+  Re-measured as one knob at a time, 200 seeds, each arm paired against the
+  one above it.
+  - **Raiding itself loses, and that is the game.** Turning raiding on for an
+    otherwise identical settler — same crew, same site rule, same build order,
+    same trading, same seeds — takes standing at day 400 from **27/200 to
+    14/200**, saved 9 against killed 22. The knob is verified to have fired
+    (neighbours fallen on 234 → 432).
+  - **Equipping for it does not rescue it**: the raider's war crew recovers
+    +3 net, nowhere near the 27.
+  - **More than half the raider's disadvantage is not raiding at all** — the
+    settler who raids stands 14, the full raider policy stands 4.
+  - **The first suspect came back an exact tie, and that is trap 3.**
+    `relaxFrom` — the rule the raider never got, priced by the settler at
+    saved 20 / killed 1 — changed nothing when added: same standing, same
+    average day, saved 0 killed 0. Chased rather than reported: at
+    `siteFloor: 7` the raider settles 170 of 200 bands **on day 6**, with only
+    14 still searching when the rule would begin to relax, against the
+    settler's 69. The knob had no work to do. It is not evidence the rule is
+    worthless, and it would have been written down as exactly that.
 
 - **2026-09-01 — 10.1's raiding finding chased down, and it inverts** — the
   harness question was taken rather than left open, and it took three passes.
