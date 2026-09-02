@@ -94,6 +94,39 @@ describe('migration registry', () => {
     expect('battle' in out).toBe(false);
   });
 
+  /**
+   * v62 dropped `Plot.at`. Order carries the slot now, so the migration must
+   * leave the plots in the SAME order it found them — a reordering migration
+   * would silently move every steading's hall.
+   */
+  it('drops the plot index a v61 save was still carrying, and keeps the order', () => {
+    const v61 = {
+      version: 61,
+      settlement: {
+        name: 'Ravenstead',
+        plots: [
+          { at: 0, kind: 'hall' },
+          { at: 1, kind: 'field' },
+          { at: 2, kind: 'wood' },
+        ],
+      },
+    };
+    const out = MIGRATIONS[61]!(v61) as Record<string, unknown>;
+    const home = out['settlement'] as Record<string, unknown>;
+    const plots = home['plots'] as Record<string, unknown>[];
+    expect(out['version']).toBe(62);
+    expect(plots.every((p) => !('at' in p))).toBe(true);
+    expect(plots.map((p) => p['kind'])).toEqual(['hall', 'field', 'wood']);
+    expect(home['name']).toBe('Ravenstead');
+  });
+
+  it('carries a v61 save with no steading straight through', () => {
+    const out = MIGRATIONS[61]!({ version: 61, day: 30 }) as Record<string, unknown>;
+    expect(out['version']).toBe(62);
+    expect(out['day']).toBe(30);
+    expect('settlement' in out).toBe(false);
+  });
+
   it('refuses saves from the future', () => {
     expect(() => migrate({ version: SAVE_VERSION + 1 })).toThrow(/newer version/);
   });

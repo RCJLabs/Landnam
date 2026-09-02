@@ -5886,13 +5886,49 @@ bad numbers came from reading one bot's habits as a rule of the game:
 
 ### Carried over from Phase 9, small and concrete
 
-- [ ] **10.5 `Plot.at` and `Champion.lastSeen`** — both found by the
-  dead-field audit of 2026-09-01, both written and never read, both in the
-  save. `Champion.lastSeen` is the interesting one: its own comment says *"so
-  the log can say how long it has been"*, and the log never says it. Either
-  write the line the field promises — it is 9.5's named foe and it is cheap —
-  or drop the field and the promise together. `Plot.at` is a slot index the
-  colony view may be the thing that SHOULD read.
+- [x] **10.5 `Plot.at` and `Champion.lastSeen`** — **DONE 2026-09-01, and the
+  two dead fields went opposite ways, which is the point of looking at each
+  one rather than sweeping them.**
+
+  **`Champion.lastSeen` now says what it was written to say.** Its comment
+  promised *"the day he was last seen, so the log can say how long it has
+  been"*, and for four milestones the log did not say it. The raid log already
+  had the sentence to hang it on — *"had come back for us"* — so it now
+  carries `It had been a season.` / `a year.` / `5 days.`, rounding DOWN to
+  the largest unit that has actually passed, because a man seen ninety days
+  ago has not been away a year and the log saying so would be a small lie in
+  the one place a run gets retold. Silent at a gap of nothing, which is the
+  save-reloaded-mid-fight case.
+
+  **The subtle half, and the reason the test drives a real raid rather than
+  the helper:** `startBattle` overwrites `lastSeen` with today as the champion
+  sets foot on the field, so the value has to be read BEFORE that assignment,
+  four lines earlier. A unit test of the formatting function would pass while
+  the log printed nothing.
+
+  **`Plot.at` is deleted.** `makePlots` builds the array in slot order and
+  nothing reorders, filters or splices it, so `plots[i].at` was always `i` —
+  the index written down twice, and the last remnant of the hex coordinate 8.5
+  set out to retire (`battle.width`/`height` were the others, taken the same
+  day). `SAVE_VERSION 62` + migration 61, which preserves plot ORDER because
+  order is what carries the slot now.
+
+  **Its only reader was another check that could not fail:** `expect(new
+  Set(plots.map(p => p.at)).size).toBe(plots.length)` — asserting that the
+  indices of an array are distinct. Replaced with the yard's size, which is
+  what `plotsFor` and the day's labour actually walk. That is the third
+  can't-fail check found in two days, after `battle.width === FIELD_WIDTH` and
+  the ending's `some()`.
+
+  Both halves were watched failing: removing the `lastSeen` read breaks two
+  champion tests, and removing the `delete` breaks the migration test.
+
+  **And a note for the next `SAVE_VERSION` bump, because this has now fired
+  twice in one day:** `port/LandnamPartyTables.gen.h` bakes `SaveVersion` in,
+  so `test/tables.test.ts` goes red the moment the constant moves. That is the
+  tripwire working — a generated file catching real staleness — but it means
+  `npm run party-tables` belongs beside the migration in the checklist, not
+  after a puzzled look at a failing suite. v61 and v62 both hit it.
 
 - [ ] **10.6 What the CI runner actually has.** `ci.yml` now prints
   `availableParallelism()` and the `maxForks` it implies. Two cores means one
@@ -5906,6 +5942,28 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — 10.5: the two dead fields went opposite ways** — one was
+  written to keep a promise nothing kept, and one was the same number stored
+  twice.
+  - **`Champion.lastSeen` now says how long it has been.** Its comment
+    promised the log would say it and the log never did. The returning-foe
+    line now carries `It had been a season.` / `a year.` / `5 days.`, rounding
+    down to the unit that has actually passed, and silent at a gap of nothing.
+    **The test drives a real raid rather than the formatter**, because
+    `startBattle` overwrites `lastSeen` with today as the champion takes the
+    field — the value must be read four lines earlier, and a unit test of the
+    formatting would pass while the log printed nothing.
+  - **`Plot.at` is deleted.** `makePlots` builds in slot order and nothing
+    reorders the array, so `plots[i].at` was always `i`: the index stored
+    twice, and the last remnant of the hex coordinate 8.5 set out to retire.
+    `SAVE_VERSION 62` + migration 61, preserving plot order because order is
+    what carries the slot now.
+  - **Its only reader was a third can't-fail check** — asserting that the
+    indices of an array are distinct — after `battle.width === FIELD_WIDTH`
+    and the ending's `some()`. Replaced with the yard's size, which the day's
+    labour actually walks.
+  - Both halves watched failing before being trusted.
 
 - **2026-09-01 — 10.4: the rare endings were neither rare nor decoration — one
   line was taking their name off them** — the wipe-out ending asked

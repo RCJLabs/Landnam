@@ -268,11 +268,45 @@ describe('the man who comes back', () => {
     expect(him.byname).toBe('the Old Wolf');
     // The log says he is not new.
     expect(battle.log[0]).toContain('had come back for us');
+    // 10.5: and it says how long, which is what `lastSeen` was written for.
+    // Set on day 1 and read on the day of the raid, so the gap is real.
+    expect(battle.log[0], 'lastSeen went unread again').toMatch(/It had been /);
     // And the scars are on him, not just in the text.
     const fresh = structuredClone(besieged('champ-returns'));
     startRaid(fresh, 2);
     const stranger = fresh.battle!.foes.find((f) => f.id === fresh.battle!.champion)!;
     expect(him.maxHealth).toBe(stranger.maxHealth + 2 * SCAR_TOUGHNESS);
+  });
+
+  // 10.5: `Champion.lastSeen` was written and never read for four milestones,
+  // though its own comment said "so the log can say how long it has been". It
+  // says it now. These drive the real raid rather than the private helper,
+  // because the subtle part is that the old value must be read BEFORE the
+  // same function overwrites it with today — a unit test of the helper would
+  // not see that, and it is the half most likely to break.
+  const lineFor = (seed: string, seenOn: number): string => {
+    const s2 = besieged(seed);
+    const clan2 = s2.neighbours[0]!;
+    clan2.champion = { name: 'Starkad', byname: 'the Old Wolf', scars: 2, lastSeen: seenOn };
+    startRaid(s2, 2);
+    return s2.battle!.log[0]!;
+  };
+
+  it('says how long it had been, in the largest unit that has actually passed', () => {
+    // Rounding DOWN: a man seen ninety days ago has not been away a year, and
+    // the log saying so would be a small lie in the one place a run is retold.
+    const day = besieged('gap-scale').day;
+    expect(lineFor('gap-scale', day - 5)).toMatch(/It had been 5 days\./);
+    expect(lineFor('gap-scale', day - 30)).toMatch(/It had been a season\./);
+    expect(lineFor('gap-scale', day - 60)).toMatch(/It had been 2 seasons\./);
+    expect(lineFor('gap-scale', day - 100)).toMatch(/It had been a year\./);
+  });
+
+  it('says nothing when no time has passed', () => {
+    // A save taken mid-fight and reloaded: he is not coming back from
+    // anywhere, and "It had been 0 days" is worse than silence.
+    const day = besieged('gap-none').day;
+    expect(lineFor('gap-none', day)).not.toMatch(/It had been/);
   });
 
   it('the scars stop somewhere — he stays killable', () => {

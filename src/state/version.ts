@@ -218,7 +218,15 @@
 //             keeps its ground — only the two numbers describing its shape
 //             are dropped, and the shape they described is the only shape
 //             there has ever been.
-export const SAVE_VERSION = 61;
+// v62 (10.5): `Plot.at` goes. It was a slot index that had been a hex of a
+//             radius-2 ring until Phase 8 drew the yard side-on, and
+//             `makePlots` builds the array in slot order — so `plots[i].at`
+//             was always `i`, and nothing reorders, filters or splices that
+//             array. The index written down twice, and the last remnant of
+//             the hex coordinate 8.5 set out to retire. Its only reader was a
+//             test asserting the values were distinct, on an array whose
+//             indices are distinct by construction.
+export const SAVE_VERSION = 62;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

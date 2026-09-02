@@ -19,7 +19,7 @@ import { pushMode } from '../modes';
 import { beat } from './beats';
 import { canActFrom, canLandOn } from './ranks';
 import { effectiveStat, standAtHome, sworn } from './people';
-import { wintersStood } from './calendar';
+import { SEASON_LENGTH, YEAR_LENGTH, wintersStood } from './calendar';
 import { fieldCrew, homeCrew } from './expedition';
 import { standsFor } from './colony';
 import { raidSource } from './neighbours';
@@ -252,6 +252,26 @@ export const SCAR_TOUGHNESS = 2;
  * with his scars on him, because the whole value of a recurring enemy is
  * that the player recognises him.
  */
+/**
+ * How long it had been since a named foe was last on a field of ours.
+ *
+ * The saga log is a past-tense chronicle, so this is a sentence rather than a
+ * number, and it rounds DOWN to the largest unit that has actually passed — a
+ * man seen ninety days ago has not been away a year, and saying so would be
+ * the log telling a small lie about the one thing it is for.
+ *
+ * Empty for a gap of nothing, which is what a save taken mid-fight and
+ * reloaded gives: he is not coming back from anywhere.
+ */
+function sinceHeWasSeen(days: number): string {
+  if (days <= 0) return '';
+  const years = Math.floor(days / YEAR_LENGTH);
+  if (years >= 1) return years === 1 ? ' It had been a year.' : ` It had been ${years} years.`;
+  const seasons = Math.floor(days / SEASON_LENGTH);
+  if (seasons >= 1) return seasons === 1 ? ' It had been a season.' : ` It had been ${seasons} seasons.`;
+  return ` It had been ${days} days.`;
+}
+
 export function anointChampion(foes: Person[], rng: Rng, known?: Champion): Person {
   const champion = foes.reduce((a, b) => (b.maxHealth > a.maxHealth ? b : a));
   const scars = Math.min(SCAR_MAX, known?.scars ?? 0);
@@ -368,6 +388,11 @@ export function beginBattle(
       ? anointChampion(foes, rng.derive('champion'), sender?.champion)
       : undefined;
   const returning = (sender?.champion?.scars ?? 0) > 0;
+  // Read BEFORE the assignment below overwrites it with today. `lastSeen` was
+  // written for exactly this and then never read by anything: its own comment
+  // said "so the log can say how long it has been", and the log did not say
+  // it. Found by the dead-field audit of 2026-09-01.
+  const lastSaw = sender?.champion?.lastSeen;
   if (champion && sender) {
     // Remembered from the moment he sets foot on the field, so a save taken
     // mid-fight still knows whose man he is.
@@ -463,6 +488,7 @@ export function beginBattle(
         (champion
           ? returning
             ? ` ${champion.name} ${champion.byname} had come back for us.`
+              + sinceHeWasSeen(state.day - (lastSaw ?? state.day))
             : ` ${champion.name} ${champion.byname} led them.`
           : '') +
         (from ? ` ${from.name} had not forgotten us.` : '') +

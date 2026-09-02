@@ -515,13 +515,16 @@ export interface SiteReport {
 /**
  * One piece of the steading's own ground, in COLONY mode.
  *
- * `at` is a slot index, 0 for the hall. It was a hex of a radius-2 ring until
- * Phase 8 drew the yard side-on; the ring's nineteen plots came across with
- * the steadings that already existed, and the index is what is left of the
- * coordinate. See `makePlots`.
+ * The hall is plot 0 and the rest are the yard, in order.
+ *
+ * `at` stood here until v62 — a slot index that was a hex of a radius-2 ring
+ * until Phase 8 drew the yard side-on. `makePlots` builds the array in slot
+ * order, so `plots[i].at` was always `i`, and nothing reorders, filters or
+ * splices the array. It was the index written down twice, and the last
+ * remnant of the hex coordinate 8.5 set out to retire. Its only reader was a
+ * test asserting the values were distinct. See `makePlots`.
  */
 export interface Plot {
-  at: number;
   kind: 'hall' | 'field' | 'wood' | 'water' | 'rough' | 'watchpost';
 }
 

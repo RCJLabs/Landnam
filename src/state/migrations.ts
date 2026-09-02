@@ -700,6 +700,28 @@ export const MIGRATIONS: Record<number, Migration> = {
    * ground has always been that one shape and the copy in the save could
    * only ever repeat it.
    */
+  /**
+   * v62: `Plot.at` leaves the yard.
+   *
+   * Order is what carries the slot now, and `makePlots` has always built the
+   * array in slot order, so dropping the field cannot move a plot: the hall is
+   * still `plots[0]` in every save that has one. Only a settled band has plots
+   * at all; everything else passes through.
+   */
+  61: (save) => {
+    const home = save['settlement'];
+    if (!home || typeof home !== 'object') return { ...save, version: 62 };
+    const h = home as Record<string, unknown>;
+    const plots = h['plots'];
+    if (!Array.isArray(plots)) return { ...save, version: 62 };
+    const next = plots.map((p) => {
+      const plot = { ...(p as Record<string, unknown>) };
+      delete plot['at'];
+      return plot;
+    });
+    return { ...save, settlement: { ...h, plots: next }, version: 62 };
+  },
+
   60: (save) => {
     const battle = save['battle'];
     if (!battle || typeof battle !== 'object') return { ...save, version: 61 };

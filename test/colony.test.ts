@@ -5,6 +5,7 @@
 import { settled as settleSomewhere } from './fixtures/settle';
 import { walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
+import { PLOT_COUNT } from '../src/sim/colony';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -100,10 +101,16 @@ describe('the steading has ground of its own', () => {
     // What survives is what the plots are FOR: one hall, one watchpost, and
     // no two of them the same, which is what `plotsFor` and the day's labour
     // actually read.
-    expect(hall[0]!.at, 'the hall is the first plot').toBe(0);
-        expect(home.plots.filter((p) => p.kind === 'watchpost')).toHaveLength(1);
-    // No two plots share an index.
-    expect(new Set(home.plots.map((p) => p.at)).size).toBe(home.plots.length);
+    // The hall is plot 0 — the POSITION is the slot now, since `Plot.at` went
+    // in v62. It held the array index a second time and nothing read it.
+    expect(home.plots[0]!.kind, 'the hall is the first plot').toBe('hall');
+    expect(home.plots.filter((p) => p.kind === 'hall')).toHaveLength(1);
+    expect(home.plots.filter((p) => p.kind === 'watchpost')).toHaveLength(1);
+    // The distinctness check that stood here asserted that no two plots shared
+    // an index, on an array whose indices are distinct by construction — it
+    // could not fail. What is worth pinning is the SIZE of the yard, which is
+    // what `plotsFor` and the day's labour walk.
+    expect(home.plots).toHaveLength(PLOT_COUNT);
   });
 
   it('is a picture of the reading you settled on', () => {

@@ -103,7 +103,7 @@ export function makePlots(report: SiteReport, rng: Rng): Plot[] {
 
   for (const at of slots) {
     if (at === 0) {
-      plots.push({ at, kind: 'hall' });
+      plots.push({ kind: 'hall' });
       continue;
     }
     // The derive key is the hex key this slot used to carry — `${i},0` — so
@@ -117,7 +117,7 @@ export function makePlots(report: SiteReport, rng: Rng): Plot[] {
         break;
       }
     }
-    plots.push({ at, kind });
+    plots.push({ kind });
   }
 
   // The watch stands on the edge, looking out. Always exactly one, so the
