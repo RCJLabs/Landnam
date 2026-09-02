@@ -2131,3 +2131,79 @@ describe('PROBE: 10.2 — what the tactical layer actually costs', () => {
     expect(rows.length).toBe(2);
   });
 });
+
+describe("PROBE: 10.3b — which of the raider's other knobs costs it", () => {
+  /**
+   * 10.3 left a hole. Raiding as ONE knob on the settler takes standing from
+   * 27/200 to 14/200 — that is the game. But the full `RAIDER` policy stands
+   * 4/200, so something outside raiding costs about as much again, and the
+   * first suspect (`relaxFrom`) came back an exact tie because at
+   * `siteFloor: 7` the raider settles on day 6 and the rule has nothing left
+   * to relax.
+   *
+   * Four differences remain between the settler-who-raids and the raider: the
+   * site policy, `plunderWindow`, `trades`, and the build order. This starts
+   * from the RAIDER and adds each settler trait back ONE at a time, paired
+   * against the raider itself — which isolates each knob inside the strategy
+   * it belongs to, rather than asking what it does to a settler that would
+   * never use it.
+   *
+   * The site policy goes back as a PAIR (`siteFloor` with `relaxFrom`),
+   * because 10.3 established the relax rule cannot act while the floor is low
+   * enough to settle on day 6. Splitting them again would re-run a knob
+   * already known to be inert.
+   */
+  it('adds each settler trait back to the raider, one at a time', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 200;
+
+    const take = (pol: Policy) => {
+      setPolicy(pol);
+      const rows: { day: number; end: string }[] = [];
+      for (let i = 0; i < SEEDS; i += 1) {
+        const s = run(armSeed(0, i, SEEDS), 400);
+        rows.push({ day: s.day, end: s.end?.cause ?? 'still standing' });
+      }
+      return rows;
+    };
+
+    const base = take(RAIDER);
+    const arms: [string, Policy][] = [
+      ['+ trades', { ...RAIDER, trades: true }],
+      ['+ plunderWindow 24', { ...RAIDER, plunderWindow: 24 }],
+      ['+ settler build order', { ...RAIDER, want: SETTLER.want }],
+      ['+ settler site policy', { ...RAIDER, siteFloor: 9, relaxFrom: 14 }],
+    ];
+
+    const standing = (r: typeof base) => r.filter((x) => x.end === 'still standing').length;
+    const avg = (r: typeof base) => Math.round(r.reduce((t, x) => t + x.day, 0) / r.length);
+
+    const lines = [`  RAIDER as it stands   ${standing(base)}/${SEEDS} standing, avg ${avg(base)} days`];
+    for (const [label, pol] of arms) {
+      const arm = take(pol);
+      let saved = 0;
+      let killed = 0;
+      let same = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        const a = base[i]!;
+        const b = arm[i]!;
+        if (a.day === b.day && a.end === b.end) same += 1;
+        const as = a.end === 'still standing';
+        const bs = b.end === 'still standing';
+        if (bs && !as) saved += 1;
+        if (as && !bs) killed += 1;
+      }
+      lines.push(
+        `  ${label.padEnd(21)} ${standing(arm)}/${SEEDS} standing, avg ${avg(arm)} days`
+        + ` | paired: saved ${saved}, killed ${killed}, ${same}/${SEEDS} identical`,
+      );
+      // A knob that leaves EVERY saga byte-identical did not run at all, and
+      // 10.3 spent a whole arm learning that the hard way. Said out loud here
+      // rather than left for a reader to notice in a table.
+      if (same === SEEDS) lines.push('      ^^ INERT: every saga identical — this knob did nothing');
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 10.3b the rest of the raider's bundle — ${SEEDS} seeds, each arm paired against the raider:\n${lines.join('\n')}`);
+    expect(lines.length).toBeGreaterThanOrEqual(5);
+  });
+});

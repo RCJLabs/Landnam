@@ -5782,8 +5782,8 @@ bad numbers came from reading one bot's habits as a rule of the game:
   right. It does not rescue battle from being a feeder; it shows the feeder
   running in both directions.
 
-- [~] **10.3 The raider is a play style that loses** — **DECOMPOSED
-  2026-09-01. IT IS BOTH, AND THEY ARE NOW SEPARATED: raiding costs about half
+- [x] **10.3 The raider is a play style that loses** — **DECOMPOSED
+  2026-09-01, COMPLETED 2026-09-02. IT IS BOTH, AND THEY ARE NOW SEPARATED: raiding costs about half
   the survivors, and the rest of the raider policy costs about as much again.**
 
   The opening reading compared two POLICIES, which cannot say anything about
@@ -5834,11 +5834,45 @@ bad numbers came from reading one bot's habits as a rule of the game:
   floor nobody is stuck behind cannot do anything. This is NOT evidence that
   the rule is worthless.
 
-  **UNMEASURED, and it is what is left of the item:** which of `trades:
-  false`, `plunderWindow: 40` and the build order carries the rest of the
-  bundle's cost. Worth noting for whoever takes it that the raider settles
-  MORE often and EARLIER than the settler (170/200 on day 6 against 148/200 on
-  day 14), so it is not a settling problem — which was the obvious guess.
+  **5. THE REST OF THE BUNDLE, MEASURED 2026-09-02 (`PROBE: 10.3b`).** Each
+  settler trait added back to the RAIDER one at a time, paired against the
+  raider itself — which asks what each knob does inside the strategy it
+  belongs to, rather than what it does to a settler that would never use it:
+
+  | | standing | against the raider |
+  |---|---|---|
+  | RAIDER as it stands | 4/200 | — |
+  | **+ settler build order** | **9/200** | **saved 9, killed 4** |
+  | + settler site policy | 6/200 | saved 4, killed 2 |
+  | + `trades` | 4/200 | saved 3, killed 3 — **a wash** |
+  | + `plunderWindow` 24 | 4/200 | **200/200 identical — INERT** |
+
+  **The build order is the largest single term outside raiding, and the reason
+  is the whole of Phase 10.** The raider defers `farmplots` from #2 to #6 and
+  `bud` from #3 to #7, putting palisade, smokehouse, storehouse and watchtower
+  ahead of them. **It builds its wall before its fields on a coast that kills
+  by hunger** — 10.1 measured starvation ending 100 of 120 settler sagas and
+  117 of 120 raider ones. Restoring the settler's order more than doubles the
+  raider's survivors.
+
+  **TWO OF THE FOUR KNOBS ARE INERT, AND FOR THE SAME REASON.**
+  `plunderWindow` came back 200/200 byte-identical, exactly as `relaxFrom` did
+  in point 4. Both are keyed to the SEARCH phase — the last day a homeless
+  band turns aside for plunder, and the day a homeless band lowers its
+  standards — and at `siteFloor: 7` the raider settles on **day 6**, with only
+  14 of 200 still searching by day 14. A raider barely has a search phase, so
+  nothing keyed to one can act. That is one cause, found twice, and it is
+  worth stating once rather than as two coincidences.
+
+  **The decomposition, and it does not sum cleanly — say so rather than
+  pretend.** Settler 27 → settler-who-raids 14 (raiding, −13) → raider 4. Of
+  that last −10: build order −5, site policy −2, trades and plunderWindow
+  nothing, and the war crew is worth +3 the OTHER way (arm C). The terms
+  interact, so 4 + 5 + 2 does not have to reach 14 and does not.
+
+  **What this settles:** more than half the raider's deficit is raiding
+  itself, which is the game, and the largest non-raiding term is a build order
+  that fights the thing the coast actually kills with.
 
 - [~] **10.4 The content is reached; the endings are not** — **HALF FIXED
   2026-09-01. THE RARE ENDINGS WERE NEITHER RARE NOR DECORATION: one line was
@@ -5982,6 +6016,26 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-02 — 10.3 completed: the raider builds its wall before its
+  fields** — the rest of the bundle measured, each settler trait added back to
+  the raider one at a time and paired against the raider itself.
+  - **The build order is the largest term outside raiding**: restoring the
+    settler's order takes the raider from 4/200 standing to **9/200** (saved
+    9, killed 4). The raider defers `farmplots` from #2 to #6 and `bud` from
+    #3 to #7, ahead of palisade, smokehouse, storehouse and watchtower — it
+    builds its wall before its fields on a coast where 10.1 measured
+    starvation ending 100 of 120 sagas.
+  - Site policy is worth +2; `trades` is a wash (saved 3, killed 3).
+  - **`plunderWindow` came back 200/200 byte-identical — inert, exactly as
+    `relaxFrom` did — and both have the same cause.** Each is keyed to the
+    SEARCH phase, and at `siteFloor: 7` the raider settles on day 6 with only
+    14 of 200 still searching by day 14. A raider barely has a search phase,
+    so nothing keyed to one can act. One cause found twice, not two
+    coincidences.
+  - The decomposition is recorded as NOT summing cleanly: 27 → 14 (raiding,
+    −13) → 4, of which build order −5, site policy −2, and the war crew +3 the
+    other way. The terms interact and the entry says so.
 
 - **2026-09-02 — 10.6: the CI runner has FOUR cores, and CI had been red for
   most of a day** — `ci cores: 4 -> vitest maxForks: 3`. The "two-core CI
