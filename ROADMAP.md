@@ -5874,8 +5874,8 @@ bad numbers came from reading one bot's habits as a rule of the game:
   itself, which is the game, and the largest non-raiding term is a build order
   that fights the thing the coast actually kills with.
 
-- [~] **10.4 The content is reached; the endings are not** — **HALF FIXED
-  2026-09-01. THE RARE ENDINGS WERE NEITHER RARE NOR DECORATION: one line was
+- [x] **10.4 The content is reached; the endings are not** — **FIXED
+  2026-09-01, COMPLETED 2026-09-02. THE RARE ENDINGS WERE NEITHER RARE NOR DECORATION: one line was
   taking their name off them.**
 
   The build tree is fine — at least 15 of 15 building kinds stand somewhere at
@@ -5908,15 +5908,44 @@ bad numbers came from reading one bot's habits as a rule of the game:
   `test/ending.test.ts` pins the shape rather than today's counts, and three of
   its five were watched failing against the old line.
 
-  **STILL OPEN, and it is an instrument problem rather than a game one:
-  `survived` and `jarl` are unreachable in every measurement taken so far.**
-  Both are player DEEDS, not outcomes — `layDownSaga` and `layDownRule` — and
-  the bot takes neither. Worse, `survived` needs `wintersStood >=
-  LONG_LIFE_WINTERS`, which `household.ts` records as **day 457**, and every
-  probe in this repo stops at day 400. So the two endings the item called
-  unreachable have never once been given the chance to fire. Whoever takes
-  this: run past 457 and teach the bot to lay the saga down, THEN ask whether
-  they are rare.
+  **AND THE OTHER TWO ARE REACHABLE — measured 2026-09-02, `PROBE: 10.4b`.**
+  `survived` and `jarl` are player DEEDS (`layDownSaga`, `layDownRule`), and
+  `survived` is gated on `wintersStood >= LONG_LIFE_WINTERS`, which first goes
+  true on **day 457** — computed here rather than taken from the comment in
+  `household.ts`, though that comment is right. Every probe in this repo stops
+  at day 400, where `wintersStood` is **4**. *The measurements were one winter
+  short of the ending they were asking about.*
+
+  Run to day 620 instead, 200 landings a policy:
+
+  | | still going at 620 | past the reckoning | could lay the saga down | ruling |
+  |---|---|---|---|---|
+  | settler | 18/200 | 18 | **13** | **18 of 18** |
+  | raider | 2/200 | 2 | 2 | **0** |
+
+  **So they were never rare. They were never reached.** Thirteen settler bands
+  in two hundred stand where the deed is legal; the five others are only
+  mid-battle or mid-event at the sampling moment, which is the horizon and not
+  a barrier.
+
+  **Every settler band that survives to day 620 is a jarl — 18 of 18** — and
+  no raider is, ever. `jarl` is the settler's ending in practice.
+
+  **WHAT THIS DELIBERATELY DOES NOT MEASURE.** How OFTEN either fires is a
+  fact about when a PLAYER chooses to stop, not about the game. Teaching the
+  bot to lay down at the first opportunity would have measured the rule I had
+  just written and nothing else, so the probe asks reachability and stops
+  there. The item's fork — "make them reachable, or retire the ones that are
+  decoration" — is answered NEITHER: they are reachable and they are not
+  decoration; the instrument was short.
+
+  **A corroboration worth keeping:** ten of the bands alive at day 400 are
+  dead by 620. The fifth winter still kills about a third of the survivors,
+  which is 9.12a's third act working, seen from an angle 9.12a did not use.
+
+  **And a note for every future probe:** day 400 is one winter short of the
+  endgame. A sweep that wants to say anything about the late game has to run
+  past 457.
 
 ### Carried over from Phase 9, small and concrete
 
@@ -6016,6 +6045,25 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-02 — 10.4 completed: `survived` and `jarl` were never rare, they
+  were never reached** — both are player deeds, and `survived` is gated on
+  day **457** (computed, not taken from the comment that says so). Every probe
+  in this repo stops at day 400, where `wintersStood` is 4 — one winter short
+  of the ending they were asking about.
+  - Run to day 620: **13 settler bands in 200 stand where the deed is legal**,
+    and every settler band still alive is a jarl (18 of 18). No raider ever
+    is. The item's fork — make them reachable or retire them as decoration —
+    is answered neither: they are reachable and they are not decoration.
+  - **What the probe deliberately does not measure:** how often either fires.
+    That is a fact about when a PLAYER stops, not about the game, and teaching
+    the bot to lay down at the first opportunity would have measured the rule
+    just written rather than anything about the game.
+  - Corroboration from a new angle: ten of the bands alive at day 400 are dead
+    by 620, so the fifth winter still kills about a third of the survivors —
+    9.12a's third act working, seen without 9.12a's instrument.
+  - **Note for every future probe:** day 400 is one winter short of the
+    endgame.
 
 - **2026-09-02 — 10.3 completed: the raider builds its wall before its
   fields** — the rest of the bundle measured, each settler trait added back to

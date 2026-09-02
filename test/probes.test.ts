@@ -41,6 +41,7 @@ import { ROUTE_STOPS } from '../src/sim/route';
 import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
 import { groundAtStop } from '../src/sim/fishery';
 import { atHome, stopReport } from '../src/sim/site';
+import { reckoningDue } from '../src/sim/landnam';
 import {
   CREW,
   Policy,
@@ -2205,5 +2206,69 @@ describe("PROBE: 10.3b — which of the raider's other knobs costs it", () => {
     // eslint-disable-next-line no-console
     console.log(`PROBE 10.3b the rest of the raider's bundle — ${SEEDS} seeds, each arm paired against the raider:\n${lines.join('\n')}`);
     expect(lines.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('PROBE: 10.4b — are `survived` and `jarl` reachable at all', () => {
+  /**
+   * 10.4 fixed the endings that were being MISNAMED. Two were left, and they
+   * are a different problem: `survived` and `jarl` had never once been given
+   * the chance to fire in any measurement this repo has taken.
+   *
+   * `wintersStood(day) >= LONG_LIFE_WINTERS` is the gate on `layDownSaga`,
+   * and it first goes true on **day 457** — computed, not taken from the
+   * comment in `household.ts` that says so, though the comment is right.
+   * Every probe in this file stops at day 400, where `wintersStood` is 4. The
+   * measurements were one winter short of the ending they were asking about.
+   *
+   * WHAT THIS DOES NOT DO, and the restraint is the point. It does not teach
+   * the bot to lay the saga down. Both endings are player DEEDS — `layDownSaga`
+   * and `layDownRule` — so how OFTEN they fire is a fact about when a player
+   * chooses to stop, not about the game, and a bot that laid down at the first
+   * opportunity would simply measure the rule I had just written. The
+   * well-posed question is REACHABILITY: does a band ever stand in a place
+   * where the deed is legal?
+   */
+  it('runs past the reckoning and counts who could lay the saga down', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 200;
+    const HORIZON = 620;
+    const lines: string[] = [];
+
+    for (const [label, pol] of [['settler', SETTLER], ['raider', RAIDER]] as [string, Policy][]) {
+      setPolicy(pol);
+      let aliveAtReckoning = 0;
+      let couldLayDown = 0;
+      let ruling = 0;
+      let couldLayDownRule = 0;
+      let diedInTheFifthWinter = 0;
+      let stillGoing = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const s = run(armSeed(0, i, SEEDS), HORIZON);
+        if (!s.end) stillGoing += 1;
+        if (s.end && s.day > 400) diedInTheFifthWinter += 1;
+        if (!s.end && reckoningDue(s)) {
+          aliveAtReckoning += 1;
+          // Exactly the guard `layDownSaga` applies, minus the deed itself.
+          if (!s.battle && !s.event && living(s.party.people).length > 0) couldLayDown += 1;
+          if (s.jarl) {
+            ruling += 1;
+            if (!s.battle && !s.event) couldLayDownRule += 1;
+          }
+        }
+      }
+
+      lines.push(
+        `  ${label}: ${stillGoing}/${SEEDS} still going at day ${HORIZON}`
+        + `, ${diedInTheFifthWinter} ended after day 400\n`
+        + `      past the reckoning (day 457): ${aliveAtReckoning}`
+        + ` | could lay the saga down: ${couldLayDown}`
+        + ` | ruling: ${ruling}, could lay down rule: ${couldLayDownRule}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 10.4b reaching the reckoning — ${SEEDS} landings a policy, run to day ${HORIZON}:\n${lines.join('\n')}`);
+    expect(lines.length).toBe(2);
   });
 });
