@@ -5622,16 +5622,59 @@ bad numbers came from reading one bot's habits as a rule of the game:
 
 ### The four things that reading says
 
-- [ ] **10.1 Food ends the game, and almost nothing else does.** Starved plus
-  despair is **100 of 120 sagas for the settler and 117 of 120 for the
-  raider** — and 9.12a established that most of the despair column is
-  starvation wearing another label. Every other cause put together is a
-  rounding error. This is not a bug and may not be a problem: a survival game
-  about a hard coast is allowed to kill by hunger. **The question is whether
-  it should be the ONLY thing that kills**, because a game with one terminal
-  threat has one real decision repeated. UNMEASURED: whether players
-  experience this as monotony or as identity. Nothing here should be built
-  before that is asked of a person rather than a bot.
+- [~] **10.1 Food ends the game, and almost nothing else does** — **THE
+  HEADLINE IS A MERGE OF THREE DIFFERENT ENDINGS. Measured 2026-09-01, and the
+  item has to be restated before any of it is acted on.**
+
+  It was opened on "starved plus despair is 100 of 120 sagas", which is a
+  reading off the ENDING SCREEN. 9.12a had already caught this class once —
+  the despair ending was renamed starvation when 28 of 30 despairing bands
+  turned out to have an empty larder — so the upstream was looked at before
+  one terminal cause was treated as one repeated decision.
+  `PROBE: 10.1 — is starvation one ending or several`, 120 landings an arm,
+  settler, each seed run to day 49 and to day 400:
+
+  | even | n | ended | settled | food on day 49 | dead of hunger | neighbours WE fell on |
+  |---|---|---|---|---|---|---|
+  | starved | 74 | day 98 | **51/74** | 33.6 | 2.1 | 1.8 |
+  | despair | 26 | day 141 | 20/26 | 35.7 | **0.7** | **3.9** |
+  | still standing | 12 | — | 12/12 | 33.7 | 4.9 | 1.7 |
+
+  **1. Starvation is at least two endings wearing one name.** On even,
+  **23 of the 74 starved sagas — 31% — never founded a steading at all**;
+  they starved on the road. On fair only 3 of 63 did. A band that never got a
+  roof and a band out-produced at its own steading are not the same failure
+  and do not want the same fix, and the mix flips with the hardship setting.
+
+  **2. THE GAME IS NOT DECIDED BY THE FIRST WINTER — that hypothesis is
+  refuted.** Food in the store on day 49 is 33.6 for the bands that starve,
+  35.7 for the ones that break, and 33.7 for the twelve that are still
+  standing at day 400. It does not separate them at all. Whatever decides a
+  saga, it is not the size of the first larder.
+
+  **3. Despair is not starvation relabelled here. It looks like the RAIDING
+  ending.** 9.12a's rename already moved the empty-larder cases into
+  `starved`, so what is left in `despair` is fed-and-broken — and those bands
+  show the FEWEST hunger deaths (0.7 against 2.1) and by far the most
+  neighbours fallen on (3.9 against 1.8, at less than half the lifespan, so
+  the rate gap is wider than the raw figure). Going out raiding correlates
+  with ending in despair.
+
+  **What is confounded, stated so nobody builds on it:** buildings standing
+  and deaths per saga both scale with how long a band lived — the standing
+  bands ran 401 days against the starved bands' 98, so "survivors built more"
+  and "survivors buried more" are duration, not cause. Nothing above rests on
+  either.
+
+  **UNMEASURED, and it is the next job:** whether finding 3 is a fact about
+  the GAME or about the settler bot's raiding policy. This is the fault Phase
+  9 committed twice — `outWith >= 4` and the shield — so it is named before it
+  is believed, and the harness question comes first.
+
+  **Still UNMEASURED, and unchanged:** whether one dominant terminal threat
+  reads as monotony or as identity. That needs asking of a person. But it is a
+  smaller question than it was, because the ending screen was merging three
+  decisions into one word.
 
 - [ ] **10.2 The tactical layer feeds the food problem instead of threatening
   the band.** Battle is not rare and never was: **about nine fights a saga,
@@ -5644,6 +5687,13 @@ bad numbers came from reading one bot's habits as a rule of the game:
   "battle is unused", which is what the ending screen alone would have
   suggested. **This item exists because the naive reading was refuted before
   it was written down.**
+
+  **AND 10.1's probe makes it stronger, 2026-09-01.** `slain` at 3 in 120 is
+  not combat's terminal contribution: the bands that end in `despair` are the
+  fed ones, and they are the ones that went out raiding most. Combat ends runs
+  through MORALE, under another ending's name — which is the same trick
+  starvation was playing. Whether that is the game or the bot is the open
+  question shared with 10.1.
 
 - [ ] **10.3 The raider is a play style that loses.** Same seeds, same coast:
   the raider settles MORE often (104/120 against 88) and dies SOONER (95 days
@@ -5682,6 +5732,32 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — 10.1 measured: the ending screen was merging three decisions
+  into one word** — the item opened on "starved plus despair is 100 of 120
+  sagas", which is a reading off the last screen rather than off the game.
+  Looked at upstream (120 landings an arm, settler, each seed run to day 49
+  and to day 400):
+  - **Starvation is at least two endings.** On even, **23 of 74 starved sagas
+    never founded a steading at all** — they starved on the road — against 3
+    of 63 on fair. Two failures, one name, and the mix flips with hardship.
+  - **The game is NOT decided by the first winter.** Food on day 49 is 33.6
+    for the bands that starve, 35.7 for the ones that break and 33.7 for the
+    twelve still standing at day 400. It does not separate them at all, and
+    the hypothesis this probe was built to test is refuted.
+  - **Despair is not starvation relabelled — it looks like the raiding
+    ending.** 9.12a's rename already moved the empty-larder cases out, so what
+    is left is fed-and-broken: fewest hunger deaths (0.7 against 2.1), most
+    neighbours fallen on (3.9 against 1.8) at under half the lifespan.
+  - That last one strengthens **10.2**: `slain` at 3 in 120 is not combat's
+    terminal contribution, because combat also ends runs through morale under
+    the despair label.
+  - **Written down as confounded rather than reported:** buildings standing
+    and deaths per saga both scale with lifespan (401 days against 98), so
+    "survivors built more" is duration, not cause. **And written down as
+    UNMEASURED:** whether the raiding correlation is the game or the settler
+    bot's policy — the fault Phase 9 committed twice, so the harness question
+    goes first.
 
 - **2026-09-01 — Phase 10 opened, from a reading rather than from the parking
   lot** — Phase 9 closed with every item ruled and the parking lot holds ideas

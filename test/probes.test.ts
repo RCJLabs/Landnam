@@ -1798,3 +1798,94 @@ describe('PROBE: the Phase 10 audit — what a whole saga is actually made of', 
     expect(lines.length).toBe(2);
   });
 });
+
+describe('PROBE: 10.1 — is starvation one ending or several', () => {
+  /**
+   * 10.1 opened on "food ends the game and almost nothing else does": starved
+   * plus despair is 100 of 120 sagas. That is a reading about the ENDING
+   * SCREEN, and 9.12a already caught this exact class once — the despair
+   * ending was renamed starvation when it turned out 28 of 30 despairing
+   * bands had an empty larder. **The name of an ending is not the decision
+   * that caused it**, so before anyone treats one terminal cause as one
+   * repeated decision, the upstream has to be looked at.
+   *
+   * Two questions, and neither needs a judgement about monotony:
+   *   1. Do the starved sagas share a story, or several?
+   *   2. Is it already settled by the first winter? A run whose ending is
+   *      readable on day 49 is a game decided in its first act, whatever the
+   *      last screen says.
+   *
+   * Same seed run twice — to day 49 and to day 400 — which is the pattern
+   * `measured()` already uses, and is sound because the RNG is seeded.
+   *
+   * DENOMINATORS. The day-49 table is conditioned on the ENDING, which is
+   * legitimate (it asks what the doomed looked like early) but is NOT a base
+   * rate, so the surviving arm is printed beside it to make the comparison
+   * possible. Nothing here reports a ratio whose denominator selected itself.
+   */
+  it('reads the upstream of every starved saga, and what it looked like on day 49', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 120;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      // Keyed by ending, so every group is described the same way.
+      const group: Record<string, {
+        n: number; settled: number; foundedOn: number; day: number;
+        band: number; built: number; sacked: number; raids: number;
+        violentDead: number; hungerDead: number;
+        aliveAt49: number; settledAt49: number; foodAt49: number; bandAt49: number;
+      }> = {};
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const seed = armSeed(0, i, SEEDS);
+        const early = run(seed, 49, undefined, terms);
+        const s = run(seed, 400, undefined, terms);
+        const key = s.end?.cause ?? 'still standing';
+        const g = group[key] ?? (group[key] = {
+          n: 0, settled: 0, foundedOn: 0, day: 0, band: 0, built: 0, sacked: 0,
+          raids: 0, violentDead: 0, hungerDead: 0,
+          aliveAt49: 0, settledAt49: 0, foodAt49: 0, bandAt49: 0,
+        });
+        g.n += 1;
+        g.day += s.day;
+        g.band += living(s.party.people).length;
+        if (s.settlement) { g.settled += 1; g.foundedOn += s.settlement.foundedOn; g.built += s.settlement.built.length; }
+        g.sacked += s.tally?.sackings ?? 0;
+        g.raids += s.tally?.raids ?? 0;
+        for (const p of s.party.people) {
+          if (p.alive || p.left) continue;
+          const f = p.fate ?? '';
+          if (/press|bled out|wound|axe|spear|slain|cut down/i.test(f)) g.violentDead += 1;
+          else if (/hunger/i.test(f)) g.hungerDead += 1;
+        }
+        if (!early.end) {
+          g.aliveAt49 += 1;
+          if (early.settlement) g.settledAt49 += 1;
+          g.foodAt49 += early.party.food;
+          g.bandAt49 += living(early.party.people).length;
+        }
+      }
+
+      const rows = Object.entries(group)
+        .sort((a, b) => b[1].n - a[1].n)
+        .map(([k, g]) => {
+          const per = (x: number) => (g.n === 0 ? 0 : Math.round((10 * x) / g.n) / 10);
+          const perAlive = (x: number) => (g.aliveAt49 === 0 ? '—' : String(Math.round((10 * x) / g.aliveAt49) / 10));
+          return `    ${k.padEnd(15)} n=${String(g.n).padStart(3)}`
+            + ` | ended day ${Math.round(g.day / Math.max(1, g.n))}`
+            + ` | settled ${g.settled}/${g.n}${g.settled ? ` on day ${Math.round(g.foundedOn / g.settled)}` : ''}`
+            + ` | ${per(g.built)} standing`
+            + ` | dead: hunger ${per(g.hungerDead)}, violence ${per(g.violentDead)}`
+            + ` | raids ${per(g.raids)}, sacked ${per(g.sacked)}`
+            + ` || alive at day 49: ${g.aliveAt49}/${g.n}`
+            + `, of those settled ${g.settledAt49}, food ${perAlive(g.foodAt49)}, band ${perAlive(g.bandAt49)}`;
+        });
+      out.push(`  ${terms}:\n${rows.join('\n')}`);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 10.1 the upstream of starvation — ${SEEDS} landings an arm, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+});
