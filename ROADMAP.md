@@ -6161,17 +6161,42 @@ Three groups, roughly in descending order of how much they change.
   RISK: a real balance change. The first-winter guards must hold, and 9.12a's
   shape applies — measure before, measure after, state the cost.
 
-- [ ] **11.S3 Travel ends when you settle. Decide whether that is the game.**
-  VERIFIED: `walkOptions` returns `[]` for a settled band with no expedition.
-  The twenty-six-stop coast is a PROLOGUE — walked for about a fortnight and
-  then gone. 9.11 found the same door from the other side ("an expedition is
-  the only door back onto the map"), and the one door that exists, the voyage,
-  is measured net-negative at about one band in seven per crossing (9.2).
+- [~] **11.S3 Travel ends when you settle** — **THE PREMISE WAS MINE AND IT
+  DID NOT SURVIVE BEING MEASURED, 2026-09-02.**
 
-  Either accept it — and stop paying for coast content most sagas never see —
-  or give a settled band a reason to walk the route again. **A decide-the-shape
-  item, not a build item**, and the first job is to re-take `PROBE: how much of
-  the coast a saga actually rows`.
+  The item was opened on a code reading: `walkOptions` returns `[]` for a
+  settled band with no expedition, so the coast "becomes unreachable" and is
+  "a prologue walked for about a fortnight". The code reading is correct. **The
+  claim about play is false.** `PROBE: 11.S3`, 200 landings a policy to day
+  620, splitting on `world.trodStops`, which keys each stop to the day it was
+  first stood on:
+
+  | | stops trodden of 26 | of which after founding | bands that trod new ground after founding | days looking / settled |
+  |---|---|---|---|---|
+  | settler | 6.3 | **1.9** | **83 of 148 (56%)** | 14.1 / 196.2 |
+  | raider | 6.8 | **3.6** | 100 of 170 (59%) | 5.8 / 108.4 |
+
+  **The door is not shut. A majority of settled bands walk through it** — and
+  for the raider more than half of all ground covered comes AFTER founding.
+  Reading `walkOptions` and inferring "the coast is gone" was inferring play
+  from a guard, which is the same fault as reading a bot policy as a rule of
+  the game. It went straight into a queue item three hours after being
+  written down.
+
+  **What is true, and it is a different and sharper question: a saga touches
+  6.3 of 26 stops — a quarter of the coast. Three-quarters of the route is
+  never stood on at all**, by bands that live to day 620. That is the content
+  question, and it has nothing to do with settling.
+
+  **And it may not be a problem.** 10.1b measured 9% event overlap between two
+  sagas: the unseen three-quarters is not waste, it is the pool that makes
+  runs differ. A coast of 26 that each band draws six from is behaving like a
+  deck rather than a map, and a deck is not obliged to be dealt out.
+
+  **STILL FOR EVAN, restated:** is a quarter of the coast per saga the right
+  draw? Accept it as a deck; shrink the route so more of it is seen; or give a
+  band reasons to range further. The first framing — "travel ends at
+  settling" — is withdrawn.
 
 - [ ] **11.S4 Crewing is the largest lever in the game and, for a human, a
   500-day chore.** MEASURED: crewing to the winter mark daily is **saved 45,
@@ -6284,6 +6309,23 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-02 — 11.S3's premise was mine, and it did not survive being
+  measured** — the item claimed the coast "becomes unreachable" once a band
+  settles, read off `walkOptions` returning `[]`. The code reading is right and
+  the claim about play is wrong: measured over 200 landings a policy to day
+  620, **56% of settled settler bands tread new ground after founding**, and
+  for the raider more than half of all ground covered comes after settling.
+  The expedition is the door and it opens.
+  - Inferring play from a guard is the same fault as reading a bot policy as a
+    rule of the game, and it went into a queue item three hours after being
+    written down.
+  - **The true finding is sharper and unrelated to settling: a saga stands on
+    6.3 of 26 stops.** Three-quarters of the route is never trodden at all.
+  - And that may be fine — 10.1b measured 9% event overlap between sagas, so
+    the unseen coast is the pool that makes runs differ. A coast of 26 that
+    each band draws six from behaves like a deck, and a deck is not obliged to
+    be dealt out. Restated for Evan on those terms.
 
 - **2026-09-02 — Phase 11 opened: fifteen items, each with its measurement
   attached** — five systems, five mechanics, five on legibility, queued the day

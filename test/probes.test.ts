@@ -2361,3 +2361,69 @@ describe('PROBE: 10.1b — is the MIDDLE of a saga the same every time', () => {
     expect(lines.length).toBe(2);
   });
 });
+
+describe('PROBE: 11.S3 — how much of the coast a saga actually stands on', () => {
+  /**
+   * 11.S3 asks whether the coast is a PROLOGUE. `walkOptions` returns `[]` for
+   * a settled band with no expedition, so the twenty-six stops stop being
+   * reachable the day a steading goes up — and 9.11 found the same door from
+   * the other side. What nobody had measured is how much of the route a saga
+   * ever stands on, and how much of that comes AFTER founding.
+   *
+   * `world.trodStops` is a record of stop → the day the band first stood
+   * there, so before-and-after founding is an exact split rather than an
+   * inference. That is the whole reason this is cheap to ask.
+   *
+   * DENOMINATORS. Bands that never settle walk further BY CONSTRUCTION — they
+   * are still looking — and pooling them would inflate every number here. So
+   * the settled and the never-settled are counted apart and printed apart, and
+   * the question S3 actually asks is answered only by the settled column.
+   */
+  it('counts the stops a band treads, before and after it founds a steading', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 200;
+    const HORIZON = 620;
+    const out: string[] = [];
+
+    for (const [label, pol] of [['settler', SETTLER], ['raider', RAIDER]] as [string, Policy][]) {
+      setPolicy(pol);
+      let settled = 0;
+      let neverSettled = 0;
+      let trodSettled = 0;
+      let trodNever = 0;
+      let afterFounding = 0;
+      let everWentBack = 0;
+      let daysBeforeFounding = 0;
+      let daysAfter = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const s = run(armSeed(0, i, SEEDS), HORIZON);
+        const trod = s.world.trodStops ?? {};
+        const stops = Object.keys(trod).length;
+        const home = s.settlement;
+        if (!home) { neverSettled += 1; trodNever += stops; continue; }
+        settled += 1;
+        trodSettled += stops;
+        const after = Object.values(trod).filter((day) => day > home.foundedOn).length;
+        afterFounding += after;
+        if (after > 0) everWentBack += 1;
+        daysBeforeFounding += home.foundedOn;
+        daysAfter += Math.max(0, s.day - home.foundedOn);
+      }
+
+      const per = (n: number, d: number) => (d === 0 ? '—' : (n / d).toFixed(1));
+      out.push(
+        `  ${label}: settled ${settled}/${SEEDS}, never settled ${neverSettled}\n`
+        + `      SETTLED bands — ${per(trodSettled, settled)} of ${ROUTE_STOPS} stops ever trodden`
+        + `, of which ${per(afterFounding, settled)} after founding\n`
+        + `      settled bands that ever trod NEW ground after founding: ${everWentBack}/${settled}\n`
+        + `      their days: ${per(daysBeforeFounding, settled)} looking, ${per(daysAfter, settled)} settled\n`
+        + `      never-settled bands (they are still looking, so they walk further):`
+        + ` ${per(trodNever, neverSettled)} stops`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 11.S3 the coast a saga stands on — ${SEEDS} landings a policy, to day ${HORIZON}:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+});
