@@ -51,8 +51,13 @@
 > 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
 > that gave the game a third act.
 >
-> **CURRENT MILESTONE (from 2026-09-01): Phase 10 — the audit of
-> 2026-09-01**, below. Opened from a fresh reading rather than from the
+> **CURRENT MILESTONE (from 2026-09-02): Phase 11 — the queue of
+> 2026-09-02**, below. Fifteen items in three groups — five that change the
+> SHAPE of the game (the wall has no decision; the yard caps nothing; travel
+> ends at settling), five mechanics, five on legibility. Every item carries
+> the measurement it rests on, and the ones resting on nothing say UNMEASURED.
+>
+> **Phase 10 — the audit of 2026-09-01** is CLOSED, all six items. Opened from a fresh reading rather than from the
 > parking lot, with each item carrying its instrument, date and N, and every
 > unmeasured claim marked UNMEASURED rather than written as a finding.
 >
@@ -6114,11 +6119,187 @@ bad numbers came from reading one bot's habits as a rule of the game:
   lie in the same commit that added it**, which is the whole habit this phase
   is about: run the thing you are telling the next person to run.
 
+## Phase 11 — the queue of 2026-09-02
+
+Fifteen items, proposed the day Phase 10 closed. **Every one carries the
+measurement it rests on, and the ones resting on nothing say so in capitals.**
+Phase 10's own finding is the reason for the discipline: this game reported
+itself badly, and six items in a row were opened on numbers that did not
+survive being re-taken.
+
+Three groups, roughly in descending order of how much they change.
+
+### Systems — the shape of the game
+
+- [ ] **11.S1 Give the shield wall a decision. It has none.** VERIFIED in
+  code, not remembered: `dash` went in 9.1b (measured a trap — 42/60 against
+  46/60), `stepUp` fires only when `nothingToDo(who)`, and a fighter's rank is
+  the order he took the field in. **So in the game whose central pillar is the
+  shield wall, the player never forms it** — they choose a target and a verb,
+  and the line arranges itself.
+
+  The fix is NOT to restore the dash, which measured badly and was rightly
+  dropped. It is to move the choice BEFORE the first blow: deploy the line,
+  decide who stands front and who holds second, knowing what gear and what
+  wounds each man carries. That respects 9.13 (one action, one turn) and 8.1's
+  "position is rank", and gives the wall the decision it is named for.
+  UNMEASURED: whether a pre-battle order changes outcomes at all. Measure a
+  fixed-order arm against arrival-order first — 9.1's lesson is that a verb
+  the bot cannot use measures as worthless.
+
+- [ ] **11.S2 Make the yard an economy, or admit it is scenery.** VERIFIED:
+  nineteen plots are rolled per steading from the site reading and drawn
+  side-on, and `plotsFor` is called in exactly two places (`colony.ts:403-404`)
+  as BOOLEANS — can anyone farm here at all, can anyone fish here at all. The
+  ground caps nothing.
+
+  Proposal: plots cap the job. Three field plots means three farmers. The
+  reading you settled on then keeps mattering all game instead of only on
+  founding day, and two coasts play differently. **Measured hook:** 10.1b found
+  the build tree is the repetitive half of a saga — 34–45% shared between runs
+  against 9% of events — and binding the yard is the most direct lever on it.
+  RISK: a real balance change. The first-winter guards must hold, and 9.12a's
+  shape applies — measure before, measure after, state the cost.
+
+- [ ] **11.S3 Travel ends when you settle. Decide whether that is the game.**
+  VERIFIED: `walkOptions` returns `[]` for a settled band with no expedition.
+  The twenty-six-stop coast is a PROLOGUE — walked for about a fortnight and
+  then gone. 9.11 found the same door from the other side ("an expedition is
+  the only door back onto the map"), and the one door that exists, the voyage,
+  is measured net-negative at about one band in seven per crossing (9.2).
+
+  Either accept it — and stop paying for coast content most sagas never see —
+  or give a settled band a reason to walk the route again. **A decide-the-shape
+  item, not a build item**, and the first job is to re-take `PROBE: how much of
+  the coast a saga actually rows`.
+
+- [ ] **11.S4 Crewing is the largest lever in the game and, for a human, a
+  500-day chore.** MEASURED: crewing to the winter mark daily is **saved 45,
+  killed 0** over 120 seeds — the largest effect anything in this repo has
+  measured. But that is the BOT re-assigning every day. A player doing the same
+  is hundreds of identical taps, and 9.13 established this project's dislike of
+  a mandatory tap with one outcome.
+
+  Proposal: standing orders. Set the intent — "keep the mark met" — let the
+  band follow it, and surface only the exceptions. Converts the biggest lever
+  in the game from a chore into a decision. UNMEASURED: whether an automated
+  crew is still a decision or just a number going up.
+
+- [ ] **11.S5 Winters that vary — finish 6.1.** GROUNDED in an existing
+  unfinished item rather than invented: `6.1 Winters that vary` is still `[~]`.
+  Every winter arrives at the same depth today. Proposal: severity rolled per
+  winter and ANNOUNCED IN AUTUMN, so a player provisions against a forecast
+  rather than a constant, and a hard year is a story rather than arithmetic.
+  It also gives 9.7's declined warmth mechanics a reason to exist later —
+  warmth ends 4% of runs partly BECAUSE winter never varies.
+
+### Mechanics — fixes and enhancements
+
+- [ ] **11.M1 A winter camp: a middle outcome for a band with no roof.**
+  MEASURED (10.1): **23 of 74 starved sagas on `even` never founded a steading
+  at all** — 31% — against 3 of 63 on `fair`. Today "no roof by winter" is a
+  death sentence with nothing between it and survival. A camp — no plots, no
+  building, heavier firewood, survivable if provisioned — turns a binary into
+  a cost, and it is the failure mode with the largest untouched population.
+  UNMEASURED: whether it softens the first act, where 53% of runs already end.
+
+- [ ] **11.M2 Raiding states its record.** MEASURED (10.3): raiding as a single
+  knob, everything else held, is **saved 9 / killed 22** over 200 paired seeds.
+  Two verbs already do exactly this — `ABANDON_RECORD` (9.14) and
+  `VOYAGE_RECORD` (9.2) — and both shipped and held. Raiding is the third verb
+  with a measured negative price and the only one that does not say so. States
+  it, never refuses. **Highest confidence and lowest cost in the queue:** the
+  number exists, the pattern exists, and the test pattern exists.
+
+- [ ] **11.M3 Price the desperation raid where it happens.** MEASURED (10.1):
+  despair bands fall on neighbours 2.9 times against everyone else's 0.7, and
+  the causation runs backwards — they raid BECAUSE they are starving, trading
+  the larder for the heart. **CAVEAT THAT DECIDES THE ITEM:** that is the
+  HARNESS's rule ("the average player robs it before they die"), not the
+  game's. So the work is to make the game offer what the bot assumes: under
+  three days of food, the neighbour card names both sides of the trade.
+
+- [ ] **11.M4 Find what actually decides the first winter.** MEASURED (10.1):
+  food in store on day 49 reads **33.6 / 35.7 / 33.7** across bands that
+  starve, break, and are still standing at day 400. **The most-watched number
+  in the game does not separate the doomed from the survivors at all.**
+  Something else decides it — hands, roof, site reading, job mix. Find what,
+  because whatever it is, that is what the panel should show. Investigation
+  first, which is this project's own method.
+
+- [ ] **11.M5 Sweep every player verb for effect size.** MEASURED: the two
+  winter levers are **saved 22 / killed 1** and **saved 45 / killed 0**, the
+  largest effects in the repo, and both were invisible until 9.7 gave them
+  lines. 9.1 ran this sweep for the battle verbs and found the shield had been
+  mis-measured rather than dead. Nobody has run it for the colony and travel
+  verbs. On the base rate so far, expect one or two more.
+
+### UI and legibility
+
+- [ ] **11.U1 Give the roofless band a mark.** VERIFIED: `markVisible` returns
+  `false` when there is no settlement, and `renderNeeds` gates on
+  `state.settlement` as well. **A band still looking for ground sees no
+  countdown at all** — and that band is 31% of all starvations on `even`. The
+  population most likely to die gets the least warning. Not a redesign; a
+  missing case. **The biggest single gap found.**
+
+- [ ] **11.U2 The build list names cost and blockers, never worth.** VERIFIED:
+  a row reads `N timber · N days · for X`, or a blocker word. MEASURED (10.3b):
+  build order is worth **+5 bands per 200** — fields before wall. This is the
+  exact fault 9.3, 9.4 and 9.7 each corrected elsewhere, surviving in the one
+  panel that still has it. `counsel` already computes what closes the winter
+  gap for HANDS; extending it to buildings is a short step from working code.
+
+- [ ] **11.U3 The mark should follow the band onto the road.** MEASURED:
+  crewing to the mark is the largest lever in the game, and it lives on the
+  colony panel — so a settled band away from home cannot see it. Related to
+  U1 and distinct: U1 is "never had a roof", this is "has one, is not standing
+  in it".
+
+- [ ] **11.U4 What the fighting has cost, mid-run.** MEASURED (10.2): battle is
+  **39% of the settler's dead and 47% of the raider's**, across about nine
+  fights a saga of which four in five are not chosen. 10.4 fixed the ENDING
+  screen hiding this. Mid-run there is still no accounting, so a player cannot
+  see the bleed that is about to kill them by hunger.
+
+- [ ] **11.U5 Known foes.** MEASURED: `lastSeen` now says how long since a
+  champion was seen (10.5), scars accumulate, and 22% of champion fights belong
+  to a clan that can send him back. The data is all there and appears once, in
+  one log line. A small "who we have fought" list makes the named foe a thread
+  rather than a sentence. UNMEASURED whether it is wanted — **the softest item
+  in the queue**, and it is marked so rather than dressed up.
+
+### Deliberately not in the queue
+
+- **A second terminal threat.** 9.7 measured warmth at ~4% of runs and declined
+  it; 10.1 put it again as an option and Evan declined it again. It stays
+  declined rather than re-offered, and 11.S5 is the thing that would make it
+  worth revisiting.
+- **Enriching the ending screen to name the road.** Offered under 10.1 on
+  2026-09-02 and declined. Recorded here so it is not proposed a third time by
+  somebody who forgets it was already answered.
+
 ## Parking Lot (ideas, not commitments)
 
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-02 — Phase 11 opened: fifteen items, each with its measurement
+  attached** — five systems, five mechanics, five on legibility, queued the day
+  Phase 10 closed. Three of the five systems items rest on facts VERIFIED in
+  the code rather than remembered, and each is a gap nobody had named:
+  - **The shield wall has no decision.** `dash` went in 9.1b, `stepUp` fires
+    only when a fighter has nothing legal to do, and rank is the order he took
+    the field in. In the game named for the wall, the player never forms it.
+  - **The yard is scenery.** Nineteen plots are rolled per steading and drawn,
+    and `plotsFor` is called twice, as booleans. The ground caps nothing.
+  - **Travel ends at settling.** `walkOptions` returns `[]` for a settled band,
+    so the twenty-six-stop coast is a prologue walked for about a fortnight.
+  - Two items are recorded as DELIBERATELY NOT QUEUED — a second terminal
+    threat, and enriching the ending screen — because both were already
+    declined, and writing that down is what stops them being proposed a third
+    time.
 
 - **2026-09-02 — 10.1 ruled, and Phase 10's opening six are closed** — Evan's
   call: nothing changes. The pressure chain is the identity rather than a
