@@ -27,7 +27,8 @@
     "hearth": "npm run build && node scripts/hearth.mjs",
     "ending": "npm run build && node scripts/ending.mjs",
     "look": "npm run build && node scripts/look.mjs",
-    "look:bless": "npm run build && LOOK_BLESS=1 node scripts/look.mjs"
+    "look:bless": "npm run build && LOOK_BLESS=1 node scripts/look.mjs",
+    "probes": "PROBES=1 vitest run test/probes.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

@@ -5930,18 +5930,87 @@ bad numbers came from reading one bot's habits as a rule of the game:
   `npm run party-tables` belongs beside the migration in the checklist, not
   after a puzzled look at a failing suite. v61 and v62 both hit it.
 
-- [ ] **10.6 What the CI runner actually has.** `ci.yml` now prints
-  `availableParallelism()` and the `maxForks` it implies. Two cores means one
-  fork and the `onTaskUpdate` warning cannot happen there; four means CI is
-  exposed as this box is. Read it off the next run and close it either way.
-  The mechanism behind that warning is UNKNOWN — the "two concurrent forks"
-  story was refuted when one file alone reproduced it.
+- [x] **10.6 What the CI runner actually has** — **READ 2026-09-02: FOUR
+  CORES, AND CI HAD BEEN RED FOR IT.** `ci cores: 4 -> vitest maxForks: 3`.
+
+  **The inherited number was wrong.** `vite.config.ts` has said "a two-core CI
+  runner" since Phase 5 and nothing ever re-took it; `ubuntu-latest` gives
+  four. So CI runs three forks and is exposed exactly as this box is — which
+  is why the correlation held.
+
+  **And the consequence was not a warning, it was a failing build.** Runs on
+  `74e0f78`, `8836305` and `75e9762` each finished
+
+  > `Test Files 92 passed (92)` · `Tests 1569 passed | 1 skipped` · `Errors 1 error`
+  > `##[error]Process completed with exit code 1.`
+
+  — every test green, the job red, on the unhandled `[vitest-worker]: Timeout
+  calling "onTaskUpdate"`. That is precisely what the note in `vite.config.ts`
+  records as having happened once before, and it had been happening again for
+  most of a day.
+
+  **THE ENTRY THAT SAID OTHERWISE WAS MINE, AND IT WAS AN INSTRUMENT FAULT.**
+  "Exit code was still 0", "it has never failed a run", "CI passes today" —
+  all read off LOCAL runs, where the shell pipeline's exit code comes from
+  `tee`/`tail` rather than from vitest. The local instrument could not see the
+  failure it was being asked about. Same shape as every other fault this phase
+  collected, this time about the tooling rather than the game.
+
+  **The fix, and it is the only one measured to work.** `npm test` no longer
+  runs `test/probes.test.ts`; `npm run probes` does. With the probes excluded
+  the error does not occur AT ALL — 0 occurrences against 3 of 3 runs with
+  them — and the suite goes **2,465s → 1,273s**. Rejected on measurement:
+  capping the fork pool (80% slower AND still errored), and the concurrency
+  mechanism itself (one file alone reproduces the error). The probes are not
+  deleted, skipped or weakened; they are simply not a gate. That is what the
+  bars/probes split was FOR — the bars are the gate, the probes are the
+  microscope — and running the microscope on every push was the category
+  error underneath all of it.
+
+  **AND THE ESCAPE HATCH HAD TO BE TESTED, NOT ASSUMED.** The first cut wrote
+  "run them with `npm run probes`" and shipped a script that did not work:
+  vitest applies `exclude` even to an explicit file filter, so `vitest run
+  test/probes.test.ts` exits *"No test files found"* against a config that
+  excludes it, and `--exclude` on the command line does not override it
+  either. Both were tried. The config now drops the exclusion when `PROBES=1`
+  and the script sets it. **That instruction was one command away from being a
+  lie in the same commit that added it**, which is the whole habit this phase
+  is about: run the thing you are telling the next person to run.
 
 ## Parking Lot (ideas, not commitments)
 
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-02 — 10.6: the CI runner has FOUR cores, and CI had been red for
+  most of a day** — `ci cores: 4 -> vitest maxForks: 3`. The "two-core CI
+  runner" in `vite.config.ts` has been wrong since Phase 5 and nothing
+  re-took it.
+  - **The `onTaskUpdate` error was not a warning — it was failing the build.**
+    Three runs finished `92 passed / 1569 tests passed` and exited 1 on the
+    unhandled error. Exactly what `vite.config.ts` records happening once
+    before with every test green.
+  - **The entry claiming otherwise was mine, and the fault was the
+    instrument.** "Exit code 0", "it has never failed a run", "CI passes
+    today" were all read off LOCAL runs, where the pipeline's exit code comes
+    from `tee`/`tail`, not vitest. The local instrument could not see the
+    failure it was being asked about.
+  - **Fixed by taking the probes out of `npm test`** (`npm run probes` runs
+    them). Measured: the error does not occur at all without them — 0
+    occurrences against 3 of 3 — and the suite goes **2,465s → 1,273s**.
+    Capping the fork pool was rejected earlier on measurement (80% slower,
+    still errored), and the concurrency mechanism was refuted (one file alone
+    reproduces it).
+  - The probes are not deleted, skipped or weakened. Running instruments as a
+    gate was the category error: the bars are the gate, the probes are the
+    microscope.
+  - **The escape hatch had to be tested rather than assumed.** The first cut
+    shipped `npm run probes` as a broken command — vitest applies `exclude`
+    even to an explicit file filter, so it exited "No test files found", and a
+    CLI `--exclude` does not override it. The config now drops the exclusion
+    when `PROBES=1`. The instruction was one command away from being a lie in
+    the commit that introduced it.
 
 - **2026-09-01 — 10.5: the two dead fields went opposite ways** — one was
   written to keep a promise nothing kept, and one was the same number stored
