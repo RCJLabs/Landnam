@@ -5652,13 +5652,51 @@ bad numbers came from reading one bot's habits as a rule of the game:
   standing at day 400. It does not separate them at all. Whatever decides a
   saga, it is not the size of the first larder.
 
-  **3. Despair is not starvation relabelled here. It looks like the RAIDING
-  ending.** 9.12a's rename already moved the empty-larder cases into
-  `starved`, so what is left in `despair` is fed-and-broken — and those bands
-  show the FEWEST hunger deaths (0.7 against 2.1) and by far the most
-  neighbours fallen on (3.9 against 1.8, at less than half the lifespan, so
-  the rate gap is wider than the raw figure). Going out raiding correlates
-  with ending in despair.
+  **3. Despair looked like the RAIDING ending. Chased down, it is the food
+  story again, and the causation runs the other way.** This took three passes
+  and every one of them is worth keeping.
+
+  *First pass:* despair bands showed the fewest hunger deaths (0.7 against
+  2.1) and the most `tally.sackings` (3.9 against 1.8). Written down as
+  "going out raiding correlates with ending in despair".
+
+  *Second pass — the counter was MERGED.* `sackings` is noted from two
+  different deeds: `fallOn` a neighbour's steading (`sim/neighbours.ts`) and
+  `sackPlace` a coastal prize (`sim/places.ts`). Reading the settler's policy
+  — `raidReach: 0`, `raidParty: 0`, `robsCamps: false`, a bot that never goes
+  out under arms — predicted the whole 3.9 must be place-plunder. **That
+  prediction was wrong, and only re-measuring caught it.** Split by watching
+  which deed actually fired:
+
+  | even | places plundered | neighbours fallen on |
+  |---|---|---|
+  | starved | 1.0 | 0.8 |
+  | despair | 1.0 | **2.9** |
+  | still standing | 1.0 | 0.7 |
+
+  Place-plunder is FLAT across every group. The entire signal is neighbour
+  raiding — so the correlation survived the split and got sharper.
+
+  *Third pass — WHY a bot with `raidReach: 0` falls on anybody.* The harness
+  has a second fall-on branch that no policy knob gates:
+
+  > `// Starving on a cold doorstep: the average player robs it before they die.`
+  > `if (host && days < 3 && host.standing < 10 && canFallOn(state, host.id))`
+
+  **It fires with under three days of food left.** The despair bands did not
+  break because they raided; they raided because they were starving. The
+  raiding is a symptom of the hunger, not a second cause — and the deaths it
+  costs them (violence 1.5 against the starved bands' 0.8) are what grinds the
+  morale down. **Despair is largely starvation routed through a desperation
+  raid that trades the larder for the heart.**
+
+  So 10.1's headline is MORE true than it looked, not less: the food story
+  reaches even the ending that appeared to be about something else.
+
+  **What this is conditional on, stated plainly:** that branch is the
+  HARNESS's model of a player, not a rule of the game. What is established is
+  that a band which answers near-starvation by robbing a neighbour converts a
+  food death into a morale death. Whether players do that is unmeasured.
 
   **What is confounded, stated so nobody builds on it:** buildings standing
   and deaths per saga both scale with how long a band lived — the standing
@@ -5666,10 +5704,10 @@ bad numbers came from reading one bot's habits as a rule of the game:
   and "survivors buried more" are duration, not cause. Nothing above rests on
   either.
 
-  **UNMEASURED, and it is the next job:** whether finding 3 is a fact about
-  the GAME or about the settler bot's raiding policy. This is the fault Phase
-  9 committed twice — `outWith >= 4` and the shield — so it is named before it
-  is believed, and the harness question comes first.
+  **The harness question was TAKEN rather than left open, and it is the reason
+  finding 3 now reads the way it does.** Phase 9 committed this fault twice —
+  `outWith >= 4` and the shield — so the answer was gone and got rather than
+  assumed, and it inverted the finding.
 
   **Still UNMEASURED, and unchanged:** whether one dominant terminal threat
   reads as monotony or as identity. That needs asking of a person. But it is a
@@ -5688,12 +5726,14 @@ bad numbers came from reading one bot's habits as a rule of the game:
   suggested. **This item exists because the naive reading was refuted before
   it was written down.**
 
-  **AND 10.1's probe makes it stronger, 2026-09-01.** `slain` at 3 in 120 is
-  not combat's terminal contribution: the bands that end in `despair` are the
-  fed ones, and they are the ones that went out raiding most. Combat ends runs
-  through MORALE, under another ending's name — which is the same trick
-  starvation was playing. Whether that is the game or the bot is the open
-  question shared with 10.1.
+  **AND 10.1's probe qualifies it, 2026-09-01.** The bands that end in
+  `despair` do fall on neighbours far more (2.9 against 0.7), and the deaths
+  they take doing it are what breaks them — so combat does end runs through
+  MORALE rather than through the wall. But 10.1 chased the direction down: the
+  harness raids because it is within three days of starving, so this is
+  combat as a symptom of hunger rather than combat as a threat in its own
+  right. It does not rescue battle from being a feeder; it shows the feeder
+  running in both directions.
 
 - [ ] **10.3 The raider is a play style that loses.** Same seeds, same coast:
   the raider settles MORE often (104/120 against 88) and dies SOONER (95 days
@@ -5732,6 +5772,28 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — 10.1's raiding finding chased down, and it inverts** — the
+  harness question was taken rather than left open, and it took three passes.
+  - **The counter was merged.** `tally.sackings` is noted from two different
+    deeds — `fallOn` a neighbour and `sackPlace` a coastal prize. Split by
+    watching which fired: place-plunder is FLAT across every ending (1.0) and
+    the whole signal is neighbour raiding (despair 2.9 against 0.7–0.8).
+  - **A prediction from reading the policy was wrong.** The settler is
+    `raidReach: 0`, `raidParty: 0`, `robsCamps: false` — a bot that never goes
+    out under arms — so the merged figure "must" have been place-plunder. It
+    was not, and only re-measuring caught it. Reading the config is not
+    measuring the behaviour.
+  - **The causation runs the other way.** The harness has a second fall-on
+    branch that no knob gates: *"Starving on a cold doorstep: the average
+    player robs it before they die"*, firing with under three days of food.
+    The despair bands did not break because they raided; they raided because
+    they were starving, and the deaths it cost them (violence 1.5 against
+    0.8) ground the morale down. **Despair is largely starvation routed
+    through a desperation raid that trades the larder for the heart** — so
+    10.1's headline is more true than it looked, not less.
+  - Stated as conditional: that branch is the harness's model of a player, not
+    a rule of the game.
 
 - **2026-09-01 — 10.1 measured: the ending screen was merging three decisions
   into one word** — the item opened on "starved plus despair is 100 of 120

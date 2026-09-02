@@ -1832,7 +1832,7 @@ describe('PROBE: 10.1 — is starvation one ending or several', () => {
       // Keyed by ending, so every group is described the same way.
       const group: Record<string, {
         n: number; settled: number; foundedOn: number; day: number;
-        band: number; built: number; sacked: number; raids: number;
+        band: number; built: number; placeSacks: number; neighbourFalls: number; raids: number;
         violentDead: number; hungerDead: number;
         aliveAt49: number; settledAt49: number; foodAt49: number; bandAt49: number;
       }> = {};
@@ -1840,18 +1840,37 @@ describe('PROBE: 10.1 — is starvation one ending or several', () => {
       for (let i = 0; i < SEEDS; i += 1) {
         const seed = armSeed(0, i, SEEDS);
         const early = run(seed, 49, undefined, terms);
-        const s = run(seed, 400, undefined, terms);
+        // `tally.sackings` MERGES TWO DIFFERENT DEEDS -- `fallOn` a
+        // neighbour's steading and `sackPlace` a coastal prize both note it.
+        // The first version of this probe read the merged figure under the
+        // SETTLER, whose policy is `raidReach: 0` and `robsCamps: false` -- a
+        // bot that never goes out under arms at all -- and reported "despair
+        // bands went out raiding most". They cannot have. They plundered
+        // PLACES inside `plunderWindow`, before they ever had a steading.
+        // Split by watching which of the two actually fired.
+        let placeSacks = 0;
+        let neighbourFalls = 0;
+        const s = run(seed, 400, (before, after) => {
+          const was = before.tally?.sackings ?? 0;
+          const now = after.tally?.sackings ?? 0;
+          if (now <= was) return;
+          const sackedBefore = (before.world.places ?? []).filter((pl) => pl.sackedOn !== undefined).length;
+          const sackedAfter = (after.world.places ?? []).filter((pl) => pl.sackedOn !== undefined).length;
+          if (sackedAfter > sackedBefore) placeSacks += now - was;
+          else neighbourFalls += now - was;
+        }, terms);
         const key = s.end?.cause ?? 'still standing';
         const g = group[key] ?? (group[key] = {
-          n: 0, settled: 0, foundedOn: 0, day: 0, band: 0, built: 0, sacked: 0,
+          n: 0, settled: 0, foundedOn: 0, day: 0, band: 0, built: 0, placeSacks: 0, neighbourFalls: 0,
           raids: 0, violentDead: 0, hungerDead: 0,
           aliveAt49: 0, settledAt49: 0, foodAt49: 0, bandAt49: 0,
         });
         g.n += 1;
+        g.placeSacks += placeSacks;
+        g.neighbourFalls += neighbourFalls;
         g.day += s.day;
         g.band += living(s.party.people).length;
         if (s.settlement) { g.settled += 1; g.foundedOn += s.settlement.foundedOn; g.built += s.settlement.built.length; }
-        g.sacked += s.tally?.sackings ?? 0;
         g.raids += s.tally?.raids ?? 0;
         for (const p of s.party.people) {
           if (p.alive || p.left) continue;
@@ -1877,7 +1896,7 @@ describe('PROBE: 10.1 — is starvation one ending or several', () => {
             + ` | settled ${g.settled}/${g.n}${g.settled ? ` on day ${Math.round(g.foundedOn / g.settled)}` : ''}`
             + ` | ${per(g.built)} standing`
             + ` | dead: hunger ${per(g.hungerDead)}, violence ${per(g.violentDead)}`
-            + ` | raids ${per(g.raids)}, sacked ${per(g.sacked)}`
+            + ` | raids at us ${per(g.raids)}, places plundered ${per(g.placeSacks)}, neighbours fallen on ${per(g.neighbourFalls)}`
             + ` || alive at day 49: ${g.aliveAt49}/${g.n}`
             + `, of those settled ${g.settledAt49}, food ${perAlive(g.foodAt49)}, band ${perAlive(g.bandAt49)}`;
         });
