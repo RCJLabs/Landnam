@@ -56,6 +56,15 @@
 > parking lot, with each item carrying its instrument, date and N, and every
 > unmeasured claim marked UNMEASURED rather than written as a finding.
 >
+> **All six opening items are closed as of 2026-09-02** — 10.1 ruled (nothing
+> changes), 10.2 and 10.3 measured, 10.4 half fixed and half found reachable,
+> 10.5 built, 10.6 fixed a CI failure that had been red for a day. **What the
+> phase actually found is that this game reports itself badly**: three
+> separate endings were merging into one word, `slain` was being stolen by a
+> `some()`, battle's share of the dead was understated by half, and the
+> instrument that said CI was fine could not see CI. The game underneath
+> measured better than its own accounts of it.
+>
 > **PHASE 9 IS CLOSED — every item ruled, 2026-09-01.** The last three went
 > the same way they all did: the voyage STAYS, on 9.1c's precedent; winter's
 > proposed content is DECLINED, because warmth ends about 4% of runs against
@@ -5622,7 +5631,7 @@ bad numbers came from reading one bot's habits as a rule of the game:
 
 ### The four things that reading says
 
-- [~] **10.1 Food ends the game, and almost nothing else does** — **THE
+- [x] **10.1 Food ends the game, and almost nothing else does** — **THE
   HEADLINE IS A MERGE OF THREE DIFFERENT ENDINGS. Measured 2026-09-01, and the
   item has to be restated before any of it is acted on.**
 
@@ -5709,12 +5718,68 @@ bad numbers came from reading one bot's habits as a rule of the game:
   `outWith >= 4` and the shield — so the answer was gone and got rather than
   assumed, and it inverted the finding.
 
-  **Still UNMEASURED, and unchanged:** whether one dominant terminal threat
-  reads as monotony or as identity. That needs asking of a person. But it is a
-  smaller question than it was, because the ending screen was merging three
-  decisions into one word.
+  **4. AND "MONOTONY" WAS THE WRONG QUESTION TO ASK OF THE ENDINGS.**
+  Measured 2026-09-02, `PROBE: 10.1b`, 120 landings a policy run past the
+  reckoning to day 620. Monotony is a fact about the MIDDLE of a saga; two
+  bands can share a last screen and share nothing on the way to it — one that
+  starved having never raised a hall, and one that starved as a jarl in its
+  fifth winter, are the same word and not the same game. So this counts what a
+  saga is MADE of:
 
-- [ ] **10.2 The tactical layer feeds the food problem instead of threatening
+  | | authored events fired | per saga | two sagas share |
+  |---|---|---|---|
+  | settler | **102 of 103** | 13.7 | **9%** |
+  | raider | 95 of 103 | 9.6 | **8%** |
+
+  | | building kinds raised | per saga | two sagas share |
+  |---|---|---|---|
+  | settler | 15 of 15 | 6.0 | 34% |
+  | raider | 15 of 15 | 6.4 | 45% |
+
+  **The endings repeat; the middles do not.** Two settler sagas have nine per
+  cent of their events in common. Nearly the whole deck — 102 of 103 — is
+  reached. The build tree is more repetitive (a third to a half shared), which
+  is the honest weak spot if one is wanted, and it is a fact about the bot's
+  fixed `want` list as much as the game.
+
+  So the fork the item poses — monotony or identity — is **not** a question
+  about one terminal threat at all. A player meets thirteen different events a
+  run out of a hundred and three, and shares one in eleven with the last run.
+  What repeats is the last screen.
+
+  **`built` is accumulated across the whole run here, not read at the end**,
+  because it LOSES a building the day something replaces it — the counter
+  CLAUDE.md opens on. Read at the end it would undercount every upgrade.
+
+  **The probe was wrong once, and the number was impossible, which is the only
+  reason it was caught.** It first printed "104 of 103 authored ever fired":
+  `ActiveEvent.id` is not only an id from `data/events` — its own comment says
+  "or 'feud'", and `travel.ts` raises a 'thing' the same way. The denominator
+  did not match the id space being counted. Partitioned now, and the two
+  non-deck ids are named in the output.
+
+  **RULED BY EVAN 2026-09-02: NOTHING CHANGES. THE ITEM CLOSES.**
+
+  The pressure chain is the identity rather than a thinness: battle bleeds a
+  band — 39% of the settler's dead and 47% of the raider's — and hunger
+  finishes it, and since 10.4 the last screen names both honestly instead of
+  calling everything `starved`. A player meets thirteen events a run out of a
+  hundred and three and shares one in eleven with their last run. What repeats
+  is one word on one screen, at the end of a road that does not repeat.
+
+  **What was NOT taken, so it is not mistaken for an oversight:** the build
+  tree is the genuinely repetitive half (a third to a half shared between
+  sagas, against 9% of events), and enriching the ending screen to name the
+  road rather than only its cause is cheap and carries no balance risk. Both
+  are real and both were declined here; neither is blocked if they come back.
+
+  *Done when:* ✅ the ending screen's three merged decisions separated
+  · ✅ the "decided by the first winter" hypothesis tested and refuted
+  · ✅ the despair/raiding correlation chased to its cause and inverted
+  · ✅ monotony measured where it actually lives — the middle — rather than
+  read off the endings · ✅ ruled.
+
+- [x] **10.2 The tactical layer feeds the food problem instead of threatening
   the band.** Battle is not rare and never was: **about nine fights a saga,
   in 95 of 120 sagas**, and battle-flavoured fates ("cut down in the press",
   "bled out before the fight was over") are **100 of roughly 475 deaths — a
@@ -5772,6 +5837,15 @@ bad numbers came from reading one bot's habits as a rule of the game:
   **This also explains 10.3.** Raiding loses because it adds chosen battles on
   top of a load that is already four-fifths unchosen, at a third of a man
   per battle.
+
+  **CLOSED 2026-09-02 BY 10.1's RULING, which is the same chain seen from the
+  other end.** This item's open half was whether "battle bleeds, hunger
+  finishes" is the right shape. Evan ruled on exactly that chain in 10.1:
+  it is the identity, nothing changes. Giving battle a terminal threat of its
+  own was one of the options put and declined. What this item BUILT survives
+  in 10.4 — the ending screen no longer hides battle's share behind a
+  `some()`, so `slain` reads 10 in 120 for a settler and 14 for a raider
+  rather than 3 and 1.
 
   **AND 10.1's probe qualifies it, 2026-09-01.** The bands that end in
   `despair` do fall on neighbours far more (2.9 against 0.7), and the deaths
@@ -6045,6 +6119,40 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-02 — 10.1 ruled, and Phase 10's opening six are closed** — Evan's
+  call: nothing changes. The pressure chain is the identity rather than a
+  thinness. Battle bleeds a band (39% of the settler's dead, 47% of the
+  raider's) and hunger finishes it, and since 10.4 the last screen names both
+  honestly. A player meets 13 events a run out of 103 and shares one in eleven
+  with their last run; what repeats is one word on one screen at the end of a
+  road that does not.
+  - Declined but recorded rather than buried: the build tree is the genuinely
+    repetitive half (a third to a half shared, against 9% of events), and
+    enriching the ending screen to name the road is cheap and carries no
+    balance risk. Neither is blocked if they come back.
+  - **The phase's own finding, worth carrying forward: this game reports
+    itself badly.** Three endings merged into one word, `slain` was stolen by
+    a `some()`, battle's share of the dead was understated by half, and the
+    instrument that said CI was fine could not see CI. The game underneath
+    measured better than its accounts of it.
+
+- **2026-09-02 — 10.1: "monotony" was the wrong question to ask of the
+  endings** — monotony is a fact about the MIDDLE of a saga, and the ending
+  distribution cannot speak to it. Measured over 120 landings a policy, run
+  past the reckoning to day 620:
+  - **The endings repeat; the middles do not.** Two settler sagas share **9%**
+    of their events, and **102 of the 103 authored events** are reached across
+    the sample, 13.7 a run. The raider sees 95 of 103 and shares 8%.
+  - The build tree is the repetitive part — a third to a half shared — and
+    that is as much the bot's fixed `want` list as the game.
+  - `built` is accumulated across the run rather than read at the end, because
+    it loses a building the day something replaces it.
+  - **The probe was wrong once and the number was impossible, which is the
+    only reason it was caught**: it printed "104 of 103 authored ever fired",
+    because `ActiveEvent.id` also carries 'feud' and 'thing', which are not in
+    the deck. The denominator did not match the id space. Partitioned, and the
+    non-deck ids are now named in the output.
 
 - **2026-09-02 — 10.4 completed: `survived` and `jarl` were never rare, they
   were never reached** — both are player deeds, and `survived` is gated on

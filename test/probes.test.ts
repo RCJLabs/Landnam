@@ -35,6 +35,7 @@ import { wintersStood } from '../src/sim/calendar';
 import { type JobId } from '../src/data/jobs';
 import { type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
+import { EVENTS } from '../src/data/events';
 import { DEATHS } from '../src/data/injuries';
 import { rivalBlocks } from '../src/sim/rival';
 import { ROUTE_STOPS } from '../src/sim/route';
@@ -2269,6 +2270,94 @@ describe('PROBE: 10.4b — are `survived` and `jarl` reachable at all', () => {
 
     // eslint-disable-next-line no-console
     console.log(`PROBE 10.4b reaching the reckoning — ${SEEDS} landings a policy, run to day ${HORIZON}:\n${lines.join('\n')}`);
+    expect(lines.length).toBe(2);
+  });
+});
+
+describe('PROBE: 10.1b — is the MIDDLE of a saga the same every time', () => {
+  /**
+   * 10.1's open half asks whether one dominant terminal threat reads as
+   * monotony or as identity, and says it needs a person. Before it goes to
+   * one, this separates two things the item runs together.
+   *
+   * **Monotony is a fact about the MIDDLE, not the end.** Two sagas can share
+   * an ending and share nothing else on the way to it — a band that starved
+   * having never raised a hall and a band that starved as a jarl in its fifth
+   * winter are the same word on the last screen and not the same game. The
+   * ending distribution cannot answer the question the item asks, so this
+   * measures what a saga is MADE of instead: which of the 103 authored events
+   * it saw, and which buildings it ever raised.
+   *
+   * `built` is a set that LOSES a building the day something replaces it, so
+   * the union is accumulated over the whole run rather than read at the end —
+   * that is the counter CLAUDE.md opens on, and reading it at the end would
+   * undercount every upgrade.
+   *
+   * Overlap is mean pairwise Jaccard across every pair of sagas. High overlap
+   * means the same run over and over; low means the ending is the only thing
+   * they share.
+   */
+  it('counts the content a saga reaches, and how much two sagas share', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 620;
+    const lines: string[] = [];
+
+    for (const [label, pol] of [['settler', SETTLER], ['raider', RAIDER]] as [string, Policy][]) {
+      setPolicy(pol);
+      const eventSets: Set<string>[] = [];
+      const builtSets: Set<string>[] = [];
+      const allEvents = new Set<string>();
+      const allBuilt = new Set<string>();
+      // `ActiveEvent.id` is NOT only an id from `data/events`. Its own comment
+      // says "or 'feud'", and `travel.ts` raises a 'thing' the same way. The
+      // first cut of this probe compared the id space against
+      // `EVENTS.length` and printed "104 of 103 authored ever fired" — an
+      // impossible number, which is the only reason it was caught. Partitioned
+      // now, so the denominator matches what is being counted.
+      const authoredIds = new Set(EVENTS.map((e) => e.id));
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const seen = new Set<string>();
+        const raised = new Set<string>();
+        run(armSeed(0, i, SEEDS), HORIZON, (_before, after) => {
+          if (after.event?.id) { seen.add(after.event.id); allEvents.add(after.event.id); }
+          for (const b of after.settlement?.built ?? []) { raised.add(b); allBuilt.add(b); }
+        });
+        eventSets.push(seen);
+        builtSets.push(raised);
+      }
+
+      const jaccard = (a: Set<string>, b: Set<string>) => {
+        if (a.size === 0 && b.size === 0) return 1;
+        let hit = 0;
+        for (const x of a) if (b.has(x)) hit += 1;
+        return hit / (a.size + b.size - hit);
+      };
+      const meanPair = (sets: Set<string>[]) => {
+        let total = 0;
+        let n = 0;
+        for (let i = 0; i < sets.length; i += 1) {
+          for (let j = i + 1; j < sets.length; j += 1) { total += jaccard(sets[i]!, sets[j]!); n += 1; }
+        }
+        return n === 0 ? 0 : total / n;
+      };
+      const mean = (sets: Set<string>[]) => sets.reduce((t, x) => t + x.size, 0) / sets.length;
+
+      const authoredSeen = [...allEvents].filter((id) => authoredIds.has(id));
+      const synthetic = [...allEvents].filter((id) => !authoredIds.has(id)).sort();
+      lines.push(
+        `  ${label}: events — ${authoredSeen.length} of ${EVENTS.length} authored ever fired`
+        + ` (plus ${synthetic.length} not from the deck: ${synthetic.join(', ') || 'none'})`
+        + `, ${mean(eventSets).toFixed(1)} per saga`
+        + `, two sagas share ${Math.round(100 * meanPair(eventSets))}%\n`
+        + `      buildings — ${allBuilt.size} of ${BUILDINGS.length} kinds ever raised`
+        + `, ${mean(builtSets).toFixed(1)} per saga`
+        + `, two sagas share ${Math.round(100 * meanPair(builtSets))}%`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 10.1b what a saga is made of — ${SEEDS} landings a policy, run to day ${HORIZON}:\n${lines.join('\n')}`);
     expect(lines.length).toBe(2);
   });
 });
