@@ -5803,6 +5803,12 @@ bad numbers came from reading one bot's habits as a rule of the game:
   | **D** the full `RAIDER` policy | **4/200** | 97 | — |
   | **E** D + `relaxFrom: 14` | 4/200 | 97 | saved 0, killed 0 |
 
+  *(One figure below moved when 10.4 fixed the ending labels: the paired
+  "runs identical" count reads 64 rather than 65, because that comparison
+  includes `end.cause` and one saga's cause was relabelled. `saved 9, killed
+  22` is unchanged, since survival is read off "still standing" and no run
+  changed its outcome — only what the screen calls it.)*
+
   **1. Raiding itself loses, and that is the GAME.** One knob on the settler,
   everything else held — same crew, same site rule, same build order, same
   trading, same seeds — halves the bands standing at day 400 and comes out
@@ -5834,12 +5840,49 @@ bad numbers came from reading one bot's habits as a rule of the game:
   MORE often and EARLIER than the settler (170/200 on day 6 against 148/200 on
   day 14), so it is not a settling problem — which was the obvious guess.
 
-- [ ] **10.4 The content is reached; the endings are not.** At least 15 of 15
-  building kinds are standing somewhere at the end and a settled band holds
-  6.6 of them, so the build tree is not starved for reach. The endings are:
-  five of the six causes share 20 sagas between them on the settler arm.
-  A cheap, honest item — make the rare endings reachable, or retire the ones
-  that are decoration.
+- [~] **10.4 The content is reached; the endings are not** — **HALF FIXED
+  2026-09-01. THE RARE ENDINGS WERE NEITHER RARE NOR DECORATION: one line was
+  taking their name off them.**
+
+  The build tree is fine — at least 15 of 15 building kinds stand somewhere at
+  the end, 6.6 per settled band. The endings were the item, and the item asked
+  the wrong question about them.
+
+  **`slain` was being stolen by a `some()`.** The wipe-out ending read:
+
+  > `const starved = people.some(p => p.fate === 'hunger');`
+  > `const froze = people.some(p => p.fate === 'the cold');`
+  > `endRun(state, starved ? 'starved' : froze ? 'frozen' : 'slain', ...)`
+
+  **One** person who ever died of hunger, in any winter of the saga, named the
+  whole ending `starved` — so a band cut to pieces was told it starved as long
+  as a single hand had once gone short, and `slain` could only fire where
+  nobody had EVER starved or frozen. That is the mechanical cause of 10.2's
+  puzzle: battle is 39–47% of all deaths and `slain` ended 3 sagas in 120.
+
+  Replaced with `wipedOutBy`, which counts and names the largest, ties keeping
+  the old order. **The labels move and nothing else does** — same 120 sagas,
+  same average day, same bands settled, same bands standing:
+
+  | | starved | slain | frozen | despair | standing |
+  |---|---|---|---|---|---|
+  | settler before | 74 | **3** | 5 | 26 | 12 |
+  | settler after | 65 | **10** | 7 | 26 | 12 |
+  | raider before | 77 | **1** | 0 | 40 | 2 |
+  | raider after | 58 | **14** | 6 | 40 | 2 |
+
+  `test/ending.test.ts` pins the shape rather than today's counts, and three of
+  its five were watched failing against the old line.
+
+  **STILL OPEN, and it is an instrument problem rather than a game one:
+  `survived` and `jarl` are unreachable in every measurement taken so far.**
+  Both are player DEEDS, not outcomes — `layDownSaga` and `layDownRule` — and
+  the bot takes neither. Worse, `survived` needs `wintersStood >=
+  LONG_LIFE_WINTERS`, which `household.ts` records as **day 457**, and every
+  probe in this repo stops at day 400. So the two endings the item called
+  unreachable have never once been given the chance to fire. Whoever takes
+  this: run past 457 and teach the bot to lay the saga down, THEN ask whether
+  they are rare.
 
 ### Carried over from Phase 9, small and concrete
 
@@ -5863,6 +5906,26 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — 10.4: the rare endings were neither rare nor decoration — one
+  line was taking their name off them** — the wipe-out ending asked
+  `people.some(p => p.fate === 'hunger')` first, so ONE hunger death in any
+  winter of a saga named the whole ending `starved`, and `slain` could only
+  fire for a band where nobody had ever starved or frozen. That is the
+  mechanical cause of 10.2's puzzle: battle is 39–47% of all deaths while
+  `slain` ended 3 sagas in 120.
+  - Replaced with `wipedOutBy`, which counts the dead and names the largest
+    cause, ties keeping the old order. Over the same 120 landings a policy:
+    settler `slain` **3 → 10**, raider `slain` **1 → 14**, `frozen` 0 → 6.
+    Average day, bands settled and bands standing are all unchanged — the
+    labels move and the play does not, and both columns still sum to 120.
+  - `test/ending.test.ts` pins the shape rather than the counts; three of its
+    five tests were watched failing against the old line.
+  - **Left open as an instrument problem:** `survived` and `jarl` are player
+    deeds (`layDownSaga`, `layDownRule`) that the bot never takes, and
+    `survived` additionally needs day 457 while every probe here stops at 400.
+    They have never been given the chance to fire, so nothing is yet known
+    about whether they are rare.
 
 - **2026-09-01 — 10.2 measured: battle kills far more than the item said, and
   is mostly not a choice** — the item was opened on "battle fates are a fifth
