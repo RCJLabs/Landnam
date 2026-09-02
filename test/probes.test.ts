@@ -1719,3 +1719,82 @@ describe('PROBE: 9.7 — is warmth ever the thing that decides a winter', () => 
     expect(rows.length).toBe(2);
   });
 });
+
+describe('PROBE: the Phase 10 audit — what a whole saga is actually made of', () => {
+  /**
+   * Phase 9 closed with every item ruled, and the parking lot holds ideas
+   * rather than readings. This is the reading a next phase should be opened
+   * from, taken the way 9's own lesson demands: not one item below the line
+   * gets written down as a finding until the number under it has been taken
+   * fresh, at a stated N, with the instrument named.
+   *
+   * TWO POLICIES, REPORTED APART AND NEVER MERGED. Half of Phase 9's bad
+   * numbers came from reading one bot's habits as a rule of the game, so the
+   * settler and the raider are run over the same seeds and printed side by
+   * side. Where they disagree, that IS the finding.
+   *
+   * Everything here is counted off `state.tally`, the fates of the dead and
+   * `state.end` — the game's own bookkeeping, not a second copy of it.
+   */
+  it('counts how sagas end, what battle costs, and how much content is reached', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 120;
+    const lines: string[] = [];
+
+    for (const [label, pol] of [['settler', SETTLER], ['raider', RAIDER]] as [string, Policy][]) {
+      setPolicy(pol);
+      const ends: Record<string, number> = {};
+      const fates: Record<string, number> = {};
+      let battles = 0;
+      let raids = 0;
+      let sackings = 0;
+      let sagasWithAFight = 0;
+      let days = 0;
+      const everBuilt = new Set<string>();
+      let builtHere = 0;
+      let settled = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const s = run(armSeed(0, i, SEEDS), 400);
+        days += s.day;
+        ends[s.end?.cause ?? 'still standing'] = (ends[s.end?.cause ?? 'still standing'] ?? 0) + 1;
+        const t = s.tally;
+        if (t) {
+          battles += t.battles;
+          raids += t.raids;
+          sackings += t.sackings;
+          if (t.battles + t.raids > 0) sagasWithAFight += 1;
+        }
+        for (const p of s.party.people) {
+          if (p.alive || p.left) continue;
+          fates[p.fate ?? 'unrecorded'] = (fates[p.fate ?? 'unrecorded'] ?? 0) + 1;
+        }
+        if (s.settlement) {
+          settled += 1;
+          builtHere += s.settlement.built.length;
+          for (const b of s.settlement.built) everBuilt.add(b);
+        }
+      }
+
+      const top = (r: Record<string, number>, n: number) => Object.entries(r)
+        .sort((a, b) => b[1] - a[1]).slice(0, n)
+        .map(([k, v]) => `${k} ${v}`).join(', ');
+
+      lines.push(
+        `  ${label}: avg ${Math.round(days / SEEDS)} days, settled ${settled}/${SEEDS}\n`
+        + `      ends: ${top(ends, 6)}\n`
+        + `      the dead, by fate: ${top(fates, 6)}\n`
+        + `      fights: ${battles} open + ${raids} at the wall + ${sackings} fallen on`
+        + `, over ${sagasWithAFight}/${SEEDS} sagas that saw one\n`
+        // STANDING AT THE END, not ever raised — `built` loses a building the
+        // day something replaces it, which is the counter CLAUDE.md opens on.
+        // So this is a LOWER bound on reach and is labelled as one.
+        + `      buildings: ${everBuilt.size} of ${BUILDINGS.length} kinds standing somewhere at the end`
+        + `, ${settled > 0 ? (builtHere / settled).toFixed(1) : '0'} standing per settled band`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE Phase 10 audit — ${SEEDS} landings a policy, same seeds:\n${lines.join('\n')}`);
+    expect(lines.length).toBe(2);
+  });
+});

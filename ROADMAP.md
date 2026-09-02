@@ -51,6 +51,11 @@
 > 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
 > that gave the game a third act.
 >
+> **CURRENT MILESTONE (from 2026-09-01): Phase 10 — the audit of
+> 2026-09-01**, below. Opened from a fresh reading rather than from the
+> parking lot, with each item carrying its instrument, date and N, and every
+> unmeasured claim marked UNMEASURED rather than written as a finding.
+>
 > **PHASE 9 IS CLOSED — every item ruled, 2026-09-01.** The last three went
 > the same way they all did: the voyage STAYS, on 9.1c's precedent; winter's
 > proposed content is DECLINED, because warmth ends about 4% of runs against
@@ -5593,11 +5598,114 @@ nice. Four groups, in the shape they were proposed and chosen from.
 
 ---
 
+## Phase 10 — the audit of 2026-09-01
+
+Opened the day Phase 9 closed, and opened the same way Phase 9 was: from
+numbers taken fresh, not from the parking lot. Every item below carries the
+instrument, the date and the N, and anything not yet measured says so in
+capitals rather than being written as a finding.
+
+**The reading it is opened from.** `PROBE: the Phase 10 audit`, 120 landings a
+policy over the same seeds, both bots reported apart because half of Phase 9's
+bad numbers came from reading one bot's habits as a rule of the game:
+
+| | settler | raider |
+|---|---|---|
+| average saga | 137 days | 95 days |
+| settled | 88/120 | 104/120 |
+| still standing at day 400 | **12** | **2** |
+| ends: starved / despair | 74 / 26 | 77 / 40 |
+| ends: slain | **3** | **1** |
+| fights (open + at the wall + fallen on) | 625 + 178 + 274 | 646 + 153 + 335 |
+| sagas that saw a fight | 95/120 | 105/120 |
+| building kinds standing somewhere at the end | 15 of 15 | 15 of 15 |
+
+### The four things that reading says
+
+- [ ] **10.1 Food ends the game, and almost nothing else does.** Starved plus
+  despair is **100 of 120 sagas for the settler and 117 of 120 for the
+  raider** — and 9.12a established that most of the despair column is
+  starvation wearing another label. Every other cause put together is a
+  rounding error. This is not a bug and may not be a problem: a survival game
+  about a hard coast is allowed to kill by hunger. **The question is whether
+  it should be the ONLY thing that kills**, because a game with one terminal
+  threat has one real decision repeated. UNMEASURED: whether players
+  experience this as monotony or as identity. Nothing here should be built
+  before that is asked of a person rather than a bot.
+
+- [ ] **10.2 The tactical layer feeds the food problem instead of threatening
+  the band.** Battle is not rare and never was: **about nine fights a saga,
+  in 95 of 120 sagas**, and battle-flavoured fates ("cut down in the press",
+  "bled out before the fight was over") are **100 of roughly 475 deaths — a
+  fifth of everyone who dies.** But `slain` ends **3 sagas in 120**. So the
+  whole combat mode — ranks, the wall, champions, heirlooms — is an attrition
+  pump into the larder rather than a way to lose. Whether that is the right
+  shape is a design question and an interesting one; what it is NOT is
+  "battle is unused", which is what the ending screen alone would have
+  suggested. **This item exists because the naive reading was refuted before
+  it was written down.**
+
+- [ ] **10.3 The raider is a play style that loses.** Same seeds, same coast:
+  the raider settles MORE often (104/120 against 88) and dies SOONER (95 days
+  against 137), finishing with **2 bands standing against the settler's 12**.
+  It is not close. UNMEASURED, and it is the whole item: whether that is the
+  bot playing the raider badly or the game paying raiding badly. Phase 9 made
+  this mistake twice — `outWith >= 4` and the shield — so the first job is a
+  harness question, not a balance change.
+
+- [ ] **10.4 The content is reached; the endings are not.** At least 15 of 15
+  building kinds are standing somewhere at the end and a settled band holds
+  6.6 of them, so the build tree is not starved for reach. The endings are:
+  five of the six causes share 20 sagas between them on the settler arm.
+  A cheap, honest item — make the rare endings reachable, or retire the ones
+  that are decoration.
+
+### Carried over from Phase 9, small and concrete
+
+- [ ] **10.5 `Plot.at` and `Champion.lastSeen`** — both found by the
+  dead-field audit of 2026-09-01, both written and never read, both in the
+  save. `Champion.lastSeen` is the interesting one: its own comment says *"so
+  the log can say how long it has been"*, and the log never says it. Either
+  write the line the field promises — it is 9.5's named foe and it is cheap —
+  or drop the field and the promise together. `Plot.at` is a slot index the
+  colony view may be the thing that SHOULD read.
+
+- [ ] **10.6 What the CI runner actually has.** `ci.yml` now prints
+  `availableParallelism()` and the `maxForks` it implies. Two cores means one
+  fork and the `onTaskUpdate` warning cannot happen there; four means CI is
+  exposed as this box is. Read it off the next run and close it either way.
+  The mechanism behind that warning is UNKNOWN — the "two concurrent forks"
+  story was refuted when one file alone reproduced it.
+
 ## Parking Lot (ideas, not commitments)
 
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — Phase 10 opened, from a reading rather than from the parking
+  lot** — Phase 9 closed with every item ruled and the parking lot holds ideas
+  with no numbers under them, which is the shape Phase 9 spent itself
+  correcting. So a fresh audit was taken first (`PROBE: the Phase 10 audit`,
+  120 landings a policy, both bots reported apart) and the phase is opened
+  from what it says:
+  - **Food ends the game and almost nothing else does** — starved plus despair
+    is 100 of 120 sagas for the settler and 117 of 120 for the raider.
+  - **The tactical layer feeds that rather than threatening the band** — about
+    nine fights a saga in 95 of 120 sagas, and battle fates are a fifth of all
+    deaths, but `slain` ends 3 sagas in 120. **The naive version of this item
+    — "battle is unused" — was refuted before it was written down**, because
+    the ending screen says 2.5% and the list of the dead says 21%.
+  - **The raider is a play style that loses** — same seeds, it settles more
+    often and dies sooner, 2 bands standing at day 400 against 12. Filed with
+    the harness question FIRST, because Phase 9 twice mistook a bot's habits
+    for a rule of the game.
+  - **The content is reached** — at least 15 of 15 building kinds stand
+    somewhere at the end; it is the ENDINGS that are unreachable, five of six
+    causes sharing 20 sagas.
+  - The probe's own building counter was mislabelled "ever raised" when
+    `built` holds what STANDS — the exact counter CLAUDE.md opens on. Relabelled
+    as the lower bound it is.
 
 - **2026-09-01 — 9.12 is closed, and Phase 9 with it: `HEARTH_FREE` stays at
   1** — the last open question in the phase was whether to buy back 9.12a's
