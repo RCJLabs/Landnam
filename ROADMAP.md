@@ -5726,6 +5726,53 @@ bad numbers came from reading one bot's habits as a rule of the game:
   suggested. **This item exists because the naive reading was refuted before
   it was written down.**
 
+  **MEASURED PROPERLY 2026-09-01, AND THE ITEM UNDERSTATED IT BADLY.**
+  "A fifth of everyone who dies" was read off the top six rows of a table with
+  a regex written from memory. `DEATHS` in `data/injuries.ts` is a five-string
+  constant, so it is imported and matched exactly instead — and it contains
+  **"went under and was not seen again"**, which the regex took for drowning
+  and dropped. That one string is 52 deaths in a 120-saga arm.
+
+  `PROBE: 10.2`, 200 landings a policy, every death matched against the
+  constants and every fate that lands in no bucket printed rather than
+  swallowed:
+
+  | | settler (984 dead) | raider (912 dead) |
+  |---|---|---|
+  | hunger | 415 (42%) | 302 (33%) |
+  | **on the field** | **381 (39%)** | **425 (47%)** |
+  | sickness | 69 (7%) | 44 (5%) |
+  | the cold | 65 (7%) | 78 (9%) |
+  | carried off | 50 (5%) | 55 (6%) |
+
+  **1. Battle is one of the two engines of death, not a feeder into one.** It
+  kills 39% of the settler's dead and is the LARGEST single cause for the
+  raider at 47%, ahead of hunger. The opening figure was roughly half the
+  truth.
+
+  **2. And it is mostly not a choice.** Attributed per battle — by watching
+  which counter moved in the same step, because `tally.battles` already
+  CONTAINS `raids` and a fall-on also calls `startBattle`:
+
+  | | defended at the wall | met on the road | we started it |
+  |---|---|---|---|
+  | settler (1073 battles) | 339 (32%) | 500 (47%) | **234 (22%)** |
+  | raider (1140) | 255 (22%) | 508 (45%) | 377 (33%) |
+
+  Roughly four battles in five are weather rather than a decision. Every
+  settler prize (217) was taken without a fight at all.
+
+  **3. So the ending screen is the thing that is wrong, not the battle
+  system.** 0.36 dead per battle, four in five battles unavoidable, 39% of all
+  deaths — and `slain` ends 3 sagas in 120, because a band bled white on the
+  road dies of the hunger that follows and the last straw gets its name on the
+  screen. This is the same attribution fault as despair-was-starvation, and
+  now it has been found twice in the same phase.
+
+  **This also explains 10.3.** Raiding loses because it adds chosen battles on
+  top of a load that is already four-fifths unchosen, at a third of a man
+  per battle.
+
   **AND 10.1's probe qualifies it, 2026-09-01.** The bands that end in
   `despair` do fall on neighbours far more (2.9 against 0.7), and the deaths
   they take doing it are what breaks them — so combat does end runs through
@@ -5816,6 +5863,27 @@ bad numbers came from reading one bot's habits as a rule of the game:
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-01 — 10.2 measured: battle kills far more than the item said, and
+  is mostly not a choice** — the item was opened on "battle fates are a fifth
+  of everyone who dies", read off six rows with a regex written from memory.
+  `DEATHS` is a five-string constant in `data/injuries.ts`; imported and
+  matched exactly, battle is **39% of the settler's dead and 47% of the
+  raider's — the largest single cause for the raider, ahead of hunger.** The
+  regex had dropped "went under and was not seen again", taking it for
+  drowning when it is one of the five battle deaths: 52 deaths in one arm.
+  - **Four battles in five are not chosen.** Attributed per battle rather than
+    from totals: settler 339 defended, 500 met on the road, 234 started by the
+    band. Two wrong accounts were written first and both were caught by
+    reading the code that writes the counters — `tally.battles` already
+    CONTAINS `raids`, so adding them double-counted, and a fall-on was assumed
+    to skip the tactical layer when `travel.ts` calls `startBattle` for it.
+  - **The ending screen is what is wrong, not the battle system**: 0.36 dead
+    per battle and 39% of all deaths, against `slain` ending 3 sagas in 120,
+    because a band bled white dies of the hunger that follows. Same
+    attribution fault as despair-was-starvation — now found twice in one phase.
+  - It also explains 10.3: raiding adds chosen battles on top of a load that
+    is already four-fifths unchosen.
 
 - **2026-09-01 — 10.3 decomposed: raiding costs half the survivors, and the
   raider policy costs as much again** — the item opened by comparing two

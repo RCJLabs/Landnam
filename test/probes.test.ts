@@ -35,6 +35,7 @@ import { wintersStood } from '../src/sim/calendar';
 import { type JobId } from '../src/data/jobs';
 import { type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
+import { DEATHS } from '../src/data/injuries';
 import { rivalBlocks } from '../src/sim/rival';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
@@ -2043,5 +2044,90 @@ describe('PROBE: 10.3 — is it the raiding that loses, or the bundle', () => {
     // check 9.1 needed and did not have.
     expect(falls(on), 'raiding was switched on and nobody was fallen on')
       .toBeGreaterThan(falls(off));
+  });
+});
+
+describe('PROBE: 10.2 — what the tactical layer actually costs', () => {
+  /**
+   * 10.2 was opened on "battle fates are 100 of roughly 475 deaths", read off
+   * the top six rows of a table with a regex written from memory. Both halves
+   * of that were wrong.
+   *
+   * THE FATES ARE A DATA CONSTANT, so they are imported and matched exactly
+   * rather than pattern-matched. `DEATHS` in `data/injuries.ts` is the pool a
+   * fighter draws from when he dies on the field, and it contains **"went
+   * under and was not seen again"** — which the earlier reading took for
+   * drowning and dropped, on its own worth 52 deaths in a 120-saga arm. A
+   * regex invented at the keyboard cannot know that; the constant can.
+   *
+   * Every fate that lands in no bucket is PRINTED rather than swallowed, so
+   * a classification that silently loses a category says so.
+   */
+  it('prices every death against the fate constants, and every fight by who chose it', { timeout: 1_800_000 }, async () => {
+    const SEEDS = 200;
+    const rows: string[] = [];
+
+    for (const [label, pol] of [['settler', SETTLER], ['raider', RAIDER]] as [string, Policy][]) {
+      setPolicy(pol);
+      const bucket: Record<string, number> = {};
+      const unclassified: Record<string, number> = {};
+      // WHO STARTED IT, attributed per battle rather than inferred from the
+      // totals. Two wrong accounts were written before this one: `battles`
+      // ALREADY CONTAINS `raids`, so adding them double-counted; and a
+      // fall-on was assumed to skip the tactical layer when `travel.ts` in
+      // fact calls `startBattle` for it. Both were caught by reading the code
+      // that writes the counters, which is the only thing that settles it.
+      let defended = 0, chosen = 0, met = 0, sacksNoFight = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const s = run(armSeed(0, i, SEEDS), 400, (before, after) => {
+          const dB = (after.tally?.battles ?? 0) - (before.tally?.battles ?? 0);
+          const dR = (after.tally?.raids ?? 0) - (before.tally?.raids ?? 0);
+          const dS = (after.tally?.sackings ?? 0) - (before.tally?.sackings ?? 0);
+          if (dB > 0) {
+            // A raid at the steading is defended; a battle that lands with a
+            // sacking is one the band went out and started; anything else is
+            // met on the road.
+            if (dR > 0) defended += dR;
+            else if (dS > 0) chosen += dB;
+            else met += dB;
+          }
+          // An unguarded prize is "a day's work, taken on the spot" -- a
+          // sacking with no battle behind it.
+          if (dS > 0 && dB === 0) sacksNoFight += dS;
+        });
+        for (const p of s.party.people) {
+          if (p.alive || p.left) continue;
+          const f = p.fate ?? 'unrecorded';
+          if (DEATHS.includes(f)) bucket['on the field'] = (bucket['on the field'] ?? 0) + 1;
+          else if (f === 'hunger' || f === 'short commons') bucket['hunger'] = (bucket['hunger'] ?? 0) + 1;
+          else if (f === 'the cold') bucket['the cold'] = (bucket['the cold'] ?? 0) + 1;
+          else if (f === 'the sickness of that winter') bucket['sickness'] = (bucket['sickness'] ?? 0) + 1;
+          else if (f.startsWith('was carried off')) bucket['carried off'] = (bucket['carried off'] ?? 0) + 1;
+          else { bucket['other'] = (bucket['other'] ?? 0) + 1; unclassified[f] = (unclassified[f] ?? 0) + 1; }
+        }
+      }
+
+      const dead = Object.values(bucket).reduce((t, n) => t + n, 0);
+      const pct = (n: number) => `${Math.round((100 * n) / Math.max(1, dead))}%`;
+      const battles = defended + chosen + met;
+      const share = (n: number) => `${Math.round((100 * n) / Math.max(1, battles))}%`;
+      rows.push(
+        `  ${label}: ${dead} dead over ${SEEDS} sagas\n`
+        + `      ${Object.entries(bucket).sort((a, b) => b[1] - a[1])
+            .map(([k, v]) => `${k} ${v} (${pct(v)})`).join(', ')}\n`
+        + `      battles ${battles}: defended ${defended} (${share(defended)})`
+        + `, met on the road ${met} (${share(met)})`
+        + `, WE started ${chosen} (${share(chosen)})`
+        + ` | plus ${sacksNoFight} prizes taken without a fight\n`
+        + `      dead on the field per battle: ${((bucket['on the field'] ?? 0) / Math.max(1, battles)).toFixed(2)}\n`
+        + `      fates in no bucket: ${Object.keys(unclassified).length === 0 ? 'none'
+            : Object.entries(unclassified).map(([k, v]) => `"${k}" ${v}`).join('; ')}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 10.2 what battle costs — ${SEEDS} landings a policy:\n${rows.join('\n')}`);
+    expect(rows.length).toBe(2);
   });
 });
