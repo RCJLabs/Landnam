@@ -48,6 +48,7 @@ import type { Combatant, GameState } from '../src/state/types';
 import { groundAtStop } from '../src/sim/fishery';
 import { atHome, stopReport } from '../src/sim/site';
 import { reckoningDue } from '../src/sim/landnam';
+import { reachable } from '../src/sim/reach';
 import {
   CREW,
   Policy,
@@ -3146,5 +3147,131 @@ describe('PROBE: 11.S4 — how big a chore is crewing, and is it a decision', ()
       + `:\n${rows.join('\n')}`,
     );
     expect(rows.length).toBe(3);
+  });
+});
+
+describe('PROBE: the winter verdict — is it broken, or is it honest', () => {
+  /**
+   * 11.S2's flip is RULED and blocked on this. Post-flip, `reachable`
+   * condemned 157 bands over 900 seeds and 91 saw spring anyway — 58% wrong
+   * against 38% before — and two bars went red.
+   *
+   * TWO READINGS OF THE SAME NUMBER, and they call for opposite work.
+   *
+   * (a) The verdict is BROKEN: its projection under-models what a band that
+   *     works its ground can do, so it condemns bands that were always going
+   *     to live. Fix the model.
+   * (b) The verdict is HONEST: it claims only "we will not reach spring on
+   *     what THIS GROUND gives", and says so with "we can still rob the
+   *     coast" underneath. A band that lives by robbing, trading, or burying
+   *     a mouth has not falsified it. Fix the claim, or the bar's denominator.
+   *
+   * The absolute figures already argue for (b) — the verdict wrongly condemns
+   * 87 bands per 900 seeds before the flip and 91 after, so the mistake moved
+   * by four bands while the RATIO moved twenty points, purely because the
+   * flip rescued the easy cases out of the condemned pool (229 -> 157). That
+   * is CLAUDE.md trap 2, a denominator reselecting itself.
+   *
+   * But absolute stability is not the same as honesty, and P(live | told
+   * dead) is the number a player actually feels. So this attributes the
+   * survivals: after the day it was condemned, what did each surviving band
+   * actually DO? `canGather` and `canFish` both require `!atHome`, so a
+   * settled band cannot forage its way out — which already rules out the
+   * obvious missing capability and is why this asks about the rest.
+   */
+  it('attributes what the wrongly-condemned bands did after the verdict', { timeout: 3_600_000 }, async () => {
+    // MIRRORS THE BAR EXACTLY, and the first cut of this did not — it used
+    // `curve-` seeds and a day-200 horizon and read 7% wrong against the
+    // bar's 38%, which is not a disagreement about the verdict but two
+    // different questions: P(alive at the thaw | condemned) is not P(alive at
+    // day 200 | condemned), because bands die between the two. Five bands is
+    // also no sample to attribute anything from. Same seeds, same horizon,
+    // same definition of lived as `balance.test.ts`.
+    const SEEDS = 900;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    setPolicy(SETTLER);
+
+    let condemned = 0;
+    let lived = 0;
+    const by = { shed: 0, robbed: 0, dealt: 0, wentOut: 0, nothing: 0 };
+    /**
+     * BOTH ERRORS, COUNTED ABSOLUTELY, and this is the instrument the
+     * deferred fix in `walkWinter` was never judged on.
+     *
+     * The bar reads `wronglyCondemned / condemned`, and a projection fix
+     * moves BOTH halves of that: a kinder projection condemns fewer bands, so
+     * the denominator shrinks and the ratio can RISE while the number of
+     * players lied to falls. That is how "taking the max over every producing
+     * job reads 44%" got recorded as a rejection — trap 2 inside the
+     * evaluation of a fix, not inside the fix.
+     *
+     * So: false-dead (told dead, lived) and false-alive (never told, died),
+     * both as counts per 900 seeds. A projection cannot game these together —
+     * buying fewer false-deads by condemning nobody shows up immediately as
+     * false-alives.
+     */
+    let settledEver = 0;
+    let clearedAndDied = 0;
+    let cleared = 0;
+
+    for (let i = 0; i < SEEDS; i += 1) {
+      let judgedOn = 0;
+      let at = { souls: 0, sackings: 0, bargains: 0, expeditions: 0 };
+      const final = run(`winter-inside-${i}`, SPRING_IN, (_before, after) => {
+        if (judgedOn || !after.settlement) return;
+        if (reachable(after)) return;
+        judgedOn = after.day;
+        at = {
+          souls: living(after.party.people).length,
+          sackings: after.tally?.sackings ?? 0,
+          bargains: after.tally?.bargains ?? 0,
+          expeditions: after.tally?.expeditions ?? 0,
+        };
+      });
+      const wasSettled = !!final.settlement || judgedOn > 0;
+      const survived = !final.end && final.day >= SPRING_IN;
+      if (wasSettled) settledEver += 1;
+      if (!judgedOn) {
+        if (wasSettled) {
+          cleared += 1;
+          if (!survived) clearedAndDied += 1;
+        }
+        continue;
+      }
+      condemned += 1;
+      if (!survived) continue;
+      lived += 1;
+      // Not exclusive: a band may have done several. Counted per escape so
+      // the shares can overlap, and `nothing` is the residue that matters —
+      // a band that lived on the ground alone IS the projection being wrong.
+      const shed = living(final.party.people).length < at.souls;
+      const robbed = (final.tally?.sackings ?? 0) > at.sackings;
+      const dealt = (final.tally?.bargains ?? 0) > at.bargains;
+      const wentOut = (final.tally?.expeditions ?? 0) > at.expeditions;
+      if (shed) by.shed += 1;
+      if (robbed) by.robbed += 1;
+      if (dealt) by.dealt += 1;
+      if (wentOut) by.wentOut += 1;
+      if (!shed && !robbed && !dealt && !wentOut) by.nothing += 1;
+    }
+
+    const pc = (n: number) => (lived === 0 ? '—' : `${Math.round((n / lived) * 100)}%`);
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE the verdict — ${SEEDS} landings, settler, to the thaw (day ${SPRING_IN}):\n`
+      + `  condemned ${condemned}, of whom ${lived} saw spring`
+      + ` (${condemned ? Math.round((lived / condemned) * 100) : 0}% wrong)\n`
+      + `  what the survivors did after the verdict (overlapping):\n`
+      + `    buried a mouth      ${by.shed} (${pc(by.shed)})\n`
+      + `    robbed somebody     ${by.robbed} (${pc(by.robbed)})\n`
+      + `    traded or dealt     ${by.dealt} (${pc(by.dealt)})\n`
+      + `    went out on the road ${by.wentOut} (${pc(by.wentOut)})\n`
+      + `  NONE OF THOSE — lived on the ground alone: ${by.nothing} (${pc(by.nothing)})`
+      + ` <- this is the only share that is the projection being wrong\n`
+      + `  BOTH ERRORS, absolute, over ${SEEDS} seeds (${settledEver} ever settled):\n`
+      + `    false-dead  (told dead, lived)  ${lived}\n`
+      + `    false-alive (never told, died)  ${clearedAndDied} of ${cleared} cleared`,
+    );
+    expect(condemned).toBeGreaterThan(0);
   });
 });

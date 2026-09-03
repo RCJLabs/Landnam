@@ -6359,11 +6359,11 @@ Three groups, roughly in descending order of how much they change.
   a small improvement after it, which is one more number that changes with the
   game underneath it.
 
-  **NEXT, and it is its own item rather than a rider:** recalibrate the winter
-  verdict for a band that works its ground, and re-decide whether the eve of
-  winter should still be a cliff — the second is a design statement about
-  difficulty, not a threshold. When both are settled, the flip is
-  `crewsByOutput: true` on three policies and a restatement to 87/65/38.
+  **THE VERDICT WORK IS DONE — and it turned out to be needed WITHOUT the
+  flip, which is not what the blocker looked like. See 11.V below.** The flip
+  is still off: post-flip, even with the repaired verdict, the ratio reads 58%
+  and the bar wants 40%. When that is settled the flip is `crewsByOutput:
+  true` on three policies and a restatement to 87/65/38.
 
 - [x] **11.S3 Travel ends when you settle** — **THE PREMISE WAS MINE AND IT
   DID NOT SURVIVE BEING MEASURED, 2026-09-02. Ruled a deck and closed,
@@ -6452,6 +6452,62 @@ Three groups, roughly in descending order of how much they change.
   reassignment rate. A human who crews less often gets less than the full
   saved-45 and pays fewer taps, and nothing here measures where on that curve
   a real player sits.
+
+- [x] **11.V The winter verdict picked its food job by name, and it was wrong
+  about 65 bands per 900** — opened as 11.S2's blocker, finished on its own
+  merits. 2026-09-03.
+
+  `walkWinter` projected the winter on `jobs.find((j) => j.id === 'hunter')`.
+  Its own note said so and deferred the repair: *"taking the max over every
+  producing job instead reads truer... left alone until that call is made."*
+  Two earlier attempts were measured and rejected at 44% and 39% against a
+  33% baseline.
+
+  **BOTH REJECTIONS WERE TRAP 2 INSIDE THE EVALUATION OF A FIX.** The bar is
+  `wronglyCondemned / condemned`, and a kinder projection moves both halves —
+  it condemns fewer bands, so the denominator shrinks and the ratio can RISE
+  while the number of players lied to falls. Judged as counts over the same
+  900 seeds, on the same `winter-inside-` sample and the same day-73 horizon:
+
+  | | before | after |
+  |---|---|---|
+  | condemned | 200 | 180 |
+  | **false-dead** (told dead, lived) | **65** | **50** |
+  | false-alive (never told, died) | 17 of 467 | 22 of 487 |
+  | the bar's ratio | 33% | **28%** |
+
+  Fifteen fewer bands told they were doomed and then living; five more not
+  warned. Both are reported because a projection cannot game them together —
+  buying fewer false-deads by condemning nobody shows up at once as
+  false-alives. The shipped version differs from both rejected ones by picking
+  per HAND and carrying that job's own seasonal factor, which is why it reads
+  28% where a band-wide max read 44%.
+
+  **AND IT IS A REAL DEFECT, NOT A NARROW CLAIM.** The verdict says "on what
+  THIS GROUND gives" and offers robbery underneath, so a band that lives by
+  robbing has not falsified it. Attributed (`PROBE: the winter verdict`), of
+  65 wrongly condemned: 24 buried a mouth, 11 took the road, **0 robbed, 0
+  traded — and 35 (54%) lived on the ground ALONE.** That share is the
+  projection being wrong and nothing else. `canGather` and `canFish` both
+  require `!atHome`, so a settled band cannot forage its way out; the ground
+  really was the whole of it.
+
+  **THE CLIFF MOVED, AND ITS BAR IS RESTATED RATHER THAN RELAXED.** A better
+  projection is a kinder one, and `cliff.test` pinned an absolute count — at
+  day 50, at least 9 of 12 best-ground bands doomed. Re-swept:
+
+  | day | 30 | 40 | 50 | 60 | 70 |
+  |---|---|---|---|---|---|
+  | past saving, of 12 | 0 | 0 | **6** | 4 | 5 |
+
+  No day now reaches 9, so that threshold is gone. What has not gone is the
+  cliff: mid-autumn every band on the best ground is saveable and by the eve
+  half are not. The bar is now the STEP rather than the level — eve ≥ 4 past
+  saving AND eve − mid-autumn ≥ 4 — which is the claim the file exists for.
+  **Watched failing both ways:** a verdict that never condemns reads 0/12 and
+  0/12 and trips the first clause; one that condemns everybody reads 12/12
+  and 12/12 and trips the second. (Day 70 lifting is correct — the thaw is
+  three days off and there is barely a winter left to walk.)
 
 - [ ] **11.S5 Winters that vary — finish 6.1.** GROUNDED in an existing
   unfinished item rather than invented: `6.1 Winters that vary` is still `[~]`.
@@ -6552,6 +6608,29 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — the winter verdict was projecting the hunt, and two earlier
+  repairs were rejected by a ratio that could not judge them** — `walkWinter`
+  picked its food job with `jobs.find((j) => j.id === 'hunter')`. Fixed to ask
+  the ground per hand, carrying each job's own seasonal factor.
+  - **False-deads 65 → 50 per 900 seeds; the bar's own ratio 33% → 28%.** The
+    two earlier attempts read 44% and 39% and were recorded as rejections:
+    both approximated (band-wide max, first-crewman rank), and both were
+    judged on `wronglyCondemned / condemned`, which a kinder projection moves
+    from BOTH ends — trap 2 inside the evaluation of a fix rather than inside
+    the fix.
+  - **It was a real defect, not a narrow claim.** Of 65 wrongly condemned, 24
+    buried a mouth and 11 took the road, but **0 robbed, 0 traded, and 35
+    (54%) lived on the ground alone** — and `canGather`/`canFish` both need
+    `!atHome`, so a settled band cannot forage its way out.
+  - **`cliff.test` restated, not relaxed.** A better projection is kinder, so
+    the absolute "9 of 12 doomed at day 50" is unreachable; re-swept, past
+    saving runs 0/0/6/4/5 across days 30–70. The bar is now the STEP —
+    eve ≥ 4 and eve − mid-autumn ≥ 4 — and was watched failing both ways, one
+    clause per sabotage.
+  - This was opened as 11.S2's blocker and finished on its own merits: it was
+    wrong about 65 bands per 900 seeds before the flip existed.
+
 
 - **2026-09-03 — the yard fix is ruled, measured, and blocked on the winter
   verdict** — Evan ruled 11.S2's flip ON. It was turned on, measured, and

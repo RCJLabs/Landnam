@@ -4297,17 +4297,36 @@ describe('the first winter, from inside', () => {
     // it cannot do is tell 38 from 40, and nobody should read a move inside
     // that band as a change to the game.
     //
-    // TWO FIXES WERE TRIED AND BOTH REJECTED, on measurement rather than
-    // taste. The note in `walkWinter` says taking the max over every
-    // producing job reads 29% — RE-TAKEN, it reads 44% and breaks
-    // `cliff.test`'s pivot band, so that figure is one more number that did
-    // not survive being asked again. A cheaper variant that ranks food jobs
-    // by the first crewman's output reads 39% and would have scraped this bar
-    // by a point on arithmetic nobody could defend. Neither shipped.
+    // A THIRD FIX WAS TRIED AND THIS ONE SHIPPED, 2026-09-03, and the two
+    // rejections above are worth re-reading because of HOW they were judged.
     //
-    // The remaining wrong verdicts are still bands that reach spring on
-    // nothing, and mostly by shedding a mouth — which is what a projection
-    // that holds the roster constant cannot credit, and should not.
+    // Both earlier attempts approximated: one took the max over producing
+    // jobs for the whole band (44%), one ranked them by the first crewman's
+    // output (39%). The version that shipped picks the best food job PER
+    // HAND and carries that job's own seasonal factor, and it reads 28%.
+    //
+    // AND THIS RATIO IS A POOR INSTRUMENT FOR JUDGING A PROJECTION FIX,
+    // which is the lesson worth keeping. A kinder projection moves BOTH
+    // halves of it: it condemns fewer bands, so the denominator shrinks and
+    // the ratio can RISE while the number of players lied to falls. Judged as
+    // COUNTS over the same 900 seeds, the repair is plain:
+    //
+    //   false-dead  (told dead, lived)   65 -> 50
+    //   false-alive (never told, died)   17/467 -> 22/487
+    //
+    // Fifteen fewer bands told they were doomed and lived; five more not
+    // warned. Both errors are reported because a projection cannot game them
+    // together — buying fewer false-deads by condemning nobody shows up at
+    // once as false-alives. See `PROBE: the winter verdict` in probes.test.ts.
+    //
+    // The repair was needed on its own evidence, not just for the ratio:
+    // attributed, 54% of the wrongly condemned lived on the ground ALONE —
+    // no mouth buried, nobody robbed, nothing traded, no road taken. That
+    // share is the projection being wrong and nothing else.
+    //
+    // The remaining wrong verdicts are still mostly bands that shed a mouth —
+    // which is what a projection that holds the roster constant cannot
+    // credit, and should not.
     expect(wrong, `the panel told ${condemnedAndLived} surviving bands they were dead`)
       .toBeLessThan(0.4);
   });
