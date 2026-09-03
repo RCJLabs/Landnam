@@ -141,6 +141,29 @@ export function suggestedBuild(
   return buildable[0];
 }
 
+/**
+ * Why THIS building is the one flagged, in the steading's own words — or
+ * nothing, when the flag is the arbitrary fallback `suggestedBuild` takes
+ * once nothing is pressing, because a made-up reason for an arbitrary pick
+ * is worse than no reason at all.
+ *
+ * 11.U2: the build list named cost and blockers and never worth, while the
+ * panel already highlighted a `primary` row with nothing on screen saying
+ * why. This reuses the exact sentence `readNeeds` already wrote for the
+ * worst need — never a second copy of the claim — so the highlight can
+ * never say something the rest of the panel would contradict.
+ */
+export function buildWorthLine(state: GameState, building: BuildingDef): string | undefined {
+  const worst = worstNeed(state);
+  if (building.answers === worst.answers) return worst.line;
+  // The one indirect case `suggestedBuild` itself takes: rest has no
+  // building of its own, so a roof stands in for it.
+  if (worst.id === 'rest' && building.answers === 'warmth') {
+    return 'A roof mends what the road cannot.';
+  }
+  return undefined;
+}
+
 /** Season-aware nudge for the panel: what the year is about to do to you. */
 export function pressureLine(state: GameState): string {
   const untilWinter = Math.max(0, 49 - state.day);

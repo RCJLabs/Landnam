@@ -33,7 +33,9 @@ import {
   underway,
   unqueueBuild,
 } from '../src/sim/colony';
-import { daysOfFood, nightsOfFire, readNeeds, suggestedBuild, worstNeed } from '../src/sim/needs';
+import {
+  buildWorthLine, daysOfFood, nightsOfFire, readNeeds, suggestedBuild, worstNeed,
+} from '../src/sim/needs';
 import { BUILDINGS, buildingById, type BuildingId } from '../src/data/buildings';
 import { jobById, type JobId } from '../src/data/jobs';
 import { living } from '../src/sim/people';
@@ -122,6 +124,56 @@ describe('the four needs', () => {
     for (const p of cold.party.people) p.health = p.maxHealth;
     expect(worstNeed(cold).id).toBe('warmth');
     expect(suggestedBuild(cold, buildable(cold))?.answers).toBe('warmth');
+  });
+
+  /**
+   * 11.U2: the panel already flagged one row `primary` on this exact
+   * decision and never said why. `buildWorthLine` is that reason, and the
+   * bar is that it can never disagree with the sentence `readNeeds` already
+   * put on screen elsewhere — the two must be THE SAME STRING, not two
+   * prose that happen to agree today.
+   */
+  it('gives the flagged building the same reason readNeeds already wrote, and nobody else one', () => {
+    const cold = stocked('worth-cold');
+    cold.day = 40;
+    cold.party.firewood = 8;
+    cold.party.food = 900;
+    cold.party.morale = 95;
+    for (const p of cold.party.people) p.health = p.maxHealth;
+    expect(worstNeed(cold).id).toBe('warmth');
+
+    const pick = suggestedBuild(cold, buildable(cold));
+    expect(pick?.answers).toBe('warmth');
+    expect(buildWorthLine(cold, pick!)).toBe(worstNeed(cold).line);
+
+    // Something that answers a need that is NOT hurting gets no line at
+    // all — a made-up reason would be worse than none.
+    const foodBuilding = buildable(cold).find((b) => b.answers === 'food');
+    expect(foodBuilding, 'need a food building on offer to make this a real check').toBeDefined();
+    expect(buildWorthLine(cold, foodBuilding!)).toBeUndefined();
+  });
+
+  /**
+   * The one INDIRECT case `suggestedBuild` itself takes: fresh ashore,
+   * nothing raised yet, rest is what is hurting and `bud` cannot be queued
+   * before `longhouse` exists to stand it against (`after: ['longhouse']`)
+   * — so the roof stands in for it, and the worth line has to say so
+   * without borrowing the warmth need's own sentence, which would be
+   * naming the wrong scarcity.
+   */
+  it('names the roof for rest, without pretending it is a warmth line', () => {
+    const beaten = settledWell('worth-rest');
+    beaten.party.food = 900;
+    beaten.party.firewood = 400;
+    beaten.party.morale = 90;
+    for (const p of beaten.party.people) p.health = 1;
+    expect(worstNeed(beaten).id).toBe('rest');
+
+    const pick = suggestedBuild(beaten, buildable(beaten));
+    expect(pick?.id).toBe('longhouse');
+    const line = buildWorthLine(beaten, pick!);
+    expect(line).toBeDefined();
+    expect(line).not.toBe(worstNeed(beaten).line);
   });
 });
 

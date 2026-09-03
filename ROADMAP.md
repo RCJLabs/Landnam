@@ -6863,12 +6863,40 @@ Three groups, roughly in descending order of how much they change.
   yet" at 3 days' food, "The stores are empty, and there is still no roof."
   at zero — both in the expected styling, no console errors.
 
-- [ ] **11.U2 The build list names cost and blockers, never worth.** VERIFIED:
-  a row reads `N timber · N days · for X`, or a blocker word. MEASURED (10.3b):
-  build order is worth **+5 bands per 200** — fields before wall. This is the
-  exact fault 9.3, 9.4 and 9.7 each corrected elsewhere, surviving in the one
-  panel that still has it. `counsel` already computes what closes the winter
-  gap for HANDS; extending it to buildings is a short step from working code.
+- [x] **11.U2 The build list names cost and blockers, never worth.** —
+  **SHIPPED 2026-09-03.**
+
+  Re-verified before building: the item cited `counsel` (hands-closing-the-
+  winter-mark) as the pattern to extend, but `counsel`'s own machinery
+  (re-running `forecast()` against a hypothetical crew move) does not
+  transfer to buildings — a queued building costs TIMBER and DAYS rather
+  than an instant reassignment, and most buildings' benefit is not modeled
+  as a direct `output()` term `forecast()` would even see. Checked the
+  panel's existing code instead of assuming a gap: `renderBuilds` already
+  computes `suggestedBuild` (via `worstNeed`'s four-axis food/warmth/rest/
+  heart read) and marks that ONE row `primary` — so the underlying DECISION
+  9.3/9.4/9.7 already fixed was never the missing piece. What was missing
+  was the sentence: the highlight had nothing on screen saying why.
+
+  Shipped the honest, scoped version instead: `buildWorthLine` (`sim/
+  needs.ts`) returns the EXACT SAME `Need.line` string `readNeeds` already
+  writes for the worst need, for the one building `suggestedBuild` would
+  pick — never a second copy of the claim, so the two can never disagree.
+  One authored exception mirrors `suggestedBuild`'s own indirect branch
+  (rest has no building until `longhouse` stands, so a roof stands in for
+  it — "A roof mends what the road cannot."). Every other row, and every
+  blocked row, gets no worth line at all — a made-up reason for an
+  arbitrary pick would be worse than none, the same principle `counsel`
+  itself is built on.
+
+  Bar in `test/buildings.test.ts` — the flagged building gets the same
+  string `worstNeed` already wrote (byte-for-byte), nothing else does, and
+  the indirect rest→roof case names itself without borrowing the warmth
+  line. Watched failing against a stub first. Verified live in a browser
+  (390×844): the suggested Longhouse row carries "4 nights of fire, and no
+  more." in gold italic under its cost line; Farm plots, Dock and Palisade
+  — unblocked but not the worst need — carry no line; every blocked row is
+  unchanged. No console errors.
 
 - [ ] **11.U3 The mark should follow the band onto the road.** MEASURED:
   crewing to the mark is the largest lever in the game, and it lives on the
@@ -6904,6 +6932,20 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.U2: the highlighted build row finally says why** — the
+  panel already flagged one row `primary` (`suggestedBuild`, the four-axis
+  `worstNeed` read 9.3/9.4/9.7 already fixed) with nothing on screen naming
+  the reason. Checked the item's own proposed pattern (extend `counsel`)
+  before using it: `counsel`'s hypothetical-crew-move re-forecast does not
+  transfer to buildings, which cost timber and days rather than an instant
+  reassignment. Shipped `buildWorthLine` instead (`sim/needs.ts`) — the
+  exact same `Need.line` string `readNeeds` already writes, reused rather
+  than duplicated, so the highlight can never contradict the rest of the
+  panel. One authored line for the sole indirect case (rest, pre-longhouse,
+  a roof standing in for a room). Every other row, and every blocked row,
+  stays silent — no invented reason for an arbitrary pick. Bar watched
+  failing against a stub; verified live in a browser at 390×844.
 
 - **2026-09-03 — 11.U1: the roofless band gets its own mark, not a borrowed
   one** — `markVisible` is false whenever `!state.settlement`, so the winter

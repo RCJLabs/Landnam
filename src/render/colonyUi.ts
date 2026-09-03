@@ -22,7 +22,7 @@ import {
   output,
   underway,
   type BlockReason, standsFor } from '../sim/colony';
-import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
+import { buildWorthLine, pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
 import { CROWDING_BITE } from '../sim/minds';
 import { wallMark } from '../sim/raid';
 import { foodPerDay } from '../sim/upkeep';
@@ -350,13 +350,20 @@ export function renderBuilds(state: GameState, dispatch: Dispatch): HTMLElement 
         title: building.blurb,
       },
     );
+    // 11.U2: the row named cost and blockers and never worth, while the CSS
+    // already flagged one row `primary` with nothing on screen saying why.
+    // Blocked rows keep the blocker word alone — a building the band cannot
+    // raise yet does not need a reason it would be good.
+    const worth = blocker ? undefined : buildWorthLine(state, building);
+    const note = el('span', { class: 'build-note' }, [
+      blocker
+        ? blockWord(state, building, blocker)
+        : `${building.timber} timber · ${building.works} days · for ${building.answers}`,
+    ]);
+    if (worth) note.append(el('span', { class: 'build-worth' }, [worth]));
     node.replaceChildren(
       el('span', { class: 'build-name' }, [building.name]),
-      el('span', { class: 'build-note' }, [
-        blocker
-          ? blockWord(state, building, blocker)
-          : `${building.timber} timber · ${building.works} days · for ${building.answers}`,
-      ]),
+      note,
     );
     if (blocker) node.setAttribute('disabled', 'true');
     wrap.append(node);
