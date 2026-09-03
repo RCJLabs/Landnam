@@ -3064,3 +3064,87 @@ describe('PROBE: 11.S2 — does the ground ever cap anything', () => {
     expect(rows.length).toBe(2);
   });
 });
+
+describe('PROBE: 11.S4 — how big a chore is crewing, and is it a decision', () => {
+  /**
+   * 11.S4 proposes standing orders: set the intent, let the band follow it,
+   * surface the exceptions. It rests on a PREMISE and carries an UNMEASURED
+   * clause, and both are checkable before any UI gets built.
+   *
+   * THE PREMISE — "for a human, a 500-day chore". Nobody has counted the taps.
+   * The daily crewing is worth saved 45 / killed 0, the largest effect in the
+   * repo, and a player who wants it has to issue ASSIGN by hand. How many
+   * times? If it is a handful, there is no chore and the item is answering
+   * nothing.
+   *
+   * THE UNMEASURED CLAUSE — "whether an automated crew is still a decision or
+   * just a number going up". Its measurable form is CHURN: if the right crew
+   * is the same crew all game, a standing order removes no decision because
+   * there was none, and the feature is pure convenience. If it changes often,
+   * the order is executing a live policy and which order you set matters.
+   *
+   * WHERE THE COUNT COMES FROM, because it is not the obvious place. The
+   * harness recrews by mutating `state` BEFORE `apply`, so `watch(before,
+   * after)` sees a state that has already been reassigned — comparing within
+   * a transition misses every tap. The jobs are therefore compared across
+   * transitions: this turn's `before` against last turn's `after`.
+   */
+  it('counts the taps a player would make to crew the way the bot does', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 500;
+
+    const sample = (pol: Policy, label: string) => {
+      setPolicy(pol);
+      let taps = 0;
+      let settledDays = 0;
+      let sagas = 0;
+      let worstSaga = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        let last: Record<string, string> = {};
+        let seen = false;
+        let here = 0;
+        let days = 0;
+        let lastDay = 0;
+        run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          if (before.settlement) {
+            const now: Record<string, string> = {};
+            for (const pe of living(before.party.people)) now[pe.id] = pe.job ?? '';
+            if (seen) {
+              for (const id of Object.keys(now)) {
+                // A hand that was not in the band last turn was not RE-crewed;
+                // counting them would price births and joinings as taps.
+                if (last[id] !== undefined && last[id] !== now[id]) here += 1;
+              }
+            }
+            seen = true;
+            if (after.day !== lastDay) { lastDay = after.day; days += 1; }
+          }
+          const kept: Record<string, string> = {};
+          for (const pe of living(after.party.people)) kept[pe.id] = pe.job ?? '';
+          last = kept;
+        });
+        if (days > 0) sagas += 1;
+        taps += here;
+        settledDays += days;
+        worstSaga = Math.max(worstSaga, here);
+      }
+      return `  ${label}: ${taps} assignments changed over ${settledDays} settled band-days`
+        + ` in ${sagas} sagas — ${(taps / Math.max(1, sagas)).toFixed(0)} taps a saga`
+        + `, ${(taps / Math.max(1, settledDays)).toFixed(2)} a day, worst saga ${worstSaga}`;
+    };
+
+    const rows = [
+      sample(SETTLER, 'the harness as it ships (crews to the mark daily)'),
+      sample({ ...SETTLER, crewsToNeed: false }, 'crew set on settling day and never touched'),
+      sample({ ...SETTLER, crewsByOutput: true }, 'crews to the mark AND asks the ground'),
+    ];
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.S4 the price of the chore — ${SEEDS} landings an arm, to day ${HORIZON}`
+      + `:\n${rows.join('\n')}`,
+    );
+    expect(rows.length).toBe(3);
+  });
+});

@@ -6364,17 +6364,50 @@ Three groups, roughly in descending order of how much they change.
   band reasons to range further. The first framing — "travel ends at
   settling" — is withdrawn.
 
-- [ ] **11.S4 Crewing is the largest lever in the game and, for a human, a
-  500-day chore.** MEASURED: crewing to the winter mark daily is **saved 45,
-  killed 0** over 120 seeds — the largest effect anything in this repo has
-  measured. But that is the BOT re-assigning every day. A player doing the same
-  is hundreds of identical taps, and 9.13 established this project's dislike of
-  a mandatory tap with one outcome.
+- [~] **11.S4 Crewing is the largest lever in the game and, for a human, a
+  500-day chore** — **premise measured and TRUE, the unmeasured clause
+  answered, and the item is a GO that has not been built. 2026-09-03.**
 
-  Proposal: standing orders. Set the intent — "keep the mark met" — let the
-  band follow it, and surface only the exceptions. Converts the biggest lever
-  in the game from a chore into a decision. UNMEASURED: whether an automated
-  crew is still a decision or just a number going up.
+  Nobody had counted the taps. `PROBE: 11.S4` counts every assignment that
+  actually changes, across transitions — the harness recrews by mutating
+  `state` BEFORE `apply`, so comparing within one `watch(before, after)` sees
+  a state already reassigned and misses every tap:
+
+  | the order the band is under | taps a saga | a day | worst saga |
+  |---|---|---|---|
+  | crews to the mark daily (the game's biggest lever) | **94** | 0.51 | **530** |
+  | crew set on settling day, never touched | 0 | 0.00 | 0 |
+  | crews to the mark AND asks the ground (11.S2) | 66 | 0.31 | 429 |
+
+  **Ninety-four taps a saga, five hundred and thirty in a long one, to work a
+  lever the game already computes for you.** That is 9.13's mandatory-tap
+  objection ninety-four times over: every one of those taps is the output of a
+  two-line rule reading the winter mark, and the mark panel already displays
+  both halves of it — Food and Wood, held against needed, with the gap.
+
+  A pleasing side reading: asking the ground costs FEWER taps (66 against 94)
+  over MORE settled days (18,685 against 15,773), because a band that eats
+  better is short less often, so the rule fires less.
+
+  **AND THE UNMEASURED CLAUSE IS ANSWERED: it is a decision, because the
+  ORDERS differ.** Three plausible standing orders, three measured outcomes,
+  all paired at 120 seeds — leave the crew alone against keep the mark met is
+  **saved 30, killed 3** (2026-08-20); keep the mark met against keep it on
+  the ground that pays best is **saved 11, killed 1** (11.S2d). So a standing
+  orders screen is not one toggle wearing a UI, and automating the taps is not
+  "a number going up": what the player picks changes how the saga ends.
+
+  **GO, and the design is settled by the two readings above:** the order is
+  stored intent, the band follows it daily, and the food job it reaches for
+  comes from `output()` rather than a name — which is the 11.S2 finding
+  expressed as a feature rather than as a harness knob. Not built: it needs
+  state on the settlement, a `SAVE_VERSION` bump with a migration, a panel,
+  and a re-measure afterwards.
+
+  **One caveat to carry into the build:** 94 taps a saga is the BOT's
+  reassignment rate. A human who crews less often gets less than the full
+  saved-45 and pays fewer taps, and nothing here measures where on that curve
+  a real player sits.
 
 - [ ] **11.S5 Winters that vary — finish 6.1.** GROUNDED in an existing
   unfinished item rather than invented: `6.1 Winters that vary` is still `[~]`.
@@ -6475,6 +6508,27 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.S4: the chore is real and it is 94 taps a saga** — the
+  item rested on an uncounted premise ("a 500-day chore") and an UNMEASURED
+  clause ("whether an automated crew is still a decision"). Both are now
+  measured and both come out in the item's favour.
+  - **94 assignments changed a saga, 530 in the worst, 0.51 a day** across
+    15,773 settled band-days. Every one is the output of a two-line rule
+    reading the winter mark — which the mark panel already displays. 9.13's
+    mandatory-tap objection, ninety-four times over.
+  - Counting them needed care: the harness recrews by mutating `state` before
+    `apply`, so a within-transition comparison sees a state already
+    reassigned and reports zero. The jobs are compared ACROSS transitions.
+  - **It is a decision, because the orders differ.** Leave the crew alone vs
+    keep the mark met is saved 30 / killed 3; keep the mark met vs keep it on
+    the ground that pays best is saved 11 / killed 1. Three orders, three
+    outcomes.
+  - Asking the ground costs FEWER taps (66 vs 94) over MORE settled days — a
+    band that eats better is short less often, so the rule fires less.
+  - Left `[~]`: GO with the design settled, not built. It needs settlement
+    state, a SAVE_VERSION bump with a migration, a panel, and a re-measure.
+
 
 - **2026-09-03 — 11.S2: the yard is an economy and the BOT was playing it
   wrong** — the item proposed plot caps so the site reading would keep
