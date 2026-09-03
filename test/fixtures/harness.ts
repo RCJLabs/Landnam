@@ -178,6 +178,21 @@ export interface Policy {
    * eat none of.
    */
   barterBeforeFallOn?: boolean;
+  /**
+   * Whether the road's food errand hunts instead of foraging on ground where
+   * `terrainDef` prices hunt strictly above forage.
+   *
+   * Optional and off everywhere, so no shipped figure moves by its existing.
+   * `HUNT` is a real verb — `doHunt` in `sim/gathering.ts`, its own reducer
+   * case, its own depletion pool — that no policy in this file has ever
+   * dispatched: the road's food fallback only ever tries FORAGE then FISH.
+   * `terrainDef` prices hunt above forage on exactly one country (hills, 3
+   * against 2) and level with it on two more (forest 4/4, mountains 1/1,
+   * bog 2/2) — the same narrow-case shape 9.1 found for the shield before
+   * this knob existed to ask the game rather than assume the bot's silence
+   * meant the verb was dead. 11.M5.
+   */
+  huntsBetterGround?: boolean;
   /** What it raises, in the order it wants it. */
   want: readonly string[];
   /** What everyone does with their days. */
@@ -1212,7 +1227,11 @@ export function step(state: GameState): Action {
       if (go) return go;
     }
   }
-  if (days < 4 && canGather(state)) return { type:'FORAGE' };
+  if (days < 4 && canGather(state)) {
+    if (policy.huntsBetterGround
+      && terrainDef(country).hunt > terrainDef(country).forage) return { type:'HUNT' };
+    return { type:'FORAGE' };
+  }
   if (days < 4 && canFish(state)) return { type:'FISH' };
 
   if (walkOptions(state).length === 0) return { type:'CAMP' };

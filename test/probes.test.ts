@@ -47,6 +47,8 @@ import { effectiveStat } from '../src/sim/people';
 import type { Combatant, GameState } from '../src/state/types';
 import { groundAtStop } from '../src/sim/fishery';
 import { atHome, stopReport } from '../src/sim/site';
+import { countryHere } from '../src/sim/coast';
+import { terrainDef } from '../src/data/terrain';
 import { reckoningDue } from '../src/sim/landnam';
 import { reachable } from '../src/sim/reach';
 import {
@@ -3782,5 +3784,99 @@ describe('PROBE: 11.M1 — what actually kills a band that never finds land', ()
     // eslint-disable-next-line no-console
     console.log(`PROBE 11.M1b before vs after winter opens — ${SEEDS} landings an arm, settler:\n${out.join('\n')}`);
     expect(out.length).toBe(2);
+  });
+});
+
+describe('PROBE: 11.M5 — the road verb nobody has ever tried', () => {
+  /**
+   * 9.1 swept the battle verbs and found the shield was not dead, only
+   * mis-measured — every arm had put it last in priority, so it never got
+   * offered a turn. 11.M5 asks the same question of colony and travel: has
+   * anything there been silently unused the same way?
+   *
+   * `HUNT` is: `doHunt` in `sim/gathering.ts` is a full verb with its own
+   * reducer case, its own stat term and its own depletion pool, structurally
+   * identical to `doForage` — and no policy in `test/fixtures/harness.ts`
+   * has ever dispatched it on the road (confirmed by grep and by the
+   * instrument check below: the base arm hunts zero times). The road's food
+   * fallback only ever tries FORAGE then FISH.
+   *
+   * Unlike the shield, this is not a priority-ordering bug — `terrainDef`
+   * (src/data/terrain.ts) prices hunt BELOW forage on four of seven
+   * countries and only strictly above it on one: hills, 3 against 2.
+   * (Forest, mountains and bog tie; ocean/shore/valley/meadow all favour
+   * forage.) So the honest question is the narrow one 9.1 asked of the
+   * shield: does taking hunt in exactly its one good case move anything, or
+   * is the gap too small to matter next to everything else a saga survives?
+   *
+   * `huntsBetterGround` (harness.ts) swaps FORAGE for HUNT precisely where
+   * `terrainDef` says hunt pays more — which on the current data is hills
+   * and hills alone — leaving every other country's choice untouched.
+   */
+  it('prices hunting hills instead of foraging them, in whole sagas', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 150;
+    const HORIZON = 500;
+
+    let baseHunts = 0;
+    const base = (() => {
+      setPolicy(SETTLER);
+      const lived: boolean[] = [];
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          const prevN = before.beats?.[before.beats.length - 1]?.n ?? 0;
+          const last = after.beats?.[after.beats.length - 1];
+          if (last && last.n !== prevN && last.kind === 'gathered' && last.how === 'hunt') {
+            baseHunts += 1;
+          }
+        });
+        lived.push(!final.end && final.day >= HORIZON);
+      }
+      return { lived };
+    })();
+
+    // THE INSTRUMENT CHECK (CLAUDE.md trap 3): the item's whole claim rests
+    // on HUNT never firing today. If it turns out the base arm already
+    // hunts sometimes, "nobody has tried it" is wrong and the reading below
+    // needs a different frame.
+    const neverHuntedBefore = baseHunts === 0;
+
+    let armHunts = 0;
+    let huntsOffHills = 0;
+    const arm = (() => {
+      setPolicy({ ...SETTLER, huntsBetterGround: true });
+      const lived: boolean[] = [];
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          const prevN = before.beats?.[before.beats.length - 1]?.n ?? 0;
+          const last = after.beats?.[after.beats.length - 1];
+          if (last && last.n !== prevN && last.kind === 'gathered' && last.how === 'hunt') {
+            armHunts += 1;
+            if (countryHere(before) === 'hills') huntsOffHills += 1;
+          }
+        });
+        lived.push(!final.end && final.day >= HORIZON);
+      }
+      return { lived };
+    })();
+    setPolicy(SETTLER);
+
+    let saved = 0;
+    let killed = 0;
+    for (let i = 0; i < SEEDS; i += 1) {
+      if (!base.lived[i] && arm.lived[i]) saved += 1;
+      if (base.lived[i] && !arm.lived[i]) killed += 1;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.M5 hunting hills instead of foraging them — ${SEEDS} landings, settler, to day ${HORIZON}:\n`
+      + `  terrainDef hills: forage ${terrainDef('hills').forage}, hunt ${terrainDef('hills').hunt}\n`
+      + `  as it ships     : ${base.lived.filter(Boolean).length}/${SEEDS} standing, hunts dispatched ${baseHunts}`
+      + ` (never tried before this knob existed: ${neverHuntedBefore})\n`
+      + `  hunts hills     : ${arm.lived.filter(Boolean).length}/${SEEDS} standing, hunts dispatched ${armHunts}`
+      + ` (${huntsOffHills} of them off hills terrain — should equal the total)\n`
+      + `  paired against the control: saved ${saved}, killed ${killed}`,
+    );
+    expect(base.lived.length).toBe(SEEDS);
   });
 });

@@ -6753,12 +6753,70 @@ Three groups, roughly in descending order of how much they change.
   about how to avoid losing, and it is not what this item asked. Left
   unopened.
 
-- [ ] **11.M5 Sweep every player verb for effect size.** MEASURED: the two
-  winter levers are **saved 22 / killed 1** and **saved 45 / killed 0**, the
-  largest effects in the repo, and both were invisible until 9.7 gave them
-  lines. 9.1 ran this sweep for the battle verbs and found the shield had been
-  mis-measured rather than dead. Nobody has run it for the colony and travel
-  verbs. On the base rate so far, expect one or two more.
+- [x] **11.M5 Sweep every player verb for effect size.** — **RUN 2026-09-03.
+  One dead verb found, and it stays dead — the priority list ahead of it
+  forecloses its one good case before it can ever be tried.**
+
+  First, the inventory: most colony and travel verbs already carry an
+  effect-size reading from this session's own work, verb by verb rather than
+  as one sweep — `SET_RATIONS` (short commons, saved 22/killed 1, 9.7),
+  crewing to the winter mark (saved 45/killed 0, 9.7), `QUEUE_BUILD` order
+  (10.3b, +5 bands/200), `BARTER`/`FALL_ON` (11.M3), raiding (`LAUNCH`
+  purpose:'raid', 11.M2 and task 31/33), `SACK_PLACE`/`STRANDHOGG` (task 33,
+  "the place economy"), `TRADE_AT` (task 33's remainder), walking out
+  (item 460/489, saved 0/killed 11), the voyage home (9.2). Three verbs —
+  `HOLD_BLOT`, `LAY_DOWN_RULE`, `LAY_DOWN_SAGA` — are confirmed by direct
+  code read (grep of `test/fixtures/harness.ts`, zero hits) to never be
+  dispatched by any bot policy, and each carries its own comment explaining
+  why: they are PLAYER-only choices by design (`sim/blot.ts`: "a card the
+  player calls for"; `sim/thing.ts`'s `layDownRule`: "a CHOICE now... the
+  player is the only one who should decide"). Not holes — the harness
+  correctly never reaches for them because reaching for them is the
+  player's whole point.
+
+  That left one genuine candidate, the shape 9.1 asked for: a verb the bot
+  never uses that ISN'T obviously either dominated or player-only. `HUNT` —
+  `doHunt` in `sim/gathering.ts`, a full reducer case, its own depletion
+  pool — has never been dispatched by any policy in `harness.ts` (grep,
+  zero hits), and `terrainDef` (`data/terrain.ts`) prices it BELOW forage on
+  four of seven countries and only strictly above it on one: hills, 3
+  against 2 (forest/mountains/bog tie; ocean/shore/valley/meadow favour
+  forage). The exact shape of the shield before 9.1: a verb with one narrow
+  good case nobody had tried.
+
+  A knob (`huntsBetterGround`, off by default) was added that swaps FORAGE
+  for HUNT precisely where `terrainDef` says hunt pays more. Measured
+  (`PROBE: 11.M5`, `test/probes.test.ts`, 150 paired landings, settler, to
+  day 500): **the arm dispatched zero hunts — the same zero as the
+  control.** The instrument check (CLAUDE.md trap 3) caught this directly:
+  "saved 2, killed 1" was printed, and it is noise, because the knob
+  supposedly producing it never once fired.
+
+  Diagnosed rather than left as a bare tie: hills is not rare (14% of a
+  coast's stretches, `route.ts`) and the state that would justify hunting —
+  hills terrain, gathering allowed, under four days of food — occurs (6
+  coincidences in 30 sagas by a direct count). What eats it is the branch
+  immediately above the forage/hunt fallback: `shortOfFood` triggers at SIX
+  days of food, the fishing-ground detour, and it either fishes on the spot
+  or WALKS TOWARD the nearest known fishing ground within 8 stops. Since the
+  forage/hunt line's own threshold (four days) is strictly inside
+  `shortOfFood`'s (six), by the time the code could reach HUNT the fishing
+  detour has already returned — unless the band is more than eight stops
+  from every known ground, which essentially never happens on a 26-stop
+  coast. **Same shape as the shield's first reading: not a mis-tuned verb,
+  a verb standing behind a branch that always claims the turn first.**
+
+  Unlike the shield, this does not get the shield's ending. The shield's
+  narrow case was worth taking (49/60 wins against 46/60) once measured with
+  the shield offered FIRST. Hunt's narrow case is a food-yield edge of ONE
+  unit on ONE terrain, smaller than the noise in a 150-seed paired count
+  even before the fishing detour is accounted for — reordering the road's
+  priorities to let it fire would cost the fishing-ground behaviour real
+  turns to win a verb that, even taken every time it could be, is not the
+  size of thing this repo's other findings have moved. Declined: the knob
+  and probe stay (matching `barterBeforeFallOn`, `crewsByOutput`) so the
+  reading can be retaken if `terrainDef`'s hunt/forage numbers ever change,
+  but no priority-order change is made on this evidence.
 
 ### UI and legibility
 
@@ -6810,6 +6868,24 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.M5: the sweep found one dead verb, and it stays dead** —
+  most colony/travel verbs already carried an effect-size reading from this
+  session's own item-by-item work; `HOLD_BLOT`/`LAY_DOWN_RULE`/
+  `LAY_DOWN_SAGA` are confirmed player-only by design (never dispatched by
+  any policy, and each says so in its own code comment). `HUNT` was the one
+  real candidate — never dispatched, and `terrainDef` prices it above
+  forage on exactly one country (hills, 3 v 2), the shield's exact shape
+  before 9.1. Added `huntsBetterGround` (harness.ts, off by default) to try
+  it there. Measured (`PROBE: 11.M5`, 150 paired landings to day 500): **the
+  arm dispatched zero hunts, same as the control** — the instrument check
+  caught a printed "saved 2, killed 1" as noise before it could be
+  mistaken for a finding. Diagnosed: the fishing-ground detour
+  (`shortOfFood`, days<6) always claims the turn first, since its threshold
+  is looser than forage/hunt's (days<4) and hills is not rare enough (14%
+  of stretches) for the gap to matter. Declined — the edge is one food unit
+  on one terrain, smaller than paired-count noise even before the detour;
+  knob and probe kept for re-measurement, no priority-order change made.
 
 - **2026-09-03 — 11.M1: the winter camp was aimed at a season most of its
   victims never reach** — the item inherited 10.1's 23/74-never-founded
