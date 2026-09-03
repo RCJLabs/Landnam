@@ -6683,13 +6683,54 @@ Three groups, roughly in descending order of how much they change.
   this session's other rulings have needed Evan for (a starving band gets a
   door it does not have today). Not built. **Left `[~]` on that decision.**
 
-- [ ] **11.M4 Find what actually decides the first winter.** MEASURED (10.1):
-  food in store on day 49 reads **33.6 / 35.7 / 33.7** across bands that
-  starve, break, and are still standing at day 400. **The most-watched number
-  in the game does not separate the doomed from the survivors at all.**
-  Something else decides it — hands, roof, site reading, job mix. Find what,
-  because whatever it is, that is what the panel should show. Investigation
-  first, which is this project's own method.
+- [x] **11.M4 Find what actually decides the first winter** — **RE-TAKEN
+  rather than inherited, and it no longer reads the way it did: food now
+  separates the doomed from the survivors, and nobody set out to fix that.
+  2026-09-03.**
+
+  10.1's opening figure — food at day 49 reading 33.6 / 35.7 / 33.7 across
+  starved / despair / still-standing, no separation on the most-watched
+  number in the game — was six items and five balance changes old by the
+  time this item was reached (11.S1's deployment fix, 11.S2's flip, 11.V's
+  verdict repair, 11.S5's winter-depth fix, 11.M2, 11.M3, several of which
+  touch survival directly). RE-RUN on the identical instrument (`PROBE:
+  10.1`, same probe, same seeds) rather than trusted:
+
+  | terms | starved | despair | still standing |
+  |---|---|---|---|
+  | even | 34.4 | 35.1 | **46.9** |
+  | fair | 53.4 | 47.0 | **60.3** |
+
+  **Still-standing bands carry 12–13 more food at day 49 than either doomed
+  group, in both terms.** The flat reading that opened this item is gone. No
+  one item did this on purpose — it is the residue of the balance work
+  between 10.1 and here, and it is recorded as a fact rather than credited
+  to a cause nobody isolated by bisecting five changes.
+
+  **THREE MORE CANDIDATES CHECKED, AND NONE OF THEM SEPARATE EITHER**
+  (`PROBE: 11.M4`, same 120-seed sample, settled bands only): hands (band
+  size at day 49) was already in 10.1's own data and reads 6.0 / 5.9 / 6.1 —
+  flat. Roof (settled by day 49) reads 33/35, 19/19, 18/18 — saturated,
+  everyone who is going to have one has it by day 49 regardless of fate.
+  Site reading at founding reads **13.8 / 13.8 / 14.4 of 25** (even) and
+  **14.0 / 13.6 / 14.2** (fair) — flat. Job mix is closer to identical than
+  any of them: woodcutter ~2.5, hunter ~2.2–2.8, builder ~0.9–1.0 per band in
+  every group, both terms — `crewsToNeed` reacts to the same pressure
+  everywhere, so it produces the same shape everywhere.
+
+  **SO THE ITEM'S OWN PRESCRIPTION — "whatever decides it, that is what the
+  panel should show" — is already satisfied.** Food decides it, now, and the
+  panel already shows food. Nothing to build. Closed on the strength of the
+  re-take rather than left open on a stale reading.
+
+  **ONE THREAD DELIBERATELY NOT PULLED.** Food does not tell the two ways of
+  being doomed apart from EACH OTHER — starved 34.4 against despair 35.1 in
+  even terms, food essentially tied — and 10.1's fuller table shows despair
+  bands falling on neighbours far more (3.9 a saga against starved's 0.7,
+  matching 11.M3's finding that a food crisis reaches for the neighbour).
+  That is a question about which FLAVOUR of loss a doomed band gets, not
+  about how to avoid losing, and it is not what this item asked. Left
+  unopened.
 
 - [ ] **11.M5 Sweep every player verb for effect size.** MEASURED: the two
   winter levers are **saved 22 / killed 1** and **saved 45 / killed 0**, the
@@ -6748,6 +6789,29 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.M4: food now separates the doomed from the survivors,
+  and nobody set out to fix that** — 10.1's opening figure (food at day 49,
+  33.6 / 35.7 / 33.7 across starved / despair / still-standing, no
+  separation) was re-run on the identical instrument rather than inherited,
+  six items and five balance changes later. It no longer holds: **34.4 /
+  35.1 / 46.9 on even terms, 53.4 / 47.0 / 60.3 on fair** — still-standing
+  bands carry 12–13 more food at the same day, in both terms. Nobody fixed
+  this on purpose; it is the residue of 11.S1/S2/S5/V/M2/M3, recorded as a
+  fact rather than credited to a cause nobody isolated.
+  - Three more named candidates checked and all flat: hands (band size,
+    6.0/5.9/6.1), roof (settled by day 49, saturated near 100% in every
+    group), site reading (13.8/13.8/14.4 of 25). Job mix nearly identical
+    across every group — `crewsToNeed` reacts to the same pressure
+    everywhere and produces the same shape everywhere.
+  - The item's own prescription — show whatever decides it — is already
+    met: food decides it now, and the panel already shows food. Closed with
+    nothing to build.
+  - One thread named and deliberately not pulled: food does not separate
+    starved from despair from EACH OTHER, and despair bands raid neighbours
+    far more (3.9 a saga against 0.7). That is which flavour of loss a
+    doomed band gets, not how to avoid losing, and it is not this item.
+
 
 - **2026-09-03 — 11.M3: the trade a starving band was meant to be offered
   cannot rescue it, structurally** — the item's own caveat said the harness's

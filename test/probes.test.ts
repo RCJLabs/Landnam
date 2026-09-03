@@ -3607,3 +3607,70 @@ describe('PROBE: 11.M3 — can a starving band actually trade its way out', () =
     expect(base.lived.length).toBe(SEEDS);
   });
 });
+
+describe('PROBE: 11.M4 — what actually separates the doomed from the survivors', () => {
+  /**
+   * 11.M4 opened on 10.1's reading: food in store on day 49 read 33.6 /
+   * 35.7 / 33.7 across starved / despair / still-standing bands — no
+   * separation at all, on the most-watched number in the game.
+   *
+   * RE-TAKEN FIRST, on the identical instrument, because six items and five
+   * balance changes sit between that reading and this one (11.S1's
+   * deployment fix, 11.S2's flip, 11.V's verdict repair, 11.S5's winter
+   * depth fix, 11.M2, 11.M3 — several of them touch survival directly). It
+   * did NOT hold: on `even` terms, day-49 food now reads 34.4 (starved) /
+   * 35.1 (despair) / 46.9 (still standing) — still-standing bands are
+   * carrying about twelve MORE food at the same day than either doomed
+   * group. `fair` agrees in shape: 53.4 / 47.0 / 60.3.
+   *
+   * So the premise survives only in a narrower form: food does not tell the
+   * TWO WAYS of being doomed apart from EACH OTHER (starved vs. despair),
+   * and the existing day-49 data says band size does not either (6.0 / 5.9 /
+   * 6.1) nor does having settled by then (33/35, 19/19, 18/18 — all near
+   * saturated). This asks the two named candidates that data could not
+   * answer: the SITE READING, and the JOB MIX.
+   */
+  it('checks the site reading and the job mix against the same three groups', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      const group: Record<string, {
+        n: number; total: number; jobs: Record<string, number>;
+      }> = {};
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const seed = armSeed(0, i, SEEDS);
+        const early = run(seed, 49, undefined, terms);
+        const full = run(seed, 400, undefined, terms);
+        const key = full.end?.cause ?? 'still standing';
+        if (!early.settlement) continue;
+        const g = group[key] ?? (group[key] = { n: 0, total: 0, jobs: {} });
+        g.n += 1;
+        g.total += stopReport(early.seed, early.settlement.stop ?? 0).total;
+        for (const p of living(early.party.people)) {
+          const j = p.job ?? 'idle';
+          g.jobs[j] = (g.jobs[j] ?? 0) + 1;
+        }
+      }
+
+      const rows = Object.entries(group)
+        .sort((a, b) => b[1].n - a[1].n)
+        .map(([k, g]) => {
+          const jobLine = Object.entries(g.jobs)
+            .sort((a, b) => b[1] - a[1])
+            .map(([j, n]) => `${j} ${(n / g.n).toFixed(1)}`)
+            .join(', ');
+          return `    ${k.padEnd(15)} n=${String(g.n).padStart(3)}`
+            + ` | site reading ${(g.total / g.n).toFixed(1)}/25`
+            + ` | jobs (avg per band): ${jobLine}`;
+        });
+      out.push(`  ${terms}, settled by day 49:\n${rows.join('\n')}`);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 11.M4 site reading and job mix, day 49 — ${SEEDS} landings an arm, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+});
