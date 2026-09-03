@@ -28,7 +28,10 @@ import { assign, buildable, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
 import { checkRunEnd, foodPerDay, passDay, SURVIVAL_DAY } from '../src/sim/upkeep';
 import { SEASON_LENGTH, YEAR_LENGTH } from '../src/sim/calendar';
-import { forecast, markVisible, MARK_WINDOW, PRUDENCE, WINTER_DAY } from '../src/sim/winter';
+import {
+  forecast, markVisible, roadDaysLeft, roadMarkVisible,
+  MARK_WINDOW, PRUDENCE, ROAD_MARK_WINDOW, WINTER_DAY,
+} from '../src/sim/winter';
 import { coldNight, sickCount } from '../src/sim/cold';
 import { readiness } from '../src/sim/reach';
 import { telegraphWinter, winterVerdict } from '../src/sim/telegraph';
@@ -213,6 +216,48 @@ describe('the winter mark', () => {
 
   it('carries a margin, because the weather is not an average', () => {
     expect(PRUDENCE).toBeGreaterThan(1);
+  });
+});
+
+describe('the road mark (11.U1)', () => {
+  /**
+   * `markVisible` is false for the whole of a band's search for ground —
+   * `!state.settlement` refuses it outright — so the road needs its own,
+   * separate visibility rule rather than a relaxed version of the winter
+   * one. `forecast()` walks to the next thaw assuming zero production,
+   * which for a roofless band can be months out; the road mark asks a
+   * shorter, honest question instead: days of food on hand, right now.
+   */
+  it('is blank once a roof goes up, however short the stores are', () => {
+    const state = settledWell('road-mark-roofed');
+    state.party.food = 0;
+    expect(roadMarkVisible(state)).toBe(false);
+  });
+
+  it('is blank on the road while food is nowhere near the window', () => {
+    const state = newGame('road-mark-plenty');
+    state.party.food = foodPerDay(state) * (ROAD_MARK_WINDOW + 20);
+    expect(roadMarkVisible(state)).toBe(false);
+  });
+
+  it('comes on once a roofless band is inside the window, and counts down honestly', () => {
+    const state = newGame('road-mark-short');
+    const perDay = foodPerDay(state);
+    state.party.food = perDay * (ROAD_MARK_WINDOW - 1);
+    expect(roadMarkVisible(state)).toBe(true);
+    expect(roadDaysLeft(state)).toBe(ROAD_MARK_WINDOW - 1);
+
+    // And it never claims more days than the stores actually hold.
+    state.party.food = 0;
+    expect(roadDaysLeft(state)).toBe(0);
+    expect(roadMarkVisible(state)).toBe(true);
+  });
+
+  it('goes quiet once the run itself is over', () => {
+    const state = newGame('road-mark-over');
+    state.party.food = 0;
+    state.end = { cause: 'starved', title: '', lines: [] };
+    expect(roadMarkVisible(state)).toBe(false);
   });
 });
 

@@ -6820,12 +6820,48 @@ Three groups, roughly in descending order of how much they change.
 
 ### UI and legibility
 
-- [ ] **11.U1 Give the roofless band a mark.** VERIFIED: `markVisible` returns
-  `false` when there is no settlement, and `renderNeeds` gates on
-  `state.settlement` as well. **A band still looking for ground sees no
-  countdown at all** — and that band is 31% of all starvations on `even`. The
-  population most likely to die gets the least warning. Not a redesign; a
-  missing case. **The biggest single gap found.**
+- [x] **11.U1 Give the roofless band a mark.** — **SHIPPED 2026-09-03, as a
+  new instrument rather than an extension of the old one.**
+
+  The gap was real — confirmed again by direct read: `markVisible` returns
+  `false` whenever `!state.settlement`, so `renderWinterMark` is a blank
+  `<div>` for the whole of a band's search for ground, and the top bar's
+  `Food` stat (always on screen) is the only warning it gets, turning red
+  with two days left to react.
+
+  But the fix is not "make `markVisible` true for a roofless band" — checked
+  before building, and `forecast()` would be the wrong instrument for it.
+  It projects to `nextThaw`, which for a band early in the year and still
+  walking can be a hundred-plus days out, and it assumes ZERO production the
+  whole way (`if (home) { ...grown/cut... }`, skipped when there is no
+  settlement) — so the number it would print is not "days of food you
+  actually have," it is "food needed for months of a walk assuming you never
+  eat anything you find," a figure nobody could read or act on. Worse,
+  11.M1 (same day) had just measured that this population's real killer
+  is not winter at all: **82% of never-founded deaths happen before winter
+  even opens**, mostly of ordinary hunger. A mark built on `forecast()` would
+  be counting down to the wrong danger for the population most likely to
+  hit it.
+
+  So: a second, separate instrument. `roadDaysLeft`/`roadMarkVisible`
+  (`sim/winter.ts`) ask the short-horizon question that actually matches
+  the risk — food on hand today, divided by today's mouths, no forecast, no
+  production assumption — visible inside `ROAD_MARK_WINDOW` (10) days and
+  only while there is no roof. `renderRoadMark` (`render/ui.ts`) reuses the
+  winter mark's own CSS (`winter-mark`, `mark-head`, `.lost`) rather than
+  inventing a new panel shape, matching this file's own rule for `renderLine`
+  and `renderChaseMark` — the player has already learned to read one of
+  these. Mounted in `travelScreen.ts` beside the winter mark it stands in
+  for.
+
+  Bar: `test/winter.test.ts`, "the road mark (11.U1)" — blank once settled
+  however short the stores are, blank on the road while food is nowhere near
+  the window, comes on and counts down honestly inside it, blank once the
+  run has ended. Watched failing against a stubbed `roadMarkVisible` before
+  being trusted. Verified live in a browser at 390×844 (Playwright,
+  Chromium) against an injected save: "3 days of food left, and no roof
+  yet" at 3 days' food, "The stores are empty, and there is still no roof."
+  at zero — both in the expected styling, no console errors.
 
 - [ ] **11.U2 The build list names cost and blockers, never worth.** VERIFIED:
   a row reads `N timber · N days · for X`, or a blocker word. MEASURED (10.3b):
@@ -6868,6 +6904,21 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.U1: the roofless band gets its own mark, not a borrowed
+  one** — `markVisible` is false whenever `!state.settlement`, so the winter
+  mark never shows before founding, and 11.M1's own reading names this
+  population's real killer as ordinary hunger before winter (82% of
+  never-founded deaths). Extending `forecast()` to the road was checked and
+  rejected: it projects to next thaw assuming zero production, a
+  hundred-plus-day number nobody could act on and the wrong hazard besides.
+  Built a second, short-horizon instrument instead — `roadDaysLeft`/
+  `roadMarkVisible` (sim/winter.ts): food on hand today over today's
+  mouths, visible inside 10 days, no roof required. `renderRoadMark`
+  (render/ui.ts) reuses the winter mark's own CSS rather than a new panel
+  shape. Bar in test/winter.test.ts, watched failing against a stub first;
+  verified live in a browser (390×844) against an injected save at 3 days
+  and at 0 — correct text and styling, no console errors.
 
 - **2026-09-03 — 11.M5: the sweep found one dead verb, and it stays dead** —
   most colony/travel verbs already carried an effect-size reading from this

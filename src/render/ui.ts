@@ -15,7 +15,7 @@ import {
   verdictFor,
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
-import { forecast, markVisible } from '../sim/winter';
+import { forecast, markVisible, roadDaysLeft, roadMarkVisible } from '../sim/winter';
 import { reachable } from '../sim/reach';
 import { holed, sprung, unseaworthy } from '../sim/ship';
 import { weatherNext, weatherNow } from '../sim/weather';
@@ -170,6 +170,30 @@ export function renderWinterMark(state: GameState): HTMLElement {
     ]),
     row('Food', state.party.food, f.food, f.foodGap),
     row('Wood', state.party.firewood, f.firewood, f.firewoodGap),
+  ]);
+}
+
+/**
+ * The road's own mark: what a band with no roof yet sees instead of the
+ * winter mark above, which stays blank for all of them (`markVisible`
+ * requires a settlement). 11.U1/11.M1: this is the population that dies
+ * fastest and mostly to ordinary hunger, not to winter, so the number
+ * worth telling it is days of food left on hand, not days to spring.
+ *
+ * Same shape as the winter mark on purpose — a headline, red until things
+ * are dire, then the lost styling — because the player has already learned
+ * to read one of these.
+ */
+export function renderRoadMark(state: GameState): HTMLElement {
+  if (!roadMarkVisible(state)) return el('div');
+  const days = roadDaysLeft(state);
+  const lost = days <= 0;
+  return el('div', { class: `winter-mark road${lost ? ' lost' : ''}` }, [
+    el('div', { class: 'mark-head' }, [
+      lost
+        ? 'The stores are empty, and there is still no roof.'
+        : `${days} ${days === 1 ? 'day' : 'days'} of food left, and no roof yet`,
+    ]),
   ]);
 }
 

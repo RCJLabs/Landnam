@@ -21,6 +21,7 @@ import {
   renderWatchMark,
   renderTopBar,
   renderWinterMark,
+  renderRoadMark,
   renderLine,
 } from './ui';
 import { button } from './svg';
@@ -117,6 +118,7 @@ export function renderTravelScreen(state: GameState, h: ScreenHooks): void {
     renderHint(state),
     renderChaseMark(state),
     renderWinterMark(state),
+    renderRoadMark(state),
     renderLine(state),
     renderWaterMark(state),
     renderWatchMark(state),

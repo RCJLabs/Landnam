@@ -230,6 +230,38 @@ export function markVisible(state: GameState): boolean {
   return days > 0 && days <= MARK_WINDOW;
 }
 
+/** Inside this many days of food left, the road's own mark is worth showing. */
+export const ROAD_MARK_WINDOW = 10;
+
+/**
+ * Days of food left on the road, at today's mouths and no more forage.
+ *
+ * Deliberately not `forecast()`: that walks to the NEXT THAW assuming zero
+ * production, which for a band with no roof yet can be a hundred days or
+ * more out — a number nobody can act on, and the wrong hazard besides.
+ * 11.M1 measured what actually kills a band that never founds a steading:
+ * 82% of them die before winter even OPENS, mostly of ordinary hunger on
+ * the walk. That is a days-of-food question, not a days-to-spring one, so
+ * it gets its own short-horizon instrument rather than a repurposed one.
+ */
+export function roadDaysLeft(state: GameState): number {
+  return Math.floor(state.party.food / Math.max(1, foodPerDay(state)));
+}
+
+/**
+ * Whether the road's own mark is worth showing: no roof yet, and food has
+ * started to matter.
+ *
+ * 11.U1: `markVisible` above is false for the whole of a band's search for
+ * ground, so the population 11.M1 found dying fastest — roofless, mostly
+ * to hunger — saw no countdown at all before this, only the top bar's
+ * `Food` stat turning red with two days left to react.
+ */
+export function roadMarkVisible(state: GameState): boolean {
+  if (state.end || state.settlement) return false;
+  return roadDaysLeft(state) <= ROAD_MARK_WINDOW;
+}
+
 
 
 
