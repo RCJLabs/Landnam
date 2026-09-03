@@ -370,18 +370,60 @@ export interface WallReading {
   thin: boolean;
   /** What that is worth, in the panel's voice. */
   line: string;
+  /** What raiding as a strategy costs, for a raid and only a raid. */
+  record?: string;
 }
 
-export function wallReading(state: GameState, going: string[]): WallReading {
+/**
+ * What going out under arms has actually cost, for the card to say.
+ *
+ * 11.M2. THE RECORD, AS THE OTHER TWO DOORS OUT ALREADY CARRY ONE
+ * (`VOYAGE_RECORD` above, `ABANDON_RECORD` in data/retreat.ts). Raiding was
+ * the third verb this project had measured a negative price for and the only
+ * one whose card said nothing about it — a raid party stood shoulder to
+ * shoulder, read a fight it could win, and the card never said that winning
+ * fights and surviving the saga are different questions.
+ *
+ * MEASURED (`PROBE: 10.3`, re-taken 2026-09-03 rather than inherited — 10.1's
+ * original reading was three commits and two balance changes old by the time
+ * this item reached it, 11.S1's deployment fix and 11.V's verdict fix both
+ * touch survival directly). ONE knob on the settler, raiding turned on and
+ * nothing else changed — same crew, same site rule, same trading, same
+ * seeds, 200 landings, paired:
+ *
+ *   raiding off   29/200 standing, avg day 150
+ *   raiding on    16/200 standing, avg day 119
+ *   paired — saved 7, killed 20
+ *
+ * Down from the item's own opening figure (saved 9, killed 22) but the same
+ * shape and the same conclusion: raiding kills roughly three bands for every
+ * one it saves. `PROBE: 10.3b` ruled out the obvious objections — a war crew
+ * recovers some of it (saved 13, killed 9 against raiding-with-the-settler's-
+ * crew) but not the gap to a band that never raids at all, and RAIDER's own
+ * `relaxFrom` is a dead knob at this site floor (saved 0, killed 0).
+ *
+ * States it, never refuses — same rule as `VOYAGE_RECORD` and
+ * `ABANDON_RECORD`: the game does not tell the player what to do anywhere
+ * else, and a band with a wrong worth avenging is entitled to go and be
+ * wrong.
+ */
+export const RAID_RECORD =
+  'Of the bands that went out under arms, more died for it than were saved '
+  + 'by it — about three for every one it spared. Winning the fight and '
+  + 'surviving the saga are not the same question.';
+
+export function wallReading(state: GameState, going: string[], purpose?: Purpose): WallReading {
   // Through `sworn()` rather than filtering on the bond here, so the cap it
   // applies is applied once: a save that somehow holds more than SWORN_MAX
   // must not be able to field a wider wall on this card than on the field.
   const count = sworn(state.party.people).filter((p) => going.includes(p.id)).length;
+  const record = purpose === 'raid' ? RAID_RECORD : undefined;
   if (count === 0) {
     return {
       sworn: 0,
       thin: true,
       line: 'Nobody going is sworn. They cannot hold a line if anything meets them.',
+      record,
     };
   }
   if (count < WALL_ENOUGH) {
@@ -390,6 +432,7 @@ export function wallReading(state: GameState, going: string[]): WallReading {
       thin: true,
       line: `${count} sworn is half a wall — about one open fight in ten goes their way. `
         + `${WALL_ENOUGH} stand shoulder to shoulder.`,
+      record,
     };
   }
   return {
@@ -397,5 +440,6 @@ export function wallReading(state: GameState, going: string[]): WallReading {
     thin: false,
     line: `${count} sworn stand shoulder to shoulder — about seven open fights in ten. `
       + 'More than four only brings more of them out to meet you.',
+    record,
   };
 }

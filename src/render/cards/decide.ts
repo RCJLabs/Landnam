@@ -175,10 +175,21 @@ export function renderLaunch(
       // for why: she comes home with mouths, not hands.
       card.append(el('p', { class: 'outcome grim' }, [VOYAGE_RECORD]));
     } else {
-      const wall = wallReading(state, [...picked]);
+      const wall = wallReading(state, [...picked], purpose);
       card.append(
         el('p', { class: `outcome${wall.thin ? ' grim' : ''}` }, [wall.line]),
       );
+      // THE RECORD ON RAIDING (11.M2), under the wall reading rather than
+      // instead of it — a raid party still needs to know its odds in the
+      // fight it is walking into; this is the separate fact that winning
+      // that fight and surviving the saga are different questions. Composed
+      // by `wallReading` itself, not decided here, for the reason
+      // `leaveNote` gives for doing the same with `ABANDON_RECORD`: a
+      // renderer that decides on its own whether to show a record is a
+      // renderer that can forget to.
+      if (wall.record) {
+        card.append(el('p', { class: 'outcome grim' }, [wall.record]));
+      }
     }
   }
 

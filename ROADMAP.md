@@ -6616,13 +6616,31 @@ Three groups, roughly in descending order of how much they change.
   a cost, and it is the failure mode with the largest untouched population.
   UNMEASURED: whether it softens the first act, where 53% of runs already end.
 
-- [ ] **11.M2 Raiding states its record.** MEASURED (10.3): raiding as a single
-  knob, everything else held, is **saved 9 / killed 22** over 200 paired seeds.
-  Two verbs already do exactly this — `ABANDON_RECORD` (9.14) and
-  `VOYAGE_RECORD` (9.2) — and both shipped and held. Raiding is the third verb
-  with a measured negative price and the only one that does not say so. States
-  it, never refuses. **Highest confidence and lowest cost in the queue:** the
-  number exists, the pattern exists, and the test pattern exists.
+- [x] **11.M2 Raiding states its record** — **shipped 2026-09-03, on a
+  RE-TAKEN number rather than the one the item opened on.**
+
+  The item cited 10.3's figure — saved 9 / killed 22 over 200 paired seeds —
+  and that reading was seven items and two balance changes old by the time
+  this one was reached (11.S1's deployment fix, 11.V's winter-verdict fix,
+  both touch survival directly). Re-run on the identical probe rather than
+  trusted: **saved 7 / killed 20**, 200 seeds, raiding turned on for the
+  settler with nothing else changed. Same shape, smaller magnitude — the
+  number moved and the conclusion did not, which is what re-taking a figure
+  is for.
+
+  `sim/expedition.ts` gains `RAID_RECORD`, and `wallReading` now takes an
+  optional `purpose` and composes the record itself when it is `'raid'` — the
+  same discipline `leaveNote` uses for `ABANDON_RECORD`: a renderer left to
+  decide on its own whether to show a record is a renderer that can forget
+  to, which is exactly the bug that made ABANDON's record go unseen until
+  9.14 caught it. `render/cards/decide.ts` prints it under the existing wall
+  reading, not instead of it — a raid party still needs its odds in the fight
+  it is walking into; the record is the separate fact that winning that
+  fight and surviving the saga are different questions. States it, never
+  refuses, same rule as the other two doors out.
+
+  Watched failing: the card's own test was run against the record forced to
+  `undefined` before being trusted.
 
 - [ ] **11.M3 Price the desperation raid where it happens.** MEASURED (10.1):
   despair bands fall on neighbours 2.9 times against everyone else's 0.7, and
@@ -6697,6 +6715,20 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.M2: raiding states its record, on a re-taken number** —
+  the item cited a 10.3 figure that was two balance changes old (11.S1's
+  deployment fix, 11.V's verdict fix). Re-run rather than trusted: **saved 7 /
+  killed 20** over 200 paired seeds, down from the item's own saved 9 / killed
+  22 — same shape, smaller magnitude.
+  - `wallReading` composes `RAID_RECORD` itself when passed `purpose:
+    'raid'`, the same discipline `leaveNote` uses for `ABANDON_RECORD` — a
+    renderer deciding on its own whether to show a record is how ABANDON's
+    went unseen for a whole milestone.
+  - Shown under the existing wall reading, not instead of it: a raid party
+    still needs its odds in the fight; the record says winning that fight and
+    surviving the saga are different questions. States it, never refuses.
+
 
 - **2026-09-03 — 6.1 finished: winters were varying for exactly three years
   and then stopped forever** — 11.S5's own premise ("every winter arrives at

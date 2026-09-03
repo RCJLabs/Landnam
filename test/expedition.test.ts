@@ -8,7 +8,7 @@ import { settled as settleSomewhere } from './fixtures/settle';
 import { goHome, walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
 import { KEPT_FOR, canKeepHall, keepHall, sinceKept } from '../src/sim/hall';
-import { WALL_ENOUGH, wallReading } from '../src/sim/expedition';
+import { RAID_RECORD, WALL_ENOUGH, wallReading } from '../src/sim/expedition';
 import { SWORN_MAX, sworn } from '../src/sim/people';
 import { foeCount } from '../src/sim/battle';
 import { newGame } from '../src/state/create';
@@ -479,5 +479,41 @@ describe('the launch card says what the party is as a wall', () => {
     for (const p of state.party.people) p.bond = 'sworn';
     const all = state.party.people.filter((p) => p.alive).map((p) => p.id);
     expect(wallReading(state, all).sworn).toBeLessThanOrEqual(SWORN_MAX);
+  });
+
+  /**
+   * 11.M2: raiding states its record, the same way `leaveNote` composes
+   * `ABANDON_RECORD` in the sim rather than leaving a renderer to decide on
+   * its own whether to show it — see the comment on `wallReading`'s
+   * `purpose` parameter for why that class of bug matters here specifically.
+   */
+  describe('the record on raiding', () => {
+    it('says nothing when no purpose is given, or the purpose is not a raid', () => {
+      const state = settleSomewhere('record-none');
+      const crew = crewOf(state, 4);
+      expect(wallReading(state, crew).record).toBeUndefined();
+      for (const purpose of ['trade', 'explore', 'fish', 'home'] as const) {
+        expect(wallReading(state, crew, purpose).record, purpose).toBeUndefined();
+      }
+    });
+
+    it('states the record for a raid, thin party or full', () => {
+      const state = settleSomewhere('record-raid');
+      expect(wallReading(state, crewOf(state, 2), 'raid').record).toBe(RAID_RECORD);
+      expect(wallReading(state, crewOf(state, 4), 'raid').record).toBe(RAID_RECORD);
+    });
+
+    it('never refuses — the wall reading itself is unchanged by the record', () => {
+      // States it, never refuses (VOYAGE_RECORD's rule, ABANDON_RECORD's
+      // rule): the record rides alongside the wall math, not instead of it,
+      // so a raid party still learns its odds in the fight it is walking
+      // into.
+      const state = settleSomewhere('record-alongside');
+      const plain = wallReading(state, crewOf(state, 4));
+      const raiding = wallReading(state, crewOf(state, 4), 'raid');
+      expect(raiding.sworn).toBe(plain.sworn);
+      expect(raiding.thin).toBe(plain.thin);
+      expect(raiding.line).toBe(plain.line);
+    });
   });
 });
