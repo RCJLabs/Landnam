@@ -6234,11 +6234,36 @@ Three groups, roughly in descending order of how much they change.
   republishing a passing figure off one thin reading is the trap the top of
   this file is about. Re-take it at 300 before touching it.
 
-  **STILL OPEN, and it is (a) from the ruling above:** the leader's rank is
-  the one axis measured to have a real gradient, and it is now decided by his
-  health rather than by anybody's choice. Making it the player's call is the
-  deploy decision worth building — but a screen offering a stat sort is not,
-  because a stat sort measured as noise.
+  **STILL OPEN, was (a) from the ruling above, and CLOSED ON RE-MEASUREMENT,
+  2026-09-03: the leader's stance does not clear a saga.** The claim above was
+  mine and it repeats this file's own oldest trap: read off an ARENA
+  instrument that never issues the war cry, so "back beats default 209/300
+  against 186" was a survival reading with no tactical cost attached, and it
+  went straight into a recommendation.
+
+  Re-measured in whole sagas, with the real bot — which DOES issue B_WARCRY —
+  reordering the leader on the watch hook exactly as 11.S1b did, 150 landings
+  an arm to day 500:
+
+  | | still standing | people alive | paired against default |
+  |---|---|---|---|
+  | formUp default | 14/150 | 5.76 | — control |
+  | leader forced to the front | 10/150 | 4.95 | saved 3, killed 7 |
+  | leader forced to the back | 15/150 | 5.67 | saved 13, killed 12 |
+
+  **Forcing the leader to the front is a clear net loss.** Forcing him to the
+  back is saved 13 / killed 12 of 150 — a net of one, deep inside the noise a
+  150-seed sample can resolve, not the gradient the arena promised. `formUp`
+  already sends a hurt leader to the back by the same rule it applies to
+  everyone; a bespoke stance control would be spending a `SAVE_VERSION` bump,
+  a migration, an action and a panel on a choice indistinguishable from
+  "leave it alone" at the one scale that counts.
+
+  **DECLINED: no stance screen.** The only thing the arena got right is that
+  forcing the leader forward is bad, and the default already declines to do
+  that. Nothing is built. If a future feature makes standing at the front
+  mean something beyond heft — gear, a banner, a boast — this is worth asking
+  again with that mechanic in place, not before.
 
 - [~] **11.S2 Make the yard an economy, or admit it is scenery** — **the yard
   IS an economy, the BOT was playing it wrong for the whole project, the
@@ -6608,6 +6633,23 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — the leader's stance was declined, and the reason is worth
+  keeping: my own earlier claim was an arena reading treated as a
+  conclusion** — 11.S1's "STILL OPEN" note said the leader's rank was "the one
+  axis measured to have a real gradient", on 300 arena fights where the bot
+  never issues the war cry. Re-measured in 150 whole sagas with the real bot:
+  - **Forcing the leader to the front is a clear net loss** (saved 3, killed
+    7 of 150). Forcing him to the back is **saved 13, killed 12** — a net of
+    one, inside the noise a 150-seed sample can resolve, not the gradient the
+    arena promised.
+  - `formUp` (11.S1) already sends a hurt leader toward the back by the same
+    health-plus-might rule it applies to everyone. A dedicated stance control
+    would spend a save bump, a migration, an action and a panel on a choice
+    the saga cannot tell apart from doing nothing.
+  - Declined. Nothing built. Worth asking again only if a future mechanic
+    makes standing at the front mean something beyond raw fitness.
+
 
 - **2026-09-03 — the winter verdict was projecting the hunt, and two earlier
   repairs were rejected by a ratio that could not judge them** — `walkWinter`

@@ -3275,3 +3275,166 @@ describe('PROBE: the winter verdict — is it broken, or is it honest', () => {
     expect(condemned).toBeGreaterThan(0);
   });
 });
+
+describe('PROBE: does the leader\'s stance still matter after 11.S1', () => {
+  /**
+   * 11.S1 shipped `formUp`, which stands the fit at the front by health and
+   * might. That already moves the leader off the roster's rank 1 — so before
+   * building a stance control, this asks whether he still has anywhere
+   * INTERESTING to stand: is `formUp` already putting him where a player
+   * would, or is there a real choice left?
+   *
+   * THE MECHANISM, re-confirmed rather than assumed: `leaderFell` costs the
+   * WHOLE side 25 nerve, and `doWarCry` reaches `|rank - leader.rank| <= 2`
+   * on BOTH sides — so a leader at the back dreads no enemy and hearten only
+   * the men already safest; a leader at the front buys the cry's real range
+   * and the heavy blow, and pays with 25 nerve if he falls. That is a real
+   * trade only if it moves an outcome.
+   */
+  it('measures front-forced vs back-forced vs formUp default, arena and saga', { timeout: 3_600_000 }, async () => {
+    const ARENA_FIGHTS = 300;
+    const seed = (i: number) => `stance-${i}`;
+
+    const deploy = (stance: 'default' | 'front' | 'back') => (s: GameState, ours: Combatant[]) => {
+      const leaderId = leaderOf(s.party.people)?.id;
+      const line = [...ours];
+      if (stance !== 'default' && leaderId) {
+        const idx = line.findIndex((c) => c.personId === leaderId);
+        if (idx >= 0) {
+          const [leader] = line.splice(idx, 1);
+          if (stance === 'front') line.unshift(leader!);
+          else line.push(leader!);
+        }
+      }
+      return line;
+    };
+
+    function fought(i: number, stance: 'default' | 'front' | 'back') {
+      const start = structuredClone(newGame(seed(i)));
+      beginBattle(start, 'meadow', 2);
+      const ours = start.battle!.combatants.filter((c) => c.side === 'warband');
+      // THE BUG THIS FIXED IN ITSELF: `battle.ts` already assigns rank from
+      // `formUp`, which is NOT roster order. `ours` is in PUSH order (roster
+      // order) with `.rank` set separately. The first cut of this arm
+      // reassigned rank by array position for 'default' too — silently
+      // re-deploying by roster order, the exact bug 11.S1 fixed, and that is
+      // why it read the leader at rank 1.00 in 300/300 fights. 'default'
+      // means "leave beginBattle's own ranks alone".
+      if (stance !== 'default') {
+        deploy(stance)(start, ours).forEach((c, ix) => { c.rank = ix + 1; });
+      }
+      const leaderId = leaderOf(start.party.people)?.id;
+      const leaderRank = ours.find((c) => c.personId === leaderId)?.rank ?? 0;
+      let s: GameState = start;
+      for (let n = 0; n < 2000 && !s.battle?.outcome; n += 1) {
+        const active = activeCombatant(s.battle!);
+        if (!active || active.side !== 'warband') { s = apply(s, { type: 'B_END_TURN' }); continue; }
+        if (!active.hasActed) {
+          const weakest = (list: Combatant[]) => [...list].sort(
+            (a, b) => (fighterPerson(s, a.personId)?.health ?? 99) - (fighterPerson(s, b.personId)?.health ?? 99),
+          )[0]!;
+          const hits = strikeTargets(s);
+          const spear = reachTargets(s);
+          const shots = throwTargets(s);
+          if (hits.length > 0) s = apply(s, { type: 'B_STRIKE', targetId: weakest(hits).personId });
+          else if (spear.length > 0) s = apply(s, { type: 'B_REACH', targetId: weakest(spear).personId });
+          else if (shots.length > 0) s = apply(s, { type: 'B_THROW', targetId: weakest(shots).personId });
+        }
+        s = apply(s, { type: 'B_END_TURN' });
+      }
+      const end = s.battle!;
+      return {
+        won: end.outcome === 'won',
+        stood: standing(end, 'warband').length,
+        leaderDown: end.combatants.some((c) => c.personId === leaderId && (c.down || c.fled)),
+        leaderRank,
+      };
+    }
+
+    const rows: string[] = [];
+    for (const stance of ['default', 'front', 'back'] as const) {
+      let wins = 0; let stood = 0; let leaderLost = 0; let rankSum = 0;
+      for (let i = 0; i < ARENA_FIGHTS; i += 1) {
+        const r = fought(i, stance);
+        if (r.won) wins += 1;
+        stood += r.stood;
+        if (r.leaderDown) leaderLost += 1;
+        rankSum += r.leaderRank;
+      }
+      rows.push(
+        `  ${stance.padEnd(8)} won ${wins}/${ARENA_FIGHTS}, ${(stood / ARENA_FIGHTS).toFixed(2)} of six standing`
+        + `, leader at rank ${(rankSum / ARENA_FIGHTS).toFixed(2)} on average, went down in ${leaderLost}/${ARENA_FIGHTS}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE leader stance after 11.S1 — ${ARENA_FIGHTS} fights an arm:\n${rows.join('\n')}`);
+    expect(rows.length).toBe(3);
+  });
+
+  /**
+   * THE ARENA READING IS INCOMPLETE ON ITS OWN, and worth saying why rather
+   * than trusting it. The scripted bot above never issues B_WARCRY — it only
+   * strikes, thrusts and throws — so "back beats default" there is entirely a
+   * SURVIVAL reading: the leader stands where nerve punishes his fall least,
+   * and the war cry's tactical value (which enemies it can dread, keyed off
+   * the crier's own rank) is not in the number at all.
+   *
+   * So this asks in WHOLE SAGAS, with the real harness bot — which DOES issue
+   * B_WARCRY (test/fixtures/harness.ts) — reordering the leader on the watch
+   * hook exactly as 11.S1b did, at every battle transition rather than once.
+   */
+  it('prices the stance in whole sagas, with the real bot and the real war cry', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 150;
+    const HORIZON = 500;
+
+    const sample = (stance: 'default' | 'front' | 'back') => {
+      setPolicy(SETTLER);
+      const lived: boolean[] = [];
+      let standing6 = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          if (stance === 'default' || !after.battle || before.battle) return;
+          const ours = after.battle.combatants.filter((c) => c.side === 'warband');
+          const leaderId = leaderOf(after.party.people)?.id;
+          const idx = ours.findIndex((c) => c.personId === leaderId);
+          if (idx < 0) return;
+          const [leader] = ours.splice(idx, 1);
+          const line = stance === 'front' ? [leader!, ...ours] : [...ours, leader!];
+          line.forEach((c, ix) => { c.rank = ix + 1; });
+        });
+        lived.push(!final.end && final.day >= HORIZON);
+        standing6 += living(final.party.people).length;
+      }
+      return { lived, standing6 };
+    };
+
+    const base = sample('default');
+    const rows = [
+      `  formUp default: ${base.lived.filter(Boolean).length}/${SEEDS} still standing`
+      + `, ${(base.standing6 / SEEDS).toFixed(2)} people alive on average   [control]`,
+    ];
+    for (const stance of ['front', 'back'] as const) {
+      const arm = sample(stance);
+      let saved = 0;
+      let killed = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        if (!base.lived[i] && arm.lived[i]) saved += 1;
+        if (base.lived[i] && !arm.lived[i]) killed += 1;
+      }
+      rows.push(
+        `  leader forced ${stance}: ${arm.lived.filter(Boolean).length}/${SEEDS} still standing`
+        + `, ${(arm.standing6 / SEEDS).toFixed(2)} people alive on average`
+        + `\n      paired against the control: saved ${saved}, killed ${killed}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE the leader's stance, in whole sagas — ${SEEDS} landings an arm, settler, to day ${HORIZON}`
+      + `:\n${rows.join('\n')}`,
+    );
+    expect(rows.length).toBe(3);
+  });
+});
