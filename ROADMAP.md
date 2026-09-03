@@ -6131,21 +6131,68 @@ Three groups, roughly in descending order of how much they change.
 
 ### Systems — the shape of the game
 
-- [ ] **11.S1 Give the shield wall a decision. It has none.** VERIFIED in
-  code, not remembered: `dash` went in 9.1b (measured a trap — 42/60 against
-  46/60), `stepUp` fires only when `nothingToDo(who)`, and a fighter's rank is
-  the order he took the field in. **So in the game whose central pillar is the
-  shield wall, the player never forms it** — they choose a target and a verb,
-  and the line arranges itself.
+- [~] **11.S1 Give the shield wall a decision** — **the premise held, the
+  proposed fix did not, and the measurement found a bug instead, 2026-09-02.**
 
-  The fix is NOT to restore the dash, which measured badly and was rightly
-  dropped. It is to move the choice BEFORE the first blow: deploy the line,
-  decide who stands front and who holds second, knowing what gear and what
-  wounds each man carries. That respects 9.13 (one action, one turn) and 8.1's
-  "position is rank", and gives the wall the decision it is named for.
-  UNMEASURED: whether a pre-battle order changes outcomes at all. Measure a
-  fixed-order arm against arrival-order first — 9.1's lesson is that a verb
-  the bot cannot use measures as worthless.
+  The premise is VERIFIED in code: rank is handed out at `battle.ts:440` as
+  `combatants.filter(side==='warband').length + 1` over `sworn(fieldCrew())`,
+  and `sworn` is roster order sliced to six. The player never forms the wall;
+  they pick a target and a verb and the line arranges itself.
+
+  **What the measurement found is that the line the game arranges is the worst
+  one it could pick.** `PROBE: 11.S1`, an arena of 300 fights an arm at
+  difficulty 2, one bot, changing only who stands in which rank:
+
+  | line | won | of six standing | leader down |
+  |---|---|---|---|
+  | **as they turn up (the game today)** | **178/300** | 2.15 | 296/300 |
+  | best men front | 222 | 3.17 | 197 |
+  | best men back | 224 | 2.52 | 210 |
+  | **a line drawn at random** | **218** | 2.75 | 209 |
+  | reversed roster | 240 | 3.24 | 75 |
+  | leader to the back, otherwise roster | 237 | 3.06 | 88 |
+
+  **The shipped order loses 40 fights in 300 to picking at random.** And
+  `PROBE: 11.S1b` says it is not a fixture artefact — 150 landings an arm,
+  settler, to day 500, reordering from `run`'s watch hook: **7/150 bands still
+  standing becomes 19/150** (leader to the back: saved 18, killed 6; reversed
+  roster: saved 14, killed 2), 4.75 people alive on average against 6.37. The
+  hook lands one beat late, so foes with the initiative have already swung at
+  the roster line — the bias runs toward the control and these are floors.
+
+  **THE PROPOSED FIX MEASURES AT NOTHING, THOUGH.** Best-men-front wins 222
+  and a line drawn at random wins 218. A deploy screen that rewards sorting by
+  stats is a decision with no right answer — 9.1's lesson exactly. What HAS a
+  gradient is one question: **where does the leader stand?** `leaderOf` is
+  `sworn(people)[0]` and rank is that same order, so **the band's leader stands
+  in the front rank of every fight it ever has**, and `leaderFell` costs the
+  whole side 25 nerve from anywhere on the field. Moving him alone is worth
+  +59 in the arena.
+
+  **THREE MECHANISMS WERE PROPOSED AND TWO DIED, which is why the arms are
+  kept.** "Leadership cascades down the line as the front rank dies" — refuted:
+  `leaderFell` fires 0.99 times a fight, never twice, because our fallen keep
+  `alive` and `leaderOf` never advances mid-battle. "Kin stand shoulder to
+  shoulder because `bindKin` pairs `free[0..1]` and `free[2..3]`" — real, and
+  small: unbinding kin alone is +10, though it is 10–0 paired, so kin as it
+  ships is a pure penalty in a fight. **About 26 of the placebo's 36 wins are
+  still unattributed** and are written down as unattributed.
+
+  The defect underneath is one line of description: **roster index is used for
+  three unrelated things — the order men stand in, who leads, and who is kin to
+  whom — so all three correlate perfectly and nobody chose any of it.**
+
+  **FOR EVAN, and it is a real balance decision rather than a fix to apply:**
+  changing the default line moves 7/150 to 19/150, which re-prices every
+  survival figure in this file. Three ways to take it. (a) Leave the default
+  and make the leader's rank the deploy DECISION — thematically loaded, a
+  chieftain who stands in front costs you, and it is the one axis measured to
+  have a gradient. (b) Change the default so rank stops keying off roster
+  order, and accept the re-pricing. (c) Both, later: the screen only becomes a
+  richer decision once men differ in what they can do FROM a rank, and today
+  they do not — `REACH` is a table of ranks with no per-person gear in it.
+  Recommendation: **(a)**, because it buys the wall a decision without
+  invalidating the file's published numbers.
 
 - [ ] **11.S2 Make the yard an economy, or admit it is scenery.** VERIFIED:
   nineteen plots are rolled per steading from the site reading and drawn
@@ -6309,6 +6356,28 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-02 — 11.S1: the game deploys its shield wall in the worst order
+  available** — the item asked, before building anything, whether line order
+  changes an outcome at all. It changes it enormously, and in the direction
+  nobody expected: an arena of 300 fights an arm puts the shipped roster line
+  at **178 wins against 218 for a line drawn at random** and 240 for a
+  reversed one, and 150 whole sagas agree — **7/150 bands standing at day 500
+  becomes 19/150**, 4.75 people alive on average against 6.37.
+  - The proposed fix measures at nothing: best-men-front wins 222 and random
+    wins 218, so a deploy screen rewarding a stat sort is a decision with no
+    right answer. The one axis with a gradient is **where the leader stands** —
+    `leaderOf` is `sworn(people)[0]` and rank is that same order, so the leader
+    is at the front of every fight and `leaderFell` costs the side 25 nerve.
+  - Two proposed mechanisms were measured and DIED — a leadership cascade
+    (`leaderFell` fires 0.99 times a fight, never twice) and kin adjacency
+    (real but only +10, though 10–0 paired). About 26 of the placebo arm's 36
+    wins remain unattributed and are recorded as unattributed.
+  - The defect underneath: roster index is used for the order men stand in,
+    for who leads, and for who is kin to whom, so all three correlate
+    perfectly and nobody chose any of it. Left `[~]` — changing the default
+    re-prices every survival figure in this file, which is Evan's call.
+
 
 - **2026-09-02 — 11.S3's premise was mine, and it did not survive being
   measured** — the item claimed the coast "becomes unreachable" once a band

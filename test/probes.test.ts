@@ -24,7 +24,7 @@ import { SEASON_LENGTH, YEAR_LENGTH, seasonOf } from '../src/sim/calendar';
 import { ailingCount, careToday } from '../src/sim/sickness';
 import { sprung } from '../src/sim/ship';
 import { foodPerDay, firewoodPerNight } from '../src/sim/upkeep';
-import { living, sworn } from '../src/sim/people';
+import { leaderOf, living, sworn } from '../src/sim/people';
 import { KEPT_FOR, NEGLECTED_AFTER, feastCost, sinceKept } from '../src/sim/hall';
 import { takeIn } from '../src/sim/joining';
 import { autumnChance, autumnRaidDay } from '../src/sim/raid';
@@ -40,6 +40,11 @@ import { DEATHS } from '../src/data/injuries';
 import { rivalBlocks } from '../src/sim/rival';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
+import { apply } from '../src/sim/actions';
+import { activeCombatant, beginBattle, fighterPerson, standing, strikeTargets } from '../src/sim/battle';
+import { reachTargets, throwTargets } from '../src/sim/strike';
+import { effectiveStat } from '../src/sim/people';
+import type { Combatant, GameState } from '../src/state/types';
 import { groundAtStop } from '../src/sim/fishery';
 import { atHome, stopReport } from '../src/sim/site';
 import { reckoningDue } from '../src/sim/landnam';
@@ -2425,5 +2430,315 @@ describe('PROBE: 11.S3 — how much of the coast a saga actually stands on', () 
     // eslint-disable-next-line no-console
     console.log(`PROBE 11.S3 the coast a saga stands on — ${SEEDS} landings a policy, to day ${HORIZON}:\n${out.join('\n')}`);
     expect(out.length).toBe(2);
+  });
+});
+
+describe('PROBE: 11.S1 — does it matter WHO stands in which rank', () => {
+  /**
+   * 11.S1's own first job, and it is a premise check rather than a build.
+   *
+   * VERIFIED IN CODE before any of this ran: `rank` is handed out at
+   * `battle.ts:440` as `combatants.filter(side==='warband').length + 1` over
+   * `sworn(fieldCrew(state))`, and `sworn` is roster order sliced to six. So
+   * the front rank of every fight in the game is `state.party.people[0]` —
+   * which `leaderOf` also returns. **The leader stands at the front of every
+   * battle a band ever fights, and nobody chose that.**
+   *
+   * Whether that is a MISSING DECISION or a non-decision is the question, and
+   * 9.1's lesson decides how to ask it: a verb the bot cannot use measures as
+   * worthless, so before building a deploy screen, measure whether the line
+   * ORDER moves an outcome at all.
+   *
+   * THE INSTRUMENT IS AN ARENA, and that is a deliberate trade against
+   * CLAUDE.md's trap 1 (a figure from a fixture is not a figure about the
+   * game). Here the fixture is the only thing that can answer the question:
+   * a whole-saga arm buries one line-up inside five hundred days of weather,
+   * hunger and travel, and the survival curve only ends about one run in six
+   * on steel. The arena isolates the single variable. What it can say is
+   * "order moves / does not move a fight"; what it CANNOT say is what that is
+   * worth to a saga, and if it moves, that is the next reading, not this one.
+   *
+   * THREE ARMS, and the third is there so a tie is diagnosable. If best-front
+   * and best-back BOTH tie the control, the reorder never ran or rank is
+   * inert — trap 3 — and `reordered` below is what tells the two apart.
+   */
+  const ARENA_FIGHTS = 300;
+  const ARENA_DIFFICULTY = 2;
+
+  /** What a fighter is worth where the blows land: might swings, wits evades. */
+  function worth(state: GameState, c: Combatant): number {
+    const p = fighterPerson(state, c.personId);
+    if (!p) return 0;
+    return effectiveStat(p, 'might') + effectiveStat(p, 'wits') + p.health;
+  }
+
+  type Deploy = (state: GameState, ours: Combatant[]) => Combatant[];
+
+  const ARMS: [string, Deploy][] = [
+    ['as they turn up (the game today)', (_s, ours) => ours],
+    ['best men front', (s, ours) => [...ours].sort((a, b) => worth(s, b) - worth(s, a))],
+    ['best men back', (s, ours) => [...ours].sort((a, b) => worth(s, a) - worth(s, b))],
+    // THE ARM THAT READ THE OTHER TWO. Best-front and best-back both beat
+    // the control by about the same margin, which is not a gradient — it is
+    // the signature of something that changes when the line stops agreeing
+    // with the roster. This permutation is uncorrelated with `worth`, so it
+    // separates "quality decides" from "any reordering decides". It won MORE
+    // than either quality arm, which settles it: quality is not the variable.
+    ['reversed roster (no quality gradient)', (_s, ours) => [...ours].reverse()],
+    // THE TWO THAT NAME THE VARIABLE. `leaderOf` is `sworn(people)[0]`, and
+    // rank is handed out in that same roster order, so the band's leader
+    // stands at rank 1 in every fight the game plays — and `leaderFell`
+    // costs the WHOLE side 25 nerve, distance-independent, the largest
+    // single morale event in the mode.
+    //
+    // Moving him one place is not a test of that on its own, because it also
+    // promotes whoever was behind him. So the placebo moves the SECOND man
+    // instead and leaves the leader at the front: same shape of permutation,
+    // same promotion, no leader moved. If the placebo does nothing and the
+    // first arm does what reversing did, the variable is the leader.
+    ['leader to the back, roster order otherwise', (_s, ours) => [...ours.slice(1), ours[0]!]],
+    ['PLACEBO: second man to the back, leader stays at the front',
+      (_s, ours) => [ours[0]!, ...ours.slice(2), ours[1]!]],
+    // THE ARM THE PLACEBO FORCED. The placebo kept the leader at rank 1 and
+    // took his fall 292/300 — the leader numbers are the control's to within
+    // noise — and still won 36 more. So a second thing is in here, and
+    // `bindKin` names it: it pairs `free[0]` with `free[1]` and `free[2]`
+    // with `free[3]`, and rank is roster order, so in the game as it ships
+    // both kin pairs stand SHOULDER TO SHOULDER, at ranks 1-2 and 3-4.
+    //
+    // `witnessFall` then lands NERVE_ALLY_DOWN + NERVE_WALL_SHATTERED on the
+    // shoulder-mate and NERVE_KIN_FELL on the kin — and when they are the
+    // same man he eats all of it at once. Nerve is a per-man threshold, so
+    // concentrated shock breaks somebody and the same total spread over two
+    // men breaks nobody.
+    //
+    // This arm changes nothing about the line: same roster order as the
+    // control, kin simply unbound, exactly as test/wall.test.ts unbinds them
+    // and for the same stated reason. If it lands near the placebo, kin
+    // adjacency is what the placebo was measuring and the deployment
+    // question was never in it at all.
+    ['DIAGNOSTIC: roster order, kin unbound', (s, ours) => {
+      for (const person of s.party.people) delete person.kin;
+      return ours;
+    }],
+    // WHERE THE SHIPPED LINE SITS IN THE FIELD OF ALL LINES. Unbinding kin
+    // recovered only 10 of the placebo's 36, so a residual is unexplained —
+    // and rather than keep guessing at mechanisms, this arm asks the question
+    // that does not need one: is roster order an ordinary draw from the
+    // permutations, or is it near the bottom of them?
+    //
+    // Its own tiny LCG rather than the game's RNG, deliberately: a probe that
+    // pulled on `stream(seed, ...)` would be perturbing the same randomness
+    // it is measuring.
+    ['a line drawn at random, fresh each fight', (s, ours) => {
+      let x = 0;
+      for (let i = 0; i < s.seed.length; i += 1) x = (x * 31 + s.seed.charCodeAt(i)) % 2147483647;
+      const shuffled = [...ours];
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        x = (x * 1103515245 + 12345) % 2147483647;
+        const j = x % (i + 1);
+        [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+      }
+      return shuffled;
+    }],
+  ];
+
+  interface Fought {
+    won: boolean;
+    stood: number;
+    /** The rank each warband combatant ended up deployed at, in roster order. */
+    line: string;
+    /** Did the band's leader go down in this fight? The mechanism instrument. */
+    leaderDown: boolean;
+    /** What rank the leader was deployed at. Proves each arm did what it says. */
+    leaderRank: number;
+    /**
+     * How many times `leaderFell` fired on OUR side in this fight — the 25
+     * nerve to every man standing, the largest morale event in the mode.
+     *
+     * Counted off the log line rather than the beat stream because beats are
+     * trimmed to BEATS_MAX and a long fight would silently drop the early
+     * ones. It is a prose match, which is brittle — so `leaderDown` is
+     * printed beside it: an arm reporting men down and zero falls would be
+     * the phrasing having changed, and it would be visible rather than quiet.
+     */
+    leaderFalls: number;
+  }
+
+  /**
+   * One fight, deployed by `deploy` and then played by a bot that is the SAME
+   * in every arm — strike what is in reach, else thrust, else throw.
+   *
+   * `beginBattle` rather than `startBattle`, because `startBattle` ends with
+   * `playUntilOurTurn`: foes with the initiative would have already swung
+   * before the line was ordered, which is a deploy screen shown after the
+   * first blow.
+   */
+  function fought(seed: string, deploy: Deploy): Fought {
+    const start = structuredClone(newGame(seed));
+    beginBattle(start, 'meadow', ARENA_DIFFICULTY);
+    const ours = start.battle!.combatants.filter((c) => c.side === 'warband');
+    deploy(start, ours).forEach((c, i) => { c.rank = i + 1; });
+    const line = ours.map((c) => c.rank).join('');
+    const leaderId = leaderOf(start.party.people)?.id;
+    const leaderRank = ours.find((c) => c.personId === leaderId)?.rank ?? 0;
+
+    let s: GameState = start;
+    for (let i = 0; i < 2000 && !s.battle?.outcome; i += 1) {
+      const active = activeCombatant(s.battle!);
+      if (!active || active.side !== 'warband') { s = apply(s, { type: 'B_END_TURN' }); continue; }
+      if (!active.hasActed) {
+        const weakest = (list: Combatant[]) => [...list].sort(
+          (a, b) => (fighterPerson(s, a.personId)?.health ?? 99)
+            - (fighterPerson(s, b.personId)?.health ?? 99),
+        )[0]!;
+        const hits = strikeTargets(s);
+        const spear = reachTargets(s);
+        const shots = throwTargets(s);
+        if (hits.length > 0) s = apply(s, { type: 'B_STRIKE', targetId: weakest(hits).personId });
+        else if (spear.length > 0) s = apply(s, { type: 'B_REACH', targetId: weakest(spear).personId });
+        else if (shots.length > 0) s = apply(s, { type: 'B_THROW', targetId: weakest(shots).personId });
+      }
+      s = apply(s, { type: 'B_END_TURN' });
+    }
+    const end = s.battle!;
+    return {
+      won: end.outcome === 'won',
+      stood: standing(end, 'warband').length,
+      line,
+      leaderDown: end.combatants.some((c) => c.personId === leaderId && (c.down || c.fled)),
+      leaderRank,
+      leaderFalls: end.log.filter((l) => l.includes('left holding the line')).length,
+    };
+  }
+
+  it('plays the same fight three ways, changing only who stands where', { timeout: 3_600_000 }, async () => {
+    const control: Fought[] = [];
+    const out: string[] = [];
+
+    for (const [label, deploy] of ARMS) {
+      let wins = 0;
+      let stood = 0;
+      let leaderLost = 0;
+      let leaderRankSum = 0;
+      let falls = 0;
+      /** THE INSTRUMENT CHECK: fights where this arm deployed a DIFFERENT
+       * line from the control. A tie on an arm that never reordered anybody
+       * is trap 3 — evidence the arm did not run, not that rank is inert. */
+      let reordered = 0;
+      let wonWhereControlLost = 0;
+      let lostWhereControlWon = 0;
+      const isControl = control.length === 0;
+
+      for (let i = 0; i < ARENA_FIGHTS; i += 1) {
+        const r = fought(`line-${i}`, deploy);
+        if (isControl) control.push(r);
+        else {
+          const c = control[i]!;
+          if (r.line !== c.line) reordered += 1;
+          if (r.won && !c.won) wonWhereControlLost += 1;
+          if (!r.won && c.won) lostWhereControlWon += 1;
+        }
+        if (r.won) wins += 1;
+        stood += r.stood;
+        if (r.leaderDown) leaderLost += 1;
+        leaderRankSum += r.leaderRank;
+        falls += r.leaderFalls;
+      }
+
+      out.push(
+        `  ${label}: won ${wins}/${ARENA_FIGHTS}`
+        + `, ${(stood / ARENA_FIGHTS).toFixed(2)} of six still standing`
+        + `\n      leader stood at rank ${(leaderRankSum / ARENA_FIGHTS).toFixed(2)} on average`
+        + ` and went down in ${leaderLost}/${ARENA_FIGHTS} fights`
+        + `\n      "the heart went out of them" fired ${falls} times`
+        + ` — ${(falls / ARENA_FIGHTS).toFixed(2)} a fight`
+        + (isControl ? '   [control]'
+          : `\n      paired against the control: won ${wonWhereControlLost} it lost`
+            + `, lost ${lostWhereControlWon} it won`
+            + `\n      fights where this arm actually deployed a different line:`
+            + ` ${reordered}/${ARENA_FIGHTS}`),
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.S1 the line-up, in the arena — ${ARENA_FIGHTS} fights an arm`
+      + `, difficulty ${ARENA_DIFFICULTY}, one bot:\n${out.join('\n')}`,
+    );
+    expect(out.length).toBe(ARMS.length);
+  });
+
+  /**
+   * WHAT THE ARENA CANNOT SAY, said. CLAUDE.md trap 1: a figure measured in a
+   * fixture is not a figure about the game, and the arena reading above is
+   * exactly that — 300 fights with nothing else in them. A saga has weather,
+   * hunger, travel and a survival curve that only ends about one run in six
+   * on steel, so a big arena effect can still come out at nothing.
+   *
+   * The line is reordered from `run`'s watch hook, on the transition where a
+   * battle first appears. That is one beat LATE — `startBattle` ends with
+   * `playUntilOurTurn`, so foes holding the initiative have already swung
+   * once at the roster line before the reorder lands. The bias is therefore
+   * AGAINST the arms and toward the control, which is the right direction for
+   * a bias to run: whatever this reads is a floor, not a ceiling.
+   */
+  it('prices the same reorder in whole sagas rather than in an arena', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 150;
+    const HORIZON = 500;
+
+    type Line = ((ours: Combatant[]) => Combatant[]) | undefined;
+    const sample = (line: Line) => {
+      setPolicy(SETTLER);
+      const lived: boolean[] = [];
+      let standing6 = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          if (line && !before.battle && after.battle) {
+            const ours = after.battle.combatants.filter((c) => c.side === 'warband');
+            // A fight the band is not standing in has no line to order, and
+            // `ours[0]!` on an empty array is how this probe first crashed.
+            if (ours.length > 0) line(ours).forEach((c, ix) => { c.rank = ix + 1; });
+          }
+        });
+        lived.push(!final.end && final.day >= HORIZON);
+        standing6 += living(final.party.people).length;
+      }
+      return { lived, standing6 };
+    };
+
+    const control = sample(undefined);
+    const rows: string[] = [
+      `  as they turn up (the game today): ${control.lived.filter(Boolean).length}/${SEEDS}`
+      + ` still standing at day ${HORIZON}`
+      + `, ${(control.standing6 / SEEDS).toFixed(2)} people alive on average   [control]`,
+    ];
+
+    const ARMS_IN_PLAY: [string, (ours: Combatant[]) => Combatant[]][] = [
+      ['leader to the back', (ours) => [...ours.slice(1), ours[0]!]],
+      ['reversed roster', (ours) => [...ours].reverse()],
+    ];
+
+    for (const [label, line] of ARMS_IN_PLAY) {
+      const arm = sample(line);
+      let saved = 0;
+      let killed = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        if (!control.lived[i] && arm.lived[i]) saved += 1;
+        if (control.lived[i] && !arm.lived[i]) killed += 1;
+      }
+      rows.push(
+        `  ${label}: ${arm.lived.filter(Boolean).length}/${SEEDS} still standing`
+        + `, ${(arm.standing6 / SEEDS).toFixed(2)} people alive on average`
+        + `\n      paired against the control: saved ${saved}, killed ${killed}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.S1b the line-up, in whole sagas — ${SEEDS} landings an arm`
+      + `, settler, to day ${HORIZON}:\n${rows.join('\n')}`,
+    );
+    expect(rows.length).toBe(ARMS_IN_PLAY.length + 1);
   });
 });
