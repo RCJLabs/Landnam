@@ -263,14 +263,27 @@ export interface Policy {
    * Whether the daily crewing picks the food job the GROUND pays best,
    * instead of always reaching for the hunter.
    *
-   * Optional and off everywhere, so no figure in balance.test.ts moves by its
-   * existing. It is here because 11.S2 measured what the hardcoded 'hunter'
-   * below is worth: asked of `output()` on the states a saga really passes
-   * through, the ground pays FISHER best on 51-94% of settled band-days and
-   * hunter best on 4-17%, and the winner leads the runner-up by 32-49%. The
-   * bot has been reaching for the worst of the three food jobs on most days
-   * of most sagas, which makes every food figure in ROADMAP.md a figure about
-   * a band playing its yard badly.
+   * OFF, AND IT IS OFF FOR A REASON THAT IS WORTH MORE THAN THE KNOB.
+   *
+   * 11.S2 measured what the hardcoded `'hunter'` below is worth: asked of
+   * `output()` on the states a saga really passes through, the ground pays
+   * FISHER best on 51-94% of settled band-days and hunter best on 4-17%, by
+   * 32-49%. The bot reaches for the worst of the three food jobs on most days
+   * of most sagas, and turning this on is worth saved 11 / killed 1 at first
+   * spring. Evan ruled it ON on 2026-09-03.
+   *
+   * IT WAS TURNED ON, AND TURNED BACK OFF THE SAME DAY, because it does not
+   * ship alone. See 11.S2's entry in ROADMAP.md: the flip re-prices the
+   * difficulty menu (84/58/30 -> 87/65/38, measured) and then breaks the
+   * WINTER VERDICT, which is calibrated to a game where bands feed themselves
+   * badly. `reachable` starts condemning bands that go on to live, and
+   * `cliff.test`'s eve-of-winter cliff stops being a cliff. Neither is a
+   * stale number to restate; both are decisions about the game.
+   *
+   * So the flip is a two-part change and only the first part is measured. The
+   * knob stays for the reason audit item 7 gave — the arm that measures a
+   * lever has to be able to switch it off — and it is the one line that
+   * re-does the flip when the verdict is ready for it.
    */
   crewsByOutput?: boolean;
   /**

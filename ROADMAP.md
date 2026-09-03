@@ -6241,8 +6241,9 @@ Three groups, roughly in descending order of how much they change.
   because a stat sort measured as noise.
 
 - [~] **11.S2 Make the yard an economy, or admit it is scenery** — **the yard
-  IS an economy. The BOT has been playing it wrong for the whole project, and
-  the plot-cap proposal is declined. 2026-09-03.**
+  IS an economy, the BOT was playing it wrong for the whole project, the
+  plot-cap proposal is declined, and the fix is RULED but blocked on the
+  winter verdict. 2026-09-03.**
 
   RE-VERIFIED, not inherited: `plotsFor` is called in exactly two places,
   `colony.ts:403-404`, both inside `availableJobs` and both as booleans. The
@@ -6315,20 +6316,58 @@ Three groups, roughly in descending order of how much they change.
   **DECLINED: plot caps.** The yard is not scenery for want of a cap, and a
   cap would land on the one kind two jobs share.
 
-  **FOR EVAN — a second re-pricing, and it is the same shape as S1's.** The
-  job picker already prints each person's exact output per job, and its own
-  comment says "the comparison is right there"; ROADMAP's `crewsToNeed`
-  ruling was made on precisely that ground — "a competent player presses it,
-  and a bot that represents competent play has to press it too or every
-  figure in this file describes a game nobody plays." By that rule the
-  harness should ask the ground, and **every food and survival figure in this
-  file is understated by about eight points at first spring.** Flipping
-  `crewsByOutput` on in SETTLER would re-price the hardship menu a second time
-  in one session. Recommendation: **flip it** — but it is your call, and it is
-  left off until you make it.
+  **RULED FLIP, 2026-09-03 — AND THE FLIP DOES NOT SHIP ALONE. It was turned
+  on, measured, and turned back off the same day, with a prerequisite nobody
+  knew was there.** The ruling stands; what follows is what it costs, so the
+  next hand can do it in one line and in full knowledge.
 
-- [~] **11.S3 Travel ends when you settle** — **THE PREMISE WAS MINE AND IT
-  DID NOT SURVIVE BEING MEASURED, 2026-09-02.**
+  **What the flip is worth, measured:** the difficulty menu re-prices from
+  84/58/30 to **87/65/38** over 300 landings a setting. They do NOT move
+  together this time — +3, +7, +8 — and that shape is right: a fair country
+  feeds a band whatever it does, and the worse the ground the more it matters
+  that you work the right part of it. The gaps the three names rest on narrow
+  from 26 and 28 points to 22 and 27, both still past the ±10 this harness can
+  resolve.
+
+  **What it breaks, and neither is a stale number to restate.** Three bars go
+  red, and one of them is only arithmetic — `A Fair Country promises 30% ever
+  rule` against 48% measured. The other two are the same defect:
+
+  1. **The winter verdict is calibrated to a game where bands feed themselves
+     badly.** `reachable` condemned 157 bands over 900 seeds and **91 of them
+     went on to see spring — 58% wrong, against 38% before the flip**, on a
+     panel that does not hedge.
+  2. **The eve of winter stops being a cliff.** `cliff.test` puts twelve bands
+     on the best ground in the world, day 50, four food and no wood: 6 of 12
+     are now saveable where the bar allows 3.
+
+  **AND THE 58% IS A TRAP-2 READING — the denominator reselected itself.** In
+  ABSOLUTE terms the verdict is telling almost exactly as many bands as before
+  that they are dead when they are not: **87 bands per 900 seeds before the
+  flip, 91 after.** What changed is that the flip rescues the easy cases out
+  of the condemned pool — 229 condemned becomes 157 — so the same error is now
+  a much bigger fraction of a smaller, harder-to-call population. The ratio
+  moved 20 points; the underlying mistake moved by four bands.
+
+  **A FIX WAS TRIED AND IS RECORDED RATHER THAN SHIPPED.** `walkWinter` picks
+  the food job BY NAME too — the same bug as the crewing — and its own note
+  says taking the max over every producing job "reads truer... left alone
+  until that call is made". Re-taken per person, post-flip, it moves the
+  verdict from 60.6% wrong to 58.0% and flips `cliff.test`'s pivot band. It
+  helps and it is nowhere near enough, so it went back with the flip: the
+  interesting part is that a fix REJECTED before the flip (33% → 44%) becomes
+  a small improvement after it, which is one more number that changes with the
+  game underneath it.
+
+  **NEXT, and it is its own item rather than a rider:** recalibrate the winter
+  verdict for a band that works its ground, and re-decide whether the eve of
+  winter should still be a cliff — the second is a design statement about
+  difficulty, not a threshold. When both are settled, the flip is
+  `crewsByOutput: true` on three policies and a restatement to 87/65/38.
+
+- [x] **11.S3 Travel ends when you settle** — **THE PREMISE WAS MINE AND IT
+  DID NOT SURVIVE BEING MEASURED, 2026-09-02. Ruled a deck and closed,
+  2026-09-03.**
 
   The item was opened on a code reading: `walkOptions` returns `[]` for a
   settled band with no expedition, so the coast "becomes unreachable" and is
@@ -6359,10 +6398,15 @@ Three groups, roughly in descending order of how much they change.
   runs differ. A coast of 26 that each band draws six from is behaving like a
   deck rather than a map, and a deck is not obliged to be dealt out.
 
-  **STILL FOR EVAN, restated:** is a quarter of the coast per saga the right
-  draw? Accept it as a deck; shrink the route so more of it is seen; or give a
-  band reasons to range further. The first framing — "travel ends at
-  settling" — is withdrawn.
+  **RULED, 2026-09-03: accept it as a deck.** A quarter of the coast per saga
+  is the draw, and it is not waste — 10.1b measured 9% event overlap between
+  two sagas, so the three-quarters a band never stands on is the pool that
+  makes runs differ. The route is not a map to be exhausted; it is a deck to
+  be dealt from, and a deck is not obliged to be dealt out. **No work
+  follows** — the item existed to settle a question and the question is
+  settled. Do not shrink the route, and do not add reasons to range further
+  without a fresh reading: both would spend the thing that differentiates
+  runs. The first framing — "travel ends at settling" — stays withdrawn.
 
 - [~] **11.S4 Crewing is the largest lever in the game and, for a human, a
   500-day chore** — **premise measured and TRUE, the unmeasured clause
@@ -6508,6 +6552,31 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — the yard fix is ruled, measured, and blocked on the winter
+  verdict** — Evan ruled 11.S2's flip ON. It was turned on, measured, and
+  turned back off the same day: it does not ship alone.
+  - **Worth it:** the difficulty menu re-prices 84/58/30 to **87/65/38**, and
+    unlike the morning's restatement the three do NOT move together (+3, +7,
+    +8) — a fair country feeds a band whatever it does.
+  - **Breaks it:** `reachable` is calibrated to a game where bands feed
+    themselves badly. Post-flip it condemned 157 bands over 900 seeds and 91
+    saw spring anyway — **58% wrong against 38% before**. And `cliff.test`'s
+    eve of winter stops being a cliff: 6 of 12 empty bands on day 50 are now
+    saveable where the bar allows 3.
+  - **The 58% is a trap-2 reading.** In absolute terms the verdict wrongly
+    condemns 87 bands per 900 seeds before the flip and 91 after — the
+    mistake moved by four bands. The RATIO moved 20 points because the flip
+    rescues the easy cases out of the condemned pool (229 condemned becomes
+    157), leaving a smaller and much harder-to-call population.
+  - `walkWinter` picks its food job by name too, and its own note deferred the
+    fix "until that call is made". Re-taken per person post-flip it reads 58%
+    against 60.6% — a fix REJECTED before the flip (33% → 44%) is a small
+    improvement after it. Recorded, not shipped.
+  - **11.S3 closed: the coast is a deck.** A quarter of it per saga is the
+    draw, and the three-quarters never trodden is the pool that makes runs
+    differ (9% event overlap, 10.1b). No work follows.
+
 
 - **2026-09-03 — 11.S4: the chore is real and it is 94 taps a saga** — the
   item rested on an uncounted premise ("a 500-day chore") and an UNMEASURED
