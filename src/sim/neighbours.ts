@@ -280,20 +280,61 @@ export interface Bargain {
   firewood: number;
 }
 
+/**
+ * What a barter is worth before the dice touch it — the midpoint of
+ * `bargain()`'s own formula, RNG term dropped (`rng.float(0.9, 1.1)`
+ * averages to 1). Pure and side-effect-free on purpose: 11.M3 needed a
+ * number the deed sheet could show BEFORE the trade is struck, and a
+ * preview that touched the `events` stream would perturb the very roll it
+ * is previewing.
+ *
+ * Shares the rest of the formula rather than keeping a second copy of it —
+ * exactly the discipline `offerGot` already states for a place's counter,
+ * so a shown price and a paid price cannot drift apart here either.
+ */
+export function bargainEstimate(state: GameState, id: string): number {
+  const n = neighbourById(state, id);
+  if (!n) return 0;
+  const crew = fieldCrew(state);
+  const sharp = crew.reduce<number>((best, p) => Math.max(best, effectiveStat(p, 'wits')), 1);
+  const purpose = state.expedition ? purposeDef(state.expedition.purpose) : undefined;
+  const errand = purpose?.id === 'trade' ? 1.25 : 1;
+  return Math.max(1, Math.round(BARTER_FOOD * tradeRate(n.standing) * (0.8 + sharp * 0.08) * errand));
+}
+
+/**
+ * What the deed sheet says about a barter, in full — 11.M3.
+ *
+ * `starving` is handed in rather than computed here (`foodPerDay` lives in
+ * upkeep.ts, which already imports THIS file for `driftStandings` and
+ * `neighboursCallOn` — importing it back would be a cycle) — the caller
+ * already has the number the winter mark itself reads.
+ *
+ * THE WARNING, not always: `bargain()` runs one way, food out and firewood
+ * in, so it cannot rescue a band that is short of FOOD specifically —
+ * MEASURED (`PROBE: 11.M3`): trying it first in that exact crisis, 150
+ * landings paired, moved nothing (saved 4, killed 4, the arm firing 55
+ * times) and could not, structurally, since it spends the one store the
+ * band is short of. Said here rather than left for the player to learn the
+ * hard way what the item's own opening line assumed a bot already knew.
+ */
+export function bargainBlurb(state: GameState, id: string, starving: boolean): string {
+  const base = `Carry ${BARTER_FOOD} of food in and come out with `
+    + `about ${bargainEstimate(state, id)} of timber and goods.`;
+  return starving
+    ? `${base} It buys wood, not food — this will not fill an empty larder.`
+    : base;
+}
+
 /** Carries food in and goods out. Mutates; callers hold a clone. */
 export function bargain(state: GameState, id: string): Bargain | null {
   if (bargainBlocker(state, id) !== null) return null;
   const n = neighbourById(state, id)!;
-  const crew = fieldCrew(state);
-  const sharp = crew.reduce<number>((best, p) => Math.max(best, effectiveStat(p, 'wits')), 1);
-  // A party that went out to barter is carrying things worth bartering.
-  const purpose = state.expedition ? purposeDef(state.expedition.purpose) : undefined;
-  const errand = purpose?.id === 'trade' ? 1.25 : 1;
 
   const rng = stream(state.seed, 'events').derive(`barter:${n.id}:${state.day}`);
   const firewood = Math.max(
     1,
-    Math.round(BARTER_FOOD * tradeRate(n.standing) * (0.8 + sharp * 0.08) * errand * rng.float(0.9, 1.1)),
+    Math.round(bargainEstimate(state, id) * rng.float(0.9, 1.1)),
   );
 
   state.party.food -= BARTER_FOOD;

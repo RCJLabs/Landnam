@@ -3527,3 +3527,83 @@ describe('PROBE: 11.S5 — what restoring the bite past year three costs', () =>
     expect(lived.length).toBe(SEEDS);
   });
 });
+
+describe('PROBE: 11.M3 — can a starving band actually trade its way out', () => {
+  /**
+   * The item's own caveat: 10.1's "despair bands fall on neighbours 2.9x"
+   * reading is the HARNESS's rule, not the game's, and the item proposes
+   * making the neighbour card "name both sides of the trade" so a player,
+   * unlike the untuned bot, sees the peaceful door.
+   *
+   * RE-VERIFIED IN CODE FIRST, and it changes the shape of the fix. The
+   * desperation branch this is about fires on `days < 3` — FOOD nearly
+   * gone — and `bargain()` is fixed in ONE direction: food OUT, firewood
+   * IN. A neighbour's barter, unlike a PLACE's market (`data/places.ts` has
+   * offers running firewood-for-food too), cannot buy food with anything.
+   * So the "trade" the card would be naming, in exactly the crisis that
+   * triggers it, spends the one store the band is short of to buy a store
+   * it did not ask for.
+   *
+   * `barterBeforeFallOn` (test/fixtures/harness.ts) tries barter first in
+   * this exact branch when the game allows it, and this asks the question
+   * structurally rather than assuming the answer: does trying it help, do
+   * nothing, or actively cost the band that fires it?
+   */
+  it('prices trying to barter before falling on, in whole sagas', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 150;
+    const HORIZON = 500;
+    const base = (() => {
+      setPolicy(SETTLER);
+      const lived: boolean[] = [];
+      let sackings = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), HORIZON);
+        lived.push(!final.end && final.day >= HORIZON);
+        sackings += final.tally?.sackings ?? 0;
+      }
+      return { lived, sackings };
+    })();
+    // THE INSTRUMENT CHECK, and it is what a tied arm needs before it is
+    // trusted (CLAUDE.md trap 3): if the branch almost never actually FIRES
+    // — `bargainBlocker` refuses it because a band this desperate usually
+    // has under BARTER_FOOD in store too — the tie proves nothing about
+    // whether the trade helps, only that it rarely happens. Watched
+    // directly: a bargain struck while the band was inside the days<3
+    // window this branch gates on, whichever exact line dispatched it.
+    let firedInCrisis = 0;
+    const arm = (() => {
+      setPolicy({ ...SETTLER, barterBeforeFallOn: true });
+      const lived: boolean[] = [];
+      let sackings = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          const struck = (after.tally?.bargains ?? 0) > (before.tally?.bargains ?? 0);
+          if (!struck || !before.settlement) return;
+          const days = before.party.food / Math.max(1, foodPerDay(before));
+          if (days < 3) firedInCrisis += 1;
+        });
+        lived.push(!final.end && final.day >= HORIZON);
+        sackings += final.tally?.sackings ?? 0;
+      }
+      return { lived, sackings };
+    })();
+    setPolicy(SETTLER);
+
+    let saved = 0;
+    let killed = 0;
+    for (let i = 0; i < SEEDS; i += 1) {
+      if (!base.lived[i] && arm.lived[i]) saved += 1;
+      if (base.lived[i] && !arm.lived[i]) killed += 1;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.M3 trying to barter before falling on — ${SEEDS} landings, settler, to day ${HORIZON}:\n`
+      + `  as it ships     : ${base.lived.filter(Boolean).length}/${SEEDS} standing, ${base.sackings} sackings\n`
+      + `  barters first   : ${arm.lived.filter(Boolean).length}/${SEEDS} standing, ${arm.sackings} sackings\n`
+      + `  paired against the control: saved ${saved}, killed ${killed}\n`
+      + `  bargains struck WHILE inside the days<3 crisis window: ${firedInCrisis} across ${SEEDS} landings`,
+    );
+    expect(base.lived.length).toBe(SEEDS);
+  });
+});

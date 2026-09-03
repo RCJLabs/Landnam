@@ -6642,13 +6642,46 @@ Three groups, roughly in descending order of how much they change.
   Watched failing: the card's own test was run against the record forced to
   `undefined` before being trusted.
 
-- [ ] **11.M3 Price the desperation raid where it happens.** MEASURED (10.1):
-  despair bands fall on neighbours 2.9 times against everyone else's 0.7, and
-  the causation runs backwards — they raid BECAUSE they are starving, trading
-  the larder for the heart. **CAVEAT THAT DECIDES THE ITEM:** that is the
-  HARNESS's rule ("the average player robs it before they die"), not the
-  game's. So the work is to make the game offer what the bot assumes: under
-  three days of food, the neighbour card names both sides of the trade.
+- [~] **11.M3 Price the desperation raid where it happens** — **the item's
+  own caveat was checked rather than assumed, and it does not hold the way
+  the item expected: the trade the bot is meant to be offered CANNOT rescue
+  the crisis it fires in. A smaller, honest fix shipped; the real fix is a
+  new mechanic and is Evan's call. 2026-09-03.**
+
+  The item's caveat said the harness's rule ("the average player robs it
+  before they die") is a bot habit, not the game's truth, and that the fix
+  is to make the neighbour card show the trade the bot is skipping.
+  RE-VERIFIED IN CODE FIRST rather than built to spec: `bargain()` runs in
+  exactly ONE direction, food OUT and firewood IN
+  (`sim/neighbours.ts:bargain`), and the branch this item is about fires on
+  `days < 3` — FOOD nearly gone. So "naming both sides of the trade" would be
+  naming a trade that spends the one store the band is short of to buy a
+  store it did not ask for. Not a UI gap; a trade that cannot address the
+  crisis it would be offered against, structurally.
+
+  MEASURED rather than reasoned from the structure alone (`PROBE: 11.M3`,
+  150 landings a arm to day 500, an added `barterBeforeFallOn` knob trying
+  barter first in the exact branch): **saved 4, killed 4** — an exact tie —
+  with the instrument checked before it was trusted (CLAUDE.md trap 3): the
+  arm fired 55 times across the sample, not zero, so the tie is the trade
+  doing nothing, not the trade never running.
+
+  **WHAT SHIPPED, and it is smaller than the item asked for.** The barter
+  deed gets the numbers fall-on got at 9.15 — `bargainEstimate` (a pure,
+  RNG-free preview sharing `bargain()`'s own formula, so a shown price and a
+  paid price cannot drift, same discipline as `offerGot`) — and, only when
+  `foodPerDay` says the band is inside the three-day floor, a stated warning:
+  *"It buys wood, not food — this will not fill an empty larder."* Composed
+  in `sim/neighbours.ts` (`bargainBlurb`) rather than in the renderer, so a
+  test can hold the numbers and the warning together without a browser.
+
+  **DECLINED for now: giving a neighbour the reciprocal trade a PLACE already
+  has.** `data/places.ts` already runs offers firewood-for-food at fixed
+  counters; a neighbour's `bargain()` has no such direction at all. That
+  WOULD be a real peaceful door out of a food crisis, and is a new mechanic —
+  more than the item asked for, and a real balance question in the shape
+  this session's other rulings have needed Evan for (a starving band gets a
+  door it does not have today). Not built. **Left `[~]` on that decision.**
 
 - [ ] **11.M4 Find what actually decides the first winter.** MEASURED (10.1):
   food in store on day 49 reads **33.6 / 35.7 / 33.7** across bands that
@@ -6715,6 +6748,27 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.M3: the trade a starving band was meant to be offered
+  cannot rescue it, structurally** — the item's own caveat said the harness's
+  desperation rule was a bot habit, not a truth about the game, and proposed
+  showing the neighbour card's trade so a player sees the door the bot
+  skips. Checked in code first: `bargain()` runs ONE way, food out and
+  firewood in, and the branch this is about fires on `days < 3` — food
+  nearly gone. The trade would spend the one store the band is short of.
+  - **MEASURED, not just reasoned:** an added `barterBeforeFallOn` harness
+    knob tried it first in that exact crisis, 150 landings paired — **saved
+    4, killed 4**, an exact tie, checked against CLAUDE.md trap 3 by
+    confirming the arm actually fired (55 times, not zero).
+  - **Shipped:** `bargainEstimate` (a pure preview sharing `bargain()`'s
+    formula, no RNG touched) puts real numbers on the barter deed, the way
+    fall-on got them at 9.15, and `bargainBlurb` states plainly, only when
+    the band is inside the three-day floor: *"It buys wood, not food — this
+    will not fill an empty larder."*
+  - **Declined, left `[~]`:** giving a neighbour the firewood-for-food
+    direction a PLACE's market already has would be a real peaceful door out
+    — and a new mechanic, a balance question for Evan, not a UI fix.
+
 
 - **2026-09-03 — 11.M2: raiding states its record, on a re-taken number** —
   the item cited a 10.3 figure that was two balance changes old (11.S1's

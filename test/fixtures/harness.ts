@@ -163,6 +163,21 @@ export interface Policy {
   keepsWood?: boolean;
   /** Whether it falls on neighbours' camps as a matter of course. */
   robsCamps: boolean;
+  /**
+   * Whether the desperation fall-on tries BARTER first when it can.
+   *
+   * Optional and off everywhere, so no shipped figure moves by its existing.
+   * 11.M3's premise is that a starving band would trade before it draws
+   * steel — but `bargain()` is food OUT, firewood IN, one direction, fixed.
+   * The branch this guards fires on `days < 3`, which is FOOD nearly gone,
+   * so trying it first spends the one thing the band is short of to buy the
+   * one thing it did not ask for. This knob exists to measure whether that
+   * structural mismatch is actually harmless (a barter this poor just never
+   * qualifies, `bargainBlocker` refuses it, and nothing changes) or actually
+   * costs a band that fires it and empties its last food for firewood it can
+   * eat none of.
+   */
+  barterBeforeFallOn?: boolean;
   /** What it raises, in the order it wants it. */
   want: readonly string[];
   /** What everyone does with their days. */
@@ -876,6 +891,12 @@ export function step(state: GameState): Action {
   // Friends stay friends — this only fires on a camp that already dislikes
   // the band, when there are under three days of food left.
   if (host && days < 3 && host.standing < 10 && canFallOn(state, host.id)) {
+    // 11.M3's arm: try the peaceful door FIRST. See `barterBeforeFallOn` for
+    // why this is not obviously a rescue — the trade spends food to buy
+    // firewood, and food is exactly what days<3 says is nearly gone.
+    if (policy.barterBeforeFallOn && bargainBlocker(state, host.id) === null) {
+      return { type: 'BARTER', id: host.id };
+    }
     return { type:'FALL_ON', id: host.id };
   }
 

@@ -51,6 +51,8 @@ import {
   angerLevel,
   angriest,
   bargain,
+  bargainEstimate,
+  bargainBlurb,
   bargainBlocker,
   driftStandings,
   fallOn,
@@ -499,6 +501,77 @@ describe('bartering', () => {
     );
     expect(refused, 'a good neighbour turned us away').toBeLessThanOrEqual(SEEDS.length);
     expect(friendly).toBeGreaterThan(hostile);
+  });
+
+  /**
+   * 11.M3: the deed sheet needed a preview of what `bargain()` will pay,
+   * struck BEFORE the dice touch it — `bargainEstimate` is that formula with
+   * the RNG term dropped to its midpoint (1.0).
+   */
+  it('estimates close to what bargain() actually pays, on average', () => {
+    const state = settled('nb-estimate');
+    const target = state.neighbours[0]!;
+    target.standing = 30;
+    standBeside(state, target);
+
+    const estimate = bargainEstimate(state, target.id);
+    expect(estimate).toBeGreaterThan(0);
+
+    let total = 0;
+    const N = 60;
+    for (let i = 0; i < N; i += 1) {
+      const s = settled(`nb-estimate-${i}`);
+      const n = s.neighbours[0]!;
+      n.standing = 30;
+      standBeside(s, n);
+      total += bargain(s, n.id)!.firewood;
+    }
+    const avg = total / N;
+    // Within the RNG's own ±10% band, not pinned to one draw.
+    expect(Math.abs(avg - estimate)).toBeLessThan(estimate * 0.15);
+  });
+
+  it('never touches the RNG stream — a preview cannot perturb the roll it previews', () => {
+    const state = settled('nb-pure');
+    const target = state.neighbours[0]!;
+    target.standing = 30;
+    standBeside(state, target);
+    const before = bargainEstimate(state, target.id);
+    // Called ten times over; a function that draws from `stream(...)` would
+    // answer differently as the derived stream advanced.
+    for (let i = 0; i < 10; i += 1) expect(bargainEstimate(state, target.id)).toBe(before);
+    // And the real roll is unaffected by how many times the preview ran.
+    const deal = bargain(state, target.id)!;
+    expect(deal.firewood).toBeGreaterThan(0);
+  });
+
+  describe('the record on a trade that cannot fill an empty larder (11.M3)', () => {
+    /**
+     * `bargain()` runs one way — food out, firewood in — so it structurally
+     * cannot rescue a band that is short of FOOD specifically. MEASURED
+     * (`PROBE: 11.M3`): trying it first in that exact crisis moved nothing,
+     * saved 4 / killed 4 over 150 paired landings, the arm firing 55 times.
+     * `bargainBlurb`'s `starving` flag says so on the deed sheet rather than
+     * leaving a player to find out the hard way.
+     */
+    it('says nothing extra when the band is not starving', () => {
+      const state = settled('nb-blurb-fine');
+      const target = state.neighbours[0]!;
+      target.standing = 30;
+      standBeside(state, target);
+      expect(bargainBlurb(state, target.id, false)).not.toMatch(/will not fill/);
+    });
+
+    it('warns plainly when it is', () => {
+      const state = settled('nb-blurb-starving');
+      const target = state.neighbours[0]!;
+      target.standing = 30;
+      standBeside(state, target);
+      const blurb = bargainBlurb(state, target.id, true);
+      expect(blurb).toMatch(/will not fill an empty larder/);
+      // The warning is additional, not instead of — the numbers still show.
+      expect(blurb).toContain(`${bargainEstimate(state, target.id)}`);
+    });
   });
 });
 

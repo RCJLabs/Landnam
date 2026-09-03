@@ -16,10 +16,10 @@ import { canHoldBlot } from '../sim/blot';
 import { KEPT_FOR, canKeepHall, feastCost, sinceKept } from '../sim/hall';
 import { SAIL_ON_REASON, reckoningDue, sailOnBlocker } from '../sim/landnam';
 import { everyoneHome } from '../sim/expedition';
-import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
+import { BARGAIN_REASON, bargainBlocker, bargainBlurb, neighbourHere } from '../sim/neighbours';
+import { foodPerDay } from '../sim/upkeep';
 import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
 import { placeKind } from '../data/places';
-import { BARTER_FOOD } from '../data/clans';
 import { FEAST_FOOD } from '../data/thing';
 import { wintersStood } from '../sim/calendar';
 import { thingCooldown, thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
@@ -204,7 +204,11 @@ export function deedsFor(
     deeds.push({
       id: 'barter',
       label: `Barter with ${host.name}`,
-      blurb: `Carry ${BARTER_FOOD} of food in and come out with timber and goods.`,
+      // THE NUMBERS, same reason fall-on got them at 9.15, and the WARNING
+      // this crisis needs (11.M3) — both composed in sim/neighbours.ts,
+      // where a test can hold them without a browser. See `bargainBlurb`
+      // for the measurement behind the warning.
+      blurb: bargainBlurb(state, host.id, state.party.food / Math.max(1, foodPerDay(state)) < 3),
       ...(blocked ? { blocked: BARGAIN_REASON[blocked] } : {}),
       run: () => dispatch({ type: 'BARTER', id: host.id }),
     });
