@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
-    odds: { spring: 0.81, ruled: 0.30 },
+    odds: { spring: 0.84, ruled: 0.30 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.53, ruled: 0.23 },
+    odds: { spring: 0.58, ruled: 0.23 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.31, ruled: 0.07 },
+    odds: { spring: 0.30, ruled: 0.07 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -162,8 +162,24 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * Where the numbers above came from, so nobody has to guess later.
  *
  * THREE HUNDRED landings a setting, not sixty, and that is the whole lesson
- * of this figure's history. Latest: 81% / 53% / 31% published, measured at
- * 81% / 55% / 27% on 2026-08-31.
+ * of this figure's history. Latest: 84% / 58% / 30% published, measured at
+ * 84% / 58% / 30% on 2026-09-03.
+ *
+ * RE-MEASURED AFTER 11.S1, 2026-09-03, and all three moved for one reason:
+ * the shield wall stopped forming up in roster order. Rank used to be a
+ * fighter's roster index, which is also `leaderOf`'s index and `bindKin`'s,
+ * so the leader stood at the front of every fight and both kin pairs stood
+ * shoulder to shoulder — an order measured WORSE THAN CHANCE (178 arena wins
+ * in 300 against 218 for a line drawn at random). `sim/lineup.ts` forms both
+ * walls by who can hold the front instead. Over the same 300 landings the
+ * curve went 81% -> 84%, 55% -> 58%, 27% -> 30%.
+ *
+ * Two things worth noting about that. The three moved TOGETHER, by three
+ * points each, which is what a change to the fight rather than to a country
+ * should look like — and the gaps the names rest on, 26 and 28 points, did
+ * not move at all. And As It Lies is the one that broke the bar rather than
+ * drifting inside it: published 53 against a measured 58 is five points, and
+ * the tolerance is five.
  *
  * RE-MEASURED ON THE COAST, 2026-08-28, and twice in the same day — which is
  * the honest record and worth keeping as one. The flag flipped in the morning

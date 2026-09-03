@@ -6131,8 +6131,9 @@ Three groups, roughly in descending order of how much they change.
 
 ### Systems — the shape of the game
 
-- [~] **11.S1 Give the shield wall a decision** — **the premise held, the
-  proposed fix did not, and the measurement found a bug instead, 2026-09-02.**
+- [x] **11.S1 Give the shield wall a decision** — **the premise held, the
+  proposed fix did not, the measurement found a bug instead, and the bug is
+  fixed. 2026-09-02/03.**
 
   The premise is VERIFIED in code: rank is handed out at `battle.ts:440` as
   `combatants.filter(side==='warband').length + 1` over `sworn(fieldCrew())`,
@@ -6182,17 +6183,62 @@ Three groups, roughly in descending order of how much they change.
   three unrelated things — the order men stand in, who leads, and who is kin to
   whom — so all three correlate perfectly and nobody chose any of it.**
 
-  **FOR EVAN, and it is a real balance decision rather than a fix to apply:**
-  changing the default line moves 7/150 to 19/150, which re-prices every
-  survival figure in this file. Three ways to take it. (a) Leave the default
-  and make the leader's rank the deploy DECISION — thematically loaded, a
-  chieftain who stands in front costs you, and it is the one axis measured to
-  have a gradient. (b) Change the default so rank stops keying off roster
-  order, and accept the re-pricing. (c) Both, later: the screen only becomes a
-  richer decision once men differ in what they can do FROM a rank, and today
-  they do not — `REACH` is a table of ranks with no per-person gear in it.
-  Recommendation: **(a)**, because it buys the wall a decision without
-  invalidating the file's published numbers.
+  **RULED (b), 2026-09-03: the default changed and the re-pricing was taken.**
+  `sim/lineup.ts` forms a wall by who can hold the front — current health plus
+  might, ties on `id` — and `battle.ts` reads rank off that instead of off the
+  roster index. Health rather than maxHealth on purpose: a man wounded in the
+  spring stands further back in the autumn and the line re-forms around him
+  without anybody deciding it.
+
+  **BOTH WALLS, and that was not politeness.** `sim/battleAi.ts` already
+  states the rule — "a formation trick that only the warband can play is not a
+  formation, it is a bonus" — so the foes form up the same way. It is not
+  free, and the number is recorded rather than buried: with our line still
+  forced to roster order, forming THEIR wall alone took the player from 178 to
+  190 in the arena. `anointChampion` raises the champion's health before
+  deployment, so `formUp` puts him in the front rank, where an axe can reach
+  him and where his fall costs his side 25 nerve. That is the tactic the
+  codebase says it wants — "singling out the man with the pennant a real
+  tactic on both sides of it" — and it is also a player gain.
+
+  **WHAT IT BOUGHT, on the same instruments, after:**
+
+  | | before | after |
+  |---|---|---|
+  | arena, wins in 300 | 178 | **210** |
+  | of six still standing | 2.15 | 3.09 |
+  | leader down, in 300 fights | 296 | 209 |
+  | sagas standing at day 500, of 150 | 7 | **14** |
+  | people alive at day 500 | 4.75 | 5.76 |
+
+  It does not take everything on the table — a reversed roster still reads 234
+  in the arena against 210 — and it is not meant to. Best-men-front measured
+  inside the noise of a random line, so there is no clever ordering to be had;
+  what there was is a correlation to break, and "the fit hold the front" is a
+  rule that can be said in the game's own words. In whole sagas, which is the
+  reading that counts, the new default has taken essentially all of it:
+  leader-to-the-back now scores 12/150 against the default's 14, and reversed
+  roster 17 (saved 10, killed 7 — inside noise at this N).
+
+  **THE COST, stated.** One bar moved in 1561: As It Lies published 53% see
+  the first spring against a measured 58%, and the tolerance is five points.
+  All three settings were restated at 300 landings — **81/55/27 becomes
+  84/58/30** — and they moved TOGETHER by three points each, which is what a
+  change to the FIGHT rather than to a country should look like. The gaps the
+  three names rest on, 26 and 28 points, did not move.
+
+  **A READING LEFT FOR SOMEBODY TO RE-TAKE:** A Fair Country publishes 30%
+  ever rule and the long game measured 24% over 120 sagas. That is inside the
+  bar's eight-point tolerance so it was NOT restated — 120 seeds is the sample
+  this file's own history says is too thin to set a promise with, and
+  republishing a passing figure off one thin reading is the trap the top of
+  this file is about. Re-take it at 300 before touching it.
+
+  **STILL OPEN, and it is (a) from the ruling above:** the leader's rank is
+  the one axis measured to have a real gradient, and it is now decided by his
+  health rather than by anybody's choice. Making it the player's call is the
+  deploy decision worth building — but a screen offering a stat sort is not,
+  because a stat sort measured as noise.
 
 - [ ] **11.S2 Make the yard an economy, or admit it is scenery.** VERIFIED:
   nineteen plots are rolled per steading from the site reading and drawn
@@ -6356,6 +6402,34 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.S1 shipped: the wall forms up by who can hold the front**
+  — `sim/lineup.ts` replaces rank-is-your-roster-index. The roster index also
+  decides who leads (`leaderOf`) and who is kin to whom (`bindKin`), so the
+  leader stood at the front of every fight and both kin pairs stood shoulder
+  to shoulder — an order measured worse than chance.
+  - **Arena 178 wins in 300 becomes 210; sagas standing at day 500 go 7/150 to
+    14/150**, and people alive at day 500 4.75 to 5.76. The leader goes down in
+    209 fights of 300 rather than 296.
+  - **Both walls form up**, because sim/battleAi.ts already says a formation
+    only one side can play is a bonus. Recorded as a player gain rather than
+    buried: forming their wall alone is worth +12 in the arena, because
+    `anointChampion` boosts the champion before deployment so `formUp` stands
+    him at the front, where he can be reached and where his fall costs his
+    side 25 nerve.
+  - **One bar moved in 1561** and it is the one the change was always going to
+    move: As It Lies published 53% see the first spring against 58% measured.
+    All three settings restated at 300 landings, **81/55/27 to 84/58/30** —
+    they moved together by three points each, and the 26- and 28-point gaps
+    the three names rest on did not move at all.
+  - A Fair Country publishes 30% ever rule against 24% measured at 120 sagas.
+    Inside tolerance, so NOT restated: 120 is the sample this file's own
+    history calls too thin to set a promise with. Left as a reading to re-take
+    at 300.
+  - `test/lineup.test.ts` is the regression bar, watched failing against the
+    old line before it was trusted. Not `test/line.test.ts`, which is the
+    renderer's rank geometry and a different thing entirely.
+
 
 - **2026-09-02 — 11.S1: the game deploys its shield wall in the worst order
   available** — the item asked, before building anything, whether line order

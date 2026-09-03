@@ -2472,10 +2472,17 @@ describe('PROBE: 11.S1 — does it matter WHO stands in which rank', () => {
     return effectiveStat(p, 'might') + effectiveStat(p, 'wits') + p.health;
   }
 
-  type Deploy = (state: GameState, ours: Combatant[]) => Combatant[];
+  /** `undefined` leaves the game's own deployment alone — that is the control. */
+  type Deploy = ((state: GameState, ours: Combatant[]) => Combatant[]) | undefined;
 
   const ARMS: [string, Deploy][] = [
-    ['as they turn up (the game today)', (_s, ours) => ours],
+    // THE CONTROL IS WHATEVER THE GAME DOES, not a permutation this file
+    // spells. It was the same thing when this probe was written — rank was
+    // roster order — and 11.S1's fix moved it, so this row re-prices itself
+    // rather than going stale, which is the whole reason probes are kept.
+    ['the line the game forms (the control)', undefined],
+    ['FORCED roster order — the line the game formed before 11.S1',
+      (_s, ours) => ours],
     ['best men front', (s, ours) => [...ours].sort((a, b) => worth(s, b) - worth(s, a))],
     ['best men back', (s, ours) => [...ours].sort((a, b) => worth(s, a) - worth(s, b))],
     // THE ARM THAT READ THE OTHER TWO. Best-front and best-back both beat
@@ -2578,7 +2585,7 @@ describe('PROBE: 11.S1 — does it matter WHO stands in which rank', () => {
     const start = structuredClone(newGame(seed));
     beginBattle(start, 'meadow', ARENA_DIFFICULTY);
     const ours = start.battle!.combatants.filter((c) => c.side === 'warband');
-    deploy(start, ours).forEach((c, i) => { c.rank = i + 1; });
+    if (deploy) deploy(start, ours).forEach((c, i) => { c.rank = i + 1; });
     const line = ours.map((c) => c.rank).join('');
     const leaderId = leaderOf(start.party.people)?.id;
     const leaderRank = ours.find((c) => c.personId === leaderId)?.rank ?? 0;

@@ -18,6 +18,7 @@ import type { Battle, Champion, Combatant, GameState, Person, Stats, Terrain } f
 import { pushMode } from '../modes';
 import { beat } from './beats';
 import { canActFrom, canLandOn } from './ranks';
+import { formUp } from './lineup';
 import { effectiveStat, standAtHome, sworn } from './people';
 import { SEASON_LENGTH, YEAR_LENGTH, wintersStood } from './calendar';
 import { fieldCrew, homeCrew } from './expedition';
@@ -430,14 +431,24 @@ export function beginBattle(
   // 20 raids the spot search refused NOBODY. It was capping a number the band
   // rules had already capped.
 
+  // WHO STANDS WHERE. This was `combatants.filter(...).length + 1` — the
+  // order they took the field, which is `sworn()`'s order, which is the
+  // roster. See sim/line.ts for why that was a bug and what 11.S1 measured
+  // it at; the short of it is that the roster index also decides who leads
+  // and who is kin to whom, so the wall was correlated with both and chosen
+  // by nobody.
+  //
+  // The combatants array is still built in the original order and only the
+  // RANK comes from `formUp`. That is deliberate: array order is read in a
+  // couple of places that do not care about the line (a foe looking for
+  // somebody to throw at, for one), and changing both at once would have
+  // made the diff bigger than the thing that was measured.
+  const ourLine = formUp(ourSide);
   for (const person of ourSide) {
     battle.combatants.push({
       personId: person.id,
       side: 'warband',
-      // The order they took the field is the order they stand in, front
-      // first. This was a note ABOUT a hex once; it is the whole of where
-      // somebody is now.
-      rank: battle.combatants.filter((c) => c.side === 'warband').length + 1,
+      rank: ourLine.indexOf(person) + 1,
       initiative: 0,
       movesLeft: BASE_MOVES,
       hasActed: false,
@@ -452,11 +463,15 @@ export function beginBattle(
     });
   }
 
+  // Their wall forms up the same way ours does. sim/battleAi.ts states the
+  // rule this is keeping: a formation trick only one side can play is not a
+  // formation, it is a bonus.
+  const theirLine = formUp(foes);
   for (const foe of foes) {
     battle.combatants.push({
       personId: foe.id,
       side: 'foe',
-      rank: battle.combatants.filter((c) => c.side === 'foe').length + 1,
+      rank: theirLine.indexOf(foe) + 1,
       initiative: 0,
       movesLeft: BASE_MOVES,
       hasActed: false,
