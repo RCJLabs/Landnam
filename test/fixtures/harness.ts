@@ -260,6 +260,20 @@ export interface Policy {
    */
   crewsToNeed: boolean;
   /**
+   * Whether the daily crewing picks the food job the GROUND pays best,
+   * instead of always reaching for the hunter.
+   *
+   * Optional and off everywhere, so no figure in balance.test.ts moves by its
+   * existing. It is here because 11.S2 measured what the hardcoded 'hunter'
+   * below is worth: asked of `output()` on the states a saga really passes
+   * through, the ground pays FISHER best on 51-94% of settled band-days and
+   * hunter best on 4-17%, and the winner leads the runner-up by 32-49%. The
+   * bot has been reaching for the worst of the three food jobs on most days
+   * of most sagas, which makes every food figure in ROADMAP.md a figure about
+   * a band playing its yard badly.
+   */
+  crewsByOutput?: boolean;
+  /**
    * Whether the band walks out on a steading the verdict has written off.
    *
    * AUDIT ITEM 6. `readiness()` named this as a way out for a long time while
@@ -1468,9 +1482,17 @@ export function run(
             assign(state, p.id, 'builder');
             return;
           }
-          if (shortWood && shortFood) assign(state, p.id, ix % 2 ? 'woodcutter' : 'hunter');
-          else if (shortWood) assign(state, p.id, ix < 4 ? 'woodcutter' : 'hunter');
-          else if (shortFood) assign(state, p.id, ix < 4 ? 'hunter' : 'woodcutter');
+          // WHICH food job. 'hunter' was hardcoded in all three branches
+          // below; `crewsByOutput` asks the game instead — see the flag.
+          const eats: JobId = policy.crewsByOutput
+            ? (['farmer', 'hunter', 'fisher'] as JobId[])
+              .filter((id) => availableJobs(state).some((j) => j.id === id))
+              .reduce((best, id) => (output(state, p, jobById(id)!) > output(state, p, jobById(best)!)
+                ? id : best), 'hunter' as JobId)
+            : 'hunter';
+          if (shortWood && shortFood) assign(state, p.id, ix % 2 ? 'woodcutter' : eats);
+          else if (shortWood) assign(state, p.id, ix < 4 ? 'woodcutter' : eats);
+          else if (shortFood) assign(state, p.id, ix < 4 ? eats : 'woodcutter');
         });
     }
 

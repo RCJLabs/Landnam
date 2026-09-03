@@ -6240,19 +6240,92 @@ Three groups, roughly in descending order of how much they change.
   deploy decision worth building — but a screen offering a stat sort is not,
   because a stat sort measured as noise.
 
-- [ ] **11.S2 Make the yard an economy, or admit it is scenery.** VERIFIED:
-  nineteen plots are rolled per steading from the site reading and drawn
-  side-on, and `plotsFor` is called in exactly two places (`colony.ts:403-404`)
-  as BOOLEANS — can anyone farm here at all, can anyone fish here at all. The
-  ground caps nothing.
+- [~] **11.S2 Make the yard an economy, or admit it is scenery** — **the yard
+  IS an economy. The BOT has been playing it wrong for the whole project, and
+  the plot-cap proposal is declined. 2026-09-03.**
 
-  Proposal: plots cap the job. Three field plots means three farmers. The
-  reading you settled on then keeps mattering all game instead of only on
-  founding day, and two coasts play differently. **Measured hook:** 10.1b found
-  the build tree is the repetitive half of a saga — 34–45% shared between runs
-  against 9% of events — and binding the yard is the most direct lever on it.
-  RISK: a real balance change. The first-winter guards must hold, and 9.12a's
-  shape applies — measure before, measure after, state the cost.
+  RE-VERIFIED, not inherited: `plotsFor` is called in exactly two places,
+  `colony.ts:403-404`, both inside `availableJobs` and both as booleans. The
+  ground caps nothing. **The premise is true and the proposed fix is wrong**,
+  and the measurement went somewhere better.
+
+  **1. A plot cap would bite almost only on WOOD, which the item did not
+  consider.** `PROBE: 11.S2`, 120 landings to day 500, counting hands set to
+  each kind of ground against plots of that kind, per PLOT KIND rather than
+  per job — because `wood` is worked by TWO jobs, `woodcutter` and `hunter`,
+  so "three field plots means three farmers" has no equivalent spelling for
+  it. And `hall` and `watchpost` are exactly ONE plot each, so the proposal
+  read literally caps a steading at one builder and one warrior.
+
+  | kind | plots | hands a day | a cap bites |
+  |---|---|---|---|
+  | field | 3.2 | 0.1 | 1% of days |
+  | **wood** | 4.7 | **7.2 (most 23)** | **57% of days, excess up to 19** |
+  | water | 6.4 | 0.0 | 0% |
+  | hall | 1.0 | 0.7 | 0% |
+  | watchpost | 1.0 | 0.1 | 0% |
+
+  The field cap the item actually describes is inert; the wood cap nobody
+  proposed is severe.
+
+  **2. THE INSTRUMENT CHECK TURNED THE PROBE AROUND, and it is the reason
+  this entry is not the one above.** Three of five kinds read 0% because
+  nothing bites — but "the ground is generous" and "nobody ever holds the
+  job" are the same number in that column. Counting HANDS regardless of the
+  cap says which: **fisher is assigned zero times in 15,837 settled
+  band-days.** `recrews` is false in all three shipped policies, so `recrew`
+  — the game's own "take the food job this ground pays best" — is never
+  called, and `crewsToNeed` spells `'hunter'` in all three of its branches.
+  The first reading was a fact about the harness.
+
+  **3. AND THE GROUND IS NOT AMBIVALENT. It is emphatic.** `PROBE: 11.S2c`
+  asks `output()` — no bot in it — on the states a saga really passes
+  through, 120 landings to day 500:
+
+  | season | farmer | hunter | fisher | winner's lead |
+  |---|---|---|---|---|
+  | spring | 25% | **4%** | **71%** | 32% |
+  | summer | 33% | **17%** | **51%** | 32% |
+  | autumn | 28% | **9%** | **63%** | 32% |
+  | winter | 0% | **6%** | **94%** | 49% |
+
+  **The ground pays fisher best on most days and hunter best on 4–17%, by
+  32–49%** — so the site reading already reaches every day of the game, which
+  is exactly what 11.S2 wanted plot caps to achieve. (This asks `output`
+  without gating on `availableJobs`; 85 of 86 steadings have water plots, so
+  the correction is about a point.)
+
+  **4. WHAT THE HARDCODED HUNTER COSTS.** `PROBE: 11.S2d` adds
+  `crewsByOutput` to the harness — optional, off in every shipped policy, so
+  no bar moves — and lets the daily crewing ask the ground instead:
+
+  | | reaches for the hunter | asks the ground | |
+  |---|---|---|---|
+  | spring (day 73) | 64/120, 4.54 souls | **74/120**, 4.91 souls | **saved 11, killed 1** |
+  | day 500 | 12/120, 5.83 souls | 17/120, **8.52 souls** | saved 12, killed 7 |
+
+  **5. AND `recrews` DID SURVIVE BEING DOUBTED**, which is worth recording
+  because the doubt was reasonable and wrong. It was switched off on "saved 0,
+  killed 0" — an exact tie, this file's own signature of a feature that never
+  ran. Re-taken (`PROBE: 11.S2b`): saved 0/killed 2 at spring, saved 11/killed
+  7 at day 500, which is noise at N=120. It really is worth nothing, because
+  `crewsToNeed` overwrites its seasonal choice the next day. The fix is not to
+  switch `recrews` on; it is to stop the daily crewing naming a job.
+
+  **DECLINED: plot caps.** The yard is not scenery for want of a cap, and a
+  cap would land on the one kind two jobs share.
+
+  **FOR EVAN — a second re-pricing, and it is the same shape as S1's.** The
+  job picker already prints each person's exact output per job, and its own
+  comment says "the comparison is right there"; ROADMAP's `crewsToNeed`
+  ruling was made on precisely that ground — "a competent player presses it,
+  and a bot that represents competent play has to press it too or every
+  figure in this file describes a game nobody plays." By that rule the
+  harness should ask the ground, and **every food and survival figure in this
+  file is understated by about eight points at first spring.** Flipping
+  `crewsByOutput` on in SETTLER would re-price the hardship menu a second time
+  in one session. Recommendation: **flip it** — but it is your call, and it is
+  left off until you make it.
 
 - [~] **11.S3 Travel ends when you settle** — **THE PREMISE WAS MINE AND IT
   DID NOT SURVIVE BEING MEASURED, 2026-09-02.**
@@ -6402,6 +6475,31 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.S2: the yard is an economy and the BOT was playing it
+  wrong** — the item proposed plot caps so the site reading would keep
+  mattering. Measured, the reading already reaches every day: `output()` pays
+  **fisher best on 51–94% of settled band-days and hunter best on 4–17%, by a
+  margin of 32–49%**. The harness reaches for `'hunter'`, hardcoded in all
+  three branches of its daily crewing.
+  - **Fisher is assigned zero times in 15,837 settled band-days.** Caught by
+    an instrument check added for exactly this: "the ground is generous" and
+    "nobody holds the job" are the same 0% in a cap-bites column.
+  - Asking the ground instead is worth **saved 11, killed 1** at first spring
+    (64/120 to 74/120) and 5.83 to 8.52 souls alive at day 500. Added as
+    `crewsByOutput`, optional and off everywhere, so no bar moved.
+  - **Plot caps declined.** They would bite almost only on `wood` — 57% of
+    days, excess up to 19 hands — because `woodcutter` and `hunter` share it;
+    the field cap the item describes bites 1%; and `hall` and `watchpost` are
+    one plot each, so the literal proposal caps a steading at one builder and
+    one warrior.
+  - `recrews` was re-taken because it had been switched off on an exact tie —
+    this file's own signature of a feature that never ran — and the doubt did
+    not survive: still noise. `crewsToNeed` overwrites its seasonal choice the
+    next day.
+  - Left `[~]`: flipping the harness to ask the ground re-prices the hardship
+    menu a second time, which is Evan's call.
+
 
 - **2026-09-03 — 11.S1 shipped: the wall forms up by who can hold the front**
   — `sim/lineup.ts` replaces rank-is-your-roster-index. The roster index also

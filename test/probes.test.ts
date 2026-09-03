@@ -29,10 +29,10 @@ import { KEPT_FOR, NEGLECTED_AFTER, feastCost, sinceKept } from '../src/sim/hall
 import { takeIn } from '../src/sim/joining';
 import { autumnChance, autumnRaidDay } from '../src/sim/raid';
 import { fallenOf } from '../src/sim/fallen';
-import { buildBlocker, capacity, crowding, heartRaised, shelterSaving, standsFor } from '../src/sim/colony';
+import { buildBlocker, capacity, crowding, heartRaised, output, shelterSaving, standsFor } from '../src/sim/colony';
 import { CROSSING, provisioning, sailBlocker } from '../src/sim/voyage';
 import { wintersStood } from '../src/sim/calendar';
-import { type JobId } from '../src/data/jobs';
+import { PLOTS, jobById, type JobId } from '../src/data/jobs';
 import { type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
 import { EVENTS } from '../src/data/events';
@@ -2747,5 +2747,320 @@ describe('PROBE: 11.S1 — does it matter WHO stands in which rank', () => {
       + `, settler, to day ${HORIZON}:\n${rows.join('\n')}`,
     );
     expect(rows.length).toBe(ARMS_IN_PLAY.length + 1);
+  });
+});
+
+describe('PROBE: 11.S2 — does the ground ever cap anything', () => {
+  /**
+   * 11.S2 proposes that plots cap the job: "three field plots means three
+   * farmers." Before building that, the question 9.1 forces is whether the cap
+   * would ever BIND — a rule nobody runs into is a rule worth nothing, and
+   * this file has now shipped that finding twice.
+   *
+   * RE-VERIFIED IN CODE first, not inherited: `plotsFor` is called in exactly
+   * two places, `colony.ts:403-404`, both inside `availableJobs` and both as
+   * booleans — "can anyone farm here at all". The ground caps nothing. The
+   * item's premise holds.
+   *
+   * BUT THE ITEM'S SPELLING OF THE FIX DOES NOT SURVIVE READING THE DATA, and
+   * that is why this measures per PLOT KIND rather than per job:
+   *
+   *   - `wood` is worked by TWO jobs, `woodcutter` and `hunter`, so a cap on
+   *     the ground is shared between them and "three plots, three farmers"
+   *     has no equivalent spelling for wood;
+   *   - `hall` is exactly one plot and works `builder`; `watchpost` is exactly
+   *     one and works `warrior`. Taken literally the proposal caps a steading
+   *     at ONE builder and ONE warrior, which is a far larger change than the
+   *     item describes and is not obviously wanted.
+   *
+   * So the reading below is: for every day a band is settled, how many hands
+   * are set to work each kind of ground, against how many plots of that kind
+   * it has. `over` is the days a cap would have bitten.
+   *
+   * WHOSE BEHAVIOUR THIS IS. The hands are placed by the HARNESS's policy,
+   * not by a rule of the game — `crewsToNeed` puts up to four on one job —
+   * and CLAUDE.md's own warning is that a bot policy read as a rule of the
+   * game is how four Phase 9 items went wrong. So this says what the cap
+   * would do to THIS bot. A player who spreads their hands differently would
+   * meet it more or less often, and that is not measured here.
+   */
+  it('counts the ground against the hands set to work it', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 500;
+    const KINDS = ['field', 'wood', 'water', 'hall', 'watchpost'] as const;
+
+    const sample = (pol: Policy) => {
+      setPolicy(pol);
+      const days: Record<string, number> = {};
+      const over: Record<string, number> = {};
+      const worst: Record<string, number> = {};
+      const plotSum: Record<string, number> = {};
+      /** THE INSTRUMENT CHECK, and it is what turned this probe around. A cap
+       * that never bites can mean the ground is generous OR that nobody ever
+       * holds the job — trap 3 — and those two read identically in `over`. */
+      const handSum: Record<string, number> = {};
+      const handMax: Record<string, number> = {};
+      for (const k of KINDS) {
+        days[k] = 0; over[k] = 0; worst[k] = 0; plotSum[k] = 0;
+        handSum[k] = 0; handMax[k] = 0;
+      }
+      let settled = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        let lastDay = 0;
+        let counted = false;
+        run(armSeed(0, i, SEEDS), HORIZON, (_before, after) => {
+          const home = after.settlement;
+          if (!home || after.day === lastDay) return;
+          lastDay = after.day;
+          if (!counted) {
+            counted = true;
+            settled += 1;
+            for (const k of KINDS) {
+              plotSum[k] = (plotSum[k] ?? 0) + home.plots.filter((pl) => pl.kind === k).length;
+            }
+          }
+          for (const k of KINDS) {
+            const plots = home.plots.filter((pl) => pl.kind === k).length;
+            // Everyone whose job happens on this kind of ground, read off the
+            // same table `plotsFor` reads so the two cannot disagree.
+            const hands = living(after.party.people)
+              .filter((pe) => !!pe.job && PLOTS[k].worked.includes(pe.job as JobId)).length;
+            days[k] = (days[k] ?? 0) + 1;
+            handSum[k] = (handSum[k] ?? 0) + hands;
+            handMax[k] = Math.max(handMax[k] ?? 0, hands);
+            if (hands > plots) {
+              over[k] = (over[k] ?? 0) + 1;
+              worst[k] = Math.max(worst[k] ?? 0, hands - plots);
+            }
+          }
+        });
+      }
+      return { days, over, worst, plotSum, handSum, handMax, settled };
+    };
+
+    /**
+     * THREE BOTS, because the first reading was a fact about ONE of them.
+     *
+     * SETTLER opens with `['farmer','farmer','woodcutter','hunter','builder',
+     * 'warrior']` — two farmers — and `crewsToNeed` reassigns the whole band
+     * to wood and game the first day the winter mark shows them short, which
+     * is most days. And `recrews` is FALSE in all three shipped policies, so
+     * `recrew` — the game's own "take the food job with the best output here"
+     * — is never called at all.
+     *
+     * So the shipped bot's yard is one job wide, and asking it whether a plot
+     * cap would bind measures the policy rather than the game. These two arms
+     * are the same band playing its ground: one that re-picks the best food
+     * job each season, and one that simply keeps the crew it landed with.
+     */
+    const ARMS: [string, Policy][] = [
+      ['the harness as it ships', SETTLER],
+      ['+ recrews: takes the best food job for this ground, each season',
+        { ...SETTLER, recrews: true }],
+      ['+ keeps its landing crew (two farmers), never crews to need',
+        { ...SETTLER, crewsToNeed: false }],
+    ];
+
+    const out: string[] = [];
+    for (const [label, pol] of ARMS) {
+      const r = sample(pol);
+      const rows = KINDS.map((k) => {
+        const pct = r.days[k] === 0 ? 0 : Math.round((r.over[k]! / r.days[k]!) * 100);
+        return `      ${k.padEnd(10)} ${(r.plotSum[k]! / Math.max(1, r.settled)).toFixed(1)} plots`
+          + `, ${(r.handSum[k]! / Math.max(1, r.days[k]!)).toFixed(1)} hands a day`
+          + ` (most ${r.handMax[k]})`
+          + ` — a cap bites ${pct}% of days, worst excess ${r.worst[k]}`;
+      });
+      out.push(`  ${label} — ${r.settled}/${SEEDS} settled:\n${rows.join('\n')}`);
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.S2 the ground against the hands — ${SEEDS} landings an arm, to day ${HORIZON}`
+      + `:\n${out.join('\n')}`,
+    );
+    expect(out.length).toBe(ARMS.length);
+  });
+
+  /**
+   * RE-TAKING A NUMBER THIS FILE'S OWN RULE SAYS TO DISTRUST.
+   *
+   * `recrews` is false in all three shipped policies, and the reading it was
+   * switched off on (2026-08-20) is in ROADMAP.md as **"and re-crewed by
+   * season too — 48/120, saved 0, killed 0 on top"**: an EXACT tie with the
+   * daily crewing alone.
+   *
+   * CLAUDE.md names that shape: "an arm that ties its control exactly is
+   * usually evidence the feature never ran, not that it is worthless." And
+   * the mechanism fits — `recrew` fires once a season and `crewsToNeed`
+   * reassigns every hand the next day, so a seasonal choice is overwritten
+   * before it can be worked.
+   *
+   * The probe above says it is not quite nothing: with `recrews` on, hands on
+   * water go from 0.0 a day to 1.2, so the verb DOES move people. A verb that
+   * moves people and changes no outcome at all is worth re-measuring rather
+   * than inheriting — especially now, because 11.S1 moved the survival curve
+   * three points under every one of these figures.
+   *
+   * TWO HORIZONS on purpose. Spring is where the old reading was taken, and
+   * it is also where fishing should matter most: winter forage is 0.15, so
+   * `seasonFactor` pays a farmer 0.15 of a day and a fisher 0.575.
+   */
+  it('re-takes what re-crewing by season is worth', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const sample = (pol: Policy, horizon: number) => {
+      setPolicy(pol);
+      const lived: boolean[] = [];
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), horizon);
+        lived.push(!final.end && final.day >= horizon);
+      }
+      return lived;
+    };
+
+    const rows: string[] = [];
+    for (const [label, horizon] of [['spring (day 73)', 73], ['day 500', 500]] as [string, number][]) {
+      const base = sample(SETTLER, horizon);
+      const arm = sample({ ...SETTLER, recrews: true }, horizon);
+      let saved = 0;
+      let killed = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        if (!base[i] && arm[i]) saved += 1;
+        if (base[i] && !arm[i]) killed += 1;
+      }
+      rows.push(
+        `  ${label}: as it ships ${base.filter(Boolean).length}/${SEEDS}`
+        + `, re-crewing by season ${arm.filter(Boolean).length}/${SEEDS}`
+        + ` — saved ${saved}, killed ${killed}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 11.S2b what re-crewing by season is worth — ${SEEDS} landings an arm:\n${rows.join('\n')}`);
+    expect(rows.length).toBe(2);
+  });
+
+  /**
+   * THE QUESTION UNDER 11.S2, asked of the GAME rather than of any bot.
+   *
+   * 11.S2 proposes plot caps so "the reading you settled on keeps mattering
+   * all game". But the reading ALREADY reaches every day of the game:
+   * `output()` is `job.floor + report[job.measure] * job.perPoint`, evaluated
+   * fresh each day for each job, and `recrew` picks the best food job from
+   * it. If the yard is scenery it is not because that channel is missing.
+   *
+   * So: for a settled steading on a real day, which of the three food jobs
+   * actually pays best? This asks `output` directly, on the states a saga
+   * really passes through, with the SAME person for all three so the answer
+   * is about ground and season and not about who happens to be free. No bot
+   * policy is in it — which is the point, after the reading above turned out
+   * to be a fact about `crewsToNeed`.
+   */
+  it('asks which food job the ground actually pays best', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 500;
+    const FOOD: JobId[] = ['farmer', 'hunter', 'fisher'];
+    const wins: Record<string, Record<string, number>> = {};
+    const daysIn: Record<string, number> = {};
+    /** How far ahead the winner is — a lead of nothing is not a decision. */
+    const leadSum: Record<string, number> = {};
+
+    setPolicy(SETTLER);
+    for (let i = 0; i < SEEDS; i += 1) {
+      let lastDay = 0;
+      run(armSeed(0, i, SEEDS), HORIZON, (_before, after) => {
+        if (!after.settlement || after.day === lastDay) return;
+        lastDay = after.day;
+        const who = living(after.party.people)[0];
+        if (!who) return;
+        const season = seasonOf(after.day);
+        const scored = FOOD
+          .map((id) => ({ id, n: output(after, who, jobById(id)!) }))
+          .sort((a, b) => b.n - a.n);
+        const top = scored[0]!;
+        const second = scored[1]!;
+        wins[season] ??= {};
+        wins[season]![top.id] = (wins[season]![top.id] ?? 0) + 1;
+        daysIn[season] = (daysIn[season] ?? 0) + 1;
+        leadSum[season] = (leadSum[season] ?? 0)
+          + (top.n === 0 ? 0 : (top.n - second.n) / top.n);
+      });
+    }
+
+    const rows = Object.keys(daysIn).sort().map((season) => {
+      const n = daysIn[season]!;
+      const parts = FOOD.map((id) => {
+        const w = wins[season]?.[id] ?? 0;
+        return `${id} ${Math.round((w / n) * 100)}%`;
+      });
+      return `  ${season.padEnd(7)} (${n} band-days): ${parts.join(', ')}`
+        + ` — the winner leads the runner-up by ${Math.round((leadSum[season]! / n) * 100)}%`;
+    });
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.S2c which food job the ground pays best — ${SEEDS} landings to day ${HORIZON}`
+      + `, asked of \`output()\` on the states a saga really passes through:\n${rows.join('\n')}`,
+    );
+    expect(rows.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * WHAT THE HARDCODED HUNTER COSTS.
+   *
+   * 11.S2c says the ground pays fisher best on 51-94% of settled band-days
+   * and hunter best on 4-17%, by a margin of 32-49%. The harness's daily
+   * crewing — the lever ROADMAP.md calls "the largest single effect this
+   * project has measured" — spells `'hunter'` in all three of its branches.
+   *
+   * So this is not a proposal, it is a price: what does the bot lose by
+   * reaching for one named job instead of asking the ground? `crewsByOutput`
+   * is off in every shipped policy, so nothing in balance.test.ts moves;
+   * this arm is the only thing that turns it on.
+   *
+   * If it is large, then every food figure in ROADMAP.md describes a band
+   * playing its yard badly, and 11.S2's plot caps are aimed at a yard that
+   * was never the problem.
+   */
+  it('prices the hardcoded hunter against asking the ground', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const sample = (pol: Policy, horizon: number) => {
+      setPolicy(pol);
+      const lived: boolean[] = [];
+      let souls = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), horizon);
+        lived.push(!final.end && final.day >= horizon);
+        souls += living(final.party.people).length;
+      }
+      return { lived, souls };
+    };
+
+    const rows: string[] = [];
+    for (const [label, horizon] of [['spring (day 73)', 73], ['day 500', 500]] as [string, number][]) {
+      const base = sample(SETTLER, horizon);
+      const arm = sample({ ...SETTLER, crewsByOutput: true }, horizon);
+      let saved = 0;
+      let killed = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        if (!base.lived[i] && arm.lived[i]) saved += 1;
+        if (base.lived[i] && !arm.lived[i]) killed += 1;
+      }
+      rows.push(
+        `  ${label}: reaches for the hunter ${base.lived.filter(Boolean).length}/${SEEDS}`
+        + ` (${(base.souls / SEEDS).toFixed(2)} souls)`
+        + `, asks the ground ${arm.lived.filter(Boolean).length}/${SEEDS}`
+        + ` (${(arm.souls / SEEDS).toFixed(2)} souls)`
+        + ` — saved ${saved}, killed ${killed}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 11.S2d what the hardcoded hunter costs — ${SEEDS} landings an arm:\n${rows.join('\n')}`);
+    expect(rows.length).toBe(2);
   });
 });
