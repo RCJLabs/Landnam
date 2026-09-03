@@ -6608,13 +6608,34 @@ Three groups, roughly in descending order of how much they change.
 
 ### Mechanics — fixes and enhancements
 
-- [ ] **11.M1 A winter camp: a middle outcome for a band with no roof.**
-  MEASURED (10.1): **23 of 74 starved sagas on `even` never founded a steading
-  at all** — 31% — against 3 of 63 on `fair`. Today "no roof by winter" is a
-  death sentence with nothing between it and survival. A camp — no plots, no
-  building, heavier firewood, survivable if provisioned — turns a binary into
-  a cost, and it is the failure mode with the largest untouched population.
-  UNMEASURED: whether it softens the first act, where 53% of runs already end.
+- [x] **11.M1 A winter camp: a middle outcome for a band with no roof.** —
+  **DECLINED 2026-09-03, on a re-take that moved the target out from under
+  the item.** The 10.1 figure inherited here (23/74 on `even` never found a
+  steading) was read as "no roof by winter is a death sentence" and the fix
+  proposed was winter-shaped: a camp with heavier firewood, survivable if
+  provisioned. Re-measured with two probes (`PROBE: 11.M1`/`11.M1b`,
+  `test/probes.test.ts`, `SEEDS=120`, `HORIZON=400`, both hardship terms):
+  first, what actually kills the never-founded — `even`: 34/120 sagas never
+  found a steading (avg end day 31), fallen split cold 13 / **hunger 37** /
+  violence 17 (hunger outnumbers cold nearly 3:1), 0/34 still wandering alive
+  at day 400 — none linger, all die outright. `fair`: 7/120 never founded
+  (avg day 33), cold 1 / hunger 6 / violence 8, 0/7 wandering. Second, the
+  decisive split — of those 34 `even` deaths, **28 (82%) die *before* winter
+  even opens** (day < 49, the fixed `WINTER_DAY`); only 6 die at-or-after
+  winter opens, and even inside that small remainder cold (8) still trails
+  hunger (10). `fair`: 4/7 before winter, 3/7 after, and among the after
+  group cold 1 / hunger 6. So the population this item targets almost never
+  reaches the season it names — four in five of them are already dead of
+  ordinary summer/autumn hunger and violence weeks before winter is a factor
+  — and even the minority who do reach it homeless are still killed more
+  often by hunger than by cold, meaning a firewood/shelter mechanic (the one
+  literally described) would treat the wrong store even within its own
+  narrowed true population. No code change is indicated: the failure this
+  item names is real in aggregate (31% never found) but is not a winter
+  failure, so a winter-shaped fix would measure as close to nothing, the
+  same pattern 11.M3 found for its own proposed mechanic. Left for Evan: if
+  the never-founded rate itself is worth addressing, the lever is early-game
+  hunger and violence before day ~31–33, not a winter camp.
 
 - [x] **11.M2 Raiding states its record** — **shipped 2026-09-03, on a
   RE-TAKEN number rather than the one the item opened on.**
@@ -6789,6 +6810,20 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.M1: the winter camp was aimed at a season most of its
+  victims never reach** — the item inherited 10.1's 23/74-never-founded
+  figure and read it as a winter problem, proposing a camp with heavier
+  firewood. Re-taken with two probes: of 34 `even`-term sagas that never
+  found a steading (`SEEDS=120`, `HORIZON=400`), **82% (28/34) die before
+  winter even opens** (day < 49); only 6 die at-or-after, and inside that
+  remainder hunger (10) still edges cold (8). `fair` terms split 4/7 before,
+  3/7 after. The population is real but the season it names is not where it
+  dies — four in five are already gone to ordinary hunger and violence weeks
+  earlier — so a firewood/shelter mechanic would target the wrong store even
+  for the minority who do reach winter. Declined; no code change. Left for
+  Evan: if the never-founded rate is worth addressing, the lever is
+  early-game hunger/violence before day ~31–33, not a winter camp.
 
 - **2026-09-03 — 11.M4: food now separates the doomed from the survivors,
   and nobody set out to fix that** — 10.1's opening figure (food at day 49,

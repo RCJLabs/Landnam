@@ -3674,3 +3674,113 @@ describe('PROBE: 11.M4 — what actually separates the doomed from the survivors
     expect(out.length).toBe(2);
   });
 });
+
+describe('PROBE: 11.M1 — what actually kills a band that never finds land', () => {
+  /**
+   * 10.1 opened this item on "23 of 74 starved sagas on even never founded a
+   * steading at all — 31%". RE-TAKEN in the same run as 11.M4 (identical
+   * instrument, same seeds): 22/60 (37%) on even, 3/65 (5%) on fair. The
+   * population is real and, if anything, larger than the item opened on.
+   *
+   * WHAT THE ITEM PROPOSES IS A FIX FOR COLD, NOT FOR HUNGER — "heavier
+   * firewood, survivable if provisioned" describes a shelter cost, and
+   * 11.M3 is the reason that distinction is not a technicality: a fix aimed
+   * at the wrong store measures as nothing, because it does not touch the
+   * thing that is actually killing anybody. So before designing a camp,
+   * this asks what kills the bands that never find land — the cold a camp
+   * would answer, or the hunger it would not.
+   */
+  it('breaks down the fate of every band that never founded a steading', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 400;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      let never = 0;
+      let frozen = 0;
+      let hungered = 0;
+      let violent = 0;
+      let stillWandering = 0;
+      let daysAlive = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const s = run(armSeed(0, i, SEEDS), HORIZON, undefined, terms);
+        if (s.settlement) continue;
+        never += 1;
+        daysAlive += s.day;
+        if (!s.end) { stillWandering += 1; continue; }
+        for (const p of s.party.people) {
+          if (p.alive || p.left) continue;
+          const f = p.fate ?? '';
+          if (f === 'the cold') frozen += 1;
+          else if (f === 'hunger' || f === 'short commons') hungered += 1;
+          else if (DEATHS.includes(f)) violent += 1;
+        }
+      }
+
+      out.push(
+        `  ${terms}: ${never}/${SEEDS} never founded a steading at all`
+        + ` (avg day ${never ? Math.round(daysAlive / never) : 0})\n`
+        + `      of the fallen among them: cold ${frozen}, hunger ${hungered}, violence ${violent}\n`
+        + `      still wandering, alive, at day ${HORIZON}: ${stillWandering}/${never}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 11.M1 what kills the never-founded — ${SEEDS} landings an arm, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * THE AVERAGE END DAY WAS 31 — BEFORE WINTER EVEN OPENS (day 49). That
+   * means most of the "never founded" population is not a band caught out
+   * by an unroofed winter at all; it is a band that failed during ordinary
+   * summer travel, for reasons a winter camp cannot touch. Split the same
+   * population by whether the end came before or after winter opens, so the
+   * item's actual target — bands caught BY winter — is not averaged away
+   * inside a bigger population it was never about.
+   */
+  it('splits the never-founded by whether they even reached winter', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 400;
+    const WINTER_OPENS = 49;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      let never = 0;
+      let beforeWinter = 0;
+      let afterWinter = 0;
+      let afterFrozen = 0;
+      let afterHungered = 0;
+      let afterViolent = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const s = run(armSeed(0, i, SEEDS), HORIZON, undefined, terms);
+        if (s.settlement || !s.end) continue;
+        never += 1;
+        if (s.day < WINTER_OPENS) { beforeWinter += 1; continue; }
+        afterWinter += 1;
+        for (const p of s.party.people) {
+          if (p.alive || p.left) continue;
+          const f = p.fate ?? '';
+          if (f === 'the cold') afterFrozen += 1;
+          else if (f === 'hunger' || f === 'short commons') afterHungered += 1;
+          else if (DEATHS.includes(f)) afterViolent += 1;
+        }
+      }
+
+      out.push(
+        `  ${terms}: ${never} never-founded deaths total`
+        + ` — ${beforeWinter} before winter even opened (day < ${WINTER_OPENS}, a camp cannot touch these)`
+        + `, ${afterWinter} at or after\n`
+        + `      of the AFTER-WINTER fallen: cold ${afterFrozen}, hunger ${afterHungered}, violence ${afterViolent}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 11.M1b before vs after winter opens — ${SEEDS} landings an arm, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+});
