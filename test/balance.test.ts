@@ -24,7 +24,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
-import { effectsOn, SEASON_LENGTH, seasonOf, winterDepth } from '../src/sim/calendar';
+import { effectsOn, SEASON_LENGTH, seasonOf, winterDepth, YEAR_LENGTH } from '../src/sim/calendar';
 import { markHaze } from '../src/sim/winter';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply } from '../src/sim/actions';
@@ -276,6 +276,41 @@ describe('no two winters are the same, and the mark says so', () => {
     expect(markHaze(150)).toBe(0);
     expect(markHaze(100)).toBeGreaterThan(0);
     expect(markHaze(90)).toBeGreaterThan(markHaze(110));
+  });
+
+  /**
+   * THE BAR 11.S5 SHIPPED, and it is stated as a REGRESSION GUARD rather than
+   * a design choice, because the regression already happened once.
+   *
+   * `winterDepth` used to be `min(WINTER_DEPTH_MAX, floorDepth(day) +
+   * bite(seed, day))` — one ceiling over the sum. WINTER_DEEPENING is 2 and
+   * WINTER_DEPTH_MAX is 6, so the floor alone reaches the ceiling on the
+   * band's FOURTH winter (3 * 2 = 6), and every winter after that read
+   * bit-for-bit identical regardless of the seeded roll — the file's own
+   * comment calls the variance "the whole mechanism", and the arithmetic had
+   * switched it off for the rest of the game. MEASURED: 19% of winters
+   * actually lived, over 120 settler landings to day 500, were already this
+   * flat (`PROBE: 11.S5`).
+   *
+   * WATCHED FAILING against the exact old formula before this bar was
+   * trusted — swap `winterDepth` back to `Math.min(WINTER_DEPTH_MAX,
+   * floorDepth(day) + bite(seed, day))` and the fourth winter's spread is
+   * zero, which is precisely what this asserts against.
+   */
+  it('keeps varying past the fourth winter, when the floor alone used to swallow it', () => {
+    const FOURTH_WINTER_DAY = SEASON_LENGTH * 2 + 1 + YEAR_LENGTH * 3; // winterIndex 3
+    const depths = new Set(
+      Array.from({ length: 30 }, (_, i) => winterDepth(`late-saga-${i}`, FOURTH_WINTER_DAY)),
+    );
+    expect(depths.size, 'the fourth winter reads the same depth every time — the floor ate the bite').toBeGreaterThan(1);
+
+    // And every winter after it, not just the fourth — the ceiling used to
+    // catch every one of them once the floor alone reached it.
+    const TENTH_WINTER_DAY = SEASON_LENGTH * 2 + 1 + YEAR_LENGTH * 9;
+    const laterDepths = new Set(
+      Array.from({ length: 30 }, (_, i) => winterDepth(`later-saga-${i}`, TENTH_WINTER_DAY)),
+    );
+    expect(laterDepths.size, 'the tenth winter has flatlined too').toBeGreaterThan(1);
   });
 });
 

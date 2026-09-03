@@ -3438,3 +3438,92 @@ describe('PROBE: does the leader\'s stance still matter after 11.S1', () => {
     expect(rows.length).toBe(3);
   });
 });
+
+describe('PROBE: 11.S5 — how much of a saga is winters that stopped varying', () => {
+  /**
+   * 6.1's own status note calls it a prerequisite that "measured at no
+   * change to the curve". The arithmetic says why, and it is worth pinning
+   * down before touching anything: `winterDepth` is
+   * `min(WINTER_DEPTH_MAX, floorDepth(day) + bite(seed, day))`, floorDepth
+   * grows WINTER_DEEPENING (2) a winter, and WINTER_DEPTH_MAX is 6 — so by
+   * the FOURTH winter the floor alone (3 * 2 = 6) already meets the ceiling,
+   * and every winter after that is bit-for-bit identical regardless of the
+   * seeded `bite()` roll:
+   *
+   *   winter   floor   depth range   spread
+   *   1          0       0..4          4
+   *   2          2       2..6          4
+   *   3          4       4..6          2
+   *   4          6       6..6          0   <- no variance left, forever
+   *
+   * So "winters that vary" stops varying by the game's fourth winter. This
+   * asks what that costs in a real saga: of every winter a band actually
+   * lives through, how many still have any spread left?
+   */
+  it('counts how many lived winters still have any severity variance left', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 500;
+    setPolicy(SETTLER);
+
+    let wintersLived = 0;
+    let flatlined = 0;
+    const byIndex: Record<number, number> = {};
+
+    for (let i = 0; i < SEEDS; i += 1) {
+      let lastStood = -1;
+      run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+        if (!after.settlement) return;
+        // Count once per winter actually entered, on the day it starts.
+        if (seasonOf(after.day) !== 'winter' || seasonOf(before.day) === 'winter') return;
+        const idx = wintersStood(after.day);
+        if (idx === lastStood) return;
+        lastStood = idx;
+        wintersLived += 1;
+        byIndex[idx] = (byIndex[idx] ?? 0) + 1;
+        const floor = idx * 2;
+        if (floor >= 6) flatlined += 1;
+      });
+    }
+
+    const rows = Object.keys(byIndex).map(Number).sort((a, b) => a - b).map(
+      (idx) => `    winter #${idx + 1}: lived ${byIndex[idx]} times, floor ${idx * 2}`
+        + `${idx * 2 >= 6 ? ' (flatlined)' : ''}`,
+    );
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.S5 winters lived, and how many still vary — ${SEEDS} landings, settler, to day ${HORIZON}:\n`
+      + `${rows.join('\n')}\n`
+      + `  total winters lived: ${wintersLived}, of which flatlined (zero spread left): ${flatlined}`
+      + ` (${wintersLived ? Math.round((flatlined / wintersLived) * 100) : 0}%)`,
+    );
+    expect(wintersLived).toBeGreaterThan(0);
+  });
+});
+
+describe('PROBE: 11.S5 — what restoring the bite past year three costs', () => {
+  /**
+   * The FIX, priced. `winterDepth` used to cap the SUM of floor and bite at
+   * WINTER_DEPTH_MAX (6); now it caps the floor alone and lets bite add on
+   * top, so a winter past the third can land as high as 10 instead of a
+   * fixed 6. That is a real balance change on the tail of the difficulty
+   * curve, not a cosmetic one, and it gets the same treatment every other
+   * balance change in this file gets: paired seeds, saved/killed, stated.
+   */
+  it('prices the restored variance in whole sagas', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 150;
+    const HORIZON = 500;
+    setPolicy(SETTLER);
+    const lived: boolean[] = [];
+    for (let i = 0; i < SEEDS; i += 1) {
+      const final = run(armSeed(0, i, SEEDS), HORIZON);
+      lived.push(!final.end && final.day >= HORIZON);
+    }
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 11.S5 the fix, in whole sagas — ${SEEDS} landings, settler, to day ${HORIZON}: `
+      + `${lived.filter(Boolean).length}/${SEEDS} still standing\n`
+      + `  bitstring: ${lived.map((l) => (l ? '1' : '0')).join('')}`,
+    );
+    expect(lived.length).toBe(SEEDS);
+  });
+});

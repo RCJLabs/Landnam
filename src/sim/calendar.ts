@@ -141,12 +141,42 @@ export function winterIndex(day: number): number {
  */
 export function winterDepth(seed: string, day: number): number {
   if (seasonOf(day) !== 'winter') return 0;
-  return Math.min(WINTER_DEPTH_MAX, floorDepth(day) + bite(seed, day));
+  return cappedFloor(day) + bite(seed, day);
 }
 
-/** The part that grows with the years, and that the band can count on. */
+/**
+ * The part that grows with the years, and that the band can count on.
+ *
+ * UNCAPPED here on purpose — `cappedFloor` is the only place a ceiling gets
+ * applied, so this stays the honest "years times deepening" reading, with
+ * exactly one ceiling in the whole calculation rather than two that could
+ * drift apart.
+ */
 export function floorDepth(day: number): number {
   return wintersStood(day) * WINTER_DEEPENING;
+}
+
+/**
+ * The floor, ceilinged on ITS OWN — found 2026-09-03, and worth stating
+ * exactly what was wrong. `winterDepth` used to be
+ * `min(WINTER_DEPTH_MAX, floorDepth(day) + bite(seed, day))` — one ceiling
+ * over the SUM. `WINTER_DEEPENING` is 2 and `WINTER_DEPTH_MAX` is 6, so the
+ * floor alone reaches the ceiling on the band's fourth winter (3 * 2 = 6),
+ * and from there every winter is bit-for-bit identical regardless of the
+ * seeded bite roll — the comment two functions up calls the variance "the
+ * whole mechanism" and the arithmetic switched it off for the rest of the
+ * game. MEASURED: 19% of winters actually lived, over 120 settler landings
+ * to day 500, were already flatlined this way.
+ *
+ * The floor still stops growing here — this project has not re-opened
+ * whether winter's structural cost should climb forever, and is not doing so
+ * today. What changes is that `bite` now adds ON TOP of the capped floor
+ * rather than being clamped away by a ceiling the floor alone already met, so
+ * a winter past the fourth can still land anywhere the floor's own ceiling
+ * plus a bad roll reaches — see `winterDepth`.
+ */
+export function cappedFloor(day: number): number {
+  return Math.min(WINTER_DEPTH_MAX, floorDepth(day));
 }
 
 /**

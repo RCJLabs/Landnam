@@ -3995,11 +3995,12 @@ can actually kill you. Set from a design conversation after the 5.3
 measurements: the material survival loop cannot threaten a settled band,
 because by year two it has more labour than uses for it.
 
-- [~] **6.1 Winters that vary** — Each winter's severity is fixed by the run
-  seed and grows with the years; the mark is exact close to and vague far out,
-  so long-range stockpiling is a gamble rather than arithmetic. *Shipped, and
-  measured at no change to the curve — see the changelog. It is a prerequisite
-  for 6.2, not a fix on its own.*
+- [x] **6.1 Winters that vary** — **Finished 2026-09-03 (11.S5): the
+  variance the milestone shipped was silently switching itself off by the
+  fourth winter, and now it does not.** Each winter's severity is fixed by
+  the run seed and grows with the years; the mark is exact close to and vague
+  far out, so long-range stockpiling is a gamble rather than arithmetic. See
+  11.S5 below for the defect, the fix, and what it cost.
 - [x] **6.2 Hands** — The band can grow: thralls taken, survivors taken in, a
   neighbour's sons. Losing people becomes recoverable, which is what makes
   losing them affordable to inflict — and the labour surplus becomes a choice
@@ -6534,13 +6535,76 @@ Three groups, roughly in descending order of how much they change.
   and 12/12 and trips the second. (Day 70 lifting is correct — the thaw is
   three days off and there is barely a winter left to walk.)
 
-- [ ] **11.S5 Winters that vary — finish 6.1.** GROUNDED in an existing
-  unfinished item rather than invented: `6.1 Winters that vary` is still `[~]`.
-  Every winter arrives at the same depth today. Proposal: severity rolled per
-  winter and ANNOUNCED IN AUTUMN, so a player provisions against a forecast
-  rather than a constant, and a hard year is a story rather than arithmetic.
-  It also gives 9.7's declined warmth mechanics a reason to exist later —
-  warmth ends 4% of runs partly BECAUSE winter never varies.
+- [x] **11.S5 Winters that vary — finish 6.1** — **the item's own premise
+  was re-checked against the code rather than inherited, and it was WRONG in
+  an interesting way: winters do not arrive at the same depth "today" — 6.1
+  already varies them. They stop varying, permanently, after the third one.
+  2026-09-03.**
+
+  RE-VERIFIED, not assumed: `winterDepth(seed, day) = min(WINTER_DEPTH_MAX,
+  floorDepth(day) + bite(seed, day))`, where `floorDepth` grows
+  `WINTER_DEEPENING` (2) a winter and `WINTER_DEPTH_MAX` is 6. The floor ALONE
+  reaches the ceiling on the fourth winter (3 × 2 = 6), and from there every
+  winter reads bit-for-bit identical regardless of the seeded `bite()` roll —
+  the code's own comment two lines above calls the variance "the whole
+  mechanism", and the arithmetic had switched it off for the rest of the
+  game:
+
+  | winter | floor | depth range | spread |
+  |---|---|---|---|
+  | 1 | 0 | 0..4 | 4 |
+  | 2 | 2 | 2..6 | 4 |
+  | 3 | 4 | 4..6 | 2 |
+  | 4 | 6 | 6..6 | **0 — flatlined forever after** |
+
+  MEASURED, not assumed to matter: `PROBE: 11.S5`, 120 settler landings to
+  day 500 — **of 183 winters actually lived through, 35 (19%) were already
+  flatlined.**
+
+  **THE FIX cuts the SHARED ceiling in two.** `winterDepth` now caps the
+  floor alone (`cappedFloor`) and adds `bite` on top, uncapped by anything the
+  floor already met — so a winter past the third can land anywhere from 6 to
+  10 instead of pinned at 6. The floor's own growth is UNCHANGED — this did
+  not re-open whether winter's structural cost should climb forever, only
+  restored the part the milestone's own comment calls the point.
+
+  **A SECOND, LATENT BUG SURFACED WHILE FIXING THE FIRST, and needed its own
+  fix in the same commit.** `winter.ts`'s `plannedFirewood` — the mark's
+  far-out guess and `reach.ts`'s "best case" ceiling — computed its own
+  parallel `base = effectsOn(day).firewood + floorDepth(day)`, using the RAW,
+  UNCAPPED floor rather than the capped one `winterDepth` actually uses. For
+  a `best=true` walk (no ceiling clause reachable to catch it) this could
+  charge a late-game band for a depth no real winter has ever reached — the
+  exact false-dead shape 11.V found and fixed elsewhere in this file's
+  neighbourhood, latent here rather than triggered, because it needed a
+  winter deep enough into a saga that few sagas reach it. Fixed to share
+  `cappedFloor` with `winterDepth`, so the mark and the real burn cannot
+  quietly disagree — which is the rule `plannedFirewood`'s own header comment
+  already states.
+
+  **ANNOUNCED IN AUTUMN, per the item's own proposal.** A new, separate
+  chronicle line fires once, at the exact day autumn opens, from the second
+  winter on (silent for the first — `bite` is forced to zero there, so there
+  is nothing true to say). Day-gated rather than flag-gated, the same
+  discipline the existing "eight days out" line uses, so it cannot repeat
+  within a season. Three lines, chosen by the seeded `bite`, watched to fire
+  exactly once and to differ across seeds:
+  - mild (`bite` 0–1): *"The autumn opened mild, and the old hands said this
+    looked to be an easy year."*
+  - ordinary (`bite` 2): *"The autumn opened as autumns do — no better a
+    sign in it than any other year."*
+  - hard (`bite` 3–4): *"The autumn opened with something wrong in the
+    colour of the sky, and the old hands said so."*
+
+  **PRICED, paired same-seed, before and after the depth-cap fix:** 150
+  settler landings to day 500, **150/150 sagas agree except one — saved 1,
+  killed 0.** Inside noise at this N, and that is the right shape for this
+  fix: it restores a mechanism the milestone's own numbers already said moves
+  survival "by exactly zero" on its own (fixed deepening alone was tried and
+  rejected on that basis when 6.1 first shipped) — what it buys is legibility
+  and story, not a curve shift, and it was not expected to move one.
+
+  This closes 6.1.
 
 ### Mechanics — fixes and enhancements
 
@@ -6633,6 +6697,36 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 6.1 finished: winters were varying for exactly three years
+  and then stopped forever** — 11.S5's own premise ("every winter arrives at
+  the same depth today") was re-checked against the code rather than
+  inherited, and was wrong in a sharper way than the item guessed: 6.1
+  already varies severity, but `winterDepth`'s shared ceiling
+  (`min(WINTER_DEPTH_MAX, floor + bite)`) let the structural floor alone
+  reach the cap on the fourth winter, after which `bite`'s seeded roll — the
+  code's own comment calls it "the whole mechanism" — changed nothing, ever
+  again. **19% of winters actually lived, over 120 settler landings, were
+  already flatlined this way.**
+  - Fixed by capping the floor alone (`cappedFloor`) and adding `bite` on top
+    of that, uncapped by anything the floor already met. The floor's own
+    growth is unchanged — this did not re-open whether winter's structural
+    cost should climb forever.
+  - **A second, latent false-dead bug surfaced fixing the first:**
+    `plannedFirewood`'s far-out guess and best-case ceiling used the RAW,
+    uncapped floor in a code path with no ceiling clause to catch it — the
+    same shape 11.V found and fixed elsewhere, latent here because it needed
+    a saga to reach a deep winter to trigger. Fixed to share `cappedFloor`
+    with `winterDepth`, so the mark and the real burn cannot disagree.
+  - **Announced in autumn**, per the item's own proposal: a new chronicle
+    line, day-gated (not flag-gated) so it cannot repeat within a season,
+    naming the coming winter mild, ordinary, or hard from the seeded bite —
+    silent for the first winter, where there is nothing true to say.
+  - **Priced: saved 1, killed 0 of 150 paired sagas** — inside noise, and
+    the right shape for a fix that restores legibility rather than difficulty
+    the milestone's own numbers already said this lever moves "by exactly
+    zero" alone.
+
 
 - **2026-09-03 — the leader's stance was declined, and the reason is worth
   keeping: my own earlier claim was an arena reading treated as a

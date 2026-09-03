@@ -10,12 +10,11 @@
 
 import type { GameState } from '../state/types';
 import {
+  cappedFloor,
   effectsOn,
-  floorDepth,
   nextThaw,
   seasonOf,
   WINTER_BITE_MAX,
-  WINTER_DEPTH_MAX,
 } from './calendar';
 import { dayLabour, jobOf, output, seasonFactor, shelterSaving } from './colony';
 import { hardshipById } from './../data/hardship';
@@ -167,7 +166,13 @@ export function markHaze(day: number): number {
 export function plannedFirewood(state: GameState, day: number, best = false): number {
   const terms = hardshipById(state.hardship).winter;
   if (seasonOf(day) !== 'winter') return effectsOn(day).firewood;
-  const base = effectsOn(day).firewood + floorDepth(day);
+  // `cappedFloor`, not the raw growing floor — 11.S5 found this reading the
+  // UNCAPPED figure while `winterDepth` capped it, so a late-game "best case"
+  // walk (`reach.ts`, `best=true`, no ceiling clause below to catch it)
+  // could charge a band for a depth no winter has ever actually reached,
+  // which is exactly the false-dead shape 11.V found and fixed elsewhere in
+  // this same file's neighbourhood. One ceiling, shared, is the whole point.
+  const base = effectsOn(day).firewood + cappedFloor(day);
   // Close enough to read, so the weather is part of the reading — the same
   // term `firewoodPerNight` adds to the actual burn. If the fire felt a frost
   // the mark did not, the mark would be quietly short by exactly the frosts
@@ -186,9 +191,15 @@ export function plannedFirewood(state: GameState, day: number, best = false): nu
   // ceiling gets the mildest winter the years guarantee, the same best case
   // `bestShelter` already grants the roof.
   if (best) return base * terms;
+  // The ceiling used to be the constant WINTER_DEPTH_MAX, which was right
+  // exactly as long as `winterDepth` capped the SUM at that same constant.
+  // 11.S5 uncapped the sum so `bite` keeps mattering past the third winter —
+  // see calendar.ts — so the true ceiling a hazy guess must never exceed is
+  // now `cappedFloor(day) + WINTER_BITE_MAX`, the same two terms
+  // `winterDepth` itself adds.
   return (
     Math.min(
-      effectsOn(day).firewood + WINTER_DEPTH_MAX,
+      effectsOn(day).firewood + cappedFloor(day) + WINTER_BITE_MAX,
       base + Math.round(WINTER_BITE_MAX / 2),
     ) * terms
   );

@@ -27,7 +27,7 @@ import { seasonOf } from '../src/sim/calendar';
 import { assign, buildable, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
 import { checkRunEnd, foodPerDay, passDay, SURVIVAL_DAY } from '../src/sim/upkeep';
-import { YEAR_LENGTH } from '../src/sim/calendar';
+import { SEASON_LENGTH, YEAR_LENGTH } from '../src/sim/calendar';
 import { forecast, markVisible, MARK_WINDOW, PRUDENCE, WINTER_DAY } from '../src/sim/winter';
 import { coldNight, sickCount } from '../src/sim/cold';
 import { readiness } from '../src/sim/reach';
@@ -377,6 +377,58 @@ describe('an unprepared colony dies and it is clearly your fault', () => {
     state.day = 5;
     telegraphWinter(state);
     expect(state.flags['winterTargetGiven']).toBeUndefined();
+  });
+
+  /**
+   * 11.S5, finishing 6.1: at the moment autumn opens, the game names the
+   * coming winter's unknowable-in-advance character — see
+   * `characterOfTheComingWinter` in sim/telegraph.ts, a SEPARATE line from
+   * the food/wood reckoning above (which is a first-run tutorial beat and
+   * stays one). `bite()` is forced to zero for the FIRST winter on purpose
+   * (calendar.ts), and there is nothing true to say about a roll that never
+   * happened, so this stays silent there.
+   */
+  it('says nothing about the winter\'s character in the first autumn', () => {
+    const state = settledWell('quiet-first');
+    state.day = SEASON_LENGTH + 1; // the exact FIRST day of the first autumn — the day gate itself
+    telegraphWinter(state);
+    expect(state.saga.some((e) => /autumn opened/.test(e.text))).toBe(false);
+  });
+
+  /**
+   * From the SECOND winter it has something to say, exactly once — the day
+   * gate means calling it again mid-autumn is silent, matching "8 days out"
+   * in upkeep.ts, which needs no flag for the same reason — and it says one
+   * of three things, which the seed fixes, same discipline as `winterDepth`
+   * itself two tables up.
+   */
+  it('names the winter\'s character once, at the moment the second autumn opens, and the seed decides which', () => {
+    const SECOND_AUTUMN_OPENS = SEASON_LENGTH + 1 + YEAR_LENGTH;
+    const said = new Set<string>();
+    for (let i = 0; i < 20; i += 1) {
+      const state = settledWell(`character-${i}`);
+      state.day = SECOND_AUTUMN_OPENS;
+      state.saga = [];
+      telegraphWinter(state);
+      const lines = state.saga.filter((e) => /autumn opened/.test(e.text));
+      expect(lines, `seed character-${i} gave no reckoning at all`).toHaveLength(1);
+      said.add(lines[0]!.text);
+
+      // A day later in the same autumn: silent. The gate is the day, not a
+      // flag, and this is what proves it is not simply always-on.
+      state.day += 1;
+      state.saga = [];
+      telegraphWinter(state);
+      expect(state.saga.some((e) => /autumn opened/.test(e.text))).toBe(false);
+
+      // FIXED BY THE SEED, replayed from scratch.
+      const replay = settledWell(`character-${i}`);
+      replay.day = SECOND_AUTUMN_OPENS;
+      replay.saga = [];
+      telegraphWinter(replay);
+      expect(replay.saga.find((e) => /autumn opened/.test(e.text))!.text).toBe(lines[0]!.text);
+    }
+    expect(said.size, 'twenty seeds and only one kind of winter among them').toBeGreaterThan(1);
   });
 });
 
