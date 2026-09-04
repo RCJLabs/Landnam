@@ -3964,3 +3964,93 @@ describe('PROBE: 11.U4 — what the fighting has actually cost', () => {
     expect(out.length).toBe(2);
   });
 });
+
+describe('PROBE: 11.U5 — is there a thread of known foes to draw', () => {
+  /**
+   * The item says "the data is all there and appears once, in one log line",
+   * and proposes a "who we have fought" list to make the named foe a thread.
+   *
+   * BOTH HALVES NEED CHECKING, and the first fails on a code read alone.
+   * A champion is not a record of a fight, it is a slot on a NEIGHBOUR:
+   * `clan.champion` holds ONE man, is overwritten every time that clan sends
+   * another, and is DELETED outright when he is put down (`battleTurn.ts`).
+   * So the state cannot answer "who have we fought" — only "who does each
+   * clan have right now", with everyone you killed erased. A history would
+   * be new persisted shape, a SAVE_VERSION bump and a migration, not a
+   * readout of what is already kept.
+   *
+   * The second half is the thread itself, and 9.5 already measured it and
+   * wrote the figure into `battleTurn.ts`: a champion who walks away leads a
+   * repeat fight in 5% of clan fights on even and 3% on fair, and only 22%
+   * of champion fights belong to a clan at all. Re-taken here rather than
+   * inherited, and asked in the shape the PANEL needs: how many rows would
+   * it have, and how many of them would name a man met more than once?
+   */
+  it('counts the rows such a list would have, and the foes ever met twice', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 80;
+    const HORIZON = 400;
+    const out: string[] = [];
+
+    for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
+      setPolicy(pol);
+      let championFights = 0;
+      let clanFights = 0;
+      let returns = 0;
+      let killed = 0;
+      let rowsAtEnd = 0;
+      let sagasWithAnyRow = 0;
+      let sagasWithTwoRows = 0;
+      let scarredAtEnd = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          // A fight that has just begun, and whose man it is.
+          if (!before.battle && after.battle) {
+            if (after.battle.champion) championFights += 1;
+            const of = after.battle.championOf;
+            if (of) {
+              clanFights += 1;
+              // Scars are added when he WALKS OFF, at the end of a fight, so
+              // any he already carries as this one opens were earned on an
+              // earlier field: this is a man met before, not a new one.
+              const clan = after.neighbours.find((n) => n.id === of);
+              if ((clan?.champion?.scars ?? 0) > 0) returns += 1;
+            }
+          }
+          // Held a champion a moment ago and does not now: put down, and
+          // gone from the record with him.
+          for (const was of before.neighbours) {
+            if (!was.champion) continue;
+            const now = after.neighbours.find((n) => n.id === was.id);
+            if (now && !now.champion) killed += 1;
+          }
+        }, 'fair');
+
+        const rows = final.neighbours.filter((n) => n.champion);
+        rowsAtEnd += rows.length;
+        if (rows.length >= 1) sagasWithAnyRow += 1;
+        if (rows.length >= 2) sagasWithTwoRows += 1;
+        scarredAtEnd += rows.filter((n) => (n.champion?.scars ?? 0) > 0).length;
+      }
+
+      out.push(
+        `  ${name}: ${championFights} fights with a named man, ${clanFights} of them a clan's`
+        + ` — ${championFights > 0 ? Math.round((clanFights / championFights) * 100) : 0}%`
+        + ` (the item said 22%)\n`
+        + `      a man met BEFORE: ${returns} of ${clanFights} clan fights`
+        + ` — ${clanFights > 0 ? Math.round((returns / clanFights) * 100) : 0}%`
+        + ` (9.5 said 3% on fair)\n`
+        + `      champions put down (erased from the record): ${killed}\n`
+        + `      THE LIST AT SAGA END: ${(rowsAtEnd / SEEDS).toFixed(2)} rows a saga`
+        + ` | sagas with any row at all ${sagasWithAnyRow}/${SEEDS}`
+        + ` | with two or more ${sagasWithTwoRows}/${SEEDS}`
+        + ` | rows naming a man met twice ${scarredAtEnd}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 11.U5 known foes — ${SEEDS} landings an arm, fair terms, to day ${HORIZON}:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+});
