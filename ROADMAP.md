@@ -6459,9 +6459,58 @@ Three groups, roughly in descending order of how much they change.
   **The repair this points at is the BAR, not `walkWinter`.** 40% is a
   ceiling on P(lived | condemned), and roughly two-fifths of that numerator
   is food the projection is not allowed to know about. A bar on the ground
-  share alone (10/65) is a bar on the thing the panel actually claims. This
-  is a ruling for whoever takes the flip, not a change made here: the flip
-  arm has not been re-measured this way.
+  share alone (10/65) is a bar on the thing the panel actually claims.
+
+  **AND THE FLIPPED ARM NOW SAYS THE SAME, which is what that ruling was
+  waiting on.** A figure from the shipped arm is not a figure about the
+  flipped one, so both were measured together — MEASURED 2026-09-04, 300
+  seeds, `even`, SETTLER, to day 73, the only difference between the arms
+  being `crewsByOutput`:
+
+  | arm | condemned | lived | the bar's ratio | on the ground alone |
+  |---|---|---|---|---|
+  | as it ships | 65 | 18 | 28% | 10 = **15%** |
+  | flipped | 57 | 32 | 56% | 16 = **28%** |
+
+  (The shipped row reproduces the reading above exactly, seed for seed and
+  unit for unit, which is the cross-check that the two-arm rig changed
+  nothing.) **A bar written on the ground share passes on both arms** —
+  15% and 28% against a 40% ceiling — where the shipped bar fails the
+  flipped arm at 56%. So restating the bar unblocks the flip, and does it by
+  measuring the claim the panel makes rather than the one it does not.
+
+  **But the flip really does make the projection twice as wrong, 15% to
+  28%, and that is not luck.** Two things were measured alongside it, and
+  both point the same way:
+
+  - **The flipped condemned are condemned by a third of the margin** — a
+    food shortfall of 7.4 at the verdict against 19.5 on the shipped arm.
+    Better-crewed bands are refused nearer the line, so more of them squeak
+    over it. This alone raises the wrong-rate with nothing else at work.
+  - **They re-crew twice as often afterwards** — 22.9 turns a band moved
+    somebody after the verdict against 11.4, from the same 2.8–2.9 people.
+    `forecast` walks the remaining days against the assignments held AT THE
+    VERDICT and by design cannot see a later move, so a band that shuffles
+    hands twice as often outruns a projection that never re-reads it.
+
+  The staleness story made a check-able prediction, the prediction held, and
+  it is still only a prediction that held: nothing here shows the extra
+  moves CAUSED the extra survivals, and the smaller margin is the simpler
+  co-explanation. Recorded as two measured facts and one surviving
+  hypothesis, not as a mechanism.
+
+  **The re-crew counter needed fixing before it could say anything**, and
+  the fault is the one this file keeps finding. Comparing `before` against
+  `after` read 0.0 on BOTH arms — trap 3 exactly — because the harness calls
+  `assign(state, …)` on the live object before `apply`, so the new job is
+  already on `before` when the watcher runs. The check could not fire. It
+  now snapshots each person's job at the verdict into a plain map of strings
+  and compares every later turn against that.
+
+  **THE RULING IS EVAN'S**, because it changes a shipped bar and then the
+  balance behind it: restate the verdict bar as a ceiling on the ground
+  share and take the flip, or leave both. The measurement is done either
+  way.
 
   Two limits stand on all of the above: it is the UNFLIPPED arm, so it
   describes the shipped 28% population and not the post-flip 58% one the

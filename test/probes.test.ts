@@ -51,7 +51,7 @@ import { countryHere } from '../src/sim/coast';
 import { terrainDef } from '../src/data/terrain';
 import { reckoningDue } from '../src/sim/landnam';
 import { reachable } from '../src/sim/reach';
-import { markVisible } from '../src/sim/winter';
+import { forecast, markVisible } from '../src/sim/winter';
 import {
   CREW,
   Policy,
@@ -4197,5 +4197,171 @@ describe('PROBE: where the wrongly-condemned actually got their food', () => {
     // buckets and the day/no-day split are two views of ONE population, so a
     // future edit cannot let them drift apart unnoticed.
     expect(Math.round(total)).toBe(Math.round(withDay + withoutDay));
+  });
+
+  /**
+   * AND THE SAME QUESTION ASKED OF THE ARM THE BLOCKER IS ACTUALLY ABOUT.
+   *
+   * The reading above is the UNFLIPPED game — the 28% population that ships.
+   * 11.S2's blocker is the flip (`crewsByOutput: true`), where the verdict
+   * bar reads 58% against a ceiling of 40%, and the ruling drawn from the
+   * attribution — that the ceiling is judging the panel against food it
+   * cannot see — is only worth anything if it holds where the bar is red.
+   * Writing that ruling down without measuring this arm would have been a
+   * figure from one population offered as a fact about another.
+   *
+   * Both arms, same seeds, same terms, same horizon, so the only difference
+   * is the policy flag. `setPolicy` takes a copy rather than editing the
+   * harness, so nothing has to be restored afterwards.
+   */
+  it('asks the same of the flipped arm, where the bar is actually red', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    const rows: string[] = [];
+
+    for (const arm of ['as it ships', 'flipped'] as const) {
+      setPolicy(arm === 'flipped' ? { ...SETTLER, crewsByOutput: true } : SETTLER);
+      let condemned = 0;
+      let lived = 0;
+      let onGround = 0;
+      const units = new Map<string, number>();
+
+      for (let s = 0; s < SEEDS; s += 1) {
+        let saidNo = false;
+        const mine = new Map<string, number>();
+        const final = run(`winter-inside-${s}`, SPRING_IN, (before, after, action) => {
+          if (after.end || !after.settlement) return;
+          if (!saidNo) {
+            if (!markVisible(after) || reachable(after)) return;
+            saidNo = true;
+            return;
+          }
+          const gained = after.party.food - before.party.food;
+          if (gained <= 0) return;
+          mine.set(action.type, (mine.get(action.type) ?? 0) + gained);
+        }, 'even');
+        if (!saidNo) continue;
+        condemned += 1;
+        for (const [k, n] of mine) units.set(k, (units.get(k) ?? 0) + n);
+        if (final.end || final.day < SPRING_IN) continue;
+        lived += 1;
+        const luck = [...mine.entries()].filter(([k]) => k !== 'CAMP')
+          .reduce((a, [, n]) => a + n, 0);
+        if (luck === 0) onGround += 1;
+      }
+
+      const share = (n: number) => (condemned ? `${Math.round((n / condemned) * 100)}%` : '—');
+      const by = [...units.entries()].sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `${k} ${Math.round(n)}`).join(', ');
+      rows.push(
+        `  ${arm.padEnd(11)} condemned ${condemned}, lived ${lived} (${share(lived)} — the bar's ratio)`
+        + `, of them ${onGround} on the ground alone (${share(onGround)} of the condemned)\n`
+        + `              food after the verdict by action: ${by}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE the verdict, both arms — ${SEEDS} seeds, even terms, to day ${SPRING_IN}:\n${rows.join('\n')}`,
+    );
+    expect(rows.length).toBe(2);
+  });
+
+  /**
+   * WHY THE FLIPPED ARM IS MORE WRONG, TESTED RATHER THAN ASSERTED.
+   *
+   * The two-arm reading shows the ground-alone share nearly doubling under
+   * the flip, 15% to 28%, and post-verdict `CAMP` food going from 150 to
+   * 512. The obvious story is that `forecast` walks the remaining days
+   * against the assignments the band has AT THE MOMENT OF THE VERDICT, and a
+   * band that re-crews by output afterwards outruns that projection — the
+   * verdict is stale rather than wrong.
+   *
+   * That is a story, and this file's whole preamble is about what happens to
+   * stories that get written down. It makes a check-able prediction: the
+   * flipped bands must be CHANGING JOBS after the verdict more than the
+   * shipped ones do. If both arms re-crew at the same rate, staleness is not
+   * the mechanism and the extra food came from somewhere else.
+   *
+   * The rate is counted from the people themselves rather than from the
+   * harness's own crewing branch, because a policy is not a rule of the game
+   * (trap: `outWith >= 4`).
+   *
+   * AND THE FIRST CUT OF THAT COUNT COULD NOT FIRE, which is why it is
+   * written the way it is. Comparing `before` against `after` read 0.0 on
+   * BOTH arms — trap 3, an arm tying its control exactly — because the
+   * harness calls `assign(state, …)` on the live object BEFORE `apply`, so
+   * the new job is already on `before` by the time the watcher sees it.
+   * There is nothing to notice in the difference. The job each person held
+   * at the VERDICT is therefore snapshotted into a plain map of strings,
+   * which no later mutation can reach, and every turn afterwards is compared
+   * against that.
+   */
+  it('tests whether the flipped bands outrun the verdict by re-crewing', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    const rows: string[] = [];
+
+    for (const arm of ['as it ships', 'flipped'] as const) {
+      setPolicy(arm === 'flipped' ? { ...SETTLER, crewsByOutput: true } : SETTLER);
+      let condemned = 0;
+      let moves = 0;
+      let handsMoved = 0;
+      let gapSum = 0;
+      let campSum = 0;
+
+      for (let s = 0; s < SEEDS; s += 1) {
+        let saidNo = false;
+        let myMoves = 0;
+        let myCamp = 0;
+        let myGap = 0;
+        let seen = new Map<string, string>();
+        const everMoved = new Set<string>();
+        const jobsOf = (g: GameState) => new Map(
+          g.party.people.filter((p) => p.alive).map((p) => [p.id, p.job ?? 'idle'] as const),
+        );
+        run(`winter-inside-${s}`, SPRING_IN, (before, after, action) => {
+          if (after.end || !after.settlement) return;
+          if (!saidNo) {
+            if (!markVisible(after) || reachable(after)) return;
+            saidNo = true;
+            // The gap the panel was showing when it said no — the size of
+            // the shortfall the band then had to outrun — and the crew it
+            // was showing it for.
+            myGap = forecast(after).foodGap;
+            seen = jobsOf(after);
+            return;
+          }
+          const now = jobsOf(after);
+          let changed = 0;
+          for (const [id, job] of now) {
+            const was = seen.get(id);
+            if (was !== undefined && was !== job) { changed += 1; everMoved.add(id); }
+          }
+          if (changed > 0) myMoves += 1;
+          seen = now;
+          if (action.type === 'CAMP') myCamp += Math.max(0, after.party.food - before.party.food);
+        }, 'even');
+        if (!saidNo) continue;
+        condemned += 1;
+        moves += myMoves;
+        handsMoved += everMoved.size;
+        campSum += myCamp;
+        gapSum += myGap;
+      }
+
+      const per = (n: number) => (condemned ? (n / condemned).toFixed(1) : '—');
+      rows.push(
+        `  ${arm.padEnd(11)} ${condemned} condemned: ${per(moves)} turns a band moved somebody after the`
+        + ` verdict, ${per(handsMoved)} of them ever changed job at all, ${per(campSum)} food from worked days,`
+        + ` against a shortfall of ${per(-gapSum)} at the verdict`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE does the flipped band outrun a stale verdict — ${SEEDS} seeds:\n${rows.join('\n')}`);
+    expect(rows.length).toBe(2);
   });
 });
