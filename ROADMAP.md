@@ -6507,10 +6507,46 @@ Three groups, roughly in descending order of how much they change.
   now snapshots each person's job at the verdict into a plain map of strings
   and compares every later turn against that.
 
-  **THE RULING IS EVAN'S**, because it changes a shipped bar and then the
-  balance behind it: restate the verdict bar as a ceiling on the ground
-  share and take the flip, or leave both. The measurement is done either
-  way.
+  **RULED AND SHIPPED 2026-09-04: the bar is restated and the flip is on.**
+  `crewsByOutput: true` in SETTLER, RAIDER and TURTLE (DESPERATE spreads
+  SETTLER and follows). Six published figures restated in
+  `src/data/hardship.ts` — spring 84/58/30 -> **87/65/38**, ever-rule
+  30/23/7 -> **48/29/10** — of which only A Fair Country's ever-rule had
+  actually broken its tolerance. Full suite green, all twelve browser bars
+  green.
+
+  **THE FIRST RESTATEMENT OF THE BAR WAS WRONG AND SABOTAGE CAUGHT IT.**
+  Putting the ground-alone count over `condemned` and hard-wiring
+  `reachable` to condemn every band read **10%** — a comfortable pass, and
+  better-looking than the honest 29%, because inflating the denominator is
+  something the projection itself does. That is trap 2, committed in a bar
+  written the same day as two write-ups of trap 2. The rate is now over
+  `judged`: every band settled and far enough into autumn for the mark to be
+  live, condemned or cleared. It read 654 on all three arms, which is what
+  a denominator the projection cannot set looks like.
+
+  | arm | wrongly condemned on the ground | rate over 654 judged |
+  |---|---|---|
+  | as it ships (flip off) | 20 | 3.1% |
+  | flipped | 45 | **6.9%** |
+  | `reachable` condemning ALL | 65 | 9.9% |
+
+  Ceiling 8%, between the flip and a projection that has stopped
+  projecting — the same way the old 40% was chosen, and a THIN gap that
+  nobody should read movement inside. **A second bar carries the other
+  error** so the pair cannot be gamed: cleared-and-died, 0.9% as it stands,
+  ceiling 4%. Both halves were watched failing against their own sabotage —
+  condemn-everybody trips the first at 9.9%, condemn-nobody trips the second
+  at 11.0%.
+
+  **The third red bar the 2026-09-03 entry predicted never appeared.**
+  `cliff.test` passes: 11.V had already rewritten it as the STEP between
+  mid-autumn and the eve (0/12 then 6/12) rather than an absolute count,
+  precisely so a fairer verdict would not trip it. One prediction of three
+  survived contact.
+
+  **And the flip's cost is recorded rather than hidden by the pass:** it
+  doubles how often the projection is wrong on its own terms, 3.1% to 6.9%.
 
   Two limits stand on all of the above: it is the UNFLIPPED arm, so it
   describes the shipped 28% population and not the post-flip 58% one the
@@ -7227,6 +7263,22 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-04 — 11.S2's flip SHIPPED, on a verdict bar that measures what the
+  panel actually claims.** The daily crewing stopped reaching for the hunter
+  by name and asks the ground which food job pays here. Difficulty restated
+  87/65/38 spring and 48/29/10 ever-rule; the title screen now reads "Seven
+  bands in eight saw the first spring. One band in two ruled." The bar that
+  blocked this for two days was measuring P(lived | condemned) — and
+  attributed by the ACTION that brought each unit of food, more than half of
+  what reaches a condemned band is an event card or battle spoils, neither of
+  which `reachable` claims to predict. It is now a rate of wrongly-condemned
+  bands the GROUND fed, over every band the panel could have judged, paired
+  with a cleared-and-died bar so neither half can be bought with the other.
+  My first cut of that restatement passed with `reachable` sabotaged to
+  condemn everybody, because the denominator was one the projection sets;
+  the second is 6.9% flipped against 9.9% sabotaged. Both halves watched
+  failing. All twelve browser bars green; the title look blessed.
 
 - **2026-09-03 — 11.U5: declined, and the probe found that 11.S1 took the
   named foe to zero** — the item's "the data is all there" fails on a code

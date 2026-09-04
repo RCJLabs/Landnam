@@ -310,10 +310,11 @@ export interface Policy {
    * `cliff.test`'s eve-of-winter cliff stops being a cliff. Neither is a
    * stale number to restate; both are decisions about the game.
    *
-   * So the flip is a two-part change and only the first part is measured. The
-   * knob stays for the reason audit item 7 gave — the arm that measures a
-   * lever has to be able to switch it off — and it is the one line that
-   * re-does the flip when the verdict is ready for it.
+   * FLIPPED ON 2026-09-04, in all three shipped policies, once the verdict
+   * bar was restated to measure the claim the panel actually makes — see the
+   * ratchet note in `balance.test.ts`. The knob stays, for the reason audit
+   * item 7 gave: the arm that measures a lever has to be able to switch it
+   * off, and both arms of the 11.S2 reading are taken by toggling it.
    */
   crewsByOutput?: boolean;
   /**
@@ -477,6 +478,10 @@ export function recrew(state: GameState): number {
  */
 export const SETTLER: Policy = {
   id: 'settler',
+  // FLIPPED 2026-09-04: the daily crewing asks the ground which food job pays
+  // here instead of reaching for the hunter by name. Worth 87/65/38 on the
+  // difficulty menu against 84/58/30 — see 11.S2 in ROADMAP.md.
+  crewsByOutput: true,
   siteFloor: 9,
   /**
    * And gives way as winter closes, which is the whole difference between a
@@ -527,6 +532,10 @@ export const SETTLER: Policy = {
  */
 export const RAIDER: Policy = {
   id: 'raider',
+  // FLIPPED 2026-09-04: the daily crewing asks the ground which food job pays
+  // here instead of reaching for the hunter by name. Worth 87/65/38 on the
+  // difficulty menu against 84/58/30 — see 11.S2 in ROADMAP.md.
+  crewsByOutput: true,
   // Seven, not eleven. The first cut had him holding out for good ground,
   // which is a strawman of his own strategy — a man who means to live off
   // what he takes does not care what the soil is like, and `the first
@@ -570,6 +579,10 @@ export const RAIDER: Policy = {
  */
 export const TURTLE: Policy = {
   id: 'turtle',
+  // FLIPPED 2026-09-04: the daily crewing asks the ground which food job pays
+  // here instead of reaching for the hunter by name. Worth 87/65/38 on the
+  // difficulty menu against 84/58/30 — see 11.S2 in ROADMAP.md.
+  crewsByOutput: true,
   siteFloor: 7,
   plunderWindow: 0,
   raidReach: 0,

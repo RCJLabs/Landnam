@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
-    odds: { spring: 0.84, ruled: 0.30 },
+    odds: { spring: 0.87, ruled: 0.48 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.58, ruled: 0.23 },
+    odds: { spring: 0.65, ruled: 0.29 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.30, ruled: 0.07 },
+    odds: { spring: 0.38, ruled: 0.10 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -162,8 +162,22 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * Where the numbers above came from, so nobody has to guess later.
  *
  * THREE HUNDRED landings a setting, not sixty, and that is the whole lesson
- * of this figure's history. Latest: 84% / 58% / 30% published, measured at
- * 84% / 58% / 30% on 2026-09-03.
+ * of this figure's history. Latest: 87% / 65% / 38% published, measured at
+ * 87% / 65% / 38% (262, 196 and 115 of 300 landings) on 2026-09-04.
+ *
+ * ALL SIX RESTATED 2026-09-04, FOR THE FLIP. The daily crewing stopped
+ * reaching for the hunter by name and started asking the ground which food
+ * job pays here (`crewsByOutput`, now on in all three shipped policies).
+ * Spring went 84/58/30 -> 87/65/38 and ever-rule 30/23/7 -> 48/29/10 over the
+ * same seeds.
+ *
+ * They do NOT move together, and the shape is the point: +3, +7, +8 on
+ * spring. A fair country feeds a band whatever it does; the worse the ground,
+ * the more it matters that you work the right part of it. Only ONE of the six
+ * had actually broken its tolerance — A Fair Country's ever-rule, 48%
+ * measured against 30% published — but all six are restated rather than the
+ * one, because a published figure here is what the harness has just measured
+ * and not the nearest number that still passes.
  *
  * RE-MEASURED AFTER 11.S1, 2026-09-03, and all three moved for one reason:
  * the shield wall stopped forming up in roster order. Rank used to be a
@@ -308,9 +322,16 @@ export function hardshipById(id: string | undefined): HardshipDef {
  */
 export function measuredLine(def: HardshipDef): string {
   const spring = asFraction(def.odds.spring);
+  // Ten in twenty is a true sentence nobody says out loud, and A Fair Country
+  // landed on it the day the flip restated these figures. Said as a half it
+  // takes the same shape as the sentence before it, and "them" cannot be
+  // misread as the bands that saw the spring.
+  const inTwentieths = inTwenty(def.odds.ruled);
   const ruled = def.odds.ruled < 0.03
     ? 'None of twenty ever ruled.'
-    : `${cap(inTwenty(def.odds.ruled))} in twenty ruled.`;
+    : inTwentieths === 'ten'
+      ? 'One band in two ruled.'
+      : `${cap(inTwentieths)} in twenty ruled.`;
   return `${cap(spring.n)} ${spring.n === 'one' ? 'band' : 'bands'} in ${spring.d} saw the first spring. ${ruled}`;
 }
 
