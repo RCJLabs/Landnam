@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
-    odds: { spring: 0.87, ruled: 0.48 },
+    odds: { spring: 0.95, ruled: 0.46 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.65, ruled: 0.29 },
+    odds: { spring: 0.77, ruled: 0.38 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.38, ruled: 0.10 },
+    odds: { spring: 0.51, ruled: 0.20 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -162,10 +162,22 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * Where the numbers above came from, so nobody has to guess later.
  *
  * THREE HUNDRED landings a setting, not sixty, and that is the whole lesson
- * of this figure's history. Latest: 87% / 65% / 38% published, measured at
- * 87% / 65% / 38% (262, 196 and 115 of 300 landings) on 2026-09-04.
+ * of this figure's history. Latest: 95% / 77% / 51% published, measured at
+ * 95% / 77% / 51% (286, 230 and 154 of 300 landings) on 2026-09-04.
  *
- * ALL SIX RESTATED 2026-09-04, FOR THE FLIP. The daily crewing stopped
+ * ALL SIX RESTATED TWICE ON 2026-09-04, AND THE SECOND TIME THE GAME DID NOT
+ * CHANGE AT ALL. 12.H swept the harness settler's site floor and found the
+ * shipped value last on every column, on both countries: `siteFloor` went
+ * 9 to 7 (coast 14 to 12), and with it spring 87/65/38 -> **95/77/51** and
+ * ever-rule 48/29/10 -> **46/38/20**.
+ *
+ * THAT IS A CHANGE TO WHO THESE FIGURES DESCRIBE, not to the coast. The game
+ * plays exactly as it did; the bot stopped walking past ground it could have
+ * taken. So the older figures in ROADMAP.md are not wrong, they are readings
+ * of a different player, and nothing measured before 2026-09-04 is comparable
+ * with anything measured after it.
+ *
+ * ALL SIX RESTATED EARLIER THE SAME DAY, FOR THE FLIP. The daily crewing stopped
  * reaching for the hunter by name and started asking the ground which food
  * job pays here (`crewsByOutput`, now on in all three shipped policies).
  * Spring went 84/58/30 -> 87/65/38 and ever-rule 30/23/7 -> 48/29/10 over the
@@ -359,7 +371,12 @@ function inTwenty(fraction: number): string {
 function asFraction(fraction: number): { n: string; d: string } {
   const clamped = Math.max(0, Math.min(1, fraction));
   let best = { d: 20, n: 1, err: Infinity };
-  for (const d of [3, 4, 5, 8, 10, 20]) {
+  // Two is in the list for the halves. Without it 0.51 reads "two bands in
+  // four", which is true and is not a sentence anybody says — the same fault
+  // as "ten in twenty ruled" below, and worth fixing in the generator rather
+  // than in the one figure that happens to trip it today. It only ever wins
+  // near a half: at 0.95 it is out by five points and 20 is exact.
+  for (const d of [2, 3, 4, 5, 8, 10, 20]) {
     const n = Math.round(clamped * d);
     if (n < 1) continue;
     const err = Math.abs(n / d - clamped);
