@@ -62,7 +62,7 @@ import { TRAITS } from '../src/data/traits';
 import { kinPairs } from '../src/sim/kin';
 import { drawOdds, swordOdds } from '../src/sim/joining';
 import { DRAW_ANGER, DRAW_LARDER_DAYS, SWORD_DEEDS, WHY_SWORDS_COME, WHY_THEY_COME } from '../src/data/folk';
-import { markVisible } from '../src/sim/winter';
+import { markVisible, roadMarkVisible } from '../src/sim/winter';
 import { reachable } from '../src/sim/reach';
 import { eventChance, isEligible } from '../src/sim/events';
 import { currentMode } from '../src/modes';
@@ -3794,6 +3794,77 @@ describe('who lands their blows', () => {
  * scored entirely off the state on its first morning is not a phase a player
  * plays; it is a report card on autumn wearing twenty-four days of turns.
  */
+/**
+ * THE ROAD MARK HAS TO BE ABLE TO GO DARK.
+ *
+ * 11.U1 shipped it at ten days and 12.H found that an unsettled band
+ * essentially never carries ten days' food: the mark was up on 95% of every
+ * unsettled road day and 80% of sagas never saw it dark once. A warning that
+ * is always on is not a warning, and the top bar already carries food and
+ * days of food permanently, so it was a duplicate as well as a constant.
+ *
+ * WRITTEN IN TERMS OF THE PROPERTY, NOT THE CONSTANT, which is the whole
+ * point of it existing. A bar phrased as `roadDaysLeft <= ROAD_MARK_WINDOW`
+ * would pass for any value of the window including the one that broke it —
+ * this file has made that mistake before. So: it must go dark on a real share
+ * of road days, AND it must still reach the bands it is for in time to act.
+ * Either half alone can be bought by moving the window to an extreme.
+ *
+ * MEASURED 2026-09-04 at the shipped value, 300 sagas a country, settler, to
+ * day 49: dark on 52% of road days on `even` and 35% on `hard`, reaching
+ * 47/49 and 87/87 of the bands that starved at least three days out. The
+ * floors below sit well under those, because what they are catching is a
+ * return to wallpaper, not a drift of a point or two.
+ */
+describe('the road mark is a warning and not wallpaper', () => {
+  it('goes dark often enough to mean something, and still arrives in time', { timeout: 600_000 }, () => {
+    const SEEDS = 120;
+    const WINTER_OPENS = 49;
+    const WARNING_NEEDS = 3;
+    setPolicy(SETTLER);
+
+    let days = 0;
+    let dark = 0;
+    let starved = 0;
+    let warnedInTime = 0;
+
+    for (let s = 0; s < SEEDS; s += 1) {
+      const mine: { lit: boolean; day: number }[] = [];
+      const final = run(`road-mark-${s}`, WINTER_OPENS, (before, after) => {
+        if (after.day <= before.day || before.settlement || before.end) return;
+        mine.push({ lit: roadMarkVisible(before), day: before.day });
+      }, 'even');
+      for (const d of mine) { days += 1; if (!d.lit) dark += 1; }
+      if (final.end && final.day < WINTER_OPENS && !final.settlement
+        && final.end.cause === 'starved' && mine.length > 0) {
+        starved += 1;
+        const end = mine[mine.length - 1]!.day;
+        if (mine.some((d) => d.lit && end - d.day >= WARNING_NEEDS)) warnedInTime += 1;
+      }
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `the road mark over ${SEEDS} sagas on As It Lies: dark on ${dark}/${days} unsettled road days`
+      + ` (${Math.round((dark / Math.max(1, days)) * 100)}%);`
+      + ` of ${starved} bands that starved on the road it reached ${warnedInTime}`
+      + ` at least ${WARNING_NEEDS} days out`,
+    );
+
+    expect(days, 'no unsettled road days at all — nothing was measured').toBeGreaterThan(200);
+    expect(
+      dark / days,
+      'the road mark is up on nearly every road day again — it has gone back to being wallpaper',
+    ).toBeGreaterThan(0.25);
+    expect(starved, 'no band starved on the road — the second half tested nothing')
+      .toBeGreaterThan(0);
+    expect(
+      warnedInTime / starved,
+      `the mark reached only ${warnedInTime} of ${starved} starving bands in time to act`,
+    ).toBeGreaterThan(0.85);
+  });
+});
+
 describe('the first winter, from inside', () => {
   it('says where the deaths fall, and whether autumn had already decided', () => {
     const SEEDS = 60;

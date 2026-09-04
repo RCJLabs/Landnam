@@ -52,6 +52,8 @@ import { terrainDef } from '../src/data/terrain';
 import { reckoningDue } from '../src/sim/landnam';
 import { reachable } from '../src/sim/reach';
 import { atSea } from '../src/sim/road';
+import { foundBlocker } from '../src/sim/site';
+import { ROAD_MARK_WINDOW, roadDaysLeft, roadMarkVisible } from '../src/sim/winter';
 import { abundance } from '../src/sim/abundance';
 import { placeHere } from '../src/sim/places';
 import { neighbourHere } from '../src/sim/neighbours';
@@ -4869,6 +4871,224 @@ describe('PROBE: 12.H — what kills a band before winter even opens', () => {
 
     // eslint-disable-next-line no-console
     console.log(`PROBE 12.H the price of haste, whole sagas — ${SEEDS} landings a country, paired:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * DOES A PANEL LINE HAVE A SUBJECT AT ALL?
+   *
+   * The reading above says holding out for a site is what kills them, and the
+   * obvious answer is to tell the player what the search is costing. That is
+   * only worth building if the bands who died were STANDING on ground they
+   * could have taken — a line that says "you could stop here" needs a here.
+   * If they were mostly on unfoundable stretches, the finding is about the
+   * coast rather than about the choice, and the panel is the wrong fix.
+   *
+   * Also asked: what the clock read on those days. `foundBlocker` is the
+   * game's own answer to "may we found here", and `roadDaysLeft` (11.U1) to
+   * "how long will the larder last" — both game facts, neither a policy.
+   */
+  it('counts the days the doomed stood on ground they could have taken', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const WINTER_OPENS = 49;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      let bands = 0;
+      let bandsWithAChance = 0;
+      let days = 0;
+      let couldFound = 0;
+      let foodLeftSum = 0;
+      let firstChanceSum = 0;
+      let markShowing = 0;
+      let foodAtFirstSum = 0;
+      let markAtFirst = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        let myDays = 0;
+        let myCould = 0;
+        let myFirst = 0;
+        let myFood = 0;
+        let myMark = 0;
+        let myFoodAtFirst = 0;
+        let myMarkAtFirst = 0;
+        const final = run(armSeed(0, i, SEEDS), WINTER_OPENS, (before, after) => {
+          if (after.day <= before.day || before.settlement) return;
+          myDays += 1;
+          if (foundBlocker(before) === null) {
+            myCould += 1;
+            // THE FIRST CHANCE AND THE AVERAGE CHANCE ARE DIFFERENT DAYS, and
+            // reporting the larder over all of them next to "the first came on
+            // day 3" would invite reading one as the other — most of those
+            // days fall late, when the band is already dying. What decides
+            // whether the opening is a real dilemma is the larder at the FIRST
+            // chance, so that is carried separately.
+            if (!myFirst) {
+              myFirst = before.day;
+              myFoodAtFirst = roadDaysLeft(before);
+              myMarkAtFirst = roadMarkVisible(before) ? 1 : 0;
+            }
+            myFood += roadDaysLeft(before);
+            if (roadMarkVisible(before)) myMark += 1;
+          }
+        }, terms);
+        if (!final.end || final.day >= WINTER_OPENS || final.settlement) continue;
+        bands += 1;
+        days += myDays;
+        couldFound += myCould;
+        foodLeftSum += myFood;
+        markShowing += myMark;
+        if (myCould > 0) {
+          bandsWithAChance += 1;
+          firstChanceSum += myFirst;
+          foodAtFirstSum += myFoodAtFirst;
+          markAtFirst += myMarkAtFirst;
+        }
+      }
+
+      const pc = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : '—');
+      out.push(
+        `  ${terms}: ${bands} bands died on the road before day ${WINTER_OPENS}, over ${days} days\n`
+        + `      stood on ground they could have founded on: ${couldFound} days`
+        + ` (${pc(couldFound, days)}), and ${bandsWithAChance} of ${bands} bands`
+        + ` (${pc(bandsWithAChance, bands)}) had at least one such day\n`
+        + `      AT THE FIRST CHANCE (day ${bandsWithAChance ? Math.round(firstChanceSum / bandsWithAChance) : 0}`
+        + ` on average): ${bandsWithAChance ? (foodAtFirstSum / bandsWithAChance).toFixed(1) : 0} days' food`
+        + ` in hand, road mark already showing for ${pc(markAtFirst, bandsWithAChance)} of them\n`
+        + `      OVER ALL such days (mostly later, when they are already dying):`
+        + ` ${couldFound ? (foodLeftSum / couldFound).toFixed(1) : 0} days' food,`
+        + ` mark showing on ${pc(markShowing, couldFound)}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H ground they could have taken — ${SEEDS} sagas a country, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * IS THE ROAD MARK A WARNING, OR IS IT WALLPAPER?
+   *
+   * The reading above was going to close this item: the doomed bands stood on
+   * foundable ground with about a week's food in hand and the road mark
+   * already up, so the information was there and the choice was theirs. But
+   * "the mark was showing on 98% of those days" is the shape of a check that
+   * cannot fail. A mark that is up almost always carries no signal, and its
+   * being up at the moment of a bad decision would mean nothing at all.
+   *
+   * The population above selects for hunger — they are bands that starved —
+   * so it cannot answer this. The denominator here is EVERY unsettled road
+   * day in every saga, dying or not, which is the only one that can say
+   * whether `roadMarkVisible` distinguishes anything.
+   */
+  it('measures how often the road mark is up at all, over every band', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const WINTER_OPENS = 49;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      let days = 0;
+      let showing = 0;
+      let sagas = 0;
+      let everDark = 0;
+      let firstDarkDaySum = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        let myDays = 0;
+        let myShowing = 0;
+        let dark = 0;
+        run(armSeed(0, i, SEEDS), WINTER_OPENS, (before, after) => {
+          if (after.day <= before.day || before.settlement || before.end) return;
+          myDays += 1;
+          if (roadMarkVisible(before)) myShowing += 1;
+          else if (!dark) dark = before.day;
+        }, terms);
+        if (myDays === 0) continue;
+        sagas += 1;
+        days += myDays;
+        showing += myShowing;
+        if (dark) { everDark += 1; firstDarkDaySum += dark; }
+      }
+
+      const pc = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : '—');
+      out.push(
+        `  ${terms}: ${sagas} sagas, ${days} unsettled road days\n`
+        + `      the road mark was up on ${showing} of them (${pc(showing, days)})\n`
+        + `      sagas that ever saw it DARK: ${everDark}/${sagas} (${pc(everDark, sagas)}),`
+        + ` first on day ${everDark ? Math.round(firstDarkDaySum / everDark) : 0}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H is the road mark a warning — ${SEEDS} sagas a country, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * SO WHAT WINDOW WOULD MAKE IT MEAN SOMETHING?
+   *
+   * `ROAD_MARK_WINDOW` is 10 days, and an unsettled band essentially never
+   * carries more than ten days' food — hence 95%. The window is the one knob,
+   * and picking a value by taste is what this file exists to prevent, so the
+   * whole curve is measured: for each candidate, how often the mark is LIT
+   * (its cost — a mark that is always up is wallpaper) against whether it
+   * still reaches the bands it is for IN TIME (its worth).
+   *
+   * "In time" is three days before the end, because that is roughly what it
+   * takes to walk somewhere and eat: a warning that arrives on the last day
+   * is not a warning either. Both halves are measured over the same sagas, so
+   * the trade is legible rather than asserted.
+   */
+  it('prices every road-mark window against the one it has', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const WINTER_OPENS = 49;
+    const WARNING_NEEDS = 3;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      // Each unsettled road day, as the number of days' food the band held.
+      // Collected once and scored against every window, so the arms cannot
+      // disagree about the population.
+      const allDays: number[] = [];
+      // Per band that died hungry on the road: the days' food it held on each
+      // of its days, and the day each fell on.
+      const doomed: { left: number; day: number }[][] = [];
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const mine: { left: number; day: number }[] = [];
+        const final = run(armSeed(0, i, SEEDS), WINTER_OPENS, (before, after) => {
+          if (after.day <= before.day || before.settlement || before.end) return;
+          mine.push({ left: roadDaysLeft(before), day: before.day });
+        }, terms);
+        for (const d of mine) allDays.push(d.left);
+        if (final.end && final.day < WINTER_OPENS && !final.settlement
+          && final.end.cause === 'starved' && mine.length > 0) {
+          doomed.push(mine);
+        }
+      }
+
+      const rows: string[] = [];
+      for (const w of [2, 3, 4, 5, 6, 8, 10]) {
+        const lit = allDays.filter((d) => d <= w).length;
+        const warned = doomed.filter((band) => {
+          const end = band[band.length - 1]!.day;
+          return band.some((d) => d.left <= w && end - d.day >= WARNING_NEEDS);
+        }).length;
+        rows.push(
+          `      ${String(w).padStart(2)} days: lit on ${Math.round((lit / allDays.length) * 100)}%`
+          + ` of road days, and reached ${warned}/${doomed.length} of the starved`
+          + ` at least ${WARNING_NEEDS} days out`
+          + (w === ROAD_MARK_WINDOW ? '   <- as it ships' : ''),
+        );
+      }
+      out.push(`  ${terms}: ${allDays.length} unsettled road days, ${doomed.length} bands starved on the road\n${rows.join('\n')}`);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H the road mark's window — ${SEEDS} sagas a country, settler:\n${out.join('\n')}`);
     expect(out.length).toBe(2);
   });
 });
