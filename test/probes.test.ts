@@ -4098,12 +4098,14 @@ describe('PROBE: where the wrongly-condemned actually got their food', () => {
     let livedWithCardFood = 0;
     let cardFoodTotal = 0;
     let dayFoodTotal = 0;
+    let otherStillTotal = 0;
     let cardFoodAmongLived = 0;
 
     for (let s = 0; s < SEEDS; s += 1) {
       let saidNo = false;
       let card = 0;
       let fromDays = 0;
+      let otherStill = 0;
       const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
         if (after.end || !after.settlement) return;
         if (!saidNo) {
@@ -4112,15 +4114,26 @@ describe('PROBE: where the wrongly-condemned actually got their food', () => {
           return;
         }
         // Past the verdict: attribute every rise in the larder.
+        //
+        // PROVEN, NOT INFERRED, since 2026-09-04. The first cut called any
+        // food arriving without the day advancing "a card", which is a guess
+        // about the source dressed as a measurement — nothing showed a card
+        // was the only thing that could do it. An event is PRESENT on
+        // `state.event` and `sim/events.ts` deletes it when it resolves, so
+        // a transition that clears one is a card being answered and nothing
+        // else. Anything else that arrives without a day is now counted
+        // separately rather than folded in, so the claim can be checked.
         const gained = after.party.food - before.party.food;
         if (gained <= 0) return;
-        if (after.day === before.day) card += gained;
+        if (before.event && !after.event) card += gained;
+        else if (after.day === before.day) otherStill += gained;
         else fromDays += gained;
       }, 'even');
       if (!saidNo) continue;
       condemned += 1;
       cardFoodTotal += card;
       dayFoodTotal += fromDays;
+      otherStillTotal += otherStill;
       if (!final.end && final.day >= SPRING_IN) {
         lived += 1;
         cardFoodAmongLived += card;
@@ -4137,7 +4150,9 @@ describe('PROBE: where the wrongly-condemned actually got their food', () => {
       + `  food after the verdict, all condemned: ${Math.round(dayFoodTotal)} from days worked,`
       + ` ${Math.round(cardFoodTotal)} from cards\n`
       + `  card food among those who LIVED: ${Math.round(cardFoodAmongLived)}`
-      + ` (${lived ? (cardFoodAmongLived / lived).toFixed(1) : 0} a band)`,
+      + ` (${lived ? (cardFoodAmongLived / lived).toFixed(1) : 0} a band)\n`
+      + `  food arriving with no day AND no card resolving: ${Math.round(otherStillTotal)}`
+      + ` — the share the first cut would have miscalled a card`,
     );
     expect(condemned).toBeGreaterThan(0);
   });

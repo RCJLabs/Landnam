@@ -6413,24 +6413,37 @@ Three groups, roughly in descending order of how much they change.
   157 — the same figures recorded above, so V behaves exactly as this entry
   predicted and no more.
 
-  The lead is in the ATTRIBUTION rather than the model. "54% lived on the
+  The hole is in the ATTRIBUTION rather than the model. "54% lived on the
   ground alone" is a list of four things ruled OUT — no mouth buried, nobody
   robbed, nothing traded, no road taken — so anything not on the list falls
-  there by default, and an EVENT CARD that hands a band food is none of the
-  four. `PROBE: where the wrongly-condemned actually got their food` (300
-  seeds, `even`, to day 73) splits their post-verdict larder by whether the
-  day advanced: **183 of the food that reached condemned bands arrived
-  without a day passing, against 150 from days worked**, and **8 of the 18
-  survivors (44%) took some**. If that is cards, the projection is not wrong
-  for those bands — it is being judged against luck it cannot see, and the
-  repair is to the BAR rather than to `walkWinter`.
+  there by default. `PROBE: where the wrongly-condemned actually got their
+  food` (300 seeds, `even`, to day 73) splits their post-verdict larder by
+  where it came from, and the hole is real and LARGER than the four-item list
+  suggests: **183 units reached condemned bands without a day passing at all,
+  against 150 from every day worked put together.** More food arrives from
+  outside the projection than the ground gives.
 
-  Held as a LEAD and not a finding, for three reasons stated rather than
-  buried: it is the UNFLIPPED arm, so it describes the shipped 28% population
-  and not the post-flip 58% one the blocker is about; "card" is inferred from
-  the day not advancing rather than proven to be the only such source; and
-  the counts are small (65 condemned, 18 lived, 8 card-fed). The next hand
-  should re-take it post-flip and prove the source before spending it.
+  **AND THE FIRST EXPLANATION OF IT WAS MINE AND WAS WRONG, which is why the
+  figure above is the only one kept.** The first cut of this probe called
+  everything arriving without a day "a card" and reported 8 of 18 survivors
+  (44%) card-fed — a guess about the source written as a measurement, the
+  same fault this file's own preamble is about. `sim/events.ts` deletes
+  `state.event` when a card resolves, so the source can be PROVEN rather than
+  inferred; re-measured that way it is **0 of 183 from cards, and 0 of 18
+  survivors**. The card hypothesis is refuted outright.
+
+  **So the 183 is unexplained, and that is the lead.** It is not the ground,
+  not a card, and the four things the original attribution ruled out were
+  ruled out by that attribution — so something is feeding condemned bands
+  that nobody has named. Whatever it is decides the repair: if it is a
+  capability the band really has, `walkWinter` should model it; if it is
+  luck, the BAR is judging the panel against something it cannot see. The
+  next instrument should attribute by what else moved alongside the food —
+  an aftermath cleared, an expedition home, a tally counter ticking.
+
+  Two limits stand on the figure that survived: it is the UNFLIPPED arm, so
+  it describes the shipped 28% population and not the post-flip 58% one the
+  blocker is about, and the counts are small (65 condemned, 18 lived).
 
   Two hypotheses died on the way here and are recorded so they are not tried
   twice: 11.V did NOT unblock the flip, and the buildings signal in the bar's
