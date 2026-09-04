@@ -6958,11 +6958,69 @@ Three groups, roughly in descending order of how much they change.
   reason and was left there. The counsel is the measured lever; a second
   line would be clutter bought with no reading behind it.
 
-- [ ] **11.U4 What the fighting has cost, mid-run.** MEASURED (10.2): battle is
-  **39% of the settler's dead and 47% of the raider's**, across about nine
-  fights a saga of which four in five are not chosen. 10.4 fixed the ENDING
-  screen hiding this. Mid-run there is still no accounting, so a player cannot
-  see the bleed that is about to kill them by hunger.
+- [x] **11.U4 What the fighting has cost, mid-run.** — **DECLINED
+  2026-09-03. The panel would be blank on four bands in five of exactly the
+  population it was meant to warn.**
+
+  Checked what exists first, and "no accounting" is half right in the same
+  way 11.U3's title was. The COUNTERS are already in the save — `tally`
+  holds `battles`, `battlesWon`, `foesFelled`, `raids`, `raidsHeld`, counted
+  as they happen — and the Warband card already lists every dead member
+  mid-run with their fate on the row. What is missing is a SUMMARY, not the
+  facts. So the item is a question about a readout, and the readout has to
+  earn its place on the justification the item gives for it.
+
+  It does not. `PROBE: 11.U4` (`test/probes.test.ts`, 120 landings an arm,
+  `fair`, to day 400):
+
+  **The share half-survived.** Battle owns **43% of the raider's dead**
+  against 10.2's 47% — that holds. It owns **28% of the settler's** against
+  10.2's 39%, and that one did not.
+
+  **The reason the item gives did not survive at all.** The item wants the
+  panel so a player can "see the bleed that is about to kill them by
+  hunger" — a causal chain from fighting to fewer hands to starvation.
+  Violent losses counted strictly BEFORE day 49, among bands that reached
+  day 49 (so exposure is equal and the deaths of the losing itself are
+  excluded):
+
+  | reached day 49 | settler | raider |
+  |---|---|---|
+  | starved | 0.40 a saga, 11/63 bled at all | 0.34, 11/58 |
+  | despair | 0.36, 5/25 | 0.38, 9/40 |
+  | **still standing** | **0.14, 2/21** | **0.71, 6/14** |
+
+  **The two policies point in opposite directions.** Still-standing settlers
+  bleed a third as much as the doomed; still-standing raiders bleed twice as
+  much. With exposure equalised that is not a lever, it is a marker of what
+  the band was DOING — a raider that bleeds is a raider that went out, and
+  going out is also what feeds it. It agrees with 11.M4's neighbouring
+  reading from the day before: hands at day 49 flat at 6.0 / 5.9 / 6.1
+  across the same three groups.
+
+  **And the finding that decides it holds in both arms regardless of
+  direction: about four in five of the bands that go on to starve had ZERO
+  violent losses by day 49** — 52 of 63 settler, 47 of 58 starved raider,
+  and 80% and 78% of the despair groups. A panel built to show a starving
+  band its bleed would have nothing to say to most of them. Same shape as
+  11.M1's winter camp and 11.M5's hunting knob: a fix pointed at a
+  population that is not there.
+
+  THE EXPOSURE CORRECTION IS WHY THIS IS TRUSTWORTHY, and the first cut did
+  not have it. Counting every saga rather than only those that reached the
+  window compares how long a band had in which to bleed and calls it a
+  finding — CLAUDE.md's trap 2. It moved both despair figures materially
+  (settler 0.59 → 0.36, raider 0.53 → 0.38), which is the size of the thing
+  that would have been reported as real.
+
+  (`slain n=2` at 3.00 a saga is not a counter-example: a band killed by
+  violence having suffered violence is a denominator selecting itself.)
+
+  Left for Evan, and it is a taste call rather than a measured one: the
+  Warband card could carry a one-line summary of fights and losses as a
+  RECORD — the counters are already there and it would cost a few lines.
+  What it must not be sold as is a warning about hunger, because the
+  measurement above says that is not what it would be.
 
 - [ ] **11.U5 Known foes.** MEASURED: `lastSeen` now says how long since a
   champion was seen (10.5), scars accumulate, and 22% of champion fights belong
@@ -6986,6 +7044,27 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.U4: the fighting's cost is real and is not the warning
+  the item wanted** — declined. The counters were already in the save
+  (`tally`) and the Warband card already lists the dead with their fates, so
+  the gap was a summary, not the facts; and the reason offered for the
+  summary did not hold. Re-took 10.2: battle owns **43% of the raider's dead
+  (10.2 said 47%, holds) and 28% of the settler's (said 39%, does not)**.
+  Then took the reading the item's causal clause needed and nobody had:
+  violent losses before day 49, among bands that REACHED day 49 so exposure
+  is equal — settler 0.40 starved / 0.36 despair / **0.14 still standing**,
+  raider 0.34 / 0.38 / **0.71 still standing**. The two arms point in
+  OPPOSITE directions, so the bleed marks what a band was doing rather than
+  where it is heading (a raider that bleeds is one that went out, which is
+  also what feeds it), agreeing with 11.M4's flat hands. Decisive either
+  way: **about four in five bands that go on to starve had zero violent
+  losses by day 49** — the panel would be blank on the population it was
+  built to warn. The exposure correction is what makes this trustworthy; the
+  first cut counted every saga and moved both despair figures materially
+  (0.59→0.36, 0.53→0.38). Left for Evan as a taste call: the same counters
+  would make a fine one-line RECORD on the Warband card — just not a hunger
+  warning.
 
 - **2026-09-03 — 11.U3: the move follows the band onto the road, though the
   mark already did** — the item's title overstates and its body is exact.
