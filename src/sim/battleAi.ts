@@ -8,6 +8,8 @@ import { canThrowAt, doReach, doStrike, doThrow, reachTargets } from './strike';
 import { doDefend } from './footwork';
 import { evasion } from './swing';
 import { threatCount } from './zoc';
+import { closeUp } from './ranks';
+import { beat } from './beats';
 
 /**
  * Past this round nobody is being clever any more. Cautious and flanking
@@ -60,6 +62,58 @@ function bestMeleeTarget(state: GameState): Combatant | undefined {
  * - and it still spends the turn, as the dash did.
  */
 
+/**
+ * When a clan's named man decides he has had enough of this field.
+ *
+ * THE SAME FRACTION `takeFoeTurn` ALREADY CALLS HURT, taken from there
+ * rather than picked to taste: a cautious fighter at 0.35 puts his shield up,
+ * and a champion with a clan behind him walks. Spelled separately on purpose
+ * — they agree today and they are not one rule.
+ */
+export const CHAMPION_QUITS_AT = 0.35;
+
+/**
+ * A clan's champion, badly hurt, gets off the field.
+ *
+ * WHY THIS EXISTS. MEASURED 2026-09-04 (80 landings an arm, `fair`, to day
+ * 400, 981 fights with a named man): the recurring antagonist never recurs —
+ * 0 of 179 clan fights featured a man met before. He opens at rank 1 in 100%
+ * of fights, he flees in 0 of 981 and breaks in 3-9%, so he never gives the
+ * ground `takeBrokenTurn` would have given him; and the band wins 87% of clan
+ * fights, because those are the fights it picks. A man who fights to the end
+ * of a fight his side loses nine times in ten is not a recurring foe, he is a
+ * milestone.
+ *
+ * WHY ONLY A CLAN'S MAN. `settleChampion` does nothing without a
+ * `championOf`: a champion who belongs to nobody cannot come back whatever
+ * happens to him, and he already walks off 60-65% of his fights. Restricting
+ * the rule keeps it on the population it was measured for — and it reads as
+ * the truth about both men. One has a hall to go back to; the other is on
+ * that field by choice.
+ *
+ * DELIBERATELY NOT A ROUT. He leaves under his own steam, on his own turn,
+ * still standing — `settleChampion` then writes the line it has always had
+ * for a man who got away, and gives him the scar that makes him worse next
+ * time. Killing him on the field is still final, and still the only way to be
+ * rid of him; it now has to be done before he decides to go.
+ */
+export function championQuits(state: GameState, active: Combatant): boolean {
+  const battle = state.battle!;
+  if (!battle.championOf || battle.champion !== active.personId) return false;
+  if (active.down || active.fled) return false;
+  if (healthFraction(state, active) >= CHAMPION_QUITS_AT) return false;
+
+  const person = fighterPerson(state, active.personId);
+  const name = person ? `${person.name}${person.byname ? ` ${person.byname}` : ''}` : 'Their man';
+  active.fled = true;
+  // Same as a man going down: the wall does not keep his place for him.
+  closeUp(battle.combatants, active.side);
+  beat(battle, { kind: 'fled', who: active.personId });
+  battle.log.push(`${name} had taken enough, and went back to his own.`);
+  active.hasActed = true;
+  return true;
+}
+
 /** One foe's whole turn. */
 export function takeFoeTurn(state: GameState): void {
   const battle = state.battle!;
@@ -67,7 +121,13 @@ export function takeFoeTurn(state: GameState): void {
   if (!active || active.side !== 'foe') return;
   if (standing(battle, 'warband').length === 0) return;
 
+  // Before anything else he might do with the turn: he may not want it.
+  if (championQuits(state, active)) return;
+
   const temperament = temperamentOf(state, active);
+  // Left as its own number rather than pointed at CHAMPION_QUITS_AT below.
+  // They are the same fraction today and they are not the same rule: moving
+  // when a champion walks must not silently move when a cautious man shields.
   const hurt = healthFraction(state, active) < 0.35;
 
   // A cautious fighter with a clear lane opens with a throw before closing.

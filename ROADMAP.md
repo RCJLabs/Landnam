@@ -7280,8 +7280,37 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   broken man back down the line and would have saved him. The recurrence
   figure itself re-reads at **0 of 179 clan fights** on the flipped build, and
   the list a "who we have fought" panel would hold is still 0.01–0.03 rows a
-  saga. Instrument in `test/probes.test.ts`. **No change made: the fix is a
-  combat rule and wants a ruling first.**
+  saga. Instrument in `test/probes.test.ts`.
+
+- **2026-09-04 — 12.C SHIPPED: a clan's named man takes himself off the
+  field.** `championQuits` in `sim/battleAi.ts` — a champion who belongs to a
+  clan and is below 0.35 of his health leaves on his own turn, still standing,
+  so `settleChampion` writes the line it has always had for a man who got away
+  and gives him the scar that makes him worse next time. Killing him is still
+  final and still the only way to be rid of him; it now has to be done before
+  he decides to go. **Narrow on purpose**: a champion who belongs to nobody
+  cannot come back whatever happens (no `championOf`) and already walks off
+  60-65% of his fights, so the rule stays on the population it was measured
+  for. Same 80 landings an arm, `fair`, to day 400:
+
+  | | before | after |
+  |---|---|---|
+  | a clan's man goes down | 98-100% | **56-59%** |
+  | he gets off the field | 0-2% | **37-44%** |
+  | clan fights against a man met BEFORE | 0 of 179 | **13% settler, 24% raider** |
+  | the list a panel would hold | 0.01-0.03 rows a saga | 0.24-0.28, 19-22 sagas of 80 |
+
+  **It cost the curve nothing measurable**: 87/65/39 against the 87/65/38 just
+  published, inside the bar's own tolerance and inside the ±3 this harness can
+  resolve at 300 landings. Two bars in `test/champion.test.ts` make it a rule
+  — he stays while hale, goes when hurt, and a loose champion with one point
+  of health stands his ground — and the first was watched failing with the
+  rule stubbed out.
+
+  **The threshold is 0.35 because `takeFoeTurn` already called that hurt**,
+  taken from there rather than picked; it is spelled as its own constant so
+  moving when a champion walks cannot silently move when a cautious man
+  shields.
 
 - **2026-09-04 — 11.S2's flip SHIPPED, on a verdict bar that measures what the
   panel actually claims.** The daily crewing stopped reaching for the hunter
