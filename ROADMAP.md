@@ -7264,6 +7264,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-09-04 — 12.C (opened): the named foe does not die of the front rank,
+  and the inherited mechanism was half wrong.** 11.U5 recorded that 11.S1 took
+  the recurring antagonist to zero because `anointChampion` picks the
+  highest-`maxHealth` foe and `heft` sorts by health, so he stands in the
+  front rank and dies there. Re-taken on the FLIPPED build (80 landings an
+  arm, `fair`, to day 400 — 981 fights with a named man), the rank half is
+  confirmed exactly and the death half is not: **he opens at rank 1 in 100% of
+  981 fights**, and the champion who belongs to NOBODY stands in the same
+  place and walks away from 60–65% of his. What separates them is the fight,
+  not the line: **the band wins 87% of clan fights and 28–36% of the rest**,
+  and a clan's man goes down in 98–100% against 35–40%. Clan fights are the
+  ones the band picks. Two further links: he **never flees** (0 of 981) and he
+  **breaks in only 3–9%**, so he never gives ground — `takeBrokenTurn` moves a
+  broken man back down the line and would have saved him. The recurrence
+  figure itself re-reads at **0 of 179 clan fights** on the flipped build, and
+  the list a "who we have fought" panel would hold is still 0.01–0.03 rows a
+  saga. Instrument in `test/probes.test.ts`. **No change made: the fix is a
+  combat rule and wants a ruling first.**
+
 - **2026-09-04 — 11.S2's flip SHIPPED, on a verdict bar that measures what the
   panel actually claims.** The daily crewing stopped reaching for the hunter
   by name and asks the ground which food job pays here. Difficulty restated

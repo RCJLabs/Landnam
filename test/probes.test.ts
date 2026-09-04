@@ -4060,6 +4060,123 @@ describe('PROBE: 11.U5 — is there a thread of known foes to draw', () => {
     console.log(`PROBE 11.U5 known foes — ${SEEDS} landings an arm, fair terms, to day ${HORIZON}:\n${out.join('\n')}`);
     expect(out.length).toBe(2);
   });
+
+  /**
+   * WHERE THE NAMED MAN STANDS, AND HOW HE LEAVES THE FIELD.
+   *
+   * 11.U5 measured that the recurring antagonist does not recur — 0 of 165
+   * clan fights featured a man met before — and named a mechanism: since
+   * 11.S1, `anointChampion` sets `health = maxHealth` after adding
+   * CHAMPION_TOUGHNESS, and `heft` sorts by health, so the champion tops the
+   * foe line every time and stands where the blows land.
+   *
+   * That is a code read, and a code read is a hypothesis. It predicts three
+   * things this measures directly rather than inferring from the outcome:
+   * he is at rank 1 in nearly every fight; he goes DOWN rather than getting
+   * away; and he almost never flees, because CHAMPION_SPIRIT is the stat
+   * that decides whether a man breaks.
+   *
+   * Re-taken on the FLIPPED game (2026-09-04), because 11.U5's figures were
+   * measured before `crewsByOutput` shipped and a figure from one build is
+   * not a figure about another.
+   */
+  it('measures the champion\'s rank, and how he leaves the field', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 80;
+    const HORIZON = 400;
+    const out: string[] = [];
+
+    for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
+      setPolicy(pol);
+      let fights = 0;
+      let rankSum = 0;
+      let atFront = 0;
+      let foesInLine = 0;
+      // SPLIT BY WHOSE MAN HE IS, because the two populations turned out to
+      // be nothing alike and the first cut of this probe merged them. A
+      // champion who belongs to a clan is the only one who CAN come back —
+      // `settleChampion` returns early without a `championOf` — so a
+      // mortality figure pooled over both answers a question nobody asked.
+      const ends = {
+        clan: { n: 0, down: 0, fled: 0, stood: 0, won: 0, foesLeft: 0, wiped: 0, broke: 0, gaveGround: 0 },
+        loose: { n: 0, down: 0, fled: 0, stood: 0, won: 0, foesLeft: 0, wiped: 0, broke: 0, gaveGround: 0 },
+      };
+      // WHETHER HE EVER BREAKS, the last link in the chain and the one that
+      // decides what a fix would touch. `takeBrokenTurn` moves a broken man
+      // BACK down the line and only sets `fled` when there is nobody behind
+      // him — so a champion at rank 1 who broke would give ground and live.
+      // He never flees (0 of 981), so either he never breaks, or breaking
+      // does not save him.
+      const brokeThisFight = new Set<string>();
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          // Mid-fight: his nerve and whether he ever leaves the front.
+          const going = after.battle;
+          if (going?.champion) {
+            const still = going.combatants.find((c) => c.personId === going.champion);
+            if (still?.broken) brokeThisFight.add(going.champion);
+          }
+          // Opening: where he was put in the line.
+          if (!before.battle && after.battle?.champion) {
+            const line = after.battle.combatants.filter((c) => c.side !== 'warband');
+            const him = line.find((c) => c.personId === after.battle!.champion);
+            if (him) {
+              fights += 1;
+              rankSum += him.rank;
+              foesInLine += line.length;
+              if (him.rank === 1) atFront += 1;
+            }
+          }
+          // Closing: read the fight that is GOING, not the state that has
+          // none — `B_LEAVE` deletes the battle, so the last look at him is
+          // on `before`.
+          if (before.battle?.champion && !after.battle) {
+            const him = before.battle.combatants.find((c) => c.personId === before.battle!.champion);
+            if (!him) return;
+            const bucket = before.battle.championOf ? ends.clan : ends.loose;
+            bucket.n += 1;
+            if (him.down) bucket.down += 1;
+            else if (him.fled) bucket.fled += 1;
+            else bucket.stood += 1;
+            // HOW THE FIGHT ITSELF ENDED, because rank turned out not to be
+            // what separates the two populations — they stand in the same
+            // place and leave the field differently, so the difference is in
+            // the fight, not the line.
+            if (before.battle.outcome === 'won') bucket.won += 1;
+            const left = before.battle.combatants
+              .filter((c) => c.side !== 'warband' && !c.down && !c.fled).length;
+            bucket.foesLeft += left;
+            if (left === 0) bucket.wiped += 1;
+            if (brokeThisFight.has(before.battle.champion)) bucket.broke += 1;
+            brokeThisFight.delete(before.battle.champion);
+            if (him.rank > 1) bucket.gaveGround += 1;
+          }
+        }, 'fair');
+      }
+
+      const pc = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : '—');
+      const row = (label: string, e: typeof ends.clan) =>
+        `      ${label.padEnd(18)} ${e.n} fights — down ${e.down} (${pc(e.down, e.n)}),`
+        + ` fled ${e.fled} (${pc(e.fled, e.n)}), still standing ${e.stood} (${pc(e.stood, e.n)})\n`
+        + `      ${' '.repeat(18)} the fight: we won ${pc(e.won, e.n)},`
+        + ` their side wiped out ${e.wiped} (${pc(e.wiped, e.n)}),`
+        + ` ${(e.foesLeft / Math.max(1, e.n)).toFixed(1)} of them left standing\n`
+        + `      ${' '.repeat(18)} his nerve: broke in ${e.broke} (${pc(e.broke, e.n)}),`
+        + ` ended off the front rank in ${e.gaveGround} (${pc(e.gaveGround, e.n)})`;
+      out.push(
+        `  ${name}: ${fights} fights with a named man, ${(foesInLine / Math.max(1, fights)).toFixed(1)} foes in the line\n`
+        + `      his rank at the opening: ${(rankSum / Math.max(1, fights)).toFixed(2)} on average,`
+        + ` at the FRONT in ${atFront} (${pc(atFront, fights)})\n`
+        + `${row("a clan's man:", ends.clan)}\n`
+        + `${row('belongs to nobody:', ends.loose)}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE the champion's place in the line — ${SEEDS} landings an arm, fair, to day ${HORIZON}:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
 });
 
 describe('PROBE: where the wrongly-condemned actually got their food', () => {
