@@ -51,6 +51,7 @@ import { countryHere } from '../src/sim/coast';
 import { terrainDef } from '../src/data/terrain';
 import { reckoningDue } from '../src/sim/landnam';
 import { reachable } from '../src/sim/reach';
+import { markVisible } from '../src/sim/winter';
 import {
   CREW,
   Policy,
@@ -4058,5 +4059,86 @@ describe('PROBE: 11.U5 — is there a thread of known foes to draw', () => {
     // eslint-disable-next-line no-console
     console.log(`PROBE 11.U5 known foes — ${SEEDS} landings an arm, fair terms, to day ${HORIZON}:\n${out.join('\n')}`);
     expect(out.length).toBe(2);
+  });
+});
+
+describe('PROBE: where the wrongly-condemned actually got their food', () => {
+  /**
+   * THE LAST UNANSWERED PIECE OF 11.S2's BLOCKER, and it decides which of two
+   * different repairs is the right one.
+   *
+   * `reachable` says "we will not reach spring on what THIS GROUND gives".
+   * The bar allows 40% of the condemned to live anyway; post-flip it reads
+   * 58%. 11.S2 attributed the survivals and found **54% lived on the ground
+   * ALONE** — no mouth buried, nobody robbed, nothing traded, no road taken —
+   * and called that share "the projection being wrong and nothing else".
+   *
+   * BUT THAT ATTRIBUTION HAS A HOLE, and it is the shape of a trap this file
+   * keeps finding: it is a list of four things ruled OUT, so anything not on
+   * the list falls into "the ground alone" by default. An EVENT CARD that
+   * hands a band food is none of the four. If the cards are feeding them,
+   * the projection is not wrong at all — it is being judged against luck it
+   * cannot see and should not model, and the repair is to the BAR rather
+   * than to `walkWinter`.
+   *
+   * Instrument: food that arrives WITHOUT the day advancing is food no day's
+   * work produced — a card, a choice, a gift. Food arriving as the day turns
+   * is the ground. Both are counted only AFTER the verdict, because that is
+   * the window the panel's claim covers.
+   *
+   * Mirrors the bar exactly — same seeds, same `even` terms, same horizon —
+   * so the two populations are the same bands.
+   */
+  it('splits their food into what the day gave and what a card gave', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    let condemned = 0;
+    let lived = 0;
+    let livedWithCardFood = 0;
+    let cardFoodTotal = 0;
+    let dayFoodTotal = 0;
+    let cardFoodAmongLived = 0;
+
+    for (let s = 0; s < SEEDS; s += 1) {
+      let saidNo = false;
+      let card = 0;
+      let fromDays = 0;
+      const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
+        if (after.end || !after.settlement) return;
+        if (!saidNo) {
+          if (!markVisible(after) || reachable(after)) return;
+          saidNo = true;
+          return;
+        }
+        // Past the verdict: attribute every rise in the larder.
+        const gained = after.party.food - before.party.food;
+        if (gained <= 0) return;
+        if (after.day === before.day) card += gained;
+        else fromDays += gained;
+      }, 'even');
+      if (!saidNo) continue;
+      condemned += 1;
+      cardFoodTotal += card;
+      dayFoodTotal += fromDays;
+      if (!final.end && final.day >= SPRING_IN) {
+        lived += 1;
+        cardFoodAmongLived += card;
+        if (card > 0) livedWithCardFood += 1;
+      }
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE where the wrongly-condemned got their food — ${SEEDS} seeds, even terms, to day ${SPRING_IN}:\n`
+      + `  condemned ${condemned}, of whom ${lived} lived (${condemned ? Math.round((lived / condemned) * 100) : 0}% — the bar's ratio)\n`
+      + `  of those ${lived}: ${livedWithCardFood} took food from a CARD after the verdict`
+      + ` (${lived ? Math.round((livedWithCardFood / lived) * 100) : 0}%)\n`
+      + `  food after the verdict, all condemned: ${Math.round(dayFoodTotal)} from days worked,`
+      + ` ${Math.round(cardFoodTotal)} from cards\n`
+      + `  card food among those who LIVED: ${Math.round(cardFoodAmongLived)}`
+      + ` (${lived ? (cardFoodAmongLived / lived).toFixed(1) : 0} a band)`,
+    );
+    expect(condemned).toBeGreaterThan(0);
   });
 });

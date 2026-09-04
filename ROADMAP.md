@@ -6407,6 +6407,37 @@ Three groups, roughly in descending order of how much they change.
   and the bar wants 40%. When that is settled the flip is `crewsByOutput:
   true` on three policies and a restatement to 87/65/38.
 
+  **RE-CONFIRMED 2026-09-04, and a LEAD for whoever settles it.** The flip was
+  re-run with 11.V in place, on the chance the repaired verdict had cleared
+  the way. It has not: 3 bars red, the verdict reading 58.0% wrong on 91 of
+  157 — the same figures recorded above, so V behaves exactly as this entry
+  predicted and no more.
+
+  The lead is in the ATTRIBUTION rather than the model. "54% lived on the
+  ground alone" is a list of four things ruled OUT — no mouth buried, nobody
+  robbed, nothing traded, no road taken — so anything not on the list falls
+  there by default, and an EVENT CARD that hands a band food is none of the
+  four. `PROBE: where the wrongly-condemned actually got their food` (300
+  seeds, `even`, to day 73) splits their post-verdict larder by whether the
+  day advanced: **183 of the food that reached condemned bands arrived
+  without a day passing, against 150 from days worked**, and **8 of the 18
+  survivors (44%) took some**. If that is cards, the projection is not wrong
+  for those bands — it is being judged against luck it cannot see, and the
+  repair is to the BAR rather than to `walkWinter`.
+
+  Held as a LEAD and not a finding, for three reasons stated rather than
+  buried: it is the UNFLIPPED arm, so it describes the shipped 28% population
+  and not the post-flip 58% one the blocker is about; "card" is inferred from
+  the day not advancing rather than proven to be the only such source; and
+  the counts are small (65 condemned, 18 lived, 8 card-fed). The next hand
+  should re-take it post-flip and prove the source before spending it.
+
+  Two hypotheses died on the way here and are recorded so they are not tried
+  twice: 11.V did NOT unblock the flip, and the buildings signal in the bar's
+  own output (wrongly condemned 2.4 built against 0.6) is NOT a missing term —
+  `output()` already applies `foodKeeping()`, so `walkWinter` does model the
+  smokehouse. Those bands are simply better bands.
+
 - [x] **11.S3 Travel ends when you settle** — **THE PREMISE WAS MINE AND IT
   DID NOT SURVIVE BEING MEASURED, 2026-09-02. Ruled a deck and closed,
   2026-09-03.**
