@@ -7022,12 +7022,63 @@ Three groups, roughly in descending order of how much they change.
   What it must not be sold as is a warning about hunger, because the
   measurement above says that is not what it would be.
 
-- [ ] **11.U5 Known foes.** MEASURED: `lastSeen` now says how long since a
-  champion was seen (10.5), scars accumulate, and 22% of champion fights belong
-  to a clan that can send him back. The data is all there and appears once, in
-  one log line. A small "who we have fought" list makes the named foe a thread
-  rather than a sentence. UNMEASURED whether it is wanted — **the softest item
-  in the queue**, and it is marked so rather than dressed up.
+- [x] **11.U5 Known foes.** — **DECLINED 2026-09-03, and the measurement
+  turned up something worth more than the item: 11.S1 took the named foe's
+  recurrence to exactly zero, and nobody had noticed.**
+
+  **"The data is all there" is not true, and that is a code read rather than
+  a reading.** A champion is not a record of a fight. `clan.champion`
+  (`state/types.ts`) is ONE slot on a neighbour: it is overwritten every time
+  that clan sends another man, and `battleTurn.ts` DELETES it outright when
+  he is put down. The state can answer "who does each clan have now" and can
+  never answer "who have we fought", because everyone you killed is gone from
+  it. The proposed list would need new persisted shape, a `SAVE_VERSION` bump
+  and a migration — not a readout of what is kept.
+
+  **The 22% held.** `PROBE: 11.U5` (`test/probes.test.ts`, 80 landings an
+  arm, `fair`, day 400): 21% of the settler's champion fights are a clan's
+  and 23% of the raider's, against the item's 22%. Credit where it is due —
+  that figure survived.
+
+  **The thread did not.** A man met BEFORE: **0 of 68 settler clan fights and
+  0 of 97 raider ones.** The mechanism is not subtle: **67 of 68 and 92 of 97
+  champions are put down in the fight they lead.** He does not come back
+  because he does not live. The list the item wants would be EMPTY in 79 of
+  80 settler sagas and 75 of 80 raider ones, and across 160 sagas it never
+  once held two rows.
+
+  **AND THE ZERO IS OURS.** 9.5 measured 3% on fair and wrote it into
+  `battleTurn.ts`; 0 of 165 is well below that, so the difference was tested
+  rather than shrugged at — the probe re-run against `formUp` reverted to
+  pre-11.S1 roster order:
+
+  | | shipped (S1) | pre-S1 roster |
+  |---|---|---|
+  | settler, met before | **0 of 68** | 3 of 75 (4%) |
+  | raider, met before | **0 of 97** | 9 of 97 (9%) |
+  | settler champions killed | 67/68 (99%) | 68/75 (91%) |
+  | raider champions killed | 92/97 (95%) | 76/97 (78%) |
+
+  `anointChampion` picks the foe with the highest `maxHealth` and then adds
+  toughness on top, and `heft` sorts by health — so since 11.S1 the champion
+  forms up in the FRONT RANK of every fight, which is where the blows land.
+  The pre-S1 settler figure of 4% reproduces 9.5's 3%, which is what makes
+  this a real change rather than instrument drift.
+
+  **Recorded, not reverted.** 11.S1 took bands still standing from 7 to 19 of
+  150. Recurrence going 4% to 0% is what that cost, and 9.5 had already
+  priced the same trade the other way round and refused it — it declined to
+  buy three points of recurrence for three points of spring. Twelve points of
+  standing for the last four points of recurrence is the same exchange at a
+  far better rate. The named foe was thin before we got here and is now a
+  man you meet once; that is a consequence of a good change, stated.
+
+  So the item declines twice over: the data cannot support the list without
+  new save shape, and the thread it would draw does not exist. Left for
+  Evan, and it is a mechanics question rather than a panel: if the named foe
+  is wanted, the lever is champion SURVIVAL — he dies 95–99% of the time —
+  and that is a deliberate design call with a measured price list already
+  attached, not a readout.
 
 ### Deliberately not in the queue
 
@@ -7044,6 +7095,25 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.U5: declined, and the probe found that 11.S1 took the
+  named foe to zero** — the item's "the data is all there" fails on a code
+  read: `clan.champion` is one slot on a neighbour, overwritten each meeting
+  and deleted when he is put down, so the state cannot answer "who have we
+  fought" at all and the list would need new save shape plus a migration.
+  Its 22% HELD (21% settler, 23% raider). The thread did not: **0 of 68 and
+  0 of 97 clan fights featured a man met before**, because **67 of 68 and 92
+  of 97 champions die in the fight they lead** — the list would be empty in
+  75–79 sagas of 80 and never held two rows in 160. Since 9.5 had measured
+  3% on fair, the gap was tested rather than shrugged at: re-run against
+  `formUp` reverted to pre-11.S1 roster order, recurrence comes back to 4%
+  settler and 9% raider, and champion mortality falls from 95% to 78% on the
+  raider. `anointChampion` picks the highest-health foe and `heft` sorts by
+  health, so since S1 the champion stands in the front rank and dies there.
+  **Recorded, not reverted** — S1 took bands still standing from 7 to 19 of
+  150, and 9.5 had already refused to buy three points of recurrence for
+  three of spring; this is the same trade at a far better rate. Left for
+  Evan as a mechanics call, not a panel: the lever is champion survival.
 
 - **2026-09-03 — 11.U4: the fighting's cost is real and is not the warning
   the item wanted** — declined. The counters were already in the save
