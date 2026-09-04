@@ -504,12 +504,50 @@ export const SETTLER: Policy = {
   // here instead of reaching for the hunter by name. Worth 87/65/38 on the
   // difficulty menu against 84/58/30 — see 11.S2 in ROADMAP.md.
   crewsByOutput: true,
-  siteFloor: 9,
+  /**
+   * WAS 9, AND 9 WAS THE WORST ARM TESTED (12.H, 2026-09-04).
+   *
+   * `floorOn` puts a policy's floor on the coast's own scale, so 9 meant 14
+   * and 7 means 12. Swept over 120 landings an arm to day 400, paired against
+   * the 9 that shipped:
+   *
+   *   As It Lies        dead <49   spring   vs 9              standing  ruled
+   *     0 (no floor)       14        97     saved 28, kill 6     19       42
+   *     5 (coast 10)       14        97     saved 28, kill 6     21       43
+   *     7 (coast 12)       19        94     saved 21, kill 2     27       45
+   *     9 (coast 14)       32        75     —                    25       37
+   *
+   *   A Hard Country
+   *     0                  22        71     saved 28, kill 9     13       23
+   *     5                  23        69     saved 26, kill 9     12       22
+   *     7                  31        69     saved 21, kill 4     14       24
+   *     9                  45        52     —                    12       19
+   *
+   * SEVEN IS A MIDDLE, NOT AN EXTREME, and that is why it is the value. It
+   * has much the best paired ratio — 21:2 and 21:4, against 28:6 and 28:9 for
+   * no floor at all — the most bands still standing at day 400 on `even`, and
+   * the most that ever rule. Taking the first ground buys more springs and
+   * pays for them later; seven keeps most of the gain without the bill. It is
+   * also what RAIDER and TURTLE already use, so the three shipped policies
+   * now agree.
+   *
+   * THIS MOVED EVERY PUBLISHED FIGURE, which is the honest cost and is
+   * recorded rather than absorbed: the difficulty menu was restated with it,
+   * and figures in ROADMAP.md taken before 2026-09-04 were measured through
+   * the old floor and are not comparable with ones taken after.
+   */
+  siteFloor: 7,
   /**
    * And gives way as winter closes, which is the whole difference between a
    * player and a search. Measured 2026-08-22: a FIXED floor of 9 never
    * settled at all in 45 of 120 seeds and saw spring in 48; giving way from
    * day 14 settles 98 and sees spring in 67, saved 20 against killed 1.
+   *
+   * INERT AT A FLOOR OF 7 AND KEPT ANYWAY. `floorOn` clamps at
+   * `COAST_FLOOR.hard` (12), and 7 already maps to 12, so there is nothing
+   * left to give away. It stays because it is a knob rather than a fact — it
+   * governs again the moment the floor moves back up — and because deleting
+   * it would quietly change what a policy spread from SETTLER means.
    */
   relaxFrom: 14,
   plunderWindow: 24,

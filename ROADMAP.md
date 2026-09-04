@@ -7264,6 +7264,51 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-09-04 — 12.H part four, RULED AND TAKEN: the settler's floor is 7, and
+  every published figure now describes a different player.** The sweep put the
+  shipped `siteFloor: 9` last on every column on both countries, and the
+  recommendation was held back as a product call rather than a measurement.
+  Evan took it. `floorOn` maps 9 to a coast floor of 14 and 7 to 12, so the
+  band stops walking past ground it could have held.
+
+  **The curve, restated in full, 300 landings a setting:**
+
+  | | before (floor 9) | after (floor 7) |
+  |---|---|---|
+  | A Fair Country — first spring | 87% | **95%** (286/300) |
+  | As It Lies | 65% | **77%** (230/300) |
+  | A Hard Country | 38% | **51%** (154/300) |
+  | ever rule (120 sagas to day 500) | 48 / 29 / 10 | **46 / 38 / 20** |
+
+  Reached-winter goes 94/77/57 to **97/85/69**. `src/data/hardship.ts` carries
+  all six, and the title screen now reads "Nineteen bands in twenty saw the
+  first spring. Nine in twenty ruled."
+
+  **THE GAME DID NOT CHANGE. Not one line of `src/sim/` moved** — only
+  `test/fixtures/harness.ts` and the figures the harness measures. The coast
+  is exactly as hard as it was this morning; the bot stopped playing the
+  opening badly. That is why the whole suite came back green at 1583 with no
+  bar touched: no paired finding in the file flipped sign under the new
+  baseline, which is worth recording because it was the main risk of taking
+  this at all.
+
+  **WHAT IS NOT COMPARABLE ANY MORE, said plainly rather than discovered
+  later.** Every figure in this file measured before 2026-09-04 was taken
+  through the old floor. They are not wrong; they are readings of a different
+  player, and they must not be set beside a post-flip number as though the
+  game moved between them. Anything re-taken from here carries the new
+  baseline.
+
+  **`relaxFrom: 14` is now inert** — `floorOn` clamps at `COAST_FLOOR.hard`
+  (12) and 7 already maps to 12, so there is nothing left to give away. Kept
+  rather than deleted: it is a knob, not a fact, and it governs again the
+  moment the floor moves back up.
+
+  One prose fix came with it: 0.51 rendered as "two bands in four", so
+  `asFraction` gained 2 to its denominators and it reads "one band in two".
+  Same family as the "ten in twenty ruled" fix earlier today, and fixed in the
+  generator rather than in the figure that tripped it.
+
 - **2026-09-04 — 12.H part three: the settler's site floor is the worst arm
   tested, and the retune is NOT mine to make.** 12.H compared the shipped
   floor against its absence, which is two points and no shape, so the curve
