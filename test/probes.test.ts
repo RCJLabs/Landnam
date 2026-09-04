@@ -51,6 +51,7 @@ import { countryHere } from '../src/sim/coast';
 import { terrainDef } from '../src/data/terrain';
 import { reckoningDue } from '../src/sim/landnam';
 import { reachable } from '../src/sim/reach';
+import { forecast, markVisible } from '../src/sim/winter';
 import {
   CREW,
   Policy,
@@ -4058,5 +4059,426 @@ describe('PROBE: 11.U5 — is there a thread of known foes to draw', () => {
     // eslint-disable-next-line no-console
     console.log(`PROBE 11.U5 known foes — ${SEEDS} landings an arm, fair terms, to day ${HORIZON}:\n${out.join('\n')}`);
     expect(out.length).toBe(2);
+  });
+
+  /**
+   * WHERE THE NAMED MAN STANDS, AND HOW HE LEAVES THE FIELD.
+   *
+   * 11.U5 measured that the recurring antagonist does not recur — 0 of 165
+   * clan fights featured a man met before — and named a mechanism: since
+   * 11.S1, `anointChampion` sets `health = maxHealth` after adding
+   * CHAMPION_TOUGHNESS, and `heft` sorts by health, so the champion tops the
+   * foe line every time and stands where the blows land.
+   *
+   * That is a code read, and a code read is a hypothesis. It predicts three
+   * things this measures directly rather than inferring from the outcome:
+   * he is at rank 1 in nearly every fight; he goes DOWN rather than getting
+   * away; and he almost never flees, because CHAMPION_SPIRIT is the stat
+   * that decides whether a man breaks.
+   *
+   * Re-taken on the FLIPPED game (2026-09-04), because 11.U5's figures were
+   * measured before `crewsByOutput` shipped and a figure from one build is
+   * not a figure about another.
+   */
+  it('measures the champion\'s rank, and how he leaves the field', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 80;
+    const HORIZON = 400;
+    const out: string[] = [];
+
+    for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
+      setPolicy(pol);
+      let fights = 0;
+      let rankSum = 0;
+      let atFront = 0;
+      let foesInLine = 0;
+      // SPLIT BY WHOSE MAN HE IS, because the two populations turned out to
+      // be nothing alike and the first cut of this probe merged them. A
+      // champion who belongs to a clan is the only one who CAN come back —
+      // `settleChampion` returns early without a `championOf` — so a
+      // mortality figure pooled over both answers a question nobody asked.
+      const ends = {
+        clan: { n: 0, down: 0, fled: 0, stood: 0, won: 0, foesLeft: 0, wiped: 0, broke: 0, gaveGround: 0 },
+        loose: { n: 0, down: 0, fled: 0, stood: 0, won: 0, foesLeft: 0, wiped: 0, broke: 0, gaveGround: 0 },
+      };
+      // WHETHER HE EVER BREAKS, the last link in the chain and the one that
+      // decides what a fix would touch. `takeBrokenTurn` moves a broken man
+      // BACK down the line and only sets `fled` when there is nobody behind
+      // him — so a champion at rank 1 who broke would give ground and live.
+      // He never flees (0 of 981), so either he never breaks, or breaking
+      // does not save him.
+      const brokeThisFight = new Set<string>();
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          // Mid-fight: his nerve and whether he ever leaves the front.
+          const going = after.battle;
+          if (going?.champion) {
+            const still = going.combatants.find((c) => c.personId === going.champion);
+            if (still?.broken) brokeThisFight.add(going.champion);
+          }
+          // Opening: where he was put in the line.
+          if (!before.battle && after.battle?.champion) {
+            const line = after.battle.combatants.filter((c) => c.side !== 'warband');
+            const him = line.find((c) => c.personId === after.battle!.champion);
+            if (him) {
+              fights += 1;
+              rankSum += him.rank;
+              foesInLine += line.length;
+              if (him.rank === 1) atFront += 1;
+            }
+          }
+          // Closing: read the fight that is GOING, not the state that has
+          // none — `B_LEAVE` deletes the battle, so the last look at him is
+          // on `before`.
+          if (before.battle?.champion && !after.battle) {
+            const him = before.battle.combatants.find((c) => c.personId === before.battle!.champion);
+            if (!him) return;
+            const bucket = before.battle.championOf ? ends.clan : ends.loose;
+            bucket.n += 1;
+            if (him.down) bucket.down += 1;
+            else if (him.fled) bucket.fled += 1;
+            else bucket.stood += 1;
+            // HOW THE FIGHT ITSELF ENDED, because rank turned out not to be
+            // what separates the two populations — they stand in the same
+            // place and leave the field differently, so the difference is in
+            // the fight, not the line.
+            if (before.battle.outcome === 'won') bucket.won += 1;
+            const left = before.battle.combatants
+              .filter((c) => c.side !== 'warband' && !c.down && !c.fled).length;
+            bucket.foesLeft += left;
+            if (left === 0) bucket.wiped += 1;
+            if (brokeThisFight.has(before.battle.champion)) bucket.broke += 1;
+            brokeThisFight.delete(before.battle.champion);
+            if (him.rank > 1) bucket.gaveGround += 1;
+          }
+        }, 'fair');
+      }
+
+      const pc = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : '—');
+      const row = (label: string, e: typeof ends.clan) =>
+        `      ${label.padEnd(18)} ${e.n} fights — down ${e.down} (${pc(e.down, e.n)}),`
+        + ` fled ${e.fled} (${pc(e.fled, e.n)}), still standing ${e.stood} (${pc(e.stood, e.n)})\n`
+        + `      ${' '.repeat(18)} the fight: we won ${pc(e.won, e.n)},`
+        + ` their side wiped out ${e.wiped} (${pc(e.wiped, e.n)}),`
+        + ` ${(e.foesLeft / Math.max(1, e.n)).toFixed(1)} of them left standing\n`
+        + `      ${' '.repeat(18)} his nerve: broke in ${e.broke} (${pc(e.broke, e.n)}),`
+        + ` ended off the front rank in ${e.gaveGround} (${pc(e.gaveGround, e.n)})`;
+      out.push(
+        `  ${name}: ${fights} fights with a named man, ${(foesInLine / Math.max(1, fights)).toFixed(1)} foes in the line\n`
+        + `      his rank at the opening: ${(rankSum / Math.max(1, fights)).toFixed(2)} on average,`
+        + ` at the FRONT in ${atFront} (${pc(atFront, fights)})\n`
+        + `${row("a clan's man:", ends.clan)}\n`
+        + `${row('belongs to nobody:', ends.loose)}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE the champion's place in the line — ${SEEDS} landings an arm, fair, to day ${HORIZON}:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+});
+
+describe('PROBE: where the wrongly-condemned actually got their food', () => {
+  /**
+   * THE LAST UNANSWERED PIECE OF 11.S2's BLOCKER, and it decides which of two
+   * different repairs is the right one.
+   *
+   * `reachable` says "we will not reach spring on what THIS GROUND gives".
+   * The bar allows 40% of the condemned to live anyway; post-flip it reads
+   * 58%. 11.S2 attributed the survivals and found **54% lived on the ground
+   * ALONE** — no mouth buried, nobody robbed, nothing traded, no road taken —
+   * and called that share "the projection being wrong and nothing else".
+   *
+   * BUT THAT ATTRIBUTION HAS A HOLE, and it is the shape of a trap this file
+   * keeps finding: it is a list of four things ruled OUT, so anything not on
+   * the list falls into "the ground alone" by default. An EVENT CARD that
+   * hands a band food is none of the four. If the cards are feeding them,
+   * the projection is not wrong at all — it is being judged against luck it
+   * cannot see and should not model, and the repair is to the BAR rather
+   * than to `walkWinter`.
+   *
+   * Instrument: food that arrives WITHOUT the day advancing is food no day's
+   * work produced — a card, a choice, a gift. Food arriving as the day turns
+   * is the ground. Both are counted only AFTER the verdict, because that is
+   * the window the panel's claim covers.
+   *
+   * Mirrors the bar exactly — same seeds, same `even` terms, same horizon —
+   * so the two populations are the same bands.
+   */
+  it('names the action behind every unit of food they took in', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    /**
+     * ATTRIBUTED BY CAUSE, NOT BY COMPANY, since 2026-09-04, and the third
+     * version of this instrument in two days.
+     *
+     * The first cut called every unit that arrived without the day advancing
+     * "a card", which was a guess. The second proved the card half — an event
+     * is present on `state.event` and `sim/events.ts` deletes it when it
+     * resolves — and reported **0 of 183**: the lead was refuted, and the
+     * residue got bigger, not smaller. 183 units reaching condemned bands
+     * with no day and no card is more food than the 150 every worked day
+     * produced between them, and it was unexplained.
+     *
+     * The ROADMAP's own next step was "attribute by what else moved alongside
+     * the food". That would have been a fourth guess. `run` now hands the
+     * watcher the ACTION it applied, so each unit is filed under the thing
+     * that actually caused it. Buckets are collected by observation rather
+     * than declared, so an unforeseen source appears as its own row instead
+     * of being absorbed into a residue.
+     */
+    setPolicy(SETTLER);
+    let condemned = 0;
+    let lived = 0;
+    /**
+     * AND THE SHARP NUMBER THE TOTALS CANNOT GIVE. Units summed across bands
+     * say what the population ate; they do not say how many BANDS the ground
+     * fed on its own. A survivor who took one unit from a card is not a
+     * survivor the projection got wrong, and one who took ninety is not
+     * ninety of them. So each surviving band is also classed by whether any
+     * of its post-verdict food came from anywhere but the day's work.
+     */
+    let livedOnGroundAlone = 0;
+    let livedOnLuck = 0;
+    const all = new Map<string, number>();
+    const among = new Map<string, number>();
+    let withDay = 0;
+    let withoutDay = 0;
+    let fromCards = 0;
+    const add = (m: Map<string, number>, k: string, n: number) => m.set(k, (m.get(k) ?? 0) + n);
+
+    for (let s = 0; s < SEEDS; s += 1) {
+      let saidNo = false;
+      const mine = new Map<string, number>();
+      let day = 0;
+      let still = 0;
+      let card = 0;
+      const final = run(`winter-inside-${s}`, SPRING_IN, (before, after, action) => {
+        if (after.end || !after.settlement) return;
+        if (!saidNo) {
+          if (!markVisible(after) || reachable(after)) return;
+          saidNo = true;
+          return;
+        }
+        const gained = after.party.food - before.party.food;
+        if (gained <= 0) return;
+        add(mine, action.type, gained);
+        if (after.day > before.day) day += gained; else still += gained;
+        if (before.event && !after.event) card += gained;
+      }, 'even');
+      if (!saidNo) continue;
+      condemned += 1;
+      withDay += day;
+      withoutDay += still;
+      fromCards += card;
+      const survived = !final.end && final.day >= SPRING_IN;
+      if (survived) {
+        lived += 1;
+        const notTheGround = [...mine.entries()]
+          .filter(([k]) => k !== 'CAMP')
+          .reduce((a, [, n]) => a + n, 0);
+        if (notTheGround > 0) livedOnLuck += 1; else livedOnGroundAlone += 1;
+      }
+      for (const [k, n] of mine) {
+        add(all, k, n);
+        if (survived) add(among, k, n);
+      }
+    }
+
+    const total = [...all.values()].reduce((a, b) => a + b, 0);
+    const rows = [...all.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, n]) => `    ${k.padEnd(16)} ${Math.round(n).toString().padStart(5)}`
+        + ` (${total ? Math.round((n / total) * 100) : 0}%)`
+        + `   of which to bands that LIVED: ${Math.round(among.get(k) ?? 0)}`);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE what fed the wrongly-condemned — ${SEEDS} seeds, even terms, to day ${SPRING_IN}:\n`
+      + `  condemned ${condemned}, of whom ${lived} lived`
+      + ` (${condemned ? Math.round((lived / condemned) * 100) : 0}% — the bar's ratio)\n`
+      + `  ${Math.round(total)} units of food after the verdict, BY THE ACTION THAT BROUGHT IT:\n`
+      + `${rows.join('\n')}\n`
+      + `  OF THE ${lived} SURVIVORS, by band rather than by unit:\n`
+      + `    lived on the ground alone (every unit from the day's work): ${livedOnGroundAlone}\n`
+      + `    took food a card or a fight gave them:                      ${livedOnLuck}\n`
+      + `  cross-check against the old split: ${Math.round(withDay)} arrived as the day turned,`
+      + ` ${Math.round(withoutDay)} with no day, ${Math.round(fromCards)} seen by the`
+      + ` deleted-event detector (which fires a turn too late — see the note)`,
+    );
+    expect(condemned).toBeGreaterThan(0);
+    expect(total).toBeGreaterThan(0);
+    // Every unit is filed under some action by construction; this asserts the
+    // buckets and the day/no-day split are two views of ONE population, so a
+    // future edit cannot let them drift apart unnoticed.
+    expect(Math.round(total)).toBe(Math.round(withDay + withoutDay));
+  });
+
+  /**
+   * AND THE SAME QUESTION ASKED OF THE ARM THE BLOCKER IS ACTUALLY ABOUT.
+   *
+   * The reading above is the UNFLIPPED game — the 28% population that ships.
+   * 11.S2's blocker is the flip (`crewsByOutput: true`), where the verdict
+   * bar reads 58% against a ceiling of 40%, and the ruling drawn from the
+   * attribution — that the ceiling is judging the panel against food it
+   * cannot see — is only worth anything if it holds where the bar is red.
+   * Writing that ruling down without measuring this arm would have been a
+   * figure from one population offered as a fact about another.
+   *
+   * Both arms, same seeds, same terms, same horizon, so the only difference
+   * is the policy flag. `setPolicy` takes a copy rather than editing the
+   * harness, so nothing has to be restored afterwards.
+   */
+  it('asks the same of the flipped arm, where the bar is actually red', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    const rows: string[] = [];
+
+    for (const arm of ['as it ships', 'flipped'] as const) {
+      setPolicy(arm === 'flipped' ? { ...SETTLER, crewsByOutput: true } : SETTLER);
+      let condemned = 0;
+      let lived = 0;
+      let onGround = 0;
+      const units = new Map<string, number>();
+
+      for (let s = 0; s < SEEDS; s += 1) {
+        let saidNo = false;
+        const mine = new Map<string, number>();
+        const final = run(`winter-inside-${s}`, SPRING_IN, (before, after, action) => {
+          if (after.end || !after.settlement) return;
+          if (!saidNo) {
+            if (!markVisible(after) || reachable(after)) return;
+            saidNo = true;
+            return;
+          }
+          const gained = after.party.food - before.party.food;
+          if (gained <= 0) return;
+          mine.set(action.type, (mine.get(action.type) ?? 0) + gained);
+        }, 'even');
+        if (!saidNo) continue;
+        condemned += 1;
+        for (const [k, n] of mine) units.set(k, (units.get(k) ?? 0) + n);
+        if (final.end || final.day < SPRING_IN) continue;
+        lived += 1;
+        const luck = [...mine.entries()].filter(([k]) => k !== 'CAMP')
+          .reduce((a, [, n]) => a + n, 0);
+        if (luck === 0) onGround += 1;
+      }
+
+      const share = (n: number) => (condemned ? `${Math.round((n / condemned) * 100)}%` : '—');
+      const by = [...units.entries()].sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `${k} ${Math.round(n)}`).join(', ');
+      rows.push(
+        `  ${arm.padEnd(11)} condemned ${condemned}, lived ${lived} (${share(lived)} — the bar's ratio)`
+        + `, of them ${onGround} on the ground alone (${share(onGround)} of the condemned)\n`
+        + `              food after the verdict by action: ${by}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE the verdict, both arms — ${SEEDS} seeds, even terms, to day ${SPRING_IN}:\n${rows.join('\n')}`,
+    );
+    expect(rows.length).toBe(2);
+  });
+
+  /**
+   * WHY THE FLIPPED ARM IS MORE WRONG, TESTED RATHER THAN ASSERTED.
+   *
+   * The two-arm reading shows the ground-alone share nearly doubling under
+   * the flip, 15% to 28%, and post-verdict `CAMP` food going from 150 to
+   * 512. The obvious story is that `forecast` walks the remaining days
+   * against the assignments the band has AT THE MOMENT OF THE VERDICT, and a
+   * band that re-crews by output afterwards outruns that projection — the
+   * verdict is stale rather than wrong.
+   *
+   * That is a story, and this file's whole preamble is about what happens to
+   * stories that get written down. It makes a check-able prediction: the
+   * flipped bands must be CHANGING JOBS after the verdict more than the
+   * shipped ones do. If both arms re-crew at the same rate, staleness is not
+   * the mechanism and the extra food came from somewhere else.
+   *
+   * The rate is counted from the people themselves rather than from the
+   * harness's own crewing branch, because a policy is not a rule of the game
+   * (trap: `outWith >= 4`).
+   *
+   * AND THE FIRST CUT OF THAT COUNT COULD NOT FIRE, which is why it is
+   * written the way it is. Comparing `before` against `after` read 0.0 on
+   * BOTH arms — trap 3, an arm tying its control exactly — because the
+   * harness calls `assign(state, …)` on the live object BEFORE `apply`, so
+   * the new job is already on `before` by the time the watcher sees it.
+   * There is nothing to notice in the difference. The job each person held
+   * at the VERDICT is therefore snapshotted into a plain map of strings,
+   * which no later mutation can reach, and every turn afterwards is compared
+   * against that.
+   */
+  it('tests whether the flipped bands outrun the verdict by re-crewing', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    const rows: string[] = [];
+
+    for (const arm of ['as it ships', 'flipped'] as const) {
+      setPolicy(arm === 'flipped' ? { ...SETTLER, crewsByOutput: true } : SETTLER);
+      let condemned = 0;
+      let moves = 0;
+      let handsMoved = 0;
+      let gapSum = 0;
+      let campSum = 0;
+
+      for (let s = 0; s < SEEDS; s += 1) {
+        let saidNo = false;
+        let myMoves = 0;
+        let myCamp = 0;
+        let myGap = 0;
+        let seen = new Map<string, string>();
+        const everMoved = new Set<string>();
+        const jobsOf = (g: GameState) => new Map(
+          g.party.people.filter((p) => p.alive).map((p) => [p.id, p.job ?? 'idle'] as const),
+        );
+        run(`winter-inside-${s}`, SPRING_IN, (before, after, action) => {
+          if (after.end || !after.settlement) return;
+          if (!saidNo) {
+            if (!markVisible(after) || reachable(after)) return;
+            saidNo = true;
+            // The gap the panel was showing when it said no — the size of
+            // the shortfall the band then had to outrun — and the crew it
+            // was showing it for.
+            myGap = forecast(after).foodGap;
+            seen = jobsOf(after);
+            return;
+          }
+          const now = jobsOf(after);
+          let changed = 0;
+          for (const [id, job] of now) {
+            const was = seen.get(id);
+            if (was !== undefined && was !== job) { changed += 1; everMoved.add(id); }
+          }
+          if (changed > 0) myMoves += 1;
+          seen = now;
+          if (action.type === 'CAMP') myCamp += Math.max(0, after.party.food - before.party.food);
+        }, 'even');
+        if (!saidNo) continue;
+        condemned += 1;
+        moves += myMoves;
+        handsMoved += everMoved.size;
+        campSum += myCamp;
+        gapSum += myGap;
+      }
+
+      const per = (n: number) => (condemned ? (n / condemned).toFixed(1) : '—');
+      rows.push(
+        `  ${arm.padEnd(11)} ${condemned} condemned: ${per(moves)} turns a band moved somebody after the`
+        + ` verdict, ${per(handsMoved)} of them ever changed job at all, ${per(campSum)} food from worked days,`
+        + ` against a shortfall of ${per(-gapSum)} at the verdict`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE does the flipped band outrun a stale verdict — ${SEEDS} seeds:\n${rows.join('\n')}`);
+    expect(rows.length).toBe(2);
   });
 });

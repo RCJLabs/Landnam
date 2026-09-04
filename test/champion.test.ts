@@ -17,6 +17,7 @@ import { leaveBattle } from '../src/sim/battleTurn';
 import { seeNeighbours } from '../src/sim/neighbours';
 import { CHAMPION_BYNAMES } from '../src/data/foes';
 import { doStrike } from '../src/sim/strike';
+import { CHAMPION_QUITS_AT, championQuits } from '../src/sim/battleAi';
 import { NERVE_LEADER_FELL, STEADIED_PER_LINK, fellLeading } from '../src/sim/morale';
 import { leaderOf } from '../src/sim/people';
 import { migrate } from '../src/state/migrations';
@@ -240,6 +241,61 @@ describe('the man who comes back', () => {
     const line = state.saga.find((e) => e.text.includes('got off the field alive'))!.text;
     expect(line, 'the line went back to promising a return').not.toMatch(/marked us for it/i);
     expect(line).toMatch(/not have forgotten/i);
+  });
+
+  /**
+   * 12.C: HE LEAVES BEFORE HE IS KILLED, which is the whole reason he can
+   * come back at all.
+   *
+   * MEASURED 2026-09-04, 80 landings an arm, `fair`, to day 400: before this
+   * rule a clan's champion went down in 98-100% of the fights he led and the
+   * recurring antagonist recurred in 0 of 179 clan fights. He was not dying
+   * of the front rank — the champion who belongs to nobody stands at rank 1
+   * just as often and walks away from two fights in three — he was dying
+   * because the band wins 87% of the fights it picks and he never once broke
+   * off. After: down 56-59%, away 37-44%, and a man met before in 13% of
+   * clan fights (settler) and 24% (raider).
+   */
+  it('a clan\'s man badly hurt takes himself off the field', () => {
+    const state = besieged('champ-quits');
+    startRaid(state, 2);
+    const battle = state.battle!;
+    const him = battle.combatants.find((c) => c.personId === battle.champion)!;
+    const person = battle.foes.find((f) => f.id === battle.champion)!;
+
+    // Hale, and he stays: the rule must not simply remove him from fights.
+    person.health = person.maxHealth;
+    expect(championQuits(state, him)).toBe(false);
+    expect(him.fled).toBeFalsy();
+
+    // Under the threshold, and he goes — still standing, not down, so
+    // `settleChampion` writes him back into the clan with a scar.
+    person.health = Math.floor(person.maxHealth * CHAMPION_QUITS_AT) - 1;
+    expect(championQuits(state, him)).toBe(true);
+    expect(him.fled).toBe(true);
+    expect(him.down).toBeFalsy();
+    expect(battle.log.some((l) => l.includes('went back to his own'))).toBe(true);
+
+    // And once gone he is not asked again.
+    expect(championQuits(state, him)).toBe(false);
+  });
+
+  it('a champion who belongs to nobody stands his ground and dies on it', () => {
+    // The rule is deliberately narrow: `settleChampion` does nothing without
+    // a `championOf`, so a loose champion cannot come back however the fight
+    // ends, and letting him walk would change fights it was never measured
+    // for. Same wound, same threshold, opposite answer.
+    const state = structuredClone(newGame('champ-loose-stands'));
+    state.tally.sackings = 8; // word 4, bump 2: the coast talks, and names him
+    startBattle(state, 'meadow', 1);
+    const battle = state.battle!;
+    expect(battle.champion, 'the fixture produced no named man').toBeTruthy();
+    expect(battle.championOf).toBeUndefined();
+    const him = battle.combatants.find((c) => c.personId === battle.champion)!;
+    const person = battle.foes.find((f) => f.id === battle.champion)!;
+    person.health = 1;
+    expect(championQuits(state, him)).toBe(false);
+    expect(him.fled).toBeFalsy();
   });
 
   it('putting him down is final — the clan loses him', () => {

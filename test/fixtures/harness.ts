@@ -310,10 +310,11 @@ export interface Policy {
    * `cliff.test`'s eve-of-winter cliff stops being a cliff. Neither is a
    * stale number to restate; both are decisions about the game.
    *
-   * So the flip is a two-part change and only the first part is measured. The
-   * knob stays for the reason audit item 7 gave — the arm that measures a
-   * lever has to be able to switch it off — and it is the one line that
-   * re-does the flip when the verdict is ready for it.
+   * FLIPPED ON 2026-09-04, in all three shipped policies, once the verdict
+   * bar was restated to measure the claim the panel actually makes — see the
+   * ratchet note in `balance.test.ts`. The knob stays, for the reason audit
+   * item 7 gave: the arm that measures a lever has to be able to switch it
+   * off, and both arms of the 11.S2 reading are taken by toggling it.
    */
   crewsByOutput?: boolean;
   /**
@@ -477,6 +478,10 @@ export function recrew(state: GameState): number {
  */
 export const SETTLER: Policy = {
   id: 'settler',
+  // FLIPPED 2026-09-04: the daily crewing asks the ground which food job pays
+  // here instead of reaching for the hunter by name. Worth 87/65/38 on the
+  // difficulty menu against 84/58/30 — see 11.S2 in ROADMAP.md.
+  crewsByOutput: true,
   siteFloor: 9,
   /**
    * And gives way as winter closes, which is the whole difference between a
@@ -527,6 +532,10 @@ export const SETTLER: Policy = {
  */
 export const RAIDER: Policy = {
   id: 'raider',
+  // FLIPPED 2026-09-04: the daily crewing asks the ground which food job pays
+  // here instead of reaching for the hunter by name. Worth 87/65/38 on the
+  // difficulty menu against 84/58/30 — see 11.S2 in ROADMAP.md.
+  crewsByOutput: true,
   // Seven, not eleven. The first cut had him holding out for good ground,
   // which is a strawman of his own strategy — a man who means to live off
   // what he takes does not care what the soil is like, and `the first
@@ -570,6 +579,10 @@ export const RAIDER: Policy = {
  */
 export const TURTLE: Policy = {
   id: 'turtle',
+  // FLIPPED 2026-09-04: the daily crewing asks the ground which food job pays
+  // here instead of reaching for the hunter by name. Worth 87/65/38 on the
+  // difficulty menu against 84/58/30 — see 11.S2 in ROADMAP.md.
+  crewsByOutput: true,
   siteFloor: 7,
   plunderWindow: 0,
   raidReach: 0,
@@ -1406,8 +1419,16 @@ export function counterStopOn(state: GameState): number | null {
 export function run(
   seed: string,
   maxDay: number,
-  /** Called with every state transition, for measurements the tally misses. */
-  watch?: (before: GameState, after: GameState) => void,
+  /**
+   * Called with every state transition, for measurements the tally misses.
+   *
+   * The third argument is the ACTION that caused the transition, added
+   * 2026-09-04 because the alternative was guessing. A probe attributing a
+   * change to "whatever else moved on the same turn" is reading a
+   * correlation; the action is the cause itself, and a watcher that only
+   * wants the two states can keep ignoring it.
+   */
+  watch?: (before: GameState, after: GameState, action: Action) => void,
   hardship: HardshipId = 'even',
   /**
    * Run once on the fresh world, before the first turn. For planting the
@@ -1549,15 +1570,21 @@ export function run(
         });
     }
 
-    let next = apply(state, step(state));
+    // The action is kept rather than inlined into `apply` so the watcher can
+    // be told WHAT moved the state, not only that it moved. A probe that has
+    // to guess the cause from what changed alongside it is a correlation
+    // wearing a measurement's clothes — see the note on the third argument.
+    let act: Action = step(state);
+    let next = apply(state, act);
     if (next === state && state.battle) {
       // A refused battle action must never end the saga — a player whose tap
       // is refused is still in the fight, and the turn can always be ended.
       // The old break here ate half of every sample: see the header.
-      next = apply(state, { type: 'B_END_TURN' });
+      act = { type: 'B_END_TURN' };
+      next = apply(state, act);
     }
     if (next === state) break;
-    if (watch) watch(state, next);
+    if (watch) watch(state, next, act);
     state = next;
   }
   return state;

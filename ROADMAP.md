@@ -6407,6 +6407,158 @@ Three groups, roughly in descending order of how much they change.
   and the bar wants 40%. When that is settled the flip is `crewsByOutput:
   true` on three policies and a restatement to 87/65/38.
 
+  **RE-CONFIRMED 2026-09-04, and a LEAD for whoever settles it.** The flip was
+  re-run with 11.V in place, on the chance the repaired verdict had cleared
+  the way. It has not: 3 bars red, the verdict reading 58.0% wrong on 91 of
+  157 — the same figures recorded above, so V behaves exactly as this entry
+  predicted and no more.
+
+  The hole is in the ATTRIBUTION rather than the model. "54% lived on the
+  ground alone" is a list of four things ruled OUT — no mouth buried, nobody
+  robbed, nothing traded, no road taken — so anything not on the list falls
+  there by default. `PROBE: where the wrongly-condemned actually got their
+  food` (300 seeds, `even`, to day 73) splits their post-verdict larder by
+  where it came from, and the hole is real and LARGER than the four-item list
+  suggests: **183 units reached condemned bands without a day passing at all,
+  against 150 from every day worked put together.** More food arrives from
+  outside the projection than the ground gives.
+
+  **AND THE 183 IS NOW ATTRIBUTED, after two wrong instruments of my own.**
+  MEASURED 2026-09-04, same 300 seeds, `even`, SETTLER, to day 73, by asking
+  `run` to hand the watcher the ACTION that moved the state rather than
+  guessing the cause from what changed alongside the food:
+
+  | what brought it | units | % | of which to bands that LIVED |
+  |---|---|---|---|
+  | `CAMP` — the day's work | 150 | 45% | 61 |
+  | `CHOOSE` — an event card answered | 97 | 29% | 28 |
+  | `B_LEAVE` — a fight settled up | 86 | 26% | 46 |
+
+  **The 183 is 97 of card and 86 of spoils.** And by BAND rather than by
+  unit, which is the number that bears on the panel's claim: of the 18
+  survivors, **10 lived on the ground alone and 8 took food a card or a
+  fight gave them**. So a little under half of the "wrongly condemned who
+  lived" were not wrongly condemned — luck arrived after the verdict, and
+  `reachable` neither can nor should model it. Against the 65 condemned, the
+  share the projection genuinely got wrong is 10/65 = **15%**, not 28%.
+
+  **Both earlier readings of this were mine and both were faulty, in
+  opposite directions.** The first cut called everything arriving without a
+  day "a card" and reported 8 of 18 — the right BAND count, reached by a
+  definition that could not tell a card from a corpse, and a quarter of its
+  units are battle spoils. The second cut set out to prove the source and
+  looked for `state.event` being deleted; but `CHOOSE` only sets
+  `event.outcome`, and `dismissEvent` deletes the card on the NEXT action —
+  so the detector fired a turn after the food had already moved and reported
+  **0 of 183**, refuting a hypothesis that was half right. A check that fires
+  on the wrong turn looks exactly like a check that found nothing. The
+  ROADMAP's own proposed next step — "attribute by what else moved alongside
+  the food" — would have been a third guess of the same kind; naming the
+  action is the cause itself.
+
+  **The repair this points at is the BAR, not `walkWinter`.** 40% is a
+  ceiling on P(lived | condemned), and roughly two-fifths of that numerator
+  is food the projection is not allowed to know about. A bar on the ground
+  share alone (10/65) is a bar on the thing the panel actually claims.
+
+  **AND THE FLIPPED ARM NOW SAYS THE SAME, which is what that ruling was
+  waiting on.** A figure from the shipped arm is not a figure about the
+  flipped one, so both were measured together — MEASURED 2026-09-04, 300
+  seeds, `even`, SETTLER, to day 73, the only difference between the arms
+  being `crewsByOutput`:
+
+  | arm | condemned | lived | the bar's ratio | on the ground alone |
+  |---|---|---|---|---|
+  | as it ships | 65 | 18 | 28% | 10 = **15%** |
+  | flipped | 57 | 32 | 56% | 16 = **28%** |
+
+  (The shipped row reproduces the reading above exactly, seed for seed and
+  unit for unit, which is the cross-check that the two-arm rig changed
+  nothing.) **A bar written on the ground share passes on both arms** —
+  15% and 28% against a 40% ceiling — where the shipped bar fails the
+  flipped arm at 56%. So restating the bar unblocks the flip, and does it by
+  measuring the claim the panel makes rather than the one it does not.
+
+  **But the flip really does make the projection twice as wrong, 15% to
+  28%, and that is not luck.** Two things were measured alongside it, and
+  both point the same way:
+
+  - **The flipped condemned are condemned by a third of the margin** — a
+    food shortfall of 7.4 at the verdict against 19.5 on the shipped arm.
+    Better-crewed bands are refused nearer the line, so more of them squeak
+    over it. This alone raises the wrong-rate with nothing else at work.
+  - **They re-crew twice as often afterwards** — 22.9 turns a band moved
+    somebody after the verdict against 11.4, from the same 2.8–2.9 people.
+    `forecast` walks the remaining days against the assignments held AT THE
+    VERDICT and by design cannot see a later move, so a band that shuffles
+    hands twice as often outruns a projection that never re-reads it.
+
+  The staleness story made a check-able prediction, the prediction held, and
+  it is still only a prediction that held: nothing here shows the extra
+  moves CAUSED the extra survivals, and the smaller margin is the simpler
+  co-explanation. Recorded as two measured facts and one surviving
+  hypothesis, not as a mechanism.
+
+  **The re-crew counter needed fixing before it could say anything**, and
+  the fault is the one this file keeps finding. Comparing `before` against
+  `after` read 0.0 on BOTH arms — trap 3 exactly — because the harness calls
+  `assign(state, …)` on the live object before `apply`, so the new job is
+  already on `before` when the watcher runs. The check could not fire. It
+  now snapshots each person's job at the verdict into a plain map of strings
+  and compares every later turn against that.
+
+  **RULED AND SHIPPED 2026-09-04: the bar is restated and the flip is on.**
+  `crewsByOutput: true` in SETTLER, RAIDER and TURTLE (DESPERATE spreads
+  SETTLER and follows). Six published figures restated in
+  `src/data/hardship.ts` — spring 84/58/30 -> **87/65/38**, ever-rule
+  30/23/7 -> **48/29/10** — of which only A Fair Country's ever-rule had
+  actually broken its tolerance. Full suite green, all twelve browser bars
+  green.
+
+  **THE FIRST RESTATEMENT OF THE BAR WAS WRONG AND SABOTAGE CAUGHT IT.**
+  Putting the ground-alone count over `condemned` and hard-wiring
+  `reachable` to condemn every band read **10%** — a comfortable pass, and
+  better-looking than the honest 29%, because inflating the denominator is
+  something the projection itself does. That is trap 2, committed in a bar
+  written the same day as two write-ups of trap 2. The rate is now over
+  `judged`: every band settled and far enough into autumn for the mark to be
+  live, condemned or cleared. It read 654 on all three arms, which is what
+  a denominator the projection cannot set looks like.
+
+  | arm | wrongly condemned on the ground | rate over 654 judged |
+  |---|---|---|
+  | as it ships (flip off) | 20 | 3.1% |
+  | flipped | 45 | **6.9%** |
+  | `reachable` condemning ALL | 65 | 9.9% |
+
+  Ceiling 8%, between the flip and a projection that has stopped
+  projecting — the same way the old 40% was chosen, and a THIN gap that
+  nobody should read movement inside. **A second bar carries the other
+  error** so the pair cannot be gamed: cleared-and-died, 0.9% as it stands,
+  ceiling 4%. Both halves were watched failing against their own sabotage —
+  condemn-everybody trips the first at 9.9%, condemn-nobody trips the second
+  at 11.0%.
+
+  **The third red bar the 2026-09-03 entry predicted never appeared.**
+  `cliff.test` passes: 11.V had already rewritten it as the STEP between
+  mid-autumn and the eve (0/12 then 6/12) rather than an absolute count,
+  precisely so a fairer verdict would not trip it. One prediction of three
+  survived contact.
+
+  **And the flip's cost is recorded rather than hidden by the pass:** it
+  doubles how often the projection is wrong on its own terms, 3.1% to 6.9%.
+
+  Two limits stand on all of the above: it is the UNFLIPPED arm, so it
+  describes the shipped 28% population and not the post-flip 58% one the
+  blocker is about, and the counts are small (65 condemned, 18 lived, 10 of
+  them on the ground alone).
+
+  Two hypotheses died on the way here and are recorded so they are not tried
+  twice: 11.V did NOT unblock the flip, and the buildings signal in the bar's
+  own output (wrongly condemned 2.4 built against 0.6) is NOT a missing term —
+  `output()` already applies `foodKeeping()`, so `walkWinter` does model the
+  smokehouse. Those bands are simply better bands.
+
 - [x] **11.S3 Travel ends when you settle** — **THE PREMISE WAS MINE AND IT
   DID NOT SURVIVE BEING MEASURED, 2026-09-02. Ruled a deck and closed,
   2026-09-03.**
@@ -7111,6 +7263,70 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-04 — 12.C (opened): the named foe does not die of the front rank,
+  and the inherited mechanism was half wrong.** 11.U5 recorded that 11.S1 took
+  the recurring antagonist to zero because `anointChampion` picks the
+  highest-`maxHealth` foe and `heft` sorts by health, so he stands in the
+  front rank and dies there. Re-taken on the FLIPPED build (80 landings an
+  arm, `fair`, to day 400 — 981 fights with a named man), the rank half is
+  confirmed exactly and the death half is not: **he opens at rank 1 in 100% of
+  981 fights**, and the champion who belongs to NOBODY stands in the same
+  place and walks away from 60–65% of his. What separates them is the fight,
+  not the line: **the band wins 87% of clan fights and 28–36% of the rest**,
+  and a clan's man goes down in 98–100% against 35–40%. Clan fights are the
+  ones the band picks. Two further links: he **never flees** (0 of 981) and he
+  **breaks in only 3–9%**, so he never gives ground — `takeBrokenTurn` moves a
+  broken man back down the line and would have saved him. The recurrence
+  figure itself re-reads at **0 of 179 clan fights** on the flipped build, and
+  the list a "who we have fought" panel would hold is still 0.01–0.03 rows a
+  saga. Instrument in `test/probes.test.ts`.
+
+- **2026-09-04 — 12.C SHIPPED: a clan's named man takes himself off the
+  field.** `championQuits` in `sim/battleAi.ts` — a champion who belongs to a
+  clan and is below 0.35 of his health leaves on his own turn, still standing,
+  so `settleChampion` writes the line it has always had for a man who got away
+  and gives him the scar that makes him worse next time. Killing him is still
+  final and still the only way to be rid of him; it now has to be done before
+  he decides to go. **Narrow on purpose**: a champion who belongs to nobody
+  cannot come back whatever happens (no `championOf`) and already walks off
+  60-65% of his fights, so the rule stays on the population it was measured
+  for. Same 80 landings an arm, `fair`, to day 400:
+
+  | | before | after |
+  |---|---|---|
+  | a clan's man goes down | 98-100% | **56-59%** |
+  | he gets off the field | 0-2% | **37-44%** |
+  | clan fights against a man met BEFORE | 0 of 179 | **13% settler, 24% raider** |
+  | the list a panel would hold | 0.01-0.03 rows a saga | 0.24-0.28, 19-22 sagas of 80 |
+
+  **It cost the curve nothing measurable**: 87/65/39 against the 87/65/38 just
+  published, inside the bar's own tolerance and inside the ±3 this harness can
+  resolve at 300 landings. Two bars in `test/champion.test.ts` make it a rule
+  — he stays while hale, goes when hurt, and a loose champion with one point
+  of health stands his ground — and the first was watched failing with the
+  rule stubbed out.
+
+  **The threshold is 0.35 because `takeFoeTurn` already called that hurt**,
+  taken from there rather than picked; it is spelled as its own constant so
+  moving when a champion walks cannot silently move when a cautious man
+  shields.
+
+- **2026-09-04 — 11.S2's flip SHIPPED, on a verdict bar that measures what the
+  panel actually claims.** The daily crewing stopped reaching for the hunter
+  by name and asks the ground which food job pays here. Difficulty restated
+  87/65/38 spring and 48/29/10 ever-rule; the title screen now reads "Seven
+  bands in eight saw the first spring. One band in two ruled." The bar that
+  blocked this for two days was measuring P(lived | condemned) — and
+  attributed by the ACTION that brought each unit of food, more than half of
+  what reaches a condemned band is an event card or battle spoils, neither of
+  which `reachable` claims to predict. It is now a rate of wrongly-condemned
+  bands the GROUND fed, over every band the panel could have judged, paired
+  with a cleared-and-died bar so neither half can be bought with the other.
+  My first cut of that restatement passed with `reachable` sabotaged to
+  condemn everybody, because the denominator was one the projection sets;
+  the second is 6.9% flipped against 9.9% sabotaged. Both halves watched
+  failing. All twelve browser bars green; the title look blessed.
 
 - **2026-09-03 — 11.U5: declined, and the probe found that 11.S1 took the
   named foe to zero** — the item's "the data is all there" fails on a code

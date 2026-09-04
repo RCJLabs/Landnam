@@ -4231,6 +4231,23 @@ describe('the first winter, from inside', () => {
     setPolicy(SETTLER);
     let condemned = 0;
     let condemnedAndLived = 0;
+    /** Of those, the ones no card and no fight fed. This is what the bar is on. */
+    let livedOnTheGround = 0;
+    /**
+     * EVERY BAND THE PANEL COULD HAVE JUDGED — settled, and far enough into
+     * autumn for the mark to be a live target — whether it was condemned or
+     * cleared. This is the denominator, and the reason is in the ratchet note:
+     * a rate over `condemned` is one the projection SETS, and a projection
+     * that condemns everybody drives it down while doing more harm, not less.
+     */
+    let judged = 0;
+    /**
+     * THE OTHER ERROR, and the reason the pair cannot be gamed. A band the
+     * panel looked at, never condemned, and which then died. A projection
+     * that buys a clean sheet by condemning nobody scores nought above and
+     * everything here; one that condemns everybody scores the reverse.
+     */
+    let clearedAndDied = 0;
     let firstCallDay = 0;
     // What the band looked like when it was written off, split by whether the
     // writing-off turned out to be true. If the wrong ones were smaller or
@@ -4243,12 +4260,22 @@ describe('the first winter, from inside', () => {
 
     for (let s = 0; s < SEEDS; s++) {
       let saidNo = false;
+      let couldHaveBeen = false;
       let saidNoOn = 0;
       let hands = 0;
       let built = 0;
-      const final = run(`winter-inside-${s}`, SPRING_IN, (_before, after) => {
-        if (saidNo || after.end || !after.settlement) return;
+      // Food that reached the band after the verdict from anything but a
+      // worked day — see the ratchet note below on why the bar counts it.
+      let luck = 0;
+      const final = run(`winter-inside-${s}`, SPRING_IN, (before, after, action) => {
+        if (after.end || !after.settlement) return;
+        if (saidNo) {
+          if (action.type === 'CAMP') return;
+          luck += Math.max(0, after.party.food - before.party.food);
+          return;
+        }
         if (!markVisible(after)) return;
+        couldHaveBeen = true;
         if (!reachable(after)) {
           saidNo = true;
           saidNoOn = after.day;
@@ -4256,12 +4283,17 @@ describe('the first winter, from inside', () => {
           built = after.settlement.built.length;
         }
       }, 'even');
-      if (!saidNo) continue;
+      if (couldHaveBeen) judged += 1;
+      if (!saidNo) {
+        if (couldHaveBeen && (final.end || final.day < SPRING_IN)) clearedAndDied += 1;
+        continue;
+      }
       condemned += 1;
       firstCallDay += saidNoOn;
       const lived = !final.end && final.day >= SPRING_IN;
       if (lived) {
         condemnedAndLived += 1;
+        if (luck === 0) livedOnTheGround += 1;
         at.wrongHands += hands;
         at.wrongBuilt += built;
         grew.hands += (final.party.people.filter((p) => p.alive).length - hands);
@@ -4288,6 +4320,8 @@ describe('the first winter, from inside', () => {
     }
 
     const wrong = condemned === 0 ? 0 : condemnedAndLived / condemned;
+    const wrongOnTheGround = judged === 0 ? 0 : livedOnTheGround / judged;
+    const neverWarned = judged === 0 ? 0 : clearedAndDied / judged;
     console.log(
       `the verdict "we will not reach spring", over ${SEEDS} seeds:\n` +
       `  said to ${condemned} bands, first on day ${condemned ? (firstCallDay / condemned).toFixed(0) : '-'} on average\n` +
@@ -4300,7 +4334,11 @@ describe('the first winter, from inside', () => {
       `  the wrongly condemned then gained ${(grew.hands / Math.max(1, condemnedAndLived)).toFixed(1)} hands ` +
         `and ${(grew.built / Math.max(1, condemnedAndLived)).toFixed(1)} buildings before spring\n` +
       `  of the ${condemnedAndLived} wrongly condemned: ${shed} lost a mouth after the verdict, ` +
-        `${comfortable} reached spring with food to spare`,
+        `${comfortable} reached spring with food to spare\n` +
+      `  and ${livedOnTheGround} of them took nothing but the day's work — ` +
+        `${(wrongOnTheGround * 100).toFixed(1)}% of the ${judged} bands the panel could have judged <- THE BAR\n` +
+      `  the other way: ${clearedAndDied} were never told and died anyway ` +
+        `(${(neverWarned * 100).toFixed(1)}%) <- THE OTHER BAR`,
     );
 
     // A RATCHET, and worth being plain about what it is and is not.
@@ -4354,16 +4392,70 @@ describe('the first winter, from inside', () => {
     // together — buying fewer false-deads by condemning nobody shows up at
     // once as false-alives. See `PROBE: the winter verdict` in probes.test.ts.
     //
-    // The repair was needed on its own evidence, not just for the ratio:
-    // attributed, 54% of the wrongly condemned lived on the ground ALONE —
-    // no mouth buried, nobody robbed, nothing traded, no road taken. That
-    // share is the projection being wrong and nothing else.
+    // AND THE BAR NOW MEASURES THE CLAIM THE PANEL MAKES, changed 2026-09-04
+    // with the flip, which is the last thing in this note and the reason the
+    // flip could ship.
     //
-    // The remaining wrong verdicts are still mostly bands that shed a mouth —
-    // which is what a projection that holds the roster constant cannot
-    // credit, and should not.
-    expect(wrong, `the panel told ${condemnedAndLived} surviving bands they were dead`)
-      .toBeLessThan(0.4);
+    // The panel says one thing: "we will not reach spring on what THIS GROUND
+    // gives". `condemnedAndLived / condemned` is not that, twice over.
+    //
+    // WRONG NUMERATOR. A band that lived because a card fed it, or because it
+    // came home from a fight with somebody else's stores, did not refute the
+    // panel — the panel never claimed to predict either, and `reachable`
+    // neither can nor should model luck. Attributed by the ACTION that
+    // brought each unit of food (300 seeds, `even`, SETTLER, to day 73 —
+    // `PROBE: where the wrongly-condemned actually got their food`), the
+    // post-verdict larder splits CAMP 150 / CHOOSE 97 / B_LEAVE 86: more than
+    // half of what reaches a condemned band is a card or spoils. The older
+    // note above — "54% lived on the ground ALONE" — was a list of four
+    // things ruled OUT, so cards and spoils fell into "the ground" by default.
+    //
+    // WRONG DENOMINATOR, and this one was found by sabotage rather than by
+    // thinking. The first cut of the restatement put the ground-alone count
+    // over `condemned` and PASSED with `reachable` hard-wired to condemn
+    // every band — 10%, better-looking than the honest 29%, because inflating
+    // the denominator is something the projection itself does. Trap 2, in a
+    // bar written by the hand that had just written up trap 2 twice.
+    //
+    // So the rate is over `judged`: every band settled and far enough into
+    // autumn for the mark to be live, condemned or cleared. The projection
+    // cannot move it — it read 654 on all three arms below.
+    //
+    // MEASURED 2026-09-04, 900 seeds, `even`, SETTLER, same 654 judged:
+    //
+    //   as it ships (flip off)         20 wrongly condemned on the ground  3.1%
+    //   flipped                        45                                  6.9%
+    //   `reachable` condemning ALL     65                                  9.9%
+    //
+    // The ceiling is 8%: above the flip, below a projection that has stopped
+    // projecting. That is the same way the old 40% was chosen — to sit
+    // between a known defect and a known repair — and it is a THIN gap, 6.9
+    // against 9.9, which is why the second bar below exists and why nobody
+    // should read a move inside it as a change to the game.
+    //
+    // BOTH ERRORS, because neither alone can be trusted. A projection buys a
+    // clean sheet on the first bar by condemning nobody, and pays for it at
+    // once on the second: cleared-and-died is 0.9% as it stands and would be
+    // about 11% if `reachable` never said no. The pair cannot be gamed
+    // together, which is what the note fifteen lines above asked for and did
+    // not have.
+    //
+    // WHAT THIS BAR NO LONGER CLAIMS. It has NOT been read against the 46%
+    // defect it was originally written for — that state is not reachable any
+    // more — so "it fails the defect and passes the repair" is a claim about
+    // the old ratio, not this one. What HAS been checked is that each half
+    // fails when the projection is broken in its own direction.
+    //
+    // And the flip really does make the projection twice as wrong on its own
+    // terms, 3.1% to 6.9%. That is recorded rather than hidden by the pass:
+    // the flipped condemned are refused by a third of the margin (7.4 food
+    // against 19.5) and re-crew twice as often afterwards, against a forecast
+    // that by design never re-reads the assignments.
+    expect(wrongOnTheGround, `the panel told ${livedOnTheGround} bands the ground could not feed them,`
+      + ` and the ground fed them`)
+      .toBeLessThan(0.08);
+    expect(neverWarned, `${clearedAndDied} bands died with the panel never once warning them`)
+      .toBeLessThan(0.04);
   });
 });
 
