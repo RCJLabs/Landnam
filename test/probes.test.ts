@@ -3880,3 +3880,87 @@ describe('PROBE: 11.M5 — the road verb nobody has ever tried', () => {
     expect(base.lived.length).toBe(SEEDS);
   });
 });
+
+describe('PROBE: 11.U4 — what the fighting has actually cost', () => {
+  /**
+   * The item rests on two claims and they need separating.
+   *
+   * The FIRST is 10.2's: battle is 39% of the settler's dead and 47% of the
+   * raider's. That is a share of deaths and it is re-taken here on the same
+   * instrument rather than inherited.
+   *
+   * The SECOND is the reason the item gives for wanting a panel — "the bleed
+   * that is about to kill them by hunger" — and it is a CAUSAL claim: losing
+   * people to violence is what starves the band. 11.M4 measured the
+   * neighbouring fact one day earlier and it does not agree: hands at day 49
+   * came out 6.0 / 5.9 / 6.1 across starved / despair / still-standing, flat.
+   * If band size does not separate the doomed from the survivors, then
+   * violent losses may not either, and a panel sold as "see the bleed that
+   * will starve you" would be selling a chain the game does not have.
+   *
+   * So this asks both at once: the share, and whether the bleed predicts the
+   * ending. Violent losses are counted BY DAY 49 — before winter opens — so
+   * the reading is what a mid-run panel could have shown while there was
+   * still a decision to make, not a post-hoc count that includes the deaths
+   * of the losing itself.
+   */
+  it('re-takes the share of dead the fighting owns, and asks whether the bleed predicts the ending', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 400;
+    const WINTER_OPENS = 49;
+    const out: string[] = [];
+
+    for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
+      setPolicy(pol);
+      let dead = 0;
+      let violent = 0;
+      // Violent losses by day 49, grouped by how the saga finished — the
+      // reading the item's causal clause needs and nobody has taken.
+      const byEnd: Record<string, { sagas: number; bledBy49: number; anyBled: number }> = {};
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), HORIZON, undefined, 'fair');
+        let bledBy49 = 0;
+        for (const p of final.party.people) {
+          if (p.alive || p.left) continue;
+          dead += 1;
+          const fate = p.fate ?? '';
+          if (!DEATHS.includes(fate)) continue;
+          violent += 1;
+          if ((p.diedOn ?? HORIZON) < WINTER_OPENS) bledBy49 += 1;
+        }
+        // ONLY BANDS THAT REACHED THE WINDOW. A saga that ended on day 30 had
+        // thirty days in which to bleed against another's forty-nine, so
+        // counting them together compares exposure and calls it a finding —
+        // CLAUDE.md's trap 2, and the bias runs in exactly the direction that
+        // would manufacture the raider reading. A band whose saga was already
+        // over is also not one a mid-run autumn panel could ever have warned.
+        if (final.day < WINTER_OPENS) continue;
+        const how = final.end?.cause ?? 'still standing';
+        const row = byEnd[how] ?? { sagas: 0, bledBy49: 0, anyBled: 0 };
+        row.sagas += 1;
+        row.bledBy49 += bledBy49;
+        if (bledBy49 > 0) row.anyBled += 1;
+        byEnd[how] = row;
+      }
+
+      const groups = Object.entries(byEnd)
+        .sort((a, b) => b[1].sagas - a[1].sagas)
+        .map(([how, r]) => `      ${how.padEnd(14)} n=${String(r.sagas).padStart(3)}`
+          + ` | violent losses by day 49: ${(r.bledBy49 / r.sagas).toFixed(2)} a saga`
+          + ` | sagas that bled at all: ${r.anyBled}/${r.sagas}`)
+        .join('\n');
+
+      out.push(
+        `  ${name}: ${dead} dead over ${SEEDS} sagas, ${violent} of them to violence`
+        + ` — ${dead > 0 ? Math.round((violent / dead) * 100) : 0}% (10.2 said`
+        + ` ${name === 'settler' ? '39' : '47'}%)\n${groups}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 11.U4 the cost of fighting — ${SEEDS} landings an arm, fair terms, to day ${HORIZON}:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+});
