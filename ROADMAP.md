@@ -7264,6 +7264,57 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-09-04 — 12.H part two: the road mark I shipped was wallpaper, and the
+  panel line I was about to build is REFUTED.** Following 12.H's finding that
+  holding out for a site is what kills the opening, the obvious answer was to
+  tell the player what the search costs — the analogue of the winter mark's
+  counsel. Measured before building, and it does not survive.
+
+  **The line would have had a subject**: of the bands that died on the road
+  before day 49, 67% (`even`) and 57% (`hard`) stood at least once on ground
+  `foundBlocker` would have let them found on, and the first such day came on
+  day 3 on average, with **6.9 days' food in hand on `even`** and 4.5 on
+  `hard`. A real decision, taken early, with a week's food. (Stated as two
+  separate readings on purpose: over ALL such days the larder averages 3.1,
+  because most of them fall late when the band is already dying, and reporting
+  that next to "day 3" would invite reading one as the other.)
+
+  **But the warning was already up on 98% of them** — which is the shape of a
+  check that cannot fail, so the base rate was taken over every band rather
+  than only the doomed. `roadMarkVisible` is lit on **95% of every unsettled
+  road day**, and **80% of sagas never see it dark once**. 11.U1 set
+  `ROAD_MARK_WINDOW` to ten days and an unsettled band essentially never
+  carries ten days' food, so the mark has been permanent since it shipped —
+  and duplicating the top bar, which carries food and days of food anyway.
+
+  **RETUNED TO 3, WITH THE WHOLE CURVE MEASURED** rather than a value picked.
+  Lit share against the starving bands it still reaches three days out (about
+  what it takes to walk somewhere and eat):
+
+  | window | lit, even | reached | lit, hard | reached |
+  |---|---|---|---|---|
+  | 10 (shipped) | 95% | 49/49 | 95% | 87/87 |
+  | 5 | 65% | 48/49 | 85% | 87/87 |
+  | **3** | **48%** | **47/49** | **65%** | **87/87** |
+  | 2 | 37% | 46/49 | 55% | 86/87 |
+
+  Three loses two bands of 49 on `even` and none of 87 on `hard`, and roughly
+  halves the noise. It is still lit on half the road days and that is not
+  overclaimed: the road is a hungry place, and the mark is now frequent rather
+  than permanent.
+
+  A bar in `test/balance.test.ts` pins the PROPERTY rather than the constant —
+  it must go dark on a real share of road days AND still reach the starving in
+  time, since either half alone can be bought by moving the window to an
+  extreme. Watched failing at the old value (3% dark) and passing at the new
+  (46% dark, 20/20 reached).
+
+  **The panel line is not built.** The information was already on screen and
+  the decision was already the player's; adding a sentence under a mark that
+  was already lit is the kind of change that measures as nothing. What the
+  measurement supports is making the mark mean something, which is what
+  shipped.
+
 - **2026-09-04 — 12.H (opened, measured, NOT acted on): the opening's dead are
   mostly the cost of looking for good ground, and the instrument is implicated
   in its own reading.** The biggest block of endings in the game is the one

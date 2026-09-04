@@ -230,8 +230,33 @@ export function markVisible(state: GameState): boolean {
   return days > 0 && days <= MARK_WINDOW;
 }
 
-/** Inside this many days of food left, the road's own mark is worth showing. */
-export const ROAD_MARK_WINDOW = 10;
+/**
+ * Inside this many days of food left, the road's own mark is worth showing.
+ *
+ * WAS TEN, AND TEN MADE IT WALLPAPER. MEASURED 2026-09-04 (12.H, 300 sagas a
+ * country, settler, to day 49): an unsettled band essentially never carries
+ * more than ten days' food, so the mark was **up on 95% of every unsettled
+ * road day** and **80% of sagas never once saw it dark**. A warning that is
+ * always on is not a warning — the same family as a check that cannot fail —
+ * and it was also duplicating the top bar, which carries food and days of
+ * food permanently.
+ *
+ * The whole curve was measured rather than a value picked. Lit share against
+ * the bands it still reaches at least three days before they starve (roughly
+ * what it takes to walk somewhere and eat):
+ *
+ *   window   lit, even   reached   |   lit, hard   reached
+ *     10        95%       49/49    |     95%        87/87   <- what shipped
+ *      5        65%       48/49    |     85%        87/87
+ *      3        48%       47/49    |     65%        87/87
+ *      2        37%       46/49    |     55%        86/87
+ *
+ * Three keeps the warning almost whole — it loses two bands of 49 on `even`
+ * and NONE of 87 on `hard` — and roughly halves the noise. It is still lit on
+ * half the road days, and that is not overclaimed: the road is a hungry
+ * place, and the mark is now merely frequent rather than permanent.
+ */
+export const ROAD_MARK_WINDOW = 3;
 
 /**
  * Days of food left on the road, at today's mouths and no more forage.
