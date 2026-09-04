@@ -51,11 +51,27 @@
 > 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
 > that gave the game a third act.
 >
-> **CURRENT MILESTONE (from 2026-09-02): Phase 11 — the queue of
-> 2026-09-02**, below. Fifteen items in three groups — five that change the
-> SHAPE of the game (the wall has no decision; the yard caps nothing; travel
-> ends at settling), five mechanics, five on legibility. Every item carries
-> the measurement it rests on, and the ones resting on nothing say UNMEASURED.
+> **NO CURRENT MILESTONE (from 2026-09-04). Phase 11 is CLOSED, all fifteen
+> items** — S1–S5, M1–M5, U1–U5 — and nothing has been queued behind it. The
+> next one is Evan's to open.
+>
+> **Seven of the fifteen shipped a change. Eight were closed on their own
+> measurement without one**, which is the phase's real result: the discipline
+> Phase 10 asked for was applied, and it stopped more work than it started.
+> Five items rested on figures that did not survive being re-taken — 10.2's
+> 39% became 28%, 10.1's never-founded population turned out to die before
+> winter opens, `HUNT`'s one good case never fires, U4's bleed does not
+> predict the ending, U5's named foe never comes back at all. Two more (U1,
+> U3) were built, but NOT as written: each was reshaped once the reading
+> showed the proposed fix pointed at the wrong thing.
+>
+> One finding came from outside the queue and is the most important thing
+> here: **11.S1 took the named foe's recurrence to zero** (see 11.U5), a
+> consequence of a good change that nobody had priced. Recorded, not
+> reverted.
+>
+> **Phase 11 — the queue of 2026-09-02** is below, every item carrying its
+> verdict.
 >
 > **Phase 10 — the audit of 2026-09-01** is CLOSED, all six items. Opened from a fresh reading rather than from the
 > parking lot, with each item carrying its instrument, date and N, and every
