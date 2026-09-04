@@ -8,12 +8,14 @@ import {
   activeCombatant,
   beginBattle,
   effective,
+  isWarbandTurn,
   refreshTurn,
   standing,
 } from './battle';
 import { SCAR_MAX } from './battle';
 import { takeFoeTurn } from './battleAi';
 import { beat } from './beats';
+import { stepUp } from './footwork';
 import { pressureAtTurnStart, takeBrokenTurn } from './morale';
 import { settleAftermath, type Aftermath } from './consequences';
 import { holdSteading, sackSteading } from './raid';
@@ -23,8 +25,8 @@ import { isSeaFight, settleSeaFight } from './sea';
 import { noteRaidSent } from './neighbours';
 import { bonus } from './lore';
 import { note } from './tally';
-import { key } from '../hex';
 import { checkRunEnd } from './upkeep';
+import { stopAt } from './route';
 
 /**
  * Pure safety net on the auto-played foe turns. Generous enough never to fire
@@ -120,6 +122,17 @@ function playUntilOurTurn(state: GameState): void {
       continue;
     }
 
+    // THE LINE CLOSES ITSELF (9.1b). Both sides, at the top of the turn,
+    // after the nerve check and before anybody is handed orders: a fighter
+    // with no legal verb from where he stands shoulders forward one rank and
+    // that is his turn. Without it, taking the dash off the bar left 19% of
+    // warband turns with nothing legal in them at all — measured over the
+    // arena's 60 fights before the cut. See sim/footwork.ts.
+    //
+    // Before the warband return, so the player is handed a man who has
+    // already stepped rather than one who is about to.
+    stepUp(state, active);
+
     if (active.side === 'warband') return;
 
     takeFoeTurn(state);
@@ -158,7 +171,13 @@ export function startBattle(
 
 /** Opens a raid on the steading — same machinery, your own ground. */
 export function startRaid(state: GameState, difficulty = 0): void {
-  const terrain = state.world.tiles[key(state.settlement!.at)]?.terrain ?? 'meadow';
+  // THE GROUND THE HALL STANDS ON, which on a line is its stretch. The
+  // steading's `at` is a placeholder on a coast, so this read the LANDING's
+  // terrain from every steading — and once the island stopped being generated
+  // it read nothing at all and fell back to meadow. A raid fought on the
+  // wrong country is a raid whose weather, cover and footing are all somebody
+  // else's.
+  const terrain = stopAt(state.seed, state.settlement!.stop ?? 0).country;
   // Somebody sent them, and it goes on their account.
   noteRaidSent(state);
   beginBattle(state, terrain, difficulty, true);
@@ -166,6 +185,46 @@ export function startRaid(state: GameState, difficulty = 0): void {
 }
 
 /** Ends the current fighter's turn and plays every foe turn that follows. */
+/**
+ * Whether the fighter whose turn it is has nothing left to decide.
+ *
+ * THE TAP THIS EXISTS TO DELETE. Every verb in the fight — strike, reach,
+ * throw, defend and the war cry — is gated on `!hasActed` and sets it, so the
+ * moment a fighter acts the only legal action left is ending the turn. Since
+ * 9.1b the line closing itself sets it too, which is the one case where a
+ * fighter is handed over already spent without having chosen anything. The screen said so out loud ("nothing left this
+ * turn — end it") and then made the player tap it anyway: one mandatory tap
+ * per fighter per round with exactly one outcome, which is ceremony rather
+ * than a decision.
+ *
+ * NOT true before acting, and that is why the button stays. A fighter who has
+ * not acted CAN end their turn — declining to do anything is a real choice,
+ * and on a rank that cannot reach anybody it is often the right one. Only the
+ * tap after the blow is dead.
+ *
+ * AND A BROKEN MAN IS SPENT BEFORE HE STARTS. `activeCombatant` skips the
+ * down and the fled but not the broken, so a fighter whose nerve has gone
+ * still gets a turn — and every verb refuses him, `broken` sitting in the
+ * same guard as `hasActed`. The roadmap's wording ("once a fighter has
+ * acted") did not reach him, which would have left the one player most
+ * likely to be panicking tapping a button with one outcome. He has nothing
+ * to decide either, so his turn ends itself too.
+ *
+ * A predicate rather than a rule inside the verbs, deliberately. Making
+ * `B_STRIKE` end the turn itself would rewrite what an action sequence means:
+ * every recorded `[strike, end turn]` pair — the golden runs, the port's
+ * parity fixtures, the fights in this suite — would spend the NEXT fighter's
+ * turn on the second action. The sim keeps its shape; the view stops asking
+ * for a tap it already knows the answer to.
+ */
+export function turnIsSpent(state: GameState): boolean {
+  const battle = state.battle;
+  if (!battle || battle.outcome) return false;
+  if (!isWarbandTurn(state)) return false;
+  const active = activeCombatant(battle);
+  return !!active && (active.hasActed || active.broken);
+}
+
 export function endTurn(state: GameState): boolean {
   const battle = state.battle;
   if (!battle || battle.outcome) return false;
@@ -212,7 +271,26 @@ function settleChampion(state: GameState, battle: Battle): void {
     scars: Math.min(SCAR_MAX, clan.champion.scars + 1),
     lastSeen: state.day,
   };
-  chronicle(state, `${name} got off the field alive. He will have marked us for it.`, 'grim');
+  // 9.5, AND THE CHANGE IS ONE WORD OF CERTAINTY RATHER THAN THE WHOLE LINE.
+  //
+  // It read "He will have marked us for it." Measured over full runs, a
+  // champion who walks away leads a repeat fight in 5% of clan fights on even
+  // and 3% on fair — about one time in twenty — and most named foes cannot
+  // return AT ALL: only 22% of the fights he leads are a clan's, the rest
+  // being open-field champions who belong to nobody, which
+  // test/champion.test.ts asserts as intended design. So the old line
+  // promised a return the game delivers one time in twenty.
+  //
+  // The other prong of 9.5's fork was to make the promise TRUE by raising the
+  // raid rate so clans come back. That was tried and reverted: it bought three
+  // points of recurrence for three points of spring and a difficulty card that
+  // stopped being true.
+  //
+  // What is wrong is the CERTAINTY, not the menace. A chronicle is allowed to
+  // be more afraid than the odds — this is past tense, after the fight, and
+  // nothing acts on it — so the line keeps its dread and stops asserting a
+  // return. It says what is certainly true of a man who got away.
+  chronicle(state, `${name} got off the field alive. He will not have forgotten it.`, 'grim');
 }
 
 export function leaveBattle(state: GameState): Aftermath | undefined {

@@ -7,15 +7,14 @@
 // the trade rate and the raid maths.
 
 import { worldBeat } from './beats';
-import { distance, fromKey, key, type Hex } from '../hex';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
 import {
   BARTER_FOOD,
   CLAN_CALLS_EVERY,
   CLAN_COUNT,
+  CLAN_ELBOW,
   CLAN_MAX_GAP,
-  CLAN_MIN_GAP,
   CLAN_NAMES,
   NATIVE_NAMES,
   REP_DRIFT,
@@ -26,7 +25,9 @@ import {
   standingFor,
   type Standing,
 } from '../data/clans';
-import type { GameState, Neighbour, World } from '../state/types';
+import type { GameState, Neighbour } from '../state/types';
+import { daysBetween, neighbourStops } from './route';
+import { standingAt } from './coast';
 import { fieldCrew, purposeDef } from './expedition';
 import { effectiveStat } from './people';
 import { chronicle } from './saga';
@@ -48,47 +49,25 @@ export const PRESSURE_STIR = 0.3;
  * every coast has both somebody who was here first and somebody who came the
  * year before you — the two halves of the milestone.
  */
-export function placeNeighbours(world: World, rng: Rng): Neighbour[] {
-  const near: Hex[] = [];
-  const far: Hex[] = [];
-  for (const [k, tile] of Object.entries(world.tiles)) {
-    if (tile.terrain === 'ocean' || tile.terrain === 'mountains') continue;
-    const at = fromKey(k);
-    const d = distance(at, world.landing);
-    if (d < CLAN_MIN_GAP) continue;
-    (d <= CLAN_MAX_GAP ? near : far).push(at);
-  }
-  // Object key order is not something to lean on; sort, then shuffle.
-  near.sort((a, b) => key(a).localeCompare(key(b)));
-  far.sort((a, b) => key(a).localeCompare(key(b)));
-  // The band within walking distance comes first and the rest of the landmass
-  // is only a fallback, so a cramped or oddly-shaped coast still gets four
-  // neighbours rather than one.
-  const pool = [...rng.shuffle(near), ...rng.shuffle(far)];
-
-  const chosen: Hex[] = [];
-  // Spread them out first; if the landmass is too cramped for that, take what
-  // it will hold rather than shipping a coast with one neighbour on it.
-  for (const gap of [CLAN_MIN_GAP, 3, 1]) {
-    for (const at of pool) {
-      if (chosen.length >= CLAN_COUNT) break;
-      if (chosen.some((c) => distance(c, at) < gap)) continue;
-      chosen.push(at);
-    }
-  }
-
+export function placeNeighbours(rng: Rng, seed: string): Neighbour[] {
+  // The addresses are already decided — `route.neighbourStops` derives them
+  // from the seed, so there is no ground to search and no shuffle to do.
+  // Everything BELOW the address comes out of the same rng in the same order:
+  // names, opening standing, might. That is deliberate — the conversion moved
+  // where people live, not who they are.
+  const stops = neighbourStops(seed, CLAN_COUNT, CLAN_MAX_GAP, CLAN_ELBOW);
   const names = {
     clan: rng.shuffle([...CLAN_NAMES]),
     native: rng.shuffle([...NATIVE_NAMES]),
   };
-  return chosen.map((at, i) => {
+  return stops.map((stop, i) => {
     const kind = i % 2 === 0 ? 'native' : 'clan';
     const def = clanKind(kind);
     return {
       id: `nb_${i + 1}`,
       kind,
       name: names[kind][Math.floor(i / 2)] ?? `${def.noun} ${i + 1}`,
-      at: { q: at.q, r: at.r },
+      stop,
       standing: def.opening + rng.int(-6, 6),
       might: rng.int(0, 3),
       raidsSent: 0,
@@ -102,13 +81,20 @@ export function neighbourById(state: GameState, id: string): Neighbour | undefin
   return state.neighbours.find((n) => n.id === id);
 }
 
-export function neighbourAt(state: GameState, at: Hex): Neighbour | undefined {
-  return state.neighbours.find((n) => n.at.q === at.q && n.at.r === at.r);
+/**
+ * Is the band standing in this one's yard?
+ *
+ * The seam. Three verbs asked this in three copies of the same expression —
+ * `neighbourHere`, `bargainBlocker` and `canFallOn` — and every one of them
+ * was a coordinate comparison against a coordinate system being replaced.
+ */
+export function standingIn(state: GameState, n: Neighbour): boolean {
+  return n.stop !== undefined && n.stop === standingAt(state);
 }
 
 /** The one the party is standing in. */
 export function neighbourHere(state: GameState): Neighbour | undefined {
-  return neighbourAt(state, state.party.at);
+  return state.neighbours.find((n) => standingIn(state, n));
 }
 
 export function standingOf(n: Neighbour): Standing {
@@ -178,7 +164,9 @@ export function driftStandings(state: GameState): void {
 export function revealNeighbour(state: GameState, n: Neighbour, line: string): void {
   if (n.found) return;
   n.found = true;
-  if (state.world.seen[key(n.at)] === undefined) state.world.seen[key(n.at)] = 'seen';
+  // On a line there is no fog to lift and no hex to mark: `found` IS the
+  // knowledge, and marking (0,0) seen would quietly write the landing into
+  // the seen map of a world that has no hexes in it.
   worldBeat(state, { kind: 'met', id: n.id, name: n.name });
   chronicle(state, line, 'plain');
 }
@@ -187,7 +175,12 @@ export function revealNeighbour(state: GameState, n: Neighbour, line: string): v
 export function seeNeighbours(state: GameState): void {
   for (const n of state.neighbours) {
     if (n.found) continue;
-    if (state.world.seen[key(n.at)] === undefined) continue;
+    // The hex map's rule is "somebody has laid eyes on that ground", which
+    // the fog answers. A line has no fog, and the honest answer there is the
+    // narrow one: you have come to where they live. Everything else about
+    // meeting people on a coast runs through `neighboursCallOn`, which is
+    // the direction the fiction always ran in anyway.
+    if (!standingIn(state, n)) continue;
     const def = clanKind(n.kind);
     revealNeighbour(state, n, `We came in sight of ${n.name}. A ${def.noun}, lived in, and not ours.`);
   }
@@ -214,28 +207,44 @@ export function neighboursCallOn(state: GameState): void {
   const next = state.neighbours
     .filter((n) => !n.found)
     .reduce<Neighbour | undefined>(
-      (best, n) => (!best || distance(n.at, home.at) < distance(best.at, home.at) ? n : best),
+      (best, n) => (!best || fromHome(state, n) < fromHome(state, best) ? n : best),
       undefined,
     );
   if (!next) return;
 
   const def = clanKind(next.kind);
+  const which = bearing(state, next);
   const how = stream(state.seed, 'events')
     .derive(`callson:${next.id}:${state.day}`)
     .pick([
       `Two came up the strand to look at ${home.name}, and would not come in. They were of ${next.name} — a ${def.noun}, and we know now where it stands.`,
-      `A man of ${next.name} walked our fence line, counted us, and went away again. A ${def.noun}, off ${bearing(next.at, home.at)}, and no friend of ours yet.`,
+      `A man of ${next.name} walked our fence line, counted us, and went away again. A ${def.noun}, off ${which}, and no friend of ours yet.`,
       `Word had gone round that there were posts in the ground here. ${next.name} sent somebody to see it for themselves — a ${def.noun}, and near enough to matter.`,
     ]);
   revealNeighbour(state, next, how);
 }
 
-/** Rough compass word for the saga. Nothing reads a bearing off a number. */
-function bearing(at: Hex, from: Hex): string {
-  const dq = at.q - from.q;
-  const dr = at.r - from.r;
-  if (Math.abs(dr) >= Math.abs(dq)) return dr < 0 ? 'north' : 'south';
-  return dq < 0 ? 'west' : 'east';
+/**
+ * How far the hall is from this one, in whatever the world counts distance in.
+ *
+ * Days on a line rather than stops, because the stops are not evenly spaced —
+ * two stops of four-day legs is further to walk than three of two, and
+ * "nearest first" has to mean nearest to WALK or the order is a lie.
+ */
+function fromHome(state: GameState, n: Neighbour): number {
+  const home = state.settlement;
+  if (!home) return 0;
+  return daysBetween(state.seed, home.stop ?? 0, n.stop ?? 0);
+}
+
+/** Rough word for which way they lie. Nothing reads a bearing off a number. */
+function bearing(state: GameState, n: Neighbour): string {
+  const home = state.settlement;
+  if (!home) return 'somewhere';
+  // A coast has two directions and the saga should say so plainly. "North"
+  // on a line would be a compass word invented for a world with no compass
+  // in it.
+  return (n.stop ?? 0) >= (home.stop ?? 0) ? 'up the coast' : 'back toward the landing';
 }
 
 // --- Bartering ---
@@ -250,7 +259,7 @@ export const BARGAIN_REASON: Record<BargainBlock, string> = {
 
 export function bargainBlocker(state: GameState, id: string): BargainBlock | null {
   const n = neighbourById(state, id);
-  if (!n || n.at.q !== state.party.at.q || n.at.r !== state.party.at.r) return 'nobody';
+  if (!n || !standingIn(state, n)) return 'nobody';
   if (n.standing < TRADE_FLOOR) return 'standing';
   if (state.party.food < BARTER_FOOD) return 'stores';
   return null;
@@ -271,20 +280,61 @@ export interface Bargain {
   firewood: number;
 }
 
+/**
+ * What a barter is worth before the dice touch it — the midpoint of
+ * `bargain()`'s own formula, RNG term dropped (`rng.float(0.9, 1.1)`
+ * averages to 1). Pure and side-effect-free on purpose: 11.M3 needed a
+ * number the deed sheet could show BEFORE the trade is struck, and a
+ * preview that touched the `events` stream would perturb the very roll it
+ * is previewing.
+ *
+ * Shares the rest of the formula rather than keeping a second copy of it —
+ * exactly the discipline `offerGot` already states for a place's counter,
+ * so a shown price and a paid price cannot drift apart here either.
+ */
+export function bargainEstimate(state: GameState, id: string): number {
+  const n = neighbourById(state, id);
+  if (!n) return 0;
+  const crew = fieldCrew(state);
+  const sharp = crew.reduce<number>((best, p) => Math.max(best, effectiveStat(p, 'wits')), 1);
+  const purpose = state.expedition ? purposeDef(state.expedition.purpose) : undefined;
+  const errand = purpose?.id === 'trade' ? 1.25 : 1;
+  return Math.max(1, Math.round(BARTER_FOOD * tradeRate(n.standing) * (0.8 + sharp * 0.08) * errand));
+}
+
+/**
+ * What the deed sheet says about a barter, in full — 11.M3.
+ *
+ * `starving` is handed in rather than computed here (`foodPerDay` lives in
+ * upkeep.ts, which already imports THIS file for `driftStandings` and
+ * `neighboursCallOn` — importing it back would be a cycle) — the caller
+ * already has the number the winter mark itself reads.
+ *
+ * THE WARNING, not always: `bargain()` runs one way, food out and firewood
+ * in, so it cannot rescue a band that is short of FOOD specifically —
+ * MEASURED (`PROBE: 11.M3`): trying it first in that exact crisis, 150
+ * landings paired, moved nothing (saved 4, killed 4, the arm firing 55
+ * times) and could not, structurally, since it spends the one store the
+ * band is short of. Said here rather than left for the player to learn the
+ * hard way what the item's own opening line assumed a bot already knew.
+ */
+export function bargainBlurb(state: GameState, id: string, starving: boolean): string {
+  const base = `Carry ${BARTER_FOOD} of food in and come out with `
+    + `about ${bargainEstimate(state, id)} of timber and goods.`;
+  return starving
+    ? `${base} It buys wood, not food — this will not fill an empty larder.`
+    : base;
+}
+
 /** Carries food in and goods out. Mutates; callers hold a clone. */
 export function bargain(state: GameState, id: string): Bargain | null {
   if (bargainBlocker(state, id) !== null) return null;
   const n = neighbourById(state, id)!;
-  const crew = fieldCrew(state);
-  const sharp = crew.reduce<number>((best, p) => Math.max(best, effectiveStat(p, 'wits')), 1);
-  // A party that went out to barter is carrying things worth bartering.
-  const purpose = state.expedition ? purposeDef(state.expedition.purpose) : undefined;
-  const errand = purpose?.id === 'trade' ? 1.25 : 1;
 
   const rng = stream(state.seed, 'events').derive(`barter:${n.id}:${state.day}`);
   const firewood = Math.max(
     1,
-    Math.round(BARTER_FOOD * tradeRate(n.standing) * (0.8 + sharp * 0.08) * errand * rng.float(0.9, 1.1)),
+    Math.round(bargainEstimate(state, id) * rng.float(0.9, 1.1)),
   );
 
   state.party.food -= BARTER_FOOD;
@@ -315,7 +365,7 @@ export function bargain(state: GameState, id: string): Bargain | null {
 export function canFallOn(state: GameState, id: string): boolean {
   const n = neighbourById(state, id);
   if (!n || state.end || state.event || state.battle) return false;
-  return n.at.q === state.party.at.q && n.at.r === state.party.at.r;
+  return standingIn(state, n);
 }
 
 /**

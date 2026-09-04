@@ -6,26 +6,63 @@
 // whole commit because of it. A bar that cannot fail loudly is not a bar.
 import { spawnSync } from 'node:child_process';
 
-// `repaint` was not on this list, so `npm run bars` never ran it and it sat
-// red for however long it took the deep to get its own pattern pair. A bar
-// nothing runs is not a bar either.
+// THE GAME'S OWN BARS. There is one build now — the coast — so there is one
+// list, and everything the shipping game has is measured against it.
+//
+// Five bars used to sit on a second list below, run against `VITE_HEX=1`:
+// `sea` asked what the map promised afloat, `pinch`, `way-look` and `repaint`
+// were the hex map's own pan, sight and paint cache, and `steading` was the
+// hex colony yard. Every one of them made a claim about a coordinate system
+// that no longer exists, so they were deleted with it in 8.5 rather than
+// translated into claims about a line — the three the line needed
+// (`strip`, `procession`, `hearth`) were written for it in job 2.
+//
+// `look` is the only one that looks at the PICTURE. Every other bar here
+// counts nodes, measures boxes and taps buttons, and a view can pass all of
+// that while being a wrong drawing — which is how a band walking 142 units
+// above its own ground shipped through three art passes with the whole list
+// green. It compares screenshots against a blessed baseline, so it fails on
+// any deliberate art change too; that is the cost, and a person blessing the
+// new picture is the point rather than the price.
+//
+// Keep every bar on this list. `repaint` was once on neither list, so
+// `npm run bars` never ran it and it sat red for however long it took the
+// deep to get its own pattern pair. A bar nothing runs is not a bar.
 const BARS = [
-  ['offline', []], ['sea', []], ['larder', []], ['pan', []],
-  ['field', []], ['pinch', []], ['landscape', []], ['way-look', []],
-  ['repaint', []], ['steading', []], ['reach', []], ['reach', ['320x568']],
+  ['offline', []], ['larder', []], ['pan', []], ['field', []],
+  ['landscape', []], ['reach', []], ['reach', ['320x568']],
+  ['strip', []], ['procession', []], ['hearth', []], ['ending', []],
+  ['look', []],
 ];
 
+const build = () => spawnSync('npm', ['run', 'build'], { encoding: 'utf8' });
+
 let bad = 0;
-for (const [name, args] of BARS) {
+let ran = 0;
+function bar(name, args, label = args.length ? `${name} ${args.join(' ')}` : name) {
+  ran++;
   const run = spawnSync('node', [`scripts/${name}.mjs`, ...args], { encoding: 'utf8' });
-  const label = args.length ? `${name} ${args.join(' ')}` : name;
   if (run.status === 0) {
     console.log(`  PASS  ${label}`);
-  } else {
-    bad++;
-    const said = (run.stdout + run.stderr).trim().split('\n').filter(Boolean).slice(-2).join(' | ');
-    console.log(`  FAIL  ${label} (exit ${run.status}) — ${said}`);
+    return;
   }
+  bad++;
+  const said = (run.stdout + run.stderr).trim().split('\n').filter(Boolean).slice(-2).join(' | ');
+  console.log(`  FAIL  ${label} (exit ${run.status}) — ${said}`);
 }
-console.log(bad === 0 ? `\nall ${BARS.length} browser bars pass` : `\n${bad} of ${BARS.length} FAILED`);
+
+// BUILD FIRST, rather than trusting whatever is in `dist/`.
+//
+// This once ran against whatever the last command happened to leave there,
+// and was correct only as long as nothing else ever built. Then a publish of
+// the other build arrived and a run straight after it reported six red bars
+// that were all false.
+if (build().status !== 0) {
+  console.error('bars: the build did not build — nothing was measured.');
+  process.exit(2);
+}
+
+for (const [name, args] of BARS) bar(name, args);
+
+console.log(bad === 0 ? `\nall ${ran} browser bars pass` : `\n${bad} of ${ran} FAILED`);
 process.exit(bad === 0 ? 0 : 1);

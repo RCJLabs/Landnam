@@ -60,9 +60,9 @@ export const LANDFALL: string[] = [
 ];
 
 export const COUNTRY: string[] = [
-  'They walked {hexes} stretches of country and saw {seen} of it, and most of what they saw was {ground}.',
+  'They walked {stretches} stretches of country and saw {seen} of it, and most of what they saw was {ground}.',
   'The band went inland through {ground} and back again, and by the end had the shape of {seen} of the country in their heads.',
-  'They crossed {hexes} stretches of ground before it was done, and it was {ground} that they came to know best.',
+  'They crossed {stretches} stretches of ground before it was done, and it was {ground} that they came to know best.',
 ];
 
 export const AT_SEA: string[] = [
@@ -130,6 +130,52 @@ export const HELD_OUTCOME = {
   some: ['the line held {held} of those', 'they were still holding the yard after {held} of them'],
   none: ['the line did not hold', 'each time they took what they came for'],
 };
+
+/**
+ * The other landnám (9.10).
+ *
+ * A saga that never mentions the other boat is a saga about half the island.
+ * He is real in every run — he lands on day 9, and the chronicle says so
+ * whether or not the band ever finds him — but until this he vanished at the
+ * ending, which is the one place a run is actually retold.
+ *
+ * FOUR OPENINGS rather than one, because how much of him the band saw is the
+ * whole difference: the band that stood in his yard and the band that only
+ * ever heard the rumour did not play the same saga.
+ */
+export const RIVAL_MET: string[] = [
+  'They were not the only boat that spring. {leader} had come ashore too, and they stood in sight of {hall} — smoke going up, and his fences already out.',
+  'The other landnám was {leader}\'s, at {hall}. They saw it for themselves, and it was further along than anybody wanted to say out loud.',
+];
+
+/**
+ * The day sight fell on him, added only when the save remembers it.
+ *
+ * Its own sentence rather than a token in the forms above, because `metOn` is
+ * optional — a saga loaded from before 9.10 knows the band met him and not
+ * when — and a form with a token nothing can fill would print the brace.
+ */
+export const RIVAL_MET_DAY: string[] = [
+  'That was day {day}.',
+  'It was day {day} when they first saw the smoke of it.',
+];
+
+export const RIVAL_UNMET: string[] = [
+  'Somewhere up that coast {leader} had put his posts in at {hall} the same spring. They never stood close enough to see the smoke of it.',
+  'There was another hall on that island — {hall}, {leader}\'s — and they heard of it and never once laid eyes on it.',
+];
+
+/** What the hand closed on, said as coast rather than as a number. */
+export const RIVAL_HELD: string[] = [
+  'By the end he had fenced {his} stretches of that coast to the {ours} they had walked.',
+  'He held {his} stretches when it was over. They had walked {ours}.',
+];
+
+/** Only when his fences actually shut ground the band had been standing on. */
+export const RIVAL_FENCED: string[] = [
+  'Some of it was ground they had walked first, and there was nothing to be done about that.',
+  'Ground they had walked was inside his fences by the end, which is the sort of thing that is remembered longer than it is spoken about.',
+];
 
 export const FEUD: string[] = [
   'It was not all outsiders: {a} and {b} had a thing between them that never quite went away.',

@@ -41,7 +41,6 @@ const UE = process.env['LANDNAM_UE'] ?? join(process.cwd(), '..', 'landnam-ue');
  * are and were correct — which is precisely why no parity run could see it.
  */
 export const CONTRACT = [
-  { from: 'port/parity.json', to: 'Content/Data/parity.json' },
   { from: 'port/golden.json', to: 'Content/Data/golden.json' },
   { from: 'port/LandnamPartyTables.gen.h', to: 'Source/LandnamUE/Sim/LandnamPartyTables.gen.h' },
   { from: 'port/LandnamEventTables.gen.h', to: 'Source/LandnamUE/Sim/LandnamEventTables.gen.h' },
@@ -49,8 +48,6 @@ export const CONTRACT = [
   { from: 'port/foes.json', to: 'Content/Data/foes.json' },
   { from: 'port/terrain.json', to: 'Content/Data/terrain.json' },
   { from: 'port/foe-names.json', to: 'Content/Data/foe-names.json' },
-  { from: 'runs/example.json', to: 'Content/Data/runs/example.json' },
-  { from: 'runs/long.json', to: 'Content/Data/runs/long.json' },
 ];
 
 export const MANIFEST = 'port/contract.json';

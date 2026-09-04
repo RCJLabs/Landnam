@@ -23,23 +23,43 @@ import { cuesFor } from '../src/audio/cues';
 import { ambienceFor, sameAir } from '../src/audio/ambience';
 import { SOUNDS, soundDef, soundLength, AMBIENCE_INDOORS, type CueId } from '../src/data/sounds';
 import { SEASON_LENGTH } from '../src/sim/calendar';
-import { key } from '../src/hex';
 import { startBattle } from '../src/sim/battleTurn';
+import { ROUTE_COUNTRY, ROUTE_STOPS, stopAt } from '../src/sim/route';
+import { countryHere } from '../src/sim/coast';
 import type { GameState, Terrain } from '../src/state/types';
 
 function fresh(seed = 'sound'): GameState {
   return structuredClone(newGame(seed));
 }
 
-/** Puts the band on a given ground, inventing the tile if the seed lacks one. */
+/**
+ * Put the band on this ground, whichever way the game addresses ground.
+ *
+ * On a line rewriting the tile under `party.at` does nothing — `countryHere`
+ * reads the STRETCH — so every ambience bar below was measuring the landing's
+ * shore however many terrains it named, and "keeps every profile inside what
+ * the engine can play" walked eight grounds while standing on one.
+ */
 function standingOn(state: GameState, terrain: Terrain): GameState {
   const next = structuredClone(state);
-  next.world.tiles[key(next.party.at)] = {
-    ...(next.world.tiles[key(next.party.at)] ?? { river: false }),
-    terrain,
-    river: false,
-  };
-  return next;
+  // A coast does not carry every country. Since `ROUTE_COUNTRY` stopped
+  // being a uniform sixth each — valley is 8% of it now, so a 25-stretch
+  // coast misses one about an eighth of the time — asking a particular
+  // seed for a valley is a coin toss, and the bar would fail on the
+  // country rather than on the sound. So walk seeds until one has it, and
+  // carry the day over, which is the only thing the ambience reads besides
+  // the ground.
+  for (let s = -1; s < 200; s += 1) {
+    const on = s < 0 ? next : structuredClone(newGame(`${state.seed}-on-${terrain}-${s}`));
+    const stop = [...Array(ROUTE_STOPS).keys()]
+      .find((i) => stopAt(on.seed, i).country === terrain);
+    if (stop === undefined) continue;
+    on.party.stop = stop;
+    on.day = state.day;
+    expect(countryHere(on), `stood on ${terrain} and the sim disagrees`).toBe(terrain);
+    return on;
+  }
+  throw new Error(`no coast in two hundred carries ${terrain}`);
 }
 
 // --- 1. Zero assets ---
@@ -247,12 +267,24 @@ describe('cues are read off what changed', () => {
   });
 
   it('walks on land and rows on water', () => {
-    const land = standingOn(fresh(), 'meadow');
-    const sea = standingOn(fresh(), 'ocean');
-    const move: Action = { type: 'MOVE', to: land.party.at };
-    expect(cuesFor(fresh(), land, move)).toContain('step');
-    expect(cuesFor(fresh(), sea, move)).toContain('oar');
-    expect(cuesFor(fresh(), sea, move)).not.toContain('step');
+    // A line has no water to stand on, so the distinction is HOW FAR the
+    // band got in a day: `daysToWalk` prices one stop at the length of its
+    // leg and anything further at a single day at the oars. One stretch is
+    // a walk; a jump is a row.
+    //
+    // This bar was green and measuring nothing before the fixture was
+    // fixed — `standingOn` rewrote a tile the sim does not read, so 'land'
+    // and 'ocean' were the same shore, and `WALK` made no sound at all
+    // because `cuesFor` only knew about `MOVE`.
+    const from = fresh();
+    from.party.stop = 4;
+    const walked = structuredClone(from);
+    walked.party.stop = 5;
+    const rowed = structuredClone(from);
+    rowed.party.stop = 7;
+    expect(cuesFor(from, walked, { type: 'WALK', to: 5 })).toContain('step');
+    expect(cuesFor(from, rowed, { type: 'WALK', to: 7 })).toContain('oar');
+    expect(cuesFor(from, rowed, { type: 'WALK', to: 7 })).not.toContain('step');
   });
 
   it('blows the horn the moment a field exists that did not', () => {
@@ -398,9 +430,9 @@ describe('ambience follows the ground and the season', () => {
   });
 
   it('keeps every profile inside what the engine can actually play', () => {
-    const grounds: Terrain[] = [
-      'ocean', 'shore', 'meadow', 'forest', 'hills', 'mountains', 'bog', 'valley',
-    ];
+    // A coast has six countries, not eight: `ROUTE_COUNTRY` has no ocean on
+    // it and no mountains, because a route runs along the strand.
+    const grounds: readonly Terrain[] = ROUTE_COUNTRY;
     for (const ground of grounds) {
       for (const season of [0, 1, 2, 3]) {
         const state = standingOn(fresh(), ground);
@@ -419,7 +451,8 @@ describe('ambience follows the ground and the season', () => {
   it('does not re-ease toward air it is already blowing', () => {
     const state = standingOn(fresh(), 'meadow');
     expect(sameAir(ambienceFor(state), ambienceFor(structuredClone(state)))).toBe(true);
-    const moved = standingOn(state, 'mountains');
+    // Any other ground; a line has no mountains to walk onto.
+    const moved = standingOn(state, 'forest');
     expect(sameAir(ambienceFor(state), ambienceFor(moved))).toBe(false);
   });
 });

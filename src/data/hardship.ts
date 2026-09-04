@@ -79,7 +79,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Fair Country',
     blurb:
       'The land gives more than it takes. Fewer strangers on the road, a shorter bite to the winter, a fuller hold when the keel touches sand — and your blows fall a little truer than theirs. Where a saga has room to become one.',
-    odds: { spring: 0.86, ruled: 0.28 },
+    odds: { spring: 0.84, ruled: 0.30 },
     stir: 0.6,
     raid: 0.55,
     winter: 0.7,
@@ -91,7 +91,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'As It Lies',
     blurb:
       'The coast as it was found: what the sagas describe and what every number in this game was balanced against.',
-    odds: { spring: 0.53, ruled: 0.15 },
+    odds: { spring: 0.58, ruled: 0.23 },
     stir: 1,
     raid: 1,
     winter: 1,
@@ -103,7 +103,7 @@ export const HARDSHIPS: HardshipDef[] = [
     name: 'A Hard Country',
     blurb:
       'Lean ground and a long winter, men who have heard of you sooner than you would like, and every one of them a shade harder to put down. Nothing here is unfair. It is only that less of it goes your way.',
-    odds: { spring: 0.17, ruled: 0.06 },
+    odds: { spring: 0.30, ruled: 0.07 },
     stir: 1.3,
     raid: 1.35,
     winter: 1.15,
@@ -162,7 +162,56 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * Where the numbers above came from, so nobody has to guess later.
  *
  * THREE HUNDRED landings a setting, not sixty, and that is the whole lesson
- * of this figure's history. Latest: 86% / 53% / 17% seeing the first spring.
+ * of this figure's history. Latest: 84% / 58% / 30% published, measured at
+ * 84% / 58% / 30% on 2026-09-03.
+ *
+ * RE-MEASURED AFTER 11.S1, 2026-09-03, and all three moved for one reason:
+ * the shield wall stopped forming up in roster order. Rank used to be a
+ * fighter's roster index, which is also `leaderOf`'s index and `bindKin`'s,
+ * so the leader stood at the front of every fight and both kin pairs stood
+ * shoulder to shoulder — an order measured WORSE THAN CHANCE (178 arena wins
+ * in 300 against 218 for a line drawn at random). `sim/lineup.ts` forms both
+ * walls by who can hold the front instead. Over the same 300 landings the
+ * curve went 81% -> 84%, 55% -> 58%, 27% -> 30%.
+ *
+ * Two things worth noting about that. The three moved TOGETHER, by three
+ * points each, which is what a change to the fight rather than to a country
+ * should look like — and the gaps the names rest on, 26 and 28 points, did
+ * not move at all. And As It Lies is the one that broke the bar rather than
+ * drifting inside it: published 53 against a measured 58 is five points, and
+ * the tolerance is five.
+ *
+ * RE-MEASURED ON THE COAST, 2026-08-28, and twice in the same day — which is
+ * the honest record and worth keeping as one. The flag flipped in the morning
+ * and the harness ran against the game that ships for the first time: reached
+ * winter 93% / 68% / 50%, saw spring 83% / 52% / 25%. By the evening a coast
+ * save had stopped carrying the hex island and the battle stream had been
+ * re-keyed to the stretch it is fought on (both in 8.5's job 3), and the
+ * curve settled at reached winter 96% / 72% / 56%, saw spring 83% / 56% / 31%.
+ *
+ * A FAIR COUNTRY did not move at all across either change — 83% both times,
+ * against a published 86% — and As It Lies moved three points. Neither was
+ * tuned to agree; they simply describe a game whose shape survived being
+ * rebuilt underneath them, which is the most reassuring thing in this note.
+ *
+ * RE-MEASURED AFTER 9.1b, 2026-08-31, and A Fair Country moved for the first
+ * time since it was written: 83% -> 81%, over the same 300 landings. Taking
+ * the dash off the bar means the line closes ITSELF on a man with nothing
+ * left to do (sim/footwork.ts), and closing is not free — a back-rank man out
+ * of hand-axes used to stand safe doing nothing, and now he walks into the
+ * wall where he can be hit. The arena reads the same direction and larger: a
+ * formation bot goes 47/60 wins and 166 standing to 42 and 155.
+ *
+ * The published 86% was already three points optimistic and is now five, so
+ * it is RESTATED to 81 rather than left to flatter the card. The other two did
+ * not move: As It Lies 55%, A Hard Country 27%, both inside the slack.
+ *
+ * A Hard Country moved twice, 17% -> 25% -> 31%, and the direction has one
+ * cause: a hard country's band dies to the ground it settled on, and on a
+ * coast the settling gate is FRESH WATER rather than a five-measure total, so
+ * the worst ground a hard band can talk itself onto is less bad. The gaps are
+ * 27 and 25 points, still comfortably past the ±10 this harness can resolve,
+ * which is what lets the three names differ at all.
  *
  * As It Lies promised 72% for a day and a half and was never within twenty
  * points of it. The 72 was written on 2026-08-22 off a sixty-seed reading,
@@ -205,10 +254,33 @@ export const BALANCED_HARDSHIP: HardshipId = 'even';
  * jarldom is rare, rare events need sample, and twenty sagas cannot see one
  * setting from another.
  *
- * As It Lies is quoted at 15% rather than the 19% a hundred and twenty
+ * As It Lies was quoted at 15% rather than the 19% a hundred and twenty
  * landings gave, because two hundred and forty gave 14.6% and the larger
- * sample wins. The other two are the 120-seed figures; nothing bigger has
- * been run for them.
+ * sample won.
+ *
+ * ALL THREE RESTATED 2026-08-28, when the hexes went — 30% / 23% / 7%, from
+ * the same hundred and twenty sagas a country. What moved them is worth
+ * writing down, because it is not the sample: `maybeFireEvent` derived its
+ * roll from `key(party.at)`, which on a coast was the frozen landing hex, so
+ * every band rolled the day's odds from the same constant wherever it stood.
+ * Retiring the placeholder forced that key to become the STRETCH, and a pure
+ * re-labelling of an RNG derive moved the three arms by 4.2, 4.1 and 5.8
+ * points. Measured both ways rather than assumed: with the old key the same
+ * build reads 34% / 19% / 13%.
+ *
+ * Note what that says about the instrument. The bar on these figures is eight
+ * points, chosen as two standard errors at 120 sagas — and a change that
+ * touched no rule at all moved every arm by most of that. The harness is
+ * deterministic, so these are exact readings rather than draws, and the bar
+ * cannot flake; but the figures are only as stable as the RNG labels they are
+ * measured through, and this is the second time that has surprised somebody.
+ *
+ * ONE THING FOR A HUMAN. A Fair Country and As It Lies are now 30% and 23%,
+ * seven points apart, where the menu had them thirty apart at 28% and 15%.
+ * The two settings barely separate on "ever rule" any more. Spring still
+ * separates them cleanly — 86% against 53% — so the SETTINGS are fine; it is
+ * the jarldom figure that has stopped being a distinguishing number. Whether
+ * to tune for that or to stop quoting it is a design call, not a measurement.
  *
  * The old note here said the twenty-seed sample was "a mistake worth naming"
  * and named it, and then the fix was to re-measure at sixty — which was

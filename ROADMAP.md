@@ -23,12 +23,112 @@
 
 **Status legend:** `[ ]` todo · `[~]` in progress · `[x]` done
 
-> **CURRENT MILESTONE: Phase 7 — the Unreal build. Item 1 is DECIDED
-> (C++), item 5 (parity CI) is BUILT on both sides, and BOTH SCRIPTED RUNS
-> ARE GREEN END TO END: `PARITY OK — 39 checkpoints across two runs, six
-> facets each`, 1478 actions and 457 days on `runs/long.json` and 66 actions
-> to day 15 on `runs/example.json`, with `unported=0` — nothing anywhere in
-> either was skipped.**
+> **CURRENT MILESTONE (from 2026-08-28): the art queue — "what makes it look
+> like a game", below.** Phase 8 built three new views for the coast — the
+> procession, the strip and the elevation — AFTER the art pass ran, so none
+> of them has had one, and 8.5 has now deleted the two hex renderers the art
+> pass was made for. **Art 13 is done.** Ordered by how much they change
+> what a player sees, not by cost. **Art 12 is done too** — the yard is framed to its
+> slot on the painted horizon, and wears its days. **And Art 11** — the sky
+> out the window now shows the weather the chip names, with a static coat
+> so a gale is a gale even with motion stilled. **And Art 15** — camp brings
+> dusk, stars and firelight, with daylight driven by the season because at
+> these latitudes the turning of the day is the turning of the year. Next:
+> Art 19 (blows that land somewhere), now done too — a blow lands in a place
+> and the man takes it. **Art 14 is done too** — hand-axes on the belt that
+> go as they are thrown, shields only on the sworn, and a tool for every job.
+> **Art 17 is done too** — the saga is a chronicle kept by the year, with
+> the day's business gathered and the story illuminated. **And Art 20** —
+> the title is the coast the typed seed actually makes, and the ending has
+> the chronicle's voice and the screen to itself. **And Art 16** — the
+> weave is one tile, set on the root, costing the document no nodes at any
+> length. **And Art 18, which finishes the queue** — the colours with more
+> than one author are one file now, and the children of the household stopped
+> keeping a wardrobe of their own. **THE ART QUEUE IS DONE.**
+>
+> **CURRENT MILESTONE (from 2026-08-30): Phase 9 — what a saga actually
+> feels like to play**, below. **Built and closed:** 9.1b, 9.1c, 9.3, 9.4,
+> 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
+> that gave the game a third act.
+>
+> **NO CURRENT MILESTONE (from 2026-09-04). Phase 11 is CLOSED, all fifteen
+> items** — S1–S5, M1–M5, U1–U5 — and nothing has been queued behind it. The
+> next one is Evan's to open.
+>
+> **Seven of the fifteen shipped a change. Eight were closed on their own
+> measurement without one**, which is the phase's real result: the discipline
+> Phase 10 asked for was applied, and it stopped more work than it started.
+> Five items rested on figures that did not survive being re-taken — 10.2's
+> 39% became 28%, 10.1's never-founded population turned out to die before
+> winter opens, `HUNT`'s one good case never fires, U4's bleed does not
+> predict the ending, U5's named foe never comes back at all. Two more (U1,
+> U3) were built, but NOT as written: each was reshaped once the reading
+> showed the proposed fix pointed at the wrong thing.
+>
+> One finding came from outside the queue and is the most important thing
+> here: **11.S1 took the named foe's recurrence to zero** (see 11.U5), a
+> consequence of a good change that nobody had priced. Recorded, not
+> reverted.
+>
+> **Phase 11 — the queue of 2026-09-02** is below, every item carrying its
+> verdict.
+>
+> **Phase 10 — the audit of 2026-09-01** is CLOSED, all six items. Opened from a fresh reading rather than from the
+> parking lot, with each item carrying its instrument, date and N, and every
+> unmeasured claim marked UNMEASURED rather than written as a finding.
+>
+> **All six opening items are closed as of 2026-09-02** — 10.1 ruled (nothing
+> changes), 10.2 and 10.3 measured, 10.4 half fixed and half found reachable,
+> 10.5 built, 10.6 fixed a CI failure that had been red for a day. **What the
+> phase actually found is that this game reports itself badly**: three
+> separate endings were merging into one word, `slain` was being stolen by a
+> `some()`, battle's share of the dead was understated by half, and the
+> instrument that said CI was fine could not see CI. The game underneath
+> measured better than its own accounts of it.
+>
+> **PHASE 9 IS CLOSED — every item ruled, 2026-09-01.** The last three went
+> the same way they all did: the voyage STAYS, on 9.1c's precedent; winter's
+> proposed content is DECLINED, because warmth ends about 4% of runs against
+> starvation's 62%; and `HEARTH_FREE` STAYS AT 1, because paired at 200 seeds
+> the floor is inert on the arm whose cost it was meant to pay and merely
+> hands twelve jarldoms back on the arm where it acts.
+>
+> **The shape of the whole phase, worth carrying into the next one:** of the
+> items that arrived as a fork for Evan, not one survived being measured as a
+> fork. Six closed by elimination — the shield, 9.11, both of 9.2's levers,
+> winter's content, and this floor — and the recurring cause was that the
+> number which opened the item had never been re-taken.
+>
+> Three items have LEFT that list rather than been ruled on: the SHIELD when
+> 9.1c settled it by counting, 9.11 when its fork closed by elimination, and
+> 9.5 when its line stopped promising a return.
+> **Nothing in Phase 9 is unstarted now.** What remains is rulings.
+>
+> **And a standing lesson from every item above.** Ten of them were opened on
+> numbers that did not survive being re-taken, and two of the three most
+> recent closed as NEGATIVE results — 6.5b's hall-burning fired twice in 128
+> runs, and 9.5's raise of the raid rate bought three points of the villain
+> for three points of spring and a broken difficulty card. See "A number in
+> the roadmap is a reading, not a fact" at the top of CLAUDE.md before
+> building on anything measured here.
+>
+> **THE PORT'S STATE, which was the current milestone until 2026-08-28 and
+> is kept here because nothing in it has been undone.** Phase 7 — the Unreal
+> build. Item 1 is DECIDED (C++), item 5 (parity CI) is BUILT on both sides,
+> and BOTH SCRIPTED RUNS WERE GREEN END TO END when last run:
+> `PARITY OK — 39 checkpoints across two runs, six facets each`, 1478
+> actions and 457 days on `runs/long.json` and 66 actions to day 15 on
+> `runs/example.json`, with `unported=0` — nothing anywhere in either was
+> skipped.
+>
+> **THE RECORDED RUNS AND THE PARITY HARNESS WENT WITH THE HEXES.**
+> `runs/long.json`, `runs/example.json`, `port/parity.json`,
+> `scripts/parity.ts` and `scripts/record.ts` were deleted in 8.5 along with
+> `src/hex/`: every one of them was a recording of, or a claim about, a
+> coordinate system this repo no longer has. So the figures above are
+> HISTORY, not a live green light. Whatever the port's next parity harness
+> is, it has to be recorded against a coast, and that recording does not
+> exist yet. Nothing below this line has been re-verified since.
 >
 > **Re-earned on 2026-08-21 after five days of drift.** The figures above
 > read "41 checkpoints, 1320 actions" until then, and were true when written;
@@ -157,14 +257,201 @@ stops being true, unlike the changelog below, which is append-only history.
 Anyone — or any future session — should be able to read this and the "dead
 ends" table and pick the work up without re-deriving a day of measurement.*
 
-### STATE AS OF 2026-08-21 — read this paragraph before any figure below it
+### STATE AS OF 2026-08-27 — read this paragraph before any figure below it
 
-**Both repos are green and pushed.** `npm test` 1072/1072 across 62 files,
-`tsc` clean, the site published. The port reaches **PARITY OK — 39
-checkpoints across two runs, six facets each** for the first time: 1478
-actions and 457 days on `runs/long.json`, 66 to day 15 on
-`runs/example.json`, `unported=0`. The Parity workflow on `landnam-ue` is
-passing.
+**Green and pushed, on BOTH builds, and THE COAST IS THE DEFAULT.** `npm test`
+is the coast now — 1513 passed / 16 skipped across 91 files — and
+`npm run test:hex` is the old game at 1528 / 1. `tsc` clean, all 15 browser
+bars pass (ten against the coast, five against the hex build), both pages
+published: `/` is the coast and `/hex/` the map. **A coast save is 3.3 kB**,
+down from 81.1 — the hex island stopped being generated on 2026-08-28 and
+`v54` strips it out of saves that already exist. Work is on
+`claude/landnam-handover-2026-08-21-f96jml`, **36 commits ahead of `main`**.
+
+**NOTHING OF PHASE 8 IS LIVE, and this is the first thing to know.** GitHub
+Pages serves `main`, and `main` is still at `40f5fdf` "Phase 8 planned" with
+a build stamped 2026-08-25. The conversion has never been visible at the
+published URL. `npm run publish:coast` writes the coast build to `coast/` and
+`docs/coast/` on this branch, so pointing Pages at the branch shows it at
+`/coast/` without merging anything; merging to `main` is the permanent
+version and has not been done.
+
+**The coast plays end to end.** Verified in a real browser at 390x844 rather
+than inferred from tests: land, walk the coast, take the land, walk into the
+steading, raise a building, no page errors. The Act sheet gates its deeds
+correctly and says why it refuses. What it does NOT do is look like a game —
+see "The art queue" below, which is the honest answer to "it still looks very
+basic" and was not written down anywhere until today.
+
+**Phase 8 stands at:** 8.0 decided, 8.3, 8.4 and 8.5 done, 8.1 and 8.2 partial
+(8.1b and 8.2c open). **The hexes are gone as of 2026-08-28** — `src/hex/`,
+the world that stood on it, the flag that chose between them, the second
+build, the second suite, the second page and the five bars whose claim had no
+subject on a line. There is one game. The parity vectors retired with them, as
+DECIDED on 2026-08-27; the RNG's own port contract is kept and still checked.
+
+What is left of Phase 8 is not the conversion: 8.1b (`Combatant.at` is already
+gone, but `battle.grid`'s remaining ground is one boolean wearing a rectangle)
+and 8.2c's tail. **What the coast most needs now is not more conversion, it is
+the art queue below** — the procession, the strip and the elevation were built
+AFTER the Art 1–10 pass and none of them has had one.
+
+### THE HARNESS LEARNS THE COAST — and the raider was never a design problem
+
+**Done 2026-08-28.** Flipping the default ran `balance.test.ts` against a
+coast for the first time and 14 of its claims failed. Thirteen were the bot:
+it travelled by `MOVE`, found sites by scanning `world.tiles`, and ranked
+every target by `distance(x.at, ...)` — and on a line `at` is a placeholder,
+so the distances were all zero, the `seen` lookups all undefined, and the band
+simply stood on the landing. The raider "never went out under arms at all";
+the trader "struck no deals"; the sea probe measured a game with no water in
+it. None of that was the game.
+
+The fourteenth took three wrong diagnoses to get right, and the wrong ones are
+the useful part:
+
+1. **"The raider is a dead end — 0 second winters in 30 against the turtle's
+   19."** True, and the reason looked like heart: those bands ended *fed*,
+   warm, and up to fourteen strong, with morale at zero.
+2. **So: give raiding its own heart.** Built it — a haul pays back in the
+   currency hunger spends, days of food — and swept it at 0.6, 1.2 and 2.0.
+   **The numbers did not move by a single day.** Reverted rather than land an
+   unmeasurable balance change.
+3. **Then: they lose the fights they pick.** 32 of 118 camp fights on a coast
+   (27%) against 23 of 36 on the map (64%). Three times the fights, a quarter
+   of the wins.
+4. **So: they never heal between them.** Measured — and wrong again. Going in
+   they are 78% whole on a coast against 76% on the map. Identical.
+
+What the same measurement did show is the answer, in the column nobody had
+asked for: **3.1 of ours against 3.3 of theirs on a coast, 5.1 against 5.3 on
+the map.** Both sides scale together, so it was never the odds. It was that a
+wall of three has no shoulder-mates and dies — which this file's own launch
+rule has said in a comment for months: *9% won with three, 47% with six, three
+was never a raiding party, it was half a shield wall walking into a fight.*
+
+And the bug is one line. The rule that falls on a camp gated on
+`sworn(state.party.people)` — the whole ROSTER, including everyone sitting at
+home — so a TRADING party of two, walking past a camp on its way to a counter,
+passed a test about six people and stormed the place with two. It hardly bit
+on the hex map, where an errand rarely passes a camp at all. A coast puts
+every camp on the only road there is.
+
+Gated on `sworn(fieldCrew(state))` — who is actually there — the raider stands
+**7 second winters of 30**, reaches spring 25/30 (the best of the three
+lines), and lives to day 115 against 90. The hex build does not move at all:
+22/35 and 5.1 of ours, identical before and after, because the gate only ever
+differed where the bug was. Two other fixes were tried alongside it — a
+strength test on the camp, a floor on the raid party's width — and both were
+removed after measuring, because with this one in place neither changed a
+number.
+
+**The published difficulty odds were re-measured on the coast** at the 300
+landings `data/hardship.ts` demands: 83% / 52% / 25% see spring against a
+published 86% / 53% / 17%. Two of the three survived the change of country
+inside the harness's ±5 with nothing tuned to make them agree; A Hard Country
+moved to 25% and is restated. The menu describes the game that ships, so that
+comparison is asked of the coast build only — the hex game is scaffolding, and
+a second set of numbers nobody reads is a second set nobody keeps true.
+
+Two smaller things fell out of the same sweep. `a-lean-sail` was gated on
+`terrain: ['ocean']` and had become **undrawable** — a line has no ocean
+stretch — so events grew an `afloat` condition that both maps can answer, and
+the card is back. And the raid errand's site floor was on the hex scale: a
+foundable hex site totals a mean of 7.6 where a stretch totals 13.4, so a
+floor of 9 was met by every stretch that would take posts and the bot's whole
+"hold out for good ground" policy had quietly stopped existing.
+
+### THE COAST IS CALIBRATED — settled by a design decision, not by tuning
+
+**Done 2026-08-28. The coast build is green on every test for the first time.**
+
+The problem, measured on 2026-08-27: a settled coast band's site report came
+out at water 4.70 / soil 4.13 / timber 1.38 against a hex band's 1.82 / 2.65 /
+2.13. Three of the five measures were wrong and two of them pulled opposite
+ways, so `sickness` failed for a healer paid nearly double and `winter` failed
+for a woodcutter who cut a third too little. Two rounds of tuning constants
+made it worse, not better, and both were reverted.
+
+**Evan settled it as a design question, and the answer made the arithmetic
+fall out.** Two rules:
+
+- **You HAVE to settle near fresh water.** `foundBlocker` asks for a beck by
+  name on a line. `WATER_FLOOR` is 1 and on the hex map a 1 can come off a
+  bog in the ring or a fell behind it — a fair reading of an inland site with
+  a spring somewhere in it, and not a fair reading of a strand with the sea
+  down one whole side. So the line asks the narrow question.
+- **Woodcutters go out to the wood, and the walk is what it costs.** `timber`
+  on a line is no longer the ring's wood over a denominator of seven forest
+  tiles — a ring a coast cannot have, since one to three of its six are ocean.
+  `timberWithin` is the best stand on the coast discounted by the days to walk
+  it: a stand at the door is a full measure, the same stand a week up the
+  coast is worth a fraction of it. `HAUL_HALVES = 6` is the half-life, chosen
+  because a coast's forest is about a fifth of it, so the nearest stand is a
+  median two to three stretches off.
+
+Both rules made the ground a decision instead of a reading. Four supporting
+corrections went in with them, each measured off the map first:
+
+| | was | now | why |
+|---|---|---|---|
+| `ROUTE_COUNTRY` | a uniform sixth each | shore 30 / bog 18 / forest 18 / hills 14 / meadow 12 / valley 8 | a uniform roll put 4.1 valley stretches on a 26-stop coast and the search took one every time. The map's own coastal land is shore 51 / forest 25 / bog 21 / valley 3 — its shape, with hills kept common enough that ridges and `spotFixedPoints` survive |
+| ocean in a ring | two, always | rolled 1/2/3 at 58/24/17 | two is EXACTLY `harbour`'s textbook bay and exactly two non-doors, so both measures separated nothing. 132 foundable coastal hex sites average 1.62 |
+| the hinterland | two copies of the strand | rolled per slot, `HINTERLAND_SAME = 0.5` | the strand's own country appeared three times in six and counted itself over and over into `soil` |
+| a beck | `Surrounds.river`, worth 3 | a ring river, worth 1 | a river runs THROUGH a site; a beck runs down ACROSS the strand to the sea. That one line took a winter hall's care from 1.68 to 1.01 against the map's 0.85 |
+
+`COAST_VERDICTS` was re-derived at the same percentiles against the new
+distribution — the old cut left a coast with no Rich ground on it at all.
+Good-or-better now reads 4.2% of foundable stretches against the map's 4.6%.
+
+**What it cost in tests, and what that shook out.** Twelve files went red on
+the change and every one of them was a fixture reading the old world. The ones
+worth naming, because each was a bar that had been passing while measuring
+something else:
+
+- **`sickness`'s mend bar had a CEILING.** It asked how much came off an
+  illness in twelve days — but an illness is 14 to heal, so any hall that
+  tends fast enough to finish inside the window reports 14 in both seasons and
+  the comparison says nothing. Counting DAYS TO MEND has no ceiling and holds
+  on either ground: coast 11 days in winter against 7 out of it, map 23
+  against 9.
+- **`cliff` was measuring one seed's luck.** It asked a single band on day 40
+  and read the coast as soft. Swept over twelve worlds on the best ground each
+  has, food 4 and firewood 0, the two maps have the same cliff in the same
+  place — day 40 still saves 6/12 on the map and 8/12 on a coast, day 50 saves
+  1/12 and 2/12. Day 40 is late autumn and half of BOTH maps survive it;
+  'cliff-doomed' happened to be one of the six the map gives up on.
+- **`coastWalk`'s end-to-end walk stopped at stretch twelve**, and it was not
+  the coast running out — it was six people standing in a wood with their
+  shields up. `WALK` is refused by the mode gate while a battle is live, and
+  the fixture only ever asked to LEAVE, which is itself refused mid-fight. It
+  fights now.
+- **`site`'s correlations were read off a fortieth of the sample.** Ten worlds
+  is ~11,000 hex sites and ~260 stretches, so a coast correlation at ten seeds
+  carries real sampling error and wandered either side of the bar as the ring
+  was retuned. Sixty coasts settle it: soil/defence -0.26, timber/harbour
+  -0.46.
+- **`beats`'s played sweep cannot reach `spotted` on a line**, measured over
+  sixty seeds, and it is not that the mechanic is dead — walking all
+  twenty-six stretches of sixty coasts picks something out from a ridge on 57
+  of them. The two things it needs pull against each other: a band has to be
+  still walking, on a hills stretch, with unmapped country ahead — and a band
+  that finds a beck now puts the posts in and stops walking. Pinned by fixture
+  instead, which is this file's own precedent for `rallied` and `fled`.
+
+**One thing got weaker and is left as a question rather than papered over.**
+Soil and defence pull against each other at -0.26 on a coast against the map's
+-0.54, and the correction made it weaker rather than stronger — honestly so,
+because the old ring put the same terrain into `soil` and into `defence`'s
+door count and manufactured part of the pull. A ring that always holds sea
+leaves `defence` driven by HOW MUCH sea rather than by what the land is.
+Whether a line wants defence to depend on the land more than it does is a
+design question nobody has asked yet.
+
+**The port reached PARITY OK** — 39 checkpoints across two runs, six facets
+each: 1478 actions and 457 days on `runs/long.json`, 66 to day 15 on
+`runs/example.json`, `unported=0`. That was before the freeze; the Parity
+workflow on `landnam-ue` has not been fed since, deliberately.
 
 **The difficulty curve is 87% / 72% / 23% to spring** (fair / even / hard) and
 97% / 92% / 83% to the first winter, restated 2026-08-22. **ANY curve dated
@@ -1377,6 +1664,112 @@ re-run and re-tuned against ranks. Budget for that, not for the geometry.
   the pack — or go entirely?
 - **Foe count:** fixed 3–5 as the prototype has it, or scaled to the band?
 
+### The port contract is frozen
+
+**DECIDED 2026-08-25, on the first shape change of the conversion.**
+
+8.1b added `rank` to Combatant and bumped `SAVE_VERSION` to 45, and that
+immediately went red on `test/contract.test.ts` — the bar that exists because
+an audit on 2026-08-19 caught the C++ port verifying against a `parity.json`
+five regenerations behind. Two contract files had moved:
+`port/parity.json` and `port/LandnamPartyTables.gen.h`.
+
+Worth being accurate about what moved and why, because the first reading was
+wrong. It was NOT that ranks broke the port. `canonical()` hashes every key of
+the state including `version`, so the run hash moves on EVERY save bump — and
+every one of the last twenty bumps regenerated these same files. The facets
+name it exactly: `run` moved on all 44 checkpoints (the version), `field` on
+7 (combatants gained a rank), and `world`, `band`, `ship`, `coast` and
+`steading` did not move at all. Worldgen is bit-identical.
+
+So the routine answer was available: regenerate, `npm run port:sync`, carry
+on. That was not taken, because the routine answer assumes the port is worth
+keeping current, and Phase 8 is the reason to doubt it — the port is a port
+of a game being replaced, and every step of this conversion would drag
+generated contracts across to a C++ sim that will have to be rewritten
+wholesale anyway.
+
+**The hand-over is therefore paused, and this is a bar being lowered.** It is
+recorded as one rather than hidden:
+
+- `test/contract.test.ts` carries a `FROZEN` constant with a date and a
+  reason. The hash bar skips while it is set.
+- The drift is PRINTED on every run, naming each file and both hashes, so the
+  cost of the pause is in the log rather than waiting to be found by another
+  audit. The freeze is never the quiet kind.
+- A second test keeps the freeze honest: it fails if the reason is missing, or
+  if this section stops recording why, so the freeze cannot outlive the
+  decision behind it.
+- Lifting it is one line — clear `FROZEN`, run `npm run port:sync`.
+
+The generated files themselves ARE regenerated and committed here. This repo
+stays internally consistent; what is paused is only carrying them across.
+
+### The parity vectors retire with the hexes
+
+**DECIDED 2026-08-27, when 8.5 asked what the coast owes the contract.**
+
+The freeze above paused the HAND-OVER. This decides what happens to
+`port/parity.json` itself when the flag flips, which the freeze did not.
+
+What the coast build actually does to it, measured rather than assumed. All
+seven failures are the same single assertion — `worldHash(newGame(seed))` —
+which runs before any checkpoint and aborts each run, so the 336 facet
+readings are never reached at all. Inside `world`, exactly three things move:
+
+| field | hex | coast |
+|---|---|---|
+| `tiles` | `47647c97` | `47647c97` — identical |
+| `landing`, `landingName`, `seen`, `trod`, `width`, `height` | | identical |
+| `places` | 4 | 6, and different |
+| `knownStops` | absent | new |
+| `trodStops` | absent | new |
+
+Two things follow, and the second decides it:
+
+- **The coast build still generates the whole hex island.** 1872 tiles,
+  hashing identically, in every coast save, because `newGame` still calls
+  `generateWorld` and the flag only branches later at `seedPlaces`. The
+  conversion has not stopped paying for the hex map. That is job 3's subject,
+  and it is the reason worldgen being bit-identical is NOT a reason to keep
+  the vectors: there are no tiles on a line.
+- **43 of the 48 checkpoints cannot be replayed on a coast at all.**
+  `runs/example.json` and `runs/long.json` are recorded scripts of HEX
+  actions — 13 and 8 `MOVE`s carrying `{q, r}`. On a line `MOVE` does not
+  exist; travel is `WALK` to a stop. Those runs are not stale, they are
+  untranslatable.
+
+So the vectors are retired in job 4 alongside `src/hex/` and `worldgen.ts`,
+rather than regenerated against the coast or kept beside a coast set. The
+rejected options and why:
+
+- **Regenerate against the coast.** Costs re-recording 140 and 1142 actions
+  of real play, and buys a contract for a port that the freeze already
+  concluded is a port of a game being replaced. Worth doing AFTER the flag
+  flips if the Unreal work resumes — not before, and not as part of 8.5.
+- **Keep the hex vectors and add coast ones.** They become unverifiable the
+  moment job 4 deletes the hex layer, which produces exactly what
+  `test/parity.test.ts`'s own header warns against: "a green parity test that
+  cannot see one side of the parity is worse than none, because it is
+  reassuring."
+
+Until job 4, `parity.test.ts` and the three "with the flag off" guards in
+`coast.test.ts` SKIP on a coast build and run normally on the default one, so
+the hex game keeps its drift bar and the coast failure count stops carrying
+seven readings nobody is going to convert. Each skip names this section and a
+test fails if this section stops existing — the same arrangement that keeps
+the freeze honest, and for the same reason.
+
+**Updated 2026-08-25, after 8.1c.** The drift is no longer cosmetic and that
+was always the point of printing it. The verbs moving onto the line changed
+what a fight resolves to, so `runs/*.json` were re-recorded and every facet
+that touches a battle moved with them — the `field` facet most of all, and the
+`run` hash on every checkpoint that has a fight behind it. This is the first
+drift that is genuinely about rules rather than about a version number, which
+is exactly the evidence the freeze was made on: the C++ sim is now behind a
+game it does not implement, and catching it up would mean porting a
+battlefield that Phase 8 is in the middle of deleting.
+
 ### The collision with Phase 7
 
 Phase 7 is porting the hex game to Unreal. If Phase 8 lands, that port is
@@ -1386,50 +1779,1146 @@ is written so the choice is made with both arcs visible, not by drift.
 
 ---
 
-- [ ] **8.0 Decide, on evidence** — Play `proto/shieldwall.html`.
-  Optionally extend it to a three-raid coast with wounds carrying between
-  fights, to test the LOOP rather than one battle, before any `src/` work.
-  *Done when: the answer to "does deciding who stands where beat the hex
-  grid" is yes or no, and it is written down here.*
+- [x] **8.0 Decide, on evidence** — DECIDED 2026-08-25: **yes, convert.**
+  The prototype was played and the direction was taken; the notes asked for
+  were about the FIGURES (Vikings should look like Vikings, axes obvious),
+  not about the fight. The loop was not prototyped first — that option was
+  offered and passed over in favour of writing the phases down and starting.
 
-- [ ] **8.1 The wall replaces the grid** — `sim/ranks.ts` (position, close-up,
+- [x] **8.1 The wall replaces the grid** — **CLOSED 2026-09-01, and the box
+  was the last thing about it that was still wrong.** The two decisions it
+  left open were both taken elsewhere: shove and defend went to 9.1b and 9.1c
+  (shove dropped, the shield kept on a measured narrow case). Its bookkeeping
+  list — `battle.grid`, `warbandSpots`/`foeSpots`, `Combatant.at`,
+  `battle.width`/`height` — was worked through by 8.5 EXCEPT the last pair,
+  which is retired below. Of the rest: `grid` became a plain rectangle and is
+  read by `wall.ts`, the spots are read as field invariants by three test
+  files, and `at` went with the hexes.
+
+  `sim/ranks.ts` (position, close-up,
   legal from-rank and target-rank) replaces hex geometry in battle. Rewrite
   `battlefield.ts`; `wall.ts` becomes rank adjacency. Existing verbs map onto
-  rank restrictions: hew 1–2→1–2, spear 2–3→1–3, hurl 2–4→any, shove 1–2→1–2
-  with a push, hold 1–2→self and doubled when the rank behind holds too. Gear
-  belongs to the FIGHTER, not the rank. Add resolve: nerve breaks when
-  friends fall, and a broken fighter wavers or goes wood. Behind `?ranks`, so
-  the hex battle stays until the numbers are re-earned.
+  rank restrictions — and they map almost one for one onto the verbs that
+  already exist: `strike` 1–2→1–2, `reach` 2–3→1–3, `throw` 2–4→any, `shove`
+  1–2→1–2 with a push, `defend` 1–2→self. `dash` survives the conversion by
+  changing meaning: it is no longer movement across ground but a change of
+  RANK, which is how a spearman shoved to the front buys his way back.
+  `doMove` has no equivalent and goes. Gear belongs to the FIGHTER, not the
+  rank. Nerve, broken and fled already exist on Combatant, so the resolve
+  system ports rather than gets invented.
+
+  **Deviation from this plan as first written, 2026-08-25: NO `?ranks` flag.**
+  It said the hex battle would stay behind a flag until the numbers were
+  re-earned. That reasoning came from `?paint`, where two RENDERERS read one
+  state and the second is nearly free. Two SIMS are not: `Combatant` would
+  carry both `at: Hex` and `rank`, and every verb, the AI, the wall and the
+  tests would each grow a branch. The revert path is git, and the real gate
+  is the balance suite, which a flag does not help with. The old battlefield
+  files stay in the tree unreferenced until 8.5 rather than being deleted, so
+  going back is a revert and not an archaeology exercise.
+
+  Saves: `battle` is on the root and its shape changes here, so this bumps
+  `SAVE_VERSION` and ships a migration that ENDS any in-progress fight and
+  returns the band to travel. A saga caught mid-battle loses that battle and
+  nothing else. This is NOT the documented break — that is 8.5, and it is
+  about the world, not the fight.
   *Done when: `balance.test.ts`, `wall.test.ts` and `consequences.test.ts`
   run against ranks and produce tuned numbers, formation play still beats
   brawling, and losing a veteran still hurts.*
 
-- [ ] **8.2 The coast becomes a line** — Worldgen from 2D island to a 1D route
-  of places with distances between them. Skerries, landmarks, `places.ts` and
-  `neighbours.ts` are already derived from `(seed, position)` and port rather
-  than get rewritten. Answer the "six directions" question here, in the
-  design, before building it. Behind a flag.
+  - [x] **8.1a The line itself** — `sim/ranks.ts`: the reach table, closing
+    up, shove, dash-as-rank-change, and wall linkage. Pure and structural —
+    it imports no Combatant, so it is tested without a battle at all.
+    25 claims in `test/ranks.test.ts`, five mutations run against them: a
+    line that does not close, one that closes by reshuffling, a shove that
+    damages without moving, a wall that links anyone on the side, and an axe
+    that reaches the third rank. All five caught.
+  - [ ] **8.1b Combatant takes a rank** — `at: Hex` becomes `rank`, with the
+    save migration above.
+  - [x] **8.1c The verbs move onto the line, AND the numbers are re-earned**
+    — was two items, 8.1c and 8.1e. They are one, and finding that out is
+    what the 2026-08-25 attempt bought. Landed on the third attempt, whole:
+    strike/reach/throw ask the rank table instead of hex distance, the shield
+    wall is adjacent RANKS, `doMove` is gone, shove drives a man back a rank
+    and names who came forward, `dash` becomes a change of rank, and every
+    tuned number was re-measured rather than relaxed. See the changelog for
+    what the measurements said.
+
+    **Why the two items are one.** The conversion turned out to be surgical —
+    `strike.ts` is 289 lines and only SIX of them were hex, all reach checks;
+    everything else (to-hit, wall bonus, glancing blows, wounds, deaths, xp,
+    beats) is position-independent. The pleasant surprise underneath that:
+    the old design was already a line wearing a grid. `canReachAt` demanded
+    `distance === 2` PLUS a mate adjacent to both the thruster and the target
+    — which is a hex spelling of "you are in the second rank and your
+    shield-brother is in the first". Converting is faithful, not inventive.
+
+    But the tests are not surgical, and they cannot be. The ones that matter
+    most assert TUNED NUMBERS — `wall.test.ts` holds "formation play beats
+    brawling" at specific win counts, `balance.test.ts` holds survival rates.
+    The instant the verbs move onto the line every one of those moves too, so
+    there is no green state between "converted" and "re-tuned" and the slice
+    could not be committed half-done.
+
+    **What the third attempt changed about the method**: structure first,
+    numbers last, and never touch a threshold while a structural failure is
+    still standing. Two of the three failures that looked like tuning turned
+    out to be mechanics the conversion had silently deleted — see the
+    changelog. A number relaxed on either of them would have hidden a hole.
+
+    *Done when: the sweeps run against ranks and produce tuned numbers,
+    formation play still beats brawling, losing a veteran still hurts, and
+    the whole suite is green in one commit.* — **met.**
+  - [ ] **8.1d The field is drawn side-on** — `render/battle.ts` as two walls
+    meeting, painted with the oil brush.
+
+    **The layout has landed**; the oil backdrop and `Combatant.at` have not.
+    What is in: `render/line.ts` — pure, 21 claims — is the only thing that
+    knows where a rank is on screen, and the renderer, the effects layer and
+    the tap all read it, so they cannot drift apart the way three separate
+    `toPixel` calls could. A tap is a `personId` rather than a hex. The
+    palisade is drawn as the thing the two walls are meeting across. The
+    ground is a horizon with far country over it instead of a mosaic of
+    tiles.
+
+    **The oil backdrop has landed too.** `render/fieldOil.ts`, same
+    live-canvas-in-`foreignObject` trick as the steading: a graded sky with
+    soft banks of cloud, two layers of hill, and brushed ground. 200ms once
+    per fight and kept for every turn after, from 2742ms in the first cut —
+    see the changelog for where that went, because none of it was where it
+    looked like it was.
+
+    **`Combatant.at` is gone** (save v47). With it: the `from`/`to` hexes on
+    a `shoved` beat, the `drowned` shove result a line cannot produce, and
+    the whole deployment search — `place()` looked for a free passable spot
+    and, finding none, simply did not stand the man. Measured before cutting:
+    across 40 open fights and 20 raids it refused nobody, so it was capping a
+    number the band rules had already capped.
+
+    What is left for 8.5, and it is only bookkeeping now: `battle.grid` still
+    exists so `atThePalisade` can ask whether the stakes were up, and
+    `generateBattlefield`/`steadingFieldFrom`/`seaFieldFrom` still compute
+    `warbandSpots` and `foeSpots` that nothing reads. `battle.width` and
+    `battle.height` likewise. None of it is load-bearing; all of it goes when
+    `src/hex/` does.
+
+    Two things 8.1c left here on purpose:
+
+    - **`Combatant.at` survives frozen** at wherever a fighter deployed,
+      because the renderer still draws hexes. It goes here. Note what that
+      already costs: the reach markers are drawn on those dead hexes, so at
+      320px they are routinely off the panned view and `pan.mjs` has to hunt
+      for one that is on screen.
+    - **Shove and defend are very nearly inert on the line**, measured over
+      60 fights: turning either on changes the win count by nothing at all.
+      Defend fires NEVER, because only the front two may set a shield and the
+      front two always have something better to do with the action; shove
+      fires 20 times in 60 fights, and only ever to crush the last man of a
+      line against his own, since a shove that MOVES somebody deals no damage
+      and swaps two men an axe already reaches. Both are recorded as exact
+      ties in `wall.test.ts` so the day either stops being inert is a day
+      somebody finds out. Whether they earn a place on a side-on field, or
+      change, or go, is a decision for this item.
+
+- [x] **8.2 The coast becomes a line** — **DONE, and the checkbox simply never
+  moved.** Its *Done when* — a saga walked end to end on the route, the travel
+  decision nameable in one sentence — has been true since 8.5: `ROUTE_STOPS`
+  is 26, `src/hex/` does not exist, and the suite plays sagas to day 500 along
+  it on every run. "Behind a flag" is stale too; the flag became the default
+  and then 8.5 deleted the other side of it. Ticked 2026-09-01 on a read of
+  the code, not a memory of the work.
+
+  Worldgen from 2D island to a 1D route
+  of places with distances between them.
+
+  **DESIGNED 2026-08-25.** The roadmap said answer the "six directions"
+  question before building, so it was answered — and the measurement that
+  answered it is worth more than the answer.
+
+  ### What travel actually is today
+
+  A played saga, `runs/long.json`, replayed and instrumented:
+
+  | | |
+  |---|---|
+  | days | 407 |
+  | MOVE actions | **8** |
+  | distinct hexes stood on | 8, with zero revisits |
+  | island charted | 78 of 1872 hexes — **4%** |
+  | move options offered | exactly 6, every single time |
+  | places in the world | 4 |
+
+  Across twenty worlds: 1,139 land hexes each, an island 49 hexes across, and
+  four places a median of 12 apart. Travel is **0.7% of a saga's actions** —
+  CAMP is 35%, the colony 53%.
+
+  So the 2D island is already, in play, a short walk. The band lands, walks
+  about eight hexes, settles, and never moves again. Eighteen hundred hexes
+  of country exist so that eight of them can be stood on. That is not an
+  argument for making travel one-dimensional; it is an argument that travel
+  is not currently a DECISION at all, and that whatever replaces it has to be
+  one.
+
+  ### The answer: how far before you turn back
+
+  **One coast, and the decision is depth.** Not forks — a fork is a direction
+  choice, and the band makes eight of those in four hundred days, so
+  rebuilding branching would rebuild a decision nobody is making. Four things
+  make depth a real choice where six directions was not:
+
+  1. **Richness rises with distance.** The monastery four days up the coast
+     is worth more than the camp next door. Reaching it is the only way to
+     get it.
+  2. **You carry what you eat.** Food and firewood burn per day and the walk
+     home is exactly as long as the walk out, so every step outward is two
+     steps of supply.
+  3. **Winter is the clock.** Being far up the coast when the season turns is
+     how a band dies, and it is the same clock the colony already runs on.
+  4. **After settling it does not go away.** The hall sits at a position on
+     the route and raids are out-and-back from it — the same decision at a
+     smaller scale, which is what gives a settled saga something to do with a
+     warband.
+
+  In one sentence, which is this item's own bar: **how far up the coast do I
+  push before the season turns me back?**
+
+  ### The chart survives, as a strip
+
+  A painted strip map in the pack: what you have walked, and what you have
+  been told is ahead. The seen/unseen discipline keeps its meaning — fog on a
+  line is "how far my knowledge runs" — and the map stays the artifact the
+  oil pass made it, rather than the game losing the object it is partly
+  about.
+
+  ### Shape of the work
+
+  `World` gains a `route`: stops indexed 0..N, each with its country, and
+  places hung on some of them. The party's position becomes an index. Nothing
+  that derives from `(seed, position)` needs rewriting so much as
+  re-addressing — skerries, landmarks, `places.ts`, `neighbours.ts` and
+  `fishery.ts` all ask a coordinate for a number and will ask an index
+  instead.
+
+  Honest cost, counted rather than guessed — hex references per file:
+  `road.ts` 18, `places.ts` 15, `neighbours.ts` 10, `worldgen.ts` 7,
+  `fishery.ts` 5, `sea.ts` 2. The sim side is about 57 call sites across
+  1,600 lines. `render/travel.ts` is 1,013 lines and is replaced rather than
+  converted, in 8.3.
+
+  Four slices, each green on its own:
+
+  - [x] **8.2a The route exists.** `sim/route.ts`, pure, 27 claims, imported
+    by nothing. Stops numbered from the landing, legs of two to four days,
+    country and places derived from `(seed, index)` — so no save change, and
+    the port gets the coast for free.
+
+    The bar caught the design's own number on the first seed it tried. 24
+    stops and one-to-three-day legs was reasoned from the MEAN — 92 days for
+    the whole coast there and back, comfortably past a first winter at 90 —
+    and `raven-skerry-317` came out at exactly 90, because the mean was
+    sitting on the bar. A coast that rolled short legs the whole way came to
+    46, which a band could walk twice before its first autumn. The bound is
+    arithmetic on the worst case now: `2 * (ROUTE_STOPS - 1) * LEG_MIN > 90`,
+    which at 26 stops and two-to-four-day legs is 100 to 200 days whatever
+    the dice do.
+  - [x] **8.2b Travel moves on it.** `sim/coast.ts` and a `WALK` verb beside
+    `MOVE` — a second verb rather than a change to the first, which is what
+    "behind a flag" buys: the hex path stays live and untouched, so the game
+    is playable on every commit of the conversion. `walkOptions` offers
+    forward, back, and a day at the oars covering `SHIP_REACH` stops, the
+    direct heir of the hex map's `ROW_REACH`. `party.stop` is additive
+    (v48), exactly as `Combatant.rank` was.
+
+    `pushLimit` is where the milestone's sentence is actually answered: how
+    far can this band get and still come home on what it carries. Counted
+    from both halves of the walk, so a band that takes it at its word is
+    never stranded by it.
+
+    Two things the tests caught rather than the code. The flag is off, so
+    every `WALK` the suite dispatches is refused before it does anything —
+    which left the entire verb as code nothing executed, the same shape of
+    hole as the browser check that had quietly stopped running. It is
+    exercised for real in `test/coastWalk.test.ts` with the flag mocked on.
+    And that file's first end-to-end walk failed at stop 12: spending days
+    raises an event card and travel is refused while one is up, which is
+    correct, and which the test had to learn to do what a player does.
+  - [~] **8.2c The derived world follows.** PARTIAL, and named as such
+    rather than ticked. Done: the places, and the country underfoot.
+
+    **The country underfoot was the seam worth finding.**
+    `state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow'` appears
+    verbatim fifteen times across seven files — every one of them the same
+    question asked of a coordinate system being replaced. `countryHere` is
+    that question asked once. Off the flag it is that expression character
+    for character, and `test/coast.test.ts` asserts so against forty hexes
+    on three seeds, because a seam that quietly changed an answer would move
+    balance under a conversion that has not started yet.
+
+    **The places** are seeded from `route.placeAt` when the flag is on —
+    `Place` gains `stop` (v49), `placeHere` and `sackBlocker` ask it, and the
+    hex seeding stays untouched underneath, which is what keeps the worldgen
+    parity vectors from moving.
+
+    **Fisheries and foraging** followed, and a correction with them. The
+    note above said the remaining sites read a whole `Tile` "because a tile
+    carries per-hex depletion". It does not: a `Tile` is `{ terrain, river }`
+    and nothing else. Depletion lives in `world.worked`, a sparse record
+    keyed `${kind}:${hexKey}` in `abundance.ts`. The conversion was therefore
+    smaller and cleaner than the note claimed — the storage KEY becomes a
+    stop, and the tile reads were all `terrainDef(here.terrain)`, which is
+    `countryHere` again. Ten sites down to two, and both of those are
+    `river`, which a coast does not have.
+
+    A fishing ground is now a property of a stop (`groundAtStop`), on the
+    same one-in-seven share the hex water paid, from its own stream — sharing
+    the hex fishery's would make a stop's water a function of a hex key it
+    has nothing to do with. And every stop can be fished, because every stop
+    on a coast has the sea off it; on the hex map that was a real question,
+    since most of the island is inland.
+
+    One narrowing, stated rather than discovered later: on the coast the
+    larder is filed under the band's OWN stop, so a ground worked from
+    somewhere else is not told apart from one worked from here. Nothing does
+    that yet — the colony's fishers are 8.4 — but it is a real limit.
+
+    **The sea** needed a design answer rather than a re-addressing, and got
+    one out of its own docstring. `sim/sea.ts` describes the strandhögg as
+    "the same place, taken two ways, and the ship's way is better if you win
+    and much worse if you do not". On the hex map the two ways were floating
+    offshore or standing on the road. A route has no offshore to float in —
+    rowing is a step, not a state — so the difference moves from where the
+    band IS to **how they got there**: a day at the oars arrives with a sail
+    nobody was watching for, a walk arrives on the road they watch. It lasts
+    exactly one day (`Party.bySea`, v50, cleared by `advance`), because a
+    surprise that survived a night ashore would be a property of the hull
+    rather than a surprise.
+
+    **Neighbours** moved next, and the placement is where the design work
+    was. The hex map put them in a RING — no closer to the landing than
+    `CLAN_MIN_GAP`, no further than `CLAN_MAX_GAP` — and the ceiling was a
+    fix for a measured bug: nought of thirty-two clans met across eight
+    five-hundred-day sagas, because the ones seeded across the island were
+    unreachable. A ring is right when a band can go any direction and does
+    not go far.
+
+    A line wants the opposite shape for the same underlying reason. This
+    phase's whole decision is HOW FAR, and a coast whose four neighbours all
+    live inside the first fortnight answers it: never far, because there is
+    nobody out there. So `route.neighbourStops` spreads them one to a
+    quarter of the coast, and pushing out finds PEOPLE rather than only
+    plunder — trade and standing stop being landing-side systems.
+
+    Both of the ring's bounds survive, read onto the first quarter. Its
+    ceiling: the nearest is inside `CLAN_MAX_GAP` days, so "neighbour" still
+    means something. Its floor: nobody lives within `CLAN_ELBOW` stops of
+    the sand, because `foundBlocker` refuses ground inside somebody's home
+    field and the landing is the only site a band has seen on day one — a
+    coast with a camp on stop 1 is a coast that cannot be played. Two stops
+    of room on a coast 26 long is a real bite where two hexes on 1872 was
+    not, and the quarter-spread is what makes it survivable.
+
+    Everything BELOW the address is untouched and still comes out of the
+    same rng in the same order: names, opening standing, might. The
+    conversion moves where people live, not who they are — a coast where
+    the flag rerolls everybody's temper is a coast that cannot be compared
+    against the one before it. `revealNeighbour` also stopped marking a hex
+    seen, which on a line would write (0,0) into the seen map of a world
+    nobody navigates by hexes; `found` IS the knowledge there. And the saga
+    stopped saying "north": a line has two directions and they are up the
+    coast and back toward the landing.
+
+    `Settlement.stop` came with it (v51), because "who calls on the new
+    steading, nearest first" needs a hall with an address. It is written
+    only when the flag is on — `standingAt` answers 0 for a band that has
+    never walked a route, and stamping every hex-map hall "stop 0" would
+    make the field a lie the day something trusted it.
+
+    **Landmarks and telling** closed the item, and it needed a field rather
+    than a re-addressing. Everything else on the coast is derived from
+    `(seed, stop)`, but *what the band knows* cannot be: it is history, not
+    country. On the hex map that history is `world.seen` and `world.trod`,
+    both keyed by hex — so `World` gained `trodStops` and `knownStops`
+    (v52), kept as their own fields rather than folded into the hex-keyed
+    ones. Eight places in this codebase iterate `seen` and `trod` expecting
+    hexes: `exploredFraction` divides `seen`'s size by the tile count, the
+    parity fixture hashes that size, three renderers walk it,
+    `commonestGround` looks every `trod` key up in `world.tiles`. A stop key
+    dropped into either would not throw — it would quietly make a percentage
+    wrong, which is the failure this repo keeps rediscovering under other
+    names.
+
+    The density number could not be carried over, and this is the one place
+    in the conversion where measurement changed the answer. `LANDMARK_SHARE`
+    is 0.045 per HEX across roughly 1139 of them, on a map where a saga
+    stands on eight. A coast is 26 stops and a band walks most of the ones it
+    reaches. Measured over 300 seeded coasts:
+
+    | share | named of 25 (min-med-max) | met on a 10-stop walk |
+    |---|---|---|
+    | 0.045 | 0-1-6 | 0 — nothing at all on 192 of 300 |
+    | 0.25 | 1-6-13 | 2 — nothing on 17 of 300 |
+    | 0.34 | 2-8-15 | 3 — nothing on 7 of 300 |
+    | 0.50 | 3-12-19 | 5 — nothing on 1 of 300 |
+
+    The hex map's own number is the top line, and it is the one that fails:
+    carried over unchanged it gives a median coast ONE named point and leaves
+    two ten-stop walks in three with nothing to remember a stretch by —
+    exactly the disease `sim/landmark.ts` was written against. So
+    `LANDMARK_SHARE_STOP` is a third. The ceiling is real too: about four
+    places and four neighbours already sit on a coast, leaving roughly
+    seventeen bare stretches, and a third names about half of them. A half
+    starts making the module's own rule false — a landmark that is everywhere
+    is scenery.
+
+    Two mechanics had no line-shaped analogue and are recorded as such rather
+    than ported dead. `revealAround` and the sight radius do not run on a
+    line at all: a coast is walked, not surveyed. `hasLineOfSight` has no
+    question to ask, because a coast IS a line of sight — there is nothing
+    for a hill to stand behind when the country runs one way. What DID
+    survive is `keepsBearings`, and it survived intact: a fixed point on the
+    stretch you are on or either side of it still means you know where you
+    are.
+
+    **The rival** closed it, and every number he owns had to be re-derived
+    rather than re-addressed — because his claims reach exactly ONE thing in
+    the whole sim (`foundBlocker`), so each of them is a number about
+    playability and about nothing else.
+
+    Three hex-scaled distances were over-read onto a 26-stop grid, and each
+    was caught by measuring rather than by reading:
+
+    - `RIVAL_APART` is seven, meaning "far enough that we do not start in
+      their yard". Read as DAYS that is a median of two stops, and over 200
+      coasts his elbow alone covered the landing on 24 of them. It is now
+      read as what it meant: `RIVAL_ELBOW + CLAIM_REACH_STOPS + 1`, so
+      neither his elbow nor his reach can ever touch the sand.
+    - `CLAIM_REACH` of four covers 61 of 1139 hexes — five per cent, which
+      is what "a neighbour, not an empire" was calibrated against. Four
+      stops of 26 is thirty-five per cent. Three, so he holds seven at full
+      spread.
+    - The clearance his FENCES keep from somebody else's ground was
+      `RIVAL_ELBOW`, two. Two stops around each of four clans blocks twelve
+      of twenty-six, and measured it left him holding three stretches of a
+      possible seven — a hand that closes twice and jams. `CLAIM_CLEAR_STOPS`
+      is one: a fence is not a hall, and `RIVAL_ELBOW` still governs posts.
+      It leaves the older clans CONTAINING him, which was not designed and is
+      the better game — he spreads from what he holds, so a stretch he may
+      not fence is a wall his block cannot grow past.
+
+    `CLAIM_EVERY` had to move for a different reason. What makes him a CLOCK
+    rather than a fact is that on the hex map he never finishes: 61 hexes at
+    one every eleven days is 680, longer than any saga, so the hand is still
+    closing on the last day the band plays. The same eleven days on a line
+    fills his whole reach by day 75. Widening the reach to preserve that
+    would take the coast, so the interval gives instead — one claim on a line
+    is worth 1/26 of the country against 1/1139, and a thing worth forty
+    times more should not come forty times as often. At sixty days, measured
+    over 150 coasts: he holds a median of six stretches of seven, never fewer
+    than three, his last claim lands on a median of day 309, and he is still
+    taking ground past day 200 on 135 coasts and past day 300 on 90.
+
+    He was also unmeetable. `meetRival` hung off the hex sight pass, which
+    does not run on a line — a mechanic deleted rather than converted. Both
+    it and `seeNeighbours` are now outside that block, each answering its own
+    world's question.
+
+    Still to do before the flag can flip:
+
+    - **Founding.** `foundBlocker` is still hex-shaped below the elbow —
+      `siteReport`, `world.seen`, terrain. That is 8.4's, not this item's.
+  - [x] **8.2d The strip map.** The chart in the pack becomes a strip.
+
+    The hex chart fits a whole island into three hundred pixels, and its own
+    comment records what that cost: names were tried on it, could not be
+    read, and the marks now say WHERE while a key underneath says WHICH.
+    That is the right answer for a map of an island and the wrong one for a
+    coast — because a coast is not a shape to be taken in at a glance, it is
+    an ORDER, and the only question a player asks of it is how far along to
+    go. So the strip is drawn at its natural width and SCROLLED rather than
+    shrunk, which is what lets a stretch be 58px and carry its own name.
+
+    It is also the VERB. With the coast on there is no other way to walk
+    anywhere until 8.3 puts a procession under it, so tapping a stretch the
+    band could reach spends the days and shuts the card. `scripts/strip.mjs`
+    holds both halves: that a stretch is 58px on screen at 390 and at 320,
+    that the frame scrolls and the page does not — and that a tap actually
+    moves the band and costs it days. A strip that draws beautifully and
+    moves nobody is the whole feature missing.
+
+    The decision the milestone exists for is drawn rather than left to
+    arithmetic: `pushLimit` puts a dashed mark at the last stretch the band
+    could reach and still come home, and every leg is written in days on the
+    picture. `daysInHand` decides what "could" means — the smaller of the
+    food in the packs and the days until winter, because a band does not get
+    to pick which runs out first.
+
+    Three things worth recording. `sim/flags.ts` now reads `VITE_COAST`,
+    still statically replaced at build time and still false in every ordinary
+    build — but it means a build of the coast can be MADE and looked at,
+    which a conversion this long has needed for a while.
+
+    That one nearly went wrong in a way worth writing down. The first draft
+    wrote `import.meta.env?.VITE_COAST`, with an optional chain. Vite's
+    define matches the expression TEXTUALLY, so the guard stopped folding to
+    a constant, every branch behind the flag stayed in the bundle, and the
+    ordinary build went from 399kB to 421kB carrying a whole coast nobody
+    could reach. Nothing failed: the flag still read false, every test passed,
+    every bar passed. It was found by grepping the built page for a string
+    only the strip chart contains, which is the only way a dead branch that
+    still ships ever announces itself. The rule is now in the file, in
+    capitals, beside the line it applies to.
+
+    And `daysInHand` first used
+    `calendar.daysUntilWinter`, which counts down to day 49 and answers 0
+    for every day after it. It is a first-winter warning helper and says so;
+    read as a general deadline it told a band in the autumn of year three
+    that nothing was coming, and the chart offered them the whole coast on
+    the strength of a full larder. The test caught it.
+
   *Done when: a saga can be walked end to end on the route, and the travel
   decision is nameable in one sentence.*
 
-- [ ] **8.3 Travel becomes a procession** — The side-on painted view: the band
-  walking the route, country derived from the places they are between, monas-
-  teries and camps rising ahead as silhouettes. Reuses the oil brush and the
-  seen/unseen discipline. Raiding a place drops into 8.1.
+- [x] **8.3 Travel becomes a procession** — The side-on painted view: the band
+  walking the route, the country painted with the battlefield's own brush,
+  and what stands on the stretches ahead rising as silhouettes.
+
+  The chart in the pack answers "how far along do I go". It cannot answer the
+  question a player asks a hundred times more often and never opens a card
+  for: where am I, and what is coming. The hex map answered that by being on
+  screen the whole time; a strip chart in a drawer does not.
+
+  **Distance is drawn as distance.** A row of icons would pass the milestone's
+  bar and be a chart with the paint taken off. What makes this a road is that
+  a monastery two stretches on is smaller, higher up the picture and hazier
+  than a camp on the next one — so which is nearer reads without reading a
+  number. `sightAt` is the whole of it, and `test/procession.test.ts` holds
+  the property that nearer is lower and larger.
+
+  **The verbs are not in the picture**, and that was not the first draft. The
+  two steps a coast offers were drawn into the scene at its bottom edge; it
+  looked right at 390x844 and was unpressable at 320x568, because this SVG is
+  `slice` and on a short screen its bottom edge lands 58px below the map slot,
+  behind the site panel, which swallows the tap. `scripts/procession.mjs`
+  caught it with `elementFromPoint` on the button's own centre — the answer
+  came back `span.site-word`. On the screen is not the same as reachable, and
+  only the second one is a bar. The steps are ordinary buttons in the action
+  bar now, where every other verb already lives and where the 44px rule is
+  enforced by CSS and checked by `reach.mjs`.
+
+  **A band could not see anything coming**, and that is the finding worth
+  keeping. `markTrod` learned only the stretch underfoot, so "what is ahead"
+  was structurally empty on every flat coast forever: the bar walked twelve
+  stretches and never had a thing to draw. The cause was mine, one milestone
+  back — when 8.2c cut the fog pass the note said "a coast is walked, not
+  surveyed", which is right about the RADIUS and wrong about sight itself.
+  Arriving somewhere now learns the next headland either side, which is
+  `revealAround`'s heir: one stretch, two to four days, because a man on a
+  coast can see the next headland and not the one past it. Climbing a ridge is
+  still how you see eight days out.
+
   *Done when: you can tell where you are and what is ahead without the chart.*
+  — held by `scripts/procession.mjs` at 390x844 and 320x568: the picture says
+  where the band is standing, names what is in sight and how far off, and the
+  road can be walked from the screen it is drawn on.
 
-- [ ] **8.4 The steading becomes an elevation** — Colony hex plots become
-  placed buildings on a side-on view; `plotsFor(job)` becomes
-  `buildingsFor(job)`. Your hall is placed on the route in 8.2/8.3, and
-  entering it opens this. The cheap one: `colony.ts` is 540 lines with three
-  geometry references.
+- [x] **8.4 The steading becomes an elevation** — and it was not the cheap
+  one. The render was the small half; the sim underneath it was the milestone.
+
+  **The colony map drew the wrong noun.** It drew GROUND — a ring of hex
+  plots, field and wood and water. Everything a player spends a season on
+  lives in `settlement.built`, which that map never touched: raising a
+  longhouse changed a list and changed no pixel. So the elevation draws
+  BUILDINGS, in the order they were raised, with the head of the queue
+  half-up beside them and rising as the builder-days go in. That is a bar the
+  hex map could not have passed at any level of polish.
+
+  **A stretch of coast had to be readable as a site.** Not five new measures
+  — the SAME five, handed a coast-shaped `Surrounds`: two of ocean because a
+  coast has the sea down one side, the stretch before and after, and two of
+  its own country for the land behind the strand. Rewriting `water`, `soil`,
+  `timber`, `harbour` and `defence` would have meant recalibrating `VERDICTS`,
+  `nameFor` and the whole settling floor against numbers nobody had measured.
+
+  `BECK_SHARE` is the number that decides whether a coast can be settled at
+  all, because fresh water is the one measure a shore cannot supply out of
+  its own country. Measured over 300 coasts with the clans' elbows and the
+  other boat's fences counted: at a third, one seed in three hundred had
+  NOWHERE to put the posts; at a half, none do. The landing itself is dry
+  about two times in five and that is left alone — a band that must walk a
+  stretch before it can raise a hall is making this phase's decision on its
+  first day instead of settling where it happens to be standing.
+
+  **`plotsFor` survives unchanged**, which was the point of keeping plots. It
+  is read for one thing in the whole sim — `plotsFor(...).length > 0`, which
+  gates the farmer and the fisher — so the plots are rolled with the same
+  weights and the same count, and only `at` stops being a coordinate. Had the
+  conversion broken it, those jobs would have quietly stopped being available
+  and nothing would have thrown.
+
   *Done when: raising a building visibly changes the steading you walk into.*
+  — held by `scripts/hearth.mjs`, which walks into a coast steading and finds
+  bare ground, raises a longhouse, and finds it standing at 55x40 inside the
+  picture with the screen-reader line changed to match.
 
-- [ ] **8.5 Retire the hexes** — Delete `src/hex/`, the old renderers and the
-  dead flags once every flag has flipped. Bump `SAVE_VERSION` and land the
-  documented break. Rewrite the browser bars that query hex selectors.
+- [x] **8.5 Retire the hexes — DONE 2026-08-28.** `src/hex/` is deleted, with
+  `worldgen.ts`, `fog.ts`, `ways.ts`, `skerry.ts`, the hex half of `road.ts`,
+  the three hex renderers and `COAST_IS_A_LINE` itself. `SAVE_VERSION` 56
+  lands the documented break. The five browser bars that queried hex selectors
+  were deleted rather than translated — see the changelog entry "The hexes are
+  gone" for what went, what was kept and why, and for the `sailOn` defect the
+  fold found.
+
+  **The precondition is answered: the flag CAN flip.** That was never
+  actually asked. Every slice from 8.2 on proved its own piece — the walking,
+  the chart, the road, the steading — and none of them played a SAGA.
+  `test/coastSaga.test.ts` does: it lands a band on a line and plays until
+  something ends it, with a deliberately stupid player, hunting for a verb
+  the sim refuses that the player was offered. **There are none.** Nothing
+  wedges; every run reaches an ending rather than stopping dead.
+
+  The numbers needed a control before they meant anything. The fool dies —
+  twelve of twelve starve or freeze by day 34, four ever get posts in the
+  ground — which read alone looks like an uninhabitable coast. The same fool
+  on the HEX MAP settles NONE of the same twelve and dies at a median of day
+  28. The coast is not worse than the country it replaces; it is better for a
+  player this bad. The dying is the player, which is what a fool is for.
+
+  What is left is the deletion itself, and it is four separable jobs rather
+  than one:
+
+  1. **Flip the default — DONE 2026-08-28.** `COAST_IS_A_LINE` reads
+     `import.meta.env.VITE_HEX !== '1'`: the coast is what builds, and the
+     hex game is what you have to ask for. It is the hinge, and it is what
+     makes the next two necessary rather than optional.
+
+     Held shut by exactly one thing, which is why it took until now — a coast
+     build had to pass every bar the hex game passes, on its own terms rather
+     than by having its bars loosened. It does for 90 files of 91 on either
+     build, and for all 15 browser bars.
+
+     **The ninety-first is `balance.test.ts`, and flipping the default is
+     what finally ran it against a coast: 14 of its claims failed.** That file
+     is forty minutes of measured survival numbers and every one of them was
+     taken on the hex map — the last body of hex-shaped measurement in the
+     tree, and it could not have been found any other way, because `npm test`
+     never built a coast until the flag flipped. All fourteen are fixed; see
+     **THE HARNESS LEARNS THE COAST** below.
+
+     The roles swap all the way through rather than only in `flags.ts`, and
+     the point of that is that the SHIPPING game is the one under test:
+
+     - `npm test` and `npm run build` are the coast. `npm run test:hex` and
+       `VITE_HEX=1 npm run build` are the old game, and CI runs both — a
+       change that quietly breaks the build nobody runs is how a
+       half-finished conversion rots.
+     - `scripts/bars.mjs` runs TEN bars against the coast (`offline`,
+       `larder`, `pan`, `field`, `landscape`, `reach` at both widths, plus
+       `strip`, `procession`, `hearth`) and five against the hex build
+       (`sea`, `pinch`, `way-look`, `repaint`, `steading` — the five whose
+       claim has no subject on a line). Before the flip the coast's own three
+       were an afterthought at the bottom of that file.
+     - `npm run publish` writes the coast to `/` and `/docs`; `npm run
+       publish:hex` writes the hex game to `hex/` and `docs/hex/`. The old
+       `coast/` and `docs/coast/` folders are deleted — they were the
+       conversion's waiting room and it has left.
+     - `README.md` and `CLAUDE.md` describe the coast game. The README had
+       been describing a hex battlefield since 8.1 moved the fight onto ranks,
+       which nobody had noticed because nothing tests prose.
+
+     **Measured before touching it, and the measurement changed the job.**
+     Flipping the flag turns 148 tests across 39 files red. That reads as
+     thirty-nine conversions until you look at WHY, and the single commonest
+     cause by a wide margin was one fixture — "sweep `world.tiles`, keep the
+     best `siteReport`, put the posts in" — copied into twenty-two files. Not
+     thirty bugs; one duplicated helper, thirty times over.
+
+     So it is extracted first, into `test/fixtures/settle.ts`, which knows
+     both worlds and picks by the flag. Twenty-six files now call it. Measured
+     the same way before and after, on a coast build: **148 failures across 39
+     files → 103 across 25.** Fourteen whole files stopped caring what the
+     country is made of, and the conversion has one site search left to change
+     rather than twenty-two.
+
+     Two things the extraction had to say out loud rather than assume:
+
+     - The copies were two families, not one — eleven took the BEST ground by
+       `siteReport`, eight took the FIRST hex that would take posts. Unifying
+       on the best looked certain to move the yield measurements in `rations`,
+       `counsel` and `minds`. It moved none of them. Where it WOULD have
+       mattered the caller now says so: `cliff` and `hardship` pass
+       `radius: Infinity`, because their numbers were measured on the best
+       ground in the world and mean nothing off it.
+     - The first draft of the fixture stocked every band to 200 food and
+       firewood, on the reasoning that most callers want a fed band. Exactly
+       one of the twenty-two copies stocked. `buildings.test.ts` and
+       `winter.test.ts` went red at once — both exist to measure what SCARCITY
+       does, and a fixture that quietly fills the larder does not fail them,
+       it answers a different question and reports the answer as theirs. It
+       now asks: `stock` is off by default.
+
+     **Then the same shape again, one layer down: 103 → 88.** With the site
+     search shared, the next commonest failure was `expected null not to be
+     null` — a verb refusing because the band was not where the test believed
+     it had put them. The line that put them there is
+     `state.party.at = { ...n.at }`, written out 31 times across seven files.
+     The SIM has no such problem: `standingIn`, `standingOn` and `atHome` each
+     branch on the flag and have since 8.2c. What was never converted was the
+     tests' half of the same idea — not "where am I" but "put me there".
+
+     `test/fixtures/stand.ts` is those three predicates inverted:
+     `standBeside`, `standOn`, `goHome`. Each CHECKS ITSELF against the
+     predicate it inverts before returning, and that is the whole design — a
+     fixture that puts the band in the wrong place otherwise fails four lines
+     later inside the verb under test, as a null with no explanation.
+     `neighbours` alone went 24 → 6.
+
+     **And the self-check immediately found a real defect, which is what it
+     is for.** `haunt.test.ts` went UP, 2 → 5, all of them
+     `ruin pl_ruin is not on the coast — it has no stop`. `haunt()` pushed its
+     ruin with a hex and no stop, so `placeHere` — which matches on stop —
+     could never see it. **A challenge code's ghost put a grave on the coast
+     that nobody could ever walk to.** Exactly the shape of the `MAKE_WAY`
+     find in job 2, and invisible for the same reason: the feature still
+     "worked", it just could not be reached.
+
+     Fixed in `hauntedStop`, and the fix had a design call in it. On a line
+     the ghost has NO ADDRESS TO HONOUR: `ghostOf` cuts it from
+     `settlement.at`, and on a coast that is the frozen landing hex, so every
+     coast ghost carries the same meaningless pair and the `g<q>,<r>` slot in
+     a challenge code says nothing. So the stretch is DERIVED from the ghost's
+     own fields through the seeded stream — everyone pasting a code gets the
+     same coast, which is the requirement that actually matters. The
+     alternative, widening the code format with a stop, was rejected: codes
+     get retyped with a thumb, old codes must keep working, and the extra
+     field would carry a fact the coast does not have. `haunt.ts`'s own rule
+     about not moving a ruin because its position is "the one thing the ghost
+     is actually saying" has no force here — there is no such thing being
+     said. Rule 2 still holds: a coast with no stretch free simply has no
+     ruin, quietly.
+
+     **Then `places`, the biggest of what was left: 88 → 70, and that file is
+     now 38/38 on BOTH builds.** It took four sim defects with it, none of
+     which any test was asking about:
+
+     - **Duplicate place ids.** The hex seeder walks `PLACE_KINDS` once and
+       puts down at most one apiece, so `pl_<kind>` is a unique name. The
+       coast asks every stretch independently and a coast with two towns is
+       ordinary — and the id template was carried across unchanged. Two places
+       called `pl_town`; `placeById` returns the first; a band standing in the
+       second was told `away` by the first, twelve stretches back. Now
+       `placeIdFor` puts the address in the name on a line.
+     - **The band's own ruin, unreachable and unnamed.** `abandonSteading`
+       filed it under `ruin:<hex>` with no stop — so on a coast every hall
+       ever walked out of was `ruin:0,0`, and none could be stood on. The
+       ghost's ruin, one commit earlier, was the same bug. `ruinIdFor` and a
+       carried `stop`.
+     - **`tradeBlocker` compared hexes.** `sackBlocker` was converted in 8.2c;
+       its sibling four functions down, asking the identical question, was
+       not. Every market in the world answered "you are not here".
+     - **`arriveHome` compared hexes**, and in the generous direction: on a
+       coast `home.at` and `party.at` are both the frozen landing hex, so an
+       expedition folded itself back into a steading it was twelve stretches
+       away from.
+     - **`conditionHolds` read the landing's terrain from everywhere.**
+       `terrain` is the commonest condition in `data/events`, so the entire
+       drawable card pool was pinned to whatever the beach happened to be for
+       the length of a saga. One call site in that file had been converted in
+       8.2c and this one had not.
+
+     And one worldgen defect with a bar attached. **291 of 399 coast places
+     stood on ground their own kind forbids** — iron seams on the open strand,
+     monasteries in bogs — because `placeAt` never consulted `kind.ground`,
+     which the hex seeder has always honoured. Fixed, and the fix immediately
+     broke `route.test.ts`'s "every coast gives the band somewhere to go":
+     forest is a sixth of every coast and no kind will stand on it, so four
+     coasts in two hundred fell below the floor. **The bar was not lowered.**
+     `PLACES_FLOOR` guarantees it instead — the far end first, where
+     `richness` already says the good things are. The hex seeder never needed
+     one because it SEARCHES the island; asking each stretch on its own is a
+     different failure with the same remedy, and raising the odds would have
+     moved every coast to fix four.
+
+     **And then the procession bar caught what the unit tests could not.** It
+     walked twelve stretches and saw nothing — the monastery it used to sight
+     at stretch 5 wants shore, and that stretch is not. Measured over two
+     hundred coasts: the chance of anything standing within eight stretches
+     had fallen from 72% to 42%. The ground rule bites hardest CLOSE IN, where
+     `minFromLanding` has already narrowed the kinds to the two that want
+     shore — which is exactly where a band spends its first season.
+
+     That is a bug this project has had before, in the other coordinate
+     system: the hex map floored every kind and ceilinged none, so places sat
+     a median of 30 hexes out and 0.06 of them were ever seen. So `PLACES_NEAR`
+     is the same remedy — at least one place within eight stretches, filled
+     nearest-out rather than farthest-in. Within eight: **72% → 99%**; within
+     thirteen: 95% → 99%; median six per coast; nothing on forbidden ground.
+     Better than before the correctness fix on every axis.
+
+     One structural consequence, and `coastWalk.test.ts` named it exactly:
+     "two derivations of the same fact would be two facts". The guarantees
+     live in `placesOn`, so `placeAt` stopped agreeing with the world. It now
+     DELEGATES to `placesOn` rather than rolling its own answer — one
+     derivation, asked two ways.
+
+     **`scripts/bars.mjs` had a hole of its own**, found by falling into it.
+     It runs the first twelve bars against whatever is in `dist/` and puts the
+     ordinary build back at the END — correct for as long as nothing else ever
+     built. A run straight after `npm run publish:coast` reported six red
+     bars: `sea`, `pinch`, `way-look`, `repaint`, `steading` — precisely the
+     five a coast has no subject for — plus `landscape` falling over. Six
+     false failures. It now builds the ordinary page first and refuses to run
+     if that build fails. All 15 pass.
+
+     `test/fixtures/stand.ts` grew to six verbs along the way — `stepOff` and
+     `standIn` joined the first four, the latter because a line cannot be
+     PAINTED, only walked to, and painting the tile underfoot is how every
+     terrain-conditioned test set itself up.
+
+     **And one instrument that was wrong again.** Measuring word-of-mouth
+     reach from `neighbours[0]` said 12 of 203 places were tellable on a coast
+     and the channel was dead. `neighbours[0]` is the one nearest the LANDING,
+     and coast places skew far out by the richness curve — it is the neighbour
+     structurally least likely to have anything to say. From each place's
+     NEAREST neighbour the walk is a median of 6 days against `TOLD_RANGE`'s
+     12, p75 8, max 17. The channel is wide open; no constant needed changing;
+     the probe was the problem. Third time this session.
+
+     **Then `colony` and `strandhogg`: 70 → 54, both files green on both
+     builds.** `colony`'s six were one unmigrated site search, but not one the
+     shared fixture could simply absorb: this file carries BOTH searches on
+     purpose and documents the difference — `settledWell` is "what a player
+     who read the panel and spent a week looking would end up with",
+     `settled` is "the first hex that will have them, which is a different and
+     much bleaker measurement", and several of its claims are about a POOR
+     steading. So the fixture learned `pick: 'first'` rather than flattening
+     them. Two more claims were converted rather than translated: a coast
+     steading's plots are a bag with an INDEX (`makePlots` says so and writes
+     `{q: i, r: 0}` deliberately), so "the hall is in the middle" has no
+     middle to be in — what survives is one hall, one watchpost, no two the
+     same, which is what `plotsFor` and the day's labour actually read.
+
+     **`strandhogg` needed a third worldgen guarantee, and its own test said
+     so in as many words.** The sim was already converted — on a line there is
+     no afloat, so the two ways into a place are how you ARRIVED, and
+     `party.bySea` is the gate. But `a coast worth falling on` holds that
+     EVERY world has something strandable, and its header explains why: "a
+     world with nothing strandable in it makes the whole verb unreachable
+     content there, and no amount of policy fixes that. If this ever goes red,
+     stop looking at the bot." Measured: 189 of 200 coasts. The hex map is 200
+     of 200 structurally, because it seeds one of each kind and so always has
+     a monastery and a town; a line that rolls each stretch has to be told.
+     Now 200 of 200, and the fill prefers a guarded kind rather than raising
+     any odds.
+
+     **Then `neighbours`: 54 → 48, and that file too is green on both
+     builds.** Five of its six were addresses again, and every one had a
+     converted sim behind it. Two things came out of it worth keeping:
+
+     - **A test that was measuring the wrong thing on BOTH builds.** "Next to
+       nothing the morning after" asserted the second sack of a camp pays
+       under 15. Measured over forty seeds, the second haul runs 10 to 25 on
+       the HEX build alone — the threshold held on `crop-again` by luck and
+       broke the moment a coast drew a neighbour with more might. What is
+       actually true is tighter and identical in both worlds: both sacks fall
+       on the same day, so `sackCamp` derives the SAME rng for each and the
+       only thing that differs is how full the camp was. The second haul is
+       `CAMP_PICKED_CLEAN` of the first — 17-21% on hexes, 17-21% on a coast.
+       The test now pins the ratio.
+     - **`found` IS the knowledge on a line, and that had to be reasoned
+       about rather than translated.** The hex claim is that a marker under
+       fog is not knowledge, so being called on marks the hex seen. A line has
+       no fog and `revealNeighbour` deliberately writes nothing — so the
+       question became what could still go wrong here: a household met and
+       not actable-on. Neither road consults `knownStops` — the chart draws a
+       neighbour on `n.found` alone, and `walkOptions` never asks whether a
+       stretch is known — so the claim that carries the weight is that the
+       stretch is a real one on the route.
+
+     Two more of my own instruments were wrong, both caught by the sim
+     disagreeing: the elbow walk went to ±`CLAN_ELBOW` when `insideElbow` is
+     `< CLAN_ELBOW` (their own stretch and one either side, exactly what the
+     hex arm walks), and it did not filter out dry stretches, so it read
+     `foundBlocker`'s correct `'dry'` as a hole in the elbow — the hex arm has
+     always filtered for that reason and says so.
+
+     **Then `ways` and `rival`: 48 → 42.**
+
+     `ways` had no subject — `MAKE_WAY` is withdrawn on a line (job 2 above),
+     so three tests were measuring a verb that is not offered. They are not
+     skipped silently: a coast-only test holds the WITHDRAWAL positively, and
+     asks it of every stretch rather than of one hex of forest, which is a
+     stronger claim than the three it stands in for. It is also where a
+     line-shaped made way lands if the open question below is ever decided.
+
+     **`rival` was the interesting one, and it was an instrument again — this
+     time one that had been wrong on BOTH builds since the file was written.**
+     The coast rival looked inert: 1.4 stretches held by day 200 against
+     `sim/rival.ts`'s recorded median of six. The recorded number was right.
+     `idle()` could not FIGHT — it met its first raid, found CAMP refused in
+     BATTLE mode, and broke. Of twenty seeds only one ever reached day 150;
+     the rest stopped between day 8 and day 62 with the band alive and a
+     battle on the table. Every number that file has printed was taken over
+     however many days happened to pass before somebody came over the hill.
+
+     With a loop that fights: 4 stretches by day 200, 6 by day 320 — exactly
+     what was recorded when `CLAIM_EVERY_STOPS` was chosen. And the cost
+     measurement, put on his own clock rather than a flat sixty days, reads
+     3.9 stretches against the hex map's 4.0 hexes.
+
+     Two more of that file's tests were passing VACUOUSLY on a coast and are
+     now real: "lands far enough off" measured a hex distance to the
+     placeholder `(0,0)` and happened to clear the bar, and "keeps his claim
+     in one piece" walked `claims`, which is empty on a line because the
+     stretches live in `claimStops`. The second now also holds that his
+     holdings are a contiguous block rather than scattered flags, which is
+     what `nextClaimStop` enforces and nothing was checking.
+
+     **Then the parity decision, which removed ten readings rather than
+     converting them: 42 → 32.** `parity`'s seven and `coast`'s three were
+     never work — they measure a world the coast build does not have, and the
+     three even say so in their own describe names ("with the flag off"). With
+     the retirement decided they skip on a coast build and run normally on the
+     default one, so the hex game keeps its drift bar. Each skip names the
+     ROADMAP section, and a test fails if that section stops existing —
+     verified by deleting the heading and watching it go red.
+
+     **Then `site`, and there was no decision to make: 32 → 25.** It was
+     recorded above as possibly-wasted work on the hex site search. That was
+     wrong. `src/sim/site.ts` is the FOUNDING file — of thirteen exports only
+     `siteReport` dies with the hexes; `stopReport`, `foundSettlement`,
+     `foundBlocker`, `canFound`, `nameFor`, `atHome`, `verdictFor` and the
+     rest all survive and already branch. Of the seven failures exactly one
+     had no subject on a line ("the sea is never a site" — a route has no
+     ocean, as `foundBlocker` says).
+
+     And ELEVEN more of that file's tests were passing while reading the hex
+     island — `siteReport` over `world.tiles`, which a coast build still
+     generates. Not vacuous: measuring the wrong world and reporting green.
+     `readAll` now returns whichever world this build is, and with it pointed
+     at the coast the milestone's own bar failed for the first time.
+
+     **The bar was right and the coast was miscalibrated.** Measured over 260
+     stretches against 11,639 hexes:
+
+     | | hex mean (sd) | coast mean (sd) |
+     |---|---|---|
+     | harbour | 0.5 (1.30) | 4.1 (0.99) |
+     | water | 0.8 (0.81) | 3.1 (1.59) |
+     | timber | 2.5 (1.38) | 1.5 (0.74) |
+     | **total** | **7.4 (1.53)** | **14.2 (2.21)** |
+
+     None of that is a bug. `stopSurrounds` gives every stretch a ring two
+     parts ocean, so every stretch has a harbour and a flank the sea holds —
+     a coast IS a harbour. What broke is that `VERDICTS` is calibrated to a
+     mean of 7.4, so a coast read **Rich ground 60%, Good 35%** and the word
+     carried no information at all. The totals spread perfectly well (min 9,
+     max 19 — a wider absolute range than the hex map's); only the words hid
+     it. `COAST_VERDICTS` re-cuts the bands at the same PERCENTILES the hex
+     bands sit at (measured p10=11, p64=15, p97=18, p99=19), keeping the shape
+     of the experience rather than the numbers. Good-or-better is now 7.9% of
+     foundable against the hex map's 3.7%, inside the bar's 1–25%.
+
+     **And one trade-off had MOVED rather than vanished.** "Soil and
+     defensibility pull against each other" asserts two pairs. Soil/defence
+     survives (-0.44 against -0.54). Timber/defence does not: -0.73 on hexes,
+     -0.20 on a line, because two ocean in every ring leaves defence almost
+     flat (sd 0.58 against 0.99). But timber/HARBOUR is -0.68 on a coast — the
+     strongest pull in either world, and a better decision than the one it
+     replaces, because a stretch thick with wood is a stretch with nowhere to
+     beach a knarr and the player wants both on day one.
+
+     **What is LEFT is 3, and they are one bug rather than three.** The tail
+     ran 25 -> 18 -> 3 across 2026-08-27, and almost all of it was the same
+     shape as the fixture that started this job: an instrument written for a
+     coordinate system, over-reading on a line. The ones that turned out to
+     be REAL gaps in the game rather than in a test are worth naming, because
+     each was invisible while its bar was measuring the wrong world:
+
+     - **`doFish` priced the catch by the country BEHIND the beach.**
+       `terrainDef(countryHere(state)).fish` reads right on a map — a meadow
+       has `fish: 0` because a meadow is inland — and on a coast it made one
+       sea into seven. Measured: a day's net food fishing bare water was
+       +1.98 off a shore stretch and BELOW ZERO off all five other countries,
+       and the same fishing ground paid 7.29 off a beach against 2.1 off a
+       valley. A coast band fishes from the beach, so the shore's own number
+       is what the sea off any stretch is worth; it is one price now.
+     - **`WALK` made no sound.** `cuesFor` only knew `MOVE`, so a coast band
+       walked and rowed in silence. The line's own arithmetic gives the same
+       distinction the tile used to: one stretch is priced at its leg and
+       anything further at a day at the oars, so a jump is a row.
+     - **`WALK` never called `reveal`.** The pass that meets a neighbour,
+       meets the other landnamsmadr and picks a place out from a ridge ran
+       only on days the band stopped to forage. `markTrod` learns the next
+       headland either way, so the COUNTRY still appeared and the hole did
+       not show — the people in it did not, and `spotted` was never emitted
+       by a played run at all.
+     - **`WALK` emitted no `marched` beat**, so nothing that animates the
+       road had anything to animate, and rowed stretches were never counted
+       into `seaDays`.
+     - **Nothing was stopping a lesson before the player had taken a turn.**
+       The rule was in a comment for years and true only by luck: on the map
+       a fresh band lands with no fresh water, so `canSettle` was false and
+       `the-ground` stayed quiet. A coast landing carries a beck five times
+       in six, the accident stopped working, and the missing gate showed. It
+       is a rule now, on both maps, and three of the reachability builders
+       turned out to be constructing states no run reaches.
+
+     The three that remained — `sickness`, `winter`, `expedition` — were all
+     the site-report calibration, and that is DONE: see **THE COAST IS
+     CALIBRATED** under "Where we are now". A coast build is green on every
+     test. What is left of this milestone is the deletion and the
+     `SAVE_VERSION` break, not the conversion.
+  2. **The bars — done, and the count I first wrote was wrong.** I said
+     twelve of fifteen drive the hex renderers. That was read off imports
+     rather than measured. Run against a coast build, **five** fail: `sea`,
+     `pinch`, `way-look`, `repaint` and `steading`. The other ten pass
+     unchanged, because 8.1 already moved the battle to a line and `offline`,
+     `larder`, `landscape` and `reach` never cared what the map was made of.
+
+     Each of the five was decided on its own terms rather than ported:
+
+     - **`sea`** asks that the map's promise afloat equals the sim's
+       permission. On a line there is no afloat — rowing is a step, not a
+       state — so the claim has no subject. It is not lost: `strip.mjs`
+       already holds the same shape of claim, checking the stretches the
+       chart OFFERS against `walkOptions`.
+     - **`pinch`** asks that the map holds the point under your fingers. The
+       procession has no camera at all (`centreOn` is a no-op) and the strip
+       scrolls rather than zooms, so there is nothing to pinch. The
+       arithmetic it guards still matters to the battle field, which
+       `pan.mjs` drives and which passes on a coast build today.
+     - **`way-look`** turned out not to be a bar problem. See below.
+     - **`repaint`**'s live claim — a still map must not be redrawn — moved
+       into `procession.mjs`, which now watches the road's `work` counter
+       across five idle repaints AND after a walk, because a counter that
+       never moves passes the first half perfectly.
+     - **`steading`**'s brush claim — moving people must not reload the
+       painting — moved into `hearth.mjs` the same way, watching painted
+       against kept.
+
+     **And `way-look` found a real defect rather than a stale selector.**
+     `MAKE_WAY` was still being OFFERED on a coast, where `party.at` is
+     frozen at the landing hex: "Break ground" appeared exactly once a saga,
+     cost a day, marked a hex nobody was standing on, and could never appear
+     again. `wayable(from, to)` could never be true for any pair either, so
+     no journey was ever shortened — a day spent on nothing, which is the one
+     thing `sim/ways.ts`'s own header says a way must never be. It is
+     withdrawn on a line rather than half-converted.
+
+     A made way would SUIT a coast — "the journey you take again" is exactly
+     what a leg walked out and back is. What stopped it being written is a
+     real tension: `route.daysBetween` is pure and a made way is history, so
+     discounting the walk leaves the chart, the road and the strip all
+     drawing the raw leg while the price disagrees. That wants deciding.
+     Recorded as an open question rather than patched.
+  3. **The world.** `worldgen.ts`, `world.tiles`, `world.seen`, `world.trod`
+     and the fog are the hex map's own memory, and the parity fixture's
+     `world` facet hashes them.
+
+     **The parity half is now DECIDED — see "The parity vectors retire with
+     the hexes" above.** They are deleted in job 4 with the hex layer rather
+     than regenerated against the coast, so this is no longer a conversation
+     with the port. What made it one was the assumption that the vectors could
+     be carried over; measurement said otherwise — 43 of the 48 checkpoints
+     are recorded scripts of HEX actions that a line cannot replay, and the
+     coast fails all seven runs on the one `worldHash` line before reaching a
+     checkpoint at all.
+
+     **DONE 2026-08-28.** The coast build was still generating the entire hex
+     island — 1872 tiles in every coast save, `newGame` calling
+     `generateWorld` with the flag only branching later at `seedPlaces`. It
+     is **77.2 kB of an 81.1 kB save, 96% of it**, and the game reads none of
+     it: `seedPlaces`, `placeNeighbours` and `makeRival` all take the seed and
+     answer in stops, and the five site measures read `stopReport`.
+
+     A coast save is **3.3 kB now, twenty-five times smaller**, and `v54`
+     strips the island out of saves that already exist. The migration only
+     fires when `COAST_IS_A_LINE`, and that is not a hedge: the two pages are
+     two games with two slots, and the hex one navigates by those tiles —
+     stripping them there would delete the country out from under a band
+     mid-saga. `generateWorld` is untouched on the hex build, so worldgen's
+     hash still holds.
+
+     **Sixty-two tests across twenty files went red, and every one of them was
+     a test of the HEX systems** — worldgen, the fog, hex movement, the
+     skerries, the hex fishery, the map renderer, the ways, the chart. They
+     had been green on a coast build the whole time, which is the part worth
+     saying out loud: they were passing against a country the game does not
+     have. Guarded with `RETIRED_WITH_THE_HEXES` rather than deleted, because
+     the hex build still ships behind `VITE_HEX=1` and these are what keep it
+     honest until it goes; job 4 deletes the blocks and the guard together.
+
+     **And emptying the world exposed four real coast bugs**, each invisible
+     while a hex island happened to be lying underneath:
+
+     - `newGame` still ran the opening fog reveal on a coast, writing the
+       landing into a `seen` map nothing reads — and once the landing became
+       `(0,0)` it scribbled on the key every coast placeholder shares.
+     - A raid on the steading was fought on `world.tiles[settlement.at]`,
+       which on a line is the placeholder: every hall defended itself on the
+       LANDING's ground, and then on a bare `?? 'meadow'`. It reads the
+       steading's own stretch now.
+     - Every strandhögg was fought on the literal `'shore'` for the same
+       reason — a place's `at` is a placeholder, so the lookup never hit.
+     - **The battle's RNG was keyed by `key(state.party.at)`.** On a line that
+       is one placeholder, so two fights on the same day at opposite ends of
+       the coast drew from the SAME stream. It hid while the island existed,
+       because the placeholder was then a real landing hex and merely constant
+       per seed. Keyed by the stretch now.
+
+     Two battle bars moved when that key changed, and both turned out to be
+     instruments rather than regressions. "A maimed warband fights worse than
+     a whole one" was fought at the hardest difficulty and read **0 of 14 wins
+     on both arms** — no signal at all — so it fell through to a headcount
+     that measures the opposite of its claim, because a maimed band's nerve
+     breaks sooner and a band that runs early loses fewer people. Fought at a
+     winnable difficulty it reads 5 wins against 4, and the headcount agrees.
+     And "a fight you were meant to win is usually survivable" was a RATE
+     asked of twenty-four fights, where the standard error is about ten
+     points: the same machinery on a different draw read 13 fatal of 24 where
+     it had read 7. At a hundred and twenty fights the two builds agree — 36
+     of 120 against 31 — and neither of the old numbers was the truth.
+
+     The maimed bar had the same disease twice over. Even once it was fought
+     at a winnable difficulty, fourteen fights read 5 wins against 4 on one
+     build and 6 against 7 on the OTHER — the same claim coming out both ways
+     round, decided by which seeds were in the bag. At ninety it is 48 against
+     35 on a coast and 56 against 45 on the map, and the headcounts agree.
+
+     **And two browser bars had been passing on luck.** `larder` hunts the
+     same ground six days and reads what the deed sheet says about it — but a
+     day of hunting can be interrupted, and on day eight this seed now meets a
+     warband. The bar had no way through a fight, so it reported "could not
+     read the Hunt deed at all", which is a true statement about the screen
+     and a false one about the larder; it fights its way back to the road now.
+     It also clicked Act unconditionally to open the sheet, which TOGGLES it,
+     and worked only while the sixth hunt happened to deal a card whose
+     dismissal closed the sheet first.
+
+     **`port/parity.json` was regenerated, and only the hashes moved** — 48 of
+     them, one per checkpoint, which is `SAVE_VERSION` flowing through every
+     state hash and nothing else. Generated from the HEX build, which is whose
+     reference it is. The file's own header says to regenerate when a change
+     is deliberate; a version bump is. The hand-over stays frozen, so the
+     Unreal side is re-fed when that work resumes rather than now.
+  4. **`src/hex/` itself — DONE 2026-08-28.** 94 files imported it, and the
+     audit that opened the job found the thing worth writing down: the biggest
+     single user left was the BATTLEFIELD, and it had not asked a hex question
+     since 8.1c put the fight onto ranks. `battle.grid` had exactly one reader
+     in the whole of `src/` — "is any tile a wall" — and every access to it
+     went through `key(offsetToAxial(col, row))`, a column and a row encoded
+     into a hex and decoded straight back. So the field became a plain
+     rectangle first (v55, not one RNG draw moved), which left `src/hex/`
+     load-bearing in exactly one place: the world layer this milestone exists
+     to delete. Then the flag folded, the world went, and the placeholder `at`
+     fields went with it (v56).
+
+  Doing 1 without 2 leaves the suite red; doing 3 without deciding what the
+  port is owed breaks a contract this project deliberately froze rather than
+  drifted. So it is staged on purpose.
   *Done when: `grep -r "hex" src/` returns nothing load-bearing, all bars
-  pass, and the changelog states which sagas stopped loading and why.*
+  pass, and the changelog states which sagas stopped loading and why.* — MET.
+  The grep returns comments only; all ten bars pass; the changelog says it.
 
 ### What does NOT change
 
@@ -1438,6 +2927,436 @@ the turn model, deterministic seeded RNG, the sim/render split, the mode
 stack, save discipline as a practice, zero external assets, the single-file
 build, mobile-first, and the oil renderer — whose natural projection is
 side-on, which is most of why this is worth doing at all.
+
+## The art queue — what makes it look like a game
+
+**Written down 2026-08-27, and the fact that it was not written down before
+is part of the entry.** Art 1–10 were carried in a task list, worked through,
+and closed without ever reaching this document. Anyone reading the roadmap
+would conclude the game's look was unplanned, and a session picking the work
+up could not have found it.
+
+**Art 1–10 are DONE**, and they are why the battle and the hex map look
+finished: fighters became people, the field became a place, the beat stream
+was choreographed, the shield wall was made visible, weather and season
+reached the battlefield, the sea moved, terrain got relief light, the map
+became the saga's artifact, life marks arrived, and season and day were
+unified into one CSS light pass.
+
+**And that is exactly why the coast looks basic.** The art pass ran against
+the hex renderers. Phase 8 then built three new views — the procession, the
+strip and the elevation — AFTER it, and none of them has had one. The band is
+drawn as small coloured discs on the road and in the yard; the road is mostly
+empty sky. That is not a conversion bug and no bar will ever catch it: the
+bars ask whether a thing is on the screen and reachable by a thumb, which it
+is.
+
+Ordered by how much they change what a player sees, not by cost:
+
+- [x] **Art 12 The steading becomes a place** — The elevation draws a yard, a
+  row of houses and some figures. It was not somewhere anybody lived:
+  no smoke, no ground worn by use, nothing that said a season had passed.
+  **Done 2026-08-28**, in two halves.
+
+  **The frame first, because it was broken before anything was drawn.**
+  Measured on the built page: a fixed 420x300 viewBox under `meet`
+  letterboxed 176px of a 382px slot at 390x844 — 46% black bands — and drew
+  a 161px postage stamp at 320x568; and since raising a building WIDENED the
+  viewBox, every building shrank the whole picture. Worse, the yard's ground
+  sat at y 228, which is inside the PAINTING'S SKY: `fieldOil` paints one
+  world with its horizon at `line.ts`'s ground line, and the battlefield
+  composes on it while the yard floated a brown rectangle over the clouds.
+  `GROUND_Y` is now THE painted horizon, and `composeYard` (pure, tested)
+  fits the viewBox to the slot's own aspect — zero letterbox at any size,
+  refit on resize by the same observer pattern the battlefield uses.
+
+  **Then time, as derived scene facts** — none stored, all from state the
+  sim already keeps: smoke over the hearth (walls standing and somebody
+  home), a path worn dark by feet (`(day - foundedOn) / 160`), turf walls
+  greening and thatch weathering (`/ 400` — wear is faster than growth, so
+  day 20 is raw earth and fresh-cut walls, day 200 a worn path in front of
+  greening houses), a woodpile counted off the actual firewood, field rows
+  tilled only when somebody holds the farmer job, and the children born
+  here, small by the door.
+
+  *Done when: a screenshot of day 20 and one of day 200 are obviously
+  different places, and neither needs a caption.* **They are:** day 20 is
+  one fresh brown longhouse on raw ground under a big sky; day 200 is a row
+  of six greened, weathered houses on a trodden yard. Both taken at
+  390x844; the frame bar was watched fail against the old fixed viewBox.
+
+  Left on the table, named rather than implied: every building is still the
+  same house SHAPE — a palisade drawn as a longhouse is a misdrawing this
+  item did not take on — and the byre keeps no visible stock. Both belong
+  to a per-building silhouette pass, which is smaller work now that
+  `house()` is the one place a building is drawn.
+- [x] **Art 13 One person, one face, everywhere** — Six people the player
+  learns to recognise, drawn the same way on the road, in the yard and in the
+  line. **Done 2026-08-28.**
+
+  The line above used to end "the work is mostly making the other two views
+  ask `render/figures.ts` for the same person rather than inventing
+  anything". THEY ALREADY DID. Both the procession and the elevation called
+  `figure()` for every person and both came out coloured discs anyway,
+  because `figure()` draws a fighter HEAD-ON: a round shield the width of the
+  whole figure with a helm peeping over it. That is exactly right in a shield
+  wall, where a wall of shields is what you are looking at, and at 26px on a
+  road it is a disc.
+
+  So what was missing was not a shared call but a second VIEW of the same
+  person. `render/look.ts` now owns the seeded derivation — shield ground,
+  paint, motif, cloak, and new with this: tunic, hair, beard, stride phase
+  and build — and `render/walker.ts` draws a body in profile with the shield
+  slung on its back. `render/shield.ts` draws the shield once for both. The
+  road and the yard are provably the same Ulf as the line, rather than a
+  lookalike.
+
+  *Done when: you can point at a figure on the road and say which of the six
+  it is, and be right.* **Measured, 400 coasts and 2400 people:** two people
+  in one band share a shield (ground, paint and motif) in 13.5% of bands —
+  five grounds times four paints times five motifs is a hundred shields, and
+  six draws from a hundred collide about one time in seven. Sharing a WHOLE
+  look: none, in 400. That gap is the whole reason a walker carries hair, a
+  beard and a tunic and not just a shield.
+- [x] **Art 11 Weather you can see out the window** — The travel view knows
+  the sky and the season and said so only in the status bar. **Done
+  2026-08-29.** The scene now carries `weather` and `season` as facts (the
+  same pure `weatherOn`/`seasonOf` the chip reads, so the window and the
+  chip can never disagree), and the view draws the sky in three coats: the
+  season's tint and the moving weather come straight from the battlefield's
+  Art 5 work (`fieldWeather.ts` took any bounds all along, and the `.weather`
+  CSS — loop, stillness freeze, reduced motion — was never battle-scoped);
+  new is the STATIC coat, because Art 5's gusts and flakes are shown only by
+  their animation and this item's bar is a claim about the picture, not the
+  motion. A gale washes the light slate, darkens the sea and breaks it with
+  whitecaps; a hard frost washes it pale and rimes the road over — the one
+  static mark that tells a still frost from a still sea fog; sea fog hazes
+  everything. Fair adds nothing, and thaw stays a fact about the snowpack.
+  `scripts/procession.mjs` now steers by `landnam.sky()` to find a gale, a
+  frost and a fair day and reads the marks off the screen — watched fail
+  (gale found, zero gusts, zero wash) before the view was wired.
+- [x] **Art 15 Night, and the turning of the day** — **Done 2026-08-29**, and
+  the premise needed correcting first in two ways.
+
+  **There is no hour in this game.** `day` is an integer and the atomic unit
+  of play — the "everything is turn-based" pillar — and nothing in `src/sim`
+  knows about a time within a day. A clock would mean a new field, a save
+  bump, and a concept the sim has no use for. **And "the light pass" was
+  half a thing:** what Art 10 left behind is the battlefield's STATIC light,
+  a fixed low sun and a vignette, plus `seasonTint` — which travel has used
+  since Art 11 landed the day before this. There was no day/night pass
+  anywhere to be reused.
+
+  So the light runs off the two facts the game already has, and both are
+  truer to the setting than a clock would be. THE SEASON, because at these
+  latitudes the turning of the day IS the turning of the year: a midwinter
+  day here is a few hours of blue twilight and a midsummer night never gets
+  properly dark, so `lightAt` gives a winter DAY less light than a summer
+  NIGHT and gives the light nights no stars at all. And WHETHER THE BAND HAS
+  CAMPED, because `party.hasCamped` has been in state since the gathering
+  work and survives from CAMP until the next WALK — a night trigger that was
+  already there and drew nothing.
+
+  Camp now brings dusk, stars in the seasons dark enough for them, and a
+  fire that is drawn ABOVE the light wash, because a light source is not
+  dimmed by the night it lights. Measured before building: the road drew the
+  same 108 nodes walking and camped. `render/light.ts` is pure and tested;
+  `scripts/procession.mjs` camps through the real Act sheet and reads the
+  wash, the fire and the stars off the screen.
+- [x] **Art 19 Blows that land somewhere** — **Done 2026-08-29.** Art 3 gave
+  the fight its choreography — swings sweep, thrusts run flat, thrown spears
+  fly, a turned blow sparks off the rim — and then a blow that GOT THROUGH
+  produced a flash on the figure's centre and a number over its head. Every
+  blow in the game landed in the same place, because that is where `spotOf`
+  answers and nothing asked for anywhere else. A hit reported, not a blow
+  struck.
+
+  Three things now. A blow lands in a PLACE — helm, shield, or low under the
+  rim — derived in `render/fx.ts` and seeded off the beat, because the sim
+  must not grow a field for decoration (beats live in the save and the parity
+  vectors) and a replay has to show the same blow in the same spot. THE MAN
+  TAKES IT: a jolt along the line the blow came in on, scaled by the damage
+  and capped well under his own width, which is the one effect in the file
+  that reaches out and animates a fighter rather than spawning a node. And a
+  solid hit throws blood — restrained, a few dark marks gone in half a
+  second, this being a saga rather than a gore game.
+
+  **A real inconsistency fell out of it.** `fx.ts` carried a comment saying
+  it "has to agree with `render/battle.ts` about [the figure size] or a blow
+  lands somewhere near the man who threw it. One import rather than two
+  constants" — and it did not agree: it laid effects out at `RANK_GAP * 0.42`
+  while every fighter is drawn at `FIGURE_R`, `RANK_GAP * 0.46`. Nine percent
+  small, near enough for a swing arc, not near enough for an item whose whole
+  claim is that a blow lands on a place on a body. It is the same constant
+  now.
+
+  `scripts/field.mjs` holds it, and had to record with a MutationObserver
+  rather than a poll: **measured, a loop sampling every 70ms across 2.8s of a
+  real fight saw ZERO of eight blows the beat stream proves were struck.**
+  Watched fail with the recoil disabled — "11 blows landed and nobody moved
+  — they read as numbers".
+- [x] **Art 14 Gear you can see** — **Done 2026-08-29**, and the premise
+  turned out to be that the game already knew what everybody carried and
+  showed none of it. Three facts, all in state, none of them stored for this:
+
+  **Hand-axes.** `sim/ranks.ts` says plainly that "`throw` is a hand-axe. It
+  reaches anybody, which is what makes the back rank worth standing in", and
+  `Combatant.throwsLeft` counts them. The whole of that resource reached the
+  screen as a digit on a button — "Throw 1". They hang on the belt now, one
+  per throw left, so it is gear you watch being SPENT, which is the only kind
+  that changes how anybody plays.
+
+  **Who bears arms.** `Person.bond` has always said it and `sim/joining.ts`
+  is explicit that growth "buys labour, never a wider shield wall" — yet the
+  road drew a painted war shield on the back of every walker, hands included.
+  A picture telling a lie about who fights. Only the sworn carry one now.
+
+  **What a job puts in your hands.** A woodcutter and a fisher were the same
+  silhouette; they carry an axe and a net. The tool is a field on the JOB
+  (`data/jobs.ts`), so a new job arrives with its own gear and `render/gear.ts`
+  is the only place that draws — the data-driven pillar, kept. The warrior is
+  the one job with no tool, deliberately: his gear is the shield and spear
+  every sworn man already carries.
+
+  `scripts/field.mjs` holds the headline as a CORRESPONDENCE rather than a
+  presence — a picture that always draws two axes is decoration, one that
+  draws what the sim says is gear — checking every fighter's axes against his
+  `throwsLeft`. Watched fail by drawing two regardless: "0 of 11 drawn
+  right". `landnam.work()` joins the debug levers for the same reason `stock`
+  exists: a fresh steading is entirely idle, so a tool in a hand is
+  unreachable without six taps through a roster.
+- [x] **Art 17 The saga as an illuminated chronicle** — **Done 2026-08-29.**
+  It was styled as a list, and the list was the smaller half of the problem.
+  Measured on a real sixty-one-day run: 87 entries, 61 of them `plain`, and
+  the screen a player lands on read
+
+      51  We made camp and cut 1 of firewood.
+      53  a long swell coming in with no wind behind it — a gale by morning
+      53  We made camp and cut 1 of firewood.
+      55  Thorbjorn's shield-arm broken had mended.
+      55  We made camp and cut 1 of firewood.
+
+  The camp line five times in one screen, the forecast twice word for word,
+  and a man's arm healing given exactly the same weight as a night's
+  firewood. The shape of a saga — its years, its winters, the things worth
+  telling — was all in the data and none of it on the page.
+
+  `render/chronicle.ts` (pure, tested) arranges it the way a scribe would.
+  THE YEAR IS THE UNIT: seasons under their own rubric, "The first winter",
+  which is the game's own name for its clock. THE DAY'S BUSINESS GATHERS: a
+  season's fourteen identical camps are one line and "×14", dated to the
+  night it started. WEIGHT FOLLOWS MATTER: the routine sits back small and
+  dim, `good`, `grim` and `saga` keep their voice, and one illuminated
+  capital a season goes to the first line worth telling — a scribe does not
+  gild "we made camp". Measured after: the same run's 61 routine lines
+  become 13, all 26 told lines untouched and in order.
+
+  **The bar is that arranging a record must not falsify it.** A player's saga
+  is their own account of their run, so nothing is dropped and no told line
+  ever moves — only repeated ROUTINE lines lose their place in the queue
+  between other routine lines, which is not information. `scripts/procession.mjs`
+  adds up every count on the page against `state.saga.length` and was watched
+  fail on a version that quietly dropped the routine to read better: "the
+  chronicle shows 9 of 12 entries — arranging the record has falsified it".
+- [x] **Art 20 The title and the ending as set pieces** — **Done 2026-08-29.**
+  Both screens were cards floating on black, and the title was the worse of
+  the two: a wordmark, a paragraph and three difficulty buttons. A player who
+  had not yet pressed anything had seen NOTHING of the game they were about
+  to start.
+
+  **The title is now the coast the typed seed actually makes.** Not a
+  painting of a coast — that seed's coast, from `createProcessionView()` and
+  `newGame(seed)`, the same view the road is drawn with. It costs nothing to
+  do honestly: a whole `GameState` is a pure function of a seed and about
+  3 kB, so the title can simply BE the travel view of the run being chosen.
+  Type a seed, or paste somebody's challenge code, and the country behind the
+  card changes to theirs.
+
+  **The ending got the chronicle's voice and the screen to itself** — a gold
+  rule under the saga's title, one illuminated capital on the first chapter
+  that opens with a letter, and an opaque ground. It had been sitting on the
+  ordinary 0.82 overlay wash, which left the travel HUD legible behind it: a
+  day counter and a half-cut "HEA" over the last thing the run had to say.
+
+  **Three things this got wrong, all found by measuring rather than by
+  reasoning, and all worth writing down:**
+
+  - **The first cut shipped BLANK and every bar stayed green.** The sentinel
+    that forces the opening paint was `''` — which is a real seed, the one
+    you have typed when you have typed nothing. The scene mounted at full
+    size, compared empty against empty, decided nothing had changed and drew
+    nothing. `\u0000` now.
+  - **The scrim was painting behind the picture it was meant to soften.** It
+    was written on `.overlay.title`, and a parent's background paints UNDER
+    its children. It hangs off `.title-scene::after` now.
+  - **The drop caps did not cover whole lines.** Both of them — this one and
+    Art 17's — were sized by eye at 34px on a 0.84 line, which is a float
+    about a line and a QUARTER tall, so the paragraph's second line wrapped
+    short around nothing. Both are written in `em` of the paragraph they open
+    now, with the box landing just under two lines.
+
+  Two claims added, both watched fail. `scripts/procession.mjs` reads the
+  title BEFORE anything is typed — written the other way round it went green
+  against the exact blank-title bug it was for, because typing a seed repairs
+  it — and checks that two seeds paint different countries, so a backdrop
+  that ignored the seed reads as "the title is wallpaper". The eleventh bar,
+  `scripts/ending.mjs`, starves a band to death in fourteen days and measures
+  what the ending screen does with the result; its first cut of the drop-cap
+  claim said only "between one line and two", which is the range the DEFECT
+  lives in, and went green against the capital it was written to catch.
+
+  Two more, found while looking: the wordmark ran to x=279 at 320 wide and
+  the shell's mute button starts at 268, so the final Á was under a button —
+  it scales with the viewport now. And the title picture stopped in a hard
+  horizontal line partway down the screen, which is faded out rather than cut.
+- [x] **Art 16 Knotwork, done as a pattern** — **Done 2026-08-29.** This item
+  exists because Art 8 tried it and backed out, and the backing-out is on the
+  record: *"the queue said 'parchment, knot border' — the frame is a plain
+  inset line, not interlace. Knotwork corners at 1px inset cost real nodes on
+  every paint of the slot and read as noise at phone size."*
+
+  **Both halves of that were re-measured and both are false — of a pattern.**
+  They are true of interlace drawn as SHAPES, which is what Art 8 costed.
+
+  A plait is periodic, so one period is a TILE, and a tile is a PAINT rather
+  than a tree. `src/render/knot.ts` draws it once — two strands in antiphase,
+  each a pair of half-period cubics, with the strand that passes UNDER split
+  at the crossing so it stops short and starts again after. It is set on the
+  document root at boot as `--knot` and `--knot-dim`, so `style.css` never
+  carries a second copy of the weave and the two cannot drift apart.
+
+  The cost, measured on the built page:
+
+  | | as a pattern | as shapes |
+  |---|---|---|
+  | the ending's rule (306px) | **0 nodes** | 84 |
+  | the chart's frame, 390x844 | **0 nodes** | 216 |
+  | the chart's frame, 320x568 | **0 nodes** | 180 |
+
+  The frame is the one that settles it: it is the exact border Art 8 declined,
+  it repaints every time the band takes a step, and it costs the document
+  nothing. Top and bottom only — turning the corner is where a woven border
+  stops being cheap and becomes a mitre problem nobody asked for.
+
+  **The second objection was answered by looking**, not by arguing. Five
+  weights were stacked on the real ending card and compared at 390x844: 18x9
+  is a chain, not a plait — the crossings are too close to separate; 30x12 is
+  a lazy wave that has stopped reading as interlace; 26x13 weaves best of all
+  and is thirteen pixels tall, which under a heading is a fence and not a
+  rule. **22x11 at 0.62 alpha** reads as two strands and still sits under
+  type. It is not noise at phone size. It was noise at the weight Art 8 would
+  have drawn it.
+
+  **The worst of it: what first shipped was not woven at all.** The strands
+  were drawn twice each — once fat in a "casing" colour meant to cut the
+  strand beneath, once thin in ink — and the casing was set to `transparent`
+  so a band could sit on any surface. A transparent stroke paints NOTHING. It
+  cuts nothing. Rendered at 8x beside a casing painted in the surface colour,
+  the shipped one is plainly a LATTICE: two strands crossing and overlapping,
+  brighter where they meet, with no over and under in it anywhere. It built,
+  it rendered, both bars were green, and the comment in the file said in so
+  many words that a transparent stroke "cuts exactly as well as a painted
+  one". Three screens of ornament went in on it.
+
+  The honest fix is the one an inker uses: a strand that goes under simply
+  STOPS before the crossing and starts again after. No casing, no surface
+  colour, no second copy of every path — and the tile now works on a card, a
+  chart or a picture without being told what it is lying on, which is the
+  property that lets one definition serve all three.
+
+  Four more, all caught by instruments rather than by reading the code:
+
+  - **The tile had ids.** The first cut cut the strand with two `<clipPath>`
+    elements — which makes it unusable twice in one document and unusable as
+    a CSS data URI at all, which is the entire mechanism.
+  - **`encodeURIComponent` does not encode parentheses**, and the ink is an
+    `rgba(...)`. It built, it rendered, and it worked only because the
+    `url()` is quoted; unquoted anywhere, the first `)` would have handed CSS
+    a third of a tile. `test/knot.test.ts` is what noticed.
+  - **Round caps beaded the rule.** Translucent ink doubles where strokes
+    overlap, and a round cap puts a half-disc past the end of every path —
+    at both junctions inside the tile and again at every tile seam — so the
+    band came out dotted with pips. Visible at 8x, invisible at 1x, so it is
+    asserted rather than left to the eye. Butt caps, which is also how
+    interlace is inked.
+  - **The frame's node claim failed by exactly one at both widths**, which
+    was the instrument: `slot.querySelectorAll('*')` counts the `<svg>`,
+    `svg.map *` counts only its descendants.
+
+  Watched fail on a build that actually built — the first sabotage left an
+  unused import, `npm run build` died on the tsc error, and both bars
+  measured the previous `dist` and passed. With `installKnot` writing to a
+  detached element instead, `ending` and `procession` both go red: "the root
+  carries no --knot, so nothing set the weave up", "the ending title paints
+  no band at all — the knot did not reach the page, and a missing custom
+  property fails silently", "the chart's frame carries 0 woven bands, not
+  two". That is the failure this needed a bar for: `var(--knot)` unset is
+  invalid at computed-value time, resolves to `none`, and every rule in the
+  game quietly goes back to nothing with nothing thrown and nothing logged.
+- [x] **Art 18 A hand that drew this** — **Done 2026-08-29.** The last item is
+  not a feature. It asks whether all of it looks like ONE HAND, and the only
+  way to answer that is to count.
+
+  Counted, before anything was changed: **93 distinct colours across the 18
+  files in `render/`, 182 times over, with 140 pairs closer to each other
+  than dE 8** — the threshold below which two colours are the same colour
+  written twice — spread across DIFFERENT files. **Twenty-six had two or more
+  authors. Five were exact duplicates, at dE 0.0, of a colour `style.css`
+  already had a name for.**
+
+  The gold was the worst of it and the worst of the gold was this session's.
+  `--gold` is `#d3a441` in the stylesheet; `battle.ts`, `fieldWeather.ts`,
+  `figures.ts` and `look.ts` each spell it out again; and `render/knot.ts`,
+  shipped an hour earlier by Art 16, wrote it a sixth way as
+  `rgba(211,164,65,...)` — the same colour in decimal. **One colour, six
+  spellings, added to by the item that was itself about having one place for
+  a thing.** It needed an alpha and hex has nowhere to put one, so it wrote
+  the colour out again, which is what always happens when the shared thing
+  cannot do what the caller needs. `palette.ts` has an `alpha()` now.
+
+  **Two files already disagreed about what a word MEANT**, which is worse
+  than any repeated literal: `gear.ts` had `const IRON = '#9fb0c4'` for an
+  axe edge and `look.ts` exports `IRON = '#5b6570'` for a helm. Same word,
+  same directory, two colours, and a reader of either would have been
+  confident and wrong. Both are wanted — a pale edge and a dark mass — so
+  they are kept and told apart by name.
+
+  **And a load-bearing pillar was being broken in the code.** CLAUDE.md's
+  first rule says a view that invents its own colours for a person has broken
+  it. `steadingView.ts` dressed the household's children with
+
+      const tunic = ['#7a6a4e', '#916f4a', '#6b5f4a'][rng.int(0, 2)]!;
+
+  — three of `look.ts`'s six wools, copied out, so a child could only ever
+  wear half the wardrobe and would go on wearing those three whatever
+  `look.ts` did next. They are named people with a seed of their own; they
+  were just not going through the file that decides what people look like.
+  `folkLook(name)` is the name-only door into the same wardrobe.
+
+  `src/render/palette.ts` is the ink: the colours with MORE THAN ONE AUTHOR
+  and no others. The sixty-seven that belong to a single painter stay with
+  that painter, because a shared name for a colour one place uses is
+  bureaucracy, not a voice. After: **26 colours with two authors became 0,
+  and the five exact duplicates of a named CSS colour became none.**
+
+  **Nothing changed on screen, and that was checked rather than asserted.**
+  The set of colours in the built page is 143 before and 143 after, with none
+  lost and none invented — the histogram is not the instrument, because a
+  constant defined once and referenced legitimately drops its count from 13
+  to 2; the SET is.
+
+  `test/palette.test.ts` is what makes a name the only spelling there is,
+  and it took two goes. The respelling claim caught a sabotaged literal
+  first time. The three wardrobe claims did NOT: they exercise `folkLook`,
+  which stays perfectly correct while a view quietly keeps its own list
+  beside it — watched against exactly the copied wardrobe this item removed,
+  all three stayed green. The claim that works reads look.ts's own `WOOL`
+  and `HAIR` and asserts no other renderer contains one of them.
+
+**The rule this queue inherits:** zero external assets. Every one of these is
+inline SVG or WebAudio, and the built page still has to run offline from a
+`file://` open. Art 1–10 all landed under that constraint and none of them
+needed to bend it.
 
 ## The next queue — audit of 2026-08-11
 
@@ -2092,11 +4011,12 @@ can actually kill you. Set from a design conversation after the 5.3
 measurements: the material survival loop cannot threaten a settled band,
 because by year two it has more labour than uses for it.
 
-- [~] **6.1 Winters that vary** — Each winter's severity is fixed by the run
-  seed and grows with the years; the mark is exact close to and vague far out,
-  so long-range stockpiling is a gamble rather than arithmetic. *Shipped, and
-  measured at no change to the curve — see the changelog. It is a prerequisite
-  for 6.2, not a fix on its own.*
+- [x] **6.1 Winters that vary** — **Finished 2026-09-03 (11.S5): the
+  variance the milestone shipped was silently switching itself off by the
+  fourth winter, and now it does not.** Each winter's severity is fixed by
+  the run seed and grows with the years; the mark is exact close to and vague
+  far out, so long-range stockpiling is a gamble rather than arithmetic. See
+  11.S5 below for the defect, the fix, and what it cost.
 - [x] **6.2 Hands** — The band can grow: thralls taken, survivors taken in, a
   neighbour's sons. Losing people becomes recoverable, which is what makes
   losing them affordable to inflict — and the labour surplus becomes a choice
@@ -2118,14 +4038,6493 @@ because by year two it has more labour than uses for it.
   deed the player takes when they are ready. The rule costs what it is
   worth — +3 word and +2 raiders, both proven to bind rather than vanish
   into a clamp. The Thing is a milestone in a saga now, not its final page.
+- [x] **6.5 Autumn is a reckoning** — **Done 2026-08-29.** Winter is what kills
+  a run — `starved` ends 53 to 76 of every 120 sagas against `slain` 2 to 5 —
+  so fighting's job is not to end runs but to make the winter worse. Both
+  pipes for that were already built and almost never opened: a lost raid takes
+  40% of the stores, and injuries already cut a day's work, but a typical
+  steading read **a raid about every 469 days in a game averaging 172**.
+  Raiders come before winter now, on one seeded day, drawn against the same
+  worth; the other seasons keep a quartered background hazard, so the risk
+  moved rather than grew. `slain` held at 2 throughout. The pressure this was
+  meant to add showed (`starved` 63 to 67) and was then given back by sparing
+  the mead hall (62), so what ships is the same difficulty, legibly timed.
+  Full measurement, the justification that did not survive it, and the two
+  faults it exposed — a sack burning the roof its own comment protects, and
+  the mead hall being a locked door rather than a loss — are in the changelog.
+
+- [x] **6.5b The wall is what spares the mead hall** — **RULED by Evan
+  2026-08-30, built the same day, and the measurement says it does not do
+  what it was chosen for.** Read this before citing it.
+
+  The rule itself is small and stands: `sackSteading` spares the roof always
+  and the mead hall only behind a wall, asked as `standsFor(state,
+  'palisade')` so upgrading to earthworks does not silently take the
+  protection away. A consequence worth naming: the palisade was never on the
+  spared list, so a walled band with nothing else to lose has its WALL fired
+  and the autumn after that the hall is open. They come through the wall
+  first and the hall second, and a wall becomes a thing you keep rather than
+  a thing you built once.
+
+  **THE NUMBER THE RULING WAS MADE ON WAS MEASURED IN A FIXTURE.** The
+  choice was put to Evan as "1 of 4 reach the endgame without a palisade, 4
+  of 4 with one", which is a true statement about `test/thing.test.ts` — a
+  harness that FORCES its build list — and a misleading one about the game.
+  In play, bands wall up long before they raise a mead hall: on even, 31
+  sagas of 60 ever raised a wall against 27 that ever raised a hall; on
+  fair, 51 against 44. The palisade is cheap, early, and answers a need the
+  panel surfaces; the mead hall is late and dear.
+
+  So the rule is very nearly unreachable. Over 120 sagas
+  (`PROBE: does the wall ever actually protect the hall`):
+
+  | | even | fair |
+  |---|---|---|
+  | raids that found a mead hall standing | 65 | 63 |
+  | ...of those, already behind a wall | **63** | **63** |
+  | ...standing open | 2 | 0 |
+  | **mead halls actually fired** | **0** | **0** |
+
+  And the long game came back BYTE IDENTICAL to the run before it — same
+  average days, same ends, same count past the third year, on all three
+  arms. That is not a small effect. Adding the hall to the burnable list
+  changes which building `rng.pick` lands on, so identical numbers mean the
+  list never changed.
+
+  **What it is worth, honestly stated.** It is correct, it is free, and it
+  bites for a player the bot never models: somebody racing the Thing who
+  skips the wall. It does NOT restore the pressure 6.5 was built for, and
+  the `starved` 67-against-62 delta this was sold on does not reproduce —
+  the baseline after 9.12a is 75 and the rule does not move it. **If autumn
+  should bite harder, the lever is elsewhere — most likely in what a lost
+  raid takes rather than in which building burns — and it wants measuring
+  before it is built.**
+
+  It ships with `wallMark`, in the file that owns the rule, so the build
+  panel says "The mead hall stands open — raiders would fire it, and the
+  Thing needs one" before the autumn it matters rather than after. A player
+  who loses their endgame to a fire and never learns the wall was the answer
+  is the crime the crowding and hearth marks exist to fix.
+
+- [x] **6.5c Which lever makes autumn bite — measured, and the answer is
+  none of them.** Asked 2026-08-30 after 6.5b turned out to be decoration.
+  `PROBE: where a raid actually costs a band` in test/balance.test.ts.
+
+  **The sack is not too cheap. It is one of the sharpest things in the game.**
+  Split by what autumn did, 200 seeds, first winter only:
+
+  | | bands | saw spring | food at the frost |
+  |---|---|---|---|
+  | never raided | 84 | 69% | 35 |
+  | raided, **held** | 38 | **92%** | 48 |
+  | raided, **lost** | 24 | **63%** | 23 |
+
+  Held against lost is the honest comparison — both arms were judged worth
+  raiding, so they are matched on the thing that confounds this. Losing costs
+  **29 points of first-winter survival and half the larder**. The confound is
+  visible in the table and worth keeping there: "raided, held" BEATS "never
+  raided", because raiders are drawn against `worth` and a raided band is a
+  richer band. Anyone comparing "lost" to "never" naively would read a
+  6-point effect instead of a 29-point one.
+
+  **But the other two levers are inert.** Swept on `even`:
+
+  | lever | from → to | what it did | overall spring |
+  |---|---|---|---|
+  | `AUTUMN_WORTH_K` | 0.155 → 0.80 | roll 15% → 57%, never-raided 58% → 36% | **74% → 73%** |
+  | `RAID_PER_POINT` | 0.5 → 1.0 | held 38 → 37, lost 24 → 25 | **74% → 76%** |
+
+  Quadrupling how often raiders come costs ONE point. Doubling how many they
+  bring costs nothing — it went up, which is noise.
+
+  **AND THE REASON IS THE SAME FOR BOTH, AND IT IS STRUCTURAL.** Every term in
+  the raid system is proportional to what a band HAS. `worth` is roofs and
+  stores, so a first-year band is rarely worth coming for. `raidDifficulty` is
+  roofs and stores, so `RAID_PER_POINT` has almost nothing to multiply. And
+  `SACK_SHARE` takes two fifths of a larder holding 23. **Raiders come for
+  plunder, and in the first year there is none.** Raising the frequency does
+  not raise the pressure because the extra raids land on bands too poor to be
+  hurt, and the never-raided pool it drains is the poorest bands, who were
+  dying anyway — the composition moves and the total does not.
+
+  **So 6.5's goal cannot be met from inside this system**, and that is worth
+  recording as a design fact rather than being tuned at again. The first
+  winter is the band against the land; fighting becomes the antagonist once
+  there is something to take, which the held/lost split says it already does.
+
+  **What IS cheap, if the goal is reach rather than pressure:** at
+  `AUTUMN_WORTH_K = 0.5` the never-raided share falls from 58% to 43% for one
+  point of spring — more bands get an autumn that is about fighting, at
+  nearly no cost to the curve. Not taken, because it is a change to how the
+  game FEELS and that is Evan's call, not a tuning fix.
+
+  **And making it spoil year one needs a raider who wants something other
+  than goods** — the land you are squatting on, or people rather than
+  property. That is new design, not a constant.
+
+  **The mistake this closes.** 6.5b was chosen on "1 of 4 reach the endgame
+  without a palisade, 4 of 4 with one", which is true of test/thing.test.ts —
+  a fixture that forces its build list — and misleading about the game, where
+  126 of 128 halls were already walled. Two selection-bias readings in one
+  day, the other being the feast-affordability probe that read 64% by
+  sampling only days a band was already short. **A number measured in a
+  fixture is not a number about the game, and a ratio is not a reading until
+  you know what selected its denominator.**
 
 ---
+
+## Phase 9 — the audit of 2026-08-29
+
+Written the day the art queue finished, from numbers the suite was already
+printing on every run and nothing was acting on. Every item below carries the
+measurement that asked for it; none of them is a guess about what might be
+nice. Four groups, in the shape they were proposed and chosen from.
+
+### Things that exist and do not pay
+
+- [x] **9.1 The dead verbs** — **THE SHIELD WAS NOT DEAD. THE MEASUREMENT
+  WAS.** Done for defend 2026-08-30. **Ticked 2026-09-01: both forks it left
+  open were ruled and the box simply never moved** — shove and dash dropped in
+  9.1b, the shield settled by counting in 9.1c.
+
+  `B_DEFEND` appears **zero** times in 1165 battle actions — worse than the
+  item's own examples — and the arena's "defend only" arm tied never-defending
+  EXACTLY, a tie asserted in test/wall.test.ts with the words *"a verb nobody
+  can use is a hole in the design"*. It was not a hole in the design. Both
+  harnesses put the verb LAST, below strike, reach, throw and dash, and on a
+  line the front rank nearly always has somebody to hit — so the rule never
+  fired, and the arm measured a priority list.
+
+  Measured with the shield taken FIRST, where a player takes it, 60 fights at
+  difficulty 2:
+
+  | | wins | standing | paired vs swinging always |
+  |---|---|---|---|
+  | swings always | 46/60 | 172 | — |
+  | **shield when hurt** | **49/60** | **189** | **won 8, lost 5** |
+  | when outnumbered | 39/60 | 158 | won 1, lost 8 |
+  | always, front rank | 11/60 | 85 | won 0, lost 35 |
+
+  **So it is a real verb with a narrow case** — worth taking when the man
+  holding it is hurt, ruinous every turn — which is the shape a good verb has.
+  Three wins in sixty is thin on its own and is reported as thin; the
+  seventeen extra men standing is the sturdier half. `shieldAdvised` now names
+  that one case in the battle hint, stated and never enforced: the player is
+  told and can swing anyway.
+
+  **RULED 2026-08-31: BOTH DROPPED (9.1b, below).**
+
+  **The fork as it stood — shove and dash.** Neither was fixed by
+  telling anybody anything:
+
+  - **Shove** is worth nothing even in its best case: 46/60 against 46/60,
+    one fewer man standing. `REACH.shove` is `{from:[1,2], at:[1,2]}` —
+    identical to strike — so it is never a different option positionally,
+    only ever an alternative to hitting somebody. Its one real effect, driving
+    the last man of a line against his own for 2 that cannot miss, fires 7
+    times in 1165 actions. Keep it as a rare finisher, or take it off the bar.
+  - **Dash** is a measured trap (42/60 against 46, 155 standing against 172)
+    and the harness has it switched off. But it is the only way to change
+    rank at all, so removing it removes the last positional choice in a
+    fight. It may want a reason rather than a removal.
+
+  **The lesson, and it is the fifth of its kind today:** an arm that ties its
+  control exactly is not evidence the feature is worthless — it is evidence
+  the feature never ran. The tie had been asserted, with a comment explaining
+  what it meant, for long enough to read as settled.
+
+  **AND THE SHIELD IS SETTLED NOW — 2026-08-31, third reading, see 9.1c.**
+- [x] **9.1c The shield, settled on the third reading** — **Done 2026-08-31.
+  The fork 9.1 left open and 9.1b re-opened is closed by a count, not a
+  judgement.**
+
+  Three readings of one verb in three days, and the third is the one that
+  holds because it finally asked the right question:
+
+  | reading | swings always | shield when hurt |
+  |---|---|---|
+  | 9.1, 2026-08-30 | 46/60 wins, 172 standing | **49/60, 189** (paired won 8, lost 5) |
+  | 9.1b, 2026-08-31 | 42/60, 155 | **31/60, 120** (paired won 0, lost 11) |
+
+  **EVERY ARM EVER RUN TOOK THE SHIELD INSTEAD OF A SWING**, so all of them
+  were really measuring "give up your attack", which loses an attrition fight
+  whatever it buys. The arm nobody had tried is the FREE one: set the shield
+  only when there is nothing to attack. It reads **42/60 wins and 155
+  standing — an exact tie with swinging always, same log, paired won 0 lost
+  0.**
+
+  By this project's own rule that is not a finding, it is a tell. So it was
+  counted rather than read: **front-two turns with nothing to hit, over sixty
+  fights — ZERO.** The walls deploy in contact and `defend` is a front-two
+  verb, so the shield's free case does not exist on this battlefield. The verb
+  can only ever be bought with a blow, and every arm that buys it loses.
+
+  **What ships.** `shieldAdvised` and `SHIELD_WHEN_UNDER` are deleted with
+  their seven tests: a helper that recommends a move measured to lose eleven
+  fights in sixty is worse than no helper. `doDefend` and the Shield button
+  STAY — the foe AI reaches for it, a hurt cautious fighter setting his shield
+  is not measured as wrong, and a player is entitled to a defensive choice the
+  harness dislikes. The zero is asserted in `test/wall.test.ts` so the day the
+  front two have nothing to hit is a day somebody finds out.
+
+  **What is left for Evan, and it is a smaller question than it was:** the
+  shield costs a whole turn for a bonus that never outruns a blow. Whether it
+  should cost less — a free set on an approach turn, or a brace that persists
+  — is a design ruling about what a shield IS here. Nothing invented on it.
+
+- [x] **9.1b Drop the shove and the dash** — **Done 2026-08-31, on Evan's
+  ruling, and the deletion turned out to be the small half of the job.**
+
+  Both verbs are gone from the sim, the actions, the AI, the UI, the audio
+  cues and the beat stream. `REACH` is four verbs now; `shoveBack` went with
+  the shove; `SAVE_VERSION` is 59 and drops the `shoved` and `dashed` beats a
+  fight caught mid-swing is holding, the way v46 dropped hex-shaped `moved`
+  beats.
+
+  **AND THE CUT COULD NOT BE MADE AS WRITTEN.** Measured before touching
+  anything, over the arena's 60 fights: with both verbs gone, **269 of 1427
+  warband turns — 19% — had NO legal verb at all**, at ranks 4, 5 and 6.
+  `throw` is the only verb a back-rank man has, `throwsLeft` runs out, and the
+  dash was how he walked up into the wall afterwards. That is the exact bug
+  `ranks.ts` says it shipped for one afternoon, arriving a second time by
+  deletion instead of by a table.
+
+  **So the movement outlived the verb.** `stepUp` (sim/footwork.ts) closes the
+  line at the top of a turn on anybody with nothing he may legally do — one
+  rank, both sides, and it spends the turn exactly as the dash did, because
+  leaving the action unspent would let a man walk up and swing in the same
+  turn and make standing deep free. The player sees him shoulder forward and
+  the turn pass, with nothing to press. Measured after: **0 stranded turns**,
+  374 of 1494 spent by the line closing.
+
+  **WHAT IT COST, stated rather than buried.** Closing is not free — a man who
+  used to stand safe in the back rank doing nothing now walks into the wall
+  where he can be hit:
+
+  | | before | after |
+  |---|---|---|
+  | arena, formation bot | 47/60 wins, 166 standing | **42/60, 155** |
+  | curve, saw spring | 53% | **53%** |
+  | curve, two winters | 22% | **28%** |
+  | A Fair Country, saw spring (300) | 83% | **81%** |
+  | As It Lies / A Hard Country | 55% / 27% | 55% / 27% |
+
+  The shipped survival bar does not move and the long game gets longer. The
+  arena drops five wins, in the same direction the old `dash only` arm already
+  measured (46/60, 157) — that arm was this behaviour as an option, and it is
+  now the game. **`A Fair Country`'s menu card was restated 86 → 81**: it was
+  three points optimistic before this and five after, and a card that lies to
+  the player before they choose is the thing that bar exists to catch. The
+  other two cards were inside their slack and were left alone.
+
+  **AND IT OVERTURNED 9.1's SHIELD FINDING, which shipped yesterday.** Same
+  instrument, same 60 fights, re-taken after the line began closing itself:
+
+  | | 9.1 (2026-08-30) | after 9.1b |
+  |---|---|---|
+  | swings always | 46/60, 172 standing | 42/60, 155 |
+  | **shield when hurt** | **49/60, 189** (paired won 8, lost 5) | **31/60, 120** (paired **won 0, lost 11**) |
+  | when outnumbered | 39/60, 158 | 30/60, 125 |
+  | always, front rank | 11/60, 85 | **0/60**, 51 |
+
+  The reason is legible: fights are more crowded and more lethal now, so a
+  turn spent on the shield instead of the blow costs more than it saves.
+  **The hint that said "hurt — the shield is worth more than the swing" is
+  gone from the battle screen** — a sentence the harness calls false is worse
+  than no sentence — and `shieldAdvised` is kept, tested and unread, with the
+  new numbers in its docstring. Whether the shield gets a different rule or
+  comes off the bar is the same fork 9.1 was careful to leave open, and it is
+  open again, on Evan's desk.
+
+  **AND ONE BAR FAILED THAT TURNED OUT NOT TO BE A REGRESSION.** The winter
+  panel's verdict — "we will not reach spring on what this ground gives" — is
+  held to being wrong about fewer than 40% of the bands it condemns. It read
+  32% before this change and 41% after, and failed. Chased rather than
+  accepted, and the answer is that **300 seeds cannot resolve that bar**: the
+  condemned subset is only ~70 bands, so the ratio carries ±11 points, and on
+  the actual counts (21/66 against 30/74) the move is **z = 1.07, p ≈ 0.28**.
+  Two verdicts either way decided it.
+
+  Re-sampled at 900 seeds it reads **38%, and that is reported as a pass and
+  not as a clean one** — ±6 points at that size, so 40 is still inside the
+  interval. This bar can tell the 46% defect it was written for from a repair
+  in the low thirties; it cannot tell 38 from 40. That is the second time this
+  one test has been caught with a sample too thin for its own threshold, and
+  the file now says so.
+
+  **Two fixes were tried on it and both rejected, on measurement.** The note
+  in `walkWinter` has said since 8.5 that taking the max over every producing
+  job reads 29% — re-taken, it reads **44%** and breaks `cliff.test`'s pivot
+  band, so that is one more inherited figure that did not survive being asked
+  again. A cheaper variant ranking food jobs by the first crewman's output
+  reads 39% and would have scraped the bar by a point on arithmetic nobody
+  could defend. Neither shipped.
+
+  **Two dead controls the look bar caught, not a test.** `fight-late@320x568`
+  still offered "or push forward a rank" after the Run button was deleted —
+  the third lie in that one hint slot, after "tap a dashed hex to move". And
+  the title screen moved by 0.2, which turned out to be the difficulty card
+  itself: 81% renders as "Four bands in five saw the first spring", so the
+  restatement is visible exactly where a player reads it before choosing.
+
+  **Done when:** ✅ both verbs gone from every layer, save shape included ·
+  ✅ the hole the deletion opens measured BEFORE the cut, not after ·
+  ✅ closed, and the closing proved by an instrument that fails when nobody
+  throws or nobody closes · ✅ the price stated on all three instruments ·
+  ✅ the one card that stopped being true restated rather than left to
+  flatter · ✅ the shipped claim this change falsified taken off the screen
+  and the fork handed back rather than re-invented.
+- [x] **9.2 The voyage home** — **CLOSED 2026-09-01: THE VERB STAYS.** Evan
+  ruled on the recommendation below; nothing in `src/` changed to close it,
+  because everything the item decided to ship had already shipped and was
+  re-verified in the code on the day it closed (see *Done when*).
+
+  The item's premise was stale and the answer underneath it was worse.
+  Measured and stated 2026-08-30; **both remaining levers swept and refuted
+  2026-08-31**, which narrowed the ruling to two options. See the sweep
+  below.
+
+  **The gate is no longer shut.** The item was written off `0/40 sagas sailed,
+  0 crossings, 0 people fetched` and a rule wanting `food 120`. Somebody
+  lowered it to 96, and the probe now reads **6/40 sagas sailed, 9 crossings,
+  15 people fetched**. That part is fixed.
+
+  **But the probe could not answer its own title, and its aggregates were
+  misleading.** Only six of forty sagas ever sail, so thirty-four rows of each
+  arm are the same run twice and every aggregate difference is six sagas wide.
+  Read straight, "205 souls against 200" looks like the crossing costing five
+  lives across forty landings. It is six sagas of noise. The probe now pairs
+  on the seeds that actually sailed and prints its own N.
+
+  **Asked properly — one run at 200 seeds, where the treatment fires thirty
+  times instead of six:**
+
+  | | sailed | crossings | fetched | standing at day 400 | souls |
+  |---|---|---|---|---|---|
+  | never sails | 0/200 | 0 | 0 | **26/200** | 1179 |
+  | may sail | 30/200 | 43 | 82 | 22/200 | 1169 |
+  | whenever | 32/200 | 47 | 91 | 24/200 | 1160 |
+
+  **Paired on the sagas that sailed: `may sail` saved 3 and KILLED 7; `whenever`
+  saved 4 and killed 6.** The crossing kills about two bands for every one it
+  saves, and brings home eighty-two people while leaving fewer alive at the end.
+
+  **The cause was already written down before this confirmed it.** The note at
+  the top of `src/sim/voyage.ts` records that shortening the crossing made
+  things WORSE, "because what comes home is not only hands. It is MOUTHS,
+  arriving sooner in a hall whose binding constraint was never labour."
+
+  **What ships: the card states the record**, as the door out does (9.14) and
+  for the same reason — it said when she was due back and "whoever will come",
+  which reads as an offer. It is stated and never refused: a band that has
+  banked a surplus and wants its kin is entitled to go and be wrong.
+
+  **EVAN RULED "she comes home with stores" — AND SHE ALREADY DOES, AND MORE
+  OF THEM IS THE WRONG DIRECTION.** Two corrections belong here, and the first
+  is mine: I offered that candidate as unbuilt. It has been built for some
+  time — `SETTLER_STORES` gives every person fetched a season's eating, with
+  the hull's share on top — and I should have read the return path before
+  putting it up as a choice.
+
+  Swept at 200 landings, against 26 of 200 still standing for a band that
+  never sails:
+
+  | settler's stores | sailed | crossings | standing | paired |
+  |---|---|---|---|---|
+  | **12 (today)** | 30/200 | 43 | **22/200** | saved 3, killed 7 |
+  | 24 | 30/200 | 45 | 20/200 | saved 5, killed 11 |
+  | 48 | 30/200 | 55 | **18/200** | saved 2, killed 10 |
+
+  **Monotonic, and worse the more she brings.** The mechanism is plain once
+  written down: what comes home does not gate what goes out, so stores landed
+  by one crossing pay for the NEXT one. The same thirty sagas go from 43
+  crossings to 55, and crossings are what cost.
+
+  **It also kills the diagnosis this file had been repeating.** The note atop
+  `src/sim/voyage.ts` explained a failed experiment by saying what comes home
+  "is MOUTHS", landing unfunded before a winter — and I repeated it here as
+  established. If unfunded mouths were the mechanism, funding them four times
+  as well would have helped. It did the opposite. **Two named causes for this
+  verb have now failed a test**, which is the part worth carrying forward:
+  what survives is duller and better supported — every arm that sails does
+  worse than the arm that does not, and the harm tracks the NUMBER OF
+  CROSSINGS rather than anything about what comes back.
+
+  **THE TWO REMAINING CANDIDATES WERE SWEPT 2026-08-31, AND BOTH ARE
+  REFUTED.** They had stood in this item marked UNMEASURED, which made the
+  fork a coin flip rather than a decision. `whenever` — sails the moment
+  `sailBlocker` allows, in any season, which is the control that separates
+  "the gate never opens" from "the crossing is not worth taking" — paired
+  against never sailing on the same 200 seeds:
+
+  | | standing at day 400 | sagas sailed | crossings | paired |
+  |---|---|---|---|---|
+  | **never sails** | **29/200** | — | — | — |
+  | today: 78 days, 72 food | 24/200 | 28 | 40 | saved 4, killed 9 |
+  | crossing 48 days | 23/200 | 28 | 38 | saved 2, killed 8 |
+  | crossing 30 days | 22/200 | 28 | 44 | saved 3, killed 10 |
+  | **gate halved: 36 food** | **14/200** | **68** | **105** | **saved 6, killed 21** |
+
+  **Shortening the absence is inert.** 78 → 48 → 30 days moves standing 24 →
+  23 → 22 and every arm stays net-negative. The attempt that failed once
+  before was right, even though the reasoning offered for it was wrong.
+
+  **Loosening the gate is much worse.** Halving what must be provisioned more
+  than doubles the sagas that sail and the crossings they make, and standing
+  collapses to 14 of 200. The gate is not badly chosen — it is LOAD-BEARING,
+  and it is the only thing holding the damage down. That it selects bands who
+  can least afford a season is true and is not the problem.
+
+  **AND THE MECHANISM IS CONFIRMED, for the first time by varying the thing
+  it names.** Every previous attempt varied what comes HOME. This varied how
+  many crossings happen, and the harm tracked it almost linearly — net bands
+  lost per crossing across the four settings: **0.125, 0.158, 0.159, 0.143**.
+  About one band in seven, every time she goes, whatever the constants say.
+
+  **What ships is the card, again, and for 9.1b's reason.** Its second
+  sentence read "She comes back with mouths, and they land before the winter
+  does" — the unfunded-mouths cause, which has now failed two sweeps: funding
+  the mouths four times as well made things monotonically worse, and
+  shortening the crossing is exactly what changes when they land relative to
+  winter and moved nothing. A card that explains a real cost with a disproved
+  cause is a sentence the harness calls false. It now names the crossing and
+  the price. `test/voyage.test.ts` was pinning `/mouths/i` — a bar enforcing
+  the disproved half — and now pins what survived, and pins the old cause OUT.
+
+  **THE VERB STAYS, and that is the recommendation rather than a ruling.**
+  Three prongs, and the two levers are gone; what is left is remove it or
+  leave it. This project's own precedent is 9.1c: an honestly-labelled bad
+  choice is kept and the thing that RECOMMENDS it is deleted. The panel
+  stopped recommending the voyage in 9.2, the card now states the true price,
+  and a band that has banked a surplus and wants its kin is entitled to go and
+  be wrong. Taking the verb out would delete a whole subsystem to save players
+  from a choice the game already prices to their face — but it is Evan's call,
+  and it is now a call between two options rather than four.
+
+  **A correction to this item, made while closing it, and it is trap 2 of
+  CLAUDE.md committed inside the item that cites it.** This entry used to end:
+  *"`may sail` and `whenever` both land on the same six of forty, so the
+  SEASON rule is doing nothing."* There is no season rule. `sailBlocker` has
+  no season check and `sim/voyage.ts` does not import `seasonOf`;
+  `sailAnySeason` exists only in `test/fixtures/harness.ts`, where it is one
+  of the BOT's policy knobs. So the sentence read a harness policy as a rule
+  of the game — the exact fault CLAUDE.md names — and read straight it invites
+  somebody to go and delete a game rule that does not exist. What is true and
+  survives: **the food gate is the whole of the constraint**, and with the
+  bot's autumn preference removed only 70 of 9750 settled days are clear to
+  go while hunger blocks 2983.
+
+  **The ruling, and why it is *keep* rather than *remove*.** The two levers
+  are gone and the fork was remove-the-verb or leave-it. This project's own
+  precedent is 9.1c: an honestly-labelled bad choice is kept, and the thing
+  that RECOMMENDS it is deleted. All three of those are in place — the panel
+  no longer recommends the crossing, the card states its record in the same
+  grim voice as the door out, and `test/voyage.test.ts` pins the surviving
+  cause while pinning the disproved one OUT. Taking the verb out would delete
+  a whole subsystem to save players from a choice the game already prices to
+  their face. A band that has banked a surplus and wants its kin is entitled
+  to go and be wrong.
+
+  **What was NOT done, stated so it is not mistaken for an oversight:** the
+  crossing is still net-negative — about one band in seven, every time she
+  goes — and that is left standing on purpose. It is a priced choice, not a
+  balance bug, and no arm that was measured made it better.
+
+  *Done when:* ✅ the gate opens at all (6/40 sagas sail, was 0/40)
+  · ✅ the probe pairs on the seeds that actually sailed and prints its own N
+  · ✅ the panel states the record instead of recommending the voyage
+  (`VOYAGE_RECORD`, rendered by `render/cards/decide.ts`)
+  · ✅ the card's stated cause is one that survived a sweep, with the
+  disproved cause pinned out by a bar · ✅ both remaining levers priced
+  rather than guessed · ✅ ruled.
+- [x] **9.3 Fishing grounds** — **Done 2026-08-30. The fork the item names
+  resolves to the second: it pays enormously, and nothing tells them.**
+
+  The arithmetic was already in `test/fishery.test.ts` and has been carrying a
+  bar for a long time: a day's upkeep is 3.00, a day on a ground nets 7.43,
+  and the five-day trip — two days rowing plus what the ground gives before it
+  thins — returns **3.26 a day against 0.59 for foraging where you stand**.
+  Five and a half times. The mean flatters the land, too: by country it is
+  `bog -0.47, hills -0.41, shore -0.45, meadow 0.69`. **On most of the coast,
+  working the ground under your feet loses food.**
+
+  Against that, 3.2 grounds sit on a coast, 1.8 are ever known, 0.7 are ever
+  so much as rowed to. The Fish deed only appears once you are already
+  floating over one, and its blurb is flavour. `waterMark` now names the
+  nearest ground the band has FOUND and what it is worth — gated on
+  `knowsStop`, so it is a memory rather than a divining rod, which is the
+  first thing a claim here has to guard.
+
+  **Two instrument notes, because the item's own numbers overstate the case.**
+  The probe counts a ground as "worked" when the band merely ROWED to that
+  stretch, so even 0.7 is generous. And the bot fishes only at `days < 6` —
+  a starvation rule, not a strategy — so the play figure is largely a
+  statement about the harness, not the player. The design finding survives
+  both, because it rests on the yield measurement rather than on the bot.
+
+  **THE LOOK BAR EARNED ITS KEEP, and this is the part worth keeping.** The
+  mark was written first in the `room-mark` idiom — a head and a row beneath
+  it — which added **89px** to the travel hint slot and pushed the CHRONICLE
+  and the FIGHT off their blessed pictures at 320x568. Nothing else caught it:
+  the `field` bar still measured a full battlefield, because the harm was
+  upstream of the fight. That is exactly the class of defect 9.6 built the bar
+  for after the shrinking-field bug.
+
+  Fixed by not repeating what the Fish deed already says — the mark is silent
+  when the water is underfoot, one short line otherwise. The travel slot is
+  back to 188px, identical to baseline, and all twelve bars pass **with
+  nothing blessed**.
+
+  **And a mistake of mine worth recording with it.** Chasing that failure I
+  captured the fight screen before and after, found the files byte-identical,
+  and reported it as a flake. `look.mjs` only rewrites a PNG when a scene
+  CHANGES, so the "before" file was a leftover from the previous failing run:
+  I compared a stale artifact with a fresh one and they matched because both
+  came from with-change runs. The same shape as a sabotage that silently does
+  nothing — checking the artifact without checking whether it was written.
+
+  **Done when:** ✅ the fork is settled with a measurement rather than a guess
+  · ✅ the player is told where the water is and what it is worth · ✅ it
+  never names water the band has not found · ✅ it costs the 320-wide screen
+  nothing.
+- [x] **9.4 The palisade earns its place** — **Done 2026-08-30, and HALF THE
+  ITEM WAS AN INSTRUMENT ARTIFACT.**
+
+  The swing is real and current: six men defending a steading hold **47** fights
+  in 100 without a wall and **91** with one, the largest single swing in the
+  game.
+
+  **But "the rarest of twelve buildings at 13 of 60" is not true.** That number
+  is `settlement.built` read at the END of a saga — and a tier that `replaces`
+  its predecessor CONSUMES it, so every earthworks in the tally is a palisade
+  that was raised and then buried. The variable holding it was even named
+  `raised`. Counted as it happens:
+
+  | | standing at the end | ever raised |
+  |---|---|---|
+  | palisade | **14** — last of twelve | **38** — fifth of twelve |
+  | longhouse | 17 | 45 |
+
+  Thirty-eight of sixty bands raise a wall, ahead of the storehouse, the mead
+  hall and the great hall. **It is not rare; it is the most upgraded thing on
+  the coast.** The counter now prints both lists, so the next reader cannot
+  make the same mistake.
+
+  **WHAT SURVIVED THE CORRECTION IS THE TIMING**, and it is a real finding.
+  Over 120 seeds (`PROBE: is the wall up before it is needed`):
+
+  | | ever walled | raided | **wall stood when it came** | walled only after |
+  |---|---|---|---|---|
+  | even | 62 (day 51) | 60 (day 70) | **25 (42%)** | 25 |
+  | fair | 100 (day 51) | 77 (day 81) | **42 (55%)** | 29 |
+
+  About half of raided bands meet their first raid unwalled, and half of those
+  raise one immediately afterwards — the shape of a lesson learned the hard
+  way. Bands that build do it on day 51 against a first raid on day 70, so the
+  ones who start are in time; the gap is the ones who never start.
+
+  **So the panel was not missing a reason, it was missing the SIZE of one.**
+  The watch mark already says "Nothing holds them — no wall, no watch" on
+  exactly the screen an unwalled band is looking at, and never said what a wall
+  would buy. It does now, in the row that already existed — **zero new lines**,
+  because the water mark's first draft cost the 320-wide screen 89px and pushed
+  two blessed pictures off their marks.
+
+  **Done when:** ✅ the headline is checked rather than inherited · ✅ the
+  counter reports raised as well as standing · ✅ the timing question is
+  measured · ✅ the size of the reason is on the screen that needs it, at no
+  cost in height · ✅ every claim watched failing, the threshold pinned to
+  literals rather than to itself.
+- [x] **9.5 The named foe** — **MEASURED 2026-08-30, and the item's ratio is
+  wrong at both ends. Ruled and closed 2026-08-31: the promise the line made
+  is gone, the menace stayed.**
+
+  It was written on `named foes: 1 came back, 30 put down for good` — read as
+  "he is always killed". Three faults in that reading, and the tally is in
+  `the rhythm of interruption`, which runs only to **day 169**:
+
+  - it counts clan-champion TRANSITIONS, not fights he led;
+  - it counts a return only when he carries SCARS, so a clan's newly anointed
+    second man — a real recurrence of the threat — is invisible to it;
+  - the bot hunts him with every verb it has (`step` picks the champion first
+    for the strike, the spear and the throw), which is an optimal player, not
+    an average one.
+
+  Counted as fates over a full run (`PROBE: what becomes of the named foe`):
+
+  | | even | fair |
+  |---|---|---|
+  | fights he led | **195** | 303 |
+  | of those, a clan's — the only ones that can ever return | **42 (22%)** | 58 (19%) |
+  | put down | 54% | 53% |
+  | ran | 1% | 0% |
+  | **still standing when it ended** | **46%** | **47%** |
+  | led by a man who had led before | 2 of 42 (5%) | 2 of 58 (3%) |
+
+  **HE IS NOT BEING WIPED OUT. He walks off the field alive nearly half the
+  time.** Two separate things were being read as one:
+
+  1. **Most named foes cannot return by construction.** Only 22% of the fights
+     he leads are a clan's; the rest are open-field champions who belong to
+     nobody, which `test/champion.test.ts` asserts as intended design.
+  2. **Recurrence is gated by how often a CLAN comes back, not by his death.**
+     He survives 46% of the time and still leads a repeat fight in 5% of clan
+     fights, because raids run at 0.84 per hundred days.
+
+  **AND THE GAME MAKES A PROMISE IT DOES NOT KEEP.** When he gets off the
+  field, the saga says *"He will have marked us for it."* Measured, he comes
+  back about one time in twenty. That is 9.14's fault exactly — a line that
+  reads as an offer against a record that does not support it.
+
+  **THIS CONVERGES WITH 6.5c, AND IS THE REASON THAT ITEM COULDN'T FIND.**
+  6.5c swept `AUTUMN_WORTH_K` and found raising it nearly free — 0.155 → 0.5
+  takes never-raided from 58% to 43% for one point of spring — but declined it
+  because it bought no difficulty. It buys THIS: a clan that comes back is the
+  only way the man who got away is ever seen again. The lever nobody could
+  justify on difficulty is justified on the villain.
+
+  **The fork, and it is a feel decision rather than a tuning one:**
+  - **Keep the promise** — raise the raid rate so the clan returns, which
+    6.5c already priced at about one point of first-winter survival.
+  - **Stop making it** — soften the saga line to what actually happens, the
+    way 9.14's door out now states its record.
+
+  **KEEPING THE PROMISE WAS TRIED ON 2026-08-31 AND REVERTED.** The
+  recommendation above was mine, it was acted on, and the bars refused it.
+  `AUTUMN_WORTH_K` 0.155 → 0.5, measured over the same three instruments:
+
+  | | 0.155 | 0.5 |
+  |---|---|---|
+  | led by a man who had led before [even] | 2 of 42 (5%) | **5 of 63 (8%)** |
+  | led by a man who had led before [fair] | 2 of 58 (3%) | **4 of 74 (5%)** |
+  | curve, saw spring (60 seeds) | 53% | **50%** |
+  | A Hard Country, saw spring (300 landings) | 27% | **25%** |
+
+  The villain comes back three points more often; the run gets three points
+  shorter; and **`A Hard Country` breaks a shipped bar** — its menu card
+  promises 31% see spring and the harness measured 25%, over the item's own
+  300-landing sample, which is a promise on a screen a player reads before
+  choosing. Three points of recurrence is not worth a false difficulty card.
+  Reverted to 0.155.
+
+  **AND THE PRICE I QUOTED FOR IT WAS READ OFF THE WRONG INSTRUMENT.** "One
+  point of spring" is repeated four times above and in 6.5c. It is not a
+  reading from the curve. It came from `PROBE: where a raid actually costs a
+  band` (74% → 73%), which samples **bands that had already settled** — the
+  population least able to be killed by another raid. The curve, which starts
+  at the landing, moves 53% → 50%: three times the price, on the sample the
+  question was actually about. This is the CLAUDE.md rule at the top of this
+  file — the one committed this same morning, citing a self-selecting
+  denominator — committed again by its author, within the day, on the same
+  kind of number.
+
+  **RULED AND CLOSED 2026-08-31 — the middle option.** Keeping the promise was
+  priced and refused above. Softening the line wholesale, the way 9.14's door
+  out states its record, was the other prong and was NOT taken either: 9.14's
+  record sits on a DECISION CARD, read before a choice, where a false claim
+  changes what a player does. This is a past-tense chronicle entry after the
+  fight is over, and nothing acts on it — a saga is allowed to be more afraid
+  than the odds.
+
+  **What was wrong was the certainty, not the menace.** So one clause changed:
+
+  > *"He got off the field alive. ~~He will have marked us for it.~~
+  > **He will not have forgotten it.**"*
+
+  The dread survives, the promise does not. `test/champion.test.ts` pins the
+  old clause OUT so it cannot drift back, and three sabotages — the promise
+  returning, the menace draining away, the line vanishing — all fail loudly.
+
+  **What this item leaves behind is the better half anyway:** the reading that
+  he is NOT wiped out (he walks off alive 46% of the time), that most named
+  foes cannot return by construction, and that recurrence is gated by how
+  often a clan comes back rather than by his death.
+
+### Things that are not there
+
+- [x] **9.6 A bar that looks** — **Done 2026-08-29.** The three defects a
+  player found in one week — the band floating above its own ground, the
+  illegible battle, the field shrinking as men die — were invisible to eleven
+  browser bars and 1442 tests, because every bar counts nodes and none of
+  them looks at the picture.
+
+  `scripts/look.mjs` photographs eleven screens across two widths and reduces
+  each to a 24x48 grid of brightness. Deliberately not a hash: a hash says
+  "something changed" and cannot say what, which makes every deliberate art
+  change an argument with the tooling. A grid gives a DISTANCE and a PLACE —
+  "the road moved by 0.1, most of it in the bottom, around row 36 of 48" is
+  the chart's lower knot band, and it reads like that because it is.
+
+  Node has no image decoder and this repo takes no dependency for one, so the
+  PNG is decoded in `scripts/lookSignature.mjs` — inflate the IDAT, undo the
+  five scanline filters. The header is checked rather than assumed and that
+  earned itself on the first run: the guess was RGBA and Playwright writes RGB
+  for an opaque screenshot, so a decoder that assumed four bytes a pixel would
+  have read every row a third short and produced a confident non-picture.
+
+  **Watched fail on both defects it was built for, on builds that actually
+  built.** Stopping `installKnot` reaching the page moves five screens (road
+  0.1, chronicle 0.4, ending 0.3). Reverting the battlefield to the shrinking,
+  letterboxed version moves `fight-late` by **8.3**.
+
+  Four things went wrong in the building of it, all the same shape as the bug
+  it exists to catch:
+
+  - **The threshold was a guess and was ten times too loose.** 1.0 came from a
+    synthetic test; the first real sabotage walked through it. The floor is
+    measured now — a repeated run reads 0.00 on every screen — so it sits at
+    0.05, just above nothing.
+  - **The baseline was blessed against a sabotaged build**, because a restore
+    was not followed by a rebuild. The bar caught this itself the next run,
+    which is the first useful thing it did.
+  - **The `ending` screen was a photograph of a fight**, filed under the wrong
+    name and passing happily. It tried to walk out of the battle before it,
+    which cannot be done. It starts from a fresh page now, and every scene
+    declares a selector that must be present or the bar refuses to compare.
+  - **`npm run build 2>&1 | tail -1 && echo "BUILD OK"` is a lie by
+    construction** — a pipeline's exit status is `tail`'s. A whole sabotage
+    was measured against a stale `dist` and read as a pass.
+
+  What it cannot do is tell a good drawing from a bad one, and it fails on
+  every deliberate art change: `npm run look:bless` is the human act, and it
+  now prints what it is blessing, because for a while it printed only a count.
+- [x] **9.7 Winter as a season you play** — **CLOSED 2026-09-01. THE PREMISE
+  IS FALSE, and the new content it proposed is DECLINED on a measurement.**
+  Winter already holds the two largest decisions in the game. Legibility half
+  done 2026-08-31; the content half measured and declined below.
+
+  It was written on winter "offering almost no decisions". Measured, over 120
+  seeds on As It Lies:
+
+  | lever | without | with | paired |
+  |---|---|---|---|
+  | short commons | 44/120 | **65/120** | **saved 22, killed 1** |
+  | crewing to the winter mark, daily | 20/120 | **65/120** | **saved 45, killed 0** |
+
+  **Nothing else this repo has measured comes near saved 45 and killed
+  nobody.** Winter is the most decision-dense part of the game by outcome; the
+  item had it exactly backwards.
+
+  **So it is the 9.3 and 9.4 fault again — the panel names the PRICE and never
+  the worth.** The rations control says "2 off every heart", and on full shares
+  it says "nobody goes short", which is reassurance on the one screen where
+  tightening is the largest thing the player could do. It now states the
+  record instead, and only when the larder will not reach spring, so it is a
+  fact about this winter rather than a standing lecture. Zero new lines.
+
+  **BOTH LEGIBILITY FIXES ARE IN, and were re-verified in the code on the day
+  this closed** rather than taken from this entry: `tighteningWorth()` states
+  the rations record in `render/colonyUi.ts`, and `counselSpan()` names the
+  MOVE beside the winter mark — the crewing lever, which is the largest single
+  effect this repo has measured.
+
+  **THE PROPOSED CONTENT IS DECLINED, and this is the measurement that decides
+  it.** The item proposed two mechanics that do not exist — who sleeps under
+  which roof, what gets burned when the wood runs low. Both are about WARMTH.
+  So the question is whether warmth ever decides anything, and it had never
+  been asked. `PROBE: 9.7 — is warmth ever the thing that decides a winter`,
+  120 landings an arm, settler policy, counted from the day tick's own beats:
+
+  | | cold nights at home | of winter nights | bands ever cold | dead of cold | how runs ended |
+  |---|---|---|---|---|---|
+  | even | 436 / 12,455 (4%) | 9% | 34/120 | 42 | starved 74, despair 26, **frozen 5**, slain 3 |
+  | fair | 128 / 17,607 (1%) | 1% | 13/120 | 13 | starved 63, despair 30, **frozen 4**, slain 3 |
+
+  **Warmth is real, and it is not what decides a saga.** It is not inert — a
+  quarter of bands on the harder arm meet a cold night and 42 people die of it
+  — but it ends about 4% of runs against starvation's 62%, and 9.12a already
+  established that most of the despair column is starvation wearing another
+  label. Roof allocation and a burn order would add decisions on the axis that
+  matters LEAST, against two existing winter levers worth saved 22 / killed 1
+  and saved 45 / killed 0. That is the whole case for declining.
+
+  **What would change the answer**, stated so this is a decision and not a
+  door closed: make warmth bind harder first — the cold column has to be worth
+  deciding about before there is any point deciding it in more detail. The
+  mechanics are not bad; they are answers to a question the game is not
+  currently asking.
+
+  *Done when:* ✅ the premise re-taken and found false · ✅ both existing
+  levers made legible, and the fixes verified in the code · ✅ the proposed
+  content measured for a gap rather than built or refused on taste
+  · ✅ declined, with the condition that would reopen it written down.
+- [x] **9.8 The sea fight** — **Done 2026-08-31. For once the item's number was
+  right: it was not rare, it was UNREACHABLE, and the fix was one roll.**
+
+  `0 sea fights over 120 sagas` against 1308 days afloat, and the cause is not
+  a rate, a bot policy or a counter reading the wrong field. **No code path can
+  ever put `terrain: 'ocean'` on a battle.** Every call into `startBattle`
+  passes `countryHere(state)`, which is `stopAt(seed, standingAt(state))
+  .country` — a land country, always:
+
+  | caller | terrain |
+  |---|---|
+  | `events.ts:359` (a card's fight) | `countryHere` |
+  | `outlaw.ts:101` (the man we drove out) | `countryHere` |
+  | `travel.ts:212` (falling on a camp) | `countryHere` |
+  | `travel.ts:225` (taking a place) | `countryHere` |
+
+  **And the machinery for the fight it would be is already built, and dead:**
+
+  - `battle.ts:317` — `pickSeaField` is called when `terrain === 'ocean'`;
+  - `battlefield.ts:311` — a whole `case 'ocean'` that lays out the ground;
+  - `sea.ts:85` — a predicate asking whether this battle is on the water.
+
+  So the game can already generate, lay out and fight a sea battle. Nothing
+  ever asks for one. That is precisely the fault `every building gets built`
+  recorded for the earthworks and the great hall — *"the bot's want list simply
+  did not name them, so nothing ever asked"* — and the bar under that test says
+  content play cannot reach is content that does not exist.
+
+  **WHAT IS MISSING IS ONE TRIGGER**: a roll on a rowed day that starts a
+  battle with `'ocean'` rather than the country underfoot, weighted by what is
+  in the hold — which is the item's own idea, and the one threat the sea can
+  make that the land cannot.
+
+  **BUILT 2026-08-31 on Evan's ruling, and it costs the tuned game nothing.**
+
+  `metAtSea` rolls once per rowed leg, drawn against what is IN THE HOLD — the
+  item's own idea, and the one threat the sea can make that the land cannot.
+  An empty knarr is not worth rowing after; a fat one is. Same saturating shape
+  as `autumnChance`, capped at 5% a day so the sea is a hazard and not a toll,
+  and a fat hold draws a bigger crew out.
+
+  | | before | after |
+  |---|---|---|
+  | sea fights over 120 sagas | **0** | **20** |
+  | curve: winter / spring / two winters | 78% / 53% / 22% | **78% / 53% / 22%** |
+  | A Fair Country · As It Lies · A Hard Country, spring | 83 / 55 / 27% | **83 / 55 / 27%** |
+
+  **Nothing in the first winter moved**, and the reason is structural rather
+  than lucky: a sea fight needs a band that is settled, rowing, and carrying
+  something worth taking, which is a description of the game after the part
+  that is tuned.
+
+  **THE FIRST CUT SATURATED, exactly as `AUTUMN_WORTH_K` did at 0.5.** At
+  `SEA_FIGHT_K = 0.0016` the cap bound at about thirty of stores aboard, so
+  every band that had ever eaten sat at the ceiling and the cargo weighting —
+  the whole point of the design — meant nothing. At 0.00009 a lean crossing
+  reads 0.4% a day, an ordinary one 2.7%, and the cap binds around 600, which
+  is a laden ship.
+
+  **AND IT KNOCKED OVER A CONTROL ARM THAT HAD NEVER CONTROLLED ANYTHING.**
+  The market probe's placebo — "goes, deals nothing" — was striking about 250
+  bargains. `deals` counted `tally.bargains`, and `note(state, 'bargains')`
+  fires in `places.ts` AND `neighbours.ts` while `tradesNothing` gates only the
+  first: the placebo was bargaining with NEIGHBOURS and counting it. The bar
+  held on slack alone — trader 550 against a threshold of 275, placebo 257 —
+  and when rowed legs gained something to interrupt, the trader fell to 343,
+  the threshold to 171, and it finally said so. Gated on standing at a place,
+  the way `the place economy` already asks the same question, the placebo reads
+  **0** and refusing to sell wood reads 14 against 91. The market's CONCLUSION
+  was never at risk — the paired survival figures do not touch this counter —
+  but the comparison meant to prove the arms differ at all did not work.
+- [x] **9.9 Heirlooms** — **Done 2026-08-31, and the premise was half wrong
+  before a line was written.**
+
+  The item read "the memorial, the lineage and the generations exist and do
+  not talk to each other". Two of those three already talk, and the source
+  says so without a harness: `hallPasses` imports `childrenOf` and names the
+  dead leader's children, and `maybeBirth` reads `kinOf` to record a father
+  that `maybePair` made. The system that is genuinely deaf is the **memorial**
+  — `fallenOf` mapped a person to a name, a byname, a fate, a day and a seed,
+  and to nothing about who they were to anybody.
+
+  **And it is deaf about something dense.** `PROBE: what a lineage actually
+  amounts to`, 60 sagas an arm, 2026-08-31:
+
+  | | even | fair |
+  |---|---|---|
+  | sagas that saw a child born | 19 (32%) | 34 (57%) |
+  | children in all / with a father named | 24 / 11 | 46 / 16 |
+  | sagas that saw a wedding after the landing | 17 (28%) | 30 (50%) |
+  | the hall passed leaving a child / leaving none | 10 / 148 | 9 / 94 |
+  | names the wall was given | **293** | 277 |
+  | **… of them bound to somebody** | **165 (56%)** | 151 (55%) |
+  | … of them leaving a child | 19 (6%) | 23 (8%) |
+
+  So there was plenty for a thing to be carried BY. There was simply no thing.
+
+  **WHAT SHIPPED IS THE BLADE** (`src/sim/heirloom.ts`, `src/data/blades.ts`).
+  One named sword a seed, off its own derived stream, in the leader's hand at
+  the landing. When the bearer dies it goes three ways in this order, and the
+  order is the feature: **to a child they left**, laid in a chest and never
+  moved again; else **to their kin**, if that person is alive; else **to
+  whoever leads now**. Every death site already funnels through `mourn`, so
+  the hand-off is one call beside `hallPasses` rather than six. `Fallen`
+  gained one optional field, and the wall row says `bore Fótbítr` inside the
+  fate line — no fourth column, because 9.3's water mark cost the 320-wide
+  screen 89px on a row that is drawn once and this one is drawn sixty times.
+
+  **Measured, same probe, same run:**
+
+  | | even | fair |
+  |---|---|---|
+  | sagas where it changed hands at all | **40 (67%)** | 40 (67%) |
+  | hands in all | 134 | 121 |
+  | **wall rows that carry it** | **96 (33%)** | 69 (25%) |
+  | laid by in a chest for a child | **2** | **4** |
+
+  A third of the memorial now has a column that two rows can share, which is
+  the whole of what "outlives its owner" means on a wall that outlives the
+  run.
+
+  **THE RARE BRANCH IS NAMED RATHER THAN CLAIMED.** Laying the blade by for a
+  child fires in 2 of 60 even sagas and 4 of 60 fair — 6.5b's shape, and 6.5b
+  was recorded as a negative result for exactly that. The difference is
+  stated rather than assumed: there the ONLY thing the rule did fired twice in
+  128 runs, so the rule was the rare event; here the rule's common path runs
+  in 67% of sagas and marks a third of the wall, and the chest is its grace
+  note. If a later reading wants the branch to bite it needs a wider trigger,
+  and the obvious one — laying it by for any child of the steading rather than
+  the bearer's own — was declined because it would put the sword in a box in
+  a third of sagas and stop the thing circulating, which is the event.
+
+  **The bar: the curve does not move, and it did not.** Both readings are the
+  same to the point after the change — `winter 78%, spring 53%, two winters
+  22%, settled by winter 43`, and `A Fair Country 83% · As It Lies 55% · A
+  Hard Country 27%`. That is deliberate: the second-year killer is morale
+  (9.12), and a heart term on a death would soften exactly the pressure that
+  diagnosis found, in a feature whose job is to connect three systems rather
+  than tune one. The blade touches no stat, no roll and no wound.
+
+  **A HOLE THE TESTS DID NOT FIND, AND READING THE DIFF DID.** `passBlade`
+  hangs off `mourn`, and `mourn` is only called for the DEAD. `handsLeave` and
+  `driveOut` set `alive: false` with `left: true` and deliberately never mourn
+  — the saga should not bury a man who is fine — so a bearer who walked out or
+  was driven out left `holder` pointing at somebody `bearerOf` refuses to
+  return, and no later death could ever move the blade again, because every
+  one of them fails the `holder !== dead.id` guard. The band's heirloom would
+  have silently ceased to exist in a saga that never mentioned it again.
+  `bladeLeftBehind` now runs at both sites: the sword is on the PARTY, and a
+  hand who leaves in the night does not carry off what the hall owns.
+
+  **Fourteen sabotages, and THREE of them caught nothing on the first pass.**
+  That is the headline, not the eleven that worked. All three were the same
+  fault in three costumes — a check written so that it could not fail:
+
+  1. *Taking the blade off its derived stream failed nothing*, because
+     `stream()` builds a fresh `Rng` on every call, so no call site can
+     consume another's numbers whatever label it uses. The test compared the
+     sabotaged code against itself. It pins the real guarantee now — a
+     memoised stream cache fails it — and says in the file that the
+     `derive('blade')` label is convention rather than load-bearing, because
+     the only test that could claim otherwise is the one just deleted.
+  2. *Deleting the call in `handsLeave` failed nothing*, because the test
+     called `bladeLeftBehind` directly instead of walking the band until
+     somebody actually left. It tested the function and not the wiring. It
+     goes through `handsLeave` now, and asserts the hand really left before
+     asserting anything about the sword.
+  3. *Dropping the `holder !== gone.id` guard failed nothing*, because the
+     fixture had the blade in the LEADER's hand — so handing it back to the
+     leader read as no movement at all. The blade starts in a non-leader's
+     grip now, and the fixture asserts that before it measures.
+
+  **Cost in pictures: one blessed change.** The chronicle grew by one entry —
+  the blade is named on the landing, once, with its meaning — moving
+  `chronicle@320x568` by 5.3 and `chronicle@390x844` by 2.7. Both were looked
+  at before they were blessed.
+
+  **Done when:** ✅ the premise re-taken in the source before anything was
+  built · ✅ the size of what the memorial was missing measured, not assumed ·
+  ✅ the blade passes in the order the design claims, watched failing on each
+  branch · ✅ it fires in play rather than in a fixture · ✅ the rare branch
+  named as rare · ✅ both balance readings unmoved · ✅ the departure hole
+  found by reading the diff and closed at both sites · ✅ all three checks
+  that could not fail found and replaced.
+- [x] **9.10 The rival's saga** — **Done 2026-08-31. Half the premise was
+  already false and the other half was worse than it said.**
+
+  "No way to watch him" is not quite true: `render/strip.ts` has marked his
+  hall and every stretch he has fenced for some time, and `render/procession
+  .ts` draws the hall. What is true is that **`sagagen.ts` did not mention him
+  at all** — he was real in every run and vanished at the retelling, which is
+  the one place a run is actually told back to the player.
+
+  **And every one of those marks is gated on `rival.met`.** `PROBE: is the
+  rival ever actually seen`, 60 sagas an arm:
+
+  | | even | fair |
+  |---|---|---|
+  | he exists | 60/60 | 60/60 |
+  | **ever came in sight of his hall** | **19 (32%)** | 24 (40%) |
+  | first sight, average day | 45 | 51 |
+  | his fences refused our posts | 18 (30%) | 22 (37%) |
+
+  So for two runs in three he was one chronicle line on day nine and then
+  silence. The marks were real and almost nobody saw them.
+
+  **AND `rival.ts`'s OWN DOCSTRING IS A HORIZON FIGURE.** It records that he
+  "ends up holding a median of six stretches of a possible seven", measured
+  over 150 coasts walked to the horizon. In a PLAYED saga:
+
+  | | held at the end |
+  |---|---|
+  | the 8 sagas in 60 that ran all 400 days | **5.1** |
+  | the 52 that ended sooner | **2.0** |
+
+  Both numbers are true of different things and only one is about the game.
+
+  **What ships is the chapter.** `The Other Landnám` is in every ending that
+  has a rival, and it tells the two runs apart because they are two different
+  sagas — the band that stood in his yard and the band that only ever heard
+  the rumour. It names the day sight fell on him (a new optional `metOn`,
+  `SAVE_VERSION` 60, deliberately NOT backfilled: an old save met him on a day
+  nothing recorded, and a guessed date is a small lie told in the one place
+  the run gets retold). It counts his coast against ours once his hand has
+  closed on more than the stretch he landed on, and it says when his fences
+  shut on ground the band had walked — derived from `trodStops`, not stored.
+
+  > The other landnám was Gizur the Lucky's, at Hvalgarth. They saw it for
+  > themselves, and it was further along than anybody wanted to say out loud.
+  > That was day 45. By the end he had fenced 4 stretches of that coast to the
+  > 3 they had walked. Some of it was ground they had walked first, and there
+  > was nothing to be done about that.
+
+  **WHAT IS DELIBERATELY NOT BUILT is the item's second half.** "A race you
+  can lose without being killed" wants an ending where he beats you, and the
+  measurement refuses it: he reaches the ~5 stretches that would make a race
+  look close only in the 8 runs of 60 that go the whole 400 days — and 9.12
+  says a band past its third year has already won. An ending that fires in
+  13% of sagas, on bands nothing can kill, is the decoration this project
+  keeps catching. The comparison is stated instead, in the sentence above, and
+  a real race would need him to matter EARLIER — which is a design decision
+  about his clock, not a line of prose.
+
+  **Nine sabotages, eight caught first time.** The ninth — deleting the line
+  in `meetRival` that records the day — failed nothing, because the saga tests
+  build their rival by hand and a test of a FIELD is not a test of the code
+  that fills it. Second time in one session that exact fault has been caught
+  by sabotage rather than by reading. It now runs through `meetRival`, and
+  asserts the day is the FIRST sight rather than the latest.
+
+  **Done when:** ✅ premise re-taken, and the half that was false said so ·
+  ✅ the gate measured before anything was written · ✅ the docstring's stale
+  figure split into the two things it was conflating · ✅ every claim watched
+  failing, including the wiring · ✅ the half the measurement will not support
+  declined and the reason given.
+
+### Overhauls
+
+- [x] **9.11 The colony loop** — **DIAGNOSED AND BUILT 2026-08-31. The item's headline
+  claim is RIGHT, one of its three supporting numbers is wrong, and the fault
+  is not where any of them point.**
+
+  Re-taken before opening the largest item in the phase, because all four
+  figures predate 9.12a — and 9.12a exists BECAUSE of them. `PROBE: what the
+  colony loop actually is`, 60 sagas, even:
+
+  | the item said | re-taken |
+  |---|---|
+  | 53% of a saga's actions | **47%** of turns are spent standing at the steading — holds |
+  | 33 of 60 ever passed six people | **23 of 60** — the figure was ten too high |
+  | 9.0 souls to 14.2 of roof, never full | never full HOLDS; crowding fires on 0–6% of settled days |
+  | by year two, more labour than uses for it | **confirmed, and it is not about labour** |
+
+  **THE SINGLE AVERAGED PAIR HID THE ONLY INTERESTING THING ABOUT IT.** Year
+  by year, souls against roof: 5.5/9.1, **6.5/15.6**, 9.8/18.0, 12.5/18.0,
+  10.5/18.5. The gap is worst in the SECOND year and closes by the fourth — a
+  band builds roof far faster than it grows into it, and then catches up. One
+  mean across all five years reports none of that.
+
+  **AND THE REAL FINDING IS THE BUILD LIST, NOT THE PEOPLE.** Days on which
+  the steading has nothing left it could raise:
+
+  | | year 1 | year 2 | year 3 | year 4 | year 5 |
+  |---|---|---|---|---|---|
+  | **list finished** | 1% | **26%** | **63%** | **74%** | 77% |
+  | blocked (wants something it cannot start) | 21% | 13% | 16% | 16% | 12% |
+  | idle hands | 0.2 | 0.7 | 1.5 | 1.3 | 0.4 |
+  | **wood in store** | 43 | 236 | 521 | **1072** | **1613** |
+
+  Nobody is idle — everybody keeps a job. What runs out is somewhere to spend
+  what the jobs produce: by the second year a quarter of settled days offer
+  nothing to build, by the third nearly two thirds, and the band goes on
+  cutting wood it will never spend until sixteen hundred of it sits in the
+  store. **So 9.11 is not "give the band more to do with its people". It is
+  "give the steading somewhere for its output to go past year two".**
+
+  **THREE INSTRUMENT FAULTS IN ONE PROBE, and they are the point of this
+  entry.** The first draft classified turns by `currentMode(before) ===
+  'COLONY'` and reported **colony 0%** — a reading of the HARNESS's mode
+  stack, because the bot calls `assign` and `queueBuild` on the state and
+  never opens the colony screen. The second merged two reasons for "nothing to
+  build" into one count, so a band pressed for timber and a band that has
+  finished the list read identically — split, and the answer inverted. The
+  third asked `home.built.includes(id)` and read **"list finished 0%" in every
+  year**, because a tier that has been UPGRADED leaves `built` — which is
+  **9.4's finding exactly, made again by the same hand that wrote it up, and
+  the first trap named in CLAUDE.md**. `standsFor` is what the codebase has
+  for this, and it turns 0% into 74%.
+
+  **The fork was Evan's and he took it: the second tier, built 2026-08-31.**
+
+  Cargo for the knarr was the recommendation and **reading 9.2 killed it**:
+  every arm that sails does worse than the arm that never does, the harm
+  tracks the NUMBER OF CROSSINGS, and sweeping more stores onto the return
+  measured monotonically worse. Cargo adds crossings. The trade good goes the
+  same way — every way of visiting more measured at worse. What was left is
+  work the band does at home.
+
+  **Three late works, pure data** (`src/data/buildings.ts`): the **stone
+  dyke** on top of the earthworks, the **great hof** on top of the hof, and
+  the **ship-howe** — a mound raised over the dead with a boat under it, which
+  feeds nobody and keeps nobody warm and is the first thing anyone coming up
+  that coast will see. 92 timber and 124 builder-days between them, against 84
+  for the whole list that existed before.
+
+  | | year 1 | year 2 | year 3 | year 4 | year 5 |
+  |---|---|---|---|---|---|
+  | queue empty, before | 37% | 41% | 74% | 85% | 89% |
+  | **queue empty, after** | 36% | **10%** | **19%** | **30%** | **51%** |
+  | list finished, before | 1% | 26% | 63% | 74% | 77% |
+  | **list finished, after** | 0% | **0%** | **15%** | **28%** | **49%** |
+  | wood in store, before | 43 | 236 | 521 | 1072 | 1613 |
+  | **wood in store, after** | 43 | 229 | 460 | **793** | **1241** |
+
+  **The curve does not move**: `winter 77%, spring 53%, two winters 27%,
+  settled by winter 42` against 77/53/28/42 before, which is one seed.
+
+  **WHAT IT DOES NOT DO, said plainly.** 92 timber against a surplus growing
+  by ~500 a year still leaves a pile — 793 by year four. The dead window is
+  filled, the overrun is not. Production outrunning every use the game has is
+  the deeper finding and it is left standing rather than papered over. Year
+  five still empties out at 51%.
+
+  **AND IT FOUND A SHIPPED ENGINE BUG.** The ship-howe measured NEVER RAISED
+  in sixty sagas — the 6.5b shape — and the cause was not its cost.
+  `buildBlocker` checked `after` against `home.built.includes(id)`, and an
+  upgrade REMOVES what it replaces, so a great hof standing meant "there is no
+  hof here" to every gate that asked. **It was latent in shipped content, not
+  just in mine: the watchtower is `after: ['palisade']` and earthworks replaces
+  the palisade**, so a band that walled up before towering could never raise a
+  watchtower again — masked only by every bot policy wanting the tower first.
+  Fixed to `standsFor`, which is the rule `data/buildings.ts` states in the
+  `replaces` docstring, applied where it was not. Regression test ships with
+  it.
+
+  **One test fixture was completing rather than a bar lowering.** `every
+  building is reachable` grants a building's `after` list and never what it
+  `replaces` — it passed for greathall and earthworks by luck, because their
+  predecessors happened to be somebody else's prerequisite earlier in the same
+  loop. A fixture that only works in list order will lie the next time the
+  list changes.
+
+  **Done when:** ✅ the fork closed on measurement rather than taste, with the
+  two rejected prongs named · ✅ the sink is content, not engine · ✅ the dead
+  window measured before and after · ✅ the curve unmoved · ✅ what it does
+  NOT fix stated · ✅ the never-raised finding chased to a real bug rather than
+  tuned away · ✅ four sabotages, all caught.
+- [x] **9.12 The pacing arc** — **CLOSED 2026-09-01: `HEARTH_FREE` STAYS AT 1
+  AND 9.12a's COST STANDS.** The one thing left open was whether to buy back
+  the second year with the flat floor. Swept and paired below: the floor
+  cannot buy it back, and where it acts at all it hands the endgame back
+  instead. Nothing in `src/` changed.
+
+  **DIAGNOSED 2026-08-29, and the diagnosis says the item was asking the wrong
+  question.**
+
+  It was written off "average run 172 days against a 500-day horizon", which
+  is a mean of a distribution nobody had looked at. Looked at — 120 sagas an
+  arm, banded by the game's own clock — there is no average run at all:
+
+  | how far they got | even | fair | hard |
+  |---|---|---|---|
+  | before the first winter | 30 | 8 | 46 |
+  | the first winter | 34 | 22 | 45 |
+  | the second year | 22 | 45 | 16 |
+  | **the third year** | **4** | **3** | **2** |
+  | past the third year | 30 | 42 | 11 |
+
+  **THE MIDDLE IS EMPTY.** The third year holds two to four sagas in a
+  hundred and twenty. A run either dies in its first two years or it is past
+  the third, and there is almost nothing in between — so "the average run is
+  172 days" describes a length that hardly any saga is.
+
+  **PAST THE THIRD YEAR IS NOT A LATE GAME, IT IS A WON GAME.** Of the 30
+  that got there on even, 25 are ruling; on fair, 36 of 42; on hard, **11 of
+  11 — every single one**. Nothing on that coast can kill a band that has
+  lasted three years. 6.4 said a run goes on as long as it is held, and
+  nothing has ever contested the holding.
+
+  **AND THE KILLER CHANGES.** Early it is hunger; by the second year it is
+  morale, which no item in this audit had touched:
+
+  | | starved | despair |
+  |---|---|---|
+  | even, before the first winter | 21 | 7 |
+  | even, the second year | 12 | **10** |
+  | fair, the second year | 25 | **19** |
+  | hard, the second year | 8 | **8** |
+
+  So the work is not "make runs longer" and not "move the content earlier".
+  It is that the game has a first act and an epilogue and no third act: the
+  place a long saga would live — established, not yet safe — is where 3% of
+  runs are.
+
+  **DECIDED 2026-08-30: put something in the third year that can end a jarl.**
+  6.4's promise — a run goes on as long as it is held — becomes true or it
+  goes. So the next question was WHY nothing can end one, and the answer took
+  two goes.
+
+  The first guess was that ruling compounds: a jarldom takes tribute in food
+  and timber every season and draws newcomers at `JARL_DRAW = 1.7` against a
+  cost of only +3 word and +2 raiders. Plausible, and wrong. Measured, a band
+  past its third year holds:
+
+  | | even | fair | hard |
+  |---|---|---|---|
+  | winters of food in store | 0.3 | 0.3 | 0.2 |
+  | souls | 15 | 13 | 14 |
+  | **sworn** | **1** | **1** | **0** |
+  | raised | 10 | 10 | 10 |
+  | **heart** | **100** | **100** | **100** |
+
+  They are not fat. They live hand to mouth with **almost no warriors left**.
+  What is infinite is MORALE — pinned at 100, every arm, every difficulty —
+  and morale is precisely what kills bands in their second year (despair 10
+  of 22 on even, 19 of 45 on fair, 8 of 16 on hard).
+
+  **And the mechanism is one line.** `heartFromBuildings` adds the heart of
+  everything standing to morale EVERY DAY, unconditionally, forever: longhouse
+  1, meadhall 3, greathall 2, hof 2 — **+8 a day** for a full steading, plus
+  another +1 for having everybody employed. Against that a lost battle costs
+  −15, a man fleeing −4, a death in the cold −3. **A jarl recovers a lost
+  battle's whole morale cost in under two days.** A hall pays for having been
+  built once, forever, and the payment outruns every setback in the game.
+
+  So the third act does not need a new enemy. It needs the annuity to become
+  an upkeep: a mead hall cheers people when there is mead in it and a feast
+  held in it, a hof when the blót is kept, and an empty hall in a hard winter
+  is a big cold room. That reaches the late game through the door the mid
+  game already dies of, and it keeps winter as the antagonist.
+
+  **The care needed is that this must not bite the first year**, where 53%
+  of runs already end. The requirement has to scale with what is standing —
+  the bigger the hall, the more it costs to keep people glad in it — so a
+  one-building band is untouched and a ten-building jarl is not.
+
+  The instrument needed fixing first and the fix is worth recording: the
+  histogram was not reset between hardship arms, so `fair` printed 240 runs
+  out of 120 and `hard` printed 360 — a number that only looks wrong if you
+  add the row up.
+
+  **THE RULING, 2026-09-01: LEAVE `HEARTH_FREE` AT 1.**
+
+  Unpaired first, 120 landings an arm, settler policy, four values of the
+  floor. Spring is IDENTICAL at every value on both arms — 64/120 on even and
+  99/120 on fair — which is the first-year guard behaving exactly as 9.12a
+  designed it, since a floor of 1 already covers a one-building band:
+
+  | `HEARTH_FREE` | 1 | 2 | 3 | 4 |
+  |---|---|---|---|---|
+  | even — died in year two | 30 | 29 | 30 | 28 |
+  | even — past the third year (of which ruling) | 19 (11) | 19 (12) | 18 (11) | 18 (12) |
+  | fair — died in year two | 47 | 46 | 41 | 42 |
+  | fair — past the third year (of which ruling) | 26 (19) | 28 (21) | 33 (25) | **33 (28)** |
+
+  **Those are unpaired aggregates and are six or seven sagas wide, which is
+  the width of the noise** — the same trap 9.2 records, where thirty-four
+  rows of forty were the same run twice. So it was re-taken PAIRED, 200 seeds
+  an arm, every seed run at 1 and at 3 and compared to itself:
+
+  | | runs identical | saved / killed | still RULING at the end: gained / lost |
+  |---|---|---|---|
+  | even | 183/200 (92%) | 2 / 2 | 2 / 1 |
+  | fair | 158/200 (79%) | **17 / 1** | **12 / 1** |
+
+  **It is inert on the arm the cost was measured on.** The second-year cost
+  that opened this question was 22 deaths to 32 ON EVEN. On even, raising the
+  floor leaves 92% of runs bit-identical and comes out saved 2, killed 2. The
+  lever proposed to buy back year two does not touch year two.
+
+  **And where it does act, it hands the endgame back rather than easing the
+  middle.** On fair it saves 17 bands and gives twelve more of them a jarldom
+  at day 400 — and a jarldom nothing can end is precisely what 9.12a was built
+  to remove. Raising the floor would undo the third act on the arm where the
+  third act exists, in exchange for nothing on the arm that got harder.
+
+  So the trade the entry assumed — soften year two, blunt the third act by the
+  same amount — is not the trade on offer. There is no dial here, and 9.12a's
+  cost stands because the only named way to pay it down does not work.
+
+  **What is NOT established:** that year two SHOULD be softened. Nothing has
+  measured a lever that eases the middle without giving back the end, and none
+  is proposed here rather than invented — this phase spent two rulings on
+  mechanics that turned out to be already built or to answer a question the
+  game was not asking.
+
+  **How to re-take it**, because it cannot live as a test: `HEARTH_FREE` is a
+  module constant, so the sweep edits it. It was run in a throwaway `git
+  worktree` with the constant `sed`-ed per value and per-seed outcomes dumped
+  to JSON, then joined for the pairing — never in the working tree, because
+  the 9.2 sweep once timed out mid-run and left `CROSSING = 48` sitting in
+  `src/`.
+
+  *Done when:* ✅ the "average run" premise re-taken and found to describe a
+  length hardly any saga is · ✅ the mechanism found (`heartFromBuildings` as
+  an annuity) · ✅ a third act built that can end a jarl (9.12a) · ✅ its cost
+  stated rather than buried · ✅ the one named lever for that cost priced,
+  paired, and refuted · ✅ ruled.
+
+- [x] **9.12a The hall must be kept** — 9.12's answer, built 2026-08-30.
+  **DECIDED by Evan: the upkeep is a thing you DO, not a thing you spend** —
+  a deed each season that can be forgotten, the same shape as the blót, and
+  for the same reason: a rite you choose to hold is better than one that
+  happens to you.
+
+  A steading's heart is no longer paid for having been built. It is paid
+  while the hall is **kept** — a feast, one food a mouth, holding the hall
+  glad for a season (`KEPT_FOR = 24`), then fading across the season after
+  that (`NEGLECTED_AFTER = 48`) rather than falling off a cliff, because a
+  player one day late should not lose a jarldom for it. `src/sim/hall.ts`
+  owns the rule; `heartFromBuildings` asks it.
+
+  **The first year is protected by construction, not by a special case.**
+  `HEARTH_FREE = 1`: the first point of heart never needs earning, so a band
+  with a longhouse and nothing else is exactly where it was, and a jarl with
+  eight has seven riding on the feast. Nothing has to know how old a
+  steading is.
+
+  **The first-year guards held.** This was the whole condition on the item:
+
+  | | before | after |
+  |---|---|---|
+  | reached the first winter | 78% | 78% |
+  | saw spring | 52% | 53% |
+  | A Fair Country, spring | 83% | 83% |
+  | As It Lies, spring | 56% | 55% |
+  | A Hard Country, spring | 29% | 27% |
+
+  **And the third act now exists.** Past the third year, over 120 sagas an
+  arm:
+
+  | | before | after |
+  |---|---|---|
+  | even | 30 got there, **25 ruling** | 20 got there, **8 ruling** (starved 8, despair 3) |
+  | fair | 42 got there, **36 ruling** | 30 got there, **12 ruling** (starved 15) |
+  | hard | 11 got there, **11 ruling — every one** | 7 got there, **5 ruling** |
+
+  **The cost, stated rather than buried: the SECOND year got harder too**
+  — 22 deaths to 32 on even, and the average run fell from 175 days to 138
+  (fair 243 → 203). That is the mechanism working where the diagnosis said
+  morale kills, and it is more than the item asked for. The lever if it
+  should come back is `HEARTH_FREE`, which is a flat floor and would blunt
+  the third act by the same amount.
+
+  **THAT LAST SENTENCE WAS AN ASSERTION AND IT IS NOW MEASURED — AND WRONG.
+  See the ruling at the head of 9.12: the floor does not trade the third act
+  for the second year, it simply gives the third act back.**
+
+  **TWO THINGS THE MEASUREMENT CAUGHT, and both were the instrument.**
+
+  1. **At two food a mouth it was a poverty trap, not a choice.** The bot
+     never once afforded a feast, every band past its third year read a
+     heart of ZERO, and ruling fell from 25 of 30 to 8 of 23 with the deaths
+     coming up `starved` — no feast, no heart, hands walk out, less labour,
+     less food, no feast. Cut to one a mouth, which is about a fortnight of
+     one person's eating for the whole hall. The failure this rule is for is
+     FORGETTING; a feast a band can never afford is a fine.
+  2. **The bot's own branch was dead.** It was written into the long-game
+     block near the bottom of `step()`, which `step` never reaches — every
+     branch above it returns. Zero feasts held, measured as if it were the
+     rule's fault.
+
+  **And the probe that decides it was itself wrong the first time.**
+  "Of all overdue days, how many had no food?" read **64%** and meant
+  nothing: a band with food feasts at once and never lands in that sample,
+  so every day in it is a day somebody was short *by construction*. Sampled
+  instead on the one moment every band reaches — **the day the feast falls
+  due** — the larder can meet it 85% of the time on even and 84% on fair,
+  and of the rest most had nothing at all, which is a starving band and
+  should miss its feast. That is `PROBE: can a band actually afford to keep
+  its hall`, barred at a third, and it is watched failing at two a mouth
+  (fair goes to 42%).
+
+  **AND TWO MORE HARNESSES WERE WRITTEN BEFORE THE VERB EXISTED.** Neither
+  failure was the game. `expedition.test.ts` read never 16, trading 5,
+  emptied 10 — the wheel looking like a trap, with the FIVE-out arm beating
+  the two-out arm, which is incoherent; holding the feast puts trading back
+  to 13 and the ordering the right way round. `thing.test.ts` read 3 of 4,
+  and it pins food at 300 a day, so affordability was never the question —
+  it simply never held a feast. Both now hold one, with every threshold in
+  both files untouched: a band that "does the work" keeps its hall.
+
+  **Done when:** ✅ the heart of a steading is paid only while it is kept
+  · ✅ keeping it is a deed the player takes, with the cost on its face
+  · ✅ the panel says what a cold hall is costing, in the sim where the
+  wording can be held to account (`hearthMark`) · ✅ the first winter and
+  all three hardship arms unmoved · ✅ a jarldom can end · ✅ old saves are
+  credited with the day they load on rather than punished (migration 56,
+  `SAVE_VERSION 57`).
+
+### The play, moment to moment
+
+- [x] **9.13 The turn that ends itself** — **Done 2026-08-30.** Once a fighter
+  has acted the only legal move left was End turn; both of the screenshots
+  that opened this audit read "nothing left this turn — end it". One mandatory
+  tap per fighter per round with exactly one outcome. The turn now takes it.
+
+  **The premise was made executable rather than read off the guards**, which
+  is the whole reason to trust it: `test/battleActions.test.ts` tries every
+  verb the player has — strike, throw, shove, defend, dash, war cry — and
+  after each one asserts that all seven battle actions are refused and only
+  `B_END_TURN` gets through. Each arm carries an occurrence guard, and it
+  earned its place immediately: on a fresh field the walls are not yet in
+  contact, so strike, shove and the war cry were never once legal and three of
+  the six claims passed having proved nothing.
+
+  **The rule is a predicate in the sim; the view presses the button.** Making
+  `B_STRIKE` end the turn itself would rewrite what an action sequence means —
+  every recorded `[strike, end turn]` pair, in the golden runs, the port's
+  parity fixtures and this suite, would spend the NEXT fighter's turn on the
+  second action.
+
+  **Two things the work found that the item had not.**
+
+  1. **A broken man is spent before he starts.** `activeCombatant` skips the
+     down and the fled but not the broken, so a fighter whose nerve has gone
+     still gets a turn — and `broken` sits in the same guard as `hasActed`,
+     so every verb refuses him. He was being handed a turn with nothing legal
+     in it and asked to press a button about it. Worse, the action bar asked
+     only `hasActed`, so he was shown a **live Strike, Throw and Shove that
+     silently did nothing when tapped**. Both now count him as spent.
+  2. **End turn is not always ceremony, so the button stays** for a fighter
+     who has not acted — declining to act is a real choice, and on a rank
+     that reaches nobody it is often the right one. It keeps its label, too:
+     "Hold and end turn" reads better for what it now exclusively means and
+     is not worth breaking two browser bars that match the text exactly.
+
+  **The blow is left on screen for a beat** (`SPENT_GAP = 420ms`) before the
+  turn ends, because the tap being deleted was also where a player watched
+  their own blow land — end it on the same frame and the foes move over the
+  top of it. Booked against the turn key so a repaint cannot stack several,
+  re-checked against the live state when it fires so it cannot spend somebody
+  else's turn, and deferred even when motion is stilled so a dispatch never
+  re-enters a render.
+
+  **And it broke a bar honestly, which is the right kind of breakage.**
+  `scripts/pan.mjs` asked "did the tap order anything" by snapshotting
+  `round:turnIndex:down` before and after a tap on bare ground — fair only
+  while turns advanced solely because somebody pressed a button. It read
+  1:2 → 1:4 and called the clock a bare-ground order. Restated as the rule it
+  actually guards — *the active fighter must not act* — it is immune to the
+  clock and stronger than the snapshot, which could have matched by luck.
+  `scripts/look.mjs` needed the same correction: it clicked End turn after
+  striking and broke out of its loop when the button was missing, which after
+  this change would have sent it back to photographing round one — exactly the
+  blind spot that scene was written to close.
+
+  **Done when:** ✅ no tap is required that has one outcome · ✅ the premise
+  is proven against every verb, with a guard that the verb occurred · ✅ a
+  broken fighter is neither asked nor shown controls that do nothing · ✅ the
+  choice to decline is still offered · ✅ all twelve bars pass, `look`
+  included, so no screen moved.
+- [x] **9.14 Walking out is never right** — **Done 2026-08-30, and the
+  premise is now proven rather than suspected.**
+
+  **THE CASE THE VERB WAS SHIPPED FOR HAD NEVER BEEN MEASURED.** Both existing
+  measurements trigger the retreat on the VERDICT — "we will not reach spring
+  on what this ground gives" — which fires around day 40, so both measured a
+  band leaving in autumn with its summer already spent. `src/data/retreat.ts`
+  says so in as many words: it is "a verb for the OTHER case, ground you took
+  too fast and want to be off before the summer is spent", and "the harness
+  cannot measure that one". The harness can now: the bot settles rashly, and
+  leaves on the GROUND at the first legal day rather than on the verdict.
+
+  Swept over 120 landings on even, against the same band staying put:
+
+  | | saw spring | walked out | saved | killed |
+  |---|---|---|---|---|
+  | stays put | **83**/120 | 0 | — | — |
+  | leaves ground under 12 | 77/120 | 37 | 4 | **10** |
+  | under 14 | 45/120 | 141 | 5 | **43** |
+  | under 16 | 13/120 | 246 | 3 | **73** |
+  | under 18 | 5/120 | 275 | 1 | **79** |
+
+  **Read the first line and discount the rest.** Above 12 the retreat count
+  runs past the seed count — 141, 246, 275 over 120 landings — which is a band
+  founding, leaving, founding on ground just as poor and leaving again: a loop,
+  not a strategy, with a death toll inflated by it. The honest arm is
+  `under 12`, at most one retreat a band, and it still killed ten to save four.
+
+  **So the verb is wrong at every hour** — late on the verdict, early on the
+  ground, and every threshold between.
+
+  **It is not withdrawn, and that is deliberate.** retreat.ts's argument
+  stands: the game refusing was never a balance decision, it was
+  `foundSettlement` never having been written to happen twice, and whether
+  leaving is wise is the player's to get wrong. What changes is the silence.
+
+  **The panel now states the record under the price.** It had the cost on the
+  face of the control and the OUTCOME nowhere, so a player could read the whole
+  screen and still believe walking out was an escape. A game that puts the
+  price of crowding, of short commons and of a cold hall on screen cannot offer
+  this one in silence and call that neutrality. Still not urged: same quiet
+  class, one sentence, and it names the alternative in the same breath because
+  a fact with no other door in it is only discouragement.
+
+  **Composed in the sim, like the hearth and wall marks.** `leaveNote` returns
+  the refusal, the price and the record together, so the panel cannot ship two
+  of the three again — which is exactly what it had been doing. Claimed against
+  three sabotages: the record dropped, the record attached to a refusal that
+  has nothing to weigh, and the record softened into advice.
+
+  **Done when:** ✅ the case the verb was defended on is measured, not assumed
+  · ✅ the panel states what became of the bands that took the door · ✅ the
+  wording lives with the numbers it comes from · ✅ the choice is still
+  offered, and still not urged.
+- [x] **9.15 The number that decides everything and is never shown** —
+  **Done 2026-08-30, and THE ITEM'S OWN FIGURE WAS WRONG.**
+
+  It was written off "three sworn: 63% got there and never drew steel; five
+  sworn: 18%" — still reproducible (67% and 14% on the latest run) and still
+  meaningless. That gap is not a rule of the game. It is `outWith >= 4`, a
+  threshold in the HARNESS's raider policy: with three out the bot is below its
+  own bar and never falls on anything, with five it clears it and always does.
+  The game gates falling on a camp with `canFallOn`, which asks only whether
+  you are standing in it. Party size was never what decided whether steel came
+  out; the bot's own caution was.
+
+  **BUT THERE IS A REAL NUMBER UNDERNEATH, AND IT IS SHARPER.** Measured over
+  32 open-field fights a cell at difficulty 2, attacking:
+
+  | stood | won | foes faced |
+  |---|---|---|
+  | **3** | **3/32 (9%)** | 4.0 |
+  | **4** | **23/32 (72%)** | 4.0 |
+  | 5 | 22/32 (69%) | 5.0 |
+  | 6 | 17/32 (53%) | 6.0 |
+
+  **The cliff is 3 → 4, not 3 → 6, and past four it gets WORSE.** `foeCount`
+  scales what comes out to meet you with what you brought, so six of yours
+  meets six of theirs while the wall bonus is already full. The code comments
+  still repeated a stale "9% with three, 47% with six" from before that was
+  true; the live shape is 9% → 72% at four, then down.
+
+  **So four is the number, and nothing said so where it is chosen.** The
+  consequence surfaced only at the camp, as `fallOnReport`'s bare "so many of
+  ours against so many of theirs" — a ratio that cannot carry this, since four
+  against four wins 72% and six against six wins 53%. Equal numbers are not
+  equal odds.
+
+  `wallReading` now says it on the launch card, counted in SWORN because hands
+  are kept off the field entirely, and shown for every purpose rather than only
+  a raid: the camps are on the only road there is, and the fault it answers was
+  a trading party of two walking past one.
+
+  **TWO OF THE THREE SABOTAGES PASSED THE FIRST TIME**, and both faults are
+  ones this file has recorded before. The hands-don't-count claim built its
+  party by filtering a landing band for hands — a landing band is all sworn, so
+  it tested a party of nobody and went green against a version that counted
+  hands as fighters. And the threshold claim wrote both its loop bound and its
+  assertion in terms of `WALL_ENOUGH`, so moving the constant to three moved
+  both goalposts and it passed. It is pinned to the literal four now, with the
+  measurement named beside it.
+
+  **Done when:** ✅ the item's premise is checked rather than inherited · ✅
+  the real cliff is measured · ✅ it is said where the choice is made · ✅ the
+  half that is easy to drop — that heavier is not safer — is said too · ✅
+  every claim watched failing.
+
+---
+
+## Phase 10 — the audit of 2026-09-01
+
+Opened the day Phase 9 closed, and opened the same way Phase 9 was: from
+numbers taken fresh, not from the parking lot. Every item below carries the
+instrument, the date and the N, and anything not yet measured says so in
+capitals rather than being written as a finding.
+
+**The reading it is opened from.** `PROBE: the Phase 10 audit`, 120 landings a
+policy over the same seeds, both bots reported apart because half of Phase 9's
+bad numbers came from reading one bot's habits as a rule of the game:
+
+| | settler | raider |
+|---|---|---|
+| average saga | 137 days | 95 days |
+| settled | 88/120 | 104/120 |
+| still standing at day 400 | **12** | **2** |
+| ends: starved / despair | 74 / 26 | 77 / 40 |
+| ends: slain | **3** | **1** |
+| fights (open + at the wall + fallen on) | 625 + 178 + 274 | 646 + 153 + 335 |
+| sagas that saw a fight | 95/120 | 105/120 |
+| building kinds standing somewhere at the end | 15 of 15 | 15 of 15 |
+
+### The four things that reading says
+
+- [x] **10.1 Food ends the game, and almost nothing else does** — **THE
+  HEADLINE IS A MERGE OF THREE DIFFERENT ENDINGS. Measured 2026-09-01, and the
+  item has to be restated before any of it is acted on.**
+
+  It was opened on "starved plus despair is 100 of 120 sagas", which is a
+  reading off the ENDING SCREEN. 9.12a had already caught this class once —
+  the despair ending was renamed starvation when 28 of 30 despairing bands
+  turned out to have an empty larder — so the upstream was looked at before
+  one terminal cause was treated as one repeated decision.
+  `PROBE: 10.1 — is starvation one ending or several`, 120 landings an arm,
+  settler, each seed run to day 49 and to day 400:
+
+  | even | n | ended | settled | food on day 49 | dead of hunger | neighbours WE fell on |
+  |---|---|---|---|---|---|---|
+  | starved | 74 | day 98 | **51/74** | 33.6 | 2.1 | 1.8 |
+  | despair | 26 | day 141 | 20/26 | 35.7 | **0.7** | **3.9** |
+  | still standing | 12 | — | 12/12 | 33.7 | 4.9 | 1.7 |
+
+  **1. Starvation is at least two endings wearing one name.** On even,
+  **23 of the 74 starved sagas — 31% — never founded a steading at all**;
+  they starved on the road. On fair only 3 of 63 did. A band that never got a
+  roof and a band out-produced at its own steading are not the same failure
+  and do not want the same fix, and the mix flips with the hardship setting.
+
+  **2. THE GAME IS NOT DECIDED BY THE FIRST WINTER — that hypothesis is
+  refuted.** Food in the store on day 49 is 33.6 for the bands that starve,
+  35.7 for the ones that break, and 33.7 for the twelve that are still
+  standing at day 400. It does not separate them at all. Whatever decides a
+  saga, it is not the size of the first larder.
+
+  **3. Despair looked like the RAIDING ending. Chased down, it is the food
+  story again, and the causation runs the other way.** This took three passes
+  and every one of them is worth keeping.
+
+  *First pass:* despair bands showed the fewest hunger deaths (0.7 against
+  2.1) and the most `tally.sackings` (3.9 against 1.8). Written down as
+  "going out raiding correlates with ending in despair".
+
+  *Second pass — the counter was MERGED.* `sackings` is noted from two
+  different deeds: `fallOn` a neighbour's steading (`sim/neighbours.ts`) and
+  `sackPlace` a coastal prize (`sim/places.ts`). Reading the settler's policy
+  — `raidReach: 0`, `raidParty: 0`, `robsCamps: false`, a bot that never goes
+  out under arms — predicted the whole 3.9 must be place-plunder. **That
+  prediction was wrong, and only re-measuring caught it.** Split by watching
+  which deed actually fired:
+
+  | even | places plundered | neighbours fallen on |
+  |---|---|---|
+  | starved | 1.0 | 0.8 |
+  | despair | 1.0 | **2.9** |
+  | still standing | 1.0 | 0.7 |
+
+  Place-plunder is FLAT across every group. The entire signal is neighbour
+  raiding — so the correlation survived the split and got sharper.
+
+  *Third pass — WHY a bot with `raidReach: 0` falls on anybody.* The harness
+  has a second fall-on branch that no policy knob gates:
+
+  > `// Starving on a cold doorstep: the average player robs it before they die.`
+  > `if (host && days < 3 && host.standing < 10 && canFallOn(state, host.id))`
+
+  **It fires with under three days of food left.** The despair bands did not
+  break because they raided; they raided because they were starving. The
+  raiding is a symptom of the hunger, not a second cause — and the deaths it
+  costs them (violence 1.5 against the starved bands' 0.8) are what grinds the
+  morale down. **Despair is largely starvation routed through a desperation
+  raid that trades the larder for the heart.**
+
+  So 10.1's headline is MORE true than it looked, not less: the food story
+  reaches even the ending that appeared to be about something else.
+
+  **What this is conditional on, stated plainly:** that branch is the
+  HARNESS's model of a player, not a rule of the game. What is established is
+  that a band which answers near-starvation by robbing a neighbour converts a
+  food death into a morale death. Whether players do that is unmeasured.
+
+  **What is confounded, stated so nobody builds on it:** buildings standing
+  and deaths per saga both scale with how long a band lived — the standing
+  bands ran 401 days against the starved bands' 98, so "survivors built more"
+  and "survivors buried more" are duration, not cause. Nothing above rests on
+  either.
+
+  **The harness question was TAKEN rather than left open, and it is the reason
+  finding 3 now reads the way it does.** Phase 9 committed this fault twice —
+  `outWith >= 4` and the shield — so the answer was gone and got rather than
+  assumed, and it inverted the finding.
+
+  **4. AND "MONOTONY" WAS THE WRONG QUESTION TO ASK OF THE ENDINGS.**
+  Measured 2026-09-02, `PROBE: 10.1b`, 120 landings a policy run past the
+  reckoning to day 620. Monotony is a fact about the MIDDLE of a saga; two
+  bands can share a last screen and share nothing on the way to it — one that
+  starved having never raised a hall, and one that starved as a jarl in its
+  fifth winter, are the same word and not the same game. So this counts what a
+  saga is MADE of:
+
+  | | authored events fired | per saga | two sagas share |
+  |---|---|---|---|
+  | settler | **102 of 103** | 13.7 | **9%** |
+  | raider | 95 of 103 | 9.6 | **8%** |
+
+  | | building kinds raised | per saga | two sagas share |
+  |---|---|---|---|
+  | settler | 15 of 15 | 6.0 | 34% |
+  | raider | 15 of 15 | 6.4 | 45% |
+
+  **The endings repeat; the middles do not.** Two settler sagas have nine per
+  cent of their events in common. Nearly the whole deck — 102 of 103 — is
+  reached. The build tree is more repetitive (a third to a half shared), which
+  is the honest weak spot if one is wanted, and it is a fact about the bot's
+  fixed `want` list as much as the game.
+
+  So the fork the item poses — monotony or identity — is **not** a question
+  about one terminal threat at all. A player meets thirteen different events a
+  run out of a hundred and three, and shares one in eleven with the last run.
+  What repeats is the last screen.
+
+  **`built` is accumulated across the whole run here, not read at the end**,
+  because it LOSES a building the day something replaces it — the counter
+  CLAUDE.md opens on. Read at the end it would undercount every upgrade.
+
+  **The probe was wrong once, and the number was impossible, which is the only
+  reason it was caught.** It first printed "104 of 103 authored ever fired":
+  `ActiveEvent.id` is not only an id from `data/events` — its own comment says
+  "or 'feud'", and `travel.ts` raises a 'thing' the same way. The denominator
+  did not match the id space being counted. Partitioned now, and the two
+  non-deck ids are named in the output.
+
+  **RULED BY EVAN 2026-09-02: NOTHING CHANGES. THE ITEM CLOSES.**
+
+  The pressure chain is the identity rather than a thinness: battle bleeds a
+  band — 39% of the settler's dead and 47% of the raider's — and hunger
+  finishes it, and since 10.4 the last screen names both honestly instead of
+  calling everything `starved`. A player meets thirteen events a run out of a
+  hundred and three and shares one in eleven with their last run. What repeats
+  is one word on one screen, at the end of a road that does not repeat.
+
+  **What was NOT taken, so it is not mistaken for an oversight:** the build
+  tree is the genuinely repetitive half (a third to a half shared between
+  sagas, against 9% of events), and enriching the ending screen to name the
+  road rather than only its cause is cheap and carries no balance risk. Both
+  are real and both were declined here; neither is blocked if they come back.
+
+  *Done when:* ✅ the ending screen's three merged decisions separated
+  · ✅ the "decided by the first winter" hypothesis tested and refuted
+  · ✅ the despair/raiding correlation chased to its cause and inverted
+  · ✅ monotony measured where it actually lives — the middle — rather than
+  read off the endings · ✅ ruled.
+
+- [x] **10.2 The tactical layer feeds the food problem instead of threatening
+  the band.** Battle is not rare and never was: **about nine fights a saga,
+  in 95 of 120 sagas**, and battle-flavoured fates ("cut down in the press",
+  "bled out before the fight was over") are **100 of roughly 475 deaths — a
+  fifth of everyone who dies.** But `slain` ends **3 sagas in 120**. So the
+  whole combat mode — ranks, the wall, champions, heirlooms — is an attrition
+  pump into the larder rather than a way to lose. Whether that is the right
+  shape is a design question and an interesting one; what it is NOT is
+  "battle is unused", which is what the ending screen alone would have
+  suggested. **This item exists because the naive reading was refuted before
+  it was written down.**
+
+  **MEASURED PROPERLY 2026-09-01, AND THE ITEM UNDERSTATED IT BADLY.**
+  "A fifth of everyone who dies" was read off the top six rows of a table with
+  a regex written from memory. `DEATHS` in `data/injuries.ts` is a five-string
+  constant, so it is imported and matched exactly instead — and it contains
+  **"went under and was not seen again"**, which the regex took for drowning
+  and dropped. That one string is 52 deaths in a 120-saga arm.
+
+  `PROBE: 10.2`, 200 landings a policy, every death matched against the
+  constants and every fate that lands in no bucket printed rather than
+  swallowed:
+
+  | | settler (984 dead) | raider (912 dead) |
+  |---|---|---|
+  | hunger | 415 (42%) | 302 (33%) |
+  | **on the field** | **381 (39%)** | **425 (47%)** |
+  | sickness | 69 (7%) | 44 (5%) |
+  | the cold | 65 (7%) | 78 (9%) |
+  | carried off | 50 (5%) | 55 (6%) |
+
+  **1. Battle is one of the two engines of death, not a feeder into one.** It
+  kills 39% of the settler's dead and is the LARGEST single cause for the
+  raider at 47%, ahead of hunger. The opening figure was roughly half the
+  truth.
+
+  **2. And it is mostly not a choice.** Attributed per battle — by watching
+  which counter moved in the same step, because `tally.battles` already
+  CONTAINS `raids` and a fall-on also calls `startBattle`:
+
+  | | defended at the wall | met on the road | we started it |
+  |---|---|---|---|
+  | settler (1073 battles) | 339 (32%) | 500 (47%) | **234 (22%)** |
+  | raider (1140) | 255 (22%) | 508 (45%) | 377 (33%) |
+
+  Roughly four battles in five are weather rather than a decision. Every
+  settler prize (217) was taken without a fight at all.
+
+  **3. So the ending screen is the thing that is wrong, not the battle
+  system.** 0.36 dead per battle, four in five battles unavoidable, 39% of all
+  deaths — and `slain` ends 3 sagas in 120, because a band bled white on the
+  road dies of the hunger that follows and the last straw gets its name on the
+  screen. This is the same attribution fault as despair-was-starvation, and
+  now it has been found twice in the same phase.
+
+  **This also explains 10.3.** Raiding loses because it adds chosen battles on
+  top of a load that is already four-fifths unchosen, at a third of a man
+  per battle.
+
+  **CLOSED 2026-09-02 BY 10.1's RULING, which is the same chain seen from the
+  other end.** This item's open half was whether "battle bleeds, hunger
+  finishes" is the right shape. Evan ruled on exactly that chain in 10.1:
+  it is the identity, nothing changes. Giving battle a terminal threat of its
+  own was one of the options put and declined. What this item BUILT survives
+  in 10.4 — the ending screen no longer hides battle's share behind a
+  `some()`, so `slain` reads 10 in 120 for a settler and 14 for a raider
+  rather than 3 and 1.
+
+  **AND 10.1's probe qualifies it, 2026-09-01.** The bands that end in
+  `despair` do fall on neighbours far more (2.9 against 0.7), and the deaths
+  they take doing it are what breaks them — so combat does end runs through
+  MORALE rather than through the wall. But 10.1 chased the direction down: the
+  harness raids because it is within three days of starving, so this is
+  combat as a symptom of hunger rather than combat as a threat in its own
+  right. It does not rescue battle from being a feeder; it shows the feeder
+  running in both directions.
+
+- [x] **10.3 The raider is a play style that loses** — **DECOMPOSED
+  2026-09-01, COMPLETED 2026-09-02. IT IS BOTH, AND THEY ARE NOW SEPARATED: raiding costs about half
+  the survivors, and the rest of the raider policy costs about as much again.**
+
+  The opening reading compared two POLICIES, which cannot say anything about
+  raiding: `RAIDER` differs from `SETTLER` on at least six axes — `siteFloor`
+  7 against 9, no `relaxFrom` at all, `plunderWindow` 40 against 24,
+  `trades: false`, a different build order, and a different crew. That is the
+  same fault this harness already wrote down twice, "a strategy measured with
+  a spec that could not carry it".
+
+  `PROBE: 10.3`, 200 seeds, every arm paired against the one above it:
+
+  | | standing at day 400 | avg days | against the arm above |
+  |---|---|---|---|
+  | **A** settler | **27/200** | 141 | — |
+  | **B** settler + raiding, nothing else changed | **14/200** | 121 | saved 9, **killed 22** |
+  | **C** B + the raider's war crew | 17/200 | 117 | saved 9, killed 6 |
+  | **D** the full `RAIDER` policy | **4/200** | 97 | — |
+  | **E** D + `relaxFrom: 14` | 4/200 | 97 | saved 0, killed 0 |
+
+  *(One figure below moved when 10.4 fixed the ending labels: the paired
+  "runs identical" count reads 64 rather than 65, because that comparison
+  includes `end.cause` and one saga's cause was relabelled. `saved 9, killed
+  22` is unchanged, since survival is read off "still standing" and no run
+  changed its outcome — only what the screen calls it.)*
+
+  **1. Raiding itself loses, and that is the GAME.** One knob on the settler,
+  everything else held — same crew, same site rule, same build order, same
+  trading, same seeds — halves the bands standing at day 400 and comes out
+  saved 9, killed 22. The knob is checked to have fired: neighbours fallen on
+  goes 234 → 432, which is the check 9.1 needed and did not have.
+
+  **2. Equipping for it does not rescue it.** The obvious defence is that the
+  settler's two-farmer crew cannot carry a raiding strategy. Given the war
+  crew, arm C recovers +3 net (saved 9, killed 6) — real, and nowhere near
+  arm A's 27.
+
+  **3. More than half the raider's disadvantage is NOT raiding.** The settler
+  who raids stands 14 of 200; the full raider policy stands 4. So whatever
+  else is in that bundle costs about as much as raiding does.
+
+  **4. And the first suspect in the bundle came back an EXACT tie, which is
+  trap 3 and not a finding.** `relaxFrom` is the rule the raider never got,
+  and the settler's own comment prices it at saved 20 / killed 1. Added to the
+  raider it changed *nothing* — same standing, same average day, saved 0 and
+  killed 0. **The knob had no work to do:** at `siteFloor: 7` the raider
+  settles 170 of 200 bands on day 6, with only 14 still searching when the
+  rule would begin to relax, against the settler's 69. A rule that relaxes a
+  floor nobody is stuck behind cannot do anything. This is NOT evidence that
+  the rule is worthless.
+
+  **5. THE REST OF THE BUNDLE, MEASURED 2026-09-02 (`PROBE: 10.3b`).** Each
+  settler trait added back to the RAIDER one at a time, paired against the
+  raider itself — which asks what each knob does inside the strategy it
+  belongs to, rather than what it does to a settler that would never use it:
+
+  | | standing | against the raider |
+  |---|---|---|
+  | RAIDER as it stands | 4/200 | — |
+  | **+ settler build order** | **9/200** | **saved 9, killed 4** |
+  | + settler site policy | 6/200 | saved 4, killed 2 |
+  | + `trades` | 4/200 | saved 3, killed 3 — **a wash** |
+  | + `plunderWindow` 24 | 4/200 | **200/200 identical — INERT** |
+
+  **The build order is the largest single term outside raiding, and the reason
+  is the whole of Phase 10.** The raider defers `farmplots` from #2 to #6 and
+  `bud` from #3 to #7, putting palisade, smokehouse, storehouse and watchtower
+  ahead of them. **It builds its wall before its fields on a coast that kills
+  by hunger** — 10.1 measured starvation ending 100 of 120 settler sagas and
+  117 of 120 raider ones. Restoring the settler's order more than doubles the
+  raider's survivors.
+
+  **TWO OF THE FOUR KNOBS ARE INERT, AND FOR THE SAME REASON.**
+  `plunderWindow` came back 200/200 byte-identical, exactly as `relaxFrom` did
+  in point 4. Both are keyed to the SEARCH phase — the last day a homeless
+  band turns aside for plunder, and the day a homeless band lowers its
+  standards — and at `siteFloor: 7` the raider settles on **day 6**, with only
+  14 of 200 still searching by day 14. A raider barely has a search phase, so
+  nothing keyed to one can act. That is one cause, found twice, and it is
+  worth stating once rather than as two coincidences.
+
+  **The decomposition, and it does not sum cleanly — say so rather than
+  pretend.** Settler 27 → settler-who-raids 14 (raiding, −13) → raider 4. Of
+  that last −10: build order −5, site policy −2, trades and plunderWindow
+  nothing, and the war crew is worth +3 the OTHER way (arm C). The terms
+  interact, so 4 + 5 + 2 does not have to reach 14 and does not.
+
+  **What this settles:** more than half the raider's deficit is raiding
+  itself, which is the game, and the largest non-raiding term is a build order
+  that fights the thing the coast actually kills with.
+
+- [x] **10.4 The content is reached; the endings are not** — **FIXED
+  2026-09-01, COMPLETED 2026-09-02. THE RARE ENDINGS WERE NEITHER RARE NOR DECORATION: one line was
+  taking their name off them.**
+
+  The build tree is fine — at least 15 of 15 building kinds stand somewhere at
+  the end, 6.6 per settled band. The endings were the item, and the item asked
+  the wrong question about them.
+
+  **`slain` was being stolen by a `some()`.** The wipe-out ending read:
+
+  > `const starved = people.some(p => p.fate === 'hunger');`
+  > `const froze = people.some(p => p.fate === 'the cold');`
+  > `endRun(state, starved ? 'starved' : froze ? 'frozen' : 'slain', ...)`
+
+  **One** person who ever died of hunger, in any winter of the saga, named the
+  whole ending `starved` — so a band cut to pieces was told it starved as long
+  as a single hand had once gone short, and `slain` could only fire where
+  nobody had EVER starved or frozen. That is the mechanical cause of 10.2's
+  puzzle: battle is 39–47% of all deaths and `slain` ended 3 sagas in 120.
+
+  Replaced with `wipedOutBy`, which counts and names the largest, ties keeping
+  the old order. **The labels move and nothing else does** — same 120 sagas,
+  same average day, same bands settled, same bands standing:
+
+  | | starved | slain | frozen | despair | standing |
+  |---|---|---|---|---|---|
+  | settler before | 74 | **3** | 5 | 26 | 12 |
+  | settler after | 65 | **10** | 7 | 26 | 12 |
+  | raider before | 77 | **1** | 0 | 40 | 2 |
+  | raider after | 58 | **14** | 6 | 40 | 2 |
+
+  `test/ending.test.ts` pins the shape rather than today's counts, and three of
+  its five were watched failing against the old line.
+
+  **AND THE OTHER TWO ARE REACHABLE — measured 2026-09-02, `PROBE: 10.4b`.**
+  `survived` and `jarl` are player DEEDS (`layDownSaga`, `layDownRule`), and
+  `survived` is gated on `wintersStood >= LONG_LIFE_WINTERS`, which first goes
+  true on **day 457** — computed here rather than taken from the comment in
+  `household.ts`, though that comment is right. Every probe in this repo stops
+  at day 400, where `wintersStood` is **4**. *The measurements were one winter
+  short of the ending they were asking about.*
+
+  Run to day 620 instead, 200 landings a policy:
+
+  | | still going at 620 | past the reckoning | could lay the saga down | ruling |
+  |---|---|---|---|---|
+  | settler | 18/200 | 18 | **13** | **18 of 18** |
+  | raider | 2/200 | 2 | 2 | **0** |
+
+  **So they were never rare. They were never reached.** Thirteen settler bands
+  in two hundred stand where the deed is legal; the five others are only
+  mid-battle or mid-event at the sampling moment, which is the horizon and not
+  a barrier.
+
+  **Every settler band that survives to day 620 is a jarl — 18 of 18** — and
+  no raider is, ever. `jarl` is the settler's ending in practice.
+
+  **WHAT THIS DELIBERATELY DOES NOT MEASURE.** How OFTEN either fires is a
+  fact about when a PLAYER chooses to stop, not about the game. Teaching the
+  bot to lay down at the first opportunity would have measured the rule I had
+  just written and nothing else, so the probe asks reachability and stops
+  there. The item's fork — "make them reachable, or retire the ones that are
+  decoration" — is answered NEITHER: they are reachable and they are not
+  decoration; the instrument was short.
+
+  **A corroboration worth keeping:** ten of the bands alive at day 400 are
+  dead by 620. The fifth winter still kills about a third of the survivors,
+  which is 9.12a's third act working, seen from an angle 9.12a did not use.
+
+  **And a note for every future probe:** day 400 is one winter short of the
+  endgame. A sweep that wants to say anything about the late game has to run
+  past 457.
+
+### Carried over from Phase 9, small and concrete
+
+- [x] **10.5 `Plot.at` and `Champion.lastSeen`** — **DONE 2026-09-01, and the
+  two dead fields went opposite ways, which is the point of looking at each
+  one rather than sweeping them.**
+
+  **`Champion.lastSeen` now says what it was written to say.** Its comment
+  promised *"the day he was last seen, so the log can say how long it has
+  been"*, and for four milestones the log did not say it. The raid log already
+  had the sentence to hang it on — *"had come back for us"* — so it now
+  carries `It had been a season.` / `a year.` / `5 days.`, rounding DOWN to
+  the largest unit that has actually passed, because a man seen ninety days
+  ago has not been away a year and the log saying so would be a small lie in
+  the one place a run gets retold. Silent at a gap of nothing, which is the
+  save-reloaded-mid-fight case.
+
+  **The subtle half, and the reason the test drives a real raid rather than
+  the helper:** `startBattle` overwrites `lastSeen` with today as the champion
+  sets foot on the field, so the value has to be read BEFORE that assignment,
+  four lines earlier. A unit test of the formatting function would pass while
+  the log printed nothing.
+
+  **`Plot.at` is deleted.** `makePlots` builds the array in slot order and
+  nothing reorders, filters or splices it, so `plots[i].at` was always `i` —
+  the index written down twice, and the last remnant of the hex coordinate 8.5
+  set out to retire (`battle.width`/`height` were the others, taken the same
+  day). `SAVE_VERSION 62` + migration 61, which preserves plot ORDER because
+  order is what carries the slot now.
+
+  **Its only reader was another check that could not fail:** `expect(new
+  Set(plots.map(p => p.at)).size).toBe(plots.length)` — asserting that the
+  indices of an array are distinct. Replaced with the yard's size, which is
+  what `plotsFor` and the day's labour actually walk. That is the third
+  can't-fail check found in two days, after `battle.width === FIELD_WIDTH` and
+  the ending's `some()`.
+
+  Both halves were watched failing: removing the `lastSeen` read breaks two
+  champion tests, and removing the `delete` breaks the migration test.
+
+  **And a note for the next `SAVE_VERSION` bump, because this has now fired
+  twice in one day:** `port/LandnamPartyTables.gen.h` bakes `SaveVersion` in,
+  so `test/tables.test.ts` goes red the moment the constant moves. That is the
+  tripwire working — a generated file catching real staleness — but it means
+  `npm run party-tables` belongs beside the migration in the checklist, not
+  after a puzzled look at a failing suite. v61 and v62 both hit it.
+
+- [x] **10.6 What the CI runner actually has** — **READ 2026-09-02: FOUR
+  CORES, AND CI HAD BEEN RED FOR IT.** `ci cores: 4 -> vitest maxForks: 3`.
+
+  **The inherited number was wrong.** `vite.config.ts` has said "a two-core CI
+  runner" since Phase 5 and nothing ever re-took it; `ubuntu-latest` gives
+  four. So CI runs three forks and is exposed exactly as this box is — which
+  is why the correlation held.
+
+  **And the consequence was not a warning, it was a failing build.** Runs on
+  `74e0f78`, `8836305` and `75e9762` each finished
+
+  > `Test Files 92 passed (92)` · `Tests 1569 passed | 1 skipped` · `Errors 1 error`
+  > `##[error]Process completed with exit code 1.`
+
+  — every test green, the job red, on the unhandled `[vitest-worker]: Timeout
+  calling "onTaskUpdate"`. That is precisely what the note in `vite.config.ts`
+  records as having happened once before, and it had been happening again for
+  most of a day.
+
+  **THE ENTRY THAT SAID OTHERWISE WAS MINE, AND IT WAS AN INSTRUMENT FAULT.**
+  "Exit code was still 0", "it has never failed a run", "CI passes today" —
+  all read off LOCAL runs, where the shell pipeline's exit code comes from
+  `tee`/`tail` rather than from vitest. The local instrument could not see the
+  failure it was being asked about. Same shape as every other fault this phase
+  collected, this time about the tooling rather than the game.
+
+  **The fix, and it is the only one measured to work.** `npm test` no longer
+  runs `test/probes.test.ts`; `npm run probes` does. With the probes excluded
+  the error does not occur AT ALL — 0 occurrences against 3 of 3 runs with
+  them — and the suite goes **2,465s → 1,273s**. Rejected on measurement:
+  capping the fork pool (80% slower AND still errored), and the concurrency
+  mechanism itself (one file alone reproduces the error). The probes are not
+  deleted, skipped or weakened; they are simply not a gate. That is what the
+  bars/probes split was FOR — the bars are the gate, the probes are the
+  microscope — and running the microscope on every push was the category
+  error underneath all of it.
+
+  **AND THE ESCAPE HATCH HAD TO BE TESTED, NOT ASSUMED.** The first cut wrote
+  "run them with `npm run probes`" and shipped a script that did not work:
+  vitest applies `exclude` even to an explicit file filter, so `vitest run
+  test/probes.test.ts` exits *"No test files found"* against a config that
+  excludes it, and `--exclude` on the command line does not override it
+  either. Both were tried. The config now drops the exclusion when `PROBES=1`
+  and the script sets it. **That instruction was one command away from being a
+  lie in the same commit that added it**, which is the whole habit this phase
+  is about: run the thing you are telling the next person to run.
+
+## Phase 11 — the queue of 2026-09-02
+
+Fifteen items, proposed the day Phase 10 closed. **Every one carries the
+measurement it rests on, and the ones resting on nothing say so in capitals.**
+Phase 10's own finding is the reason for the discipline: this game reported
+itself badly, and six items in a row were opened on numbers that did not
+survive being re-taken.
+
+Three groups, roughly in descending order of how much they change.
+
+### Systems — the shape of the game
+
+- [x] **11.S1 Give the shield wall a decision** — **the premise held, the
+  proposed fix did not, the measurement found a bug instead, and the bug is
+  fixed. 2026-09-02/03.**
+
+  The premise is VERIFIED in code: rank is handed out at `battle.ts:440` as
+  `combatants.filter(side==='warband').length + 1` over `sworn(fieldCrew())`,
+  and `sworn` is roster order sliced to six. The player never forms the wall;
+  they pick a target and a verb and the line arranges itself.
+
+  **What the measurement found is that the line the game arranges is the worst
+  one it could pick.** `PROBE: 11.S1`, an arena of 300 fights an arm at
+  difficulty 2, one bot, changing only who stands in which rank:
+
+  | line | won | of six standing | leader down |
+  |---|---|---|---|
+  | **as they turn up (the game today)** | **178/300** | 2.15 | 296/300 |
+  | best men front | 222 | 3.17 | 197 |
+  | best men back | 224 | 2.52 | 210 |
+  | **a line drawn at random** | **218** | 2.75 | 209 |
+  | reversed roster | 240 | 3.24 | 75 |
+  | leader to the back, otherwise roster | 237 | 3.06 | 88 |
+
+  **The shipped order loses 40 fights in 300 to picking at random.** And
+  `PROBE: 11.S1b` says it is not a fixture artefact — 150 landings an arm,
+  settler, to day 500, reordering from `run`'s watch hook: **7/150 bands still
+  standing becomes 19/150** (leader to the back: saved 18, killed 6; reversed
+  roster: saved 14, killed 2), 4.75 people alive on average against 6.37. The
+  hook lands one beat late, so foes with the initiative have already swung at
+  the roster line — the bias runs toward the control and these are floors.
+
+  **THE PROPOSED FIX MEASURES AT NOTHING, THOUGH.** Best-men-front wins 222
+  and a line drawn at random wins 218. A deploy screen that rewards sorting by
+  stats is a decision with no right answer — 9.1's lesson exactly. What HAS a
+  gradient is one question: **where does the leader stand?** `leaderOf` is
+  `sworn(people)[0]` and rank is that same order, so **the band's leader stands
+  in the front rank of every fight it ever has**, and `leaderFell` costs the
+  whole side 25 nerve from anywhere on the field. Moving him alone is worth
+  +59 in the arena.
+
+  **THREE MECHANISMS WERE PROPOSED AND TWO DIED, which is why the arms are
+  kept.** "Leadership cascades down the line as the front rank dies" — refuted:
+  `leaderFell` fires 0.99 times a fight, never twice, because our fallen keep
+  `alive` and `leaderOf` never advances mid-battle. "Kin stand shoulder to
+  shoulder because `bindKin` pairs `free[0..1]` and `free[2..3]`" — real, and
+  small: unbinding kin alone is +10, though it is 10–0 paired, so kin as it
+  ships is a pure penalty in a fight. **About 26 of the placebo's 36 wins are
+  still unattributed** and are written down as unattributed.
+
+  The defect underneath is one line of description: **roster index is used for
+  three unrelated things — the order men stand in, who leads, and who is kin to
+  whom — so all three correlate perfectly and nobody chose any of it.**
+
+  **RULED (b), 2026-09-03: the default changed and the re-pricing was taken.**
+  `sim/lineup.ts` forms a wall by who can hold the front — current health plus
+  might, ties on `id` — and `battle.ts` reads rank off that instead of off the
+  roster index. Health rather than maxHealth on purpose: a man wounded in the
+  spring stands further back in the autumn and the line re-forms around him
+  without anybody deciding it.
+
+  **BOTH WALLS, and that was not politeness.** `sim/battleAi.ts` already
+  states the rule — "a formation trick that only the warband can play is not a
+  formation, it is a bonus" — so the foes form up the same way. It is not
+  free, and the number is recorded rather than buried: with our line still
+  forced to roster order, forming THEIR wall alone took the player from 178 to
+  190 in the arena. `anointChampion` raises the champion's health before
+  deployment, so `formUp` puts him in the front rank, where an axe can reach
+  him and where his fall costs his side 25 nerve. That is the tactic the
+  codebase says it wants — "singling out the man with the pennant a real
+  tactic on both sides of it" — and it is also a player gain.
+
+  **WHAT IT BOUGHT, on the same instruments, after:**
+
+  | | before | after |
+  |---|---|---|
+  | arena, wins in 300 | 178 | **210** |
+  | of six still standing | 2.15 | 3.09 |
+  | leader down, in 300 fights | 296 | 209 |
+  | sagas standing at day 500, of 150 | 7 | **14** |
+  | people alive at day 500 | 4.75 | 5.76 |
+
+  It does not take everything on the table — a reversed roster still reads 234
+  in the arena against 210 — and it is not meant to. Best-men-front measured
+  inside the noise of a random line, so there is no clever ordering to be had;
+  what there was is a correlation to break, and "the fit hold the front" is a
+  rule that can be said in the game's own words. In whole sagas, which is the
+  reading that counts, the new default has taken essentially all of it:
+  leader-to-the-back now scores 12/150 against the default's 14, and reversed
+  roster 17 (saved 10, killed 7 — inside noise at this N).
+
+  **THE COST, stated.** One bar moved in 1561: As It Lies published 53% see
+  the first spring against a measured 58%, and the tolerance is five points.
+  All three settings were restated at 300 landings — **81/55/27 becomes
+  84/58/30** — and they moved TOGETHER by three points each, which is what a
+  change to the FIGHT rather than to a country should look like. The gaps the
+  three names rest on, 26 and 28 points, did not move.
+
+  **A READING LEFT FOR SOMEBODY TO RE-TAKE:** A Fair Country publishes 30%
+  ever rule and the long game measured 24% over 120 sagas. That is inside the
+  bar's eight-point tolerance so it was NOT restated — 120 seeds is the sample
+  this file's own history says is too thin to set a promise with, and
+  republishing a passing figure off one thin reading is the trap the top of
+  this file is about. Re-take it at 300 before touching it.
+
+  **STILL OPEN, was (a) from the ruling above, and CLOSED ON RE-MEASUREMENT,
+  2026-09-03: the leader's stance does not clear a saga.** The claim above was
+  mine and it repeats this file's own oldest trap: read off an ARENA
+  instrument that never issues the war cry, so "back beats default 209/300
+  against 186" was a survival reading with no tactical cost attached, and it
+  went straight into a recommendation.
+
+  Re-measured in whole sagas, with the real bot — which DOES issue B_WARCRY —
+  reordering the leader on the watch hook exactly as 11.S1b did, 150 landings
+  an arm to day 500:
+
+  | | still standing | people alive | paired against default |
+  |---|---|---|---|
+  | formUp default | 14/150 | 5.76 | — control |
+  | leader forced to the front | 10/150 | 4.95 | saved 3, killed 7 |
+  | leader forced to the back | 15/150 | 5.67 | saved 13, killed 12 |
+
+  **Forcing the leader to the front is a clear net loss.** Forcing him to the
+  back is saved 13 / killed 12 of 150 — a net of one, deep inside the noise a
+  150-seed sample can resolve, not the gradient the arena promised. `formUp`
+  already sends a hurt leader to the back by the same rule it applies to
+  everyone; a bespoke stance control would be spending a `SAVE_VERSION` bump,
+  a migration, an action and a panel on a choice indistinguishable from
+  "leave it alone" at the one scale that counts.
+
+  **DECLINED: no stance screen.** The only thing the arena got right is that
+  forcing the leader forward is bad, and the default already declines to do
+  that. Nothing is built. If a future feature makes standing at the front
+  mean something beyond heft — gear, a banner, a boast — this is worth asking
+  again with that mechanic in place, not before.
+
+- [~] **11.S2 Make the yard an economy, or admit it is scenery** — **the yard
+  IS an economy, the BOT was playing it wrong for the whole project, the
+  plot-cap proposal is declined, and the fix is RULED but blocked on the
+  winter verdict. 2026-09-03.**
+
+  RE-VERIFIED, not inherited: `plotsFor` is called in exactly two places,
+  `colony.ts:403-404`, both inside `availableJobs` and both as booleans. The
+  ground caps nothing. **The premise is true and the proposed fix is wrong**,
+  and the measurement went somewhere better.
+
+  **1. A plot cap would bite almost only on WOOD, which the item did not
+  consider.** `PROBE: 11.S2`, 120 landings to day 500, counting hands set to
+  each kind of ground against plots of that kind, per PLOT KIND rather than
+  per job — because `wood` is worked by TWO jobs, `woodcutter` and `hunter`,
+  so "three field plots means three farmers" has no equivalent spelling for
+  it. And `hall` and `watchpost` are exactly ONE plot each, so the proposal
+  read literally caps a steading at one builder and one warrior.
+
+  | kind | plots | hands a day | a cap bites |
+  |---|---|---|---|
+  | field | 3.2 | 0.1 | 1% of days |
+  | **wood** | 4.7 | **7.2 (most 23)** | **57% of days, excess up to 19** |
+  | water | 6.4 | 0.0 | 0% |
+  | hall | 1.0 | 0.7 | 0% |
+  | watchpost | 1.0 | 0.1 | 0% |
+
+  The field cap the item actually describes is inert; the wood cap nobody
+  proposed is severe.
+
+  **2. THE INSTRUMENT CHECK TURNED THE PROBE AROUND, and it is the reason
+  this entry is not the one above.** Three of five kinds read 0% because
+  nothing bites — but "the ground is generous" and "nobody ever holds the
+  job" are the same number in that column. Counting HANDS regardless of the
+  cap says which: **fisher is assigned zero times in 15,837 settled
+  band-days.** `recrews` is false in all three shipped policies, so `recrew`
+  — the game's own "take the food job this ground pays best" — is never
+  called, and `crewsToNeed` spells `'hunter'` in all three of its branches.
+  The first reading was a fact about the harness.
+
+  **3. AND THE GROUND IS NOT AMBIVALENT. It is emphatic.** `PROBE: 11.S2c`
+  asks `output()` — no bot in it — on the states a saga really passes
+  through, 120 landings to day 500:
+
+  | season | farmer | hunter | fisher | winner's lead |
+  |---|---|---|---|---|
+  | spring | 25% | **4%** | **71%** | 32% |
+  | summer | 33% | **17%** | **51%** | 32% |
+  | autumn | 28% | **9%** | **63%** | 32% |
+  | winter | 0% | **6%** | **94%** | 49% |
+
+  **The ground pays fisher best on most days and hunter best on 4–17%, by
+  32–49%** — so the site reading already reaches every day of the game, which
+  is exactly what 11.S2 wanted plot caps to achieve. (This asks `output`
+  without gating on `availableJobs`; 85 of 86 steadings have water plots, so
+  the correction is about a point.)
+
+  **4. WHAT THE HARDCODED HUNTER COSTS.** `PROBE: 11.S2d` adds
+  `crewsByOutput` to the harness — optional, off in every shipped policy, so
+  no bar moves — and lets the daily crewing ask the ground instead:
+
+  | | reaches for the hunter | asks the ground | |
+  |---|---|---|---|
+  | spring (day 73) | 64/120, 4.54 souls | **74/120**, 4.91 souls | **saved 11, killed 1** |
+  | day 500 | 12/120, 5.83 souls | 17/120, **8.52 souls** | saved 12, killed 7 |
+
+  **5. AND `recrews` DID SURVIVE BEING DOUBTED**, which is worth recording
+  because the doubt was reasonable and wrong. It was switched off on "saved 0,
+  killed 0" — an exact tie, this file's own signature of a feature that never
+  ran. Re-taken (`PROBE: 11.S2b`): saved 0/killed 2 at spring, saved 11/killed
+  7 at day 500, which is noise at N=120. It really is worth nothing, because
+  `crewsToNeed` overwrites its seasonal choice the next day. The fix is not to
+  switch `recrews` on; it is to stop the daily crewing naming a job.
+
+  **DECLINED: plot caps.** The yard is not scenery for want of a cap, and a
+  cap would land on the one kind two jobs share.
+
+  **RULED FLIP, 2026-09-03 — AND THE FLIP DOES NOT SHIP ALONE. It was turned
+  on, measured, and turned back off the same day, with a prerequisite nobody
+  knew was there.** The ruling stands; what follows is what it costs, so the
+  next hand can do it in one line and in full knowledge.
+
+  **What the flip is worth, measured:** the difficulty menu re-prices from
+  84/58/30 to **87/65/38** over 300 landings a setting. They do NOT move
+  together this time — +3, +7, +8 — and that shape is right: a fair country
+  feeds a band whatever it does, and the worse the ground the more it matters
+  that you work the right part of it. The gaps the three names rest on narrow
+  from 26 and 28 points to 22 and 27, both still past the ±10 this harness can
+  resolve.
+
+  **What it breaks, and neither is a stale number to restate.** Three bars go
+  red, and one of them is only arithmetic — `A Fair Country promises 30% ever
+  rule` against 48% measured. The other two are the same defect:
+
+  1. **The winter verdict is calibrated to a game where bands feed themselves
+     badly.** `reachable` condemned 157 bands over 900 seeds and **91 of them
+     went on to see spring — 58% wrong, against 38% before the flip**, on a
+     panel that does not hedge.
+  2. **The eve of winter stops being a cliff.** `cliff.test` puts twelve bands
+     on the best ground in the world, day 50, four food and no wood: 6 of 12
+     are now saveable where the bar allows 3.
+
+  **AND THE 58% IS A TRAP-2 READING — the denominator reselected itself.** In
+  ABSOLUTE terms the verdict is telling almost exactly as many bands as before
+  that they are dead when they are not: **87 bands per 900 seeds before the
+  flip, 91 after.** What changed is that the flip rescues the easy cases out
+  of the condemned pool — 229 condemned becomes 157 — so the same error is now
+  a much bigger fraction of a smaller, harder-to-call population. The ratio
+  moved 20 points; the underlying mistake moved by four bands.
+
+  **A FIX WAS TRIED AND IS RECORDED RATHER THAN SHIPPED.** `walkWinter` picks
+  the food job BY NAME too — the same bug as the crewing — and its own note
+  says taking the max over every producing job "reads truer... left alone
+  until that call is made". Re-taken per person, post-flip, it moves the
+  verdict from 60.6% wrong to 58.0% and flips `cliff.test`'s pivot band. It
+  helps and it is nowhere near enough, so it went back with the flip: the
+  interesting part is that a fix REJECTED before the flip (33% → 44%) becomes
+  a small improvement after it, which is one more number that changes with the
+  game underneath it.
+
+  **THE VERDICT WORK IS DONE — and it turned out to be needed WITHOUT the
+  flip, which is not what the blocker looked like. See 11.V below.** The flip
+  is still off: post-flip, even with the repaired verdict, the ratio reads 58%
+  and the bar wants 40%. When that is settled the flip is `crewsByOutput:
+  true` on three policies and a restatement to 87/65/38.
+
+- [x] **11.S3 Travel ends when you settle** — **THE PREMISE WAS MINE AND IT
+  DID NOT SURVIVE BEING MEASURED, 2026-09-02. Ruled a deck and closed,
+  2026-09-03.**
+
+  The item was opened on a code reading: `walkOptions` returns `[]` for a
+  settled band with no expedition, so the coast "becomes unreachable" and is
+  "a prologue walked for about a fortnight". The code reading is correct. **The
+  claim about play is false.** `PROBE: 11.S3`, 200 landings a policy to day
+  620, splitting on `world.trodStops`, which keys each stop to the day it was
+  first stood on:
+
+  | | stops trodden of 26 | of which after founding | bands that trod new ground after founding | days looking / settled |
+  |---|---|---|---|---|
+  | settler | 6.3 | **1.9** | **83 of 148 (56%)** | 14.1 / 196.2 |
+  | raider | 6.8 | **3.6** | 100 of 170 (59%) | 5.8 / 108.4 |
+
+  **The door is not shut. A majority of settled bands walk through it** — and
+  for the raider more than half of all ground covered comes AFTER founding.
+  Reading `walkOptions` and inferring "the coast is gone" was inferring play
+  from a guard, which is the same fault as reading a bot policy as a rule of
+  the game. It went straight into a queue item three hours after being
+  written down.
+
+  **What is true, and it is a different and sharper question: a saga touches
+  6.3 of 26 stops — a quarter of the coast. Three-quarters of the route is
+  never stood on at all**, by bands that live to day 620. That is the content
+  question, and it has nothing to do with settling.
+
+  **And it may not be a problem.** 10.1b measured 9% event overlap between two
+  sagas: the unseen three-quarters is not waste, it is the pool that makes
+  runs differ. A coast of 26 that each band draws six from is behaving like a
+  deck rather than a map, and a deck is not obliged to be dealt out.
+
+  **RULED, 2026-09-03: accept it as a deck.** A quarter of the coast per saga
+  is the draw, and it is not waste — 10.1b measured 9% event overlap between
+  two sagas, so the three-quarters a band never stands on is the pool that
+  makes runs differ. The route is not a map to be exhausted; it is a deck to
+  be dealt from, and a deck is not obliged to be dealt out. **No work
+  follows** — the item existed to settle a question and the question is
+  settled. Do not shrink the route, and do not add reasons to range further
+  without a fresh reading: both would spend the thing that differentiates
+  runs. The first framing — "travel ends at settling" — stays withdrawn.
+
+- [~] **11.S4 Crewing is the largest lever in the game and, for a human, a
+  500-day chore** — **premise measured and TRUE, the unmeasured clause
+  answered, and the item is a GO that has not been built. 2026-09-03.**
+
+  Nobody had counted the taps. `PROBE: 11.S4` counts every assignment that
+  actually changes, across transitions — the harness recrews by mutating
+  `state` BEFORE `apply`, so comparing within one `watch(before, after)` sees
+  a state already reassigned and misses every tap:
+
+  | the order the band is under | taps a saga | a day | worst saga |
+  |---|---|---|---|
+  | crews to the mark daily (the game's biggest lever) | **94** | 0.51 | **530** |
+  | crew set on settling day, never touched | 0 | 0.00 | 0 |
+  | crews to the mark AND asks the ground (11.S2) | 66 | 0.31 | 429 |
+
+  **Ninety-four taps a saga, five hundred and thirty in a long one, to work a
+  lever the game already computes for you.** That is 9.13's mandatory-tap
+  objection ninety-four times over: every one of those taps is the output of a
+  two-line rule reading the winter mark, and the mark panel already displays
+  both halves of it — Food and Wood, held against needed, with the gap.
+
+  A pleasing side reading: asking the ground costs FEWER taps (66 against 94)
+  over MORE settled days (18,685 against 15,773), because a band that eats
+  better is short less often, so the rule fires less.
+
+  **AND THE UNMEASURED CLAUSE IS ANSWERED: it is a decision, because the
+  ORDERS differ.** Three plausible standing orders, three measured outcomes,
+  all paired at 120 seeds — leave the crew alone against keep the mark met is
+  **saved 30, killed 3** (2026-08-20); keep the mark met against keep it on
+  the ground that pays best is **saved 11, killed 1** (11.S2d). So a standing
+  orders screen is not one toggle wearing a UI, and automating the taps is not
+  "a number going up": what the player picks changes how the saga ends.
+
+  **GO, and the design is settled by the two readings above:** the order is
+  stored intent, the band follows it daily, and the food job it reaches for
+  comes from `output()` rather than a name — which is the 11.S2 finding
+  expressed as a feature rather than as a harness knob. Not built: it needs
+  state on the settlement, a `SAVE_VERSION` bump with a migration, a panel,
+  and a re-measure afterwards.
+
+  **One caveat to carry into the build:** 94 taps a saga is the BOT's
+  reassignment rate. A human who crews less often gets less than the full
+  saved-45 and pays fewer taps, and nothing here measures where on that curve
+  a real player sits.
+
+- [x] **11.V The winter verdict picked its food job by name, and it was wrong
+  about 65 bands per 900** — opened as 11.S2's blocker, finished on its own
+  merits. 2026-09-03.
+
+  `walkWinter` projected the winter on `jobs.find((j) => j.id === 'hunter')`.
+  Its own note said so and deferred the repair: *"taking the max over every
+  producing job instead reads truer... left alone until that call is made."*
+  Two earlier attempts were measured and rejected at 44% and 39% against a
+  33% baseline.
+
+  **BOTH REJECTIONS WERE TRAP 2 INSIDE THE EVALUATION OF A FIX.** The bar is
+  `wronglyCondemned / condemned`, and a kinder projection moves both halves —
+  it condemns fewer bands, so the denominator shrinks and the ratio can RISE
+  while the number of players lied to falls. Judged as counts over the same
+  900 seeds, on the same `winter-inside-` sample and the same day-73 horizon:
+
+  | | before | after |
+  |---|---|---|
+  | condemned | 200 | 180 |
+  | **false-dead** (told dead, lived) | **65** | **50** |
+  | false-alive (never told, died) | 17 of 467 | 22 of 487 |
+  | the bar's ratio | 33% | **28%** |
+
+  Fifteen fewer bands told they were doomed and then living; five more not
+  warned. Both are reported because a projection cannot game them together —
+  buying fewer false-deads by condemning nobody shows up at once as
+  false-alives. The shipped version differs from both rejected ones by picking
+  per HAND and carrying that job's own seasonal factor, which is why it reads
+  28% where a band-wide max read 44%.
+
+  **AND IT IS A REAL DEFECT, NOT A NARROW CLAIM.** The verdict says "on what
+  THIS GROUND gives" and offers robbery underneath, so a band that lives by
+  robbing has not falsified it. Attributed (`PROBE: the winter verdict`), of
+  65 wrongly condemned: 24 buried a mouth, 11 took the road, **0 robbed, 0
+  traded — and 35 (54%) lived on the ground ALONE.** That share is the
+  projection being wrong and nothing else. `canGather` and `canFish` both
+  require `!atHome`, so a settled band cannot forage its way out; the ground
+  really was the whole of it.
+
+  **THE CLIFF MOVED, AND ITS BAR IS RESTATED RATHER THAN RELAXED.** A better
+  projection is a kinder one, and `cliff.test` pinned an absolute count — at
+  day 50, at least 9 of 12 best-ground bands doomed. Re-swept:
+
+  | day | 30 | 40 | 50 | 60 | 70 |
+  |---|---|---|---|---|---|
+  | past saving, of 12 | 0 | 0 | **6** | 4 | 5 |
+
+  No day now reaches 9, so that threshold is gone. What has not gone is the
+  cliff: mid-autumn every band on the best ground is saveable and by the eve
+  half are not. The bar is now the STEP rather than the level — eve ≥ 4 past
+  saving AND eve − mid-autumn ≥ 4 — which is the claim the file exists for.
+  **Watched failing both ways:** a verdict that never condemns reads 0/12 and
+  0/12 and trips the first clause; one that condemns everybody reads 12/12
+  and 12/12 and trips the second. (Day 70 lifting is correct — the thaw is
+  three days off and there is barely a winter left to walk.)
+
+- [x] **11.S5 Winters that vary — finish 6.1** — **the item's own premise
+  was re-checked against the code rather than inherited, and it was WRONG in
+  an interesting way: winters do not arrive at the same depth "today" — 6.1
+  already varies them. They stop varying, permanently, after the third one.
+  2026-09-03.**
+
+  RE-VERIFIED, not assumed: `winterDepth(seed, day) = min(WINTER_DEPTH_MAX,
+  floorDepth(day) + bite(seed, day))`, where `floorDepth` grows
+  `WINTER_DEEPENING` (2) a winter and `WINTER_DEPTH_MAX` is 6. The floor ALONE
+  reaches the ceiling on the fourth winter (3 × 2 = 6), and from there every
+  winter reads bit-for-bit identical regardless of the seeded `bite()` roll —
+  the code's own comment two lines above calls the variance "the whole
+  mechanism", and the arithmetic had switched it off for the rest of the
+  game:
+
+  | winter | floor | depth range | spread |
+  |---|---|---|---|
+  | 1 | 0 | 0..4 | 4 |
+  | 2 | 2 | 2..6 | 4 |
+  | 3 | 4 | 4..6 | 2 |
+  | 4 | 6 | 6..6 | **0 — flatlined forever after** |
+
+  MEASURED, not assumed to matter: `PROBE: 11.S5`, 120 settler landings to
+  day 500 — **of 183 winters actually lived through, 35 (19%) were already
+  flatlined.**
+
+  **THE FIX cuts the SHARED ceiling in two.** `winterDepth` now caps the
+  floor alone (`cappedFloor`) and adds `bite` on top, uncapped by anything the
+  floor already met — so a winter past the third can land anywhere from 6 to
+  10 instead of pinned at 6. The floor's own growth is UNCHANGED — this did
+  not re-open whether winter's structural cost should climb forever, only
+  restored the part the milestone's own comment calls the point.
+
+  **A SECOND, LATENT BUG SURFACED WHILE FIXING THE FIRST, and needed its own
+  fix in the same commit.** `winter.ts`'s `plannedFirewood` — the mark's
+  far-out guess and `reach.ts`'s "best case" ceiling — computed its own
+  parallel `base = effectsOn(day).firewood + floorDepth(day)`, using the RAW,
+  UNCAPPED floor rather than the capped one `winterDepth` actually uses. For
+  a `best=true` walk (no ceiling clause reachable to catch it) this could
+  charge a late-game band for a depth no real winter has ever reached — the
+  exact false-dead shape 11.V found and fixed elsewhere in this file's
+  neighbourhood, latent here rather than triggered, because it needed a
+  winter deep enough into a saga that few sagas reach it. Fixed to share
+  `cappedFloor` with `winterDepth`, so the mark and the real burn cannot
+  quietly disagree — which is the rule `plannedFirewood`'s own header comment
+  already states.
+
+  **ANNOUNCED IN AUTUMN, per the item's own proposal.** A new, separate
+  chronicle line fires once, at the exact day autumn opens, from the second
+  winter on (silent for the first — `bite` is forced to zero there, so there
+  is nothing true to say). Day-gated rather than flag-gated, the same
+  discipline the existing "eight days out" line uses, so it cannot repeat
+  within a season. Three lines, chosen by the seeded `bite`, watched to fire
+  exactly once and to differ across seeds:
+  - mild (`bite` 0–1): *"The autumn opened mild, and the old hands said this
+    looked to be an easy year."*
+  - ordinary (`bite` 2): *"The autumn opened as autumns do — no better a
+    sign in it than any other year."*
+  - hard (`bite` 3–4): *"The autumn opened with something wrong in the
+    colour of the sky, and the old hands said so."*
+
+  **PRICED, paired same-seed, before and after the depth-cap fix:** 150
+  settler landings to day 500, **150/150 sagas agree except one — saved 1,
+  killed 0.** Inside noise at this N, and that is the right shape for this
+  fix: it restores a mechanism the milestone's own numbers already said moves
+  survival "by exactly zero" on its own (fixed deepening alone was tried and
+  rejected on that basis when 6.1 first shipped) — what it buys is legibility
+  and story, not a curve shift, and it was not expected to move one.
+
+  This closes 6.1.
+
+### Mechanics — fixes and enhancements
+
+- [x] **11.M1 A winter camp: a middle outcome for a band with no roof.** —
+  **DECLINED 2026-09-03, on a re-take that moved the target out from under
+  the item.** The 10.1 figure inherited here (23/74 on `even` never found a
+  steading) was read as "no roof by winter is a death sentence" and the fix
+  proposed was winter-shaped: a camp with heavier firewood, survivable if
+  provisioned. Re-measured with two probes (`PROBE: 11.M1`/`11.M1b`,
+  `test/probes.test.ts`, `SEEDS=120`, `HORIZON=400`, both hardship terms):
+  first, what actually kills the never-founded — `even`: 34/120 sagas never
+  found a steading (avg end day 31), fallen split cold 13 / **hunger 37** /
+  violence 17 (hunger outnumbers cold nearly 3:1), 0/34 still wandering alive
+  at day 400 — none linger, all die outright. `fair`: 7/120 never founded
+  (avg day 33), cold 1 / hunger 6 / violence 8, 0/7 wandering. Second, the
+  decisive split — of those 34 `even` deaths, **28 (82%) die *before* winter
+  even opens** (day < 49, the fixed `WINTER_DAY`); only 6 die at-or-after
+  winter opens, and even inside that small remainder cold (8) still trails
+  hunger (10). `fair`: 4/7 before winter, 3/7 after, and among the after
+  group cold 1 / hunger 6. So the population this item targets almost never
+  reaches the season it names — four in five of them are already dead of
+  ordinary summer/autumn hunger and violence weeks before winter is a factor
+  — and even the minority who do reach it homeless are still killed more
+  often by hunger than by cold, meaning a firewood/shelter mechanic (the one
+  literally described) would treat the wrong store even within its own
+  narrowed true population. No code change is indicated: the failure this
+  item names is real in aggregate (31% never found) but is not a winter
+  failure, so a winter-shaped fix would measure as close to nothing, the
+  same pattern 11.M3 found for its own proposed mechanic. Left for Evan: if
+  the never-founded rate itself is worth addressing, the lever is early-game
+  hunger and violence before day ~31–33, not a winter camp.
+
+- [x] **11.M2 Raiding states its record** — **shipped 2026-09-03, on a
+  RE-TAKEN number rather than the one the item opened on.**
+
+  The item cited 10.3's figure — saved 9 / killed 22 over 200 paired seeds —
+  and that reading was seven items and two balance changes old by the time
+  this one was reached (11.S1's deployment fix, 11.V's winter-verdict fix,
+  both touch survival directly). Re-run on the identical probe rather than
+  trusted: **saved 7 / killed 20**, 200 seeds, raiding turned on for the
+  settler with nothing else changed. Same shape, smaller magnitude — the
+  number moved and the conclusion did not, which is what re-taking a figure
+  is for.
+
+  `sim/expedition.ts` gains `RAID_RECORD`, and `wallReading` now takes an
+  optional `purpose` and composes the record itself when it is `'raid'` — the
+  same discipline `leaveNote` uses for `ABANDON_RECORD`: a renderer left to
+  decide on its own whether to show a record is a renderer that can forget
+  to, which is exactly the bug that made ABANDON's record go unseen until
+  9.14 caught it. `render/cards/decide.ts` prints it under the existing wall
+  reading, not instead of it — a raid party still needs its odds in the fight
+  it is walking into; the record is the separate fact that winning that
+  fight and surviving the saga are different questions. States it, never
+  refuses, same rule as the other two doors out.
+
+  Watched failing: the card's own test was run against the record forced to
+  `undefined` before being trusted.
+
+- [~] **11.M3 Price the desperation raid where it happens** — **the item's
+  own caveat was checked rather than assumed, and it does not hold the way
+  the item expected: the trade the bot is meant to be offered CANNOT rescue
+  the crisis it fires in. A smaller, honest fix shipped; the real fix is a
+  new mechanic and is Evan's call. 2026-09-03.**
+
+  The item's caveat said the harness's rule ("the average player robs it
+  before they die") is a bot habit, not the game's truth, and that the fix
+  is to make the neighbour card show the trade the bot is skipping.
+  RE-VERIFIED IN CODE FIRST rather than built to spec: `bargain()` runs in
+  exactly ONE direction, food OUT and firewood IN
+  (`sim/neighbours.ts:bargain`), and the branch this item is about fires on
+  `days < 3` — FOOD nearly gone. So "naming both sides of the trade" would be
+  naming a trade that spends the one store the band is short of to buy a
+  store it did not ask for. Not a UI gap; a trade that cannot address the
+  crisis it would be offered against, structurally.
+
+  MEASURED rather than reasoned from the structure alone (`PROBE: 11.M3`,
+  150 landings a arm to day 500, an added `barterBeforeFallOn` knob trying
+  barter first in the exact branch): **saved 4, killed 4** — an exact tie —
+  with the instrument checked before it was trusted (CLAUDE.md trap 3): the
+  arm fired 55 times across the sample, not zero, so the tie is the trade
+  doing nothing, not the trade never running.
+
+  **WHAT SHIPPED, and it is smaller than the item asked for.** The barter
+  deed gets the numbers fall-on got at 9.15 — `bargainEstimate` (a pure,
+  RNG-free preview sharing `bargain()`'s own formula, so a shown price and a
+  paid price cannot drift, same discipline as `offerGot`) — and, only when
+  `foodPerDay` says the band is inside the three-day floor, a stated warning:
+  *"It buys wood, not food — this will not fill an empty larder."* Composed
+  in `sim/neighbours.ts` (`bargainBlurb`) rather than in the renderer, so a
+  test can hold the numbers and the warning together without a browser.
+
+  **DECLINED for now: giving a neighbour the reciprocal trade a PLACE already
+  has.** `data/places.ts` already runs offers firewood-for-food at fixed
+  counters; a neighbour's `bargain()` has no such direction at all. That
+  WOULD be a real peaceful door out of a food crisis, and is a new mechanic —
+  more than the item asked for, and a real balance question in the shape
+  this session's other rulings have needed Evan for (a starving band gets a
+  door it does not have today). Not built. **Left `[~]` on that decision.**
+
+- [x] **11.M4 Find what actually decides the first winter** — **RE-TAKEN
+  rather than inherited, and it no longer reads the way it did: food now
+  separates the doomed from the survivors, and nobody set out to fix that.
+  2026-09-03.**
+
+  10.1's opening figure — food at day 49 reading 33.6 / 35.7 / 33.7 across
+  starved / despair / still-standing, no separation on the most-watched
+  number in the game — was six items and five balance changes old by the
+  time this item was reached (11.S1's deployment fix, 11.S2's flip, 11.V's
+  verdict repair, 11.S5's winter-depth fix, 11.M2, 11.M3, several of which
+  touch survival directly). RE-RUN on the identical instrument (`PROBE:
+  10.1`, same probe, same seeds) rather than trusted:
+
+  | terms | starved | despair | still standing |
+  |---|---|---|---|
+  | even | 34.4 | 35.1 | **46.9** |
+  | fair | 53.4 | 47.0 | **60.3** |
+
+  **Still-standing bands carry 12–13 more food at day 49 than either doomed
+  group, in both terms.** The flat reading that opened this item is gone. No
+  one item did this on purpose — it is the residue of the balance work
+  between 10.1 and here, and it is recorded as a fact rather than credited
+  to a cause nobody isolated by bisecting five changes.
+
+  **THREE MORE CANDIDATES CHECKED, AND NONE OF THEM SEPARATE EITHER**
+  (`PROBE: 11.M4`, same 120-seed sample, settled bands only): hands (band
+  size at day 49) was already in 10.1's own data and reads 6.0 / 5.9 / 6.1 —
+  flat. Roof (settled by day 49) reads 33/35, 19/19, 18/18 — saturated,
+  everyone who is going to have one has it by day 49 regardless of fate.
+  Site reading at founding reads **13.8 / 13.8 / 14.4 of 25** (even) and
+  **14.0 / 13.6 / 14.2** (fair) — flat. Job mix is closer to identical than
+  any of them: woodcutter ~2.5, hunter ~2.2–2.8, builder ~0.9–1.0 per band in
+  every group, both terms — `crewsToNeed` reacts to the same pressure
+  everywhere, so it produces the same shape everywhere.
+
+  **SO THE ITEM'S OWN PRESCRIPTION — "whatever decides it, that is what the
+  panel should show" — is already satisfied.** Food decides it, now, and the
+  panel already shows food. Nothing to build. Closed on the strength of the
+  re-take rather than left open on a stale reading.
+
+  **ONE THREAD DELIBERATELY NOT PULLED.** Food does not tell the two ways of
+  being doomed apart from EACH OTHER — starved 34.4 against despair 35.1 in
+  even terms, food essentially tied — and 10.1's fuller table shows despair
+  bands falling on neighbours far more (3.9 a saga against starved's 0.7,
+  matching 11.M3's finding that a food crisis reaches for the neighbour).
+  That is a question about which FLAVOUR of loss a doomed band gets, not
+  about how to avoid losing, and it is not what this item asked. Left
+  unopened.
+
+- [x] **11.M5 Sweep every player verb for effect size.** — **RUN 2026-09-03.
+  One dead verb found, and it stays dead — the priority list ahead of it
+  forecloses its one good case before it can ever be tried.**
+
+  First, the inventory: most colony and travel verbs already carry an
+  effect-size reading from this session's own work, verb by verb rather than
+  as one sweep — `SET_RATIONS` (short commons, saved 22/killed 1, 9.7),
+  crewing to the winter mark (saved 45/killed 0, 9.7), `QUEUE_BUILD` order
+  (10.3b, +5 bands/200), `BARTER`/`FALL_ON` (11.M3), raiding (`LAUNCH`
+  purpose:'raid', 11.M2 and task 31/33), `SACK_PLACE`/`STRANDHOGG` (task 33,
+  "the place economy"), `TRADE_AT` (task 33's remainder), walking out
+  (item 460/489, saved 0/killed 11), the voyage home (9.2). Three verbs —
+  `HOLD_BLOT`, `LAY_DOWN_RULE`, `LAY_DOWN_SAGA` — are confirmed by direct
+  code read (grep of `test/fixtures/harness.ts`, zero hits) to never be
+  dispatched by any bot policy, and each carries its own comment explaining
+  why: they are PLAYER-only choices by design (`sim/blot.ts`: "a card the
+  player calls for"; `sim/thing.ts`'s `layDownRule`: "a CHOICE now... the
+  player is the only one who should decide"). Not holes — the harness
+  correctly never reaches for them because reaching for them is the
+  player's whole point.
+
+  That left one genuine candidate, the shape 9.1 asked for: a verb the bot
+  never uses that ISN'T obviously either dominated or player-only. `HUNT` —
+  `doHunt` in `sim/gathering.ts`, a full reducer case, its own depletion
+  pool — has never been dispatched by any policy in `harness.ts` (grep,
+  zero hits), and `terrainDef` (`data/terrain.ts`) prices it BELOW forage on
+  four of seven countries and only strictly above it on one: hills, 3
+  against 2 (forest/mountains/bog tie; ocean/shore/valley/meadow favour
+  forage). The exact shape of the shield before 9.1: a verb with one narrow
+  good case nobody had tried.
+
+  A knob (`huntsBetterGround`, off by default) was added that swaps FORAGE
+  for HUNT precisely where `terrainDef` says hunt pays more. Measured
+  (`PROBE: 11.M5`, `test/probes.test.ts`, 150 paired landings, settler, to
+  day 500): **the arm dispatched zero hunts — the same zero as the
+  control.** The instrument check (CLAUDE.md trap 3) caught this directly:
+  "saved 2, killed 1" was printed, and it is noise, because the knob
+  supposedly producing it never once fired.
+
+  Diagnosed rather than left as a bare tie: hills is not rare (14% of a
+  coast's stretches, `route.ts`) and the state that would justify hunting —
+  hills terrain, gathering allowed, under four days of food — occurs (6
+  coincidences in 30 sagas by a direct count). What eats it is the branch
+  immediately above the forage/hunt fallback: `shortOfFood` triggers at SIX
+  days of food, the fishing-ground detour, and it either fishes on the spot
+  or WALKS TOWARD the nearest known fishing ground within 8 stops. Since the
+  forage/hunt line's own threshold (four days) is strictly inside
+  `shortOfFood`'s (six), by the time the code could reach HUNT the fishing
+  detour has already returned — unless the band is more than eight stops
+  from every known ground, which essentially never happens on a 26-stop
+  coast. **Same shape as the shield's first reading: not a mis-tuned verb,
+  a verb standing behind a branch that always claims the turn first.**
+
+  Unlike the shield, this does not get the shield's ending. The shield's
+  narrow case was worth taking (49/60 wins against 46/60) once measured with
+  the shield offered FIRST. Hunt's narrow case is a food-yield edge of ONE
+  unit on ONE terrain, smaller than the noise in a 150-seed paired count
+  even before the fishing detour is accounted for — reordering the road's
+  priorities to let it fire would cost the fishing-ground behaviour real
+  turns to win a verb that, even taken every time it could be, is not the
+  size of thing this repo's other findings have moved. Declined: the knob
+  and probe stay (matching `barterBeforeFallOn`, `crewsByOutput`) so the
+  reading can be retaken if `terrainDef`'s hunt/forage numbers ever change,
+  but no priority-order change is made on this evidence.
+
+### UI and legibility
+
+- [x] **11.U1 Give the roofless band a mark.** — **SHIPPED 2026-09-03, as a
+  new instrument rather than an extension of the old one.**
+
+  The gap was real — confirmed again by direct read: `markVisible` returns
+  `false` whenever `!state.settlement`, so `renderWinterMark` is a blank
+  `<div>` for the whole of a band's search for ground, and the top bar's
+  `Food` stat (always on screen) is the only warning it gets, turning red
+  with two days left to react.
+
+  But the fix is not "make `markVisible` true for a roofless band" — checked
+  before building, and `forecast()` would be the wrong instrument for it.
+  It projects to `nextThaw`, which for a band early in the year and still
+  walking can be a hundred-plus days out, and it assumes ZERO production the
+  whole way (`if (home) { ...grown/cut... }`, skipped when there is no
+  settlement) — so the number it would print is not "days of food you
+  actually have," it is "food needed for months of a walk assuming you never
+  eat anything you find," a figure nobody could read or act on. Worse,
+  11.M1 (same day) had just measured that this population's real killer
+  is not winter at all: **82% of never-founded deaths happen before winter
+  even opens**, mostly of ordinary hunger. A mark built on `forecast()` would
+  be counting down to the wrong danger for the population most likely to
+  hit it.
+
+  So: a second, separate instrument. `roadDaysLeft`/`roadMarkVisible`
+  (`sim/winter.ts`) ask the short-horizon question that actually matches
+  the risk — food on hand today, divided by today's mouths, no forecast, no
+  production assumption — visible inside `ROAD_MARK_WINDOW` (10) days and
+  only while there is no roof. `renderRoadMark` (`render/ui.ts`) reuses the
+  winter mark's own CSS (`winter-mark`, `mark-head`, `.lost`) rather than
+  inventing a new panel shape, matching this file's own rule for `renderLine`
+  and `renderChaseMark` — the player has already learned to read one of
+  these. Mounted in `travelScreen.ts` beside the winter mark it stands in
+  for.
+
+  Bar: `test/winter.test.ts`, "the road mark (11.U1)" — blank once settled
+  however short the stores are, blank on the road while food is nowhere near
+  the window, comes on and counts down honestly inside it, blank once the
+  run has ended. Watched failing against a stubbed `roadMarkVisible` before
+  being trusted. Verified live in a browser at 390×844 (Playwright,
+  Chromium) against an injected save: "3 days of food left, and no roof
+  yet" at 3 days' food, "The stores are empty, and there is still no roof."
+  at zero — both in the expected styling, no console errors.
+
+- [x] **11.U2 The build list names cost and blockers, never worth.** —
+  **SHIPPED 2026-09-03.**
+
+  Re-verified before building: the item cited `counsel` (hands-closing-the-
+  winter-mark) as the pattern to extend, but `counsel`'s own machinery
+  (re-running `forecast()` against a hypothetical crew move) does not
+  transfer to buildings — a queued building costs TIMBER and DAYS rather
+  than an instant reassignment, and most buildings' benefit is not modeled
+  as a direct `output()` term `forecast()` would even see. Checked the
+  panel's existing code instead of assuming a gap: `renderBuilds` already
+  computes `suggestedBuild` (via `worstNeed`'s four-axis food/warmth/rest/
+  heart read) and marks that ONE row `primary` — so the underlying DECISION
+  9.3/9.4/9.7 already fixed was never the missing piece. What was missing
+  was the sentence: the highlight had nothing on screen saying why.
+
+  Shipped the honest, scoped version instead: `buildWorthLine` (`sim/
+  needs.ts`) returns the EXACT SAME `Need.line` string `readNeeds` already
+  writes for the worst need, for the one building `suggestedBuild` would
+  pick — never a second copy of the claim, so the two can never disagree.
+  One authored exception mirrors `suggestedBuild`'s own indirect branch
+  (rest has no building until `longhouse` stands, so a roof stands in for
+  it — "A roof mends what the road cannot."). Every other row, and every
+  blocked row, gets no worth line at all — a made-up reason for an
+  arbitrary pick would be worse than none, the same principle `counsel`
+  itself is built on.
+
+  Bar in `test/buildings.test.ts` — the flagged building gets the same
+  string `worstNeed` already wrote (byte-for-byte), nothing else does, and
+  the indirect rest→roof case names itself without borrowing the warmth
+  line. Watched failing against a stub first. Verified live in a browser
+  (390×844): the suggested Longhouse row carries "4 nights of fire, and no
+  more." in gold italic under its cost line; Farm plots, Dock and Palisade
+  — unblocked but not the worst need — carry no line; every blocked row is
+  unchanged. No console errors.
+
+- [x] **11.U3 The mark should follow the band onto the road.** — **SHIPPED
+  2026-09-03. The title overstates and the body is exactly right; only the
+  second half of the gap was real.**
+
+  Read in code first, and the two halves part company. The MARK already
+  follows the band: `markVisible` asks `end` and `settlement` and never
+  where anybody is standing, and `renderWinterMark` has been mounted in
+  `travelScreen.ts` all along — a settled band on the road has always seen
+  its food and wood gaps. What does NOT follow is the SENTENCE. `counsel`
+  is rendered in exactly one place, `renderNeeds` on the colony panel, and
+  `ENTER_COLONY` refuses unless `atHome` — so the one line this project
+  measured at saved 30 / killed 3 was unreachable from the road.
+
+  MEASURED before building, because a panel nobody's state ever reaches is
+  the 11.M5 mistake (`PROBE`-style watch over the harness, 20 sagas an arm,
+  `fair`, to day 400): a settled band spends **453 days away from home as a
+  settler and 551 as a raider**; **216 and 161** of those fall inside the
+  mark's own window; and **109 of 216 (50%) and 122 of 161 (76%) have a
+  live counsel behind them**. Denser than the at-home window's own 38% and
+  50%. `homeCrew` was empty on NONE of them, so the advice is never an
+  empty steading's.
+
+  Shipped `roadCounsel` + `roadCounselLine` (`sim/counsel.ts`),
+  `renderRoadCounsel` (`render/ui.ts`), mounted under the winter mark it
+  answers. The road's line is NOT the colony's reprinted: a band away from
+  home cannot re-crew at all, so the bare sentence would name a move the
+  player cannot make from where they stand — the exact fault
+  `test/winter.test.ts` bars `readiness()` for. The verb the road has is
+  the walk, so the line adds it: *"Three more hands on the water would
+  close it. 11 days' walk home."* `counselLine` is reused whole rather
+  than rephrased.
+
+  **A FIXTURE FAULT CAUGHT IN MY OWN HAND, and it is worth recording.**
+  The first cut of the bar put the band away from home by assigning
+  `party.stop` directly. That is a state the game cannot produce: `canWalk`
+  refuses outright while `state.settlement && !state.expedition`, so a
+  settled band with no party out can only ever be at home, and every
+  away-from-home day in the harness reading above is an EXPEDITION day. The
+  bar passed on 28 of 40 landings and was measuring a fiction — CLAUDE.md's
+  trap 1 wearing a test's clothes. Rebuilt to LAUNCH and WALK through
+  `apply`, it speaks on 13 of 40: fewer, and real. (The same fault made the
+  first browser check show a save whose own hint line said "the band is at
+  the steading" while the counsel said seven days out; on a real
+  expedition the two agree — "11d from home" against "11 days' walk home".)
+
+  Two sabotages, one per direction, both re-run against the corrected
+  fixture: stubbing `roadCounsel` silent fails the two "it speaks" bars and
+  not the "holds its tongue" one; removing the `atHome` guard fails only
+  the "holds its tongue" one. Verified live in a browser at 390×844 on a
+  real launched-and-walked save.
+
+  Stated rather than hidden: the walk clause duplicates the distance the
+  expedition hint line already prints one row up. Kept deliberately — the
+  cost belongs INSIDE the sentence naming the move, or the player has to
+  join two facts across two panels to make the decision.
+
+  Not done, and deliberately: `readiness()` is colony-only for the same
+  reason and was left there. The counsel is the measured lever; a second
+  line would be clutter bought with no reading behind it.
+
+- [x] **11.U4 What the fighting has cost, mid-run.** — **DECLINED
+  2026-09-03. The panel would be blank on four bands in five of exactly the
+  population it was meant to warn.**
+
+  Checked what exists first, and "no accounting" is half right in the same
+  way 11.U3's title was. The COUNTERS are already in the save — `tally`
+  holds `battles`, `battlesWon`, `foesFelled`, `raids`, `raidsHeld`, counted
+  as they happen — and the Warband card already lists every dead member
+  mid-run with their fate on the row. What is missing is a SUMMARY, not the
+  facts. So the item is a question about a readout, and the readout has to
+  earn its place on the justification the item gives for it.
+
+  It does not. `PROBE: 11.U4` (`test/probes.test.ts`, 120 landings an arm,
+  `fair`, to day 400):
+
+  **The share half-survived.** Battle owns **43% of the raider's dead**
+  against 10.2's 47% — that holds. It owns **28% of the settler's** against
+  10.2's 39%, and that one did not.
+
+  **The reason the item gives did not survive at all.** The item wants the
+  panel so a player can "see the bleed that is about to kill them by
+  hunger" — a causal chain from fighting to fewer hands to starvation.
+  Violent losses counted strictly BEFORE day 49, among bands that reached
+  day 49 (so exposure is equal and the deaths of the losing itself are
+  excluded):
+
+  | reached day 49 | settler | raider |
+  |---|---|---|
+  | starved | 0.40 a saga, 11/63 bled at all | 0.34, 11/58 |
+  | despair | 0.36, 5/25 | 0.38, 9/40 |
+  | **still standing** | **0.14, 2/21** | **0.71, 6/14** |
+
+  **The two policies point in opposite directions.** Still-standing settlers
+  bleed a third as much as the doomed; still-standing raiders bleed twice as
+  much. With exposure equalised that is not a lever, it is a marker of what
+  the band was DOING — a raider that bleeds is a raider that went out, and
+  going out is also what feeds it. It agrees with 11.M4's neighbouring
+  reading from the day before: hands at day 49 flat at 6.0 / 5.9 / 6.1
+  across the same three groups.
+
+  **And the finding that decides it holds in both arms regardless of
+  direction: about four in five of the bands that go on to starve had ZERO
+  violent losses by day 49** — 52 of 63 settler, 47 of 58 starved raider,
+  and 80% and 78% of the despair groups. A panel built to show a starving
+  band its bleed would have nothing to say to most of them. Same shape as
+  11.M1's winter camp and 11.M5's hunting knob: a fix pointed at a
+  population that is not there.
+
+  THE EXPOSURE CORRECTION IS WHY THIS IS TRUSTWORTHY, and the first cut did
+  not have it. Counting every saga rather than only those that reached the
+  window compares how long a band had in which to bleed and calls it a
+  finding — CLAUDE.md's trap 2. It moved both despair figures materially
+  (settler 0.59 → 0.36, raider 0.53 → 0.38), which is the size of the thing
+  that would have been reported as real.
+
+  (`slain n=2` at 3.00 a saga is not a counter-example: a band killed by
+  violence having suffered violence is a denominator selecting itself.)
+
+  Left for Evan, and it is a taste call rather than a measured one: the
+  Warband card could carry a one-line summary of fights and losses as a
+  RECORD — the counters are already there and it would cost a few lines.
+  What it must not be sold as is a warning about hunger, because the
+  measurement above says that is not what it would be.
+
+- [x] **11.U5 Known foes.** — **DECLINED 2026-09-03, and the measurement
+  turned up something worth more than the item: 11.S1 took the named foe's
+  recurrence to exactly zero, and nobody had noticed.**
+
+  **"The data is all there" is not true, and that is a code read rather than
+  a reading.** A champion is not a record of a fight. `clan.champion`
+  (`state/types.ts`) is ONE slot on a neighbour: it is overwritten every time
+  that clan sends another man, and `battleTurn.ts` DELETES it outright when
+  he is put down. The state can answer "who does each clan have now" and can
+  never answer "who have we fought", because everyone you killed is gone from
+  it. The proposed list would need new persisted shape, a `SAVE_VERSION` bump
+  and a migration — not a readout of what is kept.
+
+  **The 22% held.** `PROBE: 11.U5` (`test/probes.test.ts`, 80 landings an
+  arm, `fair`, day 400): 21% of the settler's champion fights are a clan's
+  and 23% of the raider's, against the item's 22%. Credit where it is due —
+  that figure survived.
+
+  **The thread did not.** A man met BEFORE: **0 of 68 settler clan fights and
+  0 of 97 raider ones.** The mechanism is not subtle: **67 of 68 and 92 of 97
+  champions are put down in the fight they lead.** He does not come back
+  because he does not live. The list the item wants would be EMPTY in 79 of
+  80 settler sagas and 75 of 80 raider ones, and across 160 sagas it never
+  once held two rows.
+
+  **AND THE ZERO IS OURS.** 9.5 measured 3% on fair and wrote it into
+  `battleTurn.ts`; 0 of 165 is well below that, so the difference was tested
+  rather than shrugged at — the probe re-run against `formUp` reverted to
+  pre-11.S1 roster order:
+
+  | | shipped (S1) | pre-S1 roster |
+  |---|---|---|
+  | settler, met before | **0 of 68** | 3 of 75 (4%) |
+  | raider, met before | **0 of 97** | 9 of 97 (9%) |
+  | settler champions killed | 67/68 (99%) | 68/75 (91%) |
+  | raider champions killed | 92/97 (95%) | 76/97 (78%) |
+
+  `anointChampion` picks the foe with the highest `maxHealth` and then adds
+  toughness on top, and `heft` sorts by health — so since 11.S1 the champion
+  forms up in the FRONT RANK of every fight, which is where the blows land.
+  The pre-S1 settler figure of 4% reproduces 9.5's 3%, which is what makes
+  this a real change rather than instrument drift.
+
+  **Recorded, not reverted.** 11.S1 took bands still standing from 7 to 19 of
+  150. Recurrence going 4% to 0% is what that cost, and 9.5 had already
+  priced the same trade the other way round and refused it — it declined to
+  buy three points of recurrence for three points of spring. Twelve points of
+  standing for the last four points of recurrence is the same exchange at a
+  far better rate. The named foe was thin before we got here and is now a
+  man you meet once; that is a consequence of a good change, stated.
+
+  So the item declines twice over: the data cannot support the list without
+  new save shape, and the thread it would draw does not exist. Left for
+  Evan, and it is a mechanics question rather than a panel: if the named foe
+  is wanted, the lever is champion SURVIVAL — he dies 95–99% of the time —
+  and that is a deliberate design call with a measured price list already
+  attached, not a readout.
+
+### Deliberately not in the queue
+
+- **A second terminal threat.** 9.7 measured warmth at ~4% of runs and declined
+  it; 10.1 put it again as an option and Evan declined it again. It stays
+  declined rather than re-offered, and 11.S5 is the thing that would make it
+  worth revisiting.
+- **Enriching the ending screen to name the road.** Offered under 10.1 on
+  2026-09-02 and declined. Recorded here so it is not proposed a third time by
+  somebody who forgets it was already answered.
 
 ## Parking Lot (ideas, not commitments)
 
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.U5: declined, and the probe found that 11.S1 took the
+  named foe to zero** — the item's "the data is all there" fails on a code
+  read: `clan.champion` is one slot on a neighbour, overwritten each meeting
+  and deleted when he is put down, so the state cannot answer "who have we
+  fought" at all and the list would need new save shape plus a migration.
+  Its 22% HELD (21% settler, 23% raider). The thread did not: **0 of 68 and
+  0 of 97 clan fights featured a man met before**, because **67 of 68 and 92
+  of 97 champions die in the fight they lead** — the list would be empty in
+  75–79 sagas of 80 and never held two rows in 160. Since 9.5 had measured
+  3% on fair, the gap was tested rather than shrugged at: re-run against
+  `formUp` reverted to pre-11.S1 roster order, recurrence comes back to 4%
+  settler and 9% raider, and champion mortality falls from 95% to 78% on the
+  raider. `anointChampion` picks the highest-health foe and `heft` sorts by
+  health, so since S1 the champion stands in the front rank and dies there.
+  **Recorded, not reverted** — S1 took bands still standing from 7 to 19 of
+  150, and 9.5 had already refused to buy three points of recurrence for
+  three of spring; this is the same trade at a far better rate. Left for
+  Evan as a mechanics call, not a panel: the lever is champion survival.
+
+- **2026-09-03 — 11.U4: the fighting's cost is real and is not the warning
+  the item wanted** — declined. The counters were already in the save
+  (`tally`) and the Warband card already lists the dead with their fates, so
+  the gap was a summary, not the facts; and the reason offered for the
+  summary did not hold. Re-took 10.2: battle owns **43% of the raider's dead
+  (10.2 said 47%, holds) and 28% of the settler's (said 39%, does not)**.
+  Then took the reading the item's causal clause needed and nobody had:
+  violent losses before day 49, among bands that REACHED day 49 so exposure
+  is equal — settler 0.40 starved / 0.36 despair / **0.14 still standing**,
+  raider 0.34 / 0.38 / **0.71 still standing**. The two arms point in
+  OPPOSITE directions, so the bleed marks what a band was doing rather than
+  where it is heading (a raider that bleeds is one that went out, which is
+  also what feeds it), agreeing with 11.M4's flat hands. Decisive either
+  way: **about four in five bands that go on to starve had zero violent
+  losses by day 49** — the panel would be blank on the population it was
+  built to warn. The exposure correction is what makes this trustworthy; the
+  first cut counted every saga and moved both despair figures materially
+  (0.59→0.36, 0.53→0.38). Left for Evan as a taste call: the same counters
+  would make a fine one-line RECORD on the Warband card — just not a hunger
+  warning.
+
+- **2026-09-03 — 11.U3: the move follows the band onto the road, though the
+  mark already did** — the item's title overstates and its body is exact.
+  `markVisible` never asked where anybody was standing, so the gaps have
+  always shown on the road; what could not follow was `counsel`, rendered
+  only in `renderNeeds` behind an `ENTER_COLONY` that refuses unless
+  `atHome`. Measured the window before building it (20 sagas an arm,
+  `fair`, day 400): **216 settler and 161 raider away-from-home mark-window
+  days, 109 and 122 of them carrying a live counsel nobody could reach** —
+  denser than the at-home window itself. Shipped `roadCounsel`/
+  `roadCounselLine` + `renderRoadCounsel`, reusing `counselLine` whole and
+  adding the one thing the road can act on: the walk home, because a band
+  away cannot re-crew and the bare sentence would name an impossible move.
+  **The first bar was measuring a fiction** — it set `party.stop` by hand,
+  but `canWalk` refuses while settled with no expedition, so that state
+  never occurs; rebuilt on a real LAUNCH + WALK it speaks on 13 of 40
+  landings instead of 28. Two sabotages, one per direction, re-run against
+  the corrected fixture; verified live in a browser.
+
+- **2026-09-03 — 11.U2: the highlighted build row finally says why** — the
+  panel already flagged one row `primary` (`suggestedBuild`, the four-axis
+  `worstNeed` read 9.3/9.4/9.7 already fixed) with nothing on screen naming
+  the reason. Checked the item's own proposed pattern (extend `counsel`)
+  before using it: `counsel`'s hypothetical-crew-move re-forecast does not
+  transfer to buildings, which cost timber and days rather than an instant
+  reassignment. Shipped `buildWorthLine` instead (`sim/needs.ts`) — the
+  exact same `Need.line` string `readNeeds` already writes, reused rather
+  than duplicated, so the highlight can never contradict the rest of the
+  panel. One authored line for the sole indirect case (rest, pre-longhouse,
+  a roof standing in for a room). Every other row, and every blocked row,
+  stays silent — no invented reason for an arbitrary pick. Bar watched
+  failing against a stub; verified live in a browser at 390×844.
+
+- **2026-09-03 — 11.U1: the roofless band gets its own mark, not a borrowed
+  one** — `markVisible` is false whenever `!state.settlement`, so the winter
+  mark never shows before founding, and 11.M1's own reading names this
+  population's real killer as ordinary hunger before winter (82% of
+  never-founded deaths). Extending `forecast()` to the road was checked and
+  rejected: it projects to next thaw assuming zero production, a
+  hundred-plus-day number nobody could act on and the wrong hazard besides.
+  Built a second, short-horizon instrument instead — `roadDaysLeft`/
+  `roadMarkVisible` (sim/winter.ts): food on hand today over today's
+  mouths, visible inside 10 days, no roof required. `renderRoadMark`
+  (render/ui.ts) reuses the winter mark's own CSS rather than a new panel
+  shape. Bar in test/winter.test.ts, watched failing against a stub first;
+  verified live in a browser (390×844) against an injected save at 3 days
+  and at 0 — correct text and styling, no console errors.
+
+- **2026-09-03 — 11.M5: the sweep found one dead verb, and it stays dead** —
+  most colony/travel verbs already carried an effect-size reading from this
+  session's own item-by-item work; `HOLD_BLOT`/`LAY_DOWN_RULE`/
+  `LAY_DOWN_SAGA` are confirmed player-only by design (never dispatched by
+  any policy, and each says so in its own code comment). `HUNT` was the one
+  real candidate — never dispatched, and `terrainDef` prices it above
+  forage on exactly one country (hills, 3 v 2), the shield's exact shape
+  before 9.1. Added `huntsBetterGround` (harness.ts, off by default) to try
+  it there. Measured (`PROBE: 11.M5`, 150 paired landings to day 500): **the
+  arm dispatched zero hunts, same as the control** — the instrument check
+  caught a printed "saved 2, killed 1" as noise before it could be
+  mistaken for a finding. Diagnosed: the fishing-ground detour
+  (`shortOfFood`, days<6) always claims the turn first, since its threshold
+  is looser than forage/hunt's (days<4) and hills is not rare enough (14%
+  of stretches) for the gap to matter. Declined — the edge is one food unit
+  on one terrain, smaller than paired-count noise even before the detour;
+  knob and probe kept for re-measurement, no priority-order change made.
+
+- **2026-09-03 — 11.M1: the winter camp was aimed at a season most of its
+  victims never reach** — the item inherited 10.1's 23/74-never-founded
+  figure and read it as a winter problem, proposing a camp with heavier
+  firewood. Re-taken with two probes: of 34 `even`-term sagas that never
+  found a steading (`SEEDS=120`, `HORIZON=400`), **82% (28/34) die before
+  winter even opens** (day < 49); only 6 die at-or-after, and inside that
+  remainder hunger (10) still edges cold (8). `fair` terms split 4/7 before,
+  3/7 after. The population is real but the season it names is not where it
+  dies — four in five are already gone to ordinary hunger and violence weeks
+  earlier — so a firewood/shelter mechanic would target the wrong store even
+  for the minority who do reach winter. Declined; no code change. Left for
+  Evan: if the never-founded rate is worth addressing, the lever is
+  early-game hunger/violence before day ~31–33, not a winter camp.
+
+- **2026-09-03 — 11.M4: food now separates the doomed from the survivors,
+  and nobody set out to fix that** — 10.1's opening figure (food at day 49,
+  33.6 / 35.7 / 33.7 across starved / despair / still-standing, no
+  separation) was re-run on the identical instrument rather than inherited,
+  six items and five balance changes later. It no longer holds: **34.4 /
+  35.1 / 46.9 on even terms, 53.4 / 47.0 / 60.3 on fair** — still-standing
+  bands carry 12–13 more food at the same day, in both terms. Nobody fixed
+  this on purpose; it is the residue of 11.S1/S2/S5/V/M2/M3, recorded as a
+  fact rather than credited to a cause nobody isolated.
+  - Three more named candidates checked and all flat: hands (band size,
+    6.0/5.9/6.1), roof (settled by day 49, saturated near 100% in every
+    group), site reading (13.8/13.8/14.4 of 25). Job mix nearly identical
+    across every group — `crewsToNeed` reacts to the same pressure
+    everywhere and produces the same shape everywhere.
+  - The item's own prescription — show whatever decides it — is already
+    met: food decides it now, and the panel already shows food. Closed with
+    nothing to build.
+  - One thread named and deliberately not pulled: food does not separate
+    starved from despair from EACH OTHER, and despair bands raid neighbours
+    far more (3.9 a saga against 0.7). That is which flavour of loss a
+    doomed band gets, not how to avoid losing, and it is not this item.
+
+
+- **2026-09-03 — 11.M3: the trade a starving band was meant to be offered
+  cannot rescue it, structurally** — the item's own caveat said the harness's
+  desperation rule was a bot habit, not a truth about the game, and proposed
+  showing the neighbour card's trade so a player sees the door the bot
+  skips. Checked in code first: `bargain()` runs ONE way, food out and
+  firewood in, and the branch this is about fires on `days < 3` — food
+  nearly gone. The trade would spend the one store the band is short of.
+  - **MEASURED, not just reasoned:** an added `barterBeforeFallOn` harness
+    knob tried it first in that exact crisis, 150 landings paired — **saved
+    4, killed 4**, an exact tie, checked against CLAUDE.md trap 3 by
+    confirming the arm actually fired (55 times, not zero).
+  - **Shipped:** `bargainEstimate` (a pure preview sharing `bargain()`'s
+    formula, no RNG touched) puts real numbers on the barter deed, the way
+    fall-on got them at 9.15, and `bargainBlurb` states plainly, only when
+    the band is inside the three-day floor: *"It buys wood, not food — this
+    will not fill an empty larder."*
+  - **Declined, left `[~]`:** giving a neighbour the firewood-for-food
+    direction a PLACE's market already has would be a real peaceful door out
+    — and a new mechanic, a balance question for Evan, not a UI fix.
+
+
+- **2026-09-03 — 11.M2: raiding states its record, on a re-taken number** —
+  the item cited a 10.3 figure that was two balance changes old (11.S1's
+  deployment fix, 11.V's verdict fix). Re-run rather than trusted: **saved 7 /
+  killed 20** over 200 paired seeds, down from the item's own saved 9 / killed
+  22 — same shape, smaller magnitude.
+  - `wallReading` composes `RAID_RECORD` itself when passed `purpose:
+    'raid'`, the same discipline `leaveNote` uses for `ABANDON_RECORD` — a
+    renderer deciding on its own whether to show a record is how ABANDON's
+    went unseen for a whole milestone.
+  - Shown under the existing wall reading, not instead of it: a raid party
+    still needs its odds in the fight; the record says winning that fight and
+    surviving the saga are different questions. States it, never refuses.
+
+
+- **2026-09-03 — 6.1 finished: winters were varying for exactly three years
+  and then stopped forever** — 11.S5's own premise ("every winter arrives at
+  the same depth today") was re-checked against the code rather than
+  inherited, and was wrong in a sharper way than the item guessed: 6.1
+  already varies severity, but `winterDepth`'s shared ceiling
+  (`min(WINTER_DEPTH_MAX, floor + bite)`) let the structural floor alone
+  reach the cap on the fourth winter, after which `bite`'s seeded roll — the
+  code's own comment calls it "the whole mechanism" — changed nothing, ever
+  again. **19% of winters actually lived, over 120 settler landings, were
+  already flatlined this way.**
+  - Fixed by capping the floor alone (`cappedFloor`) and adding `bite` on top
+    of that, uncapped by anything the floor already met. The floor's own
+    growth is unchanged — this did not re-open whether winter's structural
+    cost should climb forever.
+  - **A second, latent false-dead bug surfaced fixing the first:**
+    `plannedFirewood`'s far-out guess and best-case ceiling used the RAW,
+    uncapped floor in a code path with no ceiling clause to catch it — the
+    same shape 11.V found and fixed elsewhere, latent here because it needed
+    a saga to reach a deep winter to trigger. Fixed to share `cappedFloor`
+    with `winterDepth`, so the mark and the real burn cannot disagree.
+  - **Announced in autumn**, per the item's own proposal: a new chronicle
+    line, day-gated (not flag-gated) so it cannot repeat within a season,
+    naming the coming winter mild, ordinary, or hard from the seeded bite —
+    silent for the first winter, where there is nothing true to say.
+  - **Priced: saved 1, killed 0 of 150 paired sagas** — inside noise, and
+    the right shape for a fix that restores legibility rather than difficulty
+    the milestone's own numbers already said this lever moves "by exactly
+    zero" alone.
+
+
+- **2026-09-03 — the leader's stance was declined, and the reason is worth
+  keeping: my own earlier claim was an arena reading treated as a
+  conclusion** — 11.S1's "STILL OPEN" note said the leader's rank was "the one
+  axis measured to have a real gradient", on 300 arena fights where the bot
+  never issues the war cry. Re-measured in 150 whole sagas with the real bot:
+  - **Forcing the leader to the front is a clear net loss** (saved 3, killed
+    7 of 150). Forcing him to the back is **saved 13, killed 12** — a net of
+    one, inside the noise a 150-seed sample can resolve, not the gradient the
+    arena promised.
+  - `formUp` (11.S1) already sends a hurt leader toward the back by the same
+    health-plus-might rule it applies to everyone. A dedicated stance control
+    would spend a save bump, a migration, an action and a panel on a choice
+    the saga cannot tell apart from doing nothing.
+  - Declined. Nothing built. Worth asking again only if a future mechanic
+    makes standing at the front mean something beyond raw fitness.
+
+
+- **2026-09-03 — the winter verdict was projecting the hunt, and two earlier
+  repairs were rejected by a ratio that could not judge them** — `walkWinter`
+  picked its food job with `jobs.find((j) => j.id === 'hunter')`. Fixed to ask
+  the ground per hand, carrying each job's own seasonal factor.
+  - **False-deads 65 → 50 per 900 seeds; the bar's own ratio 33% → 28%.** The
+    two earlier attempts read 44% and 39% and were recorded as rejections:
+    both approximated (band-wide max, first-crewman rank), and both were
+    judged on `wronglyCondemned / condemned`, which a kinder projection moves
+    from BOTH ends — trap 2 inside the evaluation of a fix rather than inside
+    the fix.
+  - **It was a real defect, not a narrow claim.** Of 65 wrongly condemned, 24
+    buried a mouth and 11 took the road, but **0 robbed, 0 traded, and 35
+    (54%) lived on the ground alone** — and `canGather`/`canFish` both need
+    `!atHome`, so a settled band cannot forage its way out.
+  - **`cliff.test` restated, not relaxed.** A better projection is kinder, so
+    the absolute "9 of 12 doomed at day 50" is unreachable; re-swept, past
+    saving runs 0/0/6/4/5 across days 30–70. The bar is now the STEP —
+    eve ≥ 4 and eve − mid-autumn ≥ 4 — and was watched failing both ways, one
+    clause per sabotage.
+  - This was opened as 11.S2's blocker and finished on its own merits: it was
+    wrong about 65 bands per 900 seeds before the flip existed.
+
+
+- **2026-09-03 — the yard fix is ruled, measured, and blocked on the winter
+  verdict** — Evan ruled 11.S2's flip ON. It was turned on, measured, and
+  turned back off the same day: it does not ship alone.
+  - **Worth it:** the difficulty menu re-prices 84/58/30 to **87/65/38**, and
+    unlike the morning's restatement the three do NOT move together (+3, +7,
+    +8) — a fair country feeds a band whatever it does.
+  - **Breaks it:** `reachable` is calibrated to a game where bands feed
+    themselves badly. Post-flip it condemned 157 bands over 900 seeds and 91
+    saw spring anyway — **58% wrong against 38% before**. And `cliff.test`'s
+    eve of winter stops being a cliff: 6 of 12 empty bands on day 50 are now
+    saveable where the bar allows 3.
+  - **The 58% is a trap-2 reading.** In absolute terms the verdict wrongly
+    condemns 87 bands per 900 seeds before the flip and 91 after — the
+    mistake moved by four bands. The RATIO moved 20 points because the flip
+    rescues the easy cases out of the condemned pool (229 condemned becomes
+    157), leaving a smaller and much harder-to-call population.
+  - `walkWinter` picks its food job by name too, and its own note deferred the
+    fix "until that call is made". Re-taken per person post-flip it reads 58%
+    against 60.6% — a fix REJECTED before the flip (33% → 44%) is a small
+    improvement after it. Recorded, not shipped.
+  - **11.S3 closed: the coast is a deck.** A quarter of it per saga is the
+    draw, and the three-quarters never trodden is the pool that makes runs
+    differ (9% event overlap, 10.1b). No work follows.
+
+
+- **2026-09-03 — 11.S4: the chore is real and it is 94 taps a saga** — the
+  item rested on an uncounted premise ("a 500-day chore") and an UNMEASURED
+  clause ("whether an automated crew is still a decision"). Both are now
+  measured and both come out in the item's favour.
+  - **94 assignments changed a saga, 530 in the worst, 0.51 a day** across
+    15,773 settled band-days. Every one is the output of a two-line rule
+    reading the winter mark — which the mark panel already displays. 9.13's
+    mandatory-tap objection, ninety-four times over.
+  - Counting them needed care: the harness recrews by mutating `state` before
+    `apply`, so a within-transition comparison sees a state already
+    reassigned and reports zero. The jobs are compared ACROSS transitions.
+  - **It is a decision, because the orders differ.** Leave the crew alone vs
+    keep the mark met is saved 30 / killed 3; keep the mark met vs keep it on
+    the ground that pays best is saved 11 / killed 1. Three orders, three
+    outcomes.
+  - Asking the ground costs FEWER taps (66 vs 94) over MORE settled days — a
+    band that eats better is short less often, so the rule fires less.
+  - Left `[~]`: GO with the design settled, not built. It needs settlement
+    state, a SAVE_VERSION bump with a migration, a panel, and a re-measure.
+
+
+- **2026-09-03 — 11.S2: the yard is an economy and the BOT was playing it
+  wrong** — the item proposed plot caps so the site reading would keep
+  mattering. Measured, the reading already reaches every day: `output()` pays
+  **fisher best on 51–94% of settled band-days and hunter best on 4–17%, by a
+  margin of 32–49%**. The harness reaches for `'hunter'`, hardcoded in all
+  three branches of its daily crewing.
+  - **Fisher is assigned zero times in 15,837 settled band-days.** Caught by
+    an instrument check added for exactly this: "the ground is generous" and
+    "nobody holds the job" are the same 0% in a cap-bites column.
+  - Asking the ground instead is worth **saved 11, killed 1** at first spring
+    (64/120 to 74/120) and 5.83 to 8.52 souls alive at day 500. Added as
+    `crewsByOutput`, optional and off everywhere, so no bar moved.
+  - **Plot caps declined.** They would bite almost only on `wood` — 57% of
+    days, excess up to 19 hands — because `woodcutter` and `hunter` share it;
+    the field cap the item describes bites 1%; and `hall` and `watchpost` are
+    one plot each, so the literal proposal caps a steading at one builder and
+    one warrior.
+  - `recrews` was re-taken because it had been switched off on an exact tie —
+    this file's own signature of a feature that never ran — and the doubt did
+    not survive: still noise. `crewsToNeed` overwrites its seasonal choice the
+    next day.
+  - Left `[~]`: flipping the harness to ask the ground re-prices the hardship
+    menu a second time, which is Evan's call.
+
+
+- **2026-09-03 — 11.S1 shipped: the wall forms up by who can hold the front**
+  — `sim/lineup.ts` replaces rank-is-your-roster-index. The roster index also
+  decides who leads (`leaderOf`) and who is kin to whom (`bindKin`), so the
+  leader stood at the front of every fight and both kin pairs stood shoulder
+  to shoulder — an order measured worse than chance.
+  - **Arena 178 wins in 300 becomes 210; sagas standing at day 500 go 7/150 to
+    14/150**, and people alive at day 500 4.75 to 5.76. The leader goes down in
+    209 fights of 300 rather than 296.
+  - **Both walls form up**, because sim/battleAi.ts already says a formation
+    only one side can play is a bonus. Recorded as a player gain rather than
+    buried: forming their wall alone is worth +12 in the arena, because
+    `anointChampion` boosts the champion before deployment so `formUp` stands
+    him at the front, where he can be reached and where his fall costs his
+    side 25 nerve.
+  - **One bar moved in 1561** and it is the one the change was always going to
+    move: As It Lies published 53% see the first spring against 58% measured.
+    All three settings restated at 300 landings, **81/55/27 to 84/58/30** —
+    they moved together by three points each, and the 26- and 28-point gaps
+    the three names rest on did not move at all.
+  - A Fair Country publishes 30% ever rule against 24% measured at 120 sagas.
+    Inside tolerance, so NOT restated: 120 is the sample this file's own
+    history calls too thin to set a promise with. Left as a reading to re-take
+    at 300.
+  - `test/lineup.test.ts` is the regression bar, watched failing against the
+    old line before it was trusted. Not `test/line.test.ts`, which is the
+    renderer's rank geometry and a different thing entirely.
+
+
+- **2026-09-02 — 11.S1: the game deploys its shield wall in the worst order
+  available** — the item asked, before building anything, whether line order
+  changes an outcome at all. It changes it enormously, and in the direction
+  nobody expected: an arena of 300 fights an arm puts the shipped roster line
+  at **178 wins against 218 for a line drawn at random** and 240 for a
+  reversed one, and 150 whole sagas agree — **7/150 bands standing at day 500
+  becomes 19/150**, 4.75 people alive on average against 6.37.
+  - The proposed fix measures at nothing: best-men-front wins 222 and random
+    wins 218, so a deploy screen rewarding a stat sort is a decision with no
+    right answer. The one axis with a gradient is **where the leader stands** —
+    `leaderOf` is `sworn(people)[0]` and rank is that same order, so the leader
+    is at the front of every fight and `leaderFell` costs the side 25 nerve.
+  - Two proposed mechanisms were measured and DIED — a leadership cascade
+    (`leaderFell` fires 0.99 times a fight, never twice) and kin adjacency
+    (real but only +10, though 10–0 paired). About 26 of the placebo arm's 36
+    wins remain unattributed and are recorded as unattributed.
+  - The defect underneath: roster index is used for the order men stand in,
+    for who leads, and for who is kin to whom, so all three correlate
+    perfectly and nobody chose any of it. Left `[~]` — changing the default
+    re-prices every survival figure in this file, which is Evan's call.
+
+
+- **2026-09-02 — 11.S3's premise was mine, and it did not survive being
+  measured** — the item claimed the coast "becomes unreachable" once a band
+  settles, read off `walkOptions` returning `[]`. The code reading is right and
+  the claim about play is wrong: measured over 200 landings a policy to day
+  620, **56% of settled settler bands tread new ground after founding**, and
+  for the raider more than half of all ground covered comes after settling.
+  The expedition is the door and it opens.
+  - Inferring play from a guard is the same fault as reading a bot policy as a
+    rule of the game, and it went into a queue item three hours after being
+    written down.
+  - **The true finding is sharper and unrelated to settling: a saga stands on
+    6.3 of 26 stops.** Three-quarters of the route is never trodden at all.
+  - And that may be fine — 10.1b measured 9% event overlap between sagas, so
+    the unseen coast is the pool that makes runs differ. A coast of 26 that
+    each band draws six from behaves like a deck, and a deck is not obliged to
+    be dealt out. Restated for Evan on those terms.
+
+- **2026-09-02 — Phase 11 opened: fifteen items, each with its measurement
+  attached** — five systems, five mechanics, five on legibility, queued the day
+  Phase 10 closed. Three of the five systems items rest on facts VERIFIED in
+  the code rather than remembered, and each is a gap nobody had named:
+  - **The shield wall has no decision.** `dash` went in 9.1b, `stepUp` fires
+    only when a fighter has nothing legal to do, and rank is the order he took
+    the field in. In the game named for the wall, the player never forms it.
+  - **The yard is scenery.** Nineteen plots are rolled per steading and drawn,
+    and `plotsFor` is called twice, as booleans. The ground caps nothing.
+  - **Travel ends at settling.** `walkOptions` returns `[]` for a settled band,
+    so the twenty-six-stop coast is a prologue walked for about a fortnight.
+  - Two items are recorded as DELIBERATELY NOT QUEUED — a second terminal
+    threat, and enriching the ending screen — because both were already
+    declined, and writing that down is what stops them being proposed a third
+    time.
+
+- **2026-09-02 — 10.1 ruled, and Phase 10's opening six are closed** — Evan's
+  call: nothing changes. The pressure chain is the identity rather than a
+  thinness. Battle bleeds a band (39% of the settler's dead, 47% of the
+  raider's) and hunger finishes it, and since 10.4 the last screen names both
+  honestly. A player meets 13 events a run out of 103 and shares one in eleven
+  with their last run; what repeats is one word on one screen at the end of a
+  road that does not.
+  - Declined but recorded rather than buried: the build tree is the genuinely
+    repetitive half (a third to a half shared, against 9% of events), and
+    enriching the ending screen to name the road is cheap and carries no
+    balance risk. Neither is blocked if they come back.
+  - **The phase's own finding, worth carrying forward: this game reports
+    itself badly.** Three endings merged into one word, `slain` was stolen by
+    a `some()`, battle's share of the dead was understated by half, and the
+    instrument that said CI was fine could not see CI. The game underneath
+    measured better than its accounts of it.
+
+- **2026-09-02 — 10.1: "monotony" was the wrong question to ask of the
+  endings** — monotony is a fact about the MIDDLE of a saga, and the ending
+  distribution cannot speak to it. Measured over 120 landings a policy, run
+  past the reckoning to day 620:
+  - **The endings repeat; the middles do not.** Two settler sagas share **9%**
+    of their events, and **102 of the 103 authored events** are reached across
+    the sample, 13.7 a run. The raider sees 95 of 103 and shares 8%.
+  - The build tree is the repetitive part — a third to a half shared — and
+    that is as much the bot's fixed `want` list as the game.
+  - `built` is accumulated across the run rather than read at the end, because
+    it loses a building the day something replaces it.
+  - **The probe was wrong once and the number was impossible, which is the
+    only reason it was caught**: it printed "104 of 103 authored ever fired",
+    because `ActiveEvent.id` also carries 'feud' and 'thing', which are not in
+    the deck. The denominator did not match the id space. Partitioned, and the
+    non-deck ids are now named in the output.
+
+- **2026-09-02 — 10.4 completed: `survived` and `jarl` were never rare, they
+  were never reached** — both are player deeds, and `survived` is gated on
+  day **457** (computed, not taken from the comment that says so). Every probe
+  in this repo stops at day 400, where `wintersStood` is 4 — one winter short
+  of the ending they were asking about.
+  - Run to day 620: **13 settler bands in 200 stand where the deed is legal**,
+    and every settler band still alive is a jarl (18 of 18). No raider ever
+    is. The item's fork — make them reachable or retire them as decoration —
+    is answered neither: they are reachable and they are not decoration.
+  - **What the probe deliberately does not measure:** how often either fires.
+    That is a fact about when a PLAYER stops, not about the game, and teaching
+    the bot to lay down at the first opportunity would have measured the rule
+    just written rather than anything about the game.
+  - Corroboration from a new angle: ten of the bands alive at day 400 are dead
+    by 620, so the fifth winter still kills about a third of the survivors —
+    9.12a's third act working, seen without 9.12a's instrument.
+  - **Note for every future probe:** day 400 is one winter short of the
+    endgame.
+
+- **2026-09-02 — 10.3 completed: the raider builds its wall before its
+  fields** — the rest of the bundle measured, each settler trait added back to
+  the raider one at a time and paired against the raider itself.
+  - **The build order is the largest term outside raiding**: restoring the
+    settler's order takes the raider from 4/200 standing to **9/200** (saved
+    9, killed 4). The raider defers `farmplots` from #2 to #6 and `bud` from
+    #3 to #7, ahead of palisade, smokehouse, storehouse and watchtower — it
+    builds its wall before its fields on a coast where 10.1 measured
+    starvation ending 100 of 120 sagas.
+  - Site policy is worth +2; `trades` is a wash (saved 3, killed 3).
+  - **`plunderWindow` came back 200/200 byte-identical — inert, exactly as
+    `relaxFrom` did — and both have the same cause.** Each is keyed to the
+    SEARCH phase, and at `siteFloor: 7` the raider settles on day 6 with only
+    14 of 200 still searching by day 14. A raider barely has a search phase,
+    so nothing keyed to one can act. One cause found twice, not two
+    coincidences.
+  - The decomposition is recorded as NOT summing cleanly: 27 → 14 (raiding,
+    −13) → 4, of which build order −5, site policy −2, and the war crew +3 the
+    other way. The terms interact and the entry says so.
+
+- **2026-09-02 — 10.6: the CI runner has FOUR cores, and CI had been red for
+  most of a day** — `ci cores: 4 -> vitest maxForks: 3`. The "two-core CI
+  runner" in `vite.config.ts` has been wrong since Phase 5 and nothing
+  re-took it.
+  - **The `onTaskUpdate` error was not a warning — it was failing the build.**
+    Three runs finished `92 passed / 1569 tests passed` and exited 1 on the
+    unhandled error. Exactly what `vite.config.ts` records happening once
+    before with every test green.
+  - **The entry claiming otherwise was mine, and the fault was the
+    instrument.** "Exit code 0", "it has never failed a run", "CI passes
+    today" were all read off LOCAL runs, where the pipeline's exit code comes
+    from `tee`/`tail`, not vitest. The local instrument could not see the
+    failure it was being asked about.
+  - **Fixed by taking the probes out of `npm test`** (`npm run probes` runs
+    them). Measured: the error does not occur at all without them — 0
+    occurrences against 3 of 3 — and the suite goes **2,465s → 1,273s**.
+    Capping the fork pool was rejected earlier on measurement (80% slower,
+    still errored), and the concurrency mechanism was refuted (one file alone
+    reproduces it).
+  - The probes are not deleted, skipped or weakened. Running instruments as a
+    gate was the category error: the bars are the gate, the probes are the
+    microscope.
+  - **The escape hatch had to be tested rather than assumed.** The first cut
+    shipped `npm run probes` as a broken command — vitest applies `exclude`
+    even to an explicit file filter, so it exited "No test files found", and a
+    CLI `--exclude` does not override it. The config now drops the exclusion
+    when `PROBES=1`. The instruction was one command away from being a lie in
+    the commit that introduced it.
+
+- **2026-09-01 — 10.5: the two dead fields went opposite ways** — one was
+  written to keep a promise nothing kept, and one was the same number stored
+  twice.
+  - **`Champion.lastSeen` now says how long it has been.** Its comment
+    promised the log would say it and the log never did. The returning-foe
+    line now carries `It had been a season.` / `a year.` / `5 days.`, rounding
+    down to the unit that has actually passed, and silent at a gap of nothing.
+    **The test drives a real raid rather than the formatter**, because
+    `startBattle` overwrites `lastSeen` with today as the champion takes the
+    field — the value must be read four lines earlier, and a unit test of the
+    formatting would pass while the log printed nothing.
+  - **`Plot.at` is deleted.** `makePlots` builds in slot order and nothing
+    reorders the array, so `plots[i].at` was always `i`: the index stored
+    twice, and the last remnant of the hex coordinate 8.5 set out to retire.
+    `SAVE_VERSION 62` + migration 61, preserving plot order because order is
+    what carries the slot now.
+  - **Its only reader was a third can't-fail check** — asserting that the
+    indices of an array are distinct — after `battle.width === FIELD_WIDTH`
+    and the ending's `some()`. Replaced with the yard's size, which the day's
+    labour actually walks.
+  - Both halves watched failing before being trusted.
+
+- **2026-09-01 — 10.4: the rare endings were neither rare nor decoration — one
+  line was taking their name off them** — the wipe-out ending asked
+  `people.some(p => p.fate === 'hunger')` first, so ONE hunger death in any
+  winter of a saga named the whole ending `starved`, and `slain` could only
+  fire for a band where nobody had ever starved or frozen. That is the
+  mechanical cause of 10.2's puzzle: battle is 39–47% of all deaths while
+  `slain` ended 3 sagas in 120.
+  - Replaced with `wipedOutBy`, which counts the dead and names the largest
+    cause, ties keeping the old order. Over the same 120 landings a policy:
+    settler `slain` **3 → 10**, raider `slain` **1 → 14**, `frozen` 0 → 6.
+    Average day, bands settled and bands standing are all unchanged — the
+    labels move and the play does not, and both columns still sum to 120.
+  - `test/ending.test.ts` pins the shape rather than the counts; three of its
+    five tests were watched failing against the old line.
+  - **Left open as an instrument problem:** `survived` and `jarl` are player
+    deeds (`layDownSaga`, `layDownRule`) that the bot never takes, and
+    `survived` additionally needs day 457 while every probe here stops at 400.
+    They have never been given the chance to fire, so nothing is yet known
+    about whether they are rare.
+
+- **2026-09-01 — 10.2 measured: battle kills far more than the item said, and
+  is mostly not a choice** — the item was opened on "battle fates are a fifth
+  of everyone who dies", read off six rows with a regex written from memory.
+  `DEATHS` is a five-string constant in `data/injuries.ts`; imported and
+  matched exactly, battle is **39% of the settler's dead and 47% of the
+  raider's — the largest single cause for the raider, ahead of hunger.** The
+  regex had dropped "went under and was not seen again", taking it for
+  drowning when it is one of the five battle deaths: 52 deaths in one arm.
+  - **Four battles in five are not chosen.** Attributed per battle rather than
+    from totals: settler 339 defended, 500 met on the road, 234 started by the
+    band. Two wrong accounts were written first and both were caught by
+    reading the code that writes the counters — `tally.battles` already
+    CONTAINS `raids`, so adding them double-counted, and a fall-on was assumed
+    to skip the tactical layer when `travel.ts` calls `startBattle` for it.
+  - **The ending screen is what is wrong, not the battle system**: 0.36 dead
+    per battle and 39% of all deaths, against `slain` ending 3 sagas in 120,
+    because a band bled white dies of the hunger that follows. Same
+    attribution fault as despair-was-starvation — now found twice in one phase.
+  - It also explains 10.3: raiding adds chosen battles on top of a load that
+    is already four-fifths unchosen.
+
+- **2026-09-01 — 10.3 decomposed: raiding costs half the survivors, and the
+  raider policy costs as much again** — the item opened by comparing two
+  POLICIES that differ on six axes, which cannot say anything about raiding.
+  Re-measured as one knob at a time, 200 seeds, each arm paired against the
+  one above it.
+  - **Raiding itself loses, and that is the game.** Turning raiding on for an
+    otherwise identical settler — same crew, same site rule, same build order,
+    same trading, same seeds — takes standing at day 400 from **27/200 to
+    14/200**, saved 9 against killed 22. The knob is verified to have fired
+    (neighbours fallen on 234 → 432).
+  - **Equipping for it does not rescue it**: the raider's war crew recovers
+    +3 net, nowhere near the 27.
+  - **More than half the raider's disadvantage is not raiding at all** — the
+    settler who raids stands 14, the full raider policy stands 4.
+  - **The first suspect came back an exact tie, and that is trap 3.**
+    `relaxFrom` — the rule the raider never got, priced by the settler at
+    saved 20 / killed 1 — changed nothing when added: same standing, same
+    average day, saved 0 killed 0. Chased rather than reported: at
+    `siteFloor: 7` the raider settles 170 of 200 bands **on day 6**, with only
+    14 still searching when the rule would begin to relax, against the
+    settler's 69. The knob had no work to do. It is not evidence the rule is
+    worthless, and it would have been written down as exactly that.
+
+- **2026-09-01 — 10.1's raiding finding chased down, and it inverts** — the
+  harness question was taken rather than left open, and it took three passes.
+  - **The counter was merged.** `tally.sackings` is noted from two different
+    deeds — `fallOn` a neighbour and `sackPlace` a coastal prize. Split by
+    watching which fired: place-plunder is FLAT across every ending (1.0) and
+    the whole signal is neighbour raiding (despair 2.9 against 0.7–0.8).
+  - **A prediction from reading the policy was wrong.** The settler is
+    `raidReach: 0`, `raidParty: 0`, `robsCamps: false` — a bot that never goes
+    out under arms — so the merged figure "must" have been place-plunder. It
+    was not, and only re-measuring caught it. Reading the config is not
+    measuring the behaviour.
+  - **The causation runs the other way.** The harness has a second fall-on
+    branch that no knob gates: *"Starving on a cold doorstep: the average
+    player robs it before they die"*, firing with under three days of food.
+    The despair bands did not break because they raided; they raided because
+    they were starving, and the deaths it cost them (violence 1.5 against
+    0.8) ground the morale down. **Despair is largely starvation routed
+    through a desperation raid that trades the larder for the heart** — so
+    10.1's headline is more true than it looked, not less.
+  - Stated as conditional: that branch is the harness's model of a player, not
+    a rule of the game.
+
+- **2026-09-01 — 10.1 measured: the ending screen was merging three decisions
+  into one word** — the item opened on "starved plus despair is 100 of 120
+  sagas", which is a reading off the last screen rather than off the game.
+  Looked at upstream (120 landings an arm, settler, each seed run to day 49
+  and to day 400):
+  - **Starvation is at least two endings.** On even, **23 of 74 starved sagas
+    never founded a steading at all** — they starved on the road — against 3
+    of 63 on fair. Two failures, one name, and the mix flips with hardship.
+  - **The game is NOT decided by the first winter.** Food on day 49 is 33.6
+    for the bands that starve, 35.7 for the ones that break and 33.7 for the
+    twelve still standing at day 400. It does not separate them at all, and
+    the hypothesis this probe was built to test is refuted.
+  - **Despair is not starvation relabelled — it looks like the raiding
+    ending.** 9.12a's rename already moved the empty-larder cases out, so what
+    is left is fed-and-broken: fewest hunger deaths (0.7 against 2.1), most
+    neighbours fallen on (3.9 against 1.8) at under half the lifespan.
+  - That last one strengthens **10.2**: `slain` at 3 in 120 is not combat's
+    terminal contribution, because combat also ends runs through morale under
+    the despair label.
+  - **Written down as confounded rather than reported:** buildings standing
+    and deaths per saga both scale with lifespan (401 days against 98), so
+    "survivors built more" is duration, not cause. **And written down as
+    UNMEASURED:** whether the raiding correlation is the game or the settler
+    bot's policy — the fault Phase 9 committed twice, so the harness question
+    goes first.
+
+- **2026-09-01 — Phase 10 opened, from a reading rather than from the parking
+  lot** — Phase 9 closed with every item ruled and the parking lot holds ideas
+  with no numbers under them, which is the shape Phase 9 spent itself
+  correcting. So a fresh audit was taken first (`PROBE: the Phase 10 audit`,
+  120 landings a policy, both bots reported apart) and the phase is opened
+  from what it says:
+  - **Food ends the game and almost nothing else does** — starved plus despair
+    is 100 of 120 sagas for the settler and 117 of 120 for the raider.
+  - **The tactical layer feeds that rather than threatening the band** — about
+    nine fights a saga in 95 of 120 sagas, and battle fates are a fifth of all
+    deaths, but `slain` ends 3 sagas in 120. **The naive version of this item
+    — "battle is unused" — was refuted before it was written down**, because
+    the ending screen says 2.5% and the list of the dead says 21%.
+  - **The raider is a play style that loses** — same seeds, it settles more
+    often and dies sooner, 2 bands standing at day 400 against 12. Filed with
+    the harness question FIRST, because Phase 9 twice mistook a bot's habits
+    for a rule of the game.
+  - **The content is reached** — at least 15 of 15 building kinds stand
+    somewhere at the end; it is the ENDINGS that are unreachable, five of six
+    causes sharing 20 sagas.
+  - The probe's own building counter was mislabelled "ever raised" when
+    `built` holds what STANDS — the exact counter CLAUDE.md opens on. Relabelled
+    as the lower bound it is.
+
+- **2026-09-01 — 9.12 is closed, and Phase 9 with it: `HEARTH_FREE` stays at
+  1** — the last open question in the phase was whether to buy back 9.12a's
+  second-year cost with the flat morale floor. The entry asserted the floor
+  "would blunt the third act by the same amount", which was never measured.
+  Measured now, and the assertion is wrong in a way that decides it.
+  - **Unpaired, 120 landings an arm across four values of the floor**, the
+    first-year guard never moves at all (spring identical at 64/120 even and
+    99/120 fair, every value) — which is 9.12a's design working, since a floor
+    of 1 already covers a one-building band.
+  - **Paired at 200 seeds, every seed run at 1 and at 3 against itself**,
+    because the unpaired differences were six or seven sagas wide and that is
+    the width of the noise — 9.2's own trap. On **even**, the arm whose cost
+    (22 deaths to 32) opened the question, 92% of runs come out
+    bit-identical and the tally is saved 2 / killed 2: **the lever does not
+    touch the year it was proposed to buy back.** On **fair** it saves 17 and
+    kills 1 — but it also hands **twelve more bands a jarldom at day 400**,
+    and a jarldom nothing can end is exactly what 9.12a was built to remove.
+  - So there is no dial: the floor does not trade the endgame for the middle,
+    it just gives the endgame back. 9.12a's cost stands because the only named
+    way to pay it down does not work. Recorded as NOT established: that year
+    two should be softened at all — no lever for that has been measured, and
+    none is invented here.
+  - The sweep cannot live as a test (`HEARTH_FREE` is a module constant), so
+    the method is written into the entry: a throwaway `git worktree`, the
+    constant `sed`-ed per value, per-seed outcomes dumped to JSON and joined
+    for the pairing. Never in the working tree — the 9.2 sweep once timed out
+    mid-run and left `CROSSING = 48` sitting in `src/`.
+
+- **2026-09-01 — 9.7 is closed: winter's proposed content is declined on a
+  measurement** — the item's remaining half proposed two WARMTH mechanics (who
+  sleeps under which roof, what gets burned when the wood runs low). Nobody
+  had ever asked whether warmth decides anything. Measured over 120 landings
+  an arm: cold nights are **4% of nights at home on even and 1% on fair**, and
+  `frozen` ends **5 and 4 runs of 120** against starvation's 74 and 63. Warmth
+  is not inert — 42 people die of it on even — but it is the axis that matters
+  least, and winter's two existing levers are worth saved 22/killed 1 and
+  saved 45/killed 0. Declined, with the condition that would reopen it written
+  into the entry: make warmth bind first.
+  - **The probe was wrong twice before it was right, both times by comparing
+    populations that were not the same.** First it asked
+    `party.firewood < need` on the state BEFORE the tick — a second copy of
+    arithmetic the sim already does, and wrong, because the fire is banked
+    after the day's labour lands, so wood cut that morning is invisible to it:
+    632 cold nights against the sim's own 518. Then, counting from the sim's
+    beats instead, it scanned every beat and compared the total against a
+    home-only predicate, which made the sim look like it was UNDERcounting by
+    a hundred nights when the two were simply not the same nights. It also
+    left `mark` unadvanced on days away from the steading, so a backlog of
+    road nights was counted as home nights the moment the band walked back in.
+    The cross-check that caught all of it is kept in the probe: two counts of
+    the same event from two sides, asserted equal, plus an assertion that the
+    detector fires at all — because "cold is rare" and "the detector is
+    broken" print the same zero.
+- **2026-09-01 — The worker-error mechanism recorded yesterday is refuted** —
+  "two CPU-pegged forks starve the main process" fitted the evidence and is
+  wrong: `test/probes.test.ts` run ALONE, one file and one fork, reproduces
+  `[vitest-worker]: Timeout calling "onTaskUpdate"` twice over. Concurrency is
+  not necessary for it, which also explains why capping forks did not help.
+  The correlation stands (3 of 3 split runs, 0 of 1 pre-split); the mechanism
+  is now UNKNOWN rather than known, and the file that reproduces it alone is a
+  long single test printing a large table, which points at the reporter rather
+  than the scheduler. Left unchased — it has never failed a run — but the
+  paragraph claiming a known cause would have sent the next person after fork
+  counts.
+
+- **2026-09-01 — 9.2 is closed: the voyage home stays** — the last fork was
+  remove the verb or leave it, and it is left, on 9.1c's precedent: an
+  honestly-labelled bad choice is kept and the thing that RECOMMENDS it is
+  deleted. No `src/` change was needed to close it — everything the item
+  decided to ship had already shipped, and each piece was re-verified in the
+  code rather than taken from the entry: `VOYAGE_RECORD` names the crossing
+  and its price, `render/cards/decide.ts` renders it as a grim outcome rather
+  than advice, and `test/voyage.test.ts` pins the surviving cause while
+  pinning `/mouths/i` OUT so the disproved one cannot return.
+  - **Closing it turned up trap 2 committed inside the item that cites it.**
+    The entry ended by saying "the SEASON rule is doing nothing", which reads
+    as a dead rule waiting to be deleted. **There is no season rule.**
+    `sailBlocker` has no season check, `sim/voyage.ts` never imports
+    `seasonOf`, and `sailAnySeason` exists only in `test/fixtures/harness.ts`
+    as one of the bot's policy knobs. A harness policy had been written down
+    as a rule of the game — the exact fault CLAUDE.md names — and acting on it
+    would have meant hunting for code that does not exist. Corrected in place;
+    what survives is that the food gate is the whole of the constraint.
+  - **The crossing stays net-negative on purpose**, about one band in seven
+    every time she goes. That is a priced choice rather than a balance bug,
+    and it is recorded as *not done* so it cannot look like an oversight.
+
+- **2026-09-01 — The dead-state-field class is audited, and the instrument
+  failed three times before it could be trusted** — `battle.width` was found
+  by reading 8.1's own note, not by looking, so the obvious question was how
+  many more there are. Answer, over all 175 fields of `GameState`: **three**,
+  and the instrument is the story.
+  - **`Tile` and `Visibility` are deleted.** Both hex-era types — a tile's
+    terrain, whether a river ran through it, whether it had been seen — left
+    behind when 8.5 deleted everything that referenced them. Zero references
+    in `src/`, `test/` or `scripts/`. Nothing wrote them, so no save carried
+    them and no migration was needed.
+  - **`Plot.at` is written and never read** (`makePlots` sets a slot index;
+    its only reader is `test/colony.test.ts` asserting the values are
+    distinct). It IS in the save, so removing it costs a migration. Left for
+    Evan: the plots are an array and the index is the position, so `at` looks
+    like the last of the ring coordinate — but the colony view may be the
+    thing that SHOULD read it.
+  - **`Champion.lastSeen` is written twice and never read, and its own comment
+    says what it was for**: *"The day he was last seen, so the log can say how
+    long it has been."* The log never says it. Its only reader is a test
+    asserting it equals `state.day` — the same shape as the `battle.width`
+    check that could not fail. Left for Evan, because it is a design question
+    and not a cleanup: write the line the field promises (it is 9.5's named
+    foe, and cheap), or drop the field and the promise together.
+  - **THE INSTRUMENT WAS WRONG THREE TIMES, AND EVERY ONE WOULD HAVE SHIPPED
+    A FALSE REPORT.** This is the value of the run, more than the three fields.
+    1. **A word-count scan said "no dead fields anywhere."** Pointed at the
+       commit where `width`/`height` were provably dead, it flagged neither —
+       `width` collides with `rect.width` throughout `render/battle.ts`. A
+       scan that cannot find the case you already know is not evidence of
+       absence.
+    2. **The first real oracle DELETED the field, which hides exactly this
+       rot.** Deleting makes the WRITE sites error too, so a write-only field
+       reads as used. Renaming the declaration instead makes reads and writes
+       both error, and TypeScript separates them by code: TS2339 read,
+       TS2353 object-literal write.
+    3. **The batched version reported all 170 fields dead, `grid` and
+       `terrain` among them** — both proven live minutes earlier. TypeScript
+       names the ORIGINAL property in its message (`Property 'grid' does not
+       exist`), never `grid_probe`; the parser searched for the suffix,
+       matched nothing, and recorded zero reads for everything. The
+       single-field validation had passed because it counted error codes
+       without parsing names — **it did not exercise the part that broke.**
+    4. And after all that, the fixed parser still called `craft`, `wits` and
+       `battlesWon` dead, because a read written as a string literal is
+       reported as `'"wits"'` — quotes inside quotes — which the name regex
+       could not match. `craft` has 30 reads, `wits` 51.
+  - **The rule this earns, and it is narrower than "validate your
+    instrument":** a validation must exercise the part you are about to
+    change. Steps 2 and 3 were validated on the same four fields; the
+    validation passed both times, and the second one was reporting the whole
+    state as dead.
+
+- **2026-09-01 — `battle.width` and `battle.height` are retired, and two
+  checkboxes stop lying** — 8.1 listed the pair to leave with `src/hex/`
+  ("none of it is load-bearing"), 8.5 took everything else on that list, and
+  these two stayed for a year of milestones. Measured before removing:
+  **written once** each, from `FIELD_WIDTH`/`FIELD_HEIGHT`, and **read
+  nowhere** in `src/` or `scripts/` — `cell(col, row)` indexes off the
+  constants, so the copy in the save could only ever agree with them.
+  - **Their only reader was a check that cannot fail.**
+    `test/raid.test.ts` asserted `battle.width === FIELD_WIDTH` on a battle
+    assigned `FIELD_WIDTH` a line after it was generated. Replaced with the
+    grid's own length, which is a claim about the field builder.
+  - **And the replacement is reported as narrow, because three sabotages were
+    run at it and only one landed.** It catches `blankField` handing back the
+    wrong number of cells. It does NOT catch a build loop that skips rows
+    (every cell is pre-filled `'open'`) and does NOT catch a SHORT
+    `blankField` (writing the last index grows the array back). The first
+    draft of its comment claimed it caught holes; that claim was written
+    before the sabotage that disproved it, and is the reason the sabotage is
+    worth running even on a check you just wrote.
+  - **The dead fields were visibly dead and nobody could see it.**
+    `test/lore.test.ts` built a fixture battle declaring `width: 3, height: 3`
+    over a **two-cell** grid. Nonsense, harmless, and unnoticed for as long as
+    it took nothing to read it.
+  - `SAVE_VERSION 61` + migration 60, which strips the pair from a save caught
+    mid-fight and passes every other save through. Watched failing.
+  - **The suite caught the change's one real consequence**, which is the kind
+    of thing a generated file is for: `port/LandnamPartyTables.gen.h` embeds
+    `SaveVersion`, so bumping to 61 made it stale and `test/tables.test.ts`
+    said so. Regenerated with `npm run party-tables` — a one-line diff. The
+    port contract stays FROZEN and was NOT synced: that hand-over is Evan's,
+    in the Unreal editor, and the party table was already drifting from the
+    port before this change anyway.
+  - **8.1 and 8.2 are ticked.** 8.1's open decisions were taken by 9.1b/9.1c
+    and its bookkeeping is now done. 8.2's *Done when* has been true since
+    8.5. Both were verified by reading the code — `ROUTE_STOPS = 26`, no
+    `src/hex/`, `grid` read by `wall.ts`, the spots read by three test files —
+    rather than by remembering the work.
+
+- **2026-08-31 — The balance file is split into a harness, its bars and its
+  probes** — `balance.test.ts` had grown to 7,795 lines holding three
+  different kinds of thing, and it was 43.9 of the suite's 45.0 minutes. The
+  split was measured before it was made, and the measurement CHANGED the
+  argument for it: moving the fifteen named PROBE tests out cuts the file that
+  is left to 4,660 lines — 60% of what it was — and the clock by half, because
+  the probes were half the runtime
+  while being fifteen of 105 tests and thirteen of 225 assertions. That ratio
+  is the case — not file size. The slowest things left are bars and have to
+  be (`plays to day 500` 240s, the market 167s, the winter verdict 136s, the
+  hardship arms 105s), so the suite does not get much shorter; what it gets is
+  a file where every test is a claim the game must keep meeting.
+  - `test/fixtures/harness.ts` — the scripted player, lifted whole. Not a
+    `.test.ts`: importing one test file from another would register every bar
+    twice.
+  - `test/balance.test.ts` — the BARS. 212 assertions over 88 tests.
+  - `test/probes.test.ts` — the INSTRUMENTS. 13 assertions over 15 tests. Kept
+    rather than deleted for the reason CLAUDE.md gives: a number is a reading,
+    and honouring that means being able to RE-TAKE it, which means the
+    instrument has to survive. What it must not do is sit among the bars
+    looking like one.
+  - **Exactly two things changed in the move**, and both were forced: the
+    harness's `../src/` imports became `../../src/`, and four mutable knobs
+    (`policy`, `walkedOut`, `recrewed`, `settleNotBefore`) grew setters,
+    because a test in another module reads an imported binding LIVE but cannot
+    assign to one. 51 call sites. Every read is the line it always was.
+  - **How it was verified, since a refactor is exactly where an assertion goes
+    missing quietly.** Structurally first: every non-comment line of the old
+    file is present in the three new ones verbatim, with an `export` in front
+    of it, or as the setter form of a knob assignment — zero unexplained
+    losses — and the test names, the 105 `it`s, the 225 assertions and the 57
+    printed tables all still exist. Then behaviourally, which is the check
+    that could actually fail: the curve read `winter 77%, spring 53%, two
+    winters 27%, settled by winter 42` and the hardship arms `81/55/27`,
+    both identical to the pre-split readings. A harness that behaved
+    differently would print different numbers.
+  - **A note on the instrument fault this turned up in my own hands.** The
+    first extraction left every `../src/` import in the harness wrong by one
+    directory, and TypeScript reported that as ~60 "implicitly has an `any`
+    type" errors on unrelated callback parameters. It reads as a typing
+    problem and is a resolution problem; the sixty errors were one error.
+    Worth remembering next time a refactor produces a wall of TS7006.
+  - **And the first version of this entry got a number wrong in the way this
+    file keeps warning about.** It said the old file was 6,300 lines. 6,209
+    was its length AFTER the harness had already been cut out of it — a
+    reading taken off a half-finished refactor and written down as a fact
+    about the thing before it started. The real figure is 7,795, and the only
+    reason it surfaced is that the control worktree checked out the pre-split
+    commit and the count did not match. Trap 1, at small scale, on the same
+    day and in the same commit as an entry citing trap 1.
+  - **THE CONTROL RUN WAS TAKEN, AND IT CORRECTED THE ENTRY ABOVE.** The
+    pre-split commit was checked out into a worktree and the whole suite run
+    against it, which answered two things at once.
+    - **The split HALVES the suite. The claim above that it would not is
+      wrong.** Wall clock went 2,484s → 1,317s, a 47% cut. The reasoning that
+      produced the wrong claim is worth keeping because it is a specific,
+      repeatable mistake: the probes' 21.9 minutes are CPU-TIME, and total
+      test CPU-time barely moved (2,541s → 2,688s, up 6% — two files pay two
+      collects and instantiate the harness twice). What the split actually
+      buys is PARALLELISM: two files run at once where one file could not run
+      against itself. Measuring a change in the wrong unit is the same class
+      of fault as measuring the wrong counter, and it went the flattering
+      direction only by luck.
+    - **And the split does cause the worker error.** The run now prints
+      `Errors 1 error — [vitest-worker]: Timeout calling "onTaskUpdate"`, the
+      exact hazard `vite.config.ts` documents as having once failed CI with
+      every test green. The control run has ZERO occurrences of it. The
+      mechanism fits: `onTaskUpdate` is a call the worker awaits from the main
+      process, and the main process now coordinates two CPU-pegged forks where
+      it coordinated one. Exit code was still 0 and all 1,557 tests passed, so
+      CI is not red today — but this box has 4 cores and the CI runner has 2,
+      so contention there is worse than what produced the error here. One run
+      each, so this is n=1 against n=1; the mechanism is what makes it
+      credible, not the sample.
+    - **RE-TAKEN 2026-09-01, and it is not a flake: three for three.** Two
+      further full runs on the split tree each printed the same single
+      `onTaskUpdate` error. The tally is 3 occurrences in 3 split runs against
+      0 in 1 pre-split run, so the "one run each" caveat above is retired: it
+      is reproducible, and it is the split's. What is still n=1 is the
+      CONTROL, so the honest statement is that the split reliably produces it
+      and the pre-split tree was seen clean once.
+    - **THE CHEAP LEVER WAS PRICED, AND IT IS REFUTED.** "Cap the forks" was
+      the obvious fix and it is strictly worse on both axes. Full suite at
+      `VITEST_MAX_FORKS=2`, 2026-09-01: **2,280s against 1,264s — 80% slower —
+      and the error still appeared.** It buys nothing and costs the whole gain
+      of the split, so it is off the table rather than open.
+    - **THE MECHANISM STATED ABOVE IS REFUTED, 2026-09-01.** "Two CPU-pegged
+      forks starve the main process" was a story that fit the evidence, and it
+      is wrong: running `test/probes.test.ts` ALONE — one file, one fork —
+      produced the same error twice. Concurrency is not necessary for it, so
+      the `maxForks=2` result stops being a puzzle (capping forks cannot fix
+      something forks do not cause). What survives is the correlation, 3 of 3
+      split runs against 0 of 1 pre-split, plus this: the file that reproduces
+      it alone is a long single test printing a large table, which points at
+      the reporter rather than the scheduler. **Not chased further** — it has
+      never failed a run — but the mechanism is now UNKNOWN rather than known,
+      and the paragraph that claimed otherwise would have sent the next person
+      after fork counts.
+    - **AND CI IS PROBABLY NOT EXPOSED AT ALL — but the number that decides it
+      was inherited, so it is now printed.** vitest sizes its pool as
+      `max(cpus - 1, 1)` for a non-watch run (`getDefaultThreadsCount`). On a
+      TWO-core runner that is ONE fork: files run serially, two heavy files
+      never overlap, and the error cannot happen. On a four-core runner it is
+      three forks and CI is exposed exactly as this box is. `vite.config.ts`
+      has asserted "a two-core CI runner" since Phase 5 and nothing has
+      re-taken it; `ubuntu-latest` gives two cores to some repos and four to
+      others, and it cannot be read off the workflow file. So `ci.yml` now
+      prints `availableParallelism()` and the maxForks it implies. **The next
+      CI run answers this**, and the answer decides whether there is anything
+      to rule on.
+    - **The recommendation, pending that reading: leave it.** Three split runs
+      have printed the warning and all three exited 0 with 1,559 tests
+      passing; the only measured alternative is slower AND still warns. If CI
+      prints two cores, the local warning is a four-core artifact and the item
+      closes. If it prints four, the remaining lever is serialising the two
+      heavy files against each other, which is the pre-split runtime — and
+      that is Evan's call, not a cleanup.
+    - **Also confirmed by the control**: pre-split vitest counted 107 tests in
+      `balance.test.ts`; post-split it counts 92 + 15 = 107.
+
+- **2026-08-31 — The `standsFor` bug is fixed as a class, not an instance** —
+  9.11 tripped over one of these and fixed the one it tripped over, which left
+  the class alive. Audited: `built.includes` appeared in three more places
+  that ask what a steading HAS, and all three are the same fault. The colony
+  panel's `blockWord` names which prerequisite is missing using a different
+  predicate than the gate that refused it, so a band with a great hof could be
+  told it needs a hof; `debug.build` would stack a longhouse beside the great
+  hall that replaced it, and the browser bars drive that; `reach.ts` had a
+  fast path disagreeing with the slow one beneath it. None of the three is
+  reachable TODAY — every `after` list happens to hold one id — which is
+  exactly how the watchtower bug hid for a whole tier. **The audit itself
+  needed re-taking once**: its first pass read `after: ['greathall','hof']`
+  out of a COMMENT quoting the old gate and reported a two-entry list for a
+  field that says one. `test/standsfor.test.ts` now fails on any file outside
+  `sim/colony.ts` that asks `built.includes`, in the spirit of
+  `test/palette.test.ts` — and carries a check that the pattern it bans still
+  occurs somewhere, so the lint cannot pass by having a stale regex. Five
+  sabotages, all caught. The rule is in CLAUDE.md's load-bearing section now.
+
+- **2026-08-31 — The named foe stops promising a return (9.5, closed)** — The
+  saga said *"He will have marked us for it"* when a champion walked off the
+  field. Measured, he leads a repeat fight in 5% of clan fights on even and 3%
+  on fair, and most named foes cannot return at all — only 22% of the fights
+  he leads are a clan's. The other prong, making the promise TRUE by raising
+  the raid rate, was tried and reverted: three points of recurrence for three
+  points of spring and a difficulty card that stopped being true. And
+  softening it wholesale was declined too — 9.14's record sits on a decision
+  card read BEFORE a choice, where a false claim changes what a player does,
+  while this is past tense after the fight and nothing acts on it. What was
+  wrong was the certainty, not the menace, so one clause moved: **"He will not
+  have forgotten it."** The dread survives, the promise does not, and the old
+  clause is pinned out of the test so it cannot drift back.
+
+- **2026-08-31 — Both levers on the voyage are refuted (9.2, swept)** — The
+  item left three prongs and priced one, leaving the other two marked
+  UNMEASURED, which makes a fork a coin flip. Swept at 200 paired seeds with
+  the forced arm: shortening the crossing 78 → 48 → 30 days is **inert**
+  (24, 23, 22 of 200 standing against 29 for never sailing), and halving the
+  food gate is **much worse** — it doubles the crossings to 105 and collapses
+  standing to 14 of 200. The gate is not badly chosen, it is load-bearing.
+  **And the mechanism is confirmed for the first time by varying the thing it
+  names**: every earlier attempt varied what comes home, this varied how many
+  crossings happen, and net bands lost per crossing came out 0.125, 0.158,
+  0.159, 0.143 — about one in seven, every time she goes, whatever the
+  constants say. What ships is the card: its second sentence named the
+  unfunded-mouths cause, which has now failed two sweeps, so it names the
+  crossing and the price instead — and `test/voyage.test.ts`, which was
+  pinning `/mouths/i` and so enforcing the disproved half, now pins what
+  survived and pins the old cause out. The ruling narrows from four options to
+  two: remove the verb, or leave it honestly labelled.
+
+- **2026-08-31 — The steading gets somewhere to put the work (9.11)** — The
+  fork this item left open is closed by elimination: cargo for the knarr died
+  on 9.2's own numbers (every arm that sails does worse, and the harm tracks
+  crossings), the trade good on the market's (every way of visiting more
+  measured at worse), so what is left is work done at home. Three late
+  works — a stone dyke on the earthworks, a great hof on the hof, and a
+  ship-howe raised over the dead — cost 92 timber against 84 for the entire
+  list that existed before. The dead window closes: queue-empty days go 74% →
+  **19%** in year three and 85% → **30%** in year four, and the wood pile falls
+  1072 → **793**. The curve does not move. What it does NOT do is fix the
+  overrun — 92 timber against ~500 a year still piles up, and year five still
+  empties out at 51%; production outrunning every use the game has is the
+  deeper finding and it is left standing. **And it found a shipped engine
+  bug**: the howe measured never-raised in sixty sagas because `buildBlocker`
+  checked `after` against `built.includes` rather than `standsFor`, so an
+  upgrade erased its own predecessor from every gate that asked — latent in
+  shipped content too, since the watchtower waits on a palisade the earthworks
+  replace. Four sabotages, all caught.
+
+- **2026-08-31 — The other landnám reaches the ending (9.10)** — Half the
+  item's premise was already false: the strip map has marked the rival's hall
+  and his fences for some time. What was true is that the SAGA never mentioned
+  him, so he was real in every run and vanished at the retelling. And every
+  mark is gated on `rival.met`, which the harness puts at **32% of sagas** —
+  for two runs in three he was one line on day nine and then silence. His own
+  docstring's "median of six stretches of seven" turned out to be a horizon
+  figure: played sagas end with him holding **2.0**, and only the 8 runs in 60
+  that go the whole 400 days see 5.1. So `The Other Landnám` is now a chapter
+  in every ending that has one, telling the band that stood in his yard apart
+  from the band that only heard the rumour, naming the day sight fell on him
+  (new optional `metOn`, `SAVE_VERSION` 60, not backfilled — a guessed date is
+  a lie in the one place a run is retold), counting his coast against ours, and
+  saying when his fences shut on ground the band had walked. The item's second
+  half — a race you can lose — is declined and the reason recorded: he only
+  looks like a race in the 13% of sagas that reach a point 9.12 calls already
+  won. Nine sabotages, eight caught; the ninth proved the saga tests were
+  testing a field rather than the code that fills it.
+
+- **2026-08-31 — The shield, settled on the third reading (9.1c)** — 9.1
+  measured the shield as worth taking when hurt (49/60 wins against 46); 9.1b
+  inverted that on the same instrument the next day (31/60 against 42). Both
+  were arms that took the shield INSTEAD of a swing, so both were really
+  measuring "give up your attack". The arm nobody had run is the free one —
+  set it only when there is nothing to attack — and it ties swinging-always
+  EXACTLY, same wins, same men, same log. By this project's own rule that is a
+  tell rather than a finding, so it was counted: **front-two turns with
+  nothing to hit, over sixty fights, ZERO**. The walls deploy in contact and
+  `defend` is a front-two verb, so the shield has no free case here at all; it
+  can only be bought with a blow, and buying it loses. `shieldAdvised` and its
+  seven tests are deleted — a helper recommending a move measured to lose
+  eleven fights in sixty is worse than none — while `doDefend` and the Shield
+  button stay, because the foe AI uses it and nothing says that is wrong. The
+  zero is asserted so the day it stops being zero is a day somebody finds out.
+
+- **2026-08-31 — What the colony loop actually is (9.11, diagnosed)** — All
+  four of the item's figures predate 9.12a, which was built because of them,
+  so they were re-taken before the largest item in the phase got opened on
+  them. The headline holds and one support does not: 47% of turns are spent at
+  the steading (said 53%), the hall is genuinely never full, but only **23 of
+  60** bands ever pass six people rather than 33. The averaged pair "9.0 souls
+  to 14.2 of roof" hid the only interesting thing in it — the gap is worst in
+  YEAR TWO (6.5 to 15.6) and closes by year four (12.5 to 18.0). And the real
+  fault is not the people at all: nobody is idle, but the steading has nothing
+  left to raise on **26% of settled days in year two, 63% in year three and
+  74% in year four**, while the wood it goes on cutting piles to 1072 and then
+  1613 in the store. 9.11 is not "give the band more to do with its people",
+  it is "give the steading somewhere for its output to go". Three instrument
+  faults were found and fixed inside the one probe — a mode-stack reading that
+  reported colony 0%, a merged denominator that hid pressed bands among
+  finished ones, and `home.built.includes` instead of `standsFor`, which is
+  9.4's own finding made again by the hand that wrote it up.
+
+- **2026-08-31 — The shove and the dash come off the bar (9.1b)** — Evan's
+  ruling on the fork 9.1 left open. Both verbs are gone from the sim, the
+  actions, the AI, the UI, the cues and the beat stream; `SAVE_VERSION` 59
+  drops the two beat kinds a fight caught mid-swing is holding. **The deletion
+  was the small half.** Measured over the arena's 60 fights BEFORE the cut,
+  taking both verbs away left 269 of 1427 warband turns — 19% — with no legal
+  verb at all, at ranks 4, 5 and 6: `throw` is all a back-rank man has,
+  `throwsLeft` runs out, and the dash was how he walked up into the wall. That
+  is the bug `ranks.ts` says it shipped for one afternoon, arriving again by
+  deletion instead of by a table. So the movement outlived the verb — `stepUp`
+  closes the line on anybody with nothing he may legally do, one rank, both
+  sides, spending the turn exactly as the dash did. After: 0 stranded turns,
+  374 of 1494 spent by the line closing. The price is stated rather than
+  buried: the arena's formation bot goes 47/60 wins and 166 standing to 42 and
+  155, the curve's spring is unchanged at 53% and its two-winter mark improves
+  22% → 28%, and `A Fair Country` falls 83% → 81%, so its menu card is
+  restated 86 → 81 rather than left three-then-five points optimistic. Closing
+  is not free: a man who used to stand safe in the back rank doing nothing now
+  walks into the wall where he can be hit. **It also overturned 9.1's shield
+  finding of the day before** — "shield when hurt" goes 49/60 to 31/60, paired
+  won 8 / lost 5 to won 0 / lost 11 — so the hint that told the player the
+  shield was worth more than the swing is off the screen, and whether the
+  shield gets a different rule or comes off the bar is open again.
+
+- **2026-08-31 — A sword with a name, and a wall that can say so (9.9)** — The
+  item's premise was half wrong and the source settled it before a harness
+  ran: `hallPasses` already names the dead leader's children and `maybeBirth`
+  already reads the household `maybePair` made, so the generations and the
+  lineage talk. The MEMORIAL was the deaf one — a name, a byname, a fate, a
+  day, a seed, and nothing about who anybody was to anybody — and 56% of the
+  293 names it is handed over 60 even sagas belonged to somebody who was bound
+  to another person. So the band comes ashore with one named blade, it passes
+  when its bearer dies — to a child they left, else their kin, else whoever
+  leads now — and the wall carries it. It changes hands in 67% of sagas, 134
+  hands over 60, and marks a third of the memorial's rows, which is the first
+  column on that wall two rows can share. The chest branch fires 2 times in 60
+  and is recorded as rare rather than sold as a feature. Both balance readings
+  are unmoved to the point (78/53/22 and 83/55/27): the blade touches no stat,
+  no roll and no wound, because the second-year killer is morale and a heart
+  term on a death would soften the exact pressure 9.12 found. Fourteen sabotages,
+  eleven caught — and the three that caught nothing were the same fault in
+  three costumes, a check written so that it could not fail: one comparing
+  the sabotaged code against itself, one calling the hook instead of running
+  it, one whose fixture handed the sword back to the same man. All three
+  replaced. And a hole no test had: a bearer who WALKS OUT rather than dies
+  stranded the blade forever, because `mourn` is only called for the dead.
+  That one was found by reading the diff, not by a red bar, and is closed at
+  both departure sites.
+
+- **2026-08-31 — Keeping the villain's promise was tried and refused (9.5)** —
+  9.5 left a fork: raise the raid rate so the clan that carries the named foe
+  comes back, or soften the saga line that promises he will. The first prong
+  was recommended, implemented (`AUTUMN_WORTH_K` 0.155 → 0.5) and measured. It
+  buys three points of recurrence (5% → 8% even, 3% → 5% fair) and costs three
+  points of spring on the curve (53% → 50%) — and it drops `A Hard Country` to
+  25% against a menu card that promises 31%, which is a shipped bar and a
+  promise a player reads before choosing. Reverted. The price quoted for the
+  change four times in the item was also wrong: "about one point of spring"
+  came from `PROBE: where a raid actually costs a band`, which samples bands
+  that had ALREADY SETTLED — the ones a raid can least kill — and was written
+  down as the price on the curve, which starts at the landing. That is the
+  CLAUDE.md rule added this same morning, broken by its author within the day.
+  Both are recorded in the item; the second prong of the fork is still Evan's.
+
+- **2026-08-31 — The sea can kill now (9.8)** — Zero sea fights over 120 sagas
+  turned out not to be a rate but a missing line: every caller of `startBattle`
+  passed `countryHere`, a land country, so `terrain: 'ocean'` was unreachable
+  while `pickSeaField`, the `case 'ocean'` battlefield and `isSeaFight` all sat
+  built and dead. `metAtSea` now rolls once a rowed leg against what is in the
+  hold — an empty knarr is not worth rowing after, a fat one draws a bigger
+  crew — and the count goes 0 to 20 over 120 sagas with the first winter and
+  all three hardship arms byte-identical, because a sea fight needs a band that
+  is settled, rowing and laden. The first cut saturated at thirty of stores
+  aboard and made the cargo weighting meaningless, which is the same fault
+  `AUTUMN_WORTH_K` had at 0.5. It also knocked over the market probe's placebo,
+  which had been striking 250 bargains with neighbours while claiming to deal
+  nothing — a control arm that passed for a long time on slack, and reads 0 now
+  that it counts only deals struck at a place.
+
+- **2026-08-31 — The sea fight is unreachable, not rare (9.8), and a rule
+  about numbers (CLAUDE.md)** — For once the item's figure is right: 0 sea
+  fights over 120 sagas, because no code path can put `terrain: 'ocean'` on a
+  battle. Every `startBattle` caller passes `countryHere`, which is always a
+  land country — while `pickSeaField`, a whole `case 'ocean'` in the
+  battlefield generator and a predicate in `sea.ts` all exist and can never
+  run. The game can already fight a sea battle; nothing asks for one. The
+  trigger is left unbuilt because it is a new hazard that changes difficulty.
+  Alongside it, the lesson of ten straight Phase 9 items is now a rule in
+  CLAUDE.md: a number in the roadmap is a reading from an instrument on a date
+  at some N, not a property of the game — re-take it before building on it.
+
+- **2026-08-31 — Winter already had the biggest decisions in the game (9.7)** —
+  The item said winter "offers almost no decisions". Measured, short commons
+  saves 22 bands in 120 against 1 lost, and crewing to the winter mark daily
+  saves 45 and kills nobody — the largest measured decision anywhere in this
+  game. The fault was the one 9.3 and 9.4 both turned out to be: the panel
+  names the price and never the worth. On full shares the rations control said
+  "nobody goes short", which is reassurance on exactly the screen where
+  tightening would save the band; it now states the record, and only when the
+  larder will not reach spring. The rest of the item — who sleeps where, what
+  gets burned — is new content and is left open.
+
+- **2026-08-30 — The named foe is not being wiped out (9.5)** — The item read
+  "1 came back, 30 put down for good" as the villain always dying. That tally
+  runs to day 169, counts clan-champion transitions rather than fights, and
+  counts a return only when the man carries scars. Counted as fates over a full
+  run he leads 195 fights on even, walks off the field alive in 46% of them,
+  and only 22% of them are a clan's — the rest are open-field champions who
+  cannot return by design. So recurrence is gated by how often a clan comes
+  back, not by his death, which converges with 6.5c: raising the raid rate was
+  measured as nearly free and bought no difficulty, and this is what it would
+  buy instead. Meanwhile the saga promises "He will have marked us for it" and
+  delivers one time in twenty. The measurement ships; the fork between keeping
+  that promise and no longer making it is left open.
+
+- **2026-08-30 — The palisade was never rare (9.4)** — The item was written on
+  the palisade being the rarest of twelve buildings at 13 of 60. That is
+  `settlement.built` read at the end of a saga, and a tier that replaces its
+  predecessor consumes it: every earthworks in the tally is a palisade raised
+  and buried. Counted as it happens the palisade is 38 of 60, fifth of twelve,
+  ahead of the storehouse and the mead hall — the most upgraded thing on the
+  coast rather than the rarest. The counter now prints both lists. What
+  survived is the timing: a wall stood when the first raid came in only 42% of
+  raided sagas on even, and half the rest raised one immediately afterwards. So
+  the watch panel now names the size of the reason — 91 fights in 100 held
+  against 47 — in the row that already said "no wall, no watch", at no cost in
+  height.
+
+- **2026-08-30 — The good water, said out loud (9.3)** — The item asked
+  whether fishing does not pay or whether nothing tells the player, and it is
+  emphatically the second: the five-day trip returns 3.26 a day against 0.59
+  for foraging where you stand, and on bog, hills and shore the land is
+  negative. Yet the Fish deed only speaks once you are already floating over a
+  ground. The travel panel now names the nearest ground the band has found and
+  what it is worth, gated on what they actually know. The first cut of the
+  mark cost the 320-wide screen 89px and pushed the chronicle and the fight
+  off their blessed pictures — caught by the look bar and by nothing else,
+  since the harm was upstream of the fight — so it says nothing when the water
+  is already underfoot and the deed is on the sheet.
+
+- **2026-08-30 — The voyage home, measured at a sample it fires in (9.2)** —
+  The item's premise was stale: the gate had already been lowered from 120 to
+  96 and six of forty sagas now sail. But the probe's aggregates could not
+  answer its own title, because only six rows of forty differ between arms and
+  the other thirty-four are the same run twice — "205 souls against 200" is six
+  sagas of noise wearing a sample of forty. Paired on the sagas that sail, and
+  run once at 200 seeds so the treatment fires thirty times, the crossing saved
+  3 bands and killed 7. The card now states that, as the door out states its
+  own record. Evan ruled for stores; swept, she already brings them and more
+  makes it worse — 22 of 200 standing at twelve, 18 at forty-eight — because
+  what comes home pays for the next crossing rather than gating this one. That
+  also kills the "unfunded mouths" diagnosis this repo had been repeating:
+  funding them four times as well did the opposite of helping. Two named
+  causes for the voyage have now failed a test, and what survives is that the
+  harm tracks crossings, not cargo.
+
+- **2026-08-30 — The shield was not a dead verb (9.1)** — `B_DEFEND` appeared
+  zero times in 1165 battle actions and the arena's "defend only" arm tied
+  never-defending exactly, a tie that had been asserted long enough to read as
+  a finding about the shield. It was a finding about a priority list: both
+  harnesses put the verb last, and on a line the front rank always has
+  somebody to hit, so it never fired. Taken first, where a player takes it,
+  the shield is worth 49 wins in 60 against 46 and seventeen more men
+  standing — when the man holding it is hurt. Taken every turn it wins 11.
+  The hint now names that one case. Shove and dash are left open with their
+  numbers written down: shove is worth nothing even at its best, and dash is a
+  trap that is also the only way to change rank.
+
+- **2026-08-30 — The number that decides everything, said where it is chosen
+  (9.15)** — The item's own figure turned out to be an artifact: "three sworn,
+  63% never drew steel" is `outWith >= 4` in the harness's raider policy, not a
+  rule of the game, which gates falling on a camp only by whether you are
+  standing in it. The real number is sharper and was never shown anywhere: of
+  32 open-field fights, three stood wins 9% and four stood wins 72% — a cliff,
+  not a slope — and past four it declines, because what comes out to meet you
+  scales with what you brought. The launch card now says so, counted in sworn,
+  for every errand and not only a raid. Two of the three sabotages against the
+  new claims passed on the first attempt and both are faults already recorded
+  in this file: a premise that never occurred, and an assertion written in
+  terms of the thing it was testing.
+
+- **2026-08-30 — Walking out is never right, and the panel now says so
+  (9.14)** — Both existing measurements triggered the retreat on the day-40
+  verdict, so both measured a band leaving in autumn with its summer already
+  spent; the case the verb was actually shipped for — off bad ground, early —
+  had never been measured, because the file that shipped it said the harness
+  could not. It can now, and that case fails too: against 83 of 120 seeing
+  spring by staying put, leaving the worst ground at the first legal day saved
+  4 and killed 10, and every harsher threshold is worse. The verb stays,
+  because a band that wants to leave should be able to and whether that is
+  wise is the player's to get wrong — but the panel stops being silent. The
+  record now sits under the price, composed in the sim beside the numbers it
+  comes from so the screen cannot ship the cost without the outcome again.
+
+- **2026-08-30 — The turn that ends itself (9.13)** — Once a fighter had
+  acted, ending the turn was the only legal move, and the screen said so
+  ("nothing left this turn — end it") and then made you tap it anyway: one
+  mandatory tap per fighter per round with exactly one outcome. It now takes
+  itself, after a beat so the blow is still on screen. The premise is proven
+  rather than read — every verb tried, every other action asserted refused —
+  and the occurrence guard caught three of the six claims passing without the
+  verb ever having been legal. Two things fell out that the item had not seen:
+  a broken man is spent before he starts, and he was being shown a live
+  Strike, Throw and Shove that did nothing when tapped. Two browser bars had
+  to be corrected too, both because they measured the clock rather than the
+  rule they were guarding.
+
+- **2026-08-30 — Which lever makes autumn bite: none of them (6.5b, 6.5c)** —
+  The mead hall now burns unless a wall stands, which is right and nearly
+  never happens: 126 of 128 halls found by a raid were already behind a wall,
+  because bands raise the cheap early palisade long before the dear late
+  hall. So the question became which lever would actually work, and the sweep
+  says none inside the raid system. Losing a raid is already one of the
+  sharpest things in the game — 92% of bands that held saw spring against 63%
+  that did not — but quadrupling how often raiders come costs one point of
+  survival and doubling how many they bring costs nothing, because every term
+  in the system scales with what a band has and a first-year band has
+  nothing. Raiders come for plunder; in year one there is none. Recorded as a
+  design fact rather than tuned at again.
+
+- **2026-08-30 — The wall is what spares the mead hall (6.5b)** — Evan's
+  ruling on the question 6.5 left open. Raiders fire the mead hall of a band
+  that never walled up, and the Thing cannot be called without one, so the
+  palisade stops guarding only the grain and starts guarding the run's
+  ending; `standsFor` rather than `built.includes`, so improving the wall to
+  earthworks does not silently take the protection away. The build panel says
+  it before the autumn it matters. **Measured, it almost never fires** — of
+  128 raids that found a mead hall standing across 120 sagas, 126 were
+  already behind a wall and none burned, because bands raise the cheap early
+  palisade long before the dear late hall. The long game came back byte
+  identical on all three arms. The figure the ruling was chosen on was true
+  of a fixture that forces its build list and not of the game, which is the
+  same selection bias the affordability probe had; both are written down.
+  The rule stands as a correctness fix that bites a player the bot never
+  models, and the pressure 6.5 wanted still needs a lever.
+
+- **2026-08-30 — The hall must be kept (9.12a)** — A steading's heart used
+  to be paid for having been built: +8 a day for ever, against a lost battle
+  costing −15, which is why nothing on the coast could kill a band three
+  years old. It is now paid only while the hall is KEPT — a feast, one food
+  a mouth, good for a season and fading across the next. The first point is
+  free for ever, so a band with a longhouse and nothing else is untouched
+  and the first winter is unmoved (78% reached, 53% saw spring; the three
+  hardship arms 83/55/27%). Past the third year, ruling fell from 25 of 30
+  to 8 of 20 on even and from 11 of 11 to 5 of 7 on hard: a jarldom can end.
+  Keeping it is a deed with the cost on its face, and the colony panel now
+  says what a cold hall is costing — the crowding mark's argument, that a
+  penalty the player cannot see is bad luck with a bill attached. Two false
+  readings on the way: the bot's feast branch sat below a return and never
+  fired, and the probe that judged affordability sampled only the days a
+  band was already short.
+
+- **2026-08-29 — A bar that looks, and what a run's shape actually is
+  (9.6 and 9.12)** — Two halves of the same lesson: an instrument that cannot
+  see the thing it is about will report that the thing is fine.
+
+  **9.6.** Every browser bar in this repo counts nodes, measures boxes and
+  taps buttons, and none of them looks at the picture — which is how three
+  defects a player found in one week (a band floating above its own ground,
+  an illegible battle, a field halving as men died) passed eleven bars and
+  1442 tests. `scripts/look.mjs` photographs eleven screens at two widths and
+  reduces each to a 24x48 grid of brightness, so a change has a distance AND a
+  place. Its PNG decoder is written here because Node has none and this repo
+  takes no dependency for one; the header check earned itself on the first run
+  when Playwright turned out to write RGB, not RGBA. Watched fail on both
+  defects it was built for — a missing knot moves five screens, the shrinking
+  battlefield moves `fight-late` by 8.3 — and four things went wrong in the
+  building of it, every one the same shape as the bug it catches. Those are in
+  the roadmap entry, including that `npm run build | tail -1 && echo OK` is a
+  lie by construction.
+
+  **9.12 was asking the wrong question, and the measurement is the answer.**
+  The item was written off "average run 172 days against a 500-day horizon".
+  Banded properly, there is no average run: the third year holds **two to four
+  sagas in a hundred and twenty**. A run dies in its first two years or it is
+  past the third, and past the third it is not a late game but a WON one — on
+  A Hard Country, 11 of the 11 that get there are ruling, and nothing on the
+  coast can kill them. The killer changes too: hunger early, and by the second
+  year it is despair, which nothing in this audit had touched. So the game has
+  a first act and an epilogue and no third act. The full table, and the fork
+  that follows from it, are in the roadmap.
+
+  The histogram needed its own fix first — it was not reset between hardship
+  arms, so `fair` printed 240 runs out of 120 and `hard` 360. It only looks
+  wrong if you add the row up.
+
+- **2026-08-29 — Autumn is a reckoning (6.5)** — Asked what would make fighting
+  matter in a game about winter. The answer in the data was that it already
+  could and almost never did: a lost raid takes **40% of the food and the
+  firewood**, carries off hands and burns a building, and injuries already cut
+  `effectiveStat` and so a day's work. Both pipes from a fight to the larder
+  were built. They just barely opened — a typical steading read **a raid about
+  every 469 days in a game whose average run is 172**.
+
+  So autumn is a reckoning: one roll, on one seeded day inside the season, on
+  the same worth the daily hazard reads, saturating through `1 - e^(-worth·k)`
+  so a wall always buys something and nothing is ever certain. The other three
+  seasons keep the background hazard, quartered. **The risk moved rather than
+  grew**, and the panel says so — "They come before winter — 41 in 100 this
+  autumn" instead of a number that reads as never.
+
+  Measured over 120 sagas to day 500, against the same seeds, in the two
+  states it passed through — because the second column is the honest result
+  of the design and the third is the honest result of the ruling below it:
+
+  | | before | the reckoning | + mead hall spared |
+  |---|---|---|---|
+  | ends `slain` | 2 | **2** | **2** |
+  | ends `starved` | 63 | **67** | 62 |
+  | two winters | 30% | 27% | 28% |
+  | became jarl | 28 | 26 | 30 |
+  | avg days | 172 | 165 | 175 |
+  | spring, fair/even/hard | 83/57/29% | 83/56/29% | 83/57/29% |
+
+  **The middle column is what was wanted and the right-hand one is what
+  shipped.** The reckoning on its own did exactly the agreed thing — `slain`
+  did not move and the pressure landed in the larder — and then sparing the
+  mead hall gave that pressure back. What ships is a game of about the same
+  difficulty as before, in which raiders arrive before winter on a day a band
+  can plan for. The legibility is the win; the pressure is not, yet.
+
+  **That is the trade in front of the next decision, stated plainly:** if the
+  added pressure is wanted, it is the OTHER ruling that carries it — an
+  unwalled hall cannot hold the endgame — not this one.
+
+  **The justification given for it did not survive the measurement, and is
+  recorded here rather than quietly dropped.** The case made was "only 8 of 20
+  sagas ever see a raid — the threat is too random to plan against". After the
+  change: still 8 of 20. That number is dominated by runs that end young; it
+  measures how many sagas live long enough to be worth raiding, not how
+  randomly raids arrive. The change earns its place on the table above.
+
+  **Two faults it dragged into the light.**
+
+  `sackSteading` said "the roof over everyone survives a sacking, whichever
+  tier it is" and then fell back to `home.built[0]` — the longhouse — when it
+  had nothing else to fire. The rule was written and undone on the next line,
+  and `test/raid.test.ts` asserted BOTH: one case that the longhouse survives,
+  another that a lone longhouse burns. Raids were rare enough that no steading
+  was ever stripped to its roof, so nothing noticed for months.
+
+  And the mead hall is spared now, which is a design call and not a softening:
+  the Thing must be called in one, so a band whose only hall keeps burning can
+  never reach its own endgame however well it plays afterwards. Measured, that
+  is not hypothetical — `test/thing.test.ts` fell from 4 of 4 to 1 of 4 and
+  every failure was blocked on "a mead hall to hold it in". They still take
+  two fifths of the stores, still take hands, still break the watch. What they
+  cannot take is the run's ending.
+
+  The alternative was to accept that an unwalled hall cannot hold the endgame
+  — 1 of 4 without a palisade, **4 of 4 with one** — and say so in the guard
+  rail. Both restore it; this is the one that does not lock a door.
+
+  One instrument fixed on the way: that guard rail runs a band headless, and a
+  headless band cannot fight. Its first raid set `state.battle` and left it
+  set — **366 of the next 400 days frozen mid-fight**, an outcome no player can
+  reach. It fights its raids out now, which is strictly harder than the
+  peaceful run it was measuring before.
+
+- **2026-08-29 — The battlefield stops shrinking as men die (reported)** —
+  Evan, with two screenshots: *"in battle as people die the screen shrinks."*
+  He was right twice over — it was two independent causes wearing one
+  symptom, and both had a bar pointed straight at them that let them past.
+
+  **The frame was sized by the survivors.** `deepest()` counted only the men
+  still standing, so the field's box was a function of who was left.
+  Measured on the built page at 390x844: a fight four ranks deep drew 240px
+  of picture, three drew 200, two 160, **one drew 119**. Half the size by the
+  end of a fight. `extent`'s own comment worried that a box which "shifted
+  off centre as men fell would slide the whole painting sideways" — it was
+  watching the right event for the wrong reason.
+
+  **And the log grew into its cap.** `.saga.fight .saga-entries` had
+  `max-height: 74px`, which still lets it GROW: the first turns write two
+  lines, later turns four, and every line it gained came out of the field
+  above it. Measured: the map slot went **606px to 562px over one death**,
+  monotonic, because a log only ever gets longer. It is a reserved `height`
+  now — a footnote takes its space once and never takes another pixel.
+
+  A third thing fell out of fixing the first: the view was letterboxed. With
+  the box handed straight to the viewBox and `xMidYMid meet`, the field only
+  ever filled **62% of the width** even at full depth, because the field is
+  900 tall and the slot is not. The view is shaped by the SLOT now, at the
+  scale that fits the whole field, so it fills the screen edge to edge.
+
+  **Both bars were aimed at this and both were too loose.** `field.mjs`
+  already claimed "a whole fight may not cost the field more than a tenth of
+  what it opened with" — the real loss was 7.3%, comfortably inside. It is
+  one pixel of rounding now. The first repair of the other half was a browser
+  claim that the viewBox never changes, and it **went green against the
+  unfixed build**: the bug only bites once a whole rank EMPTIES, and
+  fourteen turns takes a six-deep fight from twelve men to eight with
+  somebody still alive in the last rank the whole way. That claim is
+  `test/line.test.ts` now, where `deepestRank` takes the whole battle so
+  there is no call site left to narrow it to the living, and where burying
+  men and comparing boxes costs a millisecond and cannot miss its premise.
+
+  One more thing the first repair broke and a bar caught: scaling by the
+  height alone put a foe off the screen at 412x915 — "you cannot see who you
+  are fighting". A fit is two axes or it is not a fit.
+
+- **2026-08-29 — A hand that drew this (Art 18 — the art queue is finished)**
+  — The last item is not a feature: it asks whether all of it looks like one
+  hand, and the way to answer that is to count. Counted first: **93 distinct
+  colours across the 18 files in `render/`, 182 times over, 140 pairs closer
+  than dE 8 in different files, 26 colours with two or more authors, and five
+  exact duplicates of a colour `style.css` already named.**
+
+  The gold was the worst, and the worst of the gold was this session's own:
+  five spellings of `#d3a441` plus `rgba(211,164,65,...)` added an hour
+  earlier by Art 16 — the item about having one place for a thing. It needed
+  an alpha and hex has nowhere to put one, which is what always happens when
+  the shared thing cannot do what the caller needs. `palette.ts` has
+  `alpha()` now.
+
+  Two worse faults than repetition. **`gear.ts` and `look.ts` both defined
+  `IRON` and meant different colours** (`#9fb0c4`, an axe edge; `#5b6570`, a
+  helm) — same word, same directory, and a reader of either confident and
+  wrong. And **`steadingView.ts` dressed the household's children from three
+  of look.ts's six wools, copied out**, which is CLAUDE.md's first pillar
+  broken in the code: a view inventing its own colours for a person. They are
+  named people with their own seed; they now go through `folkLook`.
+
+  `render/palette.ts` holds the colours with more than one author and no
+  others — the 67 local to a single painter stay with it. Twenty-six shared
+  colours became zero; the five CSS duplicates became none. **Nothing changed
+  on screen and it was checked: 143 distinct colours in the built page before
+  and after, none lost, none invented.**
+
+  `test/palette.test.ts` needed two goes. The respelling claim caught a
+  sabotaged literal first time; the three wardrobe claims did not — they
+  exercise `folkLook`, which stays correct while a view keeps its own list
+  beside it, and all three stayed green against exactly the bug this item
+  removed. The one that works reads look.ts's `WOOL` and `HAIR` and asserts
+  no other renderer contains one.
+
+- **2026-08-29 — Knotwork, done as a pattern (Art 16)** — This item existed
+  because Art 8 tried knotwork and backed out: *"knotwork corners at 1px
+  inset cost real nodes on every paint of the slot and read as noise at phone
+  size."* Both halves are true of interlace drawn as SHAPES and false of a
+  pattern, which is the whole of the item.
+
+  A plait is periodic, so one period is a tile and a tile is a paint rather
+  than a tree. `render/knot.ts` draws it once — two strands in antiphase,
+  with the strand that passes under split at the crossing so it stops short
+  and starts again after — and puts it on the document root at boot as
+  `--knot` and `--knot-dim`. The stylesheet never carries a second copy, so
+  the two cannot drift.
+
+  Measured on the built page: the ending's rule costs **0 nodes against 84**
+  as shapes, and the chart's frame — the exact border Art 8 declined, which
+  repaints every time the band takes a step — costs **0 against 216** at
+  390x844 and **0 against 180** at 320x568. Top and bottom only; turning the
+  corner is where a woven border stops being cheap.
+
+  The second objection was settled by looking: five weights on the real
+  ending card, of which 18x9 is a chain rather than a plait, 30x12 a wave
+  that has stopped reading as interlace, and 26x13 thirteen pixels of fence
+  under a heading. 22x11 reads as two strands and still sits under type.
+
+  **And the first version was not woven at all.** Every strand was drawn
+  twice — fat in a "casing" colour to cut the strand beneath, thin in ink —
+  with the casing set to `transparent` so a band could sit on any surface. A
+  transparent stroke paints nothing and cuts nothing, so what went in was a
+  lattice: strands crossing and overlapping, brighter where they meet, no
+  over and under anywhere. It built, it rendered, both bars were green, and
+  the file's own comment asserted that a transparent stroke cuts as well as a
+  painted one. The fix is what an inker does — the strand that goes under
+  stops before the crossing and starts after it — and it needs no casing and
+  no surface colour, so the tile works on a card, a chart or a picture alike.
+
+  Three more faults, all found by instruments. The first tile carried two
+  `<clipPath>` ids, which would have made it unusable twice in a document and
+  unusable as a data URI at all. `encodeURIComponent` leaves parentheses
+  alone and the ink is an `rgba(...)`, so the value worked only because its
+  `url()` is quoted — `test/knot.test.ts` caught that. Round caps beaded the
+  rule with pips wherever translucent ink overlapped, at every junction and
+  every tile seam. And the frame's node claim was off by exactly one at both
+  widths, which was the instrument counting the `<svg>` element itself.
+
+- **2026-08-29 — The title and the ending as set pieces (Art 20)** — The
+  title screen never showed the game. A wordmark, a paragraph and three
+  buttons on black: somebody who had not pressed anything yet had seen
+  nothing of what they were about to play. It is now the coast THE TYPED
+  SEED MAKES, drawn with `createProcessionView()` over `newGame(seed)` —
+  the road's own view, not a picture of one — because a whole `GameState`
+  is a pure function of a seed and costs about 3 kB. Paste somebody's
+  challenge code and the country behind the card becomes theirs.
+
+  The ending got the chronicle's voice — a gold rule under the saga's title
+  and one illuminated capital on its first chapter — and an opaque ground.
+  It had been sitting on the ordinary translucent overlay, so the travel HUD
+  stayed legible behind it: a day counter and a half-cut "HEA" over the last
+  thing the run had to say.
+
+  **Everything wrong with it was found by measuring, and none of it by
+  reasoning.** The first cut shipped BLANK with all ten bars green — the
+  sentinel forcing the opening paint was `''`, which is the seed you have
+  typed when you have typed nothing. The scrim was written on the overlay,
+  and a parent's background paints under its children, so it sat behind the
+  picture it was meant to soften. Both drop caps in the game — this one and
+  Art 17's — were sized by eye into floats a line and a quarter tall, which
+  wraps the second line short around nothing. The lift that puts the band
+  above the card was derived wrong twice before being measured. And the
+  wordmark ran under the mute button at 320 wide.
+
+  Two claims, both watched fail. `procession` reads the title BEFORE
+  anything is typed — the other order went green against the exact blank
+  screen it was written for — and checks two seeds paint different
+  countries. The eleventh bar, `ending`, starves a band to death in fourteen
+  days and measures what the screen does with the result; its first drop-cap
+  claim said "between one line and two", which is where the defect lives,
+  and passed the capital it was meant to catch.
+
+- **2026-08-29 — The saga as an illuminated chronicle (Art 17)** — The item
+  said the saga log "is styled as a list", and the styling was the smaller
+  half. Measured on a real sixty-one-day run: 87 entries, 61 of them
+  `plain`, with the camp line five times in one screen, the weather forecast
+  twice word for word, and a man's arm healing given exactly the same weight
+  as a night's firewood. Everything a saga's shape is made of — years,
+  winters, the things worth telling — was in the data and none of it on the
+  page.
+
+  `render/chronicle.ts` arranges it: seasons under their own rubric ("The
+  first winter", the game's own name for its clock), the day's business
+  gathered into one line with a count and dated to the night it started, the
+  routine set back small and dim while `good`, `grim` and `saga` keep their
+  voice, and one illuminated capital a season on the first line worth
+  telling — a scribe does not gild "we made camp". The same run's 61 routine
+  lines become 13; all 26 told lines are untouched and in order.
+
+  **The rule the whole thing is built on: arranging a record must not
+  falsify it.** A player's saga is their own account of their own run. So
+  nothing is dropped, and a told line never folds and never moves — two grim
+  days with the same words are two things that happened, and their order is
+  the point of a chronicle. What a repeated ROUTINE line loses is its place
+  in the queue between other routine lines, which is not information, and
+  that distinction is stated in the file rather than glossed.
+
+  Worth recording as a near-miss: the first fold only caught CONSECUTIVE
+  repeats, which is the obviously-safe rule and did nothing at all — the
+  real page alternates camp, forecast, camp, forecast, so not one of the
+  61 folded. The bar for it is arithmetic rather than taste:
+  `scripts/procession.mjs` adds every count on the page against
+  `state.saga.length`, and was watched fail on a version that dropped the
+  routine to read better — "the chronicle shows 9 of 12 entries".
+
+  One measuring note that cost time: `landnam.skip()` only bumps the day
+  counter, it does not run `passDay`. Two hundred skipped days wrote two
+  saga lines. Days have to be lived, so the probe camps — and camping runs
+  into raids, which it now fights rather than stalling, the trap
+  `test/rival.test.ts` documents at length.
+
+- **2026-08-29 — Gear you can see (Art 14)** — The premise was not that
+  gear needed inventing. The game already knew what everybody was carrying
+  and showed none of it, in three places.
+
+  `Combatant.throwsLeft` counts hand-axes — `sim/ranks.ts` says "`throw` is
+  a hand-axe. It reaches anybody, which is what makes the back rank worth
+  standing in" — and the whole resource reached the screen as a digit on a
+  button. They are on the belt now, one per throw left, so they visibly go
+  as they are thrown. `Person.bond` has always said who bears arms, with
+  `sim/joining.ts` explicit that growth "buys labour, never a wider shield
+  wall", and the road drew a painted war shield on every walker's back
+  regardless — a picture lying about who fights. And `Person.job` made a
+  woodcutter and a fisher the same silhouette; they carry an axe and a net.
+
+  The tool is a field on the JOB rather than a switch in a renderer, so a
+  new job arrives carrying its own gear and `render/gear.ts` is the only
+  thing that draws — CLAUDE.md's data-driven pillar. The warrior has no
+  tool on purpose: his gear is the shield and spear every sworn man has, and
+  a tool as well would draw him holding two things he does not own.
+
+  `scripts/field.mjs` holds it as a CORRESPONDENCE, not a presence — a
+  picture that always draws two axes is decoration; one that draws what the
+  sim says is gear. Every fighter's drawn axes are checked against his
+  `throwsLeft`, and it was watched fail by drawing two regardless: "0 of 11
+  drawn right".
+
+  Two things sized by looking rather than by reasoning: the belt axe was
+  first drawn at 0.045 of a man, which is four world units and two and a half
+  pixels on screen — invisible. And `landnam.work()` joins the debug levers
+  for the same reason `stock` exists: a fresh steading is entirely idle, so a
+  tool in a hand cannot be reached without six taps through a roster.
+
+- **2026-08-29 — The fighters are people now, not shields** — The third
+  thing the same phone report named: "I only saw shields and not the actual
+  vikings. So maybe we didn't implement battle art of the actual viking
+  characters and enemy yet?" We had. It was drawn head-on.
+
+  `figures.ts` drew every combatant facing the CAMERA: a round shield as wide
+  as the whole figure, a helm peeping over the rim, a health bar under it. No
+  body, no legs, no face — and head-on in a scene that is otherwise entirely
+  side-on. The ground line, the ridges, the receding ranks, the two walls
+  meeting left against right: all profile. Only the men looked out at you.
+
+  **And it was asserted, not checked.** Writing Art 13 I put this in
+  `walker.ts`: the head-on figure "is exactly right on a battlefield, where a
+  shield wall is what you are looking at" — reasoning about the battle view
+  while building a different one, and never once looking at it at the size
+  the field actually draws. At that size it is a row of discs, which is what
+  a player saw and said.
+
+  A fighter is a man in profile now, turned toward the enemy: legs braced in
+  a stance, a tunic and belt, a cloak behind, a helm with a nasal, a spear
+  levelled over the rear shoulder, and his shield held out at the wall. Built
+  from the same `look.ts` as the walker on the road and the folk in the yard,
+  so the man in the line is provably the man who walked there — which was Art
+  13's whole claim and is only now true of all three views.
+
+  The shield is FORESHORTENED rather than edge-on (`shieldTurned`). Edge-on
+  is what a presented shield really looks like from the side and it is
+  useless: an edge is a line, and it would throw away the paint, which is the
+  one thing a player tells two men apart by. Squashed to 0.46 it reads as a
+  shield turned at the enemy and keeps its ground, its motif and its cracks.
+
+  Every state signal the counter carried is still here — side, health, whose
+  turn, a braced rim, the broken man's white feather, the leader's pennant —
+  and the pennant now flies from the spear he is actually holding. The active
+  mark moved to a ring on the GROUND: ranks overlap in a wall, so a hoop
+  round a man swallows the two beside him, and the ground under him is the
+  one part nobody else covers. It is the idiom the target marks already used.
+
+- **2026-08-29 — You could not see the enemy** — Reported off a phone: "I
+  didn't know where the enemy was and I didn't realize I had to scroll to see
+  them. And scrolling wasn't smooth anyway." Measured at 390x844, and it is
+  worse than needing a scroll — **there was no pan position from which both
+  walls were visible.** At rest: 3 of our 6 and 2 of their 4. Dragged one
+  way: 4/4 foes and none of ours. Dragged the other: 5/6 of ours and no
+  enemy at all. At 320x568 the resting view showed 0 of 6 foes.
+
+  The cause was a layout mistake wearing a camera's clothes. `standAt` stepped
+  each rank a full `RANK_GAP` (96) sideways while a fighter is 92 wide, so
+  rank two stood BESIDE rank one like a crowd on open ground rather than
+  behind it. A six-a-side field came out 1223 units wide; it fits 390px only
+  at scale 0.319, and the 44px thumb rule demands 0.479 — so the view zoomed
+  50% past what fits and panned to compensate. Even a four-a-side field
+  missed (0.465 against 0.479). The whole panning apparatus existed to pay
+  for the spacing.
+
+  And the reasoning that chose it was wrong on a fact. `line.ts` argued at
+  length that fitting the field would break the touch rule: "six sworn
+  against six raiders is twelve ranks, and twelve ranks in a 320px-wide box
+  is a 27px target". **Twelve ranks are not twelve targets.** `REACH` in
+  `sim/ranks.ts` says `strike: { from: [1, 2], at: [1, 2] }` — a blow lands
+  only on the enemy's first two ranks, so at most two men on a field are ever
+  tappable and the other ten are scenery. The rule was applied to every
+  figure drawn instead of every figure you can act on.
+
+  So ranks stack behind each other now — `RANK_STEP`, a little under half a
+  man — which is what a shield wall is, and the men do not shrink by a pixel
+  (`FIGURE_R` still comes off `RANK_GAP`). A six-a-side field is 619 units
+  and frames whole at 390 (0.630) and at 320 (0.517), both clear of the thumb
+  rule. Measured after: 6/6 ours and 4/4 theirs on screen at rest, at every
+  width the bars test, and dragging does nothing because there is nowhere
+  left to drag to. The pan machinery stays for a fight deeper than any the
+  game currently makes.
+
+  The tap had to follow: half a rank step is a 12px strip once ranks overlap.
+  It now resolves to the men the current aim can actually reach, with most of
+  a man's width around each — which is what the 44px rule was always for. One
+  helper answers "who is a target" for both the mark under a man and the tap
+  that hits him, so they cannot disagree.
+
+  `scripts/field.mjs` holds it, and the gap it exposes is worth naming: every
+  check in that file asked how BIG a fighter was and none asked whether he
+  was on screen. Watched fail on the old spacing — "4 of 6 foes are off
+  screen — you cannot see who you are fighting". `test/line.test.ts` had a
+  bar named "is why the field has to pan, and says so in numbers" asserting
+  the opposite of the truth; it is inverted, with the measurement in it.
+
+- **2026-08-29 — Blows that land somewhere (Art 19)** — Art 3 gave the fight
+  real choreography and then a blow that GOT THROUGH produced a flash on the
+  figure's centre and a number over its head. Every blow in the game landed
+  in the same place, because that is where `spotOf` answers and nothing ever
+  asked for anywhere else.
+
+  Now a blow lands in a place — helm, shield, or low under the rim, fitted to
+  what `figures.ts` actually draws head-on rather than to an imagined body,
+  and derived in the view seeded off the beat, because the sim must not grow
+  a field for decoration (beats live in the save and the parity vectors) and
+  a replay has to show the same blow in the same spot. The man takes it: a
+  jolt along the line the blow came in on, scaled by the damage and capped
+  well under his own width — the one effect in `fx.ts` that reaches out and
+  animates a fighter rather than spawning a node, which is why `battle.ts`
+  now marks each with `data-who`. And a solid hit throws blood, restrained,
+  gone in half a second.
+
+  **`fx.ts` was lying about its own geometry.** Its comment said the file
+  "has to agree with `render/battle.ts` about it or a blow lands somewhere
+  near the man who threw it. One import rather than two constants" — and it
+  laid effects out at `RANK_GAP * 0.42` while every fighter is drawn at
+  `FIGURE_R`, `RANK_GAP * 0.46`. Nine percent small: near enough for a swing
+  arc, which is why it survived, and not near enough for an item about where
+  on a body a blow lands. Same constant now, and the comment's promise kept.
+
+  **A measurement worth carrying: these effects cannot be polled for.** They
+  live 300-600ms, and a loop sampling every 70ms across 2.8 seconds of a real
+  fight saw ZERO of the eight blows the beat stream proves were struck — it
+  reported the feature entirely absent. `scripts/field.mjs` records with a
+  MutationObserver instead, and its claim was watched fail with the recoil
+  disabled: "11 blows landed and nobody moved — they read as numbers".
+
+  One test assertion was restated on the way. "Never punts anybody off the
+  line" was written as `blowKick(damage) < 12` — a number picked out of the
+  air, which failed at 13.7. It asks the meaningful question now: the shove
+  is a fraction of the man's own width and of the gap to the next rank.
+
+- **2026-08-29 — The band was walking on the sky** — Reported off a phone
+  ("they're just kinda floating"), and measuring it proved it exactly. This
+  is the SAME DEFECT Art 12 found in the yard the day before, on the other
+  view, and it was not checked for.
+
+  `fieldOil` paints ONE world: sky above `line.ts`'s ground line at 630,
+  ridges on it, brushed earth below. The battlefield stands its men on that
+  line and the yard does now. The procession did not — it invented a
+  640-unit scene of its own with a horizon at 0.42 and a road at 0.78, then
+  handed the brush a box from 0 to 640. So the painting's ground line landed
+  at 630 of 640, its earth was a ten-unit sliver at the very bottom, and
+  `slice` cropped even that away. **Measured on the built page: the visible
+  window ran world y 20..620 and the band's feet landed at 488 — 142 units
+  above the painted ground.** Every pixel of country on screen was the
+  painting's sky. They were not "kinda" floating; they were standing on
+  cloud, and the road drawn under them was a translucent brown triangle over
+  it, which is why it never read as a road.
+
+  Fixed the way the yard was: `HORIZON_Y` IS the painted horizon now,
+  `ROAD_Y` is `BAND_FORE` in front of it so the band stands on the brushed
+  earth, and `composeRoad` fits the frame to the slot's own aspect — so
+  `meet` and `slice` are the same thing and nothing is cropped, with a
+  ResizeObserver refit like the battlefield's and the yard's. The worn track
+  is drawn DARKER than the earth rather than lighter, because a path is
+  where the turf has been walked off and a mid-brown at 0.4 over the brush's
+  own mid-brown was invisible.
+
+  `BAND_FORE` was tuned by looking, in both directions: at 74 the band stood
+  just under the horizon with a quarter of the frame below them as bare
+  earth; at 140 they were marooned in the middle of a brown field with the
+  coast a long way behind. 88 puts them on the strand with the sea at their
+  backs. One test assertion went with it — "their heads cross the skyline"
+  was true of one cut of that number and is a nicety of a particular
+  composition, not a requirement, so it says what has to hold instead.
+
+  **The lesson worth keeping: a bug found in one renderer is a question to
+  ask of every renderer that shares the machinery.** Art 12 diagnosed this
+  precisely, wrote it up, and fixed one of the two views it applied to.
+
+- **2026-08-29 — Night, and the turning of the day (Art 15)** — Two
+  corrections to the premise before a line was written. **There is no hour
+  in this game**: `day` is an integer and the atomic unit of play, and
+  nothing in `src/sim` knows about a time within a day — a clock would mean
+  a new field, a save bump, and a concept the sim has no use for. **And the
+  light pass the item said to reuse was half a thing**: Art 10 left the
+  battlefield's STATIC light (a fixed low sun, a vignette) and `seasonTint`,
+  which travel has used since Art 11 landed the day before. There was no
+  day/night pass anywhere.
+
+  So `render/light.ts` drives the light off the two facts the game does
+  have, both truer to the setting than a clock. THE SEASON — at these
+  latitudes the turning of the day IS the turning of the year, so a winter
+  DAY gets less light than a summer NIGHT and the light nights get no stars.
+  AND WHETHER THE BAND HAS CAMPED — `party.hasCamped` has survived from CAMP
+  to the next WALK since the gathering work, an already-stored night trigger
+  that drew nothing. Measured first: the road drew the same 108 nodes on a
+  walking afternoon and a camped night.
+
+  Two things the pictures forced. The night tint started as a mid-slate and
+  a winter midnight came out an overcast afternoon with stars in it — half a
+  coat of mid-blue over the painted sky's #a8afb2 is another light grey, so
+  night has to DARKEN and the tint is near-black now with the opacity
+  carrying it. And the campfire was drawn under the light wash, which dimmed
+  the one thing in the picture giving light; it has its own layer above the
+  wash, burns brighter the darker the night, and got a radial gradient after
+  a flat ellipse read as a brown puddle on the road.
+
+  `scripts/procession.mjs` camps through the real Act sheet and reads the
+  wash, the fire and the stars off the screen — watched fail (0.148 camped
+  against 0.148 walking) on a light that ignores camping. Getting it to run
+  at all took a real fix: the weather claim above skips days to find a gale,
+  skipping days raises LESSON cards, and a `.lesson-card` sat over the
+  action bar swallowing the Act tap — diagnosed off Playwright's own
+  interception log, not guessed. Worth recording that the first attempt to
+  falsify the claim was itself a false pass: the sabotage did not compile,
+  `npm run build` failed, and the bar happily measured the previous `dist`.
+
+- **2026-08-29 — Weather you can see out the window (Art 11)** — The sim
+  has named the sky since the weather work and the top bar prints it; the
+  road ignored it — "A gale" in red over a calm painted afternoon. The
+  scene now carries `weather` and `season` (the same pure functions the
+  chip reads, so window and chip cannot disagree), and the view draws the
+  sky in three coats. Two come straight from Art 5: `fieldWeather.ts`'s
+  gusts, flakes and fog banks took arbitrary bounds all along, and the
+  `.weather` CSS contract — looping, frozen under stillness, off under
+  reduced motion — was never scoped to the battlefield. The third coat is
+  new and is the actual finding: Art 5's moving weather starts invisible
+  and is SHOWN by its animation, which on a battlefield deliberately made
+  stillness read as a calm day — but this item's bar is "a gale should look
+  like a gale", and a claim about the picture cannot depend on the picture
+  moving. So each named sky gets a static wash (`skyWash`, pure, tested),
+  a gale darkens the sea and breaks it with whitecaps, and a hard frost
+  rimes the road over — which is also the one static mark separating a
+  still frost from a still sea fog. Fair adds nothing; thaw stays a fact
+  about the snowpack, not the air.
+
+  `scripts/procession.mjs` grew the claim: it steers by the new
+  `landnam.sky()` (the sky is a pure function of seed and day) to find a
+  gale, a frost and a fair day inside sixty, then reads gusts, wash and
+  whitecaps off the screen — and demands a fair day carry NONE of it.
+  Watched fail before the view was wired: gale found, zero everything.
+  The repaint key gained weather and season, so a sky that changes is a
+  redraw that is charged and a still one stays free.
+
+- **2026-08-28 — The steading becomes a place (Art 12)** — Two findings, and
+  the first was that the picture was broken before a single mark of life was
+  missing from it. The yard's fixed 420x300 viewBox under `meet` letterboxed
+  46% of its slot at 390x844 and drew a 161px-wide postage stamp at 320x568
+  — and because the viewBox WIDENED as buildings were raised, every building
+  shrank the whole steading. Deeper: the yard's ground line sat at y 228,
+  inside the sky of the one world `fieldOil` paints — the battlefield stands
+  on that painting's horizon, and the yard floated a flat brown rectangle
+  over its clouds. `GROUND_Y` is now the painted horizon itself, and
+  `composeYard` (pure, unit-tested, watched fail against the old frame)
+  fits the frame to the slot's exact aspect: no letterbox at any size, and
+  a ResizeObserver refits it when the slot moves, the way the battlefield
+  already does. At 320x568 the steading is now a readable full-width strip
+  where it was a stamp between black bands.
+
+  The second half is time made visible, every fact derived and none stored:
+  smoke over the hearth when walls stand and somebody is home; a path worn
+  dark by feet over 160 days; turf greening and thatch weathering over 400
+  — wear outpaces growth on purpose, so a young yard is raw earth by
+  fresh-cut walls and an old one a worn track past greened houses; a
+  woodpile counted off the actual firewood; field rows tilled only when
+  somebody holds the farmer job; the children born here small by the door.
+  Day 20 and day 200 are different places in a screenshot with no caption,
+  which is the milestone's bar, verbatim.
+
+- **2026-08-28 — One person, one face, everywhere (Art 13)** — The first of
+  the art queue to run against the coast's own renderers, and it started by
+  disproving its own roadmap entry. That entry said the road and the yard
+  needed to be pointed at `render/figures.ts`; they were already pointed at
+  it. `figure()` draws a fighter HEAD-ON — a round shield as wide as the
+  whole figure with a helm over the top — which is the right drawing in a
+  shield wall and a coloured disc on a road.
+
+  So the look moved out into `render/look.ts` and a second view of the same
+  person was drawn: `render/walker.ts`, a body in profile with legs
+  mid-stride, a tunic and belt, a cloak, and the shield slung on the back
+  where the paint still carries the identity. `render/shield.ts` draws the
+  shield once for both views. What a person looks like is now a pure
+  function with unit tests on it, where before it was fifteen lines buried
+  inside a DOM-only draw call and untestable without a browser.
+
+  **Measured — 400 fresh coasts, 2400 people.** Two people in one band
+  sharing a shield (ground, paint and motif): 54 bands, 13.5%. Sharing a
+  whole look: 0. Hair, beard and tunic take the space from a hundred
+  combinations to seven thousand, which is what turns "which one is Ulf"
+  into a question with an answer. Every new bar was watched fail first: the
+  sameness bar reports 21 of 120 bands colliding when pointed at the shield
+  alone.
+
+  **Two shipped defects came out with it.** Both new views handed `figure()`
+  the person's HIT POINTS where it wanted a fraction, so at 20 of 20 hale
+  every walker trailed a health bar `radius * 2 * 20` wide — a green
+  rectangle a thousand units across, painted over the road — and nobody
+  outside a battle ever showed a scratch, because 20 is never less than
+  0.67. And `folkIn` computed the yard's width as
+  `slotX(built.length + 1) + SLOT_W` while `steadingScene` computed it as
+  `slotX(raised.length) + SLOT_W`: the same expression with a different
+  count in it, which stood the last of the band 15 units past the right edge
+  of the picture once the steading passed three houses. Below three the
+  `Math.max(YARD_W, ...)` floor hid it.
+
+  **The file on the road is now fitted rather than spaced.** It stepped back
+  a fixed 20 units a head from a leader standing a third of the way in, with
+  no idea where the edge of the picture was; measured by putting that
+  geometry back, six clear the left edge by 1.3 units of 390 and seven are
+  18.7 units off the page. The margin was luck. Gaps are laid out at a
+  preferred spacing and squeezed to the room there is, so a hall that has
+  taken people in bunches its file up instead of walking half of it out of
+  frame. `scripts/procession.mjs` counts `g.walker` rather than `g.fighter`,
+  which is the battlefield's class and would have counted nothing.
+
+  All ten browser bars pass.
+
+- **2026-08-28 — The hexes are gone** — 8.5's last job, and the milestone the
+  phase is named for. `src/hex/` is deleted, and with it `worldgen.ts`,
+  `fog.ts`, `ways.ts`, `skerry.ts`, the hex half of `road.ts`, `render/map.ts`,
+  `render/travel.ts`, `render/colony.ts` and the two oil backdrops that painted
+  them. `COAST_IS_A_LINE` is deleted too: there is no flag, no `VITE_HEX`, no
+  `npm run test:hex`, no `npm run publish:hex`, no second page and no second
+  suite. **`grep -r hex src/` returns comments and nothing else.**
+
+  **`SAVE_VERSION` 56, and this is the documented break.** Every hex-shaped
+  field leaves at once — `world.tiles`, `seen`, `trod`, `made`, `charted`,
+  `landing`, `width`, `height`, `rival.claims`, and the `at` on the party, the
+  settlement, the places, the neighbours, the rival, the ghost and the plots.
+  A plot's `at` becomes the slot index it always was.
+
+  **Which sagas stopped loading, and why: none, and that is the point.** A
+  hex-map save still opens. What it cannot bring is where anything was —
+  v49 through v53 each declined, in as many words, to invent a stop for a hall
+  or a neighbour on a world that had no route in it, and they were right to.
+  So such a save comes forward as a BAND rather than as a country: its people,
+  its ship, its stores, its lore, its grudges and the whole of its saga log
+  survive intact, and it stands on the landing of a coast derived fresh from
+  its own seed, with the hall re-sited on the landing stretch and the places,
+  the neighbours and the rival re-derived. Refusing to load was rejected
+  against this project's oldest rule — old saves must always load — and a saga
+  that opens with its history intact and its geography reset is a smaller loss
+  than one that does not open.
+
+  **The fold found a real defect, and it is the same one twice.** `sailOn`
+  called `generateWorld` unconditionally: job 3 stopped `newGame` seeding the
+  hex island and missed its twin one street over, so a coast band that took the
+  land a second time got all 1872 tiles back. Measured before it was fixed:
+  **3.2 kB to 81.1 kB**, of ground nothing reads.
+
+  Three things were kept rather than deleted, each for a reason:
+
+  - **The RNG's port contract.** `port/golden.json` loses its `hex` and
+    `worldgen` sections — the code they describe no longer exists, and a
+    vector nobody can recompute is worse than none — and keeps the `rng` ones,
+    which are live and still checked against `src/rng.ts` on every run. The
+    parity vectors and `runs/*.json` retire as DECIDED on 2026-08-27: 43 of 48
+    checkpoints were recorded hex `MOVE`s and are untranslatable, not stale.
+  - **The oil brush.** `render/oil.ts` painted the map and outlives it: the
+    battlefield and the steading paint with the same strokes. Its hexagonal
+    clip is written out inline now, because a hexagon is a SHAPE — it has no
+    long straight edge for the eye to catch, which is what keeps a field of
+    patches reading as paint rather than as tiles — and not a lattice.
+    `hexRng` became `patchRng`, addressed by a string, and `fieldOil` routes
+    through it so the property test pins the thing the game actually uses.
+  - **Five ghost-naming tests.** They were guarded as hex-only because their
+    FIXTURE searched `world.tiles`, not because their claim was. The claim —
+    that taking a dead steading names whose it was — is live on a coast, so
+    the fixture was converted and the tests came back.
+
+  What did NOT survive, each stated rather than quietly dropped: `MAKE_WAY`,
+  whose `wayBlocker` had answered `'coast'` since 8.2 and so could never fire
+  — the design question of whether a line should have made ways at all is
+  still open and still recorded above; the hex `MOVE` verb; `moveOptions`,
+  `daysForMove`, `canMove`, `isCoastalWater` and the coast-hugging rule; the
+  five browser bars whose subject was the map; and `cloneState`'s tile-sharing
+  optimisation, which existed to avoid copying 78 kB of terrain and now has
+  nothing to share — the ninety-eight percent went with the island rather than
+  being optimised away.
+
+  **Two balance readings moved, and both were worth chasing rather than
+  nudging.** `maybeFireEvent` derived its roll from `key(party.at)` — the
+  frozen landing hex on a coast — so every band rolled the day's odds from the
+  same constant wherever it stood, the same defect the battle RNG had one file
+  over. Retiring the placeholder forced that key to become the STRETCH, and
+  measuring it BOTH WAYS showed a pure re-labelling of an RNG derive moving
+  the long game's three arms by 4.2, 4.1 and 5.8 points. The jarldom odds in
+  `data/hardship.ts` are restated to 30% / 23% / 7%, with the arithmetic
+  written down — and with one thing left for a human: A Fair Country and As It
+  Lies are seven points apart on "ever rule" where the menu had them thirty
+  apart, so that figure has stopped separating the two settings. Spring still
+  does, cleanly.
+
+  The other was the instrument, again. "The winter panel does not tell bands
+  that go on to live that they are already dead" read 50% against a 40% bar
+  and looked like a regression. Its sample was sixty seeds, which condemned
+  SIX bands — a ratio over six can only report 0, 17, 33, 50, 67, 83 or 100,
+  so a bar at 40% was being decided by one band either way. At three hundred
+  seeds it condemns 62 and reads **27%, better than the 33% the bar was
+  written against.** A bigger sample, not a wider bound, and it cost forty
+  seconds of suite time.
+
+  Both halves of the tree came out together: 1034 compile errors across 79
+  files at the start of the fold, and the honest breakdown is that roughly a
+  third were one shape — a coast arm and a hex arm side by side, where folding
+  the flag left the hex half unreachable and broken. The instrument was wrong
+  as often as ever: `site.test.ts` swept every land hex to measure "readable
+  sites" on a build that generates none, `fishery.test.ts` had five bars about
+  `groundAt` that a coast never calls, and `balance.test.ts` carried three
+  target-finders ranking by `distance(x.at, ...)` where every `at` was the
+  same placeholder.
+
+- **2026-08-28 — The battlefield stops being a hex lattice** — 8.5's job 4
+  opened with an audit rather than a deletion, and the audit found something
+  worth writing down: **`battle.grid` had exactly one reader left in the whole
+  of `src/`.** It is 63 tiles of ground, generated per fight, keyed by axial
+  hex — and since 8.1c put the fight onto ranks, nobody walks it. The only
+  question anyone still asks it is `atThePalisade`'s: *is any tile a wall.*
+  `warbandSpots` and `foeSpots` had no reader at all outside the file that
+  builds them.
+
+  So the hexes came out of it and nothing else moved. Every access went
+  through `key(offsetToAxial(col, row))` — a column and a row encoded into a
+  hex and decoded straight back — so the grid is a plain rectangle now,
+  indexed by `cell(col, row)`. **Not one RNG draw changed position**, which
+  was the whole constraint: the ground rolls in the same order from the same
+  stream, so every fight in `balance.test.ts` is the fight it was. 161 tests
+  across the nine affected files green, and the 40-minute balance suite green
+  unchanged.
+
+  `SAVE_VERSION` 55, and the migration earns its keep: a save caught mid-fight
+  keeps its ground, because the old axial keys are recomputed rather than
+  assumed. The axial formula is spelled out inline inside the migration on
+  purpose — `src/hex/` is being deleted in this same milestone, and a
+  migration that outlives its own import is a migration that throws.
+
+  What this leaves is the honest scope of what remains: `src/hex/` is not
+  load-bearing in battle and never really was after 8.1. It is load-bearing in
+  exactly one place — the world layer that 8.5 exists to delete.
+
+- **2026-08-28 — A coast save stops carrying the island it never reads** —
+  81.0 kB to 3.3 kB, twenty-five times smaller, and `v54` strips it out of
+  saves that already exist.
+
+  `newGame` was still calling `generateWorld` on a coast build: 1872 hex tiles
+  in every save, 77.2 kB of 81.1, and the game reads none of them —
+  `seedPlaces`, `placeNeighbours` and `makeRival` all take the seed and answer
+  in stops, and the five site measures read `stopReport`. The migration only
+  fires when `COAST_IS_A_LINE`, which is not a hedge: the two pages are two
+  games with two slots, and the hex one navigates by those tiles.
+
+  Sixty-two tests across twenty files went red on it, and every one was a test
+  of the HEX systems — worldgen, the fog, hex movement, the skerries, the hex
+  fishery, the map renderer, the ways, the chart. They had been green on a
+  coast build the whole time, passing against a country the game does not
+  have. Guarded rather than deleted; job 4 takes the blocks and the guard
+  together.
+
+  **And emptying the world exposed four real coast bugs**, each invisible
+  while a hex island happened to be lying underneath. `newGame` still ran the
+  opening fog reveal, scribbling the landing into a `seen` map nothing reads.
+  A raid on the steading was fought on the LANDING's ground, because
+  `world.tiles[settlement.at]` is a placeholder lookup on a line. Every
+  strandhögg was fought on the literal `'shore'` for the same reason. And the
+  battle's RNG was keyed by `key(state.party.at)` — one placeholder — so two
+  fights on the same day at opposite ends of the coast drew from the SAME
+  stream. That one hid while the island existed, because the placeholder was
+  then a real landing hex and merely constant per seed.
+
+  Two browser bars had been passing on luck too. `larder` hunts one patch of
+  ground six days to see whether the sheet admits it is worked out, and a day
+  of hunting can be interrupted — on day eight this seed now meets a warband,
+  and the bar had no way through a fight, so it reported "could not read the
+  Hunt deed at all" while the deed sat there. It also opened the Act sheet by
+  clicking Act unconditionally, which toggles it.
+
+  `port/parity.json` was regenerated from the hex build and only the hashes
+  moved — 48 of them, one per checkpoint, which is `SAVE_VERSION` flowing
+  through every state hash and nothing else.
+
+  Two battle bars moved when that key changed and both turned out to be
+  instruments. "A maimed warband fights worse than a whole one" was fought at
+  the hardest difficulty and read 0 of 14 wins on BOTH arms — no signal — so
+  it fell through to a headcount that measures the opposite of its claim,
+  since a maimed band's nerve breaks sooner and a band that runs early loses
+  fewer people. At a winnable difficulty it reads 5 wins against 4. And "a
+  fight you were meant to win is usually survivable" was a rate asked of
+  twenty-four fights, where the standard error is ten points: the same
+  machinery on a different draw read 13 fatal of 24 where it had read 7. At a
+  hundred and twenty the two builds agree, 36 against 31, and neither of the
+  old numbers was the truth.
+
+- **2026-08-28 — The coast is the default, and the harness learned it** — the
+  flag flipped, and flipping it ran `balance.test.ts` against a coast for the
+  first time: 14 claims failed and all 14 are fixed.
+
+  `COAST_IS_A_LINE` reads `import.meta.env.VITE_HEX !== '1'` now. The roles
+  swap all the way through rather than only in `flags.ts`, and the point of
+  that is that the SHIPPING game is the one under test: `npm test` is the
+  coast and `npm run test:hex` the old game, with CI running both; the bars
+  runner puts ten against the coast and five against the hex build instead of
+  treating the coast's three as an afterthought; `npm run publish` writes the
+  coast to `/` and `publish:hex` the old game to `/hex/`. `README.md` had been
+  describing a hex battlefield since 8.1 moved the fight onto ranks, which
+  nobody had noticed because nothing tests prose.
+
+  Thirteen of the fourteen failures were the bot, and all the same shape: it
+  travelled by `MOVE`, found sites by scanning `world.tiles`, and ranked every
+  target by `distance(x.at, ...)` — where on a line `at` is a placeholder. So
+  the distances were zero, the fog lookups undefined, and the band stood on
+  the landing while the harness reported that the raider never went out under
+  arms and the trader struck no deals.
+
+  **The fourteenth took three wrong diagnoses, and they are the useful part.**
+  The raider line stood 0 second winters in 30 against the turtle's 19, and
+  those bands ended fed, warm and up to fourteen strong with morale at zero —
+  so it looked like heart. Built the haul-pays-heart change, swept it at 0.6,
+  1.2 and 2.0, and the numbers did not move by a single day; reverted rather
+  than land an unmeasurable balance change. Then it looked like losing fights,
+  which was true — 27% won on a coast against 64% on the map — and then like
+  never healing between them, which was not: they go in 78% whole on a coast
+  and 76% on the map.
+
+  The answer was in a column nobody had asked for. **3.1 of ours against 3.3
+  of theirs on a coast; 5.1 against 5.3 on the map.** Both sides scale
+  together, so it was never the odds — it was that a wall of three has no
+  shoulder-mates, which this file's own launch rule has said in a comment for
+  months: *9% won with three, 47% with six.* And the bug is one line: the rule
+  that falls on a camp counted `sworn(state.party.people)`, the whole roster
+  including everyone at home, so a TRADING party of two walking past a camp
+  passed a test about six people and stormed it with two. Counted on
+  `fieldCrew` instead, the raider stands 7 second winters of 30, reaches
+  spring 25/30 — best of the three lines — and lives to day 115 against 90.
+  The hex build does not move at all, because the gate only ever differed
+  where the bug was.
+
+  The published difficulty odds were re-measured at the 300 landings
+  `data/hardship.ts` demands: 83% / 52% / 25% see spring against a published
+  86% / 53% / 17%. Two survived the change of country inside ±5 with nothing
+  tuned to make them agree. A Hard Country is restated to 25%, and the menu
+  now describes the game that ships — the comparison is asked of the coast
+  build only, because the hex game is scaffolding and a second set of numbers
+  nobody reads is a second set nobody keeps true.
+
+  And `a-lean-sail` had become undrawable: gated on `terrain: ['ocean']` in a
+  game with no ocean stretch. Events grew an `afloat` condition both maps can
+  answer — standing on water, or having spent the day at the oars — and the
+  card is back.
+
+- **2026-08-28 — Settle near water, and send the woodcutters out** — the
+  coast is calibrated and a coast build is green on every test for the first
+  time since the conversion began.
+
+  Two rounds of tuning constants had failed and been reverted. The third
+  attempt was not a tuning at all: Evan settled it as a design question, and
+  the arithmetic fell out of the answer.
+
+  **You HAVE to settle near fresh water.** `foundBlocker` asks for a beck by
+  name on a line. `WATER_FLOOR` is 1, and on the hex map a 1 can come off a
+  bog in the ring or a fell behind it — a fair reading of an inland site with
+  a spring somewhere in it, and not a fair reading of a strand with the sea
+  down one whole side. It also makes the opening walk a decision rather than a
+  formality: half the coast will have you and the rest will not, so the first
+  thing a band does with this country is look for running water.
+
+  **And woodcutters go out to the wood, with the walk as the cost.** `timber`
+  on a line stopped being the ring's wood over a denominator of seven forest
+  tiles — a ring a coast cannot have, since one to three of its six are ocean,
+  so a coast was scored against a ceiling it structurally could not reach.
+  `timberWithin` is the best stand on the coast discounted by the days to walk
+  to it. A stand at the door is a full measure; the same stand a week up the
+  coast is worth a fraction of it, because most of the day went into getting
+  there and back. That makes "how far are the trees" a thing the site panel
+  says and the player weighs against fresh water and a field.
+
+  Four supporting corrections went in with them, each measured off the map
+  first. `ROUTE_COUNTRY` stopped being a uniform sixth each — that put 4.1
+  valley stretches on a 26-stop coast and the settling search took one every
+  time — and became shore 30 / bog 18 / forest 18 / hills 14 / meadow 12 /
+  valley 8: the map's own shape, with hills kept common enough that ridges and
+  landmark-spotting survive. A ring's ocean count stopped being two always,
+  which was exactly `harbour`'s textbook bay and exactly two tiles `defence`
+  does not count as doors, so neither measure separated one stretch from
+  another; 132 foundable coastal hex sites average 1.62. The hinterland stopped
+  being two copies of the strand, which counted the same country three times in
+  six into `soil`. And a beck moved out of `Surrounds.river` and into the ring
+  — a river runs THROUGH a site, a beck runs down ACROSS the strand to the sea
+  — which took a winter hall's care from 1.68 to 1.01 against the map's 0.85.
+  `COAST_VERDICTS` was re-derived at the same percentiles; the old cut had left
+  a coast with no Rich ground on it at all.
+
+  Twelve files went red on the change and every one was a fixture reading the
+  old world. Four of them had been passing while measuring something else, and
+  those are the ones worth keeping: `sickness` asked how much came off an
+  illness in twelve days, which has a CEILING at the 14 an illness is worth, so
+  a hall that tends fast enough reports 14 in both seasons and the comparison
+  says nothing — it counts days to mend now, which cannot saturate. `cliff`
+  read one seed's luck as the coast being soft; swept over twelve worlds the
+  two maps have the same cliff in the same place, and day 40 still saves 6/12
+  on the map against 8/12 on a coast. `coastWalk`'s end-to-end walk stopped at
+  stretch twelve, and it was not the coast running out — it was six people
+  standing in a wood with their shields up, because `WALK` is refused while a
+  battle is live and the fixture only ever asked to leave, which is refused
+  mid-fight. And `site` read its correlations off a fortieth of the sample: ten
+  worlds is 11,000 hex sites and 260 stretches.
+
+  One thing got weaker and is left as a question rather than papered over. Soil
+  and defence pull against each other at -0.26 on a coast against the map's
+  -0.54, and the correction made it weaker rather than stronger — honestly so,
+  because the old ring put the same terrain into `soil` and into `defence`'s
+  door count and manufactured part of the pull.
+
+- **2026-08-27 — Five things the coast could not do, found by fixing the
+  tests that were looking the wrong way** — 8.5's tail 25 → 18 → 3, both
+  builds green on everything but the site-report calibration.
+
+  The pattern held for the ninth or tenth time this milestone: a test that
+  fails on a coast is usually an instrument written for a coordinate system,
+  and roughly one in four is the game. This round the game's share was five,
+  and each was invisible while its own bar was measuring the wrong world.
+
+  **`doFish` priced the catch by the country behind the beach.** One sea, seven
+  prices: a day's net food fishing bare water measured +1.98 off a shore
+  stretch and below zero off all five of the other countries a coast can be,
+  and the same fishing ground paid 7.29 off a beach against 2.1 off a valley.
+  `terrainDef(countryHere(state)).fish` is right on a map, where a meadow has
+  `fish: 0` because a meadow is inland; on a line every stretch has the same
+  water off it. A coast band fishes from the beach and is never afloat, so
+  the shore's own number is what that water is worth.
+
+  **`WALK` made no sound, called no reveal pass, and emitted no beat.** Three
+  separate holes behind one verb. The sound one was cosmetic. The reveal one
+  was not: the pass that meets a neighbour, meets the other landnamsmadr and
+  picks a place out from a ridge ran only on days the band stopped to forage,
+  so `spotted` was never emitted by a played run at all — and that did not
+  show, because `markTrod` learns the next headland regardless, so the
+  country appeared on schedule and only the people in it were missing.
+
+  **Nothing stopped a lesson before the player had taken a turn.** The rule
+  had been in a comment in `lessons.test.ts` since it was written and was
+  true only by accident: on the hex map a fresh band lands on a beach with no
+  fresh water, `canSettle` is false, and `the-ground` stays quiet — 96.5% of
+  the time. A coast landing carries a beck five times in six, the accident
+  stopped working, and the gate that was never there showed up. Writing it
+  down then failed three of the file's own reachability builders, which had
+  been constructing states no run reaches: a band six days from empty on the
+  day it landed, posts in the ground before the first night.
+
+  Instruments fixed, and two of them were false passes rather than failures:
+  `sound.test.ts` walked eight terrains while standing on one, because it set
+  the ground by rewriting a tile the coast sim does not read; and the wide
+  bot in `beats.test.ts` travels with `MOVE`, so on a coast it stood on the
+  landing for four thousand steps and twelve seeds and reported a live
+  mechanic as unreachable. That is the fourth round of that bot being the
+  bug. `retreat`, `sagagen`, `lessons`, `fishery`, `landmark`, `travel` and
+  `colonyOil` all had hex-shaped fixtures; `repaint` and `travelScene` drive
+  the hex map's own renderer off the recorded hex script and retire with it,
+  under the precedent already set for the parity vectors.
+
+  Two bars were restated rather than loosened, both with the sweep that shows
+  the new one bites. The fishing trip's ceiling was `trip < land * 2.5` and on
+  a line that measures the land's poverty, not the sea's richness — the coast
+  trip returns 3.26 a day against the map's 4.54, so the STINGIER sea blows a
+  ratio the richer one passes, because the divisor is a coast band's average
+  stretch (0.97) rather than a map band's valley (3.31). Asked against upkeep,
+  which means the same thing on both maps, it admits what ships at 1.09x and
+  rejects a `GROUND_YIELD` of 3 at 2.12x — tighter than the bar it replaces,
+  which admits up to about 2.7x. And the painted steading's canvas: a side-on
+  steading is 1121x61 world units against a hex yard's 297x265, so it climbs
+  down to fit iOS's 4096 limit by construction. The claim that survives is
+  the one the climb-down is for — still sharper than the screen, still a legal
+  allocation.
+
+  **What is left is one bug wearing three hats**, and it has its own section:
+  the coast's site report totals 17 where the hex map's totals 11, because
+  `stopSurrounds` builds a ring that is a good site by the five measures' own
+  standards — always exactly two ocean, which is `harbour`'s textbook bay and
+  two tiles that are never doors, plus two copies of the strand's own country
+  and three chances at a beck. `sickness`, `winter` and `expedition` are all
+  that, and so is a landing that can be settled on the spot 161 times in 200
+  against the map's 7.
+
+  And the first fix for it was wrong, which is worth more than the finding
+  was. Chasing the TOTAL down to the map's is the obvious move and it is a
+  lie: only about one foundable hex site in fifty is coastal at all, so the
+  map's `harbour` averages 0.12 over its foundable ground against a coast's
+  2.83, and a coast that scored like an island's interior would be a coast
+  with the sea taken out of it. The target is per-measure and only on the
+  three a JOB reads — water, soil and timber — which is a much smaller change
+  than the one I had started building. The ring work was reverted rather than
+  landed half-done.
+
+- **2026-08-27 — A road with nowhere to go, and a rival who was never inert**
+  — `ways` and `rival` green on both builds, 48 → 42.
+
+  `ways` had no subject. `MAKE_WAY` is withdrawn on a line — `wayBlocker`
+  answers 'coast' everywhere — so three of its tests were measuring a verb
+  that is not offered. They are not skipped silently: a coast-only test holds
+  the withdrawal positively, asking it of every stretch rather than of one hex
+  of forest, and checking that the refused verb spends no day, which is the
+  bug that made withdrawing it necessary. That test is also where a
+  line-shaped made way lands if the open question about it is ever decided.
+
+  **`rival` was an instrument again, and this one had been wrong on BOTH
+  builds since the file was written.** The coast rival looked inert — 1.4
+  stretches held by day 200, against `sim/rival.ts`'s recorded median of six.
+  The recorded number was right and the loop was wrong: `idle()` could not
+  FIGHT. It met its first raid, found CAMP refused in BATTLE mode, and broke.
+  Of twenty seeds only one ever reached day 150; the rest stopped between day
+  8 and day 62 with the band alive and a battle on the table. Every number
+  that file has ever printed was taken over however many days happened to pass
+  before somebody came over the hill.
+
+  With a loop that fights, the coast rival holds 4 stretches by day 200 and 6
+  by day 320 — exactly what was recorded when `CLAIM_EVERY_STOPS` was chosen.
+  Put on his own clock rather than a flat sixty days, the cost measurement
+  reads 3.9 stretches against the hex map's 4.0 hexes.
+
+  Two more of that file's tests were passing vacuously on a coast and are now
+  real: "lands far enough off" measured a hex distance to the placeholder
+  `(0,0)` and happened to clear the bar, and "keeps his claim in one piece"
+  walked `claims`, which is empty on a line because the stretches live in
+  `claimStops`. The second now also holds that his holdings are a contiguous
+  block rather than scattered flags — what `nextClaimStop` enforces, and what
+  nothing was checking.
+
+- **2026-08-27 — The people on the coast** — `neighbours` green on both
+  builds, 54 → 48. Five of its six failures were addresses with a converted
+  sim already behind them; the sixth was more interesting.
+
+  **"Next to nothing the morning after" was measuring the wrong thing on BOTH
+  builds.** It asserted the second sack of a camp pays under 15. Over forty
+  seeds the second haul runs 10 to 25 on the HEX build alone — the threshold
+  held on one seed by luck, and broke the moment a coast drew a neighbour with
+  more might. What is actually true is tighter and identical in both worlds:
+  both sacks fall on the same day, so `sackCamp` derives the SAME rng for each
+  and the only difference is how full the camp was. The second haul is
+  `CAMP_PICKED_CLEAN` of the first — measured 17-21% on hexes, 17-21% on a
+  coast. The test pins the ratio now, which is the claim it was always making.
+
+  **`found` IS the knowledge on a line**, and that took reasoning rather than
+  translating. The hex claim is that a marker under fog is not knowledge, so
+  being called on marks the hex seen; a line has no fog and `revealNeighbour`
+  writes nothing on purpose. So the question became what could still go wrong
+  here — a household met and not actable-on — and the answer is that nothing
+  gates it: the chart draws a neighbour on `n.found` alone, and `walkOptions`
+  never asks whether a stretch is known. What carries the weight is that the
+  stretch is a real one on the route.
+
+  Two more of my own instruments were wrong, both caught by the sim
+  disagreeing rather than by reading: the elbow walk went to ±`CLAN_ELBOW`
+  when `insideElbow` is `< CLAN_ELBOW`, and it did not filter dry stretches,
+  so `foundBlocker`'s correct `'dry'` read as a hole in the elbow. The hex arm
+  has always filtered for exactly that reason and says so in a comment.
+
+- **2026-08-27 — The steading and the strandhögg** — Two more coast clusters,
+  both files now green on both builds. 70 → 54 overall, 26 files to 22.
+
+  `colony`'s six were one unmigrated site search — but not one the shared
+  fixture could simply absorb. That file carries BOTH searches on purpose and
+  says why: `settledWell` is "what a player who read the panel and spent a
+  week looking would end up with", and `settled` is "the first hex that will
+  have them, which is a different and much bleaker measurement". Several of
+  its claims are about a poor steading, so flattening the two would quietly
+  re-ask them of a good one. The fixture learned `pick: 'first'` instead, and
+  the option documents the one place the difference is load-bearing.
+
+  Two of its claims were converted rather than translated. A coast steading's
+  plots are a bag with an INDEX — `makePlots` writes `{q: i, r: 0}` on purpose
+  so nothing reads it as a coordinate — so "a hex patch with the hall in the
+  middle" has no middle to be in. What survives is the part the sim reads: the
+  same number of plots, one hall, one watchpost, no two alike.
+
+  **The strandhögg needed a third worldgen guarantee, and its own test said so
+  before I did.** The sim was already converted: on a line there is no afloat,
+  so the two ways into a place are not water and land but how you ARRIVED, and
+  `party.bySea` — set for the one day after a row — is the gate. What was
+  missing was somewhere to do it. `a coast worth falling on` holds that every
+  world has something strandable, and its header is explicit: "a world with
+  nothing strandable in it makes the whole verb unreachable content there, and
+  no amount of policy fixes that. If this ever goes red, stop looking at the
+  bot."
+
+  Measured: 189 of 200 coasts had a guarded place; the hex map has 200 of 200
+  for a structural reason, since it seeds one of each kind and therefore always
+  has a monastery and a town. A line that rolls each stretch has to be told. So
+  the fill now prefers a guarded kind when a coast has none — 200 of 200,
+  without raising any odds. Three guarantees now: something to go to, something
+  near enough to reach in the first season, and somewhere worth falling on.
+
+- **2026-08-27 — Places, and five things nothing was asking about** — The
+  `places` cluster on a coast, 15 failures down to 0, and the file is now
+  38/38 on BOTH builds. Overall 88 → 70. Almost none of it turned out to be
+  test work.
+
+  Four sim defects, all one family — the hex is baked into the address, and on
+  a coast the hex is a frozen placeholder:
+
+  - **Two places called `pl_town`.** The hex seeder walks `PLACE_KINDS` once
+    and puts down at most one apiece, so the kind is a unique name; the coast
+    asks every stretch independently and two towns is ordinary. The template
+    came across unchanged. `placeById` returns the first match, so a band
+    standing in the second town asked to deal and was told `away` by the
+    first, twelve stretches back. Nine failures, one line.
+  - **A band could not stand on its own abandoned posts.** `abandonSteading`
+    filed the ruin under `ruin:<hex>` with no `stop`, so on a coast every hall
+    ever walked out of was `ruin:0,0` and none of them reachable. Yesterday's
+    ghost ruin was the same bug in a different file.
+  - **`tradeBlocker` compared hexes** while `sackBlocker`, four functions up
+    and asking the identical question, was converted in 8.2c. Every market in
+    the world answered "you are not here".
+  - **`arriveHome` compared hexes**, generously: both sides are the frozen
+    landing hex, so an expedition folded itself back into a steading twelve
+    stretches away.
+  - **`conditionHolds` read the beach's terrain from everywhere on the coast.**
+    `terrain` is the commonest condition in `data/events`, so the whole
+    drawable card pool was pinned to whatever the landing happened to be for
+    the length of a saga. One call site in that same file had been converted
+    and this one had not.
+
+  And a worldgen defect with a bar attached: **291 of 399 coast places stood
+  on ground their own kind forbids** — iron seams on the open strand,
+  monasteries in bogs — because `placeAt` never read `kind.ground`, which the
+  hex seeder has always honoured. Fixing it broke `route.test.ts`'s "every
+  coast gives the band somewhere to go", since forest is a sixth of every
+  coast and nothing will stand on it. The bar was not lowered: `PLACES_FLOOR`
+  guarantees the floor instead, far end first where `richness` already puts
+  the good things. The hex seeder never needed a guarantee because it searches
+  the island; raising the odds would have moved every coast to fix four.
+
+  `test/fixtures/stand.ts` is six verbs now. `stepOff` for the tests whose
+  subject is the refusal, and `standIn` because a line cannot be PAINTED, only
+  walked to — writing terrain into the tile underfoot is how every
+  terrain-conditioned test set itself up, and it silently stopped working the
+  moment `conditionHolds` learned to read the stop.
+
+  **And the instrument was wrong a third time this session.** Word-of-mouth
+  reach measured from `neighbours[0]` said 12 of 203 places were tellable and
+  the channel was dead on a coast. `neighbours[0]` is the neighbour nearest
+  the LANDING, and coast places skew far out by the richness curve — the one
+  probe least likely to see anything. From each place's nearest neighbour the
+  walk is a median of 6 days against `TOLD_RANGE`'s 12, p75 8, max 17. Wide
+  open. No constant changed.
+
+  Two claims were withdrawn on a line rather than translated, and said so out
+  loud: "a mountain in the way hides what is behind it" has no subject when
+  the country runs in one direction (the limit it protects is still held, in
+  days, by "stops at the edge of what can be picked out"), and "at most one of
+  each kind" becomes "at most one thing per stretch", which is what makes a
+  stop a usable address.
+
+  **The procession bar then caught what no unit test could**: it walked twelve
+  stretches and saw nothing. Honouring `kind.ground` had cost the NEAR coast
+  most — anything within eight stretches fell from 72% of coasts to 42%,
+  because close in, `minFromLanding` has already narrowed the kinds to the two
+  that want shore. That is where the first season is spent. `PLACES_NEAR`
+  guarantees one place within eight stretches, filled nearest-out: 72% → 99%
+  within eight, 95% → 99% within thirteen, nothing on forbidden ground.
+  Better than before the fix on every axis, and the bar now sights a wreck
+  from stretch 2.
+
+  Putting the guarantees in `placesOn` broke a claim `coastWalk.test.ts` makes
+  precisely — "two derivations of the same fact would be two facts" — so
+  `placeAt` now delegates to `placesOn` instead of rolling its own answer.
+
+  And `scripts/bars.mjs` had a hole found by falling into it: it runs the
+  first twelve bars against whatever sits in `dist/`, restoring the ordinary
+  build only at the END. Run straight after `npm run publish:coast` it
+  reported six red bars — the five a coast has no subject for, plus
+  `landscape`. All false. It builds the ordinary page first now, and refuses
+  to run if that fails. All 15 pass.
+
+- **2026-08-27 — One way to stand somewhere, and a grave nobody could reach**
+  — The site fixture's sequel, and it played out the same way twice over.
+
+  With the site search shared, the commonest remaining coast failure was
+  `expected null not to be null`: a verb refusing because the band was not
+  where the test believed it had put them. The line that put them there —
+  `state.party.at = { ...n.at }` — appears 31 times across seven files. The
+  sim has no such problem; `standingIn`, `standingOn` and `atHome` have
+  branched on the flag since 8.2c. It was the tests' half of the idea that was
+  never converted: not "where am I" but "put me there".
+
+  `test/fixtures/stand.ts` inverts those three predicates — `standBeside`,
+  `standOn`, `goHome` — and each one checks itself against the predicate it
+  inverts before returning. That self-check is the design, not a nicety: a
+  fixture that puts the band in the wrong place otherwise fails four lines
+  later inside the verb under test, as an unexplained null, which is precisely
+  the 24 failures it was written to clear. Measured on a coast build:
+  **103 failures across 25 files → 88 across 26**, `neighbours` alone 24 → 6.
+
+  **And it found a real defect on its first run, which is the point of it.**
+  `haunt.test.ts` went UP, 2 → 5, every one of them
+  `ruin pl_ruin is not on the coast — it has no stop`. `haunt()` pushed its
+  ruin carrying a hex and no stop, and `placeHere` matches on stop — so a
+  challenge code's ghost put a grave on the coast that no band could ever walk
+  to. The same shape as the `MAKE_WAY` find, invisible for the same reason:
+  the feature still ran, it just could not be reached.
+
+  The fix carried a design call. On a line the ghost has no address to honour
+  — `ghostOf` cuts it from `settlement.at`, which on a coast is the frozen
+  landing hex, so every coast ghost carries the same meaningless pair of
+  numbers and the `g<q>,<r>` slot in a challenge code says nothing at all. So
+  `hauntedStop` DERIVES the stretch from the ghost's own fields through the
+  seeded stream: everyone who pastes a code still gets the same coast, which
+  is the requirement that actually matters. Widening the code format with a
+  stop was rejected — codes get retyped with a thumb, old codes have to keep
+  working, and the field would carry a fact the coast does not have.
+  `haunt.ts`'s rule about a ruin's position being "the one thing the ghost is
+  actually saying" has no force on a line, because nothing is being said; its
+  other rule does, and holds — a coast with no free stretch simply has no
+  ruin, quietly.
+
+  Two `haunt` tests were given coast branches rather than loosened: "stands on
+  the ground the ghost named" becomes "lands somewhere a band can walk to, and
+  the same code puts it in the same place twice", and "gives up quietly when
+  nothing will hold it" fills every stretch of the route instead of naming a
+  hex off the edge of the map. Both builds green, 18/18 either way.
+
+- **2026-08-26 — One site search instead of twenty-two** — Groundwork for
+  8.5's first job, and the shape of it came out of measuring rather than
+  reading. Flipping `COAST_IS_A_LINE` turns 148 tests across 39 files red, and
+  the dominant cause was not thirty conversions: it was one fixture — sweep
+  `world.tiles`, keep the best `siteReport`, put the posts in — copied into
+  twenty-two files. Extracted to `test/fixtures/settle.ts`, which knows both
+  worlds and picks by the flag. Twenty-six files call it now. Measured the
+  same way before and after, on a coast build: **148 across 39 files → 103
+  across 25**.
+
+  Two findings worth keeping, both of which are the instrument being wrong
+  before the code was:
+
+  - The copies were two families — best ground versus first foundable ground —
+    and unifying on the best looked certain to move the yield numbers in
+    `rations`, `counsel` and `minds`. It moved none of them. Where it would
+    have mattered the caller now says so out loud: `cliff` and `hardship`
+    pass `radius: Infinity`, because every number in those files was measured
+    on the best ground in the world.
+  - The first draft stocked every band to 200 food and firewood. Exactly one
+    of the twenty-two copies stocked, and `buildings` and `winter` — both of
+    which exist to measure SCARCITY — went red at once. A fixture that
+    quietly fills the larder does not fail those tests; it answers a different
+    question and reports the answer as theirs. `stock` is now off by default
+    and asked for.
+
+  What is left is no longer noise: the remaining 103 sit in `neighbours` (24),
+  `places` (16), `site` (7), `parity` (7), `strandhogg` (6) and `colony` (6),
+  and every one of them asks a hex question on purpose. That is the
+  conversion, now visible instead of buried.
+
+  Suite green throughout: 91 files, 1521 tests, including the forty-minute
+  balance sweep. No source file changed — this is test scaffolding only.
+
+- **2026-08-26 — The bars for a coast, and a day spent on nothing** — 8.5's
+  second job. The bar work was routine; what it turned up was not.
+
+  I had written that twelve of the fifteen bars drive hex renderers. Wrong,
+  and wrong because I read imports instead of running them: **five** fail on
+  a coast build. The other ten pass unchanged — 8.1 already moved the battle
+  to a line, and `offline`, `larder`, `landscape` and `reach` never cared
+  what the map was made of.
+
+  Two of the five guard claims that have no subject on a line. `sea` asks
+  that the map's promise afloat matches the sim's permission, and a coast has
+  no afloat — rowing is a step, not a state; `strip.mjs` already holds that
+  shape of claim by checking offered stretches against `walkOptions`. `pinch`
+  asks that the map holds the point under your fingers, and the procession
+  has no camera while the strip scrolls rather than zooms.
+
+  Two guard claims that DO survive, so they moved rather than died.
+  `repaint`'s "a still map must not be redrawn" is now in `procession.mjs`,
+  watching the road's work counter across five idle repaints — and after a
+  walk, because a counter that never moves passes the idle half perfectly.
+  `steading`'s "moving people must not reload the brush" is now in
+  `hearth.mjs`, watching painted against kept.
+
+  **And the fifth was not a bar problem at all.** `way-look` crashed, and the
+  reason is that `MAKE_WAY` was still being offered on a coast. `party.at` is
+  frozen at the landing there, so "Break ground" appeared exactly once a
+  saga, cost a day, marked a hex nobody was standing on, and could never
+  appear again; `wayable` could never be true for any pair, so no journey was
+  ever shortened. A day spent on nothing — which `sim/ways.ts`'s own header
+  says is the one thing a way must never be. Withdrawn on a line.
+
+  It is a withdrawal and not a conversion, deliberately. A made way would
+  suit a coast well — "the journey you take AGAIN" is exactly a leg walked
+  out and back. What stopped it is a real tension rather than time:
+  `route.daysBetween` is pure and a made way is history, so discounting the
+  walk leaves the chart, the road and the strip all drawing the raw leg while
+  the price disagrees. Better recorded as a question than patched into a lie.
+
+- **2026-08-26 — Asking whether the flag can flip, and running the control
+  before believing the answer** — 8.5's precondition, which turned out never
+  to have been asked.
+
+  Every slice since 8.2 proved its own piece. None of them played a saga, and
+  a coast where every part works and the whole cannot be lived through is a
+  coast nobody can ship. `test/coastSaga.test.ts` plays one — a deliberately
+  stupid player, because a clever script hides gaps by never walking into
+  them — and hunts for the thing that would block the flag: a verb the sim
+  refuses that the player was offered. There are none. Nothing wedges; every
+  run reaches an ending rather than stopping dead.
+
+  The interesting part is what it took to read the result. The fool dies:
+  twelve of twelve starve or freeze by day 34, four ever settle. That looks
+  like a broken coast, and I nearly wrote it up as one twice.
+
+  It is not. Two of those failures were the INSTRUMENT. The first draft stood
+  on the landing foraging until it starved — a forage on shore yields 3
+  against 3 eaten a day, break-even, correctly, because shore is the poorest
+  ground in the game while valley pays 8 and forest 7. The second called the
+  day's work twice in one turn, so a card raised by the first call made the
+  second refuse, and the sweep reported that as the sim refusing CAMP.
+
+  And the number itself only means anything against a control. The same fool
+  on the hex map settles NONE of the same twelve and dies at a median of day
+  28, where the coast gets four bands onto ground. The coast is not worse
+  than the country it replaces — it is better for a player this bad. The
+  dying is the player, which is what a fool is for.
+
+  The deletion itself is staged in ROADMAP as four separable jobs, because
+  flipping the default without rewriting the bars leaves the suite red, and
+  deleting `world.tiles` without deciding what the port is owed breaks a
+  contract this project deliberately froze rather than let drift.
+
+- **2026-08-26 — The steading you walk into, and two doors that were never
+  locked** — 8.4. The roadmap called this the cheap one. The render was the
+  small half.
+
+  The colony map drew the wrong noun. It drew GROUND, and everything a player
+  spends a season on lives in `settlement.built`, which it never touched —
+  raising a longhouse changed a list and changed no pixel. The elevation
+  draws buildings, in the order raised, with the one in hand half-up beside
+  them and rising as the builder-days go in.
+
+  Under that, a stretch of coast had to become readable as a site. The five
+  measures are not rewritten — they are handed a coast-shaped ring (two of
+  ocean, the stretches either side, two of its own country for the land
+  behind the strand) so that `VERDICTS`, `nameFor` and the settling floor
+  keep the calibration they were measured against.
+
+  `BECK_SHARE` decides whether a coast can be settled at all, fresh water
+  being the one measure a shore cannot supply itself. Over 300 coasts with
+  every elbow and fence counted: at a third, one seed in three hundred had
+  nowhere to put the posts; at a half, none. The landing is still dry two
+  times in five, deliberately.
+
+  **Two doors, and neither was locked the way I first said.**
+
+  `atHome` compared hexes, and I wrote in the code that this left a band
+  unable to walk into its own hall. That was backwards, and I checked rather
+  than shipping it: `WALK` moves `party.stop` and never touches `party.at`,
+  so on a coast the band's hex is frozen at the landing and `settlement.at`
+  was copied from that same frozen hex. The old test answered TRUE from
+  everywhere — a band twelve stretches out could walk into its hall. Fixed,
+  and the comment now says what the bug was.
+
+  And the elevation "was not on the page" for an hour of hunting that was
+  entirely my bar's fault. It clicked `.overlay button` matching /The
+  steading/i — which also matches "Rest — pass the day at the steading", and
+  that deed comes first. The bar clicked Rest, nothing happened, and the
+  failure read as a missing renderer. It matches the deed's LABEL now. The
+  lesson is the same one as the `field.mjs` false red: a bar that reports the
+  wrong cause costs more than one that reports nothing.
+
+  Two tests in `coastWalk.test.ts` also had to change, and not by weakening.
+  Its `withHall` searched `world.tiles` for the best `siteReport` — correct
+  while founding read a hex, and quietly a search of a coordinate system the
+  code had stopped using. And "leaves the landing foundable" was a claim
+  about the CLANS that had been written as a claim about founding; a dry
+  landing is now a fact about ground, so the test asserts what it was
+  actually about and checks that dryness is the only thing that may refuse.
+
+- **2026-08-26 — The road, and the thing nobody could see coming** — 8.3.
+  Travel stops being a map and becomes the road itself.
+
+  One stretch of coast, painted with the battlefield's own brush; the band
+  walking it as a file, drawn by the same hand that draws them in a fight; and
+  what stands on the stretches ahead rising as silhouettes. The rule that
+  makes it a road rather than a chart with the paint taken off is that
+  distance is drawn as distance — nearer is lower, larger and less hazy, so a
+  player reads which is closer without reading a number.
+
+  Two things went wrong, and both are more useful than the feature.
+
+  **The verbs could not be pressed.** The two steps a coast offers were drawn
+  into the picture at its bottom edge. That looked right at 390x844 and was
+  dead at 320x568: the view is `slice`, so it overflows its slot, and on a
+  short screen the bottom of the scene lands 58px below the map slot — behind
+  the site panel, which swallows the tap. The bar found it by asking
+  `elementFromPoint` what was actually under the button's centre and getting
+  back `span.site-word`. On the screen is not the same as reachable. The steps
+  are ordinary action-bar buttons now, where every other verb in this game
+  already lives.
+
+  **And nothing was ever coming.** The bar walked twelve stretches and never
+  once had anything to draw ahead, because `markTrod` learned only the stretch
+  under the band's feet. That is not a rendering bug — it is a sim gap I made
+  one milestone earlier. When 8.2c cut the hex fog pass the note read "a coast
+  is walked, not surveyed". Right about the RADIUS; wrong about sight itself,
+  and the cost stayed invisible until something tried to draw the road. A band
+  now sees the next headland either side when it arrives — one stretch, two to
+  four days, which is what a man on a coast can actually see. Ridges still
+  reach eight days, so climbing one still pays.
+
+  Worth saying plainly: nothing failed while that gap existed. The suite was
+  green, every bar passed, and the chart looked complete. It took putting a
+  picture of the road on screen to notice that the road had nothing on it.
+
+- **2026-08-26 — The coast as a strip you can walk** — 8.2d. The chart in the
+  pack stops being a map of an island and becomes what a coast actually is.
+
+  The hex chart's own comment is the argument for this one. It fits a whole
+  island into three hundred pixels, and it records what that cost: names were
+  tried on it and could not be read, so the marks say WHERE and a key says
+  WHICH. Right for a map of an island; wrong for a coast, which is not a
+  shape to take in at a glance but an ORDER, with exactly one question asked
+  of it. So the strip is drawn at its natural width — 1508px, more than any
+  phone — and SCROLLED rather than shrunk. That is the whole form: shrinking
+  is what makes a stretch too small to name and too small to touch.
+
+  And it is the verb, not a picture. With the coast on there is no other way
+  to walk anywhere until 8.3, so tapping a stretch the band can reach spends
+  the days and shuts the card. `scripts/strip.mjs` checks both halves and the
+  second one matters more: a stretch measures 58px on screen at 390 and at
+  320, the frame scrolls while the page does not — and a tap moves the band
+  and costs it days. It would be easy to ship a strip that draws beautifully
+  and moves nobody.
+
+  The decision this whole milestone exists for is now drawn instead of
+  arithmetic. Every leg is written in days on the picture, and a dashed mark
+  sits at the last stretch the band could reach and still come home.
+
+  Two things fell out of building it.
+
+  `sim/flags.ts` reads `VITE_COAST` now. Still a build-time constant — Vite
+  replaces it statically and drops the dead branch exactly as it did the bare
+  `false` — but a build of the coast can now be MADE and opened, which a
+  conversion this long has wanted for a while, and which is the only way a
+  browser bar could put a thumb on this thing at all.
+
+  It nearly went wrong quietly. The first draft wrote `import.meta.env?.` with
+  an optional chain; Vite's define matches TEXTUALLY, so the guard stopped
+  folding to a constant and every branch behind the flag stayed in the
+  bundle. The ordinary build went 399kB to 421kB and shipped a whole coast
+  nobody could reach. Nothing failed — the flag still read false, the suite
+  was green, all thirteen bars passed. It turned up only because the publish
+  line printed a size that had no business changing, and a grep of the built
+  page for a string only the strip contains confirmed it. That rule is now in
+  flags.ts in capitals, beside the line it applies to.
+
+  And a real bug the test caught rather than confirmed. `daysInHand` first
+  used `calendar.daysUntilWinter`, which counts down to day 49 and answers 0
+  for every day after. It is a first-winter warning helper and its own
+  comment says so; read as a general deadline it tells a band in the autumn
+  of year three that nothing is coming — and the chart then offers them the
+  whole coast on the strength of a full larder. My first test asserted the
+  wrong thing about it and failed for the wrong reason; the fix was in the
+  code, and the test now checks every season of several years.
+
+- **2026-08-26 — The other boat, on a coast; and a bar that could not tell a
+  won fight from a squeezed one** — the rival moves onto the line, which is
+  the last of 8.2c. The bar fix is the more useful half.
+
+  His claims reach exactly one thing in the whole sim — `foundBlocker` — so
+  every number he owns is a number about playability and nothing else. Three
+  of them were hex-scaled distances being over-read onto a 26-stop grid, and
+  measurement caught each one. `RIVAL_APART`, seven, means "far enough that
+  we do not start in their yard"; read as days that is two stops, and over
+  200 coasts his elbow alone covered the landing on 24. `CLAIM_REACH` of four
+  is 5% of a hex map and 35% of a coast. And the clearance his fences keep
+  from somebody else's ground, read as two stops around each of four clans,
+  blocks twelve of twenty-six and left him holding three stretches of a
+  possible seven — a hand that closes twice and jams.
+
+  The fix to that last one produced something better than it was aiming at:
+  at a clearance of one, the older clans CONTAIN him. He spreads from what he
+  holds, so a stretch he may not fence is a wall his block cannot grow past.
+  Nobody designed that; it fell out of the rule.
+
+  `CLAIM_EVERY` moved for a different reason and it is the one worth
+  recording. What makes him a CLOCK rather than a fact is that on the hex map
+  he never finishes — 61 hexes at one every eleven days is 680, longer than
+  any saga. The same eleven days on a line fills his reach by day 75 and he
+  is scenery for the rest of the run. So the interval gives rather than the
+  reach: at sixty days, over 150 coasts, he holds a median of six stretches
+  of seven, his last claim lands on a median of day 309, and he is still
+  taking ground past day 200 on 135 coasts of 150.
+
+  **The bar.** `scripts/field.mjs` went red on a fight that had simply been
+  WON. It plays fourteen turns by clicking whatever sits in the action slot;
+  a fight can end inside that, the battle view pops, `svg.field` stops
+  existing, and every measurement reads zero — so the bar reported "the field
+  fell to 0%, and the log took it", which is not what happened and is not
+  something any layout change could fix. It now stops when the fight does and
+  measures the last live turn.
+
+  That fix opens a false GREEN in the other direction, so it comes with its
+  own bar: a fight that ends on turn one leaves the late reading equal to the
+  opening one and every check passes with no log growth behind it. The number
+  of turns actually played is therefore itself checked, and printed on every
+  line, because a fight that ran three turns is a different measurement from
+  one that ran fourteen. Both halves were verified by forcing the case —
+  driven to sixty turns the fights end on turns 15 and 41, and the bar
+  measures those and passes, where before it would have called both a
+  collapse.
+
+  Worth saying plainly: I first reported this failure as a regression from
+  this change. It was not. Six clean runs on a correct build, and the
+  starting measurements varied run to run on the SAME tree — the bar begins
+  by pressing "Take the land", which is a new game every time.
+
+- **2026-08-26 — What a coast is remembered by, and a number that had to be
+  measured** — landmarks and telling move onto the line, which closes 8.2c's
+  re-addressing. Two corrections below, one of them to what I wrote in the
+  last two commit messages.
+
+  Everything else on this coast derives from `(seed, stop)`. What the band
+  KNOWS cannot: that is history, not country. So `World` gained `trodStops`
+  and `knownStops` (v52) — the line's `trod` and `seen` — as their own fields
+  rather than folded into the hex-keyed ones. Eight places iterate those
+  expecting hexes, and a stop key in either would not throw; it would make a
+  percentage wrong. `exploredFraction` is the proof of the danger: left
+  alone it answers 0% for every saga ever played on a route, and a closing
+  card telling a band who walked the whole coast that they saw none of it is
+  worse than one that says nothing.
+
+  The density number is where measurement changed the answer rather than
+  confirming it. `LANDMARK_SHARE` is 0.045 per hex over ~1139 hexes, on a map
+  where a saga stands on eight; a coast is 26 stops and a band walks most of
+  the ones it reaches. Over 300 seeded coasts the old number gives a median
+  of ONE named point and leaves 192 of 300 ten-stop walks with nothing at
+  all — the exact disease `landmark.ts` exists to cure. A third of the coast
+  named gives a median of eight and leaves seven. Half starts making the
+  module's own rule false, so a third it is, with the table in the constant's
+  own docstring.
+
+  Two mechanics are recorded as having no line analogue rather than ported
+  dead: `revealAround` and the sight radius (a coast is walked, not
+  surveyed), and `hasLineOfSight` (a coast IS a line of sight — nothing for a
+  hill to stand behind). `keepsBearings` survived intact, which is the half
+  worth keeping: a fixed point on your stretch or either side of it still
+  means you know where you are.
+
+  **Correction, and it is mine.** The last two commit messages and the two
+  changelog entries above them say the parity fixture moved "only the `run`
+  facet at checkpoint 0". The facet is right and the conclusion is right —
+  only `run` moved, and `world`, `band`, `ship`, `coast`, `steading` and
+  `field` all held. "At checkpoint 0" is wrong. There are exactly 48
+  checkpoints across the seven readings (five worldgen-only at one each,
+  plus 21 and 22 for the two replays), so 48 `run` facets in total, and ALL
+  of them move on a version bump, because `version` sits in every one. I
+  printed the first six moved paths, saw `checkpoints[0]` on all six — they
+  were the five one-checkpoint readings plus one — and generalised from the
+  sample instead of counting. Same shape as the `Tile`-depletion error five
+  days ago: reasoning about a structure from a partial view rather than
+  opening it.
+
+  **Second correction, to myself mid-task.** The suite began reporting one
+  unhandled `Timeout calling "onTaskUpdate"`, and a stash-and-compare said it
+  was new. It is not. Run three times on each tree, HEAD produces it once in
+  three and the working tree none in three — a pre-existing flake, not a
+  regression. `beats.test.ts` runs about 58 seconds, and under parallel load
+  vitest's worker-to-reporter RPC can miss its deadline. Every test passes;
+  no sim code is involved. Recorded here so the next person does not spend
+  the same hour on it.
+
+- **2026-08-26 — The coast has people on it, and they do not all live by the
+  landing** — neighbours move onto the line, and the placement is the whole
+  of it.
+
+  The hex map placed them in a ring: no closer than `CLAN_MIN_GAP`, no
+  further than `CLAN_MAX_GAP`. That ceiling was not decoration — it was a fix
+  for a measured bug, nought of thirty-two clans met across eight
+  five-hundred-day sagas, because the ones seeded across the island could not
+  be reached. A ring is the right shape when a band can walk any direction
+  and does not walk far.
+
+  A line wants the opposite shape, and for the same reason underneath. The
+  decision this phase exists to create is HOW FAR, and a coast whose four
+  neighbours all live inside the first fortnight has already answered it —
+  never far, because there is nobody out there. `route.neighbourStops` spreads
+  them one to a quarter of the coast instead, so pushing out finds people as
+  well as plunder, and trade and standing stop being things that only happen
+  near the sand.
+
+  The ring's bounds both survive on the first quarter. Nearest inside
+  `CLAN_MAX_GAP` days, so the word still means something. Nobody inside
+  `CLAN_ELBOW` stops of the landing, because `foundBlocker` refuses ground in
+  somebody's home field and the landing is the only site a band has seen on
+  day one. Two stops of room on a coast 26 long bites where two hexes on 1872
+  did not, which is exactly why the quarter-spread has to be there.
+
+  What did NOT change is the part worth naming. Names, opening standing and
+  might still come out of the same rng in the same order — the conversion
+  moves where people live, not who they are. The parity fixture backs it:
+  48 of 336 facets moved and every one of them is `run` at checkpoint 0,
+  which is the version inside the hash. `world`, `band`, `ship`, `coast`,
+  `steading` and `field` all held.
+
+  Two smaller repairs came out of writing it. `revealNeighbour` marked their
+  hex seen, which on a line means writing (0,0) into the seen map of a world
+  with no hexes in it — `found` is the knowledge there. And the saga said
+  "off north"; a line has no compass, only up the coast and back toward the
+  landing. The test for that second one demands BOTH phrases across four
+  seeds, because the bearing is one of three lines the caller picks between
+  and a single-seed check would pass on a coast where nobody ever mentions a
+  direction — the same shape as a bar that has quietly stopped running.
+
+  `Settlement.stop` came along (v51), so "who calls on the new steading,
+  nearest first" has a hall to measure from. Nearest is counted in DAYS
+  rather than stops, because the legs are not evenly long and "nearest" has
+  to mean nearest to walk or the order is a lie.
+
+- **2026-08-26 — A sail nobody was watching for** — the strandhögg gets a
+  line-shaped answer, and it came out of its own docstring rather than out of
+  a new idea.
+
+  `sim/sea.ts` has described the verb the same way since it was written: "the
+  same place, taken two ways, and the ship's way is better if you win and
+  much worse if you do not." On the hex map the two ways were floating
+  offshore or standing on the road, and `strandTarget` asked whether the band
+  was on an ocean tile with a place next door. A route has neither half of
+  that — nobody is ever on ocean, because rowing is a step and not a state.
+
+  So the difference moves from WHERE the band is to HOW THEY GOT THERE. Row a
+  day up the coast and you arrive under a sail nobody was watching for; walk
+  the same stretch and you arrive on the road, which is the one they watch.
+  Same place, same two doors, and the ship's reach now does double duty —
+  it is the fast way AND the raiding way, which is the period's own logic.
+
+  It lasts exactly one day. `Party.bySea` (v50) is set after the days are
+  spent and cleared by `advance`, which every verb goes through — so a night
+  ashore is a night they saw you, and a surprise that survived camping would
+  be a property of the hull rather than a surprise. `test/coastWalk.test.ts`
+  holds that as its own claim.
+
+  Worth recording what the parity fixture proved on the way. `advance` now
+  writes `bySea = undefined` on every day of every saga, and only the `run`
+  facet moved, only at checkpoint 0 — the version in the hash. `band`, which
+  carries the party's fields, did not move at all, which is `canonical()`'s
+  "an absent field and an undefined one hash alike" earning its keep rather
+  than being taken on trust.
+
+- **2026-08-26 — The coast feeds you, and a claim I made yesterday was
+  wrong** — fisheries and foraging move onto the line, and the correction is
+  the more useful half.
+
+  Last night's entry said ten call sites read a whole `Tile` "because a tile
+  carries per-hex depletion — how much game and fish are left in it". A
+  `Tile` is `{ terrain, river }`. Depletion lives somewhere else entirely:
+  `world.worked`, a sparse record keyed `${kind}:${hexKey}`, in
+  `abundance.ts`. I reasoned about a data structure instead of opening it,
+  and wrote the guess into the roadmap and a commit message as fact.
+
+  What it cost was an overestimate, which is the lucky direction. The real
+  conversion is one line — the storage key becomes a stop — and the ten
+  "tile reads" turned out to be nine `terrainDef(here.terrain)`, which is
+  `countryHere` again, and one `river`, which a coast does not have. Ten
+  sites down to two.
+
+  So: working a stretch of coast hard thins THAT stretch and no other, the
+  two larders stay apart at one stop, and the deed sheet still warns before
+  the day is spent — which is what keeps depletion from being an invisible
+  tax. A fishing ground is a property of a stop now, on the same one-in-seven
+  share the hex water paid, from its own stream: sharing the hex fishery's
+  would make a stop's water a function of a hex key it has nothing to do
+  with. Every stop can be fished, because every stop on a coast has the sea
+  off it — on the hex map that was a real question, since most of the island
+  is inland.
+
+  One narrowing, written down rather than left to be discovered: on the coast
+  the larder is filed under the band's own stop, so a ground worked from
+  somewhere else is not told apart from one worked from here. Nothing does
+  that yet; the colony's fishers are 8.4's problem.
+
+  No save bump. Nothing about the shape changed — `world.worked` was always a
+  sparse map of strings, and a stop key and a hex key sit in it side by side
+  without either inventing entries for the other.
+
+- **2026-08-26 — The coast has places on it, and one question asked once** —
+  8.2c in part: the places and the country underfoot.
+
+  The find was a seam rather than a feature.
+  `state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow'` is written
+  out FIFTEEN times across seven files — audio, events, outlaws, travel,
+  gathering, the sea, the road — and every one is the same question put to a
+  coordinate system that is being replaced. `countryHere(state)` is that
+  question asked once, and with the flag off it is that expression character
+  for character. `test/coast.test.ts` holds that against forty hexes on three
+  seeds, because a seam that quietly changed an answer would move balance
+  under a conversion that has not started yet.
+
+  Five of the fifteen are converted here. The other ten read a whole `Tile`
+  rather than a terrain, and the reason given at the time — "a tile carries
+  per-hex depletion" — was WRONG; see the entry above for what they actually
+  read and how much smaller that made the job.
+
+  Places now stand at stops: seeded from `route.placeAt` when the flag is on,
+  `Place.stop` (v49), and `placeHere`/`sackBlocker` asking it. The hex
+  seeding underneath is untouched, which is why the worldgen parity vectors
+  did not move — the version bump moved them, not the change.
+
+  The bump is worth a note of its own. `Place` gained an optional field that
+  is only ever written with the flag on, so every existing save is byte for
+  byte what it was and it was tempting to skip. This project's rule about
+  save shape has no "but nothing writes it yet" clause, so it bumped.
+
+- **2026-08-25 — The coast can be walked** — `sim/coast.ts` and a `WALK`
+  verb, behind `COAST_IS_A_LINE`. The band has a place on the line
+  (`party.stop`, v48, additive), a step costs the leg it walks, and a day at
+  the oars covers three stops — the hex map's `ROW_REACH` in its new
+  coordinate, so the knarr does not become a thing that sits on the beach
+  being expensive.
+
+  A second verb beside `MOVE` rather than a change to it. That is the whole
+  of what the flag buys: the hex path stays live and untouched, the game is
+  playable on every commit of the conversion, and the two can be measured
+  against each other before either is deleted.
+
+  **The flag left the verb untested, and that is a shape this repo keeps
+  meeting.** With `COAST_IS_A_LINE` false every `WALK` is refused before it
+  does anything, so twenty-five lines of movement, day-spending and chronicle
+  were code no test executed — the same hole as the browser check that had
+  stopped running and looked exactly like one that passed, and as the bar
+  that asserted an identity. `test/coastWalk.test.ts` mocks the flag on and
+  plays the verb for real.
+
+  Which immediately paid: its first end-to-end walk failed at stop 12.
+  Spending days raises an event card and `applyTravel` refuses every verb
+  while one is up — correct, and proof that `WALK` is properly wired into the
+  day machinery rather than sneaking around it. The test now dismisses cards
+  as it goes, which is what a player does.
+
+  A second fixture bug worth the same note: the settled-band check faked a
+  `settlement` object, which was enough for `walkOptions` and not enough for
+  `apply`, which walked straight into a field the fake had not invented. It
+  founds a real hall now. A fixture that only survives the code path it was
+  written against is not a fixture.
+
+  The saga speaks in one voice: `WALK` calls `marchLine`, which already knows
+  how to tell a day at the oars from a landing from a dull stretch of the
+  same country. A coast with its own phrasebook would read as a second game
+  rather than the same one seen from the side.
+
+- **2026-08-25 — Travel is 0.7% of a saga, and that decided 8.2** — the
+  roadmap said to answer the "six directions" question in design before
+  building, so a played saga was instrumented rather than argued about.
+
+  `runs/long.json` replayed: 407 days, **8 MOVE actions**, eight distinct
+  hexes with no revisits, 78 of 1872 hexes charted, and every one of those
+  eight moves offered exactly six options. Across twenty worlds each island
+  is 1,139 land hexes and 49 across, holding four places a median of twelve
+  apart. Against 397 CAMPs and 606 colony actions, travel is 0.7% of what a
+  saga does.
+
+  Eighteen hundred hexes of country exist so that eight of them can be stood
+  on. The finding is not "the island is too big" — it is that **travel is not
+  currently a decision**, and the question stopped being "what replaces six
+  directions" and became "what makes depth worth choosing".
+
+  Forks were the option that kept more of what exists, and that is exactly
+  why they lose: a fork is a direction choice, and the band makes eight
+  direction choices in four hundred days. The answer is one coast where the
+  decision is HOW FAR — richness rising with distance, supplies burning both
+  ways, winter as the clock, and after settling the same decision at raid
+  scale out of the hall. One sentence, which is the item's own bar: how far
+  up the coast do I push before the season turns me back?
+
+  The chart survives as a painted strip in the pack. Fog on a line means "how
+  far my knowledge runs", which is the same thing it meant on a plane, and
+  the map stays an object the game is partly about.
+
+  Written into 8.2 as four slices with the hex-reference count per file, so
+  the next sitting starts from a number rather than a guess.
+
+- **2026-08-25 — A fighter has no hex** — `Combatant.at` is deleted (save
+  v47), and 8.1d is finished.
+
+  It had become the worst kind of field: one that three parts of the game
+  disagreed about. The sim stopped reading it at 8.1c, the renderer stopped
+  drawing at it in 8.1d, and it had not moved since the man deployed — so it
+  was a coordinate that was authoritative about nothing and still had to be
+  migrated, hashed, and carried in every save.
+
+  The deletion took the deployment search with it. `place()` hunted the
+  authored grid for a free passable spot, preferred elbow room, and if there
+  was nowhere left the fighter **did not stand**. That is the kind of rule
+  that turns out to be load-bearing, so it was measured before it was cut:
+  across 40 open fights and 20 raids it refused NOBODY. It had been capping a
+  number `standAtHome` and `raiderCap` already capped.
+
+  Two things the conversion COST, recorded as costs rather than tidying:
+
+  - **`drowned` is gone.** A shove could put a man in the water and the sea
+    finished him for nothing — the best thing the verb did. There is no water
+    on a line. Whether a line gets its own version of "the ground itself
+    kills him" is an open question for the design notes, and it is now the
+    second entry on the list of things shove used to be worth.
+  - **"nobody deploys inside the hall"** was a real claim in
+    `test/raid.test.ts` and cannot be made any more, because nobody deploys
+    anywhere. The hall is still there in the grid; it just has nothing to
+    exclude.
+
+  Three tests had claims that had quietly expired and needed re-earning
+  rather than deleting:
+
+  | claim | what outlived it |
+  |---|---|
+  | every fighter gets a distinct HEX | every fighter gets a distinct RANK — and no gaps |
+  | foes close the distance | foes FIGHT: six turns and there must be a scratch on us |
+  | a v44 save keeps its `at` | a v44 save walks 44→47 with its fight intact and no coordinate in it |
+
+  The middle one is the one worth having. "Close the distance" was a fact
+  about geometry; "an AI that stands there doing nothing" is the failure it
+  was written against, and that stayed possible right through a conversion
+  that rewrote `takeBrokenTurn`, the reach gates and `battleAi` underneath it.
+
+  `scripts/pan.mjs` read `c.at.q` to check that a drag never becomes an
+  order; it reads the rank now, which is the same claim about the coordinate
+  the game actually has.
+
+- **2026-08-25 — The field is painted, and the brush is not what it looked
+  like** — `render/fieldOil.ts` gives the side-on battlefield a graded sky
+  with cloud banks, two layers of hill and brushed ground, on the same live
+  canvas in a `foreignObject` the steading uses.
+
+  It opened at **2742ms** to paint one fight — three seconds of a phone going
+  quiet, against the steading's 84ms — and finished at **200ms**, kept for
+  every turn of the fight after. Getting there was four wrong theories, and
+  the wrong ones are the useful part.
+
+  | thought | measured |
+  |---|---|
+  | the sky is most of the area, so most of the cost | sky 49ms, ridges 417ms |
+  | stroke count is what costs | cost goes with painted PIXELS — grain AND radius |
+  | bigger patches are cheaper (fewer clips) | bigger patches were *worse*: 417ms → 587ms |
+  | the far ridge is the expensive one | flattening it saved 10ms; the near one was 240ms |
+
+  What actually mattered was a **clip**. `paintPatch` intersects the live
+  region with its own hex for every patch, and intersecting a curvy ridge
+  silhouette runs about 3.6ms a patch against 0.6ms inside a rectangle. The
+  band below the lowest saddle is always inside the hills, so it can be
+  clipped with a rectangle and the flat fill carries the peaks. Same picture,
+  a quarter of the price.
+
+  And the look had the same shape of mistake. The sky kept reading as broken
+  glass however the strokes were tuned, because the marks were never the
+  problem: `paintPatch` lays an opaque hex of body colour UNDER its strokes,
+  which is right on a map where that hex is one tile of country and wrong at
+  86 units across in an empty sky. Lowering the opacity made it fainter
+  broken glass. A sky is a smooth thing with weather in it, so it gets the
+  gradient and five soft banks of cloud and costs nothing at all.
+
+  One real bug on the way in, worth writing down because the contract invites
+  it: `paintPatch`'s `clip: false` does NOT mean "no clip". It skips the
+  `save`/`restore` pair and still calls `ctx.clip()`, because its one existing
+  caller opens a clip and closes it itself. Passing it from a loop meant every
+  patch intersected the region and never gave it back, so the clip shrank to
+  nothing after two or three. The sky survived because its gradient goes down
+  first; the ground had nothing underneath and came out completely
+  transparent, which is how it was found.
+
+  Also: `test/fieldOil.test.ts` checks the canvas climb-down without a
+  browser, because a canvas past iOS Safari's 4096 limit does not throw — it
+  hands back a blank surface, and a blank surface under a shield wall looks
+  like a rendering bug rather than a memory limit.
+
+- **2026-08-25 — Two walls meeting** — the battle is drawn side-on, and the
+  worst state this conversion could sit in is over.
+
+  Since 8.1c the game PLAYED as a shield wall and was DRAWN as a hex grid.
+  Every man was painted at `Combatant.at`, frozen wherever he deployed, so
+  the picture had stopped describing where anybody stood — the reach markers
+  landed on dead hexes, routinely off the panned view, which is why
+  `pan.mjs` had to go hunting for one that was on screen. Nobody could look
+  at the build and see the game.
+
+  `render/line.ts` is the whole geometry, pure and with 21 claims against it:
+  x = 0 is where the walls meet, our line runs left and theirs runs right,
+  rank 1 closest in both. The renderer, the effects layer and the tap all
+  read it, which is the point — the hex field had three files each doing
+  their own `toPixel`, and a hit test that drifts from the layout is a game
+  where tapping a man hits the one behind him.
+
+  **The load-bearing decision is that the rank gap is CONSTANT and the field
+  grows.** The obvious alternative — fit the line into a fixed width and
+  shrink the gap as the band deepens — fails the one rule this game does not
+  bend. Six sworn against six raiders is twelve ranks, and twelve targets at
+  44px is 528px, which no phone is. So a deep fight is a wide field the view
+  pans across, and that is arithmetic rather than a shortfall.
+
+  Three things measurement changed, none of which survived being reasoned
+  about:
+
+  | reasoned | measured |
+  |---|---|
+  | a 620-tall field | four of twelve ranks on screen; 900 shows six |
+  | scale so the GAP clears 44px | the MAN came out 42px — the shield is wider than twice his radius |
+  | hills from the ground's own colour | two pale smears that read as fog, not land |
+
+  The second is the one worth keeping: a fighter is the touch target, and
+  `figures.ts` draws his shield at `rx: radius * 1.04`, so a view scaled to
+  put 44px between ranks put 42px of man on a 320px screen. `field.mjs` — now
+  measuring `g.fighter` instead of a ground polygon, because there are no
+  ground polygons — caught a rule that had been reasoned about the wrong
+  object. It is 44px at 320 and 360 now, and derived from a stated constant.
+
+  Two bar findings, both about checks rather than code. `pan.mjs`'s "a wide
+  screen still frames itself and does not pan" was never a rule — it was a
+  fact about a hex grid being compact — so it moved to `line.test.ts`, where
+  the field's width is known in user units instead of guessed from a
+  screenshot, and a new claim took its place: you cannot drag the wall off
+  the screen. And "a tap on bare ground orders nothing" had started SKIPPING
+  itself, because it hunted for an unoccupied ground polygon and 8.1d took
+  the polygons away. A check that quietly stops running looks exactly like a
+  check that passes. It taps the sky now, which cannot stop existing.
+
+  One test of my own was worse: `line.test.ts` first asserted
+  `RANK_GAP * (44 / RANK_GAP) >= 44`, an identity that could never have
+  failed. Replaced with the property it was reaching for — that what a
+  fighter is worth on screen does not know how many ranks there are.
+
+  Not run: `balance.test.ts`. Nothing under `src/sim/` or `src/state/` is
+  touched by this, and the sweep is a headless harness that never builds a
+  DOM, so it cannot see a renderer change. Everything else is green — 1218
+  tests, all twelve browser bars.
+
+- **2026-08-25 — The battle is a line, and three "tuning failures" were holes**
+  — 8.1c landed whole on the third attempt. The verbs ask the rank table, the
+  numbers were re-earned rather than relaxed, and the two items the roadmap
+  had already merged (8.1c and 8.1e) went green in one commit.
+
+  **The rule the whole mode rests on was written, tested, and never called.**
+  `closeUp` had 25 claims against it in `ranks.test.ts` and not one line in
+  `src/sim/` invoked it. Three seeds probed at random all ground to the round
+  limit — 51 rounds, survivors stranded at ranks 4, 5 and 6 and nobody at the
+  front, because a hole in a line is a front rank nobody stands in and a
+  fight where nobody can reach anybody. Wired into `drop()` and into the flee
+  branch of `takeBrokenTurn`, the same three seeds finish in four to seven
+  rounds. That is the whole difference between a line and a queue.
+
+  **Then the method, which is the part worth keeping.** Structure first,
+  numbers last, and never touch a threshold while a structural failure is
+  still standing. Three failures looked exactly like tuning drift and were
+  not:
+
+  | looked like | actually was |
+  |---|---|
+  | shove dropped 47 wins in 60 to 11 | the ported rule fired on the half of the verb that does nothing |
+  | the back rank got a free shield | `doDefend` never asked the reach table |
+  | the palisade stopped paying | the mechanic was pure hex terrain and had been deleted |
+
+  A shove that MOVES somebody deals no damage and swaps two men an axe
+  already reaches; the damage is in the other branch, where the last man of a
+  line is driven against his own for 2 that cannot miss. The hex rule
+  "somebody comes forward" ported across as *always shove* — measured, 11
+  wins in 60 and 80 men standing against 47 and 166 for a bot that never
+  shoves. The reach table says only the front two may set a shield and
+  `doDefend` had never been told, so a third-rank man collected `DEFEND_BONUS`
+  against spears and thrown axes for an action he had no other use for.
+
+  **The palisade was the worst of the three, because it failed silently.** A
+  walled steading and an open one came out of ten raids with byte-identical
+  tallies — 0 held, 36 alive, 24 dead, 720 stolen, both — because the whole
+  mechanic was "whoever is standing on a wall hex", and nobody stands
+  anywhere now. Eight timber and a week of somebody's hands for nothing. The
+  line spelling of *it does not stop them, it makes them climb where you are
+  waiting* is that the men climbing ARE the raiders' front rank: they hold no
+  wall with each other and they are `WALL_EXPOSED` easier to hit. Derived
+  from the field, so no save change. With it: **6 raids held against 0, 46
+  alive against 36, 14 dead against 24, 201 stolen against 720.**
+
+  **What the sweeps then said about the line itself.** The open worry about
+  this whole conversion was that a wall everybody stands in by default would
+  stop being worth anything. It is worth more: formation against brawl went
+  from 33/60 wins and 157 standing on hexes to **47/60 and 166**, against
+  30/60 and 109 — the gap roughly tripled.
+
+  **And dash stopped being a trap by becoming what its docstring always
+  claimed.** On hexes, spending the action to arrive sooner cost a third of
+  the wins and a third of the survivors: you arrived alone and having already
+  acted. There is no ground to sprint across now, so nobody can arrive alone
+  — what a dash does is walk the back-rank man who has thrown his last
+  hand-axe up into the wall. Over the same 60 fights it fires 361 times and
+  costs one win and nine men.
+
+  Shove and defend are the opposite finding and are recorded as such: both
+  are now so nearly inert that turning either on changes the win count by
+  exactly nothing. `wall.test.ts` asserts that as an exact tie rather than a
+  tolerance, so the day either stops being inert is a day somebody finds out,
+  and 8.1d carries the decision about whether they earn a place on a side-on
+  field.
+
+  Smaller things that had to be true first: `moved` beats carry RANKS rather
+  than hexes (v46, and the migration drops the old ones rather than inventing
+  ranks for a field that no longer exists); `runs/*.json` re-recorded and
+  `port/parity.json` regenerated; the champion fixture's "park them out of the
+  wall" premise has no line equivalent, so its bar is now what the
+  best-steadied man in a line feels; `scripts/pan.mjs` proves the new rule
+  that a tap on bare ground orders nothing, and all twelve browser bars pass.
+
+  One correction to the record: `runs/example.json` had already gone stale on
+  `main` before any of this — recorded against a clean checkout it produces
+  the same degenerate 23-forage run — so it was re-cut on `grim-fjord-100`,
+  where 140 actions cover travel, a founding, six events and a fight. And the
+  parked `wip/8.1c-source-conversion.patch` is deleted, because the work it
+  was a head start on is now in the tree.
+
+- **2026-08-25 — The line is real, and 8.1c is one job not two** — ranks
+  arrive in the sim, the port hand-over is deliberately frozen, and an attempt
+  at the verbs found out what the next sitting actually costs.
+
+  `sim/ranks.ts` is the shape a shield wall has: a LINE with depth. Rank 1 is
+  the front where the two walls meet; the back rank is where the throwers
+  stand. It imports nothing at all and defines `Ranked` structurally, so it
+  was finished and checked before anything else in battle was touched —
+  25 claims, five mutations, all caught.
+
+  The best argument that the line is the right shape came out of the mapping
+  rather than being designed: **`dash` survives by changing meaning.** It was
+  a second helping of movement across open ground, and there is no open ground
+  any more. It becomes a change of RANK — which is the answer to being put
+  somewhere your weapon is no use, and worth an action in a way running never
+  quite was.
+
+  Combatant then gained `rank` (v45), assigned as fighters deploy. Nothing
+  reads it yet, so behaviour is unchanged — and that let the migration be
+  gentler than planned: a saga caught mid-swing keeps its battle instead of
+  losing it, because ranks are purely additive while the fight still resolves
+  on hexes.
+
+  **The port contract is frozen, and it is recorded as a bar being lowered.**
+  The save bump went red on `contract.test.ts`. The first reading — "the
+  conversion broke parity on day one" — was wrong, and checking beat saying
+  something dramatic and false: `canonical()` hashes every key including
+  `version`, so the run hash moves on EVERY save bump, and all twenty of the
+  last ones regenerated the same two files. The facets named it exactly: `run`
+  moved on all 44 checkpoints, `field` on 7, and `world`, `band`, `ship`,
+  `coast` and `steading` did not move at all. The freeze is not because ranks
+  broke anything; it is because the routine answer assumes the port is worth
+  keeping current, and Phase 8 is the reason to doubt that. It prints what has
+  drifted on every run, and a second test fails if ROADMAP stops explaining
+  why.
+
+  **Then 8.1c was attempted, and stopped on purpose.** The source half went
+  well — nine files, tsc clean, and a genuinely pleasant finding: the old
+  design was already a line wearing a grid. `canReachAt` demanded distance 2
+  PLUS a mate adjacent to both the thruster and the target, which is a hex
+  spelling of "you stand behind your shield-brother". `strike.ts` is 289 lines
+  and six of them were hex.
+
+  What stopped it was the tests, and it is worth writing down: **8.1c and
+  8.1e are the same job.** `wall.test.ts` holds "formation play beats
+  brawling" at particular win counts and `balance.test.ts` holds survival
+  rates, so the moment the verbs move onto the line every tuned number moves
+  with them. There is no green state in between, which means the slice cannot
+  land half-done and needs a sitting where the 40-minute sweep can go round
+  several times.
+
+  Reverted rather than committed red. The source conversion is parked in
+  `wip/8.1c-source-conversion.patch` with a README, because it is a head start
+  worth keeping and the scratchpad it was living in does not survive the
+  container.
 
 - **2026-08-25 — A shieldwall, and a plan to turn the game sideways** — the
   hex game was not capturing its own designer, so the question became what it

@@ -11,7 +11,6 @@ import type { Action } from '../sim/actions';
 import type { CueId } from '../data/sounds';
 import type { Combatant, GameState, Person } from '../state/types';
 import { currentMode } from '../modes';
-import { key } from '../hex';
 import { SEASON_LENGTH } from '../sim/calendar';
 
 /** Living members of the warband proper. Foes are counted on the battle. */
@@ -95,7 +94,6 @@ export function cuesFor(before: GameState, after: GameState, action: Action): Cu
   // --- On the field ---
 
   if (wasFighting) {
-    if (action.type === 'B_MOVE' || action.type === 'B_DASH') cues.push('step');
     cues.push(...fieldCues(before, after, action));
     if (!before.battle?.outcome && after.battle?.outcome) {
       cues.push(after.battle.outcome === 'won' ? 'won' : 'lost');
@@ -114,10 +112,18 @@ export function cuesFor(before: GameState, after: GameState, action: Action): Cu
   // --- On the road ---
 
   if (!wasFighting && !isFighting) {
-    if (action.type === 'MOVE') {
-      // A day under oars does not sound like a day's walking.
-      const ground = after.world.tiles[key(after.party.at)]?.terrain;
-      cues.push(ground === 'ocean' ? 'oar' : 'step');
+    if (action.type === 'WALK') {
+      // The line's travel verb, which made no sound at all until now — a
+      // coast band walked and rowed in silence, because the only mover this
+      // file knew about was `MOVE`.
+      //
+      // The same distinction, read off the line's own arithmetic rather than
+      // off a tile: `daysToWalk` prices ONE stop at the length of its leg and
+      // anything further at a single day at the oars, so a stretch crossed
+      // is a walk and a jump is a row. State-derived like the rest of this
+      // file — nothing here asks which button was pressed.
+      const stops = Math.abs((after.party.stop ?? 0) - (before.party.stop ?? 0));
+      cues.push(stops > 1 ? 'oar' : 'step');
     }
     if (action.type === 'CAMP') cues.push('camp');
     if (action.type === 'FORAGE' || action.type === 'HUNT' || action.type === 'FISH') {

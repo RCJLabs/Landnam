@@ -20,13 +20,11 @@
 // coast: its country, its people, its fences, and the man you drove out of
 // your hall — he is on that island, and you are not.
 
-import { key } from '../hex';
 import { stream } from '../rng';
 import { LANDING_NAMES } from '../data/names';
-import { generateWorld } from './worldgen';
+import { bareWorld } from '../state/world';
 import { placeNeighbours } from './neighbours';
 import { seedPlaces } from './places';
-import { revealAround, sightRadius } from './fog';
 import { hold } from './ship';
 import { living } from './people';
 import { childrenOf } from './lineage';
@@ -116,10 +114,16 @@ export function sailOn(state: GameState): boolean {
   // A NEW country, seeded from the run and the count, so the same saga finds
   // the same second island every time it is replayed.
   const seed = `${state.seed}:landnam:${nth}`;
-  const world = generateWorld(stream(seed, 'worldgen'));
+  // A BARE world, exactly as `newGame` makes one. This said
+  // `generateWorld(...)` until 8.5 and it was a real defect, not a leftover:
+  // job 3 stopped `newGame` seeding the hex island and missed its twin one
+  // street over, so a coast band that sailed on got all 1872 tiles back —
+  // measured at 3.2 kB to 81.1 kB, on a save nothing reads a tile of.
+  const world = bareWorld();
   world.landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
-  world.trod = { [key(world.landing)]: state.day };
-  world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
+  world.trodStops = { '0': state.day };
+  world.knownStops = [0];
+  world.places = seedPlaces(seed);
 
   // What she holds is what goes. This is the cost of sailing on, and it is
   // the ship's own number doing the work: five winters of stores do not fit
@@ -129,7 +133,7 @@ export function sailOn(state: GameState): boolean {
   const firewood = Math.min(state.party.firewood, Math.max(0, room - food));
 
   state.world = world;
-  state.party.at = world.landing;
+  state.party.stop = 0;
   state.party.food = food;
   state.party.firewood = firewood;
   state.party.hasCamped = false;
@@ -137,7 +141,7 @@ export function sailOn(state: GameState): boolean {
   state.expedition = undefined;
   state.voyage = undefined;
   // A new coast has its own people on it.
-  state.neighbours = placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours'));
+  state.neighbours = placeNeighbours(stream(seed, 'worldgen').derive('neighbours'), seed);
   state.rival = undefined;
   // And the man we drove out is on THAT island, with our old hall to haunt.
   state.outlaws = undefined;
@@ -145,8 +149,6 @@ export function sailOn(state: GameState): boolean {
   for (const person of state.party.people) delete person.job;
   state.flags[LANDNAM] = nth;
   delete state.flags[RECKONED];
-
-  revealAround(state.world, state.party.at, sightRadius(state.world, state.party.at, 2));
 
   chronicle(
     state,

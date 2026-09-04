@@ -3,7 +3,7 @@
 
 import type { Action } from '../sim/actions';
 import type { GameState } from '../state/types';
-import { daysUntilWinter, effectsOn, seasonOf } from '../sim/calendar';
+import { daysUntilAutumn, daysUntilWinter, effectsOn, seasonOf } from '../sim/calendar';
 import { foodPerDay, firewoodPerNight } from '../sim/upkeep';
 import { living } from '../sim/people';
 import {
@@ -11,11 +11,12 @@ import {
   BLOCK_REASON,
   foundBlocker,
   scoreWord,
-  siteReport,
+  reportHere,
   verdictFor,
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
-import { forecast, markVisible } from '../sim/winter';
+import { forecast, markVisible, roadDaysLeft, roadMarkVisible } from '../sim/winter';
+import { roadCounsel, roadCounselLine } from '../sim/counsel';
 import { reachable } from '../sim/reach';
 import { holed, sprung, unseaworthy } from '../sim/ship';
 import { weatherNext, weatherNow } from '../sim/weather';
@@ -24,13 +25,14 @@ import { ghostLine, isGhostRuin } from '../sim/haunt';
 import { yearOf } from '../sim/calendar';
 import { wintersStood } from '../sim/calendar';
 import { thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
-import { threatReading } from '../sim/raid';
+import { autumnChance, autumnRaidDay, threatReading, wallWorthLine } from '../sim/raid';
 import { beats, markOf } from '../sim/challenge';
 import { chaseLine } from '../sim/announce';
 import { WINTERS_TO_JARL } from '../data/thing';
 import { expeditionLine } from '../sim/expedition';
 import { placeHere } from '../sim/places';
 import { strandTarget } from '../sim/sea';
+import { waterMark } from '../sim/fishery';
 import { placeKind } from '../data/places';
 import { angriest, neighbourHere, neighbourLine, standingOf } from '../sim/neighbours';
 import { button, el } from './svg';
@@ -173,6 +175,47 @@ export function renderWinterMark(state: GameState): HTMLElement {
 }
 
 /**
+ * What to DO about the mark, for a band that has a roof and is not standing
+ * in it. The mark's numbers already follow the band onto the road —
+ * `markVisible` never asked where anybody was standing — but the sentence
+ * naming the move did not: `counsel` renders only in `renderNeeds`, on a
+ * panel `ENTER_COLONY` refuses to open away from home. 11.U3.
+ *
+ * Sits under the winter mark it answers, in the mark's own clothes.
+ */
+export function renderRoadCounsel(state: GameState): HTMLElement {
+  const said = roadCounsel(state);
+  if (!said) return el('div');
+  return el('div', { class: 'winter-mark road-counsel' }, [
+    el('div', { class: 'mark-head' }, [roadCounselLine(state, said)]),
+  ]);
+}
+
+/**
+ * The road's own mark: what a band with no roof yet sees instead of the
+ * winter mark above, which stays blank for all of them (`markVisible`
+ * requires a settlement). 11.U1/11.M1: this is the population that dies
+ * fastest and mostly to ordinary hunger, not to winter, so the number
+ * worth telling it is days of food left on hand, not days to spring.
+ *
+ * Same shape as the winter mark on purpose — a headline, red until things
+ * are dire, then the lost styling — because the player has already learned
+ * to read one of these.
+ */
+export function renderRoadMark(state: GameState): HTMLElement {
+  if (!roadMarkVisible(state)) return el('div');
+  const days = roadDaysLeft(state);
+  const lost = days <= 0;
+  return el('div', { class: `winter-mark road${lost ? ' lost' : ''}` }, [
+    el('div', { class: 'mark-head' }, [
+      lost
+        ? 'The stores are empty, and there is still no roof.'
+        : `${days} ${days === 1 ? 'day' : 'days'} of food left, and no roof yet`,
+    ]),
+  ]);
+}
+
+/**
  * What this run is chasing, when it was started from somebody's challenge.
  *
  * Deliberately the same shape as the winter and watch marks: the player has
@@ -203,6 +246,32 @@ export function renderChaseMark(state: GameState): HTMLElement {
  *
  * Shown at the steading only, and only once the founding grace is over.
  */
+/**
+ * Where the good water is, and what it is worth (9.3).
+ *
+ * The one thing 9.3 turned out to need. Fishing is measured at roughly five
+ * times what foraging pays and the sea has been carrying that bar for a long
+ * time — but 3.2 grounds sit on a coast, 1.8 are ever known and 0.7 are ever
+ * rowed to, because the Fish deed only speaks once you are already floating
+ * over one. All the words and the arithmetic are `waterMark`, in the file that
+ * owns grounds, and it names only water the band has actually found.
+ */
+export function renderWaterMark(state: GameState): HTMLElement {
+  if (state.end || state.event || state.battle) return el('div');
+  const mark = waterMark(state);
+  if (!mark) return el('div');
+  // ONE LINE, and the look bar is why. Written first in the `room-mark` shape
+  // — a head and a row beneath it — this added 89px to the travel hint slot,
+  // which at 320x568 pushed the chronicle and the fight screens off their
+  // blessed pictures. Nothing else caught it: the field bar still measured a
+  // full battlefield, because the harm was upstream of the fight. The quiet
+  // one-line `watch-mark` is the idiom for a standing note on this panel, and
+  // it costs the shortest screen we support 25px instead of 89.
+  return el('div', { class: `watch-mark${mark.here ? '' : ' quiet'}` }, [
+    el('div', { class: 'mark-head' }, [`${mark.head} — ${mark.gap}`]),
+  ]);
+}
+
 export function renderWatchMark(state: GameState): HTMLElement {
   if (state.end || state.event || !state.settlement) return el('div');
   if (!atHome(state)) return el('div');
@@ -215,21 +284,39 @@ export function renderWatchMark(state: GameState): HTMLElement {
       ]),
     ]);
   }
-  if (read.chance <= 0) {
+  if (read.chance <= 0 && autumnChance(state) <= 0) {
     return el('div', { class: 'watch-mark quiet' }, [
       el('div', { class: 'mark-head' }, ['The wall and the watch are holding. Nobody is coming.']),
     ]);
   }
 
+  // WHAT THE PANEL IS FOR IS THE AUTUMN, and it used to say the one number
+  // that could not be planned against. "A raid about every 469 days" is true
+  // and useless in a game whose average run is 172 days: it reads as "never",
+  // and a threat that reads as never is why the palisade — worth 47% to 91%
+  // on a six-man defence — was the rarest building in the game.
+  //
+  // The reckoning comes before winter, so that is what the head says, and it
+  // says the odds for THIS autumn, which is a number a summer's work can
+  // move. The rest of the year keeps the old reading, because the rest of
+  // the year is still a background hazard.
+  const autumn = seasonOf(state.day) === 'autumn';
+  const season = Math.round(autumnChance(state) * 100);
+  const passed = autumn && state.day > autumnRaidDay(state);
+  const untilAutumn = daysUntilAutumn(state.day);
+
+  const head = passed
+    ? 'Nothing came this autumn. The next reckoning is a year off.'
+    : autumn
+      ? `They come before winter — about ${season} in 100 this autumn`
+      : `They come before winter — ${untilAutumn} days until the reckoning`;
+
   // Under a fortnight between raids is a steading in real trouble; the
   // panel says so in its border rather than in more words.
-  const pressed = read.everyDays !== null && read.everyDays <= 40;
+  const pressed = (autumn && !passed && season >= 50)
+    || (read.everyDays !== null && read.everyDays <= 40);
   const panel = el('div', { class: `watch-mark${pressed ? ' dire' : ''}` }, [
-    el('div', { class: 'mark-head' }, [
-      read.everyDays !== null
-        ? `A raid about every ${read.everyDays} days`
-        : 'A raid may come',
-    ]),
+    el('div', { class: 'mark-head' }, [head]),
   ]);
 
   const row = (term: { label: string; amount: number; why: string }, keeps: boolean): HTMLElement =>
@@ -246,7 +333,9 @@ export function renderWatchMark(state: GameState): HTMLElement {
       el('div', { class: 'mark-row short' }, [
         el('span', { class: 'mark-name wide' }, ['Nothing holds them']),
         el('span', { class: 'mark-value' }, ['—']),
-        el('span', { class: 'mark-gap' }, ['no wall, no watch']),
+        // The SIZE of the reason, not just its absence (9.4). All of it is
+        // `wallWorthLine`, beside the measurement it comes from.
+        el('span', { class: 'mark-gap' }, [wallWorthLine()]),
       ]),
     );
   }
@@ -367,12 +456,10 @@ function hornGlyph(muted: boolean): SVGElement {
  */
 export function renderSitePanel(state: GameState): HTMLElement {
   if (state.end || state.event) return el('div');
-  const at = state.party.at;
-  const report = siteReport(state.world, at);
-  if (!report) return el('div');
+  const report = reportHere(state);
 
   const home = atHome(state);
-  const blocker = foundBlocker(state, at);
+  const blocker = foundBlocker(state);
   const verdict = verdictFor(report.total);
 
   const bars = el('div', { class: 'site-measures' });
@@ -488,7 +575,12 @@ export function renderHint(state: GameState): HTMLElement {
     return el('div', { class: 'hint place' }, [`${body}${whose ? ` ${whose}` : ''}`]);
   }
   if (!state.settlement) {
-    return el('div', { class: 'hint' }, ['Find ground worth holding · tap a marked hex to travel']);
+    // There are no hexes to tap on a coast, and this is the line under the
+    // picture for the whole of the walking half of the game — the first
+    // instruction a player gets, telling them to do something impossible.
+    return el('div', { class: 'hint' }, [
+      'Find ground worth holding · walk on up the coast, or open the Chart',
+    ]);
   }
   const out = expeditionLine(state);
   if (out) return el('div', { class: 'hint out' }, [out]);

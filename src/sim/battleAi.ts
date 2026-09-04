@@ -1,17 +1,13 @@
 // Enemy behaviour. Three temperaments, each scoring the same battlefield
 // differently, so a scout and a huscarl do not play the same fight.
 
-import { distance, fromKey, type Hex } from '../hex';
 import type { Combatant, GameState } from '../state/types';
 import type { Temperament } from '../data/foes';
-import { activeCombatant, archetypeOf, fighterPerson, standing } from './battle';
+import { activeCombatant, archetypeOf, fighterPerson, standing, strikeTargets } from './battle';
 import { canThrowAt, doReach, doStrike, doThrow, reachTargets } from './strike';
-import { doDefend, doShove } from './footwork';
+import { doDefend } from './footwork';
 import { evasion } from './swing';
-import { beat } from './beats';
-import { reachWithZoc, threatCount } from './zoc';
-import { canAnchor } from './wall';
-import { effectiveStat } from './people';
+import { threatCount } from './zoc';
 
 /**
  * Past this round nobody is being clever any more. Cautious and flanking
@@ -34,9 +30,8 @@ function healthFraction(state: GameState, combatant: Combatant): number {
 }
 
 /** Prefer whoever is closest to dropping, then whoever is easiest to hit. */
-function bestMeleeTarget(state: GameState, active: Combatant): Combatant | undefined {
-  const battle = state.battle!;
-  const adjacent = standing(battle, 'warband').filter((c) => distance(c.at, active.at) === 1);
+function bestMeleeTarget(state: GameState): Combatant | undefined {
+  const adjacent = strikeTargets(state);
   if (adjacent.length === 0) return undefined;
   return [...adjacent].sort((a, b) => {
     const ha = fighterPerson(state, a.personId)?.health ?? 99;
@@ -49,97 +44,21 @@ function bestMeleeTarget(state: GameState, active: Combatant): Combatant | undef
  * How much this fighter wants to stand on a given hex. Temperament is the
  * whole difference between the archetypes.
  */
-function positionScore(
-  state: GameState,
-  active: Combatant,
-  at: Hex,
-  temperament: Temperament,
-): number {
-  const battle = state.battle!;
-  const enemies = standing(battle, 'warband');
-  if (enemies.length === 0) return 0;
-
-  const gap = Math.min(...enemies.map((e) => distance(at, e.at)));
-  const threats = threatCount(battle, at, active.side);
-  let score = -gap * 10;
-
-  // Everyone wants a shoulder-mate. Standing in a line is worth real
-  // defence, and the foes know it as well as the warband does.
-  const mates = battle.combatants.filter(
-    (c) =>
-      c.personId !== active.personId &&
-      c.side === active.side &&
-      canAnchor(c) &&
-      distance(c.at, at) === 1,
-  ).length;
-  score += Math.min(mates, 2) * 12;
-
-  switch (temperament) {
-    case 'aggressive':
-      // Wants contact and does not care what it costs.
-      if (gap === 1) score += 30;
-      break;
-
-    case 'cautious': {
-      // Likes a throwing lane and dislikes being swarmed.
-      if (gap >= 2 && gap <= 3 && active.throwsLeft > 0) score += 25;
-      score -= Math.max(0, threats - 1) * 22;
-      if (healthFraction(state, active) < 0.4 && gap === 1) score -= 25;
-      break;
-    }
-
-    case 'flanker': {
-      // Hunts warriors already busy with someone else, and would rather not
-      // be the one who opens the fight.
-      const engaged = enemies.filter(
-        (e) =>
-          distance(e.at, at) === 1 &&
-          standing(battle, 'foe').some(
-            (f) => f.personId !== active.personId && distance(f.at, e.at) === 1,
-          ),
-      );
-      if (engaged.length > 0) score += 40;
-      else if (gap === 1) score -= 12;
-      score -= Math.max(0, threats - 1) * 14;
-      break;
-    }
-  }
-  return score;
-}
-
-/** Moves this fighter to the best hex their temperament can see. */
-function reposition(state: GameState, active: Combatant, temperament: Temperament): void {
-  const battle = state.battle!;
-  const reach = reachWithZoc(battle, active);
-  if (reach.size === 0) return;
-
-  let bestAt: Hex | null = null;
-  let bestScore = positionScore(state, active, active.at, temperament);
-  let bestCost = 0;
-
-  for (const [k, cost] of reach) {
-    const at = fromKey(k);
-    const score = positionScore(state, active, at, temperament);
-    if (score > bestScore || (score === bestScore && cost < bestCost)) {
-      bestScore = score;
-      bestAt = at;
-      bestCost = cost;
-    }
-  }
-
-  if (bestAt) {
-    const from = active.at;
-    active.at = bestAt;
-    active.movesLeft -= bestCost;
-    beat(state.battle!, {
-      kind: 'moved',
-      who: active.personId,
-      from,
-      to: bestAt,
-      cost: bestCost,
-    });
-  }
-}
+/**
+ * `takeRank` stood here. It read: if you cannot reach anybody from where you
+ * are, shoulder forward until you can — with temperament deciding who bothers.
+ *
+ * 9.1b took the dash off the bar, and the same movement is now the line
+ * closing itself (`stepUp`, sim/footwork.ts), run for BOTH sides at the top of
+ * a turn. Every rule this function carried survives in that one:
+ *
+ * - "the cautious do not shoulder into the front rank" — `nothingToDo` is
+ *   false for anybody in ranks 1 or 2, because they may always set a shield;
+ * - "a flanker with axes left is where it wants to be" — a man with axes and
+ *   somebody to throw at has something to do, so the line does not close on
+ *   him;
+ * - and it still spends the turn, as the dash did.
+ */
 
 /** One foe's whole turn. */
 export function takeFoeTurn(state: GameState): void {
@@ -160,9 +79,7 @@ export function takeFoeTurn(state: GameState): void {
     }
   }
 
-  reposition(state, active, temperament);
-
-  const target = bestMeleeTarget(state, active);
+  const target = bestMeleeTarget(state);
   if (!target) {
     // Nothing at arm's length — but their line has a second rank too, and a
     // spear over a mate's shoulder is exactly what it is for. Symmetric on
@@ -188,7 +105,7 @@ export function takeFoeTurn(state: GameState): void {
     }
     // Only cover up against someone who can actually reach you. Shielding in
     // an empty field is what turns a careful fight into a staring contest.
-    const exposed = threatCount(battle, active.at, active.side) > 0;
+    const exposed = threatCount(battle, active) > 0;
     if (!active.hasActed && exposed && (hurt || temperament === 'cautious')) doDefend(state);
     return;
   }
@@ -199,18 +116,10 @@ export function takeFoeTurn(state: GameState): void {
     return;
   }
 
-  const attacker = fighterPerson(state, active.personId);
-  const defender = fighterPerson(state, target.personId);
 
-  // A shove is worth more than a swing when it puts them in the water, or
-  // when their shield is up and a blow would just rattle it.
-  if (attacker && defender) {
-    const strongEnough = effectiveStat(attacker, 'might') >= effectiveStat(defender, 'might');
-    if (target.defending && strongEnough) {
-      doShove(state, target.personId);
-      return;
-    }
-  }
-
+  // A shove stood here, for a foe strong enough to lean on a raised shield.
+  // 9.1b took the verb: on a line it had the same reach as a strike and the
+  // arena priced it at nothing (47/60 wins either way), so the foe simply
+  // swings at the shield now, which is what DEFEND_BONUS is there to answer.
   doStrike(state, target.personId);
 }

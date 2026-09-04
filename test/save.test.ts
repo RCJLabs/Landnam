@@ -4,7 +4,7 @@ import { migrate, MIGRATIONS, type Migration } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { moveOptions } from '../src/sim/road';
+import { walkOptions } from '../src/sim/coast';
 
 describe('save codec', () => {
   it('round-trips a fresh game exactly', () => {
@@ -22,9 +22,9 @@ describe('save codec', () => {
         state = apply(state, { type: 'DISMISS_EVENT' });
         continue;
       }
-      const options = moveOptions(state);
+      const options = walkOptions(state);
       state = options[0]
-        ? apply(state, { type: 'MOVE', to: options[0] })
+        ? apply(state, { type: 'WALK', to: options[0] })
         : apply(state, { type: 'CAMP' });
     }
     const decoded = decode(encode(state));
@@ -63,6 +63,68 @@ describe('migration registry', () => {
     const result = migrate(raw);
     expect(result.applied).toBe(0);
     expect(result.save['version']).toBe(SAVE_VERSION);
+  });
+
+  /**
+   * v61 dropped `battle.width` and `battle.height`. A save caught mid-fight
+   * is the only kind that has a battle at all, so both shapes are checked:
+   * the one that carries the fields, and the one that has no battle to carry
+   * them. Written against the v60 entry directly rather than through the
+   * whole walk, so it names the step that is supposed to do the work.
+   */
+  it('drops the battle shape a v60 save was still carrying', () => {
+    const v60 = {
+      version: 60,
+      battle: { terrain: 'meadow', width: 7, height: 9, grid: [], foes: [] },
+    };
+    const out = MIGRATIONS[60]!(v60) as Record<string, unknown>;
+    const battle = out['battle'] as Record<string, unknown>;
+    expect(out['version']).toBe(61);
+    expect('width' in battle).toBe(false);
+    expect('height' in battle).toBe(false);
+    // Everything else about the fight is untouched — the ground it is being
+    // fought on is not what was dropped.
+    expect(battle['terrain']).toBe('meadow');
+  });
+
+  it('carries a v60 save with no battle in progress straight through', () => {
+    const out = MIGRATIONS[60]!({ version: 60, day: 12 }) as Record<string, unknown>;
+    expect(out['version']).toBe(61);
+    expect(out['day']).toBe(12);
+    expect('battle' in out).toBe(false);
+  });
+
+  /**
+   * v62 dropped `Plot.at`. Order carries the slot now, so the migration must
+   * leave the plots in the SAME order it found them — a reordering migration
+   * would silently move every steading's hall.
+   */
+  it('drops the plot index a v61 save was still carrying, and keeps the order', () => {
+    const v61 = {
+      version: 61,
+      settlement: {
+        name: 'Ravenstead',
+        plots: [
+          { at: 0, kind: 'hall' },
+          { at: 1, kind: 'field' },
+          { at: 2, kind: 'wood' },
+        ],
+      },
+    };
+    const out = MIGRATIONS[61]!(v61) as Record<string, unknown>;
+    const home = out['settlement'] as Record<string, unknown>;
+    const plots = home['plots'] as Record<string, unknown>[];
+    expect(out['version']).toBe(62);
+    expect(plots.every((p) => !('at' in p))).toBe(true);
+    expect(plots.map((p) => p['kind'])).toEqual(['hall', 'field', 'wood']);
+    expect(home['name']).toBe('Ravenstead');
+  });
+
+  it('carries a v61 save with no steading straight through', () => {
+    const out = MIGRATIONS[61]!({ version: 61, day: 30 }) as Record<string, unknown>;
+    expect(out['version']).toBe(62);
+    expect(out['day']).toBe(30);
+    expect('settlement' in out).toBe(false);
   });
 
   it('refuses saves from the future', () => {
@@ -151,7 +213,7 @@ describe('a migrated save is a playable save', () => {
       modes: ['TRAVEL'],
       world: structuredClone(seedGame.world),
       party: {
-        at: { ...seedGame.party.at },
+        stop: seedGame.party.stop ?? 0,
         // Two people carrying only the fields v1 knew about. Everything a
         // later version added must be filled in by a migration, not by luck.
         people: seedGame.party.people.slice(0, 2).map((p) => ({
@@ -234,13 +296,13 @@ describe('a migrated save is a playable save', () => {
     let state = decode(JSON.stringify(frozenV1()))!;
     expect(() => {
       for (let i = 0; i < 12 && !state.end; i += 1) {
-        const options = moveOptions(state);
+        const options = walkOptions(state);
         state = apply(
           state,
           state.event
             ? { type: 'DISMISS_EVENT' }
             : options.length > 0
-              ? { type: 'MOVE', to: options[i % options.length]! }
+              ? { type: 'WALK', to: options[i % options.length]! }
               : { type: 'CAMP' },
         );
       }

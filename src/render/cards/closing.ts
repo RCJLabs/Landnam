@@ -6,11 +6,12 @@
 // Full-screen overlays: the title, the event card, the warband roster, and
 // the run's ending. Views only.
 
-import { exploredFraction } from '../../sim/fog';
+import { exploredFraction } from '../../sim/coast';
 import { composeSaga, sagaText } from '../../sim/sagagen';
 import type { Fallen } from '../../memorial';
 import type { GameState } from '../../state/types';
 import { button, el } from '../svg';
+import { chronicle, dayOfSeason, isTold, told } from '../chronicle';
 import { beats, challengeOf, describeMark, markOf } from '../../sim/challenge';
 import { copyText } from '../clipboard';
 
@@ -31,7 +32,13 @@ export function renderWall(dead: Fallen[], onClose: () => void): HTMLElement {
       list.append(
         el('div', { class: 'wall-row' }, [
           el('span', { class: 'wall-name' }, [`${person.name} ${person.byname}`]),
-          el('span', { class: 'wall-fate' }, [person.fate]),
+          // The blade rides in the FATE line rather than in a column of its
+          // own. A fourth column on a 320-wide screen is what the water mark
+          // cost the travel panel in 9.3 — 89px of height and two blessed
+          // pictures — and this row is repeated sixty times.
+          el('span', { class: 'wall-fate' }, [
+            person.blade ? `${person.fate} · bore ${person.blade}` : person.fate,
+          ]),
           el('span', { class: 'wall-day' }, [`day ${person.day}`]),
         ]),
       );
@@ -55,16 +62,41 @@ export function renderSagaBook(
   onGuide?: () => void,
 ): HTMLElement {
   const list = el('div', { class: 'saga-book' });
-  for (const entry of state.saga.slice(-120)) {
-    list.append(
-      el('p', { class: `saga-line tone-${entry.tone}` }, [
-        el('span', { class: 'saga-day' }, [`${entry.day}`]),
-        entry.text,
-      ]),
-    );
+  // Arranged by `render/chronicle.ts` — grouped into seasons, adjacent
+  // repeats folded, nothing hidden and nothing moved. See that file for why
+  // a view must not quietly edit somebody's record of their own run.
+  const blocks = chronicle(state.saga.slice(-160));
+  for (const block of blocks) {
+    list.append(el('h3', { class: 'chronicle-season' }, [block.heading]));
+    let lit = false;
+    for (const line of block.lines) {
+      const told = isTold(line.tone);
+      const parts: (Node | string)[] = [];
+      // ONE illuminated capital per season, and it goes to the first line
+      // worth telling rather than to whatever happened first — a scribe
+      // does not gild "we made camp".
+      if (told && !lit) {
+        lit = true;
+        parts.push(el('span', { class: 'saga-capital' }, [line.text.slice(0, 1)]));
+        parts.push(line.text.slice(1));
+      } else {
+        parts.push(el('span', { class: 'saga-day' }, [`${dayOfSeason(line.day)}`]));
+        parts.push(line.text);
+      }
+      // A run of identical nights, said once with its count.
+      if (line.times > 1) {
+        parts.push(el('span', { class: 'saga-times' }, [` \u00d7${line.times}`]));
+      }
+      list.append(
+        el('p', { class: `saga-line tone-${line.tone}${told ? ' told' : ' routine'}` }, parts),
+      );
+    }
   }
   const card = el('div', { class: 'card saga-card' }, [
     el('h2', {}, ['The Saga So Far']),
+    el('p', { class: 'chronicle-count' }, [
+      `${state.saga.length} entries, ${told(state.saga)} worth the telling`,
+    ]),
     list,
     ...(onGuide ? [button('How to play', onGuide, { class: 'relearn' })] : []),
     button('Back', onClose, { class: 'primary wide' }),
@@ -126,10 +158,24 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
   // lines, the roll of the dead — is inside it, said in prose, so the last
   // thing the player reads is a story about their run rather than a receipt.
   const body = el('div', { class: 'end-summary' });
+  // ONE illuminated capital for the whole ending, on the first chapter that
+  // opens with a letter — the same rule the chronicle keeps per season, and
+  // the same reason: gilding every chapter is decoration, gilding the first
+  // is a scribe starting a page. A capital drawn on a quote mark or a digit
+  // reads as a mistake, so those chapters take the plain paragraph.
+  let lit = false;
   for (const chapter of saga.chapters) {
+    const parts: (Node | string)[] = [];
+    if (!lit && /^\p{L}/u.test(chapter.text)) {
+      lit = true;
+      parts.push(el('span', { class: 'end-capital' }, [chapter.text.slice(0, 1)]));
+      parts.push(chapter.text.slice(1));
+    } else {
+      parts.push(chapter.text);
+    }
     body.append(
       el('h3', { class: 'saga-head' }, [chapter.heading]),
-      el('p', { class: 'saga-prose' }, [chapter.text]),
+      el('p', { class: 'saga-prose' }, parts),
     );
   }
   body.append(
@@ -166,7 +212,7 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
     note.replaceChildren(ok ? `Copied — ${code}` : code);
   }, { class: 'action secondary wide' });
 
-  return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
+  return el('div', { class: 'overlay end', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card end-card' }, [
       el('h2', { class: survived ? 'good' : 'grim' }, [saga.title]),
       ...verdict,

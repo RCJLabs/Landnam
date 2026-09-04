@@ -6,10 +6,11 @@
 // all you send a party, and everyone you send is somebody who is not farming,
 // cutting or standing the watch while they are away.
 
-import { distance, key, type Hex } from '../hex';
+import { daysBetween } from './route';
+import { standingAt } from './coast';
 import { stream } from '../rng';
 import type { GameState, Person, Purpose } from '../state/types';
-import { effectiveStat, living } from './people';
+import { effectiveStat, living, sworn } from './people';
 import { chronicle } from './saga';
 import { note } from './tally';
 import { atHome } from './site';
@@ -121,10 +122,10 @@ export function isOut(state: GameState, person: Person): boolean {
   return state.expedition?.members.includes(person.id) ?? false;
 }
 
-/** How far from home they have got. */
+/** How far from home they have got, in days of walking. */
 export function distanceFromHome(state: GameState): number {
   if (!state.settlement) return 0;
-  return distance(state.party.at, state.settlement.at);
+  return daysBetween(state.seed, standingAt(state), state.settlement.stop ?? 0);
 }
 
 // --- Launching ---
@@ -242,7 +243,12 @@ export function arriveHome(state: GameState): boolean {
   const out = state.expedition;
   const home = state.settlement;
   if (!out || !home) return false;
-  if (key(state.party.at) !== key(home.at)) return false;
+  // `atHome`, not a hex comparison: on a coast `home.at` and `party.at` are
+  // both the frozen landing hex, so this was TRUE from every stretch of the
+  // line — an expedition folded itself back into a steading it was twelve
+  // stretches away from. The generous direction again, which is why nothing
+  // caught it.
+  if (!atHome(state)) return false;
 
   const days = Math.max(1, state.day - out.launchedOn);
   const crew = living(state.party.people).filter((p) => out.members.includes(p.id));
@@ -297,7 +303,7 @@ export function pruneExpedition(state: GameState): void {
     delete state.expedition;
     if (state.settlement) {
       // The band's centre of gravity is the hall; nobody is out there now.
-      state.party.at = { ...state.settlement.at };
+      state.party.stop = state.settlement.stop ?? 0;
       chronicle(state, 'Nobody came back from that one.', 'grim');
     }
     return;
@@ -314,13 +320,126 @@ export function expeditionLine(state: GameState): string | undefined {
   const away = distanceFromHome(state);
   return (
     `${crew.length} out ${purposeLine(out.purpose)} · day ${days} · ` +
-    `${away} from home${out.returning ? ' · turning back' : ''}`
+    `${away}d from home${out.returning ? ' · turning back' : ''}`
   );
 }
 
 /** Where the party may step. Once turned for home, only toward it. */
-export function permittedStep(state: GameState, to: Hex): boolean {
+export function permittedStep(state: GameState, to: number): boolean {
   const out = state.expedition;
   if (!out?.returning || !state.settlement) return true;
-  return distance(to, state.settlement.at) <= distanceFromHome(state);
+  return daysBetween(state.seed, to, state.settlement.stop ?? 0) <= distanceFromHome(state);
+}
+
+/**
+ * How many sworn make a wall rather than a gaggle.
+ *
+ * FOUR, AND IT IS A CLIFF RATHER THAN A SLOPE. Measured over 32 open-field
+ * fights a cell at difficulty 2, attacking:
+ *
+ *   3 stood — won  3/32 ( 9%) against 4.0 foes
+ *   4 stood — won 23/32 (72%) against 4.0 foes
+ *   5 stood — won 22/32 (69%) against 5.0 foes
+ *   6 stood — won 17/32 (53%) against 6.0 foes
+ *
+ * Three is half a shield wall walking into a fight. Four is a wall. And past
+ * four it gets WORSE rather than better, because `foeCount` scales what comes
+ * out to meet you with what you brought — six of yours meets six of theirs,
+ * and the wall bonus is already full.
+ */
+export const WALL_ENOUGH = 4;
+
+/**
+ * What the party being picked is worth as a fighting force.
+ *
+ * THE NUMBER THAT DECIDED EVERYTHING AND WAS NEVER SHOWN (9.15). Party size
+ * is chosen here, at the launch card, and until now its consequence appeared
+ * only at the camp — as `fallOnReport`'s bare "four of ours against four of
+ * theirs", which does not carry the cliff at all: four against four wins 72%
+ * and six against six wins 53%, so equal numbers are not equal odds.
+ *
+ * Counted in SWORN, because hands are mouths and bodies round the fire and
+ * are kept off the field entirely. Shown whatever the errand's purpose: the
+ * camp is on the only road there is, and the fault this is for was a TRADING
+ * party of two walking past one.
+ */
+export interface WallReading {
+  /** Sworn among those going. */
+  sworn: number;
+  /** Whether they are short of a wall. */
+  thin: boolean;
+  /** What that is worth, in the panel's voice. */
+  line: string;
+  /** What raiding as a strategy costs, for a raid and only a raid. */
+  record?: string;
+}
+
+/**
+ * What going out under arms has actually cost, for the card to say.
+ *
+ * 11.M2. THE RECORD, AS THE OTHER TWO DOORS OUT ALREADY CARRY ONE
+ * (`VOYAGE_RECORD` above, `ABANDON_RECORD` in data/retreat.ts). Raiding was
+ * the third verb this project had measured a negative price for and the only
+ * one whose card said nothing about it — a raid party stood shoulder to
+ * shoulder, read a fight it could win, and the card never said that winning
+ * fights and surviving the saga are different questions.
+ *
+ * MEASURED (`PROBE: 10.3`, re-taken 2026-09-03 rather than inherited — 10.1's
+ * original reading was three commits and two balance changes old by the time
+ * this item reached it, 11.S1's deployment fix and 11.V's verdict fix both
+ * touch survival directly). ONE knob on the settler, raiding turned on and
+ * nothing else changed — same crew, same site rule, same trading, same
+ * seeds, 200 landings, paired:
+ *
+ *   raiding off   29/200 standing, avg day 150
+ *   raiding on    16/200 standing, avg day 119
+ *   paired — saved 7, killed 20
+ *
+ * Down from the item's own opening figure (saved 9, killed 22) but the same
+ * shape and the same conclusion: raiding kills roughly three bands for every
+ * one it saves. `PROBE: 10.3b` ruled out the obvious objections — a war crew
+ * recovers some of it (saved 13, killed 9 against raiding-with-the-settler's-
+ * crew) but not the gap to a band that never raids at all, and RAIDER's own
+ * `relaxFrom` is a dead knob at this site floor (saved 0, killed 0).
+ *
+ * States it, never refuses — same rule as `VOYAGE_RECORD` and
+ * `ABANDON_RECORD`: the game does not tell the player what to do anywhere
+ * else, and a band with a wrong worth avenging is entitled to go and be
+ * wrong.
+ */
+export const RAID_RECORD =
+  'Of the bands that went out under arms, more died for it than were saved '
+  + 'by it — about three for every one it spared. Winning the fight and '
+  + 'surviving the saga are not the same question.';
+
+export function wallReading(state: GameState, going: string[], purpose?: Purpose): WallReading {
+  // Through `sworn()` rather than filtering on the bond here, so the cap it
+  // applies is applied once: a save that somehow holds more than SWORN_MAX
+  // must not be able to field a wider wall on this card than on the field.
+  const count = sworn(state.party.people).filter((p) => going.includes(p.id)).length;
+  const record = purpose === 'raid' ? RAID_RECORD : undefined;
+  if (count === 0) {
+    return {
+      sworn: 0,
+      thin: true,
+      line: 'Nobody going is sworn. They cannot hold a line if anything meets them.',
+      record,
+    };
+  }
+  if (count < WALL_ENOUGH) {
+    return {
+      sworn: count,
+      thin: true,
+      line: `${count} sworn is half a wall — about one open fight in ten goes their way. `
+        + `${WALL_ENOUGH} stand shoulder to shoulder.`,
+      record,
+    };
+  }
+  return {
+    sworn: count,
+    thin: false,
+    line: `${count} sworn stand shoulder to shoulder — about seven open fights in ten. `
+      + 'More than four only brings more of them out to meet you.',
+    record,
+  };
 }

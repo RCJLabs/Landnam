@@ -12,19 +12,19 @@
 //   3. It is the same saga every time, for the same finished run — otherwise
 //      shipping the seed with it means nothing.
 
+import { settled as settleSomewhere } from './fixtures/settle';
+import { goHome, standBeside } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
-import { moveOptions } from '../src/sim/road';
+import { walkOptions } from '../src/sim/coast';
 import { learn } from '../src/sim/lore';
-import { bargain, fallOn, seeNeighbours } from '../src/sim/neighbours';
+import { bargain, fallOn, neighboursCallOn, seeNeighbours } from '../src/sim/neighbours';
 import { note, tallyOf, emptyTally } from '../src/sim/tally';
 import { startRaid } from '../src/sim/battleTurn';
 import { composeSaga, sagaText } from '../src/sim/sagagen';
@@ -35,25 +35,8 @@ import type { JobId } from '../src/data/jobs';
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
 function settled(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    if (distance(at, landing) > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
@@ -61,14 +44,27 @@ function settled(seed: string, radius = 14): GameState {
   state.party.firewood = 120;
   state.day = 40;
   seeNeighbours(state);
+  // AND LET THEM CALL. `seeNeighbours` is the hex map's path to knowing
+  // somebody — the fog has been lifted over their ground, so the band has
+  // laid eyes on it — and on a line that path is the narrow one: you have to
+  // be standing where they live. A band sitting in its own hall meets nobody
+  // that way, so every chapter about neighbours dropped out of a coast saga.
+  //
+  // `neighboursCallOn` is the direction the fiction always ran in and the one
+  // the line actually uses: a hall going up on an empty strand is the most
+  // interesting news on that coast. One caller per `CLAN_CALLS_EVERY` days
+  // since the posts went in, so this asks until it stops answering.
+  for (let i = 0; i < state.neighbours.length; i += 1) neighboursCallOn(state);
   return state;
 }
 
 /** A finished run with something behind every chapter. */
 function fullRun(seed: string): GameState {
   const state = settled(seed);
-  state.world.trod[`${state.party.at.q},${state.party.at.r}`] = 1;
-  for (const k of Object.keys(state.world.tiles).slice(0, 20)) state.world.trod[k] = 3;
+  // A coast with some of it behind them: the saga's country line counts the
+  // stretches walked, so a run that never moved has nothing to say about it.
+  state.world.trodStops = { [String(state.party.stop ?? 0)]: 1 };
+  for (let stop = 0; stop < 20; stop += 1) state.world.trodStops[String(stop)] = 3;
 
   queueBuild(state, 'longhouse');
   state.settlement!.works = 999;
@@ -87,10 +83,10 @@ function fullRun(seed: string): GameState {
 
   const first = state.neighbours[0];
   if (first) {
-    state.party.at = { ...first.at };
+    standBeside(state, first);
     state.party.food = 200;
     bargain(state, first.id);
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
   }
 
   const victim = state.party.people[1]!;
@@ -240,9 +236,9 @@ describe('THE BAR — it says what happened, and only that', () => {
     // The deed has to happen while the run is still running.
     const ending = raider.end!;
     delete raider.end;
-    raider.party.at = { ...target.at };
+    standBeside(raider, target);
     expect(fallOn(raider, target.id)).not.toBeNull();
-    raider.party.at = { ...raider.settlement!.at };
+    goHome(raider);
     raider.end = ending;
 
     expect(text(raider)).not.toBe(text(peaceful));
@@ -257,7 +253,7 @@ describe('the tally', () => {
     expect(tallyOf(state)).toEqual(emptyTally());
 
     const target = state.neighbours[0]!;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     state.party.food = 200;
     bargain(state, target.id);
     expect(tallyOf(state).bargains).toBe(1);
@@ -334,9 +330,9 @@ describe('the shareable form', () => {
       }
       s.party.food = 200;
       s.party.firewood = 200;
-      const options = moveOptions(s);
+      const options = walkOptions(s);
       s = options[i % options.length]
-        ? apply(s, { type: 'MOVE', to: options[i % options.length]! })
+        ? apply(s, { type: 'WALK', to: options[i % options.length]! })
         : apply(s, { type: 'CAMP' });
     }
     if (!s.end) s.end = { cause: 'survived', title: 'They Lived', lines: [] };
@@ -345,5 +341,101 @@ describe('the shareable form', () => {
     console.log(`\n${whole}\n`);
     expect(whole).not.toMatch(/[{}]/);
     expect(whole).toContain(s.world.landingName);
+  });
+});
+
+// 9.10: the other landnám reaches the ending.
+//
+// He was real in every run and vanished at the retelling. The strip map has
+// marked his hall and his fences for a while, but every one of those marks is
+// gated on `rival.met`, and the harness puts that at 32% of sagas — so for two
+// runs in three he was one line on day nine and then silence.
+describe('the other landnám', () => {
+  /** A run with a rival who has taken ground, met or not. */
+  function withRival(seed: string, opts: { met?: boolean; metOn?: number; claims?: number[] } = {}) {
+    const state = settled(seed);
+    state.rival = {
+      leader: 'Thorvald the Lame',
+      hall: 'Grimsted',
+      stop: 12,
+      claimStops: opts.claims ?? [12],
+      lastClaim: 9,
+      met: opts.met ?? false,
+      ...(opts.metOn !== undefined ? { metOn: opts.metOn } : {}),
+      told: true,
+    };
+    return state;
+  }
+
+  const chapter = (state: GameState) =>
+    composeSaga(state).chapters.find((c) => c.heading === 'The Other Landnám');
+
+  it('tells the run that never found him that he was there', () => {
+    const c = chapter(withRival('rival-unmet'));
+    expect(c, 'the chapter was left out entirely').toBeDefined();
+    expect(c!.text).toContain('Grimsted');
+    expect(c!.text).toContain('Thorvald the Lame');
+    // The distinction the whole chapter exists to make.
+    expect(c!.text.toLowerCase()).toMatch(/never/);
+  });
+
+  it('tells the run that stood in sight of him a different story', () => {
+    const unmet = chapter(withRival('rival-both'))!.text;
+    const met = chapter(withRival('rival-both', { met: true }))!.text;
+    expect(met).not.toBe(unmet);
+    expect(met.toLowerCase()).not.toMatch(/never stood close enough/);
+  });
+
+  it('names the day sight fell on him, when the save remembers it', () => {
+    const c = chapter(withRival('rival-day', { met: true, metOn: 45 }));
+    expect(c!.text).toContain('day 45');
+  });
+
+  it('says nothing about the day when the save does not know it', () => {
+    // An old save has `met` with no `metOn`. A guessed date is a small lie in
+    // the one place the run gets retold, so the sentence is simply absent —
+    // and this is the assertion that keeps it absent.
+    const c = chapter(withRival('rival-noday', { met: true }));
+    expect(c!.text).not.toMatch(/\bday \d+/);
+  });
+
+  it('counts the coast only once his hand has closed on something', () => {
+    // One claim is where he starts, not a land-taking worth a sentence.
+    const one = chapter(withRival('rival-one', { claims: [12] }))!.text;
+    const many = chapter(withRival('rival-many', { claims: [10, 11, 12, 13] }))!.text;
+    expect(one).not.toMatch(/stretches/);
+    expect(many).toMatch(/4 stretches/);
+  });
+
+  it('says he fenced ground we had walked, and only when he did', () => {
+    const away = withRival('rival-away', { claims: [10, 11, 12] });
+    away.world.trodStops = { '0': 1, '1': 2 };
+    const onto = withRival('rival-onto', { claims: [10, 11, 12] });
+    onto.world.trodStops = { '0': 1, '11': 2 };
+    expect(chapter(away)!.text.toLowerCase()).not.toMatch(/ground they had walked/);
+    expect(chapter(onto)!.text.toLowerCase()).toMatch(/ground they had walked/);
+  });
+
+  it('is left out entirely when there is no other boat', () => {
+    const none = settled('rival-none');
+    none.rival = undefined;
+    expect(chapter(none)).toBeUndefined();
+  });
+
+  it('says nothing about him to a band that died before word reached them', () => {
+    // `rivalDay` tells the band on day nine. A saga that ends sooner never
+    // heard of him, and this file's second rule is that it never claims what
+    // did not happen — so the chapter is gated on `told`, not on his
+    // existence. Found by looking at a blessed picture of an eleven-day run.
+    const early = withRival('rival-early');
+    early.rival!.told = false;
+    expect(chapter(early)).toBeUndefined();
+  });
+
+  it('leaves no unfilled token, met or unmet', () => {
+    for (const opts of [{}, { met: true }, { met: true, metOn: 3 }]) {
+      const c = chapter(withRival('rival-tokens', opts))!;
+      expect(c.text, `unfilled token in ${JSON.stringify(opts)}`).not.toMatch(/\{\w+\}/);
+    }
   });
 });

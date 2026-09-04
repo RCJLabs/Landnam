@@ -2,8 +2,8 @@
 // so the centre of this file runs the same raid on the same steading with and
 // against without one, and weighs the difference against what it cost.
 
+import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, key, offsetToAxial } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
@@ -12,12 +12,10 @@ import { EVENTS } from '../src/data/events';
 import { buildingById } from '../src/data/buildings';
 import { apply } from '../src/sim/actions';
 import { isEligible } from '../src/sim/events';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, standing as builtIn } from '../src/sim/colony';
-import { activeCombatant, standing } from '../src/sim/battle';
+import { activeCombatant, standing, strikeTargets } from '../src/sim/battle';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
 import { throwTargets } from '../src/sim/strike';
-import { reachWithZoc } from '../src/sim/zoc';
 import { fighterPerson } from '../src/sim/battle';
 import {
   FIELD_HEIGHT,
@@ -30,12 +28,22 @@ import {
   pickRaidField,
   steadingFieldFrom,
   widestStand,
+  cell,
 } from '../src/sim/battlefield';
 import { RAID_FIELDS } from '../src/data/raidFields';
 import { MAX_RAIDERS_FAMED } from '../src/sim/battle';
 import { SWORN_MAX } from '../src/sim/people';
 import { makeRng } from '../src/rng';
-import { raidDifficulty, RAID_EARLIEST_DAY, SACK_SHARE, sackSteading } from '../src/sim/raid';
+import {
+  RAID_EARLIEST_DAY,
+  SACK_SHARE,
+  WALL_HOLDS_WITH,
+  WALL_HOLDS_WITHOUT,
+  raidDifficulty,
+  sackSteading,
+  wallMark,
+  wallWorthLine,
+} from '../src/sim/raid';
 import { living } from '../src/sim/people';
 import type { GameState } from '../src/state/types';
 import type { JobId } from '../src/data/jobs';
@@ -43,35 +51,10 @@ import type { JobId } from '../src/data/jobs';
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
 /** Offset row of an axial hex, matching offsetToAxial in the hex library. */
-function offsetRow(at: { q: number; r: number }): number {
-  return at.r;
-}
 
 function settled(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    const gap =
-      (Math.abs(at.q - landing.q) +
-        Math.abs(at.r - landing.r) +
-        Math.abs(at.q + at.r - landing.q - landing.r)) /
-      2;
-    if (gap > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
@@ -109,7 +92,7 @@ function defend(state: GameState): GameState {
       continue;
     }
     const foes = standing(battle, 'foe');
-    const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+    const adjacent = strikeTargets(cur);
     if (!active.hasActed && adjacent.length > 0) {
       const weakest = [...adjacent].sort(
         (a, b) =>
@@ -127,22 +110,13 @@ function defend(state: GameState): GameState {
     }
     // Hold: keep shoulder to shoulder in the yard rather than charging out
     // past the wall, which is the whole point of having one.
-    const reach = [...reachWithZoc(battle, active).keys()].map((k) => fromKey(k));
-    if (reach.length > 0 && foes.length > 0) {
-      const score = (at: { q: number; r: number }) => {
-        const mates = standing(battle, 'warband').filter(
-          (c) => c.personId !== active.personId && distance(c.at, at) === 1,
-        ).length;
-        const gap = Math.min(...foes.map((f) => distance(at, f.at)));
-        // Hold the yard. Climbing out over your own palisade to meet them in
-        // the open throws away the only thing it was built for, so the bot
-        // will not do it — and neither should a player.
-        const outside = battle.raid && offsetRow(at) < WALL_ROW + 1 ? 40 : 0;
-        return -Math.max(gap, 2) * 3 + Math.min(mates, 2) * 4 - outside;
-      };
-      const best = [...reach].sort((a, b) => score(b) - score(a))[0]!;
-      const moved = apply(cur, { type: 'B_MOVE', to: best });
-      cur = moved === cur ? apply(cur, { type: 'B_END_TURN' }) : moved;
+    if (foes.length > 0) {
+      // The bot used to score ground: stay near your mates, keep a gap, and
+      // above all do not climb out over your own palisade. On a line none of
+      // that is a choice about WHERE to stand, and since 9.1b it is not a
+      // choice at all — the line shoulders forward by itself, and the
+      // palisade rule is carried by the line rather than by refusing a row.
+      cur = apply(cur, { type: 'B_END_TURN' });
       continue;
     }
     cur = apply(cur, { type: 'B_END_TURN' });
@@ -158,17 +132,35 @@ describe('the steading under attack', () => {
     startRaid(state, 0);
     const battle = state.battle!;
     expect(battle.raid).toBe(true);
-    expect(battle.width).toBe(FIELD_WIDTH);
-    expect(battle.height).toBe(FIELD_HEIGHT);
+    // The ground is a rectangle of the field's own size.
+    //
+    // This replaces `battle.width === FIELD_WIDTH`, read off a battle that
+    // was ASSIGNED FIELD_WIDTH a line after it was generated — the constant
+    // compared with itself, the shape of a check that cannot fail.
+    //
+    // What the replacement is worth, stated rather than assumed, because
+    // three sabotages were run at it and only one landed: it catches
+    // `blankField` handing back the wrong number of cells. It does NOT catch
+    // a build loop that skips rows, and it does not catch a SHORT
+    // `blankField` — the first because every cell is pre-filled 'open', the
+    // second because writing the last index grows the array back. So the
+    // rectangle's size is really guaranteed by `blankField` alone, and this
+    // watches that one thing. A narrow check that is known to be narrow beats
+    // the wide one that was here and checked nothing.
+    expect(battle.grid.length).toBe(FIELD_WIDTH * FIELD_HEIGHT);
 
-    // The hall stands in the yard and cannot be walked through. Authored
-    // fields place it where they like along the yard row; there is exactly
-    // one, and nobody deploys inside it.
+    // The hall stands in the yard. Authored fields place it where they like
+    // along the yard row and there is exactly one of it.
+    //
+    // "...and nobody deploys inside it" used to be checked here and cannot
+    // be any more: since 8.1d nobody deploys anywhere, because a fighter's
+    // place is his rank. The grid survives only to say whether the stakes
+    // were up (see `atThePalisade`), and since 8.5 it is a plain rectangle
+    // rather than a hex lattice.
     const yardBlocks = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-      offsetToAxial(col, FIELD_HEIGHT - 1),
-    ).filter((h) => battle.grid[key(h)]!.ground === 'block');
+      cell(col, FIELD_HEIGHT - 1),
+    ).filter((i) => battle.grid[i]!.ground === 'block');
     expect(yardBlocks).toHaveLength(1);
-    expect(battle.combatants.some((c) => key(c.at) === key(yardBlocks[0]!))).toBe(false);
   });
 
   it('raises the palisade only if one was built, with a gate in it', () => {
@@ -179,7 +171,7 @@ describe('the steading under attack', () => {
 
     const wallRow = (state: GameState) =>
       Array.from({ length: FIELD_WIDTH }, (_, col) =>
-        state.battle!.grid[key(offsetToAxial(col, WALL_ROW))]!.ground,
+        state.battle!.grid[cell(col, WALL_ROW)]!.ground,
       );
 
     // Authored fields may end the wall against water or trees, so the line
@@ -257,15 +249,14 @@ describe('content lint: raid fields', () => {
         const { grid, warbandSpots, foeSpots } = steadingFieldFrom(field, palisade);
 
         // Room for the biggest raid the game can send, and for six sworn.
-        const passableAt = (h: { q: number; r: number }) =>
-          isPassable(grid[key(h)]?.ground ?? 'block');
+        const passableAt = (i: number) => isPassable(grid[i]?.ground ?? 'block');
         expect(foeSpots.filter(passableAt).length, label).toBeGreaterThanOrEqual(MAX_RAIDERS_FAMED);
         expect(warbandSpots.filter(passableAt).length, label).toBeGreaterThanOrEqual(SWORN_MAX);
 
         // A way in that needs no climbing: some column runs clear from the
         // raiders' edge through the wall line.
         const lane = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-          Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[key(offsetToAxial(col, row))]!.ground)
+          Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[cell(col, row)]!.ground)
             .every((g) => g !== 'wall' && isPassable(g)),
         );
         expect(lane.some(Boolean), `${label}: no gate lane`).toBe(true);
@@ -274,7 +265,7 @@ describe('content lint: raid fields', () => {
         const widest = Math.max(...MIDDLE_ROWS.map((row) => widestStand(grid, row)));
         expect(widest, `${label}: nowhere to form up`).toBeGreaterThanOrEqual(FRONT_WIDTH);
         const crossable = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-          MIDDLE_ROWS.every((row) => isPassable(grid[key(offsetToAxial(col, row))]!.ground)),
+          MIDDLE_ROWS.every((row) => isPassable(grid[cell(col, row)]!.ground)),
         );
         expect(crossable.some(Boolean), `${label}: cannot be crossed`).toBe(true);
       }
@@ -308,7 +299,7 @@ describe('content lint: raid fields', () => {
       // Some column runs from the raiders' edge to the wall row without a
       // climb, or the gate is not actually the fast way in.
       const clear = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-        Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[key(offsetToAxial(col, row))]!.ground)
+        Array.from({ length: WALL_ROW + 1 }, (_, row) => grid[cell(col, row)]!.ground)
           .every((g) => g !== 'wall' && isPassable(g)),
       );
       expect(clear.some(Boolean), `${seed}: no gate lane`).toBe(true);
@@ -416,13 +407,102 @@ describe('a sacked steading', () => {
   });
 
   it('takes the burned building\'s shelter with it', () => {
+    // THE SUBJECT USED TO BE THE LONGHOUSE, and that made this file assert
+    // two opposite things: the test above says the longhouse survives a
+    // sacking, and this one said a lone longhouse burns — because
+    // `sackSteading` fell back to `home.built[0]` when it had nothing else
+    // to fire, undoing the rule its own comment stated two lines earlier.
+    // Raids were rare enough that no steading was ever stripped to its roof,
+    // so nothing noticed until autumn became a reckoning.
+    //
+    // The claim here is about SHELTER following the building that burns, so
+    // it is made on a building that can actually burn.
     const state = settled('burn-shelter');
-    state.settlement!.built.push('longhouse');
-    state.settlement!.shelter = 3;
-    sackSteading(state);
+    state.settlement!.built = ['bud'];
+    const roof = buildingById('bud')!.shelter ?? 0;
+    expect(roof).toBeGreaterThan(0);
+    state.settlement!.shelter = roof + 2;
+    const sack = sackSteading(state);
+    // The drop is what burned, not a number that happened to match.
+    expect(sack.burned).toBe('bud');
     expect(state.settlement!.built).toHaveLength(0);
-    expect(state.settlement!.shelter).toBe(0);
+    expect(state.settlement!.shelter).toBe(2);
     expect(builtIn(state.settlement!)).toHaveLength(0);
+  });
+
+  // THE WALL IS WHAT SPARES THE MEAD HALL (Evan's ruling, 2026-08-30). The
+  // Thing has to be called in one, so burning it is a locked door rather than
+  // a loss — and a wall is what shuts raiders out of it. Sparing it outright
+  // gave back the whole of the pressure autumn was built to add; sparing it
+  // behind a palisade keeps both, and makes the wall guard the run's ending
+  // rather than only its grain.
+  it('fires the mead hall of a band that never walled up', () => {
+    const state = settled('burn-open');
+    state.settlement!.built = ['longhouse', 'meadhall'];
+    state.party.food = 200;
+    const sack = sackSteading(state);
+    expect(sack.burned).toBe('meadhall');
+    expect(state.settlement!.built).toEqual(['longhouse']);
+  });
+
+  it('leaves the mead hall of a band that did, and its roof with it', () => {
+    // The palisade is the only other thing standing, so if the hall were
+    // burnable it would be one of two picks and this would flake rather than
+    // fail. It is asserted over four seeds for that reason.
+    for (const seed of ['walled-a', 'walled-b', 'walled-c', 'walled-d']) {
+      const state = settled(seed);
+      state.settlement!.built = ['longhouse', 'meadhall', 'palisade'];
+      state.party.food = 200;
+      const sack = sackSteading(state);
+      expect(sack.burned).not.toBe('meadhall');
+      expect(state.settlement!.built).toContain('meadhall');
+      expect(state.settlement!.built).toContain('longhouse');
+    }
+  });
+
+  it('counts the earthworks as the wall, because they replace the palisade', () => {
+    // The bug this is here for is `built.includes('palisade')`, which an
+    // upgrade makes false — a band that improved its wall would lose the
+    // protection the wall bought. data/buildings.ts warns about exactly this.
+    for (const seed of ['dug-a', 'dug-b', 'dug-c', 'dug-d']) {
+      const state = settled(seed);
+      state.settlement!.built = ['longhouse', 'meadhall', 'earthworks'];
+      state.party.food = 200;
+      const sack = sackSteading(state);
+      expect(sack.burned).not.toBe('meadhall');
+      expect(state.settlement!.built).toContain('meadhall');
+    }
+  });
+
+  it('leaves a band standing when there is nothing it may fire', () => {
+    // Nothing to fire but the roof, so nothing is fired. The stores and the
+    // people still go: a sacking is a loss, and never a band left in a field.
+    const state = settled('burn-nothing');
+    state.settlement!.built = ['greathall'];
+    state.party.food = 200;
+    const sack = sackSteading(state);
+    expect(sack.burned).toBeUndefined();
+    expect(state.settlement!.built).toEqual(['greathall']);
+    expect(sack.food).toBeGreaterThan(0);
+  });
+
+  it('can fire the wall itself, so what it buys is this autumn and not every one', () => {
+    // THE CONSEQUENCE OF MAKING THE WALL THE ANSWER, stated rather than left
+    // to be discovered. A palisade is not on the spared list — it never was —
+    // so a walled band with nothing else to lose has its wall fired, and the
+    // autumn after that the hall is open. That is the shape the ruling wants:
+    // they come through the wall first and the hall second, and a wall is a
+    // thing you keep rather than a thing you built once.
+    const state = settled('burn-wall');
+    state.settlement!.built = ['longhouse', 'meadhall', 'palisade'];
+    state.party.food = 200;
+    const first = sackSteading(state);
+    expect(first.burned).toBe('palisade');
+    expect(state.settlement!.built).toContain('meadhall');
+
+    state.day += 40;
+    const second = sackSteading(state);
+    expect(second.burned).toBe('meadhall');
   });
 
   it('losing a raid sacks the steading, and losing a field fight does not', () => {
@@ -437,9 +517,7 @@ describe('a sacked steading', () => {
     const fieldBuilt = field.settlement!.built.length;
     const foodBefore = field.party.food;
     // A plain fight, away from the steading and with nothing of it at stake.
-    field.party.at = { q: field.settlement!.at.q + 4, r: field.settlement!.at.r };
-    const fought = apply(field, { type: 'MOVE', to: field.party.at });
-    void fought;
+    field.party.stop = (field.settlement!.stop ?? 0) + 4;
     startBattle(field, 'meadow', 0);
     field.battle!.outcome = 'lost';
     const afterField = apply(field, { type: 'B_LEAVE' });
@@ -483,7 +561,7 @@ describe('raids arrive', () => {
 
     // And since 4.2, a hall whose warriors are three days out is exactly the
     // one worth coming for — that is the cost of sending them.
-    home.party.at = { q: home.settlement!.at.q + 3, r: home.settlement!.at.r };
+    home.party.stop = (home.settlement!.stop ?? 0) + 3;
     expect(raidCards.some((def) => isEligible(home, def))).toBe(true);
   });
 
@@ -525,5 +603,88 @@ describe('raids arrive', () => {
     const { save } = migrate({ version: 9, battle: { terrain: 'meadow' } });
     expect(save['version']).toBe(SAVE_VERSION);
     expect((save['battle'] as { raid?: boolean }).raid).toBeUndefined();
+  });
+});
+
+// The mark that makes the ruling fair. See wallMark in sim/raid.ts.
+describe('the panel says whether the hall stands open', () => {
+  it('says nothing to a band that has not raised a mead hall', () => {
+    const state = settled('mark-none');
+    state.settlement!.built = ['longhouse', 'palisade'];
+    expect(wallMark(state)).toBeNull();
+  });
+
+  it('says nothing to a band with no steading at all', () => {
+    const state = settled('mark-landless');
+    state.settlement = undefined;
+    expect(wallMark(state)).toBeNull();
+  });
+
+  it('warns the moment the hall goes up unwalled', () => {
+    const state = settled('mark-open');
+    state.settlement!.built = ['longhouse', 'meadhall'];
+    const mark = wallMark(state)!;
+    expect(mark.open).toBe(true);
+    expect(mark.head).toBe('The mead hall stands open');
+    // It must name BOTH stakes, because either alone understates it: the
+    // building burns, and the run's ending goes with it.
+    expect(mark.gap).toMatch(/fire it/);
+    expect(mark.gap).toMatch(/Thing/);
+  });
+
+  it('stops warning once the wall is up, at either tier', () => {
+    for (const wall of ['palisade', 'earthworks'] as const) {
+      const state = settled(`mark-${wall}`);
+      state.settlement!.built = ['longhouse', 'meadhall', wall];
+      const mark = wallMark(state)!;
+      expect(mark.open).toBe(false);
+      expect(mark.head).toBe('The wall is between them and the hall');
+    }
+  });
+
+  it('agrees with the sack itself, which is the whole point of it', () => {
+    // The bug this catches is a panel that decides on its own terms and
+    // drifts from `sackSteading`. Asserted by actually sacking the steading.
+    for (const built of [
+      ['longhouse', 'meadhall'],
+      ['longhouse', 'meadhall', 'palisade'],
+      ['longhouse', 'meadhall', 'earthworks'],
+    ]) {
+      const state = settled(`agree-${built.length}-${built[2] ?? 'open'}`);
+      state.settlement!.built = [...built];
+      state.party.food = 200;
+      const open = wallMark(state)!.open;
+      const sack = sackSteading(state);
+      expect(state.settlement!.built.includes('meadhall')).toBe(!open);
+      if (open) expect(sack.burned).toBe('meadhall');
+    }
+  });
+});
+
+// 9.4: the panel names the size of the reason, not only its absence.
+describe('the watch panel says what a wall is worth', () => {
+  it('names both numbers, so the player can weigh them', () => {
+    const line = wallWorthLine();
+    expect(line).toContain(String(WALL_HOLDS_WITH));
+    expect(line).toContain(String(WALL_HOLDS_WITHOUT));
+    // It still says what it used to say — the row is the one an unwalled
+    // band already sees, and the old words are what made it legible.
+    expect(line).toContain('no wall, no watch');
+  });
+
+  it('keeps the pair the arena actually measured', () => {
+    // Pinned to the literals, not to each other. Written as `WITH > WITHOUT`
+    // this passes at any pair, which is the tautology the party-size claim
+    // shipped with earlier today. These are the numbers in
+    // test/wall.test.ts — six men defending a steading at difficulty 2, 32
+    // fights a cell — and a change has to come here and say why.
+    expect(WALL_HOLDS_WITHOUT).toBe(47);
+    expect(WALL_HOLDS_WITH).toBe(91);
+  });
+
+  it('never sells the wall as worth less than it is', () => {
+    // The failure this guards is a well-meaning softening: the whole point
+    // of the line is that the swing is the largest in the game.
+    expect(WALL_HOLDS_WITH - WALL_HOLDS_WITHOUT).toBeGreaterThanOrEqual(40);
   });
 });

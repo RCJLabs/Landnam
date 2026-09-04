@@ -13,6 +13,7 @@ import {
   buildBlocker,
   capacity,
   crowding,
+  hearthMark,
   buildProgress,
   dayLabour,
   idlers,
@@ -20,20 +21,19 @@ import {
   offerable,
   output,
   underway,
-  type BlockReason,
-} from '../sim/colony';
-import { pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
+  type BlockReason, standsFor } from '../sim/colony';
+import { buildWorthLine, pressureLine, readNeeds, suggestedBuild, worstNeed } from '../sim/needs';
 import { CROWDING_BITE } from '../sim/minds';
+import { wallMark } from '../sim/raid';
 import { foodPerDay } from '../sim/upkeep';
-import { abandonBlocker, ABANDON_REASON } from '../sim/retreat';
-import { ABANDON_HEART } from '../data/retreat';
-import { HALF_RATION_HEART } from '../data/rations';
+import { leaveNote } from '../sim/retreat';
+import { HALF_RATION_HEART, tighteningWorth } from '../data/rations';
 import { forecast } from '../sim/winter';
 import { sickCount } from '../sim/cold';
 import { reachable, readiness } from '../sim/reach';
 import { counsel, counselLine } from '../sim/counsel';
 import { effectiveStat, living } from '../sim/people';
-import { plotTally } from './colony';
+import { plotTally } from '../sim/colony';
 import type { Dispatch } from './ui';
 import { button, el } from './svg';
 
@@ -90,9 +90,17 @@ const BLOCK_WORD: Record<BlockReason, string> = {
  */
 function blockWord(state: GameState, building: BuildingDef, reason: BlockReason): string {
   if (reason !== 'after') return BLOCK_WORD[reason];
-  const missing = (building.after ?? []).find(
-    (id) => !state.settlement?.built.includes(id),
-  );
+  // `standsFor`, NOT `built.includes` — the EXPLANATION has to ask the same
+  // question as the GATE. `buildBlocker` answers 'after' when `standsFor` is
+  // false, so a panel searching `built` can name a prerequisite the gate is
+  // perfectly happy with: a band with a great hof has no 'hof' in `built`,
+  // and would have been told it needs one.
+  //
+  // Unreachable today only because every `after` list happens to hold one id
+  // — if the one is satisfied, the gate never says 'after' and this never
+  // runs. That is precisely how the watchtower bug hid for a whole tier (see
+  // sim/colony.ts), so it is fixed as a class rather than waited for.
+  const missing = (building.after ?? []).find((id) => !standsFor(state, id));
   const name = missing ? buildingById(missing)?.name : undefined;
   return name ? `needs a ${name.toLowerCase()} first` : BLOCK_WORD.after;
 }
@@ -132,6 +140,50 @@ export function renderRoom(state: GameState): HTMLElement {
 }
 
 /**
+ * What the hall is paying, and how long since anybody fed it.
+ *
+ * The rule in sim/hall.ts takes up to seven heart a day off a big steading
+ * that has not held a feast, and a penalty the player cannot see is not
+ * difficulty — it is bad luck with a bill attached. That is the same argument
+ * the crowding mark above was written for, stated in the same shape. All the
+ * arithmetic and every word of it is `hearthMark`; this only sets it out.
+ */
+export function renderHearth(state: GameState): HTMLElement {
+  const mark = hearthMark(state);
+  if (!mark) return el('div');
+
+  return el('div', { class: `room-mark${mark.due ? ' short' : ''}` }, [
+    el('div', { class: 'mark-head' }, [mark.head]),
+    el('div', { class: 'mark-row' }, [
+      el('span', { class: 'mark-name' }, ['Since the feast']),
+      el('span', { class: 'mark-value' }, [`${mark.since} ${mark.since === 1 ? 'day' : 'days'}`]),
+      el('span', { class: 'mark-gap' }, [mark.gap]),
+    ]),
+  ]);
+}
+
+/**
+ * Whether the mead hall is standing open to a torch.
+ *
+ * Same argument as the hearth mark above, and the same shape. All the words
+ * are `wallMark`, in the file that owns the rule, so the panel and the raid
+ * cannot come to different conclusions about the same wall.
+ */
+export function renderWall(state: GameState): HTMLElement {
+  const mark = wallMark(state);
+  if (!mark) return el('div');
+
+  return el('div', { class: `room-mark${mark.open ? ' short' : ''}` }, [
+    el('div', { class: 'mark-head' }, [mark.head]),
+    el('div', { class: 'mark-row' }, [
+      el('span', { class: 'mark-name' }, ['The mead hall']),
+      el('span', { class: 'mark-value' }, [mark.open ? 'unwalled' : 'behind the wall']),
+      el('span', { class: 'mark-gap' }, [mark.gap]),
+    ]),
+  ]);
+}
+
+/**
  * Short commons — the winter lever, and the one thing a band can DO once the
  * frost is down.
  *
@@ -154,7 +206,14 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
       el('span', { class: 'mark-name' }, ['The larder']),
       el('span', { class: 'mark-value' }, [`${mouths} a day`]),
       el('span', { class: 'mark-gap' }, [
-        half ? `${HALF_RATION_HEART} off every heart` : 'nobody goes short',
+        // WORTH, NOT ONLY PRICE (9.7). On full shares this said "nobody goes
+        // short", which is reassurance on the one screen where tightening is
+        // the largest thing the player can do — measured at 22 bands saved in
+        // 120 against 1 lost. Said only when the larder will not reach spring,
+        // so it is a fact about THIS winter and not a standing lecture.
+        half
+          ? `${HALF_RATION_HEART} off every heart`
+          : forecast(state).foodGap < 0 ? tighteningWorth() : 'nobody goes short',
       ]),
     ]),
     button(
@@ -170,28 +229,35 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
  * The door out, and it is deliberately the quietest control on the panel.
  *
  * Walking out measured at saved nobody and killed eleven over 120 paired
- * landings — see src/data/retreat.ts. So it is offered rather than urged: no
- * primary styling, the cost written on the face of it, and a refusal that
- * says WHICH rule is refusing rather than going grey with no explanation. A
- * player who wants to leave can leave; nothing here suggests they should.
+ * landings, and 9.14 then swept the one case it had been shipped for — off
+ * bad ground, early, before the summer is spent — and found it worse at every
+ * threshold: see src/data/retreat.ts. So it is offered rather than urged: no
+ * primary styling, the cost written on the face of it, THE RECORD written
+ * under the cost, and a refusal that says WHICH rule is refusing rather than
+ * going grey with no explanation. A player who wants to leave can leave;
+ * nothing here suggests they should, and nothing here hides what happened to
+ * the ones who did.
  */
 function renderLeaving(state: GameState, dispatch: Dispatch): HTMLElement {
-  const why = abandonBlocker(state);
-  if (why === 'nosteading' || why === 'ended') return el('span');
+  // Every word of this is `leaveNote`, in the sim, where a test can hold the
+  // three parts together without a browser. The panel used to compose them
+  // here and composed only two — the price and the refusal — so the RECORD
+  // was nowhere and a player could read the whole screen and still believe
+  // walking out was an escape.
+  const note = leaveNote(state);
+  if (!note) return el('span');
+  if (!note.open) return el('div', { class: 'leave-note' }, [note.reason ?? '']);
   const home = state.settlement!;
-  if (why !== null) {
-    return el('div', { class: 'leave-note' }, [ABANDON_REASON[why]]);
-  }
   return el('div', { class: 'leaving' }, [
     button(
       `Leave ${home.name} standing empty`,
       () => dispatch({ type: 'ABANDON' }),
       { class: 'action wide grim' },
     ),
-    el('div', { class: 'leave-note' }, [
-      `Everything raised here is lost, and ${ABANDON_HEART} off every heart. `
-        + 'The stores come with us.',
-    ]),
+    el('div', { class: 'leave-note' }, [note.price ?? '']),
+    // The record goes under the price, in the same quiet class: stated once,
+    // never urged.
+    el('div', { class: 'leave-note' }, [note.record ?? '']),
   ]);
 }
 
@@ -284,13 +350,20 @@ export function renderBuilds(state: GameState, dispatch: Dispatch): HTMLElement 
         title: building.blurb,
       },
     );
+    // 11.U2: the row named cost and blockers and never worth, while the CSS
+    // already flagged one row `primary` with nothing on screen saying why.
+    // Blocked rows keep the blocker word alone — a building the band cannot
+    // raise yet does not need a reason it would be good.
+    const worth = blocker ? undefined : buildWorthLine(state, building);
+    const note = el('span', { class: 'build-note' }, [
+      blocker
+        ? blockWord(state, building, blocker)
+        : `${building.timber} timber · ${building.works} days · for ${building.answers}`,
+    ]);
+    if (worth) note.append(el('span', { class: 'build-worth' }, [worth]));
     node.replaceChildren(
       el('span', { class: 'build-name' }, [building.name]),
-      el('span', { class: 'build-note' }, [
-        blocker
-          ? blockWord(state, building, blocker)
-          : `${building.timber} timber · ${building.works} days · for ${building.answers}`,
-      ]),
+      note,
     );
     if (blocker) node.setAttribute('disabled', 'true');
     wrap.append(node);

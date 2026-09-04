@@ -6,19 +6,11 @@
 // the point of the whole system: robbing this coast is how a player CHOOSES
 // escalation, and the pressure machinery (4.3, 6.3) is already listening.
 
-import { distance, fromKey, key, type Hex } from '../hex';
-import { stream, type Rng } from '../rng';
-import type { GameState, Place, World } from '../state/types';
-import {
-  GOOD_WORTH,
-  PLACE_KINDS,
-  PLACE_MAX_FROM_LANDING,
-  placeKind,
-  type PlaceOffer,
-} from '../data/places';
+import { stream } from '../rng';
+import type { GameState, Place } from '../state/types';
+import { GOOD_WORTH, placeKind, type PlaceOffer } from '../data/places';
 import { seasonOf } from './calendar';
 import { chronicle } from './saga';
-import { hasLineOfSight, onHighGround } from './fog';
 import { STRAND_HAUL, STRAND_INFAMY } from './sea';
 import { holdShare } from './ship';
 import { learn, knows } from './lore';
@@ -26,9 +18,8 @@ import { shiftStanding } from './neighbours';
 import { note } from './tally';
 import { ghostTakenLine, isGhostRuin } from './haunt';
 import { worldBeat } from './beats';
-
-/** Places keep out of each other's way, and out of the landing's. */
-const PLACE_MIN_GAP = 5;
+import { daysBetween, placesOn } from './route';
+import { knowsStop, learnStop, onHeights, standingAt } from './coast';
 
 /**
  * Seeds one place of each kind onto a generated world, where the ground
@@ -39,34 +30,51 @@ const PLACE_MIN_GAP = 5;
  * this with the same derived stream `newGame` uses, so a save from before
  * places existed gains exactly the places its seed would have been born with.
  */
-export function seedPlaces(world: World, rng: Rng): Place[] {
-  const placed: Place[] = [];
+/**
+ * The id a place is filed under.
+ *
+ * `pl_<kind>` was safe for exactly as long as the hex seeding below was the
+ * only seeding there was: it walks `PLACE_KINDS` once and puts down AT MOST
+ * ONE of each, so the kind is a unique name. The coast does not work that way
+ * — `placesOn` asks every stretch independently whether something stands
+ * there, and a coast with two towns on it is ordinary. The id template was
+ * carried across unchanged, and the result was two places called `pl_town`.
+ *
+ * That is not a cosmetic clash. `placeById` returns the FIRST match, so a band
+ * standing in the second town asked to deal and was told `away` — by the first
+ * town, twelve stretches back, which it was indeed away from. Nine of
+ * `places.test.ts`'s coast failures were this one line.
+ *
+ * So on a line the address goes in the name, because on a line the stop IS the
+ * address. Nothing needs migrating: the coast worldgen has only ever run
+ * behind a flag that ships off, so no save in the world carries these ids.
+ */
+export function placeIdFor(kind: string, at: { stop?: number }): string {
+  return `pl_${kind}_${at.stop ?? 0}`;
+}
 
-  for (const kind of PLACE_KINDS) {
-    // A kind that only exists when something puts it there. Skipped before
-    // any candidate is even gathered, so worldgen draws exactly the numbers
-    // it drew before the ruin existed and the parity vectors hold.
-    if (kind.seeded === false) continue;
-    const candidates: Hex[] = [];
-    const distant: Hex[] = [];
-    for (const [k, tile] of Object.entries(world.tiles)) {
-      if (!kind.ground.includes(tile.terrain)) continue;
-      const at = fromKey(k);
-      const from = distance(at, world.landing);
-      if (from < kind.minFromLanding) continue;
-      if (placed.some((p) => distance(p.at, at) < PLACE_MIN_GAP)) continue;
-      (from <= PLACE_MAX_FROM_LANDING ? candidates : distant).push(at);
-    }
-    // Ground within reach first; the rest of the landmass only if this world
-    // has none, so an odd coast still gets its wreck rather than none at all.
-    if (candidates.length === 0) candidates.push(...distant);
-    if (candidates.length === 0) continue;
-    // Object key order is not something to lean on; sort, then pick.
-    candidates.sort((a, b) => key(a).localeCompare(key(b)));
-    const at = rng.derive(kind.id).pick(candidates);
-    placed.push({ id: `pl_${kind.id}`, kind: kind.id, at: { q: at.q, r: at.r } });
-  }
-  return placed;
+/**
+ * The id a band's own abandoned hall is filed under.
+ *
+ * Same fault, one street over, and worse: on a coast `settlement.at` is the
+ * frozen landing hex, so every steading ever walked out of was filed under the
+ * same `ruin:0,0` — and carried no `stop`, which made it unreachable as well
+ * as unnamed. A band that walked out could not stand on its own posts.
+ */
+export function ruinIdFor(at: { stop?: number }): string {
+  return `ruin:${at.stop ?? 0}`;
+}
+
+export function seedPlaces(seed: string): Place[] {
+  // The places are already decided — `route.placesOn` derives them from
+  // `(seed, stop)`, so there is nothing to search for and no ground to be
+  // picky about. The hex seeder that stood here swept `world.tiles` for
+  // candidates and spaced them by `PLACE_MIN_GAP`; a line spaces itself.
+  return placesOn(seed).map(({ index, kind }) => ({
+    id: placeIdFor(kind, { stop: index }),
+    kind,
+    stop: index,
+  }));
 }
 
 /**
@@ -114,15 +122,24 @@ export const TOLD_AT_ONCE = 1;
  * One place per bargain, nearest to the teller first, and only what they
  * could plausibly know. Returns what was named, or nothing.
  */
-export function tellOfPlace(state: GameState, from: Hex, teller: string): Place | undefined {
+export function tellOfPlace(
+  state: GameState,
+  teller: string,
+  fromStop = standingAt(state),
+): Place | undefined {
+  // A place is known or it is not — there is no fog over it on a line.
+  // TOLD_RANGE keeps its number and its meaning: on the hex map a hex was a
+  // day's walk, so twelve hexes of "their stretch of the coast" is twelve
+  // days of it here.
+  const known = (p: Place) => knowsStop(state, p.stop ?? 0);
+  const away = (p: Place) => daysBetween(state.seed, p.stop ?? 0, fromStop);
   const near = state.world.places
-    .filter((p) => state.world.seen[key(p.at)] === undefined
-      && distance(p.at, from) <= TOLD_RANGE)
-    .sort((a, b) => distance(a.at, from) - distance(b.at, from))
+    .filter((p) => !known(p) && away(p) <= TOLD_RANGE)
+    .sort((a, b) => away(a) - away(b))
     .slice(0, TOLD_AT_ONCE);
   if (near.length === 0) return undefined;
   for (const told of near) {
-    state.world.seen[key(told.at)] = 'seen';
+    learnStop(state, told.stop ?? 0);
     const def = placeKind(told.kind);
     chronicle(
       state,
@@ -168,19 +185,20 @@ export const LANDMARK_SIGHT = 8;
  */
 export function spotLandmarks(state: GameState): Place[] {
   const world = state.world;
-  const from = state.party.at;
-  if (!onHighGround(world, from)) return [];
+  // A coast IS a line of sight. There is nothing for a hill to stand behind
+  // when the country runs in one direction, so the hex map's blocking check
+  // has no line-shaped question to ask and is gone with it.
+  if (!onHeights(state)) return [];
+  const here = standingAt(state);
 
   const spotted: Place[] = [];
   for (const place of world.places) {
-    if (world.seen[key(place.at)] !== undefined) continue;
-    if (distance(place.at, from) > LANDMARK_SIGHT) continue;
-    if (!hasLineOfSight(world, from, place.at)) continue;
-    world.seen[key(place.at)] = 'seen';
+    const stop = place.stop ?? 0;
+    if (knowsStop(state, stop)) continue;
+    if (daysBetween(state.seed, here, stop) > LANDMARK_SIGHT) continue;
+    learnStop(state, stop);
     spotted.push(place);
-    worldBeat(state, {
-      kind: 'spotted', id: place.id, place: place.kind, at: { ...place.at },
-    });
+    worldBeat(state, { kind: 'spotted', id: place.id, place: place.kind, stop });
     chronicle(
       state,
       `From the high ground we made out ${placeKind(place.kind).name} away off, ` +
@@ -231,7 +249,11 @@ export function offersAt(state: GameState, id: string): PlaceOffer[] {
 export function tradeBlocker(state: GameState, id: string, offerId: string): TradeBlock | null {
   const place = placeById(state, id);
   if (!place) return 'gone';
-  if (key(place.at) !== key(state.party.at)) return 'away';
+  // `standingOn`, not a hex comparison. `sackBlocker` was converted in 8.2c
+  // and this — its sibling, four functions down, asking the identical
+  // question — was not, so on a coast every market in the world answered
+  // "you are not here". Seven of `places.test.ts`'s failures were this line.
+  if (!standingOn(state, place)) return 'away';
   // Steel ends a market. There is no dealing with a place you have emptied.
   if (place.sackedOn !== undefined) return 'taken';
   const offer = (placeKind(place.kind).market ?? []).find((o) => o.id === offerId);
@@ -269,12 +291,12 @@ export function tradeAt(state: GameState, id: string, offerId: string): PlaceTra
   const gaveWord = offer.give === 'food' ? 'of food' : 'of firewood';
   const gotWord = offer.take === 'food' ? 'of food' : 'of timber';
   worldBeat(state, {
-    kind: 'dealt', id: place.id, place: place.kind, at: { ...place.at },
+    kind: 'dealt', id: place.id, place: place.kind, stop: place.stop,
     gave: offer.cost, got,
   });
   chronicle(state, `${offer.line} ${offer.cost} ${gaveWord} for ${got} ${gotWord}.`, 'good');
   // A counter is where the coast's news is. Same trade as a neighbour's.
-  tellOfPlace(state, place.at, def.name);
+  tellOfPlace(state, def.name, place.stop);
   return { gave: offer.cost, got, offer };
 }
 
@@ -284,7 +306,13 @@ export function placeById(state: GameState, id: string): Place | undefined {
 
 /** The place the party is standing on, if any. */
 export function placeHere(state: GameState): Place | undefined {
-  return state.world.places.find((p) => key(p.at) === key(state.party.at));
+  const at = standingAt(state);
+  return state.world.places.find((p) => p.stop === at);
+}
+
+/** Is the band standing where this place is? */
+function standingOn(state: GameState, place: Place): boolean {
+  return place.stop === standingAt(state);
 }
 
 export type PlaceBlock = 'gone' | 'away' | 'taken';
@@ -292,7 +320,7 @@ export type PlaceBlock = 'gone' | 'away' | 'taken';
 export function sackBlocker(state: GameState, id: string): PlaceBlock | null {
   const place = placeById(state, id);
   if (!place) return 'gone';
-  if (key(place.at) !== key(state.party.at)) return 'away';
+  if (!standingOn(state, place)) return 'away';
   if (place.sackedOn !== undefined) return 'taken';
   return null;
 }
@@ -333,16 +361,16 @@ export function settlePlace(state: GameState, id: string, fromSea = false): void
   if (def.infamy !== 0) {
     // Word starts where the smoke is seen: the nearest neighbour learns what
     // an armed band did here, and thinks accordingly.
-    const nearest = [...state.neighbours].sort(
-      (a, b) => distance(a.at, place.at) - distance(b.at, place.at),
-    )[0];
+    const away = (n: { stop?: number }) =>
+      daysBetween(state.seed, n.stop ?? 0, place.stop);
+    const nearest = [...state.neighbours].sort((a, b) => away(a) - away(b))[0];
     if (nearest) {
       shiftStanding(state, nearest.id, Math.round(def.infamy * (fromSea ? STRAND_INFAMY : 1)));
     }
   }
 
   worldBeat(state, {
-    kind: 'sacked', id: place.id, place: place.kind, at: { ...place.at },
+    kind: 'sacked', id: place.id, place: place.kind, stop: place.stop,
     ...(fromSea ? { bySea: true as const } : {}),
   });
   chronicle(state, def.sackLine, def.garrison !== null ? 'grim' : 'good');

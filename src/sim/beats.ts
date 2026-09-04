@@ -19,7 +19,6 @@
 // sequence and a renderer that only sees the end of it has nothing to show.
 
 import type { Battle, BattleOutcome, GameState, Side } from '../state/types';
-import type { Hex } from '../hex';
 
 /** Every kind of thing that can happen on a field. */
 export type BeatKind =
@@ -28,9 +27,7 @@ export type BeatKind =
   | 'struck'
   | 'reached'
   | 'threw'
-  | 'shoved'
   | 'defended'
-  | 'dashed'
   | 'warcry'
   | 'fell'
   | 'leaderFell'
@@ -59,14 +56,23 @@ export interface OpenedBeat extends BeatBase {
   champion?: string;
 }
 
-/** Somebody crossed ground. The only beat with no line in the log. */
+/**
+ * Somebody changed their place in the line. The only beat with no line in
+ * the log.
+ *
+ * `from` and `to` were hexes, and a step used to cost move points. There is
+ * no ground to cross since 8.1c: a fighter's place is their RANK, so this
+ * says which rank they left and which they took, and the cost is gone with
+ * the movement it paid for.
+ */
 export interface MovedBeat extends BeatBase {
   kind: 'moved';
   who: string;
-  from: Hex;
-  to: Hex;
-  cost: number;
-  /** Not a manoeuvre — a broken fighter running for their own edge. */
+  /** Rank they left. */
+  from: number;
+  /** Rank they took. */
+  to: number;
+  /** Not a manoeuvre — a broken fighter giving ground down the line. */
   flight?: true;
 }
 
@@ -91,26 +97,19 @@ export interface BlowBeat extends BeatBase {
 }
 
 /**
- * How a shove finished. Three of these four kill nobody and the fourth kills
- * without a blow being struck, which is exactly why a shove needs its own
- * beat rather than being a strike that does no damage.
+ * `ShoveResult` and `ShovedBeat` stood here until 9.1b, and `'drowned'` was
+ * on the result list until 8.1d before that — a shove could put a man in the
+ * water and the sea finished him for nothing, which was the best thing the
+ * verb ever did. The line took the water away, and 9.1b took the verb.
+ *
+ * Worth keeping on the record as something two conversions COST rather than
+ * tidied. Whether a line gets its own version of "the ground itself kills
+ * him" is still open.
  */
-export type ShoveResult = 'held' | 'pushed' | 'crushed' | 'drowned';
 
-export interface ShovedBeat extends BeatBase {
-  kind: 'shoved';
-  who: string;
-  target: string;
-  result: ShoveResult;
-  from: Hex;
-  /** Where they ended up, when they gave ground. */
-  to?: Hex;
-  damage?: number;
-}
-
-/** Shield up, a run, or the leader's cry. Nobody else is involved. */
+/** Shield up, or the leader's cry. Nobody else is involved. */
 export interface SoloBeat extends BeatBase {
-  kind: 'defended' | 'dashed' | 'warcry' | 'broke' | 'fled';
+  kind: 'defended' | 'warcry' | 'broke' | 'fled';
   who: string;
 }
 
@@ -150,7 +149,6 @@ export type Beat =
   | OpenedBeat
   | MovedBeat
   | BlowBeat
-  | ShovedBeat
   | SoloBeat
   | RalliedBeat
   | FellBeat
@@ -277,10 +275,17 @@ export interface SeasonBeat extends WorldBase {
 }
 
 /** The band crossed ground. `days` because a march is not always one. */
+/**
+ * A day's going.
+ *
+ * `from` and `to` were hexes until 8.5 and are stop indices now — the same
+ * change `MovedBeat` took in 8.1c, and for the same reason: the address had
+ * stopped being a coordinate long before the field carrying it did.
+ */
 export interface MarchedBeat extends WorldBase {
   kind: 'marched';
-  from: Hex;
-  to: Hex;
+  from: number;
+  to: number;
   days: number;
   terrain: string;
   bySea?: true;
@@ -296,7 +301,8 @@ export interface GatheredBeat extends WorldBase {
 
 export interface FoundedBeat extends WorldBase {
   kind: 'founded';
-  at: Hex;
+  /** The stretch the posts went into. */
+  stop: number;
   name: string;
 }
 
@@ -356,7 +362,8 @@ export interface PlaceBeat extends WorldBase {
   kind: 'spotted' | 'dealt' | 'sacked';
   id: string;
   place: string;
-  at: Hex;
+  /** The stretch it stands on. */
+  stop: number;
   /** What crossed the counter, on a deal. */
   gave?: number;
   got?: number;

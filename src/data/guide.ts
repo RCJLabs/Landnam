@@ -11,6 +11,12 @@ export interface GuideSection {
   id: string;
   title: string;
   body: string;
+  /**
+   * The same section, written for a coast. Data rather than a flag, for the
+   * reason `LessonDef.coast` gives: `data/` does not import `sim/`, and these
+   * are rewordings rather than substitutions because a stretch is not a day.
+   */
+  coast?: string;
 }
 
 export const GUIDE: GuideSection[] = [
@@ -23,11 +29,13 @@ export const GUIDE: GuideSection[] = [
     id: 'the-day',
     title: 'The Day',
     body: 'Everything costs a day: walking a hex, foraging, camping, bartering, fighting. The Act button lists what this ground offers today, with each deed\'s cost and gain — greyed deeds tell you why they are refused. Days are the resource that actually runs out.',
+    coast: 'Everything costs at least a day: foraging, camping, bartering, fighting — and walking on up the coast costs the whole leg, which the button prices before you take it. The Act button lists what this stretch offers today, with each deed\'s cost and gain — greyed deeds tell you why they are refused. Days are the resource that actually runs out.',
   },
   {
     id: 'the-ground',
     title: 'Ground Worth Holding',
     body: 'The panel under the map reads any hex you stand on: water, soil, timber, harbour, defensibility. Founding needs fresh water outright, and the posts go in ONCE — there is no second steading. Settle lean rather than late: a band still walking when winter lands cannot stockpile.',
+    coast: 'The panel under the road reads the stretch you are standing on: water, soil, timber, harbour, defensibility. Founding needs fresh water outright, and the posts go in ONCE — there is no second steading. Settle lean rather than late: a band still walking when winter lands cannot stockpile.',
   },
   {
     id: 'the-winter',

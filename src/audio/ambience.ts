@@ -5,11 +5,11 @@
 // means "winter on an open shore is harsher than summer in a forest" is a
 // test rather than a hope.
 
-import { key } from '../hex';
 import { currentMode } from '../modes';
 import { seasonOf } from '../sim/calendar';
 import { AMBIENCE_INDOORS, type AmbienceProfile } from '../data/sounds';
 import type { GameState, Season, Terrain } from '../state/types';
+import { countryHere } from '../sim/coast';
 
 /**
  * How much air each kind of ground has moving through it.
@@ -53,7 +53,7 @@ export function ambienceFor(state: GameState): AmbienceProfile {
   // Inside the steading you are among buildings, and the roof is the point.
   if (currentMode(state) === 'COLONY') return { ...AMBIENCE_INDOORS };
 
-  const terrain = state.world.tiles[key(state.party.at)]?.terrain ?? 'meadow';
+  const terrain = countryHere(state);
   const ground = GROUND[terrain];
   const season = SEASONS[seasonOf(state.day)];
 

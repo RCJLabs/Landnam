@@ -39,3 +39,37 @@ export const HALF_RATION_HEART = 2;
 
 /** Days of short commons before the weakest of them starts to show it. */
 export const HALF_RATION_TOLL = 10;
+
+/**
+ * What tightening is measured to be worth, for the panel to say.
+ *
+ * 9.7 ASKED FOR WINTER TO BECOME A SEASON YOU PLAY, on the premise that it
+ * "offers almost no decisions". It already holds the two largest decisions in
+ * the game — over 120 seeds on As It Lies:
+ *
+ *   full shares      44/120 saw spring
+ *   short commons    65/120                 paired: saved 22, killed 1
+ *
+ *   crew set once    20/120 saw spring
+ *   crewed to the mark, daily  65/120       paired: saved 45, killed 0
+ *
+ * Nothing else this repo has measured comes near saved 45 and killed nobody.
+ * So the fault is not that winter has no decisions; it is the fault 9.3 and
+ * 9.4 both turned out to be — the panel names the PRICE of the lever and
+ * never its worth. The rations control says "2 off every heart" and, when the
+ * band is on full shares, "nobody goes short", which reads as reassurance on
+ * exactly the screen where tightening is the thing that would save them.
+ */
+export const TIGHTENED_SAVED = 22;
+export const TIGHTENED_KILLED = 1;
+export const TIGHTENED_OF = 120;
+
+/**
+ * The line the panel shows on full shares when the larder will not reach
+ * spring. Stated as the record, never as an instruction — the same voice the
+ * door out uses, because a band that wants to eat properly is entitled to.
+ */
+export function tighteningWorth(): string {
+  return `${TIGHTENED_SAVED} bands in ${TIGHTENED_OF} lived by tightening; `
+    + `${TIGHTENED_KILLED} died of it`;
+}

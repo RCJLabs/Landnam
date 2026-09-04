@@ -5,19 +5,17 @@ import { cloneState } from '../state/clone';
 import { chronicle } from './saga';
 import { currentMode, popMode, pushMode } from '../modes';
 import type { GameState, Rations } from '../state/types';
-import type { Hex } from '../hex';
 import { chooseOption, dismissEvent, maybeFireEvent } from './events';
 import { applyTravel, type TravelAction } from './travel';
 import { isWarbandTurn } from './battle';
 import { doReach, doStrike, doThrow } from './strike';
-import { doDash, doDefend, doMove, doShove } from './footwork';
+import { doDefend } from './footwork';
 import { doWarCry } from './warcry';
 import { endTurn, leaveBattle } from './battleTurn';
 import { assign, makePlots, queueBuild, unqueueBuild } from './colony';
 import { atHome } from './site';
 import { abandonSteading } from './retreat';
 import { stream } from '../rng';
-import { key } from '../hex';
 import type { JobId } from '../data/jobs';
 import type { BuildingId } from '../data/buildings';
 import type { Purpose } from '../state/types';
@@ -25,14 +23,11 @@ import { launch, turnForHome } from './expedition';
 import { sailForHome } from './voyage';
 
 export type BattleAction =
-  | { type: 'B_MOVE'; to: Hex }
   | { type: 'B_STRIKE'; targetId: string }
   | { type: 'B_THROW'; targetId: string }
-  | { type: 'B_SHOVE'; targetId: string }
   | { type: 'B_DEFEND' }
   | { type: 'B_WARCRY' }
   | { type: 'B_REACH'; targetId: string }
-  | { type: 'B_DASH' }
   | { type: 'B_END_TURN' }
   | { type: 'B_LEAVE' };
 
@@ -69,14 +64,11 @@ const COLONY_TYPES = new Set([
 ]);
 
 const BATTLE_TYPES = new Set([
-  'B_MOVE',
   'B_STRIKE',
   'B_THROW',
-  'B_SHOVE',
   'B_DEFEND',
   'B_WARCRY',
   'B_REACH',
-  'B_DASH',
   'B_END_TURN',
   'B_LEAVE',
 ]);
@@ -90,9 +82,6 @@ export function apply(state: GameState, action: Action): GameState {
     const next = cloneState(state);
 
     switch (action.type) {
-      case 'B_MOVE':
-        if (!isWarbandTurn(next) || !doMove(next, action.to)) return state;
-        return next;
       case 'B_STRIKE':
         if (!isWarbandTurn(next) || !doStrike(next, action.targetId)) return state;
         return next;
@@ -102,17 +91,11 @@ export function apply(state: GameState, action: Action): GameState {
       case 'B_THROW':
         if (!isWarbandTurn(next) || !doThrow(next, action.targetId)) return state;
         return next;
-      case 'B_SHOVE':
-        if (!isWarbandTurn(next) || !doShove(next, action.targetId)) return state;
-        return next;
       case 'B_DEFEND':
         if (!isWarbandTurn(next) || !doDefend(next)) return state;
         return next;
       case 'B_WARCRY':
         if (!isWarbandTurn(next) || !doWarCry(next)) return state;
-        return next;
-      case 'B_DASH':
-        if (!isWarbandTurn(next) || !doDash(next)) return state;
         return next;
       case 'B_END_TURN':
         // Deliberately not gated on whose turn it is: ending a turn must
@@ -143,8 +126,9 @@ export function apply(state: GameState, action: Action): GameState {
     if (home.plots.length === 0) {
       home.plots = makePlots(
         home.report,
-        home.at,
-        stream(next.seed, 'colony').derive(`found:${key(home.at)}`).derive('plots'),
+        stream(next.seed, 'colony')
+          .derive(`found:s${home.stop ?? 0}`)
+          .derive('plots'),
       );
     }
     next.modes = pushMode(next, 'COLONY').modes;

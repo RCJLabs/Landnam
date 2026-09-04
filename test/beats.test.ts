@@ -14,13 +14,12 @@
 // real fights with a bot that uses every verb, and names the kinds it saw.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, key, offsetToAxial, range, type Hex } from '../src/hex';
+import { goHome, standOn } from './fixtures/stand';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { activeCombatant, fighterPerson, standing } from '../src/sim/battle';
+import { activeCombatant, fighterPerson, standing, strikeTargets } from '../src/sim/battle';
 import { startBattle } from '../src/sim/battleTurn';
 import { reachTargets, throwTargets } from '../src/sim/strike';
-import { reachWithZoc } from '../src/sim/zoc';
 import { takeBrokenTurn } from '../src/sim/morale';
 import {
   BEATS_MAX,
@@ -33,7 +32,6 @@ import {
   type BeatKind,
   type WorldBeatKind,
 } from '../src/sim/beats';
-import { moveOptions } from '../src/sim/road';
 import { arriveHome, launch, launchBlocker } from '../src/sim/expedition';
 import {
   LANDMARK_SIGHT, offersAt, settlePlace, spotLandmarks, tradeAt,
@@ -42,6 +40,8 @@ import { placeKind } from '../src/data/places';
 import { canFound, foundSettlement } from '../src/sim/site';
 import { living } from '../src/sim/people';
 import { currentMode } from '../src/modes';
+import { ROUTE_STOPS, daysBetween } from '../src/sim/route';
+import { hasTrod, learnStop, onHeights, walkOptions } from '../src/sim/coast';
 import type { Battle, GameState } from '../src/state/types';
 
 function empty(): Battle {
@@ -52,7 +52,7 @@ describe('the emitter', () => {
   it('numbers every beat, in order', () => {
     const battle = empty();
     beat(battle, { kind: 'defended', who: 'a' });
-    beat(battle, { kind: 'dashed', who: 'b' });
+    beat(battle, { kind: 'broke', who: 'b' });
     expect(battle.beats?.map((b) => b.n)).toEqual([1, 2]);
   });
 
@@ -69,7 +69,7 @@ describe('the emitter', () => {
     // It is only safe because `n` survives the trimming — a consumer holding
     // a mark can still tell what it has and has not seen.
     const battle = empty();
-    for (let i = 0; i < BEATS_MAX + 50; i += 1) beat(battle, { kind: 'dashed', who: 'a' });
+    for (let i = 0; i < BEATS_MAX + 50; i += 1) beat(battle, { kind: 'defended', who: 'a' });
     expect(battle.beats).toHaveLength(BEATS_MAX);
     expect(battle.beats?.[0]?.n).toBe(51);
     expect(battle.beats?.[BEATS_MAX - 1]?.n).toBe(BEATS_MAX + 50);
@@ -78,7 +78,7 @@ describe('the emitter', () => {
   it('drains for a consumer that holds nothing but a mark', () => {
     const battle = empty();
     beat(battle, { kind: 'defended', who: 'a' });
-    beat(battle, { kind: 'dashed', who: 'b' });
+    beat(battle, { kind: 'warcry', who: 'b' });
     const first = beatsSince(battle, 0);
     expect(first.beats).toHaveLength(2);
     expect(first.mark).toBe(2);
@@ -120,7 +120,7 @@ function brawl(state: GameState, cap = 3000): GameState {
       cur = apply(cur, { type: 'B_END_TURN' });
       continue;
     }
-    const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+    const adjacent = strikeTargets(cur);
     const turn = battle.round + i;
 
     if (!active.hasActed) {
@@ -141,7 +141,6 @@ function brawl(state: GameState, cap = 3000): GameState {
             (fighterPerson(cur, a.personId)?.health ?? 99) -
             (fighterPerson(cur, b.personId)?.health ?? 99),
         )[0]!;
-        if (turn % 5 === 0) order.push(() => apply(cur, { type: 'B_SHOVE', targetId: weakest.personId }));
         if (turn % 7 === 0) order.push(() => apply(cur, { type: 'B_DEFEND' }));
         order.push(() => apply(cur, { type: 'B_STRIKE', targetId: weakest.personId }));
       }
@@ -160,23 +159,10 @@ function brawl(state: GameState, cap = 3000): GameState {
       if (acted) continue;
     }
 
-    // Nothing to hit. Close the distance — and now and then break into a run
-    // to do it, which is the only way `dashed` is ever emitted.
-    if (!active.hasActed && (battle.round + i) % 4 === 0) {
-      const ran = apply(cur, { type: 'B_DASH' });
-      if (ran !== cur) {
-        cur = ran;
-        continue;
-      }
-    }
-    const reach = [...reachWithZoc(battle, active).keys()].map((k) => fromKey(k));
-    if (reach.length > 0) {
-      const gap = (at: Hex) => Math.min(...foes.map((f) => distance(at, f.at)));
-      const best = [...reach].sort((a, b) => gap(a) - gap(b))[0]!;
-      const moved = apply(cur, { type: 'B_MOVE', to: best });
-      cur = moved === cur ? apply(cur, { type: 'B_END_TURN' }) : moved;
-      continue;
-    }
+    // Nothing to hit. Closing the distance was a `B_DASH` here, and the only
+    // way `dashed` was ever emitted; 9.1b took both. The line closes itself
+    // inside `endTurn` now and reports it as a `moved` beat, so passing the
+    // turn is what produces one.
     cur = apply(cur, { type: 'B_END_TURN' });
   }
   return cur;
@@ -211,9 +197,7 @@ describe('the stream reaches the field', () => {
     'struck',
     'reached',
     'threw',
-    'shoved',
     'defended',
-    'dashed',
     'warcry',
     'fell',
     'leaderFell',
@@ -253,11 +237,17 @@ describe('the stream reaches the field', () => {
       const battle = state.battle!;
       battle.round = round;
       battle.beats = [];
-      const foe = battle.combatants.find((c) => c.side === 'foe' && !c.down && !c.fled);
+      // The LAST man in their line, because that is now what "already on
+      // their own edge" means. A broken fighter gives ground down the ranks
+      // one at a time and only runs off the field when there is nobody left
+      // behind him to give ground to — so taken from anywhere else in the
+      // line this fixture can only ever produce the swap, never the flight.
+      const foes = battle.combatants.filter((c) => c.side === 'foe' && !c.down && !c.fled);
+      const foe = foes.reduce<typeof foes[number] | undefined>(
+        (deepest, c) => (deepest && deepest.rank >= c.rank ? deepest : c),
+        undefined,
+      );
       if (!foe) continue;
-      // Standing on their own edge already, so the run is one step and the
-      // only question is whether they find their nerve first.
-      foe.at = offsetToAxial(3, 0);
       foe.broken = true;
       foe.nerve = 0;
       takeBrokenTurn(state, foe);
@@ -297,18 +287,39 @@ describe('the stream reaches the field', () => {
     }
   });
 
-  it('says where a step began as well as where it ended', () => {
+  it('says which rank a step began in as well as where it ended', () => {
     // The field a diff cannot recover, and the reason `moved` exists at all:
-    // by the time a renderer sees the new state, the old hex is gone.
+    // by the time a renderer sees the new state, the old place is gone. It
+    // used to be a hex; since 8.1c a place is a rank, and the beat says
+    // which one was left and which was taken.
+    //
+    // A brawl does not reliably produce one — the only step left in the game
+    // is a broken fighter giving ground — so this drives the one path that
+    // emits it rather than hoping a played fight wanders into it.
     const state = structuredClone(newGame('beats-move'));
     startBattle(state, 'meadow', 1);
-    const done = brawl(state);
-    const moves = done.battle!.beats!.filter(
+    const battle = state.battle!;
+    const line = battle.combatants.filter((c) => c.side === 'foe' && !c.down && !c.fled);
+    const front = line.reduce((a, c) => (c.rank < a.rank ? c : a), line[0]!);
+    expect(front.rank, 'nobody behind him to give ground to').toBeLessThan(line.length);
+    battle.beats = [];
+    front.broken = true;
+    front.nerve = 0;
+    // Rolled until he fails to rally, which is the branch that steps.
+    for (let round = 1; round <= 40 && battle.beats.length === 0; round += 1) {
+      battle.round = round;
+      front.broken = true;
+      front.nerve = 0;
+      takeBrokenTurn(state, front);
+      battle.beats = battle.beats.filter((b) => b.kind === 'moved');
+    }
+    const moves = battle.beats.filter(
       (b): b is Extract<Beat, { kind: 'moved' }> => b.kind === 'moved',
     );
     expect(moves.length).toBeGreaterThan(0);
     for (const m of moves) {
-      expect(distance(m.from, m.to)).toBeGreaterThan(0);
+      expect(m.to, 'a step that went nowhere').not.toBe(m.from);
+      expect(Math.abs(m.to - m.from), 'a step of more than one rank').toBe(1);
     }
   });
 
@@ -364,7 +375,23 @@ describe('the world stream', () => {
     // long enough for the coast to call and the queue to finish something.
     const KINDS: WorldBeatKind[] = [
       'dawn', 'ate', 'burned', 'worked', 'hurt', 'died', 'seasonTurned',
-      'marched', 'gathered', 'founded', 'built', 'joined', 'met', 'spotted',
+      'marched', 'gathered', 'founded', 'built', 'joined', 'met',
+      // `spotted` IS PINNED BY FIXTURE ON A LINE, which is this file's own
+      // precedent — `rallied` and `fled` came in at four and one over thirty
+      // fights and were held the same way rather than chased with a bigger
+      // sample.
+      //
+      // Measured before it was moved: sixty seeded coasts, and this bot never
+      // emits one. It is not that the mechanic is dead — walking all
+      // twenty-six stretches of sixty coasts picks something out from a ridge
+      // on 57 of them. It is that the two things it needs pull against each
+      // other: a band has to be still walking, on a hills stretch, with
+      // unmapped country ahead — and since fresh water became the settling
+      // gate, a band that finds a beck puts the posts in and stops walking.
+      // The bot reaches stop four to six of twenty-six before it settles.
+      //
+      // Held instead by 'a landmark picked out from a ridge says which place,
+      // and where', below.
     ];
     const seen = new Set<WorldBeatKind>();
     /**
@@ -381,7 +408,12 @@ describe('the world stream', () => {
      * search for the others.
      */
     const found = (): number => KINDS.filter((k) => seen.has(k)).length;
-    for (let s = 0; s < 12 && found() < KINDS.length; s += 1) {
+    // Seeds to sweep before giving up. The loop stops the moment every kind
+    // has been seen, so this is a CEILING and not a cost — the hex build has
+    // always finished inside a handful, and a coast build needs a few more
+    // because its bands are shorter-lived.
+    const SWEEP_SEEDS = 24;
+    for (let s = 0; s < SWEEP_SEEDS && found() < KINDS.length; s += 1) {
       let state = structuredClone(newGame(`world-reach-${s}`, 'fair'));
       const memo: Memo = { jobsDone: false };
       for (let i = 0; i < 4000 && !state.end; i += 1) {
@@ -472,8 +504,26 @@ function wideStep(state: GameState, memo: Memo): GameState {
 
   // Still walking. Eat off the land while that is still allowed — `canGather`
   // is false at a steading, so anything foraged has to be foraged now.
-  if (state.party.food < 26) {
-    for (const type of ['FORAGE', 'HUNT', 'FISH'] as const) {
+  if (state.party.food < (40)) {
+    // A FIFTH ROUND OF THIS BOT BEING THE BUG, and the same lesson: a bot
+    // that cannot keep itself alive measures nothing. On a coast it starved
+    // by day 30 having reached stop 4 of 26, so most of what this sweep is
+    // meant to reach was never reached — and both halves of that were the
+    // bot's own doing.
+    //
+    // It ate the wrong thing. Measured over eight coasts and four points of
+    // the year, a day's NET food is +0.9 foraging the average stretch and
+    // +1.9 to +7.4 with a net in the water, because every stretch of a coast
+    // has the sea off it and half the countries a coast is made of return
+    // less than the three a day it costs to stand on them. The order below
+    // is the hex map's, where most of the island is inland and the basket is
+    // the right tool; on a line the net is.
+    //
+    // And it left it too late. A leg is two to four days at three a day, so
+    // a band that starts looking for supper at 26 is already inside the cost
+    // of the walk it is about to take.
+    const order = (['FISH', 'FORAGE', 'HUNT'] as const);
+    for (const type of order) {
       const got = apply(state, { type });
       if (got !== state) return got;
     }
@@ -484,12 +534,19 @@ function wideStep(state: GameState, memo: Memo): GameState {
     const founded = apply(state, { type: 'FOUND' });
     if (founded !== state) return founded;
   }
-  const options = moveOptions(state);
-  const unwalked = options.find((h) => state.world.trod[`${h.q},${h.r}`] === undefined);
-  const to = unwalked ?? options[0];
-  if (to) {
-    const moved = apply(state, { type: 'MOVE', to });
-    if (moved !== state) return moved;
+  // A FOURTH ROUND OF THIS BOT BEING THE BUG. `MOVE` and `moveOptions` are
+  // the hex mover, and a line's travel verb is `WALK` to a stop — so on a
+  // coast build the band stood on the landing for four thousand steps and
+  // twelve seeds, and the sweep reported `spotted` as a kind the game never
+  // emits. It emits it fine: walking all twenty-six stretches of sixty
+  // coasts picks something out from a ridge seventy-nine times. What never
+  // happened was the walking.
+  const stops = walkOptions(state);
+  const fresh = stops.find((stop) => !hasTrod(state, stop));
+  const step = fresh ?? stops[0];
+  if (step !== undefined) {
+    const walked = apply(state, { type: 'WALK', to: step });
+    if (walked !== state) return walked;
   }
   return apply(state, { type: 'CAMP' });
 }
@@ -513,15 +570,18 @@ describe('the errands and the fixed places', () => {
    */
   function homestead(seed: string): GameState {
     const state = structuredClone(newGame(seed, 'fair'));
-    for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
     // Found wherever this world will take posts — the landing often will not.
     let planted = false;
-    for (const k of Object.keys(state.world.tiles)) {
-      const at = fromKey(k);
-      state.party.at = at;
-      if (canFound(state, at) && foundSettlement(state)) { planted = true; break; }
+    // Walked, not scanned: `foundBlocker` reads the stretch underfoot and
+    // ignores the hex it is handed, so assigning `party.at` asked stop 0
+    // twenty-six hundred times. It passed while the landing usually took
+    // posts; since fresh water became the gate it usually does not.
+    for (let stop = 0; stop < ROUTE_STOPS; stop += 1) {
+      learnStop(state, stop);
+      state.party.stop = stop;
+      if (canFound(state) && foundSettlement(state)) { planted = true; break; }
     }
-    expect(planted, 'nowhere in this world would take the posts').toBe(true);
+        expect(planted, 'nowhere in this world would take the posts').toBe(true);
     state.party.food = 400;
     state.party.firewood = 200;
     state.beats = [];
@@ -546,33 +606,39 @@ describe('the errands and the fixed places', () => {
     const crew = living(state.party.people).slice(0, 2).map((p) => p.id);
     expect(launch(state, crew, 'trade')).toBe(true);
     state.day += 6;
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
     expect(arriveHome(state)).toBe(true);
     expect(state.beats?.at(-1)).toMatchObject({ kind: 'cameHome', purpose: 'trade', days: 6 });
   });
 
   it('a landmark picked out from a ridge says which place, and where', () => {
     const state = homestead('beat-spot');
-    const place = state.world.places[0]!;
-    delete state.world.seen[key(place.at)];
-    state.party.at = { q: place.at.q + 2, r: place.at.r };
-    for (const h of range(state.party.at, LANDMARK_SIGHT + 2)) {
-      const tile = state.world.tiles[key(h)];
-      if (tile) tile.terrain = 'meadow';
-    }
-    state.world.tiles[key(state.party.at)]!.terrain = 'hills';
+    // A ridge is a STRETCH whose country is hills, sight is counted in
+    // days, and the fog a line has is `knownStops` — so making the country
+    // over by rewriting tiles moves nothing here. Same three conditions as
+    // the hex branch below, asked of the address the sim reads.
+    const ridge = [...Array(ROUTE_STOPS).keys()].find((stop) => onHeights(state, stop));
+    expect(ridge, 'no stretch of this coast is high ground').toBeDefined();
+    state.party.stop = ridge;
+    const place = state.world.places.find(
+      (p) => (p.stop ?? 0) !== ridge
+        && daysBetween(state.seed, ridge!, p.stop ?? 0) <= LANDMARK_SIGHT,
+    );
+    expect(place, 'nothing within sight of that ridge to pick out').toBeDefined();
+    // Put the fog back over it, which on a line is forgetting the stretch.
+    state.world.knownStops = (state.world.knownStops ?? [])
+      .filter((stop) => stop !== (place!.stop ?? 0));
     state.beats = [];
     spotLandmarks(state);
     expect(state.beats?.some((b) => b.kind === 'spotted')).toBe(true);
-    expect(state.beats!.find((b) => b.kind === 'spotted')).toMatchObject({
-      id: place.id, place: place.kind, at: place.at,
-    });
+    expect(state.beats!.find((b) => b.kind === 'spotted' && b.id === place!.id))
+      .toMatchObject({ id: place!.id, place: place!.kind, stop: place!.stop });
   });
 
   it('a deal across a counter says what crossed it', () => {
     const state = homestead('beat-deal');
     const town = state.world.places.find((p) => (placeKind(p.kind).market ?? []).length > 0)!;
-    state.party.at = { ...town.at };
+    standOn(state, town);
     const offer = offersAt(state, town.id)[0]!;
     state.beats = [];
     expect(tradeAt(state, town.id, offer.id)).not.toBeNull();

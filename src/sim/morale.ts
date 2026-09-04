@@ -4,17 +4,16 @@
 // run; nerve is how this particular hour is going, and it resets with the
 // next fight. Lose it and you stop fighting and start running.
 
-import { column, distance, fromKey, type Hex } from '../hex';
 import { stream as makeStream } from '../rng';
 import type { Battle, Combatant, GameState } from '../state/types';
-import { FIELD_HEIGHT } from './battlefield';
 import { effectiveStat } from './people';
 import { fighterPerson } from './battle';
 import { beat } from './beats';
 import { canAnchor, wallLinks } from './wall';
 import { kinOf } from './kin';
 import { NERVE_KIN_FELL } from '../data/kin';
-import { reachWithZoc, threatCount } from './zoc';
+import { threatCount } from './zoc';
+import { closeUp } from './ranks';
 import { leaderOf } from './people';
 
 export const NERVE_HIT = 10;
@@ -94,7 +93,7 @@ export function witnessFall(state: GameState, fallen: Combatant): void {
       c.personId !== fallen.personId &&
       c.side === fallen.side &&
       canAnchor(c) &&
-      distance(c.at, fallen.at) === 1,
+      Math.abs(c.rank - fallen.rank) === 1,
   );
 
   for (const mate of shoulderMates) {
@@ -116,7 +115,7 @@ export function witnessFall(state: GameState, fallen: Combatant): void {
 
   // The other side takes heart from it.
   for (const c of battle.combatants) {
-    if (c.side !== fallen.side && canAnchor(c) && distance(c.at, fallen.at) <= 2) {
+    if (c.side !== fallen.side && canAnchor(c) && c.rank <= 3) {
       steadyNerve(c, NERVE_KILL);
     }
   }
@@ -156,10 +155,6 @@ export function leaderFell(state: GameState, fallen: Combatant): void {
   );
 }
 
-/** Which edge row this side runs for. */
-function homeRow(side: Combatant['side']): number {
-  return side === 'warband' ? FIELD_HEIGHT - 1 : 0;
-}
 
 /**
  * A broken fighter's turn: try to pull themselves together, and if that
@@ -175,9 +170,9 @@ export function takeBrokenTurn(state: GameState, active: Combatant): boolean {
 
   // Shoulder-mates who are still steady help you find your feet.
   const steadyMates = battle.combatants.filter(
-    (c) => c.side === active.side && canAnchor(c) && distance(c.at, active.at) === 1,
+    (c) => c.side === active.side && canAnchor(c) && Math.abs(c.rank - active.rank) === 1,
   ).length;
-  const threats = threatCount(battle, active.at, active.side);
+  const threats = threatCount(battle, active);
 
   const rng = rollFor(state, `rally:${active.personId}`);
   const roll = rng.roll(2, 6) + spirit + steadyMates * 2 - threats * 2;
@@ -194,37 +189,30 @@ export function takeBrokenTurn(state: GameState, active: Combatant): boolean {
     return true;
   }
 
-  // Still gone: run for the edge.
-  const target = homeRow(active.side);
-  const reach = reachWithZoc(battle, active);
-  let best: Hex | null = null;
-  let bestScore = -Infinity;
-  for (const [k, cost] of reach) {
-    const at = fromKey(k);
-    // Away from the enemy, toward home, cheaply.
-    const away = Math.min(
-      ...battle.combatants
-        .filter((c) => c.side !== active.side && canAnchor(c))
-        .map((c) => distance(c.at, at)),
-    );
-    const score = away * 8 - Math.abs(at.r - target) * 6 - cost;
-    if (score > bestScore) {
-      bestScore = score;
-      best = at;
-    }
-  }
-  if (best) {
-    const from = active.at;
-    active.at = best;
-    active.movesLeft = 0;
+  // Still gone: give ground down the line, and off the back of it.
+  //
+  // On the hex field this was a search for the cheapest ground away from the
+  // enemy and toward your own edge. A line has no such geography — there is
+  // one direction to go and it is backwards, one rank at a time, until there
+  // is no line left to stand behind.
+  const behind = battle.combatants.find(
+    (c) => c.side === active.side && canAnchor(c) && c.rank === active.rank + 1,
+  );
+  if (behind) {
+    const was = active.rank;
+    active.rank = behind.rank;
+    behind.rank = was;
     // Flagged as flight rather than left to look like a manoeuvre: a man
-    // running for the edge and a man taking ground are the same two hexes
-    // and nothing like the same thing to watch.
-    beat(battle, { kind: 'moved', who: active.personId, from, to: best, cost: 0, flight: true });
-  }
-
-  if (active.at.r === target || column(active.at) < 0) {
+    // giving ground and a man taking it are the same swap and nothing like
+    // the same thing to watch.
+    beat(battle, {
+      kind: 'moved', who: active.personId,
+      from: was, to: active.rank, flight: true,
+    });
+  } else {
     active.fled = true;
+    // Same as a man going down: the wall does not keep his place for him.
+    closeUp(battle.combatants, active.side);
     beat(battle, { kind: 'fled', who: active.personId });
     battle.log.push(`${name} ran from the field.`);
   }
@@ -237,7 +225,7 @@ export function takeBrokenTurn(state: GameState, active: Combatant): boolean {
 export function pressureAtTurnStart(state: GameState, active: Combatant): void {
   const battle = state.battle!;
   if (!canAnchor(active)) return;
-  if (threatCount(battle, active.at, active.side) >= 2) {
+  if (threatCount(battle, active) >= 2) {
     shakeNerve(state, active, NERVE_OUTNUMBERED);
   }
 }

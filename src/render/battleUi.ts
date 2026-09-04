@@ -43,7 +43,7 @@ export function renderBattleBar(state: GameState): HTMLElement {
 }
 
 /** Which tap-target action the player has armed. */
-export type Aim = 'strike' | 'throw' | 'shove' | 'reach';
+export type Aim = 'strike' | 'throw' | 'reach';
 
 export function renderBattleActions(
   state: GameState,
@@ -58,7 +58,12 @@ export function renderBattleActions(
   const active = activeCombatant(battle);
   if (!isWarbandTurn(state) || !active) return bar;
 
-  const spent = active.hasActed;
+  // Broken counts as spent, and until 9.13 it did not: every verb in the sim
+  // refuses a man whose nerve has gone — `broken` sits in the same guard as
+  // `hasActed` — but this line asked only whether he had acted, so he was
+  // shown a live Strike and Throw that silently did nothing when
+  // tapped. Controls that look able and are not are worse than absent ones.
+  const spent = active.hasActed || active.broken;
   const aimButton = (id: Aim, label: string, enabled: boolean) => {
     const node = button(label, () => setAim(id), {
       class: `action${aim === id ? ' primary' : ''}`,
@@ -75,16 +80,17 @@ export function renderBattleActions(
     aimButton('strike', 'Strike', !spent),
     aimButton('throw', `Throw${active.throwsLeft > 0 ? ` ${active.throwsLeft}` : ''}`,
       !spent && active.throwsLeft > 0 && throwTargets(state).length > 0),
-    aimButton('shove', 'Shove', !spent),
   );
   if (canSpear) bar.append(aimButton('reach', 'Spear', true));
 
   const second = el('div', { class: 'actionbar' });
   const defend = button('Shield', () => dispatch({ type: 'B_DEFEND' }), { class: 'action' });
   if (spent) defend.setAttribute('disabled', 'true');
-  const dash = button('Run', () => dispatch({ type: 'B_DASH' }), { class: 'action' });
-  if (spent) dash.setAttribute('disabled', 'true');
-  second.append(defend, dash);
+  // The Run button stood beside the shield until 9.1b. Changing rank is not
+  // something anybody spends an action on any more — the line closes itself
+  // on a man with nothing legal left (see sim/footwork.ts) — so there is
+  // nothing here to press.
+  second.append(defend);
   // The leader's button, and only the leader's: its absence on everyone
   // else's turn is what makes leading mean something.
   if (isLeader(state, active)) {
@@ -95,18 +101,28 @@ export function renderBattleActions(
     if (!canWarCry(state)) cry.setAttribute('disabled', 'true');
     second.append(cry);
   }
-  second.append(
-    button('End turn', () => dispatch({ type: 'B_END_TURN' }), { class: 'action primary' }),
-  );
+  // END TURN IS A CHOICE ONLY BEFORE THE BLOW (9.13). Declining to act is a
+  // real decision — on a rank that reaches nobody it is often the right one —
+  // so the button stays for a fighter who has not acted. After acting it had
+  // exactly one outcome and the turn now takes it without being asked, so
+  // offering it would be offering to do what is already happening.
+  //
+  // It keeps the name it had. "Hold and end turn" reads better for what it
+  // now exclusively means, and it is not worth it: two browser bars match
+  // this label exactly, and "End turn" is still what the button does.
+  if (!spent) {
+    second.append(
+      button('End turn', () => dispatch({ type: 'B_END_TURN' }), { class: 'action primary' }),
+    );
+  }
 
   const wrap = el('div', { class: 'action-stack' }, [bar, second]);
   return wrap;
 }
 
 const AIM_HINT: Record<Aim, string> = {
-  strike: 'tap a ringed foe to strike',
+  strike: 'tap a marked foe to strike',
   throw: 'tap a marked foe to throw',
-  shove: 'tap a ringed foe to shove them back',
   reach: 'tap a marked foe to thrust past your shield-brother',
 };
 
@@ -119,9 +135,40 @@ export function renderBattleHint(state: GameState, aim: Aim): HTMLElement {
   if (!person || !active) return el('div', { class: 'hint' }, ['Waiting']);
 
   const parts: string[] = [];
-  if (active.movesLeft > 0) parts.push('tap a dashed hex to move');
   if (!active.hasActed) parts.push(AIM_HINT[aim]);
-  if (parts.length === 0) parts.push('nothing left this turn — end it');
+  // THE SHIELD'S ONE CASE (9.1) STOOD HERE, AND 9.1b OVERTURNED IT.
+  //
+  // The line said "hurt — the shield is worth more than the swing", on a
+  // measurement of 49 wins in 60 against 46 for always swinging. Re-taken on
+  // the same instrument after the line began closing itself, the arm INVERTS:
+  // 31 in 60 against 42, paired won 0 and lost 11. Fights are more crowded
+  // now — men who used to stand safe in the back rank walk into the wall — so
+  // a turn spent on the shield instead of the blow costs more than it saves.
+  //
+  // The sentence is gone rather than left saying something the harness calls
+  // false, and `shieldAdvised` has followed it. The arm that had never been
+  // run settled it: set the shield ONLY when there is nothing to attack — the
+  // one case that costs no blow — and it ties swinging-always exactly,
+  // because over sixty fights the front two had something to hit on EVERY
+  // turn. The walls deploy in contact and `defend` is a front-two verb, so
+  // the shield's free case does not exist here; it can only be bought with a
+  // blow, and buying it loses. A helper that advised buying it is worse than
+  // no helper. See sim/footwork.ts.
+  //
+  // The Shield BUTTON stays. The foe AI reaches for it, nothing measures that
+  // as wrong, and a player is entitled to a defensive choice the harness
+  // dislikes. Whether it should cost less than a whole turn is a design
+  // ruling and not a thing to invent here.
+  //
+  // "or push forward a rank" stood beside it and named the Run button, which
+  // 9.1b deleted. The look bar caught it: `fight-late@320x568` still offered
+  // a control that was no longer on the screen. Third lie in this one slot,
+  // after "tap a dashed hex to move" — so the hint now names no control for
+  // where a man stands, because there is nothing to name.
+  // "nothing left this turn — end it" stood here, and 9.13 deleted the tap it
+  // was asking for: the turn now ends itself. What is left to say is what is
+  // HAPPENING, not what to press.
+  if (parts.length === 0) parts.push('the blow is struck');
   return el('div', { class: 'hint' }, [`${person.name}: ${parts.join(' · ')}`]);
 }
 

@@ -18,6 +18,19 @@ export type Condition =
   /** The flag has been raised. How one card's choice opens another card. */
   | { c: 'flagSet'; flag: string }
   | { c: 'nearWater' }
+  /**
+   * The band is on the water TODAY — the deck of a knarr under way, not a
+   * beach with a view of it.
+   *
+   * Its own condition rather than `terrain: ['ocean']`, because the two maps
+   * answer that differently and one of them cannot answer it at all. On the
+   * hex island being at sea is a tile you stand on; on a coast rowing is a
+   * STEP and not a state, so `route.COUNTRY` has no ocean in it and a card
+   * gated on ocean ground is a card that can never be drawn. `a-lean-sail`
+   * was exactly that for the length of the conversion, and the harness's
+   * "cards never once eligible" sweep is what found it.
+   */
+  | { c: 'afloat' }
   /** The posts are in the ground somewhere. */
   | { c: 'settled' }
   /** Standing on your own hearth. */

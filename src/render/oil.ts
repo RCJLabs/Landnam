@@ -1,24 +1,24 @@
 // The brush. Everything about how painted country LOOKS lives here.
 //
-// One rule holds the whole thing together: every stroke comes from a stream
-// derived per hex from the seed and the coordinate, the same
-// derived-not-stored trick skerries, landmarks and fishing grounds already
-// use. Two consequences, and both are why this is affordable at all:
+// One rule holds the whole thing together: every stroke comes from a seeded
+// stream carried in on the patch, the same derived-not-stored trick landmarks
+// and fishing grounds already use. Two consequences, and both are why this is
+// affordable at all:
 //
-//   - a hex paints the same marks at any scale, so a sharper repaint is the
-//     SAME painting rather than a different one, and the map can never
-//     flicker between two worlds when the camera moves;
+//   - a patch paints the same marks at any scale, so a sharper repaint is the
+//     SAME painting rather than a different one, and nothing can ever flicker
+//     between two paintings when the camera moves;
 //   - nothing has to be stored. No save change, no SAVE_VERSION bump, no
-//     migration — the painting is derived from the country like the rest of it.
+//     migration — the painting is derived from the ground like the rest of it.
+//
+// This painted the hex world map first, and the map is gone; what is left is
+// the brush itself, which the battlefield and the steading paint with.
 //
 // `Math.random` is banned project-wide and it is banned twice over here.
 
-import { corners, key, toPixel, type Hex } from '../hex';
-import { terrainDef } from '../data/terrain';
 import { mix } from './terrainArt';
 import { makeRng, type Rng } from '../rng';
-import type { Terrain } from '../state/types';
-import { HEX_SIZE, type HexGround } from './travelScene';
+import { BLACK, PARCHMENT, WHITE } from './palette';
 
 /**
  * World units per painted pixel.
@@ -35,6 +35,17 @@ import { HEX_SIZE, type HexGround } from './travelScene';
  * vector one would not.
  */
 export const OIL_SCALE = 1.35;
+
+/**
+ * The radius the brush's mark sizes are calibrated against, in world units.
+ *
+ * 26 because that was the world map's hex radius — every stroke length and
+ * width below was tuned by eye against a patch that size, and the map is gone
+ * but the calibration is what makes the paint read as paint. A patch of any
+ * other radius scales off this, which is how one brush covers the battlefield
+ * at 34 and the steading's ground at whatever the yard needs.
+ */
+const PATCH_UNIT = 26;
 
 /** Strokes per hex. Enough to cover, few enough that a reveal stays under 3 ms. */
 const STROKES = 44;
@@ -63,7 +74,6 @@ const BLEED = 1.16;
  * the anti-aliased hairline between two fills.
  */
 const GROUND = 1.03;
-const GLAZE = 1.0;
 
 /**
  * Three cuts of one colour: the light, the body and the shadow.
@@ -74,20 +84,22 @@ const GLAZE = 1.0;
  * and the world's terrain go through the same mixer.
  */
 export function rampOf(fill: string, edge: string, dim = 0): [string, string, string] {
-  const body = dim > 0 ? mix(fill, '#000000', dim) : fill;
-  const shade = dim > 0 ? mix(edge, '#000000', dim) : edge;
-  return [mix(body, '#e8dcc0', 0.13), body, shade];
+  const body = dim > 0 ? mix(fill, BLACK, dim) : fill;
+  const shade = dim > 0 ? mix(edge, BLACK, dim) : edge;
+  return [mix(body, PARCHMENT, 0.13), body, shade];
 }
 
-/** Three cuts of one terrain: the light, the body and the shadow. */
-function ramp(terrain: Terrain, deep: boolean): [string, string, string] {
-  const def = terrainDef(terrain);
-  return rampOf(def.fill, def.edge, deep ? 0.22 : 0);
-}
-
-/** One hex's own stream. The same hex, the same marks, forever. */
-export function hexRng(seed: string, at: Hex, salt: string): Rng {
-  return makeRng(`landnam-oil:${seed}:${key(at)}:${salt}`);
+/**
+ * One patch's own stream. The same patch, the same marks, forever.
+ *
+ * Took a `Hex` until 8.5 and takes the patch's address as a string now —
+ * whatever the caller calls the ground it is covering. Keeping it here rather
+ * than letting each caller invent its own key is the whole of why a repaint
+ * is the same painting: two callers deriving differently would paint the
+ * same ground twice, differently.
+ */
+export function patchRng(seed: string, where: string, salt: string, family = 'oil'): Rng {
+  return makeRng(`landnam-${family}:${seed}:${where}:${salt}`);
 }
 
 /**
@@ -114,18 +126,32 @@ function stroke(
     // cold pair — a shared highlight dragged every terrain towards the same
     // hue and was most of why the map went monochrome.
     ctx.globalAlpha = alpha * rng.float(0.1, 0.28);
-    ctx.fillStyle = rng.chance(0.55) ? mix(colour, '#ffffff', 0.34) : mix(colour, '#000000', 0.44);
+    ctx.fillStyle = rng.chance(0.55) ? mix(colour, WHITE, 0.34) : mix(colour, BLACK, 0.44);
     ctx.fillRect(-length / 2, rng.float(-0.4, 0.4) * width, length * rng.float(0.4, 0.9), width * 0.17);
   }
   ctx.restore();
   ctx.globalAlpha = 1;
 }
 
-/** A hex path at `r` world units, for clipping and for grounds. */
+/**
+ * A six-sided path at `r` world units, for clipping a patch of paint.
+ *
+ * The geometry came from `hex/coords.ts`'s `corners` until 8.5 and is written
+ * out here now. It is not a coordinate system and never was — the brush clips
+ * to a hexagon because a hexagon has no long straight edge for the eye to
+ * catch, which is what keeps a field of patches reading as paint rather than
+ * as tiles. The battlefield is the only thing left that uses it, and it is a
+ * rectangle.
+ */
 function hexPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-  const ring = corners(cx, cy, r);
   ctx.beginPath();
-  ring.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  for (let i = 0; i < 6; i += 1) {
+    const angle = (Math.PI / 180) * (60 * i - 30); // pointy-top
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
   ctx.closePath();
 }
 
@@ -172,13 +198,13 @@ export interface Patch {
  *
  * Stroke count goes with AREA rather than being fixed: a bigger patch needs
  * proportionally more marks or the paint thins out and the flat ground colour
- * shows through as a flat ground colour. At radius === HEX_SIZE it comes to
+ * shows through as a flat ground colour. At radius === PATCH_UNIT it comes to
  * exactly STROKES and draws exactly what the world map drew before this was
  * pulled out of it.
  */
 export function paintPatch(ctx: CanvasRenderingContext2D, patch: Patch): void {
   const { x, y, radius, ramp: [light, body, shade], rng } = patch;
-  const scale = radius / HEX_SIZE;
+  const scale = radius / PATCH_UNIT;
   const grain = patch.grain ?? 1;
   const strokes = Math.round((STROKES * scale * scale) / (grain * grain));
 
@@ -209,104 +235,3 @@ export function paintPatch(ctx: CanvasRenderingContext2D, patch: Patch): void {
   if (patch.clip !== false) ctx.restore();
 }
 
-/**
- * One hex of country, painted once.
- *
- * `ctx` is expected to be in WORLD units — the caller owns the transform, so
- * this is the same code at any scale, which is the point.
- *
- * The clip is generous on purpose. Clipping tight to the hex made every tile
- * read as its own scribble and the surface never became a painting; letting
- * strokes run a third of a hex past the edge, in reveal order, is what turns
- * a lattice of paint into paint.
- */
-export function paintGround(
-  ctx: CanvasRenderingContext2D,
-  seed: string,
-  at: Hex,
-  ground: HexGround,
-): void {
-  const p = toPixel(at, HEX_SIZE);
-  const rng = hexRng(seed, at, 'ground');
-  const cuts = ramp(ground.terrain, ground.deep);
-  const body = cuts[1];
-
-  ctx.save();
-  paintPatch(ctx, { x: p.x, y: p.y, radius: HEX_SIZE, rng, ramp: cuts, clip: false });
-
-  // Surf, laid over the wet ground rather than beside it. The edges come
-  // from the scene, which read them off the static tiles.
-  if (ground.foam.length > 0) {
-    const ring = corners(p.x, p.y, HEX_SIZE - 1.5);
-    for (const i of ground.foam) {
-      const a = ring[i]!;
-      const b = ring[(i + 1) % 6]!;
-      for (let s = 0; s <= 6; s += 1) {
-        const t = s / 6;
-        stroke(
-          ctx, rng,
-          a.x + (b.x - a.x) * t + rng.float(-2, 2),
-          a.y + (b.y - a.y) * t + rng.float(-2, 2),
-          rng.float(5, 11), rng.float(2, 4),
-          rng.chance(0.5) ? '#e8f0f2' : '#bcd2d8', rng.float(0.35, 0.8),
-        );
-      }
-    }
-  }
-
-  // A river runs THROUGH a hex; the first cut dabbed a blob in the middle of
-  // it and it read as a puddle dropped on the grass.
-  if (ground.river) {
-    const lean = rng.float(0, Math.PI);
-    for (let i = 0; i < 11; i += 1) {
-      const along = rng.float(-1, 1) * HEX_SIZE * 0.8;
-      stroke(
-        ctx, rng,
-        p.x + Math.cos(lean) * along + rng.float(-2.6, 2.6),
-        p.y + Math.sin(lean) * along + rng.float(-2.6, 2.6),
-        rng.float(6, 12), rng.float(2.4, 4.4),
-        rng.chance(0.5) ? mix('#3f7d94', body, 0.3) : mix('#5b9ab0', body, 0.2),
-        rng.float(0.45, 0.8),
-      );
-    }
-  }
-
-  ctx.restore();
-}
-
-/**
- * Country the band remembers rather than sees.
- *
- * NOT an opacity wash — that greys an oil painting and kills it. A scumble:
- * a cold, thin, dry glaze dragged over the marks already there, so the ground
- * underneath still shows and a hex walked away from is recognisably the
- * ground it was. That is the property terrainPatterns() already guarantees
- * for the SVG map — the light goes out of it, the trees do not move — and it
- * is the one that decided oil was viable at all.
- */
-export function scumble(ctx: CanvasRenderingContext2D, seed: string, at: Hex): void {
-  const p = toPixel(at, HEX_SIZE);
-  const rng = hexRng(seed, at, 'scumble');
-  ctx.save();
-  hexPath(ctx, p.x, p.y, HEX_SIZE * BLEED);
-  ctx.clip();
-
-  ctx.globalAlpha = 0.5;
-  ctx.fillStyle = '#141c2c';
-  hexPath(ctx, p.x, p.y, HEX_SIZE * GLAZE);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  for (let i = 0; i < 30; i += 1) {
-    const angle = rng.float(0, Math.PI * 2);
-    const away = Math.sqrt(rng.next()) * HEX_SIZE * 1.1;
-    stroke(
-      ctx, rng,
-      p.x + Math.cos(angle) * away,
-      p.y + Math.sin(angle) * away,
-      rng.float(7, 16), rng.float(2.6, 5.4),
-      rng.chance(0.6) ? '#26314a' : '#10161f', rng.float(0.2, 0.42),
-    );
-  }
-  ctx.restore();
-}

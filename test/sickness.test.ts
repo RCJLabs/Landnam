@@ -8,7 +8,7 @@
 // docks morale for, cost the band nothing it could feel in the body.
 
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { JOBS } from '../src/data/jobs';
 import { ILLNESSES } from '../src/sim/cold';
 import { crowding } from '../src/sim/colony';
@@ -25,8 +25,6 @@ import { living } from '../src/sim/people';
 import { OVER_ROOF, drawOdds, roomLeft, takeIn, willAdmit } from '../src/sim/joining';
 import { capacity } from '../src/sim/colony';
 import type { GameState, Person } from '../src/state/types';
-import { canFound, foundSettlement } from '../src/sim/site';
-import { fromKey } from '../src/hex';
 import { passDay } from '../src/sim/upkeep';
 import { SEASON_LENGTH, SEASON_ORDER, seasonOf } from '../src/sim/calendar';
 
@@ -40,17 +38,8 @@ import { SEASON_LENGTH, SEASON_ORDER, seasonOf } from '../src/sim/calendar';
  * The instrument was lying, not the feature working.
  */
 function hall(seed = 'sick', extra = 0): GameState {
-  const state = newGame(seed);
-  // Find ground the game itself would accept, stand on it, and found.
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    state.world.seen[k] = 'visible';
-    if (!canFound(state, at)) continue;
-    foundSettlement(state);
-    break;
-  }
-  if (!state.settlement) throw new Error(`no site in ${seed} — the fixture never ran`);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   state.party.food = 400;
   state.party.firewood = 400;
   // Extra bodies past what the roof holds, which is the whole subject.
@@ -260,19 +249,33 @@ describe('a winter illness mends for a healer and for nobody else', () => {
     const winter = winterHall('frost-rate', true);
     const summer = winterHall('thaw-rate', true);
     summer.day = SEASON_ORDER.indexOf('summer') * SEASON_LENGTH + 3;
-    const took = (state: GameState): number => {
-      const man = living(state.party.people)[1]!;
-      const before = man.injuries[0]!.heals;
-      twelveDays(state);
-      return before - (man.injuries[0]?.heals ?? 0);
+    // DAYS TO MEND, not days-off-in-twelve, and the difference is the whole
+    // reason this reads right. The first cut asked how much came off in a
+    // fixed twelve days, which is a quantity with a CEILING: an illness is 14
+    // to heal, so any hall that tends fast enough to finish inside the window
+    // reports 14 in both seasons and the comparison says nothing. That is
+    // exactly what a coast build does — its healer reads a site with a beck
+    // on it by law, so care lands at 1.24 against the map's 1.01 and twelve
+    // days clear the whole thing either way.
+    //
+    // Counting days to mend has no ceiling, so it holds the claim on any
+    // ground: winter tends at `care` a day and out of the frost there is a
+    // free day-a-day on top of it.
+    const mendDays = (state: GameState): number => {
+      for (let d = 1; d <= 400; d += 1) {
+        state.event = undefined;
+        if (!passDay(state)) break;
+        const man = living(state.party.people)[1];
+        if (!man || (man.injuries[0]?.heals ?? 0) <= 0) return d;
+      }
+      return Infinity;
     };
-    const inFrost = took(winter);
-    const inThaw = took(summer);
+    const inFrost = mendDays(winter);
+    const inThaw = mendDays(summer);
     // eslint-disable-next-line no-console
-    console.log(`twelve tended days took ${inFrost.toFixed(1)} off it in winter, `
-      + `${inThaw.toFixed(1)} in summer`);
-    expect(inFrost).toBeGreaterThan(0);
-    expect(inFrost).toBeLessThan(inThaw);
+    console.log(`tended, it mended in ${inFrost} days in winter and ${inThaw} out of the frost`);
+    expect(inFrost, 'never mended at all under a healer').toBeLessThan(Infinity);
+    expect(inFrost).toBeGreaterThan(inThaw);
   });
 });
 

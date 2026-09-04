@@ -2,11 +2,10 @@
 // past a shield-brother's shoulder, and the thrown spear. All three roll
 // against the same `evasion` and all three end in the same `drop`.
 
-import { distance } from '../hex';
 import type { Combatant, GameState } from '../state/types';
 import { activeCombatant, fighterPerson } from './battle';
 import { beat, type BlowBeat, type BlowResult } from './beats';
-import { hasShot } from './zoc';
+import { canActFrom, canLandOn, screen } from './ranks';
 import { canAnchor, wallLinks } from './wall';
 import { bonus } from './lore';
 import { NERVE_HIT, shakeNerve } from './morale';
@@ -60,7 +59,8 @@ export function doStrike(state: GameState, targetPersonId: string): boolean {
 
   const target = battle.combatants.find((c) => c.personId === targetPersonId && !c.down);
   if (!target || target.side === active.side) return false;
-  if (distance(active.at, target.at) !== 1) return false;
+  if (!canActFrom('strike', active.rank)) return false;
+  if (!canLandOn('strike', target.rank)) return false;
 
   const attacker = fighterPerson(state, active.personId);
   const defender = fighterPerson(state, target.personId);
@@ -148,25 +148,22 @@ export const REACH_DAMAGE_OFF = 1;
 export function screenFor(
   state: GameState,
   active: Combatant,
-  target: Combatant,
 ): Combatant | undefined {
   const battle = state.battle;
   if (!battle) return undefined;
-  return battle.combatants.find(
-    (c) =>
-      c.side === active.side &&
-      c.personId !== active.personId &&
-      canAnchor(c) &&
-      distance(c.at, active.at) === 1 &&
-      distance(c.at, target.at) === 1,
-  );
+  // The old rule asked for a mate adjacent to BOTH the thruster and the
+  // target, which was a hex spelling of "somebody is in front of you". On a
+  // line that is the man at rank - 1, and he has to be able to hold a place.
+  const ahead = screen(battle.combatants, active);
+  return ahead && canAnchor(ahead) ? ahead : undefined;
 }
 
 export function canReachAt(state: GameState, active: Combatant, target: Combatant): boolean {
   if (active.hasActed || active.broken) return false;
   if (target.down || target.fled || target.side === active.side) return false;
-  if (distance(active.at, target.at) !== REACH_RANGE) return false;
-  return screenFor(state, active, target) !== undefined;
+  if (!canActFrom('reach', active.rank)) return false;
+  if (!canLandOn('reach', target.rank)) return false;
+  return screenFor(state, active) !== undefined;
 }
 
 /** Foes the active fighter could put a spear into over a mate's shoulder. */
@@ -187,7 +184,7 @@ export function doReach(state: GameState, targetPersonId: string): boolean {
 
   const attacker = fighterPerson(state, active.personId);
   const defender = fighterPerson(state, target.personId);
-  const screen = screenFor(state, active, target);
+  const screen = screenFor(state, active);
   if (!attacker || !defender || !screen) return false;
   const front = fighterPerson(state, screen.personId);
 
@@ -235,12 +232,11 @@ export function doReach(state: GameState, targetPersonId: string): boolean {
 
 // --- Throw ---
 
-export function canThrowAt(state: GameState, active: Combatant, target: Combatant): boolean {
+export function canThrowAt(_state: GameState, active: Combatant, target: Combatant): boolean {
   if (active.throwsLeft <= 0 || active.hasActed || active.broken) return false;
   if (target.down || target.fled || target.side === active.side) return false;
-  const gap = distance(active.at, target.at);
-  if (gap < 2 || gap > THROW_RANGE) return false;
-  return hasShot(state.battle!, active.at, target.at);
+  if (!canActFrom('throw', active.rank)) return false;
+  return canLandOn('throw', target.rank);
 }
 
 /** Throw targets for whoever is acting — range 2 to 3, clear line only. */

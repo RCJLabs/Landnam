@@ -2,7 +2,6 @@
 // a Person is a party token in TRAVEL, a unit in BATTLE, a worker in COLONY.
 // Everything here must be JSON-serializable: no Maps, Sets, or class instances.
 
-import type { Hex, HexKey } from '../hex';
 import type { HardshipId } from '../data/hardship';
 // Types only, and the arrow points back here for Battle — which TypeScript is
 // happy with and which keeps the beat vocabulary next to the code that emits
@@ -26,13 +25,13 @@ export type Terrain =
   | 'bog'
   | 'valley';
 
-export type Visibility = 'unseen' | 'seen' | 'visible';
-
-export interface Tile {
-  terrain: Terrain;
-  /** A river runs through this hex — fresh water, harder to cross. */
-  river: boolean;
-}
+// `Visibility` and `Tile` stood here until 2026-09-01. Both were hex-era
+// types — a tile's terrain, whether a river ran through it, and whether it
+// had been seen — and 8.5 deleted everything that referenced them without
+// deleting them. Nothing in src/, test/ or scripts/ named either one; the
+// only mentions left were two comments in landmark.ts and version.ts
+// recounting what `Tile` used to carry, and those are history and stay.
+// Found by the probe described in the changelog, not by reading.
 
 /**
  * Somebody the band drove out, still in the country.
@@ -66,14 +65,23 @@ export interface Rival {
   leader: string;
   /** What their hall is called. */
   hall: string;
-  /** Where their posts went in. */
-  at: Hex;
-  /** Hexes they hold, hall first, in the order they took them. */
-  claims: HexKey[];
+  /** The stretch his posts went into — see sim/route.ts. */
+  stop?: number;
+  /** The stretches he holds, hall first, in the order he took them. */
+  claimStops?: number[];
   /** The day of the last claim. */
   lastClaim: number;
   /** True once we have laid eyes on the hall. */
   met: boolean;
+  /**
+   * The day sight first fell on it, for the saga to name.
+   *
+   * Optional and it has to be: a save written before 9.10 may already have
+   * `met` true with no record of when, and the saga would rather say nothing
+   * than name a day it is guessing at. `metOn` absent means "we met him, and
+   * this saga does not know the day".
+   */
+  metOn?: number;
   /** True once the saga has recorded that they landed at all. */
   told: boolean;
 }
@@ -87,42 +95,27 @@ export interface Worked {
 }
 
 export interface World {
-  width: number;
-  height: number;
-  tiles: Record<HexKey, Tile>;
-  /** Fog of war, keyed like tiles. Absent means 'unseen'. */
-  seen: Record<HexKey, Visibility>;
   /**
-   * How hard each larder has been worked, keyed `${kind}:${hexKey}`.
+   * How hard each larder has been worked, keyed `${kind}:s${stop}`.
    *
-   * Only hexes somebody has actually worked appear here, so an untouched
-   * country costs the save nothing — see sim/abundance.ts for why the figure
+   * Only stretches somebody has actually worked appear here, so an untouched
+   * coast costs the save nothing — see sim/abundance.ts for why the figure
    * can be written once and read lazily.
    */
   worked?: Record<string, Worked>;
-  /**
-   * Ground the band has broken: hexes with a way made through them, keyed to
-   * the day the work was finished.
-   *
-   * The one thing on the world the PLAYER authors, so unlike skerries and
-   * landmarks it cannot be derived and has to be carried in the save. It is
-   * also the only thing here that outlives the band that made it.
-   */
-  made?: Record<HexKey, number>;
-  /**
-   * Skerries the band has found out about, the hard way or the careful way.
-   *
-   * The rocks themselves are derived from the seed (sim/skerry.ts) and are
-   * not stored; this is the CHART, which is the part a saga earns. Absent
-   * means a coast nobody has read yet.
-   */
-  charted?: HexKey[];
-  /** Where the knarr made landfall — the run's anchor point. */
-  landing: Hex;
-  /** What the landing was called, so the map can label it. */
+  /** What the landing was called, so the chart can label it. */
   landingName: string;
-  /** Hexes the party has actually stood on, keyed to the day they first did. */
-  trod: Record<HexKey, number>;
+  /**
+   * The two things a saga learns about its coast — see sim/route.ts.
+   * `trodStops` is where the band has stood, keyed to the day it first did;
+   * `knownStops` is what it knows stands there, however it came to know.
+   *
+   * Deliberately kept apart. Standing somewhere and knowing what is there are
+   * different facts: a trader names a monastery you have never walked to, and
+   * you walk a stretch of empty shore and learn only that it was empty.
+   */
+  trodStops?: Record<string, number>;
+  knownStops?: number[];
   /** Fixed points worth walking to — and some worth taking. See data/places. */
   places: Place[];
 }
@@ -134,7 +127,8 @@ export interface World {
 export interface Place {
   id: string;
   kind: 'monastery' | 'town' | 'wreck' | 'oreseam' | 'ruin';
-  at: Hex;
+  /** Which stop on the coast it stands at — see sim/route.ts. THE address. */
+  stop: number;
   /** Set the day it was sacked or picked clean. A place is taken once. */
   sackedOn?: number;
 }
@@ -143,9 +137,14 @@ export interface Place {
 export interface Ghost {
   /** What they called their steading. */
   name: string;
-  /** Where the posts went in. */
-  at: Hex;
-  /** The day it ended. */
+  /**
+   * The day it ended.
+   *
+   * There is no `at`. A challenge code still carries a `g<q>,<r>` slot and
+   * always will — old codes have to keep working — but the numbers in it were
+   * never read: `hauntedStop` derives the stretch from the ghost's own name,
+   * day and cause, because a coast ghost had no address to honour.
+   */
   day: number;
   /** How it ended — a `RunEnd` cause. */
   cause: string;
@@ -232,7 +231,30 @@ export interface Person {
 // --- The warband ---
 
 export interface Party {
-  at: Hex;
+  /**
+   * Where the band is standing, as a stop index into the route — see
+   * sim/route.ts. THE address, and since 8.5 the only one.
+   *
+   * Absent means the landing, which is where a band that has not walked yet
+   * is standing. It stays optional for that reason and not for the old one:
+   * `at: Hex` stood above this line until the hexes were retired.
+   */
+  stop?: number;
+  /**
+   * They came out of the WATER, and have not been seen yet.
+   *
+   * The strandhögg's whole condition, in the one coordinate a line has.
+   * `sim/sea.ts` calls it "the same place, taken two ways, and the ship's
+   * way is better if you win and much worse if you do not" — on the hex map
+   * the two ways were floating offshore or standing on the road, and a route
+   * has no offshore to float in, because rowing is a step and not a state.
+   *
+   * So the difference moves from WHERE they are to HOW THEY GOT THERE. A day
+   * at the oars arrives with a sail nobody was watching for; a walk up the
+   * coast arrives on the road, which is the one they watch. It lasts exactly
+   * one day — `advance` clears it, so any day spent is a day they saw you.
+   */
+  bySea?: boolean;
   people: Person[];
   food: number;
   firewood: number;
@@ -247,6 +269,32 @@ export interface Party {
    * `data/rations.ts` for why the numbers are what they are.
    */
   rations?: Rations;
+  /**
+   * The named blade, and whose hand it is in. See sim/heirloom.ts.
+   *
+   * On the PARTY rather than on a Person for the reason the ship is on the
+   * root: a thing that outlives the hand holding it cannot be stored on the
+   * hand. Optional only because a save written before there were blades has
+   * none, and a band whose blade has been laid by in a chest still carries
+   * the record of it.
+   */
+  blade?: Blade;
+}
+
+/**
+ * A sword with a name, and the hands it has been through.
+ *
+ * `borne` holds NAMES, not ids. Ids are meaningless the moment the run ends,
+ * and the whole point of the thing is that the memorial outlives the run.
+ */
+export interface Blade {
+  name: string;
+  /** Whose hand it is in. Absent means it is in a chest — see `laidFor`. */
+  holder?: string;
+  /** The child it waits for, when nobody is bearing it. */
+  laidFor?: string;
+  /** Everyone who has borne it, first hand first. */
+  borne: string[];
 }
 
 export type Rations = 'full' | 'half';
@@ -338,7 +386,18 @@ export type Side = 'warband' | 'foe';
 export interface Combatant {
   personId: string;
   side: Side;
-  at: Hex;
+  /**
+   * Where in the line this fighter stands. 1 is the front, where the two
+   * walls meet; the back rank is where the throwers are.
+   *
+   * This is the WHOLE of where somebody is. `at: Hex` stood above it until
+   * 8.1d — first as the thing fights were resolved on, then frozen at
+   * wherever a man deployed while the sim had already moved onto ranks, and
+   * finally as a field the renderer was still drawing people at. A position
+   * nothing agrees about is worse than no position, so it is gone. See
+   * sim/ranks.ts for why a wall is a line with depth rather than a plane.
+   */
+  rank: number;
   initiative: number;
   /** Movement left this turn. */
   movesLeft: number;
@@ -403,9 +462,20 @@ export interface Battle {
   champion?: string;
   /** Which neighbour's man he is, when he belongs to one and can come back. */
   championOf?: string;
-  width: number;
-  height: number;
-  grid: Record<HexKey, BattleTile>;
+  /**
+   * The ground, as a rectangle read by `sim/battlefield.ts`'s `cell(col, row)`.
+   *
+   * Its shape is not stored beside it. `width` and `height` sat here until
+   * v61, written once from `FIELD_WIDTH`/`FIELD_HEIGHT` and read by nothing:
+   * `cell` indexes off the constants, so the copy in the save could only ever
+   * agree with them. 8.1 listed them to go with `src/hex/` and 8.5 took
+   * everything else on the list.
+   *
+   * A hex-keyed record until v55. Nothing had walked it since 8.1c put the
+   * fight on ranks, and the one question left of it — is there a palisade on
+   * this field — never needed a coordinate system.
+   */
+  grid: BattleTile[];
   /** Enemies are People too — same model, same renderer treatment. */
   foes: Person[];
   combatants: Combatant[];
@@ -442,14 +512,25 @@ export interface SiteReport {
   total: number;
 }
 
-/** One hex of the steading's own ground, in COLONY mode. */
+/**
+ * One piece of the steading's own ground, in COLONY mode.
+ *
+ * The hall is plot 0 and the rest are the yard, in order.
+ *
+ * `at` stood here until v62 — a slot index that was a hex of a radius-2 ring
+ * until Phase 8 drew the yard side-on. `makePlots` builds the array in slot
+ * order, so `plots[i].at` was always `i`, and nothing reorders, filters or
+ * splices the array. It was the index written down twice, and the last
+ * remnant of the hex coordinate 8.5 set out to retire. Its only reader was a
+ * test asserting the values were distinct. See `makePlots`.
+ */
 export interface Plot {
-  at: Hex;
   kind: 'hall' | 'field' | 'wood' | 'water' | 'rough' | 'watchpost';
 }
 
 export interface Settlement {
-  at: Hex;
+  /** Which stop on the coast the posts went into — see sim/route.ts. */
+  stop?: number;
   name: string;
   /** The day the posts went in. There is only ever one. */
   foundedOn: number;
@@ -469,6 +550,12 @@ export interface Settlement {
   queue: string[];
   /** Builder-days banked against the head of the queue. */
   works: number;
+  /**
+   * The day the hall was last kept — a feast held in it. Undefined means
+   * never, and reads as the founding day. See sim/hall.ts: a steading's
+   * heart is paid while it is kept and fades when it is not.
+   */
+  kept?: number;
   /**
    * Everyone born here.
    *
@@ -565,7 +652,8 @@ export interface Neighbour {
   /** Clan kind id from data/clans. */
   kind: string;
   name: string;
-  at: Hex;
+  /** Which stop on the coast they live at — see sim/route.ts. */
+  stop?: number;
   /** What they think of you, -100..100. */
   standing: number;
   /** How much they can field, roughly 0..3. Feeds a fight's difficulty. */

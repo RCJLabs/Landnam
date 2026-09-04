@@ -12,14 +12,14 @@ import { atHome, BLOCK_REASON, foundBlocker } from '../sim/site';
 import { atSea } from '../sim/road';
 import { canFish, canGather } from '../sim/gathering';
 import { thinWord, thinness, type Larder } from '../sim/abundance';
-import { WAY_REASON, wayBlocker, wayDays } from '../sim/ways';
 import { canHoldBlot } from '../sim/blot';
+import { KEPT_FOR, canKeepHall, feastCost, sinceKept } from '../sim/hall';
 import { SAIL_ON_REASON, reckoningDue, sailOnBlocker } from '../sim/landnam';
 import { everyoneHome } from '../sim/expedition';
-import { BARGAIN_REASON, bargainBlocker, neighbourHere } from '../sim/neighbours';
+import { BARGAIN_REASON, bargainBlocker, bargainBlurb, neighbourHere } from '../sim/neighbours';
+import { foodPerDay } from '../sim/upkeep';
 import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
 import { placeKind } from '../data/places';
-import { BARTER_FOOD } from '../data/clans';
 import { FEAST_FOOD } from '../data/thing';
 import { wintersStood } from '../sim/calendar';
 import { thingCooldown, thingNeeds, thingOdds, yearsRuled } from '../sim/thing';
@@ -77,7 +77,7 @@ export function deedsFor(
   // tracks are old is a reason to move camp, which is the whole point.
   const state_ = state;
   const leftHere = (kind: Larder, full: string): string => {
-    const how = thinness(state_, kind, state_.party.at);
+    const how = thinness(state_, kind);
     return how === 'good' ? full : `${full} ${thinWord(kind, how)}`;
   };
 
@@ -105,35 +105,6 @@ export function deedsFor(
           afloat ? 'Put the nets over the side. The best water there is.' : 'Set nets in the water here.',
         ),
         run: () => dispatch({ type: 'FISH' }),
-      });
-    }
-  }
-
-  // Breaking ground. Offered wherever it would actually pay — `wayBlocker`
-  // refuses ground that already walks easily rather than selling a wasted
-  // day — and priced in the sheet, because days are the one thing this game
-  // never gives back.
-  if (!home && !afloat) {
-    const blocked = wayBlocker(state, state.party.at);
-    if (blocked === null) {
-      const days = wayDays(state, state.party.at);
-      deeds.push({
-        id: 'make-way',
-        label: 'Break ground',
-        // The chaining has to be said. A lone made hex is nearly worthless —
-        // ways pay by JOINING UP — and a verb that hides that sells the
-        // player days for nothing.
-        blurb: `${days} ${days === 1 ? 'day' : 'days'} of work. Ways join up: two made hexes in a row are `
-          + 'crossed in a single day, so a road pays back on the journeys you take again.',
-        run: () => dispatch({ type: 'MAKE_WAY' }),
-      });
-    } else if (blocked === 'made') {
-      deeds.push({
-        id: 'make-way',
-        label: 'Break ground',
-        blurb: 'Cut a way through. The going here is easier ever after.',
-        blocked: WAY_REASON.made,
-        run: () => {},
       });
     }
   }
@@ -175,6 +146,28 @@ export function deedsFor(
     });
   }
 
+  // KEEPING THE HALL. The other half of the blót's argument: a hall is worth
+  // what it is worth because somebody keeps it, and keeping it is a thing the
+  // player does rather than a tax that happens to them. Only offered when
+  // there is something to keep and food to keep it with.
+  if (canKeepHall(state)) {
+    const due = sinceKept(state) > KEPT_FOR;
+    deeds.push({
+      id: 'feast',
+      label: 'Hold a feast',
+      blurb: due
+        ? `The hall has gone quiet. ${feastCost(state)} of food would fill it again.`
+        : `${feastCost(state)} of food, and the hall stays glad for a season.`,
+      // Gold, like the blót above it, and for the same reason: this is a
+      // rite the hall holds, not a chore off a list. What changes when it
+      // falls due is the blurb, not the styling — the tone marks WHAT a deed
+      // is, and a feast does not become a different kind of thing for being
+      // late.
+      tone: 'weighty',
+      run: () => dispatch({ type: 'KEEP_HALL' }),
+    });
+  }
+
   const here = placeHere(state);
   if (here && here.sackedOn === undefined) {
     const def = placeKind(here.kind);
@@ -211,7 +204,11 @@ export function deedsFor(
     deeds.push({
       id: 'barter',
       label: `Barter with ${host.name}`,
-      blurb: `Carry ${BARTER_FOOD} of food in and come out with timber and goods.`,
+      // THE NUMBERS, same reason fall-on got them at 9.15, and the WARNING
+      // this crisis needs (11.M3) — both composed in sim/neighbours.ts,
+      // where a test can hold them without a browser. See `bargainBlurb`
+      // for the measurement behind the warning.
+      blurb: bargainBlurb(state, host.id, state.party.food / Math.max(1, foodPerDay(state)) < 3),
       ...(blocked ? { blocked: BARGAIN_REASON[blocked] } : {}),
       run: () => dispatch({ type: 'BARTER', id: host.id }),
     });
@@ -238,7 +235,7 @@ export function deedsFor(
     // Shown even when refused, with the ground's own reason. A missing button
     // teaches nothing; a greyed one that says "no fresh water" teaches the
     // whole system in a sentence.
-    const blocker = foundBlocker(state, state.party.at);
+    const blocker = foundBlocker(state);
     deeds.push({
       id: 'settle',
       label: 'Take this land',

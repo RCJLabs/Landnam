@@ -1,37 +1,41 @@
 // New-run construction. Everything derives from the seed: same seed, same
 // coast, same warband, same weather in the bones of the world.
 
-import { key } from '../hex';
 import { makeShip } from '../sim/ship';
+import { makeBlade, meaningOf } from '../sim/heirloom';
+import { leaderOf } from '../sim/people';
 import { stream } from '../rng';
 import { makeRival } from '../sim/rival';
 import { LANDING_NAMES } from '../data/names';
-import { effectsOn } from '../sim/calendar';
-import { revealAround, sightRadius } from '../sim/fog';
 import { makeWarband } from '../sim/people';
-import { generateWorld } from '../sim/worldgen';
 import { placeNeighbours } from '../sim/neighbours';
 import { seedPlaces } from '../sim/places';
 import { emptyTally } from '../sim/tally';
 import type { GameState } from './types';
 import { BALANCED_HARDSHIP, hardshipById, type HardshipId } from '../data/hardship';
 import { SAVE_VERSION } from './version';
+import { bareWorld } from './world';
 
 export const START_FOOD = 24;
 export const START_FIREWOOD = 8;
 
 export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP): GameState {
   const terms = hardshipById(hardship);
-  const world = generateWorld(stream(seed, 'worldgen'));
+  const world = bareWorld();
   const people = makeWarband(stream(seed, 'party'));
   const landingName = stream(seed, 'worldgen').derive('placename').pick(LANDING_NAMES);
   world.landingName = landingName;
-  world.trod = { [key(world.landing)]: 1 };
+  // The sand the knarr came onto is a stretch of coast the band has stood
+  // on, and the only one it has. Without this the landing is the one stop a
+  // saga can never name, which is the opposite of what it is.
+  world.trodStops = { '0': 1 };
+  world.knownStops = [0];
   // From its own derived stream, so the migration for pre-place saves can
   // hand an old world exactly the places its seed would have been born with.
-  world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
+  world.places = seedPlaces(seed);
 
   const ship = makeShip(seed);
+  const blade = makeBlade(seed, leaderOf(people)!);
 
   const state: GameState = {
     version: SAVE_VERSION,
@@ -42,12 +46,15 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
     world,
     ship,
     party: {
-      at: world.landing,
+      stop: 0,
       people,
       food: Math.round(START_FOOD * terms.stores),
       firewood: Math.round(START_FIREWOOD * terms.stores),
       morale: 70,
       hasCamped: false,
+      // The one thing they brought that is worth naming. It is on the party
+      // and not on the man because it will outlive him — see sim/heirloom.ts.
+      blade,
     },
     saga: [
       {
@@ -55,17 +62,21 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
         text: `${ship.name} grounded at ${landingName} on a grey morning, and six of us stepped down into water to the knee. Behind us, open sea. Ahead, a country with no name we knew.`,
         tone: 'saga',
       },
+      {
+        day: 1,
+        text: `${leaderOf(people)!.name} came up the sand with ${blade.name} at the hip — ${meaningOf(blade.name)}, and older than anybody who could say where it came from.`,
+        tone: 'saga',
+      },
     ],
     flags: { landingNamed: 1 },
     grudges: [],
     lore: [],
     tally: emptyTally(),
-    neighbours: placeNeighbours(world, stream(seed, 'worldgen').derive('neighbours')),
-    // The other boat. Built from the finished world rather than inside
-    // `generateWorld`, so the port's worldgen hash — a contract with the C++
-    // side — does not move for a rule about people.
+    neighbours: placeNeighbours(stream(seed, 'worldgen').derive('neighbours'), seed),
+    // The other boat, derived from the seed like everything else on the
+    // coast — a rival is a rule about people, not a fact about terrain.
     ...(() => {
-      const rival = makeRival(seed, world);
+      const rival = makeRival(seed);
       return rival ? { rival } : {};
     })(),
     // PAST the founders, not at 1. `makeWarband` hands out `p1`..`p6`, so a
@@ -80,7 +91,9 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
     nextId: people.length + 1,
   };
 
-  const effects = effectsOn(state.day);
-  revealAround(world, world.landing, sightRadius(world, world.landing, effects.sight));
+  // The first morning's sight, which a line does not have. `world.seen` is
+  // the hex map's memory; a coast remembers in `knownStops`, set above, and
+  // `road.reveal` has skipped the fog pass on a line since 8.2c. Left in, this
+  // wrote the LANDING into the seen map of a world with no hexes in it — and
   return state;
 }

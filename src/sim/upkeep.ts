@@ -4,6 +4,7 @@
 import type { GameState, Person, RunEnd } from '../state/types';
 import { effectsOn, nextThaw, seasonOf, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from './calendar';
 import { LONG_LIFE_WINTERS } from '../data/thing';
+import { DEATHS } from '../data/injuries';
 import { worldBeat } from './beats';
 import { omenFor, weatherOn } from './weather';
 import { ageTheBand, childrenOf, maybeBirth } from './lineage';
@@ -27,7 +28,14 @@ import { rivalDay } from './rival';
 import { maybeOutlawStrike } from './outlaw';
 import { renderTribute } from './thing';
 import { handsLeave, maybeJoin, maybeSword } from './joining';
-import { raidable, raidDifficulty, raidOdds } from './raid';
+import {
+  QUIET_SEASON_SHARE,
+  autumnChance,
+  autumnRaidDay,
+  raidable,
+  raidDifficulty,
+  raidOdds,
+} from './raid';
 import { startRaid } from './battleTurn';
 import { bonus } from './lore';
 import { chronicle } from './saga';
@@ -58,7 +66,26 @@ export const SURVIVAL_DAY = 73;
 export function maybeRaid(state: GameState): void {
   if (state.end || state.battle || state.event) return;
   if (!raidable(state)) return;
-  const odds = raidOdds(state);
+
+  // AUTUMN IS A RECKONING, NOT A TRICKLE. The rest of the year keeps the
+  // daily hazard — opportunists, a feud coming to a head, somebody who
+  // heard about the store. Autumn is when they come for the winter's food,
+  // and it is one roll on one day, so a band can see it approaching and
+  // spend the summer on a wall. See `AUTUMN_WORTH_K` for the measurement
+  // that asked for this: the threat was never too small, it was too random.
+  if (seasonOf(state.day) === 'autumn') {
+    if (state.day !== autumnRaidDay(state)) return;
+    const odds = autumnChance(state);
+    if (odds <= 0) return;
+    if (!stream(state.seed, 'events').derive(`raid-autumn:${state.day}`).chance(odds)) return;
+    startRaid(state, raidDifficulty(state));
+    return;
+  }
+
+  // The rest of the year is the background hazard it always was, quartered:
+  // autumn now carries most of the year's risk, and the whole point was to
+  // MOVE the risk rather than add it. See `QUIET_SEASON_SHARE`.
+  const odds = raidOdds(state) * QUIET_SEASON_SHARE;
   if (odds <= 0) return;
   if (!stream(state.seed, 'events').derive(`raid:${state.day}`).chance(odds)) return;
   startRaid(state, raidDifficulty(state));
@@ -160,6 +187,46 @@ function wound(state: GameState, person: Person, amount: number, fate: string): 
     chronicle(state, `${person.name} ${person.byname} died of ${fate}. We had no ground fit to bury them in.`, 'grim');
     mourn(state, person);
   }
+}
+
+/**
+ * What actually killed a band that has nobody left.
+ *
+ * This used to ask `people.some(p => p.fate === 'hunger')` first, then the
+ * same for the cold, and call everything else `slain` — so ONE person who
+ * ever died of hunger, in any winter of the saga, named the whole ending.
+ * A band cut to pieces on the road was told it starved as long as a single
+ * hand had gone hungry at some point, and `slain` could only fire for a band
+ * where nobody had EVER starved or frozen.
+ *
+ * Measured over 200 landings before this changed: deaths on the field are 39%
+ * of the settler's dead and 47% of the raider's — the largest single cause for
+ * a raider — while `slain` ended 3 sagas in 120. The ending was not rare, it
+ * was misattributed, and 10.2 spent a probe on the puzzle this one line made.
+ *
+ * So it counts instead, and names the largest. Ties keep the old order, which
+ * is the pessimistic reading and the one the saga voice was written for.
+ * `the sickness of that winter` is deliberately not a fourth cause here:
+ * illness has no ending of its own, and folding it into the cold would name a
+ * cause the run-end vocabulary cannot say.
+ */
+function wipedOutBy(state: GameState): RunEnd['cause'] {
+  let starved = 0;
+  let frozen = 0;
+  let slain = 0;
+  for (const p of state.party.people) {
+    if (p.alive || p.left) continue;
+    const fate = p.fate ?? '';
+    if (fate === 'hunger' || fate === 'short commons') starved += 1;
+    else if (fate === 'the cold') frozen += 1;
+    else if (DEATHS.includes(fate)) slain += 1;
+  }
+  if (starved >= frozen && starved >= slain && starved > 0) return 'starved';
+  if (frozen >= slain && frozen > 0) return 'frozen';
+  if (slain > 0) return 'slain';
+  // Nobody died of anything this vocabulary can name — everyone was carried
+  // off, or lost to the land. `slain` is what the old code said here too.
+  return 'slain';
 }
 
 function endRun(state: GameState, cause: RunEnd['cause'], title: string, lines: string[]): void {
@@ -482,11 +549,9 @@ export function checkRunEnd(state: GameState, _forage: number): void {
   }
 
   if (alive.length === 0) {
-    const starved = state.party.people.some((p) => p.fate === 'hunger');
-    const froze = state.party.people.some((p) => p.fate === 'the cold');
     endRun(
       state,
-      starved ? 'starved' : froze ? 'frozen' : 'slain',
+      wipedOutBy(state),
       'No One Came Back',
       [`The warband ended on day ${state.day}.`, 'The sea keeps no account of who it carries out.'],
     );

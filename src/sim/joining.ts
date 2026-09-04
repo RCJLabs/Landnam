@@ -11,6 +11,7 @@
 // (see SWORN_MAX): growth buys labour, never a wider shield wall.
 
 import { worldBeat } from './beats';
+import { bladeLeftBehind } from './heirloom';
 import { stream } from '../rng';
 import {
   DRAW_ANGER,
@@ -270,6 +271,10 @@ export function handsLeave(state: GameState): Person[] {
   }
 
   for (const person of gone) {
+    // The sword belongs to the band, not to the hand that had it. See
+    // sim/heirloom.ts — this site never calls `mourn`, so without this the
+    // blade would be stranded on somebody who has walked over the hill.
+    bladeLeftBehind(state, person);
     worldBeat(state, { kind: 'left', who: person.id, name: person.name });
     chronicle(state, `${person.name} left us. Nobody went after ${person.name}.`, 'grim');
   }

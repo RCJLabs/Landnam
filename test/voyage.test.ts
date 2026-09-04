@@ -12,9 +12,12 @@
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { PURPOSES } from '../src/sim/expedition';
 import { fieldCrew, homeCrew } from '../src/sim/expedition';
 import { foodPerDay } from '../src/sim/upkeep';
+import { VOYAGE_RECORD } from '../src/sim/voyage';
+import { ABANDON_RECORD } from '../src/data/retreat';
 import {
   CROSSING,
   MIN_ABOARD,
@@ -32,23 +35,13 @@ import { SEASON_LENGTH } from '../src/sim/calendar';
 import { living } from '../src/sim/people';
 import { roomLeft } from '../src/sim/joining';
 import { crowding } from '../src/sim/colony';
-import { canFound, foundSettlement } from '../src/sim/site';
-import { fromKey } from '../src/hex';
 import { SHIP_STRAKES } from '../src/data/ships';
 import type { GameState } from '../src/state/types';
 
 function hall(seed = 'voyage', extra = 0): GameState {
-  const state = newGame(seed);
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    state.world.seen[k] = 'visible';
-    if (!canFound(state, at)) continue;
-    foundSettlement(state);
-    break;
-  }
-  if (!state.settlement) throw new Error('no site — the fixture never ran');
-  state.party.at = state.settlement.at;
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
+  state.party.stop = state.settlement!.stop;
   state.party.food = 300;
   state.party.firewood = 300;
   const seed0 = state.party.people[0]!;
@@ -295,5 +288,37 @@ describe('what a voyage is worth, measured', () => {
     // ...and the sea has to have its say, or it is a vending machine.
     expect(rough).toBeGreaterThan(0);
     expect(rough).toBeLessThan(runs);
+  });
+});
+
+// 9.2: the crossing states its record, as the door out does.
+describe('the crossing says what became of the bands that took it', () => {
+  it('states an outcome and a cause, not advice', () => {
+    // Measured at saved 4 / killed 9 over 200 landings, re-taken 2026-08-31.
+    // The line has to carry BOTH halves: what happened, and why.
+    //
+    // THIS TEST USED TO PIN THE WRONG WHY. It asserted /mouths/i, which
+    // enforced the unfunded-mouths cause — and that cause has since failed
+    // two sweeps: funding the mouths four times as well made things worse,
+    // and shortening the crossing (which is what changes when they land
+    // relative to winter) moved nothing at all. A bar that holds a card to a
+    // disproved explanation is worse than no bar, so it pins what survived
+    // instead, and pins the disproved half OUT so it cannot quietly return.
+    expect(VOYAGE_RECORD).toMatch(/more died|more were/i);
+    expect(VOYAGE_RECORD).toMatch(/crossing/i);
+    expect(VOYAGE_RECORD, 'the disproved cause came back').not.toMatch(/mouths/i);
+    // And it must not instruct.
+    expect(VOYAGE_RECORD).not.toMatch(/\byou should\b|\bdo not\b|\bnever\b/i);
+  });
+
+  it('does not contradict the door out, which makes the same kind of claim', () => {
+    // Two records in the same voice. If one ever drifts into advice the other
+    // will not, and the pair reading differently on the same screen is the
+    // tell that somebody edited one without the measurement behind it.
+    expect(VOYAGE_RECORD).not.toBe(ABANDON_RECORD);
+    for (const line of [VOYAGE_RECORD, ABANDON_RECORD]) {
+      expect(line).toMatch(/more died|more were/i);
+      expect(line.trim().endsWith('.'), `${line} should be whole sentences`).toBe(true);
+    }
   });
 });

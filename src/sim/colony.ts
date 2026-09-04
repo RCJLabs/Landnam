@@ -6,7 +6,6 @@
 // send out on an expedition are hands that are not farming.
 
 import { worldBeat } from './beats';
-import { key, range, type Hex } from '../hex';
 import type { Rng } from '../rng';
 import {
   JOBS,
@@ -32,11 +31,28 @@ import { effectsOn } from './calendar';
 import { effectiveStat, living, SWORN_MAX } from './people';
 import { homeCrew } from './expedition';
 import { chronicle } from './saga';
+import {
+  HEARTH_FREE,
+  KEPT_FOR,
+  NEGLECTED_AFTER,
+  heartPaid,
+  sinceKept,
+} from './hall';
 import { bonus, learn } from './lore';
 import type { LoreId } from '../data/lore';
 
 /** Rings of local ground around the hall. Nineteen hexes at radius two. */
 export const PLOT_RADIUS = 2;
+
+/**
+ * How many plots a steading's ground is cut into.
+ *
+ * Nineteen, because that is what a radius-2 hex ring held: the yard was a
+ * ring of ground you looked down on until Phase 8 drew it side-on, and the
+ * count came across with the steadings that already existed. A bag with an
+ * index rather than a lattice — see `makePlots`.
+ */
+export const PLOT_COUNT = 19;
 
 /**
  * The most shelter mending alone can ever reach. Everything above this has to
@@ -62,8 +78,17 @@ export const IDLE_BITE = 0.6;
  * five measures said it would be, so the local map is a picture of the choice
  * the player already made.
  */
-export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
-  const hexes = range(centre, PLOT_RADIUS);
+export function makePlots(report: SiteReport, rng: Rng): Plot[] {
+  // There is no ring of ground around the hall to walk out into — a steading
+  // stands on a stretch of shore, and what it has is what the reading said it
+  // has. So the SAME number of plots is rolled with the SAME weights, and the
+  // only thing that changed is that `at` stopped being a coordinate.
+  //
+  // `Plot.at` is a slot index now rather than a hex. It was written as
+  // `{q: i, r: 0}` while both worlds had to load, which is an index already
+  // — the rolls derive off `${i},0` here so a steading built before the
+  // hexes went keeps exactly the plots it was built with.
+  const slots = Array.from({ length: PLOT_COUNT }, (_, i) => i);
   const plots: Plot[] = [];
 
   // Weights straight off the reading. The floor keeps every steading from
@@ -76,12 +101,14 @@ export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
   ];
   const total = weights.reduce((sum, w) => sum + w[1], 0);
 
-  for (const at of hexes) {
-    if (at.q === centre.q && at.r === centre.r) {
-      plots.push({ at, kind: 'hall' });
+  for (const at of slots) {
+    if (at === 0) {
+      plots.push({ kind: 'hall' });
       continue;
     }
-    let roll = rng.derive(key(at)).float(0, total);
+    // The derive key is the hex key this slot used to carry — `${i},0` — so
+    // the same steading rolls the same plots it rolled before the hexes went.
+    let roll = rng.derive(`${at},0`).float(0, total);
     let kind: PlotKind = 'rough';
     for (const [candidate, weight] of weights) {
       roll -= weight;
@@ -90,18 +117,33 @@ export function makePlots(report: SiteReport, centre: Hex, rng: Rng): Plot[] {
         break;
       }
     }
-    plots.push({ at, kind });
+    plots.push({ kind });
   }
 
   // The watch stands on the edge, looking out. Always exactly one, so the
   // warrior always has somewhere to be.
-  const edge = plots.filter(
-    (p) => p.kind !== 'hall' && Math.max(...[p.at.q - centre.q, p.at.r - centre.r].map(Math.abs)) >= 1,
-  );
+  const edge = plots.filter((p) => p.kind !== 'hall');
   const post = edge[Math.floor(rng.derive('watchpost').float(0, edge.length))];
   if (post) post.kind = 'watchpost';
 
   return plots;
+}
+
+/**
+ * Plot kinds present, for the panel's summary of the ground.
+ *
+ * Was in `render/colony.ts`, which drew the hex ring and is gone. It is a
+ * question about the state rather than about the picture — which is why it
+ * belongs here and why it never should have been over there.
+ */
+export function plotTally(state: GameState): { kind: string; name: string; count: number }[] {
+  const home = state.settlement;
+  if (!home) return [];
+  const counts = new Map<string, number>();
+  for (const plot of home.plots) counts.set(plot.kind, (counts.get(plot.kind) ?? 0) + 1);
+  return [...counts.entries()]
+    .map(([kind, count]) => ({ kind, name: PLOTS[kind as keyof typeof PLOTS].name, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
 /** Plots of a kind the given job works. */
@@ -174,11 +216,66 @@ export function foodKeeping(state: GameState): number {
   return standing(home).reduce((n, b) => n * (b.foodKeep ?? 1), 1);
 }
 
+/** The heart everything standing WOULD give, before the hall is asked whether it has been kept. */
+export function heartRaised(state: GameState): number {
+  const home = state.settlement;
+  if (!home) return 0;
+  return standing(home).reduce((n, b) => n + (b.heart ?? 0), 0);
+}
+
 /** Standing daily heart from the buildings that give it. */
 export function heartFromBuildings(state: GameState): number {
   const home = state.settlement;
   if (!home) return 0;
-  return standing(home).reduce((n, b) => n + (b.heart ?? 0), 0);
+  // A HALL PAYS WHILE IT IS KEPT, not for having been built. This used to
+  // return the raised total whole, every day, for ever, and that annuity is
+  // what made a jarldom unkillable — see sim/hall.ts for the measurement. The
+  // first point is still free, so a young band with a longhouse and nothing
+  // else is exactly where it was.
+  return heartPaid(state, heartRaised(state));
+}
+
+/**
+ * What the hall is paying, in words, for the colony panel to say out loud.
+ *
+ * Here rather than in the renderer because it is arithmetic and a choice of
+ * wording, both of which can be got wrong and neither of which a screenshot
+ * would catch. It sits beside `heartFromBuildings` so the panel and the sim
+ * cannot come to different conclusions about the same hall.
+ *
+ * `null` when there is nothing to say: no steading, or nothing standing worth
+ * more than the free point, in which case the rule cannot cost the band
+ * anything and a line about it would only be noise on a young band's screen.
+ */
+export interface HearthMark {
+  /** The state of the hall, in the chronicle's voice. */
+  head: string;
+  /** Days since the last feast. */
+  since: number;
+  /** Heart a day being lost to neglect. Zero while the hall is kept. */
+  short: number;
+  /** The right-hand column: the shortfall, or what is being paid. */
+  gap: string;
+  /** Whether the feast is overdue — what colours the mark. */
+  due: boolean;
+}
+
+export function hearthMark(state: GameState): HearthMark | null {
+  const raised = heartRaised(state);
+  if (!state.settlement || raised <= HEARTH_FREE) return null;
+
+  const since = sinceKept(state);
+  const short = Math.round((raised - heartPaid(state, raised)) * 10) / 10;
+  const cold = since >= NEGLECTED_AFTER;
+  const due = since > KEPT_FOR;
+
+  return {
+    head: cold ? 'The hall is cold' : due ? 'The hall has gone quiet' : 'The hall is glad',
+    since,
+    short,
+    gap: short > 0 ? `${short} off every heart` : `${raised} to every heart`,
+    due,
+  };
 }
 
 // --- The build queue ---
@@ -203,8 +300,20 @@ export function buildBlocker(state: GameState, building: BuildingDef): BlockReas
     if (crowding(state) <= 0) return 'room';
   }
   if (home.queue.includes(building.id)) return 'queued';
+  // `standsFor`, NOT `built.includes` — and this was a real bug, found when
+  // 9.11's ship-howe was gated on the hof and turned out to be UNRAISEABLE in
+  // sixty sagas. An upgrade removes what it replaces, so `built` stops
+  // containing the predecessor the moment the tier goes up: a great hof
+  // standing meant "there is no hof here" to every gate that asked this way.
+  //
+  // It was latent in shipped content rather than absent from it. The
+  // watchtower is `after: ['palisade']` and earthworks REPLACES the palisade,
+  // so a band that raised earthworks first could never raise a watchtower
+  // again — masked only by every bot policy wanting the watchtower first.
+  // This is the rule the `replaces` docstring states in data/buildings.ts,
+  // applied where it was not.
   for (const id of building.after ?? []) {
-    if (!home.built.includes(id)) return 'after';
+    if (!standsFor(state, id)) return 'after';
   }
   // An upgrade needs the thing it replaces actually standing.
   if (building.replaces && !home.built.includes(building.replaces)) return 'after';

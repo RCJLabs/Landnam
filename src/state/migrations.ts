@@ -11,8 +11,11 @@
 import { SAVE_VERSION } from './version';
 import { makeShip } from '../sim/ship';
 import { SHIP_STRAKES } from '../data/ships';
-import { stream } from '../rng';
 import { seedPlaces } from '../sim/places';
+import { placeNeighbours } from '../sim/neighbours';
+import { makeRival } from '../sim/rival';
+import { stream } from '../rng';
+import { BLADES } from '../data/blades';
 
 /** Migrates a save from version N to version N+1. */
 export type Migration = (save: Record<string, unknown>) => Record<string, unknown>;
@@ -196,10 +199,10 @@ export const MIGRATIONS: Record<number, Migration> = {
   // exactly the places its seed would have been born with, and a world whose
   // generation has since changed still gets places that fit ITS ground.
   17: (save) => {
-    const world = save['world'] as Parameters<typeof seedPlaces>[0] | undefined;
+    const world = save['world'] as { places?: unknown } | undefined;
     const seed = typeof save['seed'] === 'string' ? (save['seed'] as string) : '';
-    if (world && !Array.isArray((world as { places?: unknown }).places)) {
-      world.places = seedPlaces(world, stream(seed, 'worldgen').derive('places'));
+    if (world && !Array.isArray(world.places)) {
+      world.places = seedPlaces(seed);
     }
     return { ...save, version: 18 };
   },
@@ -367,6 +370,367 @@ export const MIGRATIONS: Record<number, Migration> = {
   // fishing. An old expedition keeps whatever purpose it launched under; the
   // new one is only ever chosen going forward.
   43: (save) => ({ ...save, version: 44 }),
+  // v44 -> v45: a fighter has a place in the LINE now, not just a hex. Rank 1
+  // is the front. Nothing reads it yet, so a fight saved mid-swing carries on
+  // untouched — the ranks just have to exist and be sane. Ranked per side, in
+  // the order the combatants are stored, which is the order they deployed.
+  44: (save) => {
+    const battle = save['battle'] as { combatants?: Record<string, unknown>[] } | undefined;
+    if (battle?.combatants) {
+      const seen: Record<string, number> = {};
+      battle.combatants = battle.combatants.map((c) => {
+        const side = typeof c['side'] === 'string' ? (c['side'] as string) : 'warband';
+        seen[side] = (seen[side] ?? 0) + 1;
+        return { ...c, rank: seen[side] };
+      });
+    }
+    return { ...save, version: 45 };
+  },
+  // v45 -> v46: a `moved` beat says which RANK a fighter left and which they
+  // took. An old one names two hexes on a field that no longer exists, and
+  // there is no honest rank to translate them into. Beats are a capped,
+  // drainable presentation stream, so the old ones are dropped rather than
+  // guessed at — the worst that costs is one un-animated step in a fight
+  // that was saved mid-swing.
+  45: (save) => {
+    const battle = save['battle'] as { beats?: Record<string, unknown>[] } | undefined;
+    if (battle?.beats) {
+      battle.beats = battle.beats.filter((b) => b['kind'] !== 'moved');
+    }
+    return { ...save, version: 46 };
+  },
+  // v46 -> v47: a fighter has no hex. Strip `at` from the combatants, and the
+  // `from`/`to` hexes from any `shoved` beat still in the stream.
+  //
+  // A `drowned` shove goes with them. It was the best thing the verb did —
+  // put a man in the water and the sea finished him for nothing — and a line
+  // has no water, so it has been unreachable since 8.1c. The beats it left
+  // behind name a result the type no longer has, so they are dropped rather
+  // than left to be rendered by a branch that is also gone.
+  46: (save) => {
+    const battle = save['battle'] as {
+      combatants?: Record<string, unknown>[];
+      beats?: Record<string, unknown>[];
+    } | undefined;
+    if (battle?.combatants) {
+      battle.combatants = battle.combatants.map((c) => {
+        const { at: _at, ...rest } = c as { at?: unknown };
+        return rest as Record<string, unknown>;
+      });
+    }
+    if (battle?.beats) {
+      battle.beats = battle.beats
+        .filter((b) => !(b['kind'] === 'shoved' && b['result'] === 'drowned'))
+        .map((b) => {
+          if (b['kind'] !== 'shoved') return b;
+          const { from: _from, to: _to, ...rest } = b as { from?: unknown; to?: unknown };
+          return rest as Record<string, unknown>;
+        });
+    }
+    return { ...save, version: 47 };
+  },
+  // v47 -> v48: the band gains a place on the coast. Nothing to work out —
+  // a saga that has never walked the line has not left the landing, and
+  // `standingAt` reads an absent stop as 0 anyway. The bump exists so the
+  // field is declared rather than appearing from nowhere.
+  47: (save) => ({ ...save, version: 48 }),
+  // v48 -> v49: places may name a stop on the coast. An old world's places
+  // stand on hexes and always will — there is no honest stop to invent for
+  // them, and inventing one would put a monastery somewhere the band could
+  // walk to on a coast that world was never seeded with.
+  48: (save) => ({ ...save, version: 49 }),
+  // v49 -> v50: nobody in an old save came out of the water a moment ago.
+  // Absent is exactly right, and inventing a surprise for a band that has
+  // been standing somewhere for a season would hand them a free raid.
+  49: (save) => ({ ...save, version: 50 }),
+  // v50 -> v51: neighbours and settlements may name a stop on the coast. An
+  // old save's people live on hexes and always will — the same reasoning as
+  // v49, and for the stronger reason here that a hall's stop would decide
+  // where the whole coast thinks the band lives.
+  50: (save) => ({ ...save, version: 51 }),
+  // v51 -> v52: an old save's band walked hexes, and `trod` already records
+  // which ones and when. There is no coast to have walked, so both new
+  // fields stay absent — inventing a trodden stop would put a band's history
+  // on a route its world was never seeded with.
+  51: (save) => ({ ...save, version: 52 }),
+  // v52 -> v53: an old save's rival holds hexes and always will. Inventing a
+  // stop for his hall would move a man who has been standing somewhere since
+  // day nine, and his claims are the record of a whole saga's dawdling.
+  52: (save) => ({ ...save, version: 53 }),
+  /**
+   * v53 -> v54: a coast save stops carrying the hex island.
+   *
+   * MEASURED: 1872 tiles is 77.2 kB of an 81.1 kB save — 96% of it — and a
+   * coast build reads none of them. `newGame` stopped generating the island
+   * on 2026-08-28; this is the same relief for saves that already exist.
+   *
+   * Only on a coast build, and that is not a hedge. The two pages are two
+   * games with two save slots, and the hex one navigates by those tiles: a
+   * migration that stripped them there would delete the country out from
+   * under a band mid-saga. So the flag decides, exactly as it decides
+   * everything else about which of the two is being played.
+   *
+   * `landing` is kept and the other hex fields are left where they are. They
+   * go in 8.5's last job, which is the SAVE_VERSION break that retires
+   * `Party.at` and its siblings — this one is only the weight.
+   */
+  53: (save) => {
+    const world = save['world'] as Record<string, unknown> | undefined;
+    if (!world) return { ...save, version: 54 };
+    return {
+      ...save,
+      version: 54,
+      world: { ...world, tiles: {}, seen: {}, trod: {} },
+    };
+  },
+  /**
+   * v54 -> v55: the battlefield stops being a hex lattice.
+   *
+   * `battle.grid` was a record keyed by axial hex, written and read only ever
+   * as `key(offsetToAxial(col, row))` — a rectangle wearing a coordinate
+   * system. It is a plain array indexed `row * width + col` now.
+   *
+   * A save caught mid-fight has to keep its ground, so the old keys are
+   * recomputed here rather than assumed: the axial formula is spelled out
+   * inline on purpose, because `src/hex/` is being deleted in this same
+   * milestone and a migration that outlives its import is a migration that
+   * throws. Anything missing is open ground, which is what an absent tile
+   * already meant to every reader.
+   */
+  54: (save) => {
+    const battle = save['battle'] as Record<string, unknown> | undefined;
+    if (!battle || Array.isArray(battle['grid'])) return { ...save, version: 55 };
+    const old = (battle['grid'] ?? {}) as Record<string, { ground?: string } | undefined>;
+    const width = (battle['width'] as number | undefined) ?? 7;
+    const height = (battle['height'] as number | undefined) ?? 9;
+    const grid: { ground: string }[] = [];
+    for (let row = 0; row < height; row += 1) {
+      for (let col = 0; col < width; col += 1) {
+        const q = col - ((row - (row & 1)) >> 1);
+        grid.push({ ground: old[`${q},${row}`]?.ground ?? 'open' });
+      }
+    }
+    return { ...save, version: 55, battle: { ...battle, grid } };
+  },
+  /**
+   * v55 -> v56: THE HEXES GO, AND SO DO THE SAGAS THAT LIVED ON THEM.
+   *
+   * 8.5's own break, and the one the milestone is named for. Every hex-shaped
+   * field leaves the save at once: `world.tiles`, `seen`, `trod`, `made`,
+   * `charted`, `landing`, `width` and `height`, and the `at` on the party,
+   * the settlement, every place, every neighbour, the rival, the ghost and
+   * every plot. `rival.claims` goes with them. What is left is the address a
+   * coast actually has, which is a stop on the route.
+   *
+   * WHICH SAGAS STOP LOADING, AND WHY — nothing, in the sense that every
+   * save still opens. But a save written by the HEX MAP has no stop for
+   * anybody: v49 through v53 each declined to invent one, in as many words,
+   * because "a hall's stop would decide where the whole coast thinks the band
+   * lives". That reasoning was right while both worlds ran, and it is exactly
+   * what makes those sagas unplaceable now.
+   *
+   * So a hex-map save comes forward as a band, not as a country: its people,
+   * its ship, its stores, its lore, its grudges and the whole of its saga log
+   * survive intact, and it stands on the landing of a coast derived fresh
+   * from its own seed. What does NOT survive is where anything was — the hall
+   * is re-sited on the landing stretch, and the places, the neighbours and
+   * the rival are re-derived from the seed, because the ones it carried stood
+   * on ground that no longer exists. A band twelve hexes from its hall is
+   * standing beside it again.
+   *
+   * The alternative — refusing to load the save — was rejected against this
+   * project's oldest rule: old saves must always load. A saga that opens with
+   * its history intact and its geography reset is a smaller loss than one
+   * that does not open.
+   */
+  55: (save) => {
+    const world = (save['world'] ?? {}) as Record<string, unknown>;
+    const seed = typeof save['seed'] === 'string' ? save['seed'] : '';
+    const party = (save['party'] ?? {}) as Record<string, unknown>;
+    // A save that already walks the coast keeps everything it knows; one from
+    // the hex map has none of these and is re-derived below.
+    const onTheLine = world['trodStops'] !== undefined || party['stop'] !== undefined;
+
+    const strip = (o: Record<string, unknown>, ...fields: string[]): Record<string, unknown> => {
+      const out = { ...o };
+      for (const f of fields) delete out[f];
+      return out;
+    };
+
+    const places = onTheLine
+      ? (world['places'] as Record<string, unknown>[] ?? [])
+        .filter((p) => typeof p['stop'] === 'number')
+        .map((p) => strip(p, 'at'))
+      : (seedPlaces(seed) as unknown as Record<string, unknown>[]);
+    const neighbours = onTheLine
+      ? (save['neighbours'] as Record<string, unknown>[] ?? []).map((n) => strip(n, 'at'))
+      : (placeNeighbours(
+        stream(seed, 'worldgen').derive('neighbours'), seed,
+      ) as unknown as Record<string, unknown>[]);
+    const rival = save['rival'] as Record<string, unknown> | undefined;
+    const nextRival = onTheLine
+      ? (rival ? strip(rival, 'at', 'claims') : undefined)
+      : (makeRival(seed) as unknown as Record<string, unknown> | null) ?? undefined;
+
+    const home = save['settlement'] as Record<string, unknown> | undefined;
+    const nextHome = home
+      ? {
+        ...strip(home, 'at'),
+        stop: typeof home['stop'] === 'number' ? home['stop'] : 0,
+        // A plot's `at` was `{q: i, r: 0}` — an index already. See makePlots.
+        plots: (home['plots'] as Record<string, unknown>[] ?? []).map((plot, i) => ({
+          ...plot,
+          at: typeof plot['at'] === 'number'
+            ? plot['at']
+            : ((plot['at'] as { q?: number } | undefined)?.q ?? i),
+        })),
+      }
+      : undefined;
+
+    const ghost = save['ghost'] as Record<string, unknown> | undefined;
+
+    return {
+      ...save,
+      version: 56,
+      world: {
+        landingName: world['landingName'] ?? '',
+        places,
+        ...(world['worked'] !== undefined ? { worked: world['worked'] } : {}),
+        ...(onTheLine && world['trodStops'] !== undefined
+          ? { trodStops: world['trodStops'] } : { trodStops: { '0': 1 } }),
+        ...(onTheLine && world['knownStops'] !== undefined
+          ? { knownStops: world['knownStops'] } : { knownStops: [0] }),
+      },
+      party: { ...strip(party, 'at'), stop: typeof party['stop'] === 'number' ? party['stop'] : 0 },
+      neighbours,
+      ...(nextRival ? { rival: nextRival } : {}),
+      ...(nextHome ? { settlement: nextHome } : {}),
+      ...(ghost ? { ghost: strip(ghost, 'at') } : {}),
+    };
+  },
+
+  /**
+   * 9.12: the hall must be kept.
+   *
+   * `Settlement.kept` is the day a feast was last held in the hall. An
+   * existing save has never held one, and reading that as "never" would
+   * strip a loaded jarldom of seven points of heart a day the moment it
+   * opened — a punishment for having saved before the rule existed. So it is
+   * credited with the day it is loaded on, and its first feast falls due a
+   * season later like everybody else's.
+   */
+  56: (save) => {
+    const home = save['settlement'] as Record<string, unknown> | undefined;
+    const day = typeof save['day'] === 'number' ? save['day'] : 1;
+    return {
+      ...save,
+      version: 57,
+      ...(home ? { settlement: { ...home, kept: day } } : {}),
+    };
+  },
+
+  // v58 (9.9): the band gets its named blade.
+  //
+  // Derived from the seed like everything else, so a saga loaded from before
+  // there were blades carries the SAME sword it would have come ashore with,
+  // not a different one — a player who reloads does not find the heirloom
+  // renamed. `borne` starts at whoever holds the high seat now: the hands it
+  // went through before this existed cannot be recovered, and inventing a
+  // chain would be a lie in the one place the feature is meant to be honest.
+  //
+  // A band with nobody left alive gets a blade with no holder, which is the
+  // truth about it.
+  57: (save) => {
+    const party = save['party'] as Record<string, unknown> | undefined;
+    if (!party) return { ...save, version: 58 };
+    const seed = typeof save['seed'] === 'string' ? save['seed'] : '';
+    const people = (Array.isArray(party['people']) ? party['people'] : []) as
+      Record<string, unknown>[];
+    const heir = people.find((p) => p['alive'] === true && p['bond'] === 'sworn')
+      ?? people.find((p) => p['alive'] === true);
+    const pick = stream(seed, 'worldgen').derive('blade').pick(BLADES);
+    const blade = {
+      name: pick.name,
+      ...(heir ? { holder: heir['id'] as string } : {}),
+      borne: heir ? [heir['name'] as string] : [],
+    };
+    return { ...save, version: 58, party: { ...party, blade } };
+  },
+
+  // v59 (9.1b): the shove and the dash come off the bar.
+  //
+  // Two beat kinds go with them, and beats are a PRESENTATION stream — capped,
+  // drained and disposable — so a save caught mid-fight drops the `shoved` and
+  // `dashed` beats it is holding rather than having them translated into
+  // something they were not. Exactly what v46 did when the `moved` beats
+  // stopped meaning hexes.
+  //
+  // Nothing else in a saved fight moves: every man keeps his rank, his wounds,
+  // his nerve and his hand-axes. What changes is that from the next turn on,
+  // a man with no legal verb left shoulders forward by himself instead of
+  // being offered a Run button — see `stepUp` in sim/footwork.ts.
+  58: (save) => {
+    const battle = save['battle'] as { beats?: Record<string, unknown>[] } | undefined;
+    if (battle?.beats) {
+      battle.beats = battle.beats.filter(
+        (b) => b['kind'] !== 'shoved' && b['kind'] !== 'dashed',
+      );
+    }
+    return { ...save, version: 59 };
+  },
+
+  // v60 (9.10): Rival gains the optional `metOn` — the day sight first fell
+  // on his hall, for the ending to name.
+  //
+  // DELIBERATELY NOT BACKFILLED. A save that already has `met: true` met him
+  // on some day this file cannot know, and the alternatives were to guess one
+  // or to leave it absent. The saga reads `metOn === undefined` as "we met him
+  // and this saga does not know when" and simply says nothing about the day,
+  // which is true; a guessed date would be a small lie told in the one place
+  // the run gets retold. See sim/sagagen.ts.
+  59: (save) => ({ ...save, version: 60 }),
+
+  /**
+   * v61: the last two hex-era fields leave the battle.
+   *
+   * Only a save caught mid-fight carries a `battle` at all; every other save
+   * passes through untouched. The two numbers are dropped rather than
+   * migrated because there is nothing to migrate them to — `cell(col, row)`
+   * has indexed off `FIELD_WIDTH`/`FIELD_HEIGHT` since 8.1c, so a battle's
+   * ground has always been that one shape and the copy in the save could
+   * only ever repeat it.
+   */
+  /**
+   * v62: `Plot.at` leaves the yard.
+   *
+   * Order is what carries the slot now, and `makePlots` has always built the
+   * array in slot order, so dropping the field cannot move a plot: the hall is
+   * still `plots[0]` in every save that has one. Only a settled band has plots
+   * at all; everything else passes through.
+   */
+  61: (save) => {
+    const home = save['settlement'];
+    if (!home || typeof home !== 'object') return { ...save, version: 62 };
+    const h = home as Record<string, unknown>;
+    const plots = h['plots'];
+    if (!Array.isArray(plots)) return { ...save, version: 62 };
+    const next = plots.map((p) => {
+      const plot = { ...(p as Record<string, unknown>) };
+      delete plot['at'];
+      return plot;
+    });
+    return { ...save, settlement: { ...h, plots: next }, version: 62 };
+  },
+
+  60: (save) => {
+    const battle = save['battle'];
+    if (!battle || typeof battle !== 'object') return { ...save, version: 61 };
+    const next = { ...(battle as Record<string, unknown>) };
+    delete next['width'];
+    delete next['height'];
+    return { ...save, battle: next, version: 61 };
+  },
+
 };
 
 export interface MigrationResult {

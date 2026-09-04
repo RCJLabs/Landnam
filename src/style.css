@@ -318,9 +318,18 @@ button.wide {
  * The blow-by-blow is always "expanded", so it would otherwise creep toward
  * 46dvh as the fight went on and squeeze the battlefield down to a strip.
  * The field is the game; the log is a footnote that scrolls itself.
+ *
+ * RESERVED, NOT CAPPED, and the difference is the whole of a bug a player
+ * reported as "in battle as people die the screen shrinks". A cap still lets
+ * the log GROW INTO it: the first turns write two lines, later turns write
+ * four, and every line it gained came out of the battlefield above it —
+ * measured on the built page at 390x844, the map slot went 606px to 562px
+ * over one death, and the men with it. Monotonic with the fight, because a
+ * log only ever gets longer. Fixing the height means the footnote takes its
+ * space once, at the start, and never takes another pixel.
  */
 .saga.fight .saga-entries {
-  max-height: 74px;
+  height: 74px;
 }
 
 /*
@@ -347,7 +356,7 @@ button.wide {
  */
 @media (max-height: 700px) {
   .saga.fight .saga-entries {
-    max-height: 44px;
+    height: 44px;
   }
 }
 
@@ -374,6 +383,226 @@ button.wide {
   line-height: 1.5;
   padding: 3px 0;
   color: var(--parchment);
+}
+
+/* --- The title and the ending as set pieces (art queue item 20) --- */
+
+/* The seed's own coast, painted behind the title card. Fills the screen and
+   sits under everything; the card floats on it with a scrim of its own. */
+.title-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Lifted so the BAND is what shows, and the amount was MEASURED rather than
+   derived. Deriving it got the wrong answer twice: `composeRoad` puts the
+   horizon at `HORIZON_FRAC` of the frame, but the foreground is also floored
+   (`max(BAND_FORE + 44, visH * (1 - HORIZON_FRAC))`), and on a scene this
+   tall the floor is what binds — so arithmetic from the fraction alone was
+   out by 86px and left the six of them behind the card.
+
+   The two numbers do different jobs, and measuring showed which. The HEIGHT
+   does not zoom: `composeRoad` fits whatever frame it is given, so a taller
+   box reveals MORE COAST at the same scale — the walkers measured 106px at
+   every setting from 170% to 280%. The TRANSFORM is what puts the band where
+   it can be seen.
+
+   Measured on the built page at 390x844: at -50% the band ran 279..336 with
+   the card's top edge at 271. -56% lifts them to 158..264, clear of it.
+   280%/-64% was tried so the picture's own bottom edge would still reach the
+   screen's (at 170% it stops at 631) and it is worse: all the extra frame
+   arrives as empty strand between the band and the card, and the mountains
+   get cropped off the top. The stopping-short is not a problem worth a
+   composition — the earth ground under `.overlay.title` and the scrim take
+   the edge, and what is left is the picture that reads best.
+
+   At 320x568 the card is 50px from the top and taller than the screen, so
+   there is no headroom and the band sits behind it whatever the lift. Not
+   solved here and not claimed to be: on the small phone the coast reads in
+   the margins around the card and the band does not read at all. */
+.title-scene > svg {
+  width: 100%;
+  height: 170%;
+  display: block;
+  transform: translateY(-56%);
+  /* The picture stops before the screen does, and a painting that ends in a
+     straight horizontal line across a phone reads as a rendering fault. It
+     is faded out instead of cut. The fade runs the last fifth of the frame,
+     which on both tested widths falls entirely BEHIND the card — measured:
+     390x844 fades 374..631 against a card from 271, 320x568 fades 251..425
+     against a card from 50 — so nothing anyone can see is softened except
+     the seam itself. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to bottom, #000 82%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* The travel view's own words belong to the road, not to a title screen:
+   "On the strand, stretch 0 of 25" over a wordmark is a debug caption. The
+   PICTURE is what is wanted here, so its labels are suppressed rather than
+   the view being forked into a second one that would drift. */
+.title-scene .here-word,
+.title-scene .sight-label,
+.title-scene .sight-name,
+.title-scene .sight-days {
+  display: none;
+}
+
+/* Enough scrim that parchment text stays readable over any country the seed
+   happens to make, and it was TUNED BY LOOKING. The first cut was a radial
+   wash at 0.82 and it swallowed the picture entirely — a title screen that
+   paints a coast and then hides it is worse than one that never painted it.
+   It runs down the screen instead: almost clear over the country at the top,
+   heavy under the card, which is where the text needs the contrast.
+
+   It hangs off the SCENE, not off the overlay. It was written on
+   `.overlay.title` first and a parent's background paints UNDER its own
+   children, so the scrim sat behind the picture it was meant to soften and
+   did nothing at all — the top of the coast came through at full strength
+   and the only dark on the screen was the strip the picture did not reach. */
+.title-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 8, 6, 0.12) 0%,
+    rgba(10, 8, 6, 0.2) 32%,
+    rgba(10, 8, 6, 0.66) 58%,
+    rgba(10, 8, 6, 0.9) 100%
+  );
+}
+
+/* Whatever the picture does not cover is EARTH, not void. The scene is drawn
+   oversize and lifted, so its bottom edge stops short of the screen's; with
+   nothing behind it that showed as a hard black line across the bottom of a
+   painting. This is the darkest tone in the brushed ground, so the edge is
+   not an edge any more. */
+.overlay.title {
+  background: #1b1610;
+}
+
+.overlay.title > .card {
+  position: relative;
+  z-index: 1;
+  background: rgba(29, 26, 20, 0.9);
+  backdrop-filter: blur(2px);
+}
+
+/* The ending is a SET PIECE, so it gets the screen. The overlay's ordinary
+   0.82 wash left the travel HUD legible behind it — a day counter and a
+   half-cut "HEA" over the last thing the run has to say. The run is over;
+   its instruments are not the point any more. */
+.overlay.end {
+  background: #14110c;
+}
+
+/* --- Knotwork, done as a pattern (art queue item 16) --- */
+
+/* `--knot` and `--knot-dim` are set on the root at boot by `render/knot.ts`,
+   which is the ONE place the weave is drawn. They are `url("data:image/svg
+   +xml,...")` values holding a single period of a two-strand plait, so a rule
+   of any length is one repeated PAINT and costs the document no nodes at all.
+   That is the whole answer to why Art 8 backed out of this: it measured the
+   cost of knotwork drawn as shapes, which is a different thing. */
+
+/* The ending, given the chronicle's own voice — a rule under the title and
+   an illuminated capital on the first thing it says. The two screens a run
+   begins and ends on should sound like the book it wrote in between. */
+.end-card > h2 {
+  padding-bottom: 12px;
+  border-bottom: none;
+  background-image: var(--knot);
+  background-repeat: repeat-x;
+  background-position: left bottom;
+}
+
+/* A DROP CAP HAS TO COVER WHOLE LINES. Both capitals were first sized by
+   eye — 34px on a 0.84 line — and both landed a float about a line and a
+   quarter tall, so the SECOND line of the paragraph wrapped short around
+   nothing and the block read as a typesetting fault rather than as a
+   flourish. The float's box is what the text flows around, not the ink.
+
+   Measured on the built page: the ending's prose is 15.5px on 1.7, so two
+   lines are 52.7px; the cap's box came to 32px. Both capitals are written in
+   `em` of the paragraph they open, at 2.4em with a line-height chosen so the
+   box lands just UNDER two lines — under, because a float even half a pixel
+   over spills onto a third line and the fault comes back one line lower. */
+.end-capital {
+  float: left;
+  margin: 2px 8px 0 0;
+  color: var(--gold);
+  /* 2.4em x 1.33 = 3.19em against two lines of 3.4em. */
+  font-size: 2.4em;
+  line-height: 1.33;
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(20, 18, 13, 0.6);
+}
+
+/* --- The saga as a chronicle (art queue item 17) --- */
+
+/* The season's rubric. A chronicle is kept by year, not by day: "the first
+   winter" is the game's own name for its clock, and the reason the bare day
+   number could go. */
+.chronicle-season {
+  margin: 18px 0 4px;
+  padding-bottom: 13px;
+  border-bottom: none;
+  background-image: var(--knot);
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.chronicle-season:first-child { margin-top: 2px; }
+
+.chronicle-count {
+  margin: 0 0 2px;
+  color: var(--parchment-dim);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* WEIGHT FOLLOWS MATTER. Everything the scribe wrote is on the page — a view
+   must not quietly edit somebody's record of their own run — but the day's
+   business sits back and the run's story comes forward. */
+.saga-line.routine {
+  color: var(--parchment-dim);
+  font-size: 13px;
+  padding: 1px 0;
+  opacity: 0.75;
+}
+
+.saga-line.told {
+  padding: 5px 0;
+}
+
+/* One illuminated capital a season, on the first line worth telling. */
+/* Same two-line rule as `.end-capital` above, and the same defect it fixes.
+   A chronicle line is 14px on 1.5, so two lines are 3.0em and the cap's box
+   is 2.4 x 1.16 = 2.78em. */
+.saga-capital {
+  float: left;
+  margin: 2px 7px 0 0;
+  color: var(--gold);
+  font-size: 2.4em;
+  line-height: 1.16;
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(20, 18, 13, 0.6);
+}
+
+/* A run of identical nights, said once and counted. */
+.saga-times {
+  margin-left: 4px;
+  color: var(--parchment-dim);
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
 
 .saga-day {
@@ -482,9 +711,18 @@ button.wide {
 
 /* --- Title --- */
 
+/* The wordmark is the one piece of type on the screen that has to survive
+   the narrow phone, and at 320 it did not: measured on the built page, the
+   title ran to x=279 and the shell's mute button starts at x=268, so the
+   final Á was under a button. It scales with the viewport now — 9vw, capped
+   at the old 38px so nothing changes on a wide screen — which brings it to
+   250 and clear. The left padding is the letter-spacing paid back: 0.18em
+   is added after the LAST letter too, and centring a box with a trailing gap
+   puts the ink itself off-centre. */
 .game-title {
-  font-size: 38px;
+  font-size: clamp(26px, 9vw, 38px);
   letter-spacing: 0.18em;
+  padding-left: 0.18em;
   color: var(--gold);
   text-align: center;
 }
@@ -863,6 +1101,10 @@ h2.grim {
 }
 
 .build-note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
   font-size: 11px;
   color: var(--parchment-dim);
   text-align: right;
@@ -870,6 +1112,13 @@ h2.grim {
 
 .build.primary .build-note {
   color: var(--gold);
+}
+
+/* 11.U2: why a row is flagged, in the steading's own words — never shown
+   for a blocked building, and never a second copy of readNeeds' own line. */
+.build-worth {
+  color: var(--gold);
+  font-style: italic;
 }
 
 .build.queued {
@@ -1005,6 +1254,150 @@ h2.grim {
   height: 20px;
   display: block;
   overflow: visible;
+}
+
+/* --- The procession (8.3) --- */
+
+.here-word {
+  fill: var(--parchment);
+  font-size: 17px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: rgba(20, 18, 13, 0.85);
+  stroke-width: 3px;
+}
+
+/* Names on the road ahead. Stroked the same way, because they are painted
+   over country whose colour is not ours to choose. */
+.sight-name,
+.sight-days {
+  fill: var(--parchment);
+  paint-order: stroke;
+  stroke: rgba(20, 18, 13, 0.8);
+  stroke-width: 3px;
+}
+
+.sight-days { opacity: 0.8; }
+
+/* What a person in the yard is at. Same stroked treatment as the sightings,
+   and for the same reason: it is painted over country whose colour comes out
+   of a seed and is not ours to plan against. */
+.walker-doing {
+  fill: var(--parchment);
+  paint-order: stroke;
+  stroke: rgba(20, 18, 13, 0.8);
+  stroke-width: 2.5px;
+  opacity: 0.85;
+}
+
+/* Hearth smoke drifts. Polish only: the still wisp already says a fire is
+   lit, so the motion is free to be turned off. */
+@keyframes smoke-drift {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-7px); opacity: 0.55; }
+}
+
+.hearth-smoke {
+  animation: smoke-drift 4s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hearth-smoke { animation: none; }
+}
+
+/* --- The light on the road (art queue item 15) --- */
+
+/* Stars breathe, faintly and out of step. Decoration only: the starfield is
+   drawn at full opacity in the markup, so a still night still has stars. */
+@keyframes star-breathe {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+
+.starfield .star {
+  animation: star-breathe 4s ease-in-out infinite alternate;
+}
+
+/* The campfire's glow pulses like a fire. Its flames are static shapes, so
+   stillness keeps a lit camp lit. */
+@keyframes camp-breathe {
+  from { opacity: 0.22; transform: scaleY(0.9); }
+  to { opacity: 0.42; transform: scaleY(1.08); }
+}
+
+.procession .campglow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: camp-breathe 3.2s ease-in-out infinite alternate;
+}
+
+:root.still .starfield .star,
+:root.still .procession .campglow {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield .star,
+  .procession .campglow {
+    animation: none;
+  }
+}
+
+.road-step { cursor: pointer; }
+
+.road-step-word {
+  fill: var(--parchment);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.road-step-days {
+  fill: var(--parchment-dim);
+  font-size: 12px;
+}
+
+
+/* --- The strip chart (8.2d) --- */
+
+/* The strip is drawn at its natural width and SCROLLED, not shrunk. That is
+   the whole difference between it and the hex chart above: shrinking a coast
+   to fit a phone is what makes a stretch too small to touch, and the strip
+   has to be touched — with the coast switched on it is the only way to walk
+   anywhere until 8.3. */
+.strip-frame {
+  background: var(--sea);
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  padding: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* The card must never make the PAGE scroll sideways; the strip scrolls
+     inside its own frame instead. */
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.strip {
+  display: block;
+  /* Natural width, so a chart pixel is a screen pixel and a stretch keeps
+     the touch target render/strip.ts sized it for. */
+  height: 176px;
+}
+
+.strip-leg {
+  fill: var(--parchment-dim);
+  font-size: 11px;
+}
+
+.strip-cost {
+  fill: var(--parchment);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.strip-limit {
+  fill: #c2703a;
+  font-size: 11px;
 }
 
 
@@ -1666,6 +2059,50 @@ button.gear {
   100% { opacity: 0; }
 }
 
+/* --- Blows that land somewhere (art queue item 19) --- */
+
+/* The struck man takes it: a jolt the way the blow was going, then his feet
+   again. `--kx`/`--ky` come from `fx.ts`, scaled by the damage.
+
+   This is the ONE effect that animates a fighter rather than a spawned
+   node, and it is deliberately short: a body that keeps moving after a blow
+   reads as a stagger, and most blows in this game are not staggering. */
+@keyframes fighter-recoil {
+  0% { transform: translate(0, 0); }
+  24% { transform: translate(var(--kx, 0), var(--ky, 0)); }
+  100% { transform: translate(0, 0); }
+}
+
+g.fighter.struck {
+  animation: fighter-recoil 300ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* Blood, thrown the way the blow was going. Small, dark and gone in half a
+   second — a saga, not a gore game. */
+@keyframes blood-fling {
+  0% { transform: translate(0, 0); opacity: 0.9; }
+  70% { opacity: 0.55; }
+  100% { transform: translate(var(--tx, 0), var(--ty, 0)); opacity: 0; }
+}
+
+.fx .fx-blood circle {
+  animation: blood-fling 520ms ease-out forwards;
+}
+
+/* Stillness and reduced motion take the movement, not the information: the
+   flash and the number still say a blow landed. */
+:root.still g.fighter.struck,
+:root.still .fx .fx-blood circle {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  g.fighter.struck,
+  .fx .fx-blood circle {
+    animation: none;
+  }
+}
+
 .fx .hit-flash {
   fill: var(--blood);
   transform-box: fill-box;
@@ -1902,6 +2339,15 @@ button.gear {
   box-shadow:
     inset 0 0 54px 10px rgba(10, 8, 6, 0.5),
     inset 0 0 0 1px rgba(232, 220, 192, 0.1);
+  /* THE BORDER ART 8 DECLINED. Its reason was that knotwork on this frame
+     "costs real nodes on every paint of the slot" — true of interlace drawn
+     as shapes, and not true of a repeated paint, which costs none. Top and
+     bottom only: the plait is a horizontal band, and turning the corner is
+     where a woven border stops being cheap and starts being a mitre problem
+     nobody asked for. Dim, because a chart's edge should be felt. */
+  background-image: var(--knot-dim), var(--knot-dim);
+  background-repeat: repeat-x, repeat-x;
+  background-position: left top, left bottom;
 }
 
 /* Hearth smoke: two puffs on their own loops, rising and thinning. */
@@ -1994,6 +2440,18 @@ button.warcry:disabled {
   color: var(--gold);
   font-size: 12px;
   white-space: nowrap;
+}
+
+/* 11.U3: what to DO about the mark, for a band that has a roof and is not
+   standing in it. The move is not a warning — it is the way out of one — so
+   it takes the moss the ready mark uses rather than the blood beside it. */
+.winter-mark.road-counsel {
+  border-top-color: var(--moss);
+}
+
+.winter-mark.road-counsel .mark-head {
+  color: var(--moss);
+  margin-bottom: 0;
 }
 
 /* The mark when the mark cannot be met. Not the same as "short": short is a

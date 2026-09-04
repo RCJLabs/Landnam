@@ -5,7 +5,6 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { startBattle } from '../src/sim/battleTurn';
 import { apply } from '../src/sim/actions';
-import { distance, offsetToAxial } from '../src/hex';
 import { leaderOf } from '../src/sim/people';
 import { startingNerve } from '../src/sim/morale';
 import { WALL_PUSH_MAX, wallPush } from '../src/sim/swing';
@@ -29,7 +28,7 @@ function fight(seed: string): GameState {
   const state = structuredClone(newGame(seed));
   startBattle(state, 'meadow', 1);
   const battle = state.battle!;
-  for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+  for (let i = 0; i < battle.grid.length; i += 1) battle.grid[i] = { ground: 'open' };
   return state;
 }
 
@@ -50,11 +49,16 @@ function arrange(state: GameState, who: Combatant): void {
   who.broken = false;
 }
 
-/** Park a list of combatants far from the action, spread out. */
-function park(list: Combatant[], row: number): void {
-  list.forEach((c, i) => {
-    c.at = offsetToAxial(i % 7, row);
-  });
+/**
+ * Get these out of the way.
+ *
+ * It used to mean "stand them on a far row". Since 8.1c what matters is the
+ * RANK — a man parked on the far side of the field is still shoulder to
+ * shoulder if his rank touches yours — so they go to ranks deep enough that
+ * nothing in a fixture reaches them.
+ */
+function park(list: Combatant[]): void {
+  list.forEach((c, i) => { c.rank = 20 + i; });
 }
 
 describe('who leads', () => {
@@ -86,12 +90,14 @@ describe('the wall pushes', () => {
   it('no mates, one mate, two mates — and two is the cap', () => {
     const state = fight('push-count');
     const [a, b, c, d] = ours(state) as [Combatant, Combatant, Combatant, Combatant];
-    park(foes(state), 0);
-    park(ours(state).slice(4), 8);
-    a.at = offsetToAxial(3, 5);
-    b.at = offsetToAxial(4, 5);
-    c.at = offsetToAxial(2, 5);
-    d.at = offsetToAxial(6, 8);
+    park(foes(state));
+    park(ours(state).slice(4));
+    // `a` is the middle of the line and has both — `b` and `c` flank him with
+    // one each, and `d` stands where nothing touches him.
+    a.rank = 2;
+    b.rank = 1;
+    c.rank = 3;
+    d.rank = 6;
     for (const x of [a, b, c, d]) {
       x.broken = false;
       x.down = false;
@@ -115,10 +121,10 @@ describe('the glancing blow', () => {
     const state = fight(seed);
     const attacker = ours(state)[0]!;
     const target = foes(state)[0]!;
-    park(ours(state).slice(1), 8);
-    park(foes(state).slice(1), 0);
-    attacker.at = offsetToAxial(3, 5);
-    target.at = offsetToAxial(4, 5);
+    park(ours(state).slice(1));
+    park(foes(state).slice(1));
+    attacker.rank = 1;
+    target.rank = 2;
     arrange(state, attacker);
 
     // Max roll is 2d6 = 12; with might 0 and no wall push it cannot touch
@@ -153,15 +159,13 @@ describe('the glancing blow', () => {
 
   it('a full wall turns the glance — shield-brothers take the wear instead', () => {
     const { state, target } = hopeless('glance-wall');
-    // Give the target two shoulder-mates: a full wall. One sits on the far
-    // side of the row; the other on whichever off-row hex is truly adjacent,
-    // found by distance rather than by guessing the offset parity.
+    // Give the target two shoulder-mates: a full wall. On a line that is one
+    // in the rank ahead and one in the rank behind — which used to take a
+    // search over off-row hexes to find, and now just says itself.
     const [mate1, mate2] = foes(state).slice(1, 3) as [Combatant, Combatant];
-    mate1.at = offsetToAxial(5, 5);
-    const offRow = ([[3, 4], [4, 4], [5, 4]] as [number, number][])
-      .map(([c, r]) => offsetToAxial(c, r))
-      .find((h) => distance(h, target.at) === 1)!;
-    mate2.at = offRow;
+    target.rank = 2;
+    mate1.rank = 1;
+    mate2.rank = 3;
     for (const m of [mate1, mate2]) {
       m.broken = false;
       m.down = false;
@@ -204,13 +208,13 @@ describe('the war-cry', () => {
     const others = ours(state).filter((c) => c !== leader);
     const [nearAlly, farAlly] = others as [Combatant, Combatant];
     const [nearFoe, farFoe] = foes(state) as [Combatant, Combatant];
-    park(ours(state).slice(3), 8);
-    park(foes(state).slice(2), 0);
-    leader.at = offsetToAxial(3, 5);
-    nearAlly.at = offsetToAxial(4, 5);
-    farAlly.at = offsetToAxial(0, 8);
-    nearFoe.at = offsetToAxial(3, 4);
-    farFoe.at = offsetToAxial(6, 0);
+    park(ours(state).slice(3));
+    park(foes(state).slice(2));
+    leader.rank = 1;
+    nearAlly.rank = 2;
+    farAlly.rank = 6;
+    nearFoe.rank = 1;
+    farFoe.rank = 9;
     arrange(state, leader);
     for (const x of [nearAlly, farAlly, nearFoe, farFoe]) {
       x.broken = false;

@@ -23,6 +23,7 @@ import { makeRng, type Rng } from '../rng';
 import { ALL_TERRAINS, terrainDef } from '../data/terrain';
 import { svgEl } from './svg';
 import type { Terrain } from '../state/types';
+import { BLACK, WHITE } from './palette';
 
 /**
  * The hex the map is drawn at. Must match `HEX_SIZE` in render/travel.ts —
@@ -102,8 +103,8 @@ export function mix(hex: string, towards: string, amount: number): string {
   return `#${out.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-const lighten = (hex: string, amount: number): string => mix(hex, '#ffffff', amount);
-const darken = (hex: string, amount: number): string => mix(hex, '#000000', amount);
+const lighten = (hex: string, amount: number): string => mix(hex, WHITE, amount);
+const darken = (hex: string, amount: number): string => mix(hex, BLACK, amount);
 
 // ---- marks ----
 
@@ -480,9 +481,9 @@ function buildPattern(
 export function reliefDef(): SVGElement {
   const g = svgEl('linearGradient', { id: 'terrain-relief', x1: '0', y1: '0', x2: '1', y2: '1' });
   g.append(
-    svgEl('stop', { offset: '0', 'stop-color': '#ffffff', 'stop-opacity': 0.09 }),
-    svgEl('stop', { offset: '0.5', 'stop-color': '#ffffff', 'stop-opacity': 0 }),
-    svgEl('stop', { offset: '1', 'stop-color': '#000000', 'stop-opacity': 0.12 }),
+    svgEl('stop', { offset: '0', 'stop-color': WHITE, 'stop-opacity': 0.09 }),
+    svgEl('stop', { offset: '0.5', 'stop-color': WHITE, 'stop-opacity': 0 }),
+    svgEl('stop', { offset: '1', 'stop-color': BLACK, 'stop-opacity': 0.12 }),
   );
   return g;
 }
@@ -515,11 +516,11 @@ export function terrainPatterns(): SVGPatternElement[] {
   out.push(
     buildPattern('ocean', deepMarks, false, {
       id: 'terrain-ocean-deep',
-      base: mix(oceanDef.fill, '#000000', 0.22),
+      base: mix(oceanDef.fill, BLACK, 0.22),
     }),
     buildPattern('ocean', deepMarks, true, {
       id: 'terrain-ocean-deep-dim',
-      base: mix(oceanDef.edge, '#000000', 0.22),
+      base: mix(oceanDef.edge, BLACK, 0.22),
     }),
   );
   return out;

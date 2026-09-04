@@ -4,8 +4,6 @@
 // Fighters are Person objects on both sides; a Combatant only says where
 // they stand and what they have left this turn.
 
-import { column, distance, equals, fromKey, key, type Hex } from '../hex';
-import { reachWithZoc } from './zoc';
 import type { Rng } from '../rng';
 import { stream } from '../rng';
 import {
@@ -19,8 +17,10 @@ import {
 import type { Battle, Champion, Combatant, GameState, Person, Stats, Terrain } from '../state/types';
 import { pushMode } from '../modes';
 import { beat } from './beats';
+import { canActFrom, canLandOn } from './ranks';
+import { formUp } from './lineup';
 import { effectiveStat, standAtHome, sworn } from './people';
-import { wintersStood } from './calendar';
+import { SEASON_LENGTH, YEAR_LENGTH, wintersStood } from './calendar';
 import { fieldCrew, homeCrew } from './expedition';
 import { standsFor } from './colony';
 import { raidSource } from './neighbours';
@@ -28,12 +28,10 @@ import { note } from './tally';
 import { chronicle } from './saga';
 import { startingNerve } from './morale';
 import { weightFor, wordBump, wordOf } from './word';
+import { standingAt } from './coast';
 import {
-  FIELD_HEIGHT,
-  FIELD_WIDTH,
   generateBattlefield,
   groundName,
-  isPassable,
   pickRaidField,
   pickSeaField,
   seaFieldFrom,
@@ -58,10 +56,6 @@ export function fighterPerson(state: GameState, personId: string): Person | unde
     state.party.people.find((p) => p.id === personId) ??
     state.battle?.foes.find((p) => p.id === personId)
   );
-}
-
-export function combatantAt(battle: Battle, h: Hex): Combatant | undefined {
-  return battle.combatants.find((c) => !c.down && !c.fled && equals(c.at, h));
 }
 
 /** Still on the field: not dropped, not run off. Broken fighters still count. */
@@ -259,6 +253,26 @@ export const SCAR_TOUGHNESS = 2;
  * with his scars on him, because the whole value of a recurring enemy is
  * that the player recognises him.
  */
+/**
+ * How long it had been since a named foe was last on a field of ours.
+ *
+ * The saga log is a past-tense chronicle, so this is a sentence rather than a
+ * number, and it rounds DOWN to the largest unit that has actually passed — a
+ * man seen ninety days ago has not been away a year, and saying so would be
+ * the log telling a small lie about the one thing it is for.
+ *
+ * Empty for a gap of nothing, which is what a save taken mid-fight and
+ * reloaded gives: he is not coming back from anywhere.
+ */
+function sinceHeWasSeen(days: number): string {
+  if (days <= 0) return '';
+  const years = Math.floor(days / YEAR_LENGTH);
+  if (years >= 1) return years === 1 ? ' It had been a year.' : ` It had been ${years} years.`;
+  const seasons = Math.floor(days / SEASON_LENGTH);
+  if (seasons >= 1) return seasons === 1 ? ' It had been a season.' : ` It had been ${seasons} seasons.`;
+  return ` It had been ${days} days.`;
+}
+
 export function anointChampion(foes: Person[], rng: Rng, known?: Champion): Person {
   const champion = foes.reduce((a, b) => (b.maxHealth > a.maxHealth ? b : a));
   const scars = Math.min(SCAR_MAX, known?.scars ?? 0);
@@ -299,8 +313,19 @@ export function beginBattle(
   picked = false,
 ): void {
   state.modes = pushMode(state, 'BATTLE').modes;
+  // WHERE the fight is, keyed by the address the game actually uses.
+  //
+  // `key(state.party.at)` is the hex map's answer and on a line it is the
+  // placeholder every coast address shares — so two fights on the same day at
+  // opposite ends of the coast drew from the SAME stream. It went unnoticed
+  // while the island was still being generated, because the placeholder was
+  // then a real landing hex and merely constant per seed; once a coast build
+  // stopped generating the island it became '0,0' for every band on every
+  // coast, and the battle bars moved. Both readings were wrong; this is the
+  // one that means what the key is for.
+  const where = `s${standingAt(state)}`;
   const rng = stream(state.seed, 'combat').derive(
-    `${raid ? 'raid' : 'battle'}:${state.day}:${key(state.party.at)}`,
+    `${raid ? 'raid' : 'battle'}:${state.day}:${where}`,
   );
 
   // A raid is fought on the ground you built, and a fight afloat on an
@@ -309,7 +334,7 @@ export function beginBattle(
   const home = state.settlement;
   const raidField = raid && home ? pickRaidField(home.plots.map((p) => p.kind), rng.derive('ground')) : undefined;
   const seaField = !raid && terrain === 'ocean' ? pickSeaField(rng.derive('ground')) : undefined;
-  const { grid, warbandSpots, foeSpots } =
+  const { grid } =
     raidField && home
       ? steadingFieldFrom(raidField, standsFor(state, 'palisade'))
       : seaField
@@ -364,6 +389,11 @@ export function beginBattle(
       ? anointChampion(foes, rng.derive('champion'), sender?.champion)
       : undefined;
   const returning = (sender?.champion?.scars ?? 0) > 0;
+  // Read BEFORE the assignment below overwrites it with today. `lastSeen` was
+  // written for exactly this and then never read by anything: its own comment
+  // said "so the log can say how long it has been", and the log did not say
+  // it. Found by the dead-field audit of 2026-09-01.
+  const lastSaw = sender?.champion?.lastSeen;
   if (champion && sender) {
     // Remembered from the moment he sets foot on the field, so a save taken
     // mid-fight still knows whose man he is.
@@ -380,8 +410,6 @@ export function beginBattle(
     ...(raid ? { raid: true } : {}),
     ...(champion ? { champion: champion.id } : {}),
     ...(champion && sender ? { championOf: sender.id } : {}),
-    width: FIELD_WIDTH,
-    height: FIELD_HEIGHT,
     grid,
     foes,
     combatants: [],
@@ -392,46 +420,35 @@ export function beginBattle(
     beats: [],
   };
 
-  const taken = new Set<string>();
-  const midColumn = (FIELD_WIDTH - 1) / 2;
+  // Deployment used to be a placement problem: find a free, passable spot on
+  // the authored grid, prefer elbow room, and if there was nowhere left the
+  // fighter simply did not stand. Since 8.1d a fighter's place is his RANK
+  // and there is no ground to place him on, so the whole search is gone and
+  // everyone who turned up stands, in the order they turned up.
+  //
+  // Measured before cutting, because "and then nobody deploys" is exactly the
+  // kind of rule that turns out to be load-bearing: across 40 open fights and
+  // 20 raids the spot search refused NOBODY. It was capping a number the band
+  // rules had already capped.
 
-  /**
-   * Deploys toward the middle of the band but leaves air between fighters.
-   * Packing a line shoulder to shoulder looks tidy and plays terribly: the
-   * warriors in the middle open the fight with every neighbour occupied and
-   * nowhere legal to step.
-   */
-  const place = (spots: Hex[], placed: Hex[]): Hex | undefined => {
-    const free = spots.filter(
-      (s) => !taken.has(key(s)) && isPassable(battle.grid[key(s)]?.ground ?? 'block'),
-    );
-    if (free.length === 0) return undefined;
-
-    let best = free[0]!;
-    let bestScore = -Infinity;
-    for (const spot of free) {
-      const nearest =
-        placed.length === 0 ? 99 : Math.min(...placed.map((p) => distance(p, spot)));
-      // Elbow room counts for a lot, up to two hexes; after that, centre up.
-      const score = Math.min(nearest, 2) * 10 - Math.abs(column(spot) - midColumn);
-      if (score > bestScore) {
-        bestScore = score;
-        best = spot;
-      }
-    }
-    taken.add(key(best));
-    placed.push(best);
-    return best;
-  };
-
-  const ourLine: Hex[] = [];
+  // WHO STANDS WHERE. This was `combatants.filter(...).length + 1` — the
+  // order they took the field, which is `sworn()`'s order, which is the
+  // roster. See sim/line.ts for why that was a bug and what 11.S1 measured
+  // it at; the short of it is that the roster index also decides who leads
+  // and who is kin to whom, so the wall was correlated with both and chosen
+  // by nobody.
+  //
+  // The combatants array is still built in the original order and only the
+  // RANK comes from `formUp`. That is deliberate: array order is read in a
+  // couple of places that do not care about the line (a foe looking for
+  // somebody to throw at, for one), and changing both at once would have
+  // made the diff bigger than the thing that was measured.
+  const ourLine = formUp(ourSide);
   for (const person of ourSide) {
-    const at = place(warbandSpots, ourLine);
-    if (!at) continue;
     battle.combatants.push({
       personId: person.id,
       side: 'warband',
-      at,
+      rank: ourLine.indexOf(person) + 1,
       initiative: 0,
       movesLeft: BASE_MOVES,
       hasActed: false,
@@ -446,14 +463,15 @@ export function beginBattle(
     });
   }
 
-  const theirLine: Hex[] = [];
+  // Their wall forms up the same way ours does. sim/battleAi.ts states the
+  // rule this is keeping: a formation trick only one side can play is not a
+  // formation, it is a bonus.
+  const theirLine = formUp(foes);
   for (const foe of foes) {
-    const at = place(foeSpots, theirLine);
-    if (!at) continue;
     battle.combatants.push({
       personId: foe.id,
       side: 'foe',
-      at,
+      rank: theirLine.indexOf(foe) + 1,
       initiative: 0,
       movesLeft: BASE_MOVES,
       hasActed: false,
@@ -485,6 +503,7 @@ export function beginBattle(
         (champion
           ? returning
             ? ` ${champion.name} ${champion.byname} had come back for us.`
+              + sinceHeWasSeen(state.day - (lastSaw ?? state.day))
             : ` ${champion.name} ${champion.byname} led them.`
           : '') +
         (from ? ` ${from.name} had not forgotten us.` : '') +
@@ -521,26 +540,19 @@ export function beginBattle(
 // --- Movement and reach ---
 
 /** Hexes the active fighter can still reach this turn, zone of control included. */
-export function reachableHexes(battle: Battle): Hex[] {
-  const active = activeCombatant(battle);
-  if (!active || battle.outcome || active.movesLeft <= 0) return [];
-  return [...reachWithZoc(battle, active).keys()].map(fromKey);
-}
-
-/** What reaching each hex would cost — used to preview a step. */
-export function reachCosts(battle: Battle): Map<string, number> {
-  const active = activeCombatant(battle);
-  if (!active || battle.outcome || active.movesLeft <= 0) return new Map();
-  return reachWithZoc(battle, active);
-}
-
+// `reachableHexes` and `reachCosts` stood here. They answered "where can this
+// fighter walk, and what does each step cost", and since 8.1c there is nowhere
+// to walk — a fighter's place is their rank, and since 9.1b nobody spends an
+// action changing it: the line closes itself (see `stepUp` in footwork.ts).
+//
 /** Enemies the active fighter could strike right now. */
 export function strikeTargets(state: GameState): Combatant[] {
   const battle = state.battle;
   const active = battle ? activeCombatant(battle) : undefined;
   if (!battle || !active || active.hasActed || battle.outcome) return [];
+  if (!canActFrom('strike', active.rank)) return [];
   return battle.combatants.filter(
-    (c) => !c.down && c.side !== active.side && distance(c.at, active.at) === 1,
+    (c) => !c.down && !c.fled && c.side !== active.side && canLandOn('strike', c.rank),
   );
 }
 

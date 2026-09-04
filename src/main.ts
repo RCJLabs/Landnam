@@ -14,6 +14,7 @@ import type { GameState } from './state/types';
 import { apply, type Action } from './sim/actions';
 import { renderGuide, renderLesson, renderTitle } from './render/cards';
 import { applyMotionPref } from './motion';
+import { installKnot } from './render/knot';
 import { buzz } from './haptics';
 import { lastHardship, rememberHardship } from './hardshipPref';
 import { decodeChallenge } from './sim/challenge';
@@ -182,6 +183,9 @@ function render(): void {
 installChrome(ui, () => state);
 // The stillness choice has to be on the root before anything animates.
 applyMotionPref();
+// The knot the stylesheet's rules are drawn with. One definition, set on the
+// root, so `style.css` never carries a second copy of it. See render/knot.ts.
+installKnot();
 
 // Console levers for testing. See src/debug.ts — they go through the same
 // save-and-render path a real dispatch does.

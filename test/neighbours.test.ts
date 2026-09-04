@@ -11,8 +11,11 @@
 // raids, and get measurably worse prices, than one that deals with them — and
 // the difference must still be there long after the deed.
 
+import { settled as settleSomewhere } from './fixtures/settle';
+import { goHome, standBeside } from './fixtures/stand';
+import { ROUTE_STOPS, daysBetween, onRoute, stopAt } from '../src/sim/route';
+import { learnStop } from '../src/sim/coast';
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, neighbors } from '../src/hex';
 import { stream } from '../src/rng';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -20,7 +23,7 @@ import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundBlocker, foundSettlement, siteReport } from '../src/sim/site';
+import { foundBlocker, hasBeck, stopReport } from '../src/sim/site';
 import { WATER_FLOOR } from '../src/data/sites';
 import { campStores, sackCamp } from '../src/sim/plunder';
 import { assign } from '../src/sim/colony';
@@ -37,7 +40,6 @@ import {
   CLAN_ELBOW,
   CLAN_KINDS,
   CLAN_MAX_GAP,
-  CLAN_MIN_GAP,
   REP_DRIFT,
   REP_RAIDED,
   REP_TRADED,
@@ -49,12 +51,13 @@ import {
   angerLevel,
   angriest,
   bargain,
+  bargainEstimate,
+  bargainBlurb,
   bargainBlocker,
   driftStandings,
   fallOn,
   friendliest,
   goodwillLevel,
-  neighbourAt,
   neighboursCallOn,
   noteRaidSent,
   placeNeighbours,
@@ -71,25 +74,8 @@ const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'w
 
 /** A steading on the best ground within reach, crewed and stocked. */
 function settled(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    if (distance(at, landing) > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
@@ -103,22 +89,22 @@ function settled(seed: string, radius = 14): GameState {
 /** Falls on every neighbour once, without fighting anybody. */
 function makeEnemies(state: GameState): void {
   for (const n of state.neighbours) {
-    state.party.at = { ...n.at };
+    standBeside(state, n);
     expect(fallOn(state, n.id)).not.toBeNull();
   }
-  state.party.at = { ...state.settlement!.at };
+  goHome(state);
 }
 
 /** Deals honestly with every neighbour, the same number of times. */
 function makeFriends(state: GameState, rounds = 4): void {
   for (const n of state.neighbours) {
-    state.party.at = { ...n.at };
+    standBeside(state, n);
     for (let i = 0; i < rounds; i++) {
       state.party.food = 200;
       expect(bargain(state, n.id)).not.toBeNull();
     }
   }
-  state.party.at = { ...state.settlement!.at };
+  goHome(state);
   state.party.food = 90;
 }
 
@@ -158,14 +144,23 @@ describe('the coast has people on it', () => {
       expect(ids.size, `${seed}: duplicate ids`).toBe(placed.length);
 
       for (const n of placed) {
-        const tile = state.world.tiles[`${n.at.q},${n.at.r}`];
-        expect(tile, `${seed}: ${n.name} is nowhere`).toBeTruthy();
-        expect(['ocean', 'mountains'], `${seed}: ${n.name}`).not.toContain(tile!.terrain);
-        expect(distance(n.at, state.world.landing), `${seed}: ${n.name} on the beach`)
-          .toBeGreaterThanOrEqual(CLAN_MIN_GAP);
+        // The same two claims in the address a line has. Nobody lives on
+        // water or on bare rock — which holds by construction here, since
+        // `stopAt` never calls a stretch ocean or mountains, and is asserted
+        // rather than assumed so that changing the country mix has to be a
+        // decision. And nobody camps on the beach the band lands on:
+        // `neighbourStops` is handed CLAN_ELBOW as its floor.
+        expect(n.stop, `${seed}: ${n.name} is nowhere`).not.toBeUndefined();
+        const country = stopAt(seed, n.stop!).country;
+        expect(['ocean', 'mountains'], `${seed}: ${n.name}`).not.toContain(country);
+        expect(n.stop, `${seed}: ${n.name} on the beach`).toBeGreaterThanOrEqual(CLAN_ELBOW);
         expect(n.found).toBeFalsy();
       }
-    }
+      // Apart from each other, which on a line is what "apart" means: no
+      // two households at the same stretch.
+      const at = placed.map((n) => n.stop);
+      expect(new Set(at).size, `${seed}: two households on one stretch`).toBe(placed.length);
+          }
   });
 
   it('both kinds of people are on every coast that holds four', () => {
@@ -216,11 +211,24 @@ describe('the coast has people on it', () => {
   it('they share a coast, and a coast is something you can walk', () => {
     for (const seed of SEEDS) {
       const state = newGame(seed);
+      // On a line every stretch is walkable from every other — that is what
+      // a route IS — so "within CLAN_MAX_GAP of the landing" cannot be the
+      // claim for all four without emptying the far half of the coast of
+      // people. `neighbourStops` spreads one per quarter and puts a CEILING
+      // on the first: the NEAREST of them is a neighbour in the ordinary
+      // sense of the word, and the rest are further up the same coast.
+      //
+      // So that is what is checked, and it is the same thing the hex
+      // ceiling was protecting: somebody close enough to reach in the time
+      // a band has, rather than four households nobody ever meets.
+      const walks = state.neighbours.map((n) => daysBetween(seed, 0, n.stop!));
+      expect(walks.length, `${seed}: nobody on this coast`).toBeGreaterThan(0);
+      expect(
+        Math.min(...walks),
+        `${seed}: the nearest household is ${Math.min(...walks)} days off — not a neighbour`,
+      ).toBeLessThanOrEqual(CLAN_MAX_GAP);
       for (const n of state.neighbours) {
-        expect(
-          distance(n.at, state.world.landing),
-          `${seed}: ${n.name} is ${distance(n.at, state.world.landing)} hexes off — not a neighbour`,
-        ).toBeLessThanOrEqual(CLAN_MAX_GAP);
+        expect(onRoute(n.stop!), `${seed}: ${n.name} is off the end of the coast`).toBe(true);
       }
     }
   });
@@ -232,20 +240,36 @@ describe('the coast has people on it', () => {
     let refused = 0;
     for (const seed of SEEDS) {
       const state = structuredClone(newGame(seed));
-      for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
+      // The elbow, in stretches. On a line the ground a household holds is
+      // its own stretch and the ones inside CLAN_ELBOW of it — there is no
+      // ring of hexes to walk round, so the check walks the route instead.
+      // `insideElbow` is what `foundBlocker` consults, and this pins that
+      // it actually refuses.
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(state, stop);
       for (const n of state.neighbours) {
-        // Ground that would otherwise take a hall — so the refusal being
-        // measured is the elbow and not the water.
-        const wet = neighbors(n.at)
-          .concat([n.at])
-          .filter((at) => {
-            const t = state.world.tiles[`${at.q},${at.r}`];
-            if (!t || t.terrain === 'ocean' || t.terrain === 'mountains') return false;
-            const r = siteReport(state.world, at);
-            return !!r && r.water >= WATER_FLOOR;
-          });
-        for (const at of wet) {
-          expect(foundBlocker(state, at), `${seed}: founded in ${n.name}'s camp`).toBe('taken');
+        // `insideElbow` is `< CLAN_ELBOW`, so the home field is their own
+        // stretch and the one either side — which is exactly what the hex
+        // arm below walks, `neighbors(n.at).concat([n.at])` being distance
+        // 0 and 1. The first draft of this walked to ±CLAN_ELBOW and read
+        // the sim's correct `null` at two stretches out as a hole in the
+        // elbow.
+        for (let d = -(CLAN_ELBOW - 1); d <= CLAN_ELBOW - 1; d += 1) {
+          const stop = n.stop! + d;
+          if (!onRoute(stop)) continue;
+          // Only stretches that would otherwise TAKE a hall, so what is
+          // being measured is the elbow and not the water — the same guard
+          // the hex arm applies, and for the same reason: `foundBlocker`
+          // answers 'dry' before it ever looks at who lives nearby.
+          //
+          // A BECK, not the water score. Since fresh water became the
+          // settling gate the two are different questions: a stretch can
+          // score a 1 or 2 off a bog behind it and still have nothing to
+          // drink, and `foundBlocker` calls that dry.
+          if (!hasBeck(seed, stop)) continue;
+          if (stopReport(seed, stop).water < WATER_FLOOR) continue;
+          state.party.stop = stop;
+          expect(foundBlocker(state), `${seed}: founded in ${n.name}'s camp`)
+            .toBe('taken');
           refused += 1;
         }
       }
@@ -261,8 +285,13 @@ describe('the coast has people on it', () => {
     seeNeighbours(state);
     expect(target.found, 'seen without looking').toBeFalsy();
 
-    state.world.seen[`${target.at.q},${target.at.r}`] = 'seen';
-    seeNeighbours(state);
+    // A LINE HAS NO FOG, so "somebody has laid eyes on that ground" has no
+    // mechanism behind it — `seeNeighbours` says so and uses the narrow
+    // answer instead: you have come to where they live. Walking there is
+    // the coast's version of seeing, and everything else about meeting
+    // people runs through `neighboursCallOn`, which the next test holds.
+    state.party.stop = target.stop;
+        seeNeighbours(state);
     expect(target.found).toBe(true);
     expect(state.saga.some((e) => e.text.includes(target.name))).toBe(true);
   });
@@ -279,8 +308,8 @@ describe('the coast has people on it', () => {
     // what this measures. Put the fog back over the camps and forget them.
     for (const n of state.neighbours) {
       n.found = false;
-      delete state.world.seen[`${n.at.q},${n.at.r}`];
-    }
+      state.world.knownStops = (state.world.knownStops ?? []).filter((s) => s !== n.stop);
+          }
     state.settlement!.foundedOn = state.day;
     expect(state.neighbours.some((n) => n.found), 'met somebody before settling').toBe(false);
 
@@ -299,7 +328,8 @@ describe('the coast has people on it', () => {
       neighboursCallOn(state);
       const after = state.neighbours.filter((n) => n.found);
       expect(after.length, `no caller in fortnight ${i}`).toBe(i);
-      seenOrder.push(distance(after[after.length - 1]!.at, state.settlement!.at));
+      const last = after[after.length - 1]!;
+      seenOrder.push(daysBetween(state.seed, last.stop!, state.settlement!.stop!));
     }
 
     expect(state.neighbours.every((n) => n.found), 'somebody never came').toBe(true);
@@ -310,7 +340,19 @@ describe('the coast has people on it', () => {
     }
     // And found means findable — a marker under fog is not knowledge.
     for (const n of state.neighbours) {
-      expect(state.world.seen[`${n.at.q},${n.at.r}`], `${n.name} named but not on the map`).toBeTruthy();
+      // ON A LINE `found` IS THE KNOWLEDGE, and `revealNeighbour` says so:
+      // there is no fog to lift, and marking (0,0) seen would write the
+      // landing into the seen map of a world with no hexes in it.
+      //
+      // So the hex claim — a marker under fog is not knowledge — has to be
+      // asked of what could still go wrong HERE, which is a household the
+      // band has met and cannot act on. Two things carry that, and neither
+      // consults `knownStops`: the chart draws a neighbour on `n.found`
+      // alone (`render/strip.ts`), and `walkOptions` never asks whether a
+      // stretch is known. So what must hold is that the stretch is a real
+      // one on the route.
+      expect(n.found, `${n.name} called and was not remembered`).toBe(true);
+      expect(onRoute(n.stop!), `${n.name} named but off the end of the coast`).toBe(true);
     }
   });
 
@@ -333,7 +375,7 @@ describe('standing is a memory', () => {
     const target = state.neighbours[0]!;
     const before = target.standing;
 
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     expect(fallOn(state, target.id)).toBe(target.might);
     expect(target.standing).toBe(before + REP_RAIDED);
 
@@ -395,7 +437,7 @@ describe('bartering', () => {
     const state = settled('nb-bargain');
     const target = state.neighbours[0]!;
     target.standing = 30;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const food = state.party.food;
     const wood = state.party.firewood;
 
@@ -411,7 +453,7 @@ describe('bartering', () => {
   it('nobody deals with you below the floor, and the panel says why', () => {
     const state = settled('nb-floor');
     const target = state.neighbours[0]!;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
 
     target.standing = TRADE_FLOOR;
     expect(bargainBlocker(state, target.id)).toBeNull();
@@ -424,7 +466,7 @@ describe('bartering', () => {
     expect(bargainBlocker(state, target.id)).toBe('stores');
 
     state.party.food = 90;
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
     expect(bargainBlocker(state, target.id)).toBe('nobody');
   });
 
@@ -443,7 +485,7 @@ describe('bartering', () => {
       ] as const) {
         const target = state.neighbours[0]!;
         shiftStanding(state, target.id, delta);
-        state.party.at = { ...target.at };
+        standBeside(state, target);
         state.party.food = 200;
         // A refusal is the worst price there is, and counts as one.
         const deal = bargain(state, target.id);
@@ -459,6 +501,77 @@ describe('bartering', () => {
     );
     expect(refused, 'a good neighbour turned us away').toBeLessThanOrEqual(SEEDS.length);
     expect(friendly).toBeGreaterThan(hostile);
+  });
+
+  /**
+   * 11.M3: the deed sheet needed a preview of what `bargain()` will pay,
+   * struck BEFORE the dice touch it — `bargainEstimate` is that formula with
+   * the RNG term dropped to its midpoint (1.0).
+   */
+  it('estimates close to what bargain() actually pays, on average', () => {
+    const state = settled('nb-estimate');
+    const target = state.neighbours[0]!;
+    target.standing = 30;
+    standBeside(state, target);
+
+    const estimate = bargainEstimate(state, target.id);
+    expect(estimate).toBeGreaterThan(0);
+
+    let total = 0;
+    const N = 60;
+    for (let i = 0; i < N; i += 1) {
+      const s = settled(`nb-estimate-${i}`);
+      const n = s.neighbours[0]!;
+      n.standing = 30;
+      standBeside(s, n);
+      total += bargain(s, n.id)!.firewood;
+    }
+    const avg = total / N;
+    // Within the RNG's own ±10% band, not pinned to one draw.
+    expect(Math.abs(avg - estimate)).toBeLessThan(estimate * 0.15);
+  });
+
+  it('never touches the RNG stream — a preview cannot perturb the roll it previews', () => {
+    const state = settled('nb-pure');
+    const target = state.neighbours[0]!;
+    target.standing = 30;
+    standBeside(state, target);
+    const before = bargainEstimate(state, target.id);
+    // Called ten times over; a function that draws from `stream(...)` would
+    // answer differently as the derived stream advanced.
+    for (let i = 0; i < 10; i += 1) expect(bargainEstimate(state, target.id)).toBe(before);
+    // And the real roll is unaffected by how many times the preview ran.
+    const deal = bargain(state, target.id)!;
+    expect(deal.firewood).toBeGreaterThan(0);
+  });
+
+  describe('the record on a trade that cannot fill an empty larder (11.M3)', () => {
+    /**
+     * `bargain()` runs one way — food out, firewood in — so it structurally
+     * cannot rescue a band that is short of FOOD specifically. MEASURED
+     * (`PROBE: 11.M3`): trying it first in that exact crisis moved nothing,
+     * saved 4 / killed 4 over 150 paired landings, the arm firing 55 times.
+     * `bargainBlurb`'s `starving` flag says so on the deed sheet rather than
+     * leaving a player to find out the hard way.
+     */
+    it('says nothing extra when the band is not starving', () => {
+      const state = settled('nb-blurb-fine');
+      const target = state.neighbours[0]!;
+      target.standing = 30;
+      standBeside(state, target);
+      expect(bargainBlurb(state, target.id, false)).not.toMatch(/will not fill/);
+    });
+
+    it('warns plainly when it is', () => {
+      const state = settled('nb-blurb-starving');
+      const target = state.neighbours[0]!;
+      target.standing = 30;
+      standBeside(state, target);
+      const blurb = bargainBlurb(state, target.id, true);
+      expect(blurb).toMatch(/will not fill an empty larder/);
+      // The warning is additional, not instead of — the numbers still show.
+      expect(blurb).toContain(`${bargainEstimate(state, target.id)}`);
+    });
   });
 });
 
@@ -571,20 +684,20 @@ describe('falling on a neighbour, in play', () => {
     const state = settled('nb-inplay');
     const target = state.neighbours[0]!;
     const before = target.standing;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
 
     const next = apply(state, { type: 'FALL_ON', id: target.id });
     expect(next).not.toBe(state);
     expect(next.battle, 'nobody drew steel').toBeTruthy();
     expect(next.battle!.raid).toBeFalsy();
-    expect(neighbourAt(next, target.at)!.standing).toBe(before + REP_RAIDED);
+    expect(next.neighbours.find((n) => n.id === target.id)!.standing).toBe(before + REP_RAIDED);
     expect(next.saga.some((e) => e.text.includes(target.name))).toBe(true);
   });
 
   it('you cannot fall on somebody you are not standing in front of', () => {
     const state = settled('nb-reach');
     const target = state.neighbours[0]!;
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
     expect(apply(state, { type: 'FALL_ON', id: target.id })).toBe(state);
     expect(apply(state, { type: 'FALL_ON', id: 'nb_nobody' })).toBe(state);
     expect(target.standing).toBe(state.neighbours[0]!.standing);
@@ -594,7 +707,7 @@ describe('falling on a neighbour, in play', () => {
     const state = settled('nb-day');
     const target = state.neighbours[0]!;
     target.standing = 30;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const day = state.day;
 
     const next = apply(state, { type: 'BARTER', id: target.id });
@@ -635,12 +748,28 @@ describe('a camp is a crop, not a windfall', () => {
   it('and next to nothing the morning after', () => {
     const state = settled('crop-again');
     const n = state.neighbours[0]!;
+    const empty = state.party.food + state.party.firewood;
     sackCamp(state, n.id);
     const before = state.party.food + state.party.firewood;
+    const first = before - empty;
     sackCamp(state, n.id);
     const second = state.party.food + state.party.firewood - before;
     expect(campStores(state, n.sackedOn)).toBeCloseTo(CAMP_PICKED_CLEAN, 5);
-    expect(second).toBeLessThan(15);
+
+    // THE RATIO, NOT AN ABSOLUTE. This asserted `second < 15`, which was
+    // never a property of the rule — it was one seed's neighbour. Measured
+    // over forty seeds the second haul runs 10 to 25 on the HEX build alone,
+    // so the threshold held here by luck and broke the moment a coast drew a
+    // neighbour with more might.
+    //
+    // What is actually true is tighter, and identical on both builds: both
+    // sacks fall on the same day, so `sackCamp` derives the SAME rng for each
+    // and the only thing that differs is how full the camp was. The second
+    // haul is therefore CAMP_PICKED_CLEAN of the first, give or take the
+    // rounding of two numbers. Measured: 17-21% on hexes, 17-21% on a coast.
+    expect(first, 'the first sack paid nothing, so there is no ratio').toBeGreaterThan(20);
+    expect(second / first, `${first} then ${second}`).toBeGreaterThan(CAMP_PICKED_CLEAN * 0.8);
+    expect(second / first, `${first} then ${second}`).toBeLessThan(CAMP_PICKED_CLEAN * 1.5);
     expect(state.saga.some((e) => e.text.includes('little left to take'))).toBe(true);
   });
 
@@ -696,7 +825,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     const state = settled('plunder-heart');
     const target = state.neighbours[0]!;
     target.might = 2;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     // Well clear of the cap, or a win against 100 would read as no change.
     state.party.morale = 40;
 
@@ -710,7 +839,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     const full = settled('heart-full');
     const picked = settled('heart-picked');
     for (const s of [full, picked]) {
-      s.party.at = { ...s.neighbours[0]!.at };
+      standBeside(s, s.neighbours[0]!);
       s.party.morale = 40;
       s.neighbours[0]!.might = 2;
     }
@@ -725,7 +854,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     const state = settled('plunder-win');
     const target = state.neighbours[0]!;
     target.might = 2;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const before = state.party.food + state.party.firewood;
 
     const after = winFallOn(state, target.id);
@@ -739,7 +868,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
   it('a lost fight pays nothing, and leaves their stores where they were', () => {
     const state = settled('plunder-loss');
     const target = state.neighbours[0]!;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const mightBefore = target.might;
 
     let next = apply(state, { type: 'FALL_ON', id: target.id });
@@ -750,16 +879,16 @@ describe('the plunder economy — winning a fight you picked pays', () => {
     expect(next.battle!.outcome).toBe('lost');
     next = apply(next, { type: 'B_LEAVE' });
     expect(next.saga.some((e) => e.text.includes('took what a season had put there'))).toBe(false);
-    expect(neighbourAt(next, target.at)!.might).toBe(mightBefore);
+    expect(next.neighbours.find((n) => n.id === target.id)!.might).toBe(mightBefore);
   });
 
   it('a sacked camp arms: the second visit is dearer than the first', () => {
     const state = settled('plunder-arms');
     const target = state.neighbours[0]!;
     target.might = 1;
-    state.party.at = { ...target.at };
+    standBeside(state, target);
     const after = winFallOn(state, target.id);
-    expect(neighbourAt(after, target.at)!.might).toBe(2);
+    expect(after.neighbours.find((n) => n.id === target.id)!.might).toBe(2);
   });
 
   it('somebody can be carried home as a hand, and only if there is a bed', () => {
@@ -770,7 +899,7 @@ describe('the plunder economy — winning a fight you picked pays', () => {
       const state = settled(`plunder-thrall-${s}`);
       state.settlement!.built.push('longhouse', 'bud');
       const target = state.neighbours[0]!;
-      state.party.at = { ...target.at };
+      standBeside(state, target);
       const headsBefore = state.party.people.filter((p) => p.alive).length;
       const after = winFallOn(state, target.id);
       const heads = after.party.people.filter((p) => p.alive).length;
@@ -808,9 +937,8 @@ describe('reading the coast', () => {
   });
 
   it('placement is deterministic for a seed and different across seeds', () => {
-    const world = newGame('nb-det').world;
     const place = (): GameState['neighbours'] =>
-      placeNeighbours(world, stream('nb-det', 'worldgen').derive('neighbours'));
+      placeNeighbours(stream('nb-det', 'worldgen').derive('neighbours'), 'nb-det');
     expect(place()).toEqual(place());
     expect(newGame('nb-det').neighbours).toEqual(newGame('nb-det').neighbours);
     expect(newGame('nb-det').neighbours).not.toEqual(newGame('nb-other').neighbours);

@@ -9,13 +9,13 @@
 import { traitById } from '../../data/traits';
 import { fullName, effectiveStat } from '../../sim/people';
 import { XP_PER_ADVANCE } from '../../sim/consequences';
-import { scoreWord, siteReport, strongestOf, verdictFor } from '../../sim/site';
+import { reportHere, scoreWord, strongestOf, verdictFor } from '../../sim/site';
 import { moodOf, MOOD_WORD } from '../../sim/minds';
 import { known } from '../../sim/lore';
 import { jobOf } from '../../sim/colony';
-import { LAUNCH_REASON, launchBlocker, provisionsFor, PURPOSES } from '../../sim/expedition';
+import { LAUNCH_REASON, launchBlocker, provisionsFor, PURPOSES, wallReading } from '../../sim/expedition';
 import type { LaunchBlock } from '../../sim/expedition';
-import { CROSSING, SAIL_REASON, provisioning, sailBlocker, type SailBlock } from '../../sim/voyage';
+import { CROSSING, SAIL_REASON, VOYAGE_RECORD, provisioning, sailBlocker, type SailBlock } from '../../sim/voyage';
 import { FEUD_THRESHOLD } from '../../data/feuds';
 import { MEASURES, MEASURE_MAX } from '../../data/sites';
 import type { GameState, Person, Purpose } from '../../state/types';
@@ -28,7 +28,7 @@ export function renderFounding(
   confirm: () => void,
   cancel: () => void,
 ): HTMLElement {
-  const report = siteReport(state.world, state.party.at)!;
+  const report = reportHere(state);
   const verdict = verdictFor(report.total);
   const strongest = strongestOf(report);
   const weakest = MEASURES.reduce((worst, m) =>
@@ -156,6 +156,42 @@ export function renderLaunch(
             `${provisionsFor(going.length)} food provisioned.`,
     ]),
   );
+
+  // WHAT THEY ARE AS A WALL (9.15), and it belongs here because here is where
+  // the number is chosen. Until now its consequence surfaced only at the camp,
+  // as `fallOnReport`'s bare "so many of ours against so many of theirs" — a
+  // ratio that does not carry the cliff at all, since four against four wins
+  // about seven fights in ten and six against six about five.
+  //
+  // Shown for every purpose, not only for a raid: the camps are on the only
+  // road there is, and the fault this answers was a TRADING party of two
+  // walking past one.
+  if (!blocker) {
+    if (voyage) {
+      // THE RECORD ON THE CROSSING (9.2). The line above says when she is due
+      // back and "whoever will come", which reads as an offer; measured over
+      // 200 landings the crossing kills about two bands for every one it
+      // saves. Stated, never refused — see sim/voyage.ts for the numbers and
+      // for why: she comes home with mouths, not hands.
+      card.append(el('p', { class: 'outcome grim' }, [VOYAGE_RECORD]));
+    } else {
+      const wall = wallReading(state, [...picked], purpose);
+      card.append(
+        el('p', { class: `outcome${wall.thin ? ' grim' : ''}` }, [wall.line]),
+      );
+      // THE RECORD ON RAIDING (11.M2), under the wall reading rather than
+      // instead of it — a raid party still needs to know its odds in the
+      // fight it is walking into; this is the separate fact that winning
+      // that fight and surviving the saga are different questions. Composed
+      // by `wallReading` itself, not decided here, for the reason
+      // `leaveNote` gives for doing the same with `ABANDON_RECORD`: a
+      // renderer that decides on its own whether to show a record is a
+      // renderer that can forget to.
+      if (wall.record) {
+        card.append(el('p', { class: 'outcome grim' }, [wall.record]));
+      }
+    }
+  }
 
   const choices = el('div', { class: 'choices' });
   const go = button('Set out', () => dispatch({ type: 'LAUNCH', members: [...picked], purpose }), {

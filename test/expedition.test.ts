@@ -4,24 +4,27 @@
 //   2. Sending parties out beats never leaving, and sending too many does not.
 // Together those are what makes it a wheel rather than a fork in the road.
 
+import { settled as settleSomewhere } from './fixtures/settle';
+import { goHome, walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey, key } from '../src/hex';
+import { KEPT_FOR, canKeepHall, keepHall, sinceKept } from '../src/sim/hall';
+import { RAID_RECORD, WALL_ENOUGH, wallReading } from '../src/sim/expedition';
+import { SWORN_MAX, sworn } from '../src/sim/people';
+import { foeCount } from '../src/sim/battle';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
+import { daysBetween } from '../src/sim/route';
+import { walkOptions } from '../src/sim/coast';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, buildable, dayLabour, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
-import { canMove, moveOptions } from '../src/sim/road';
 import { startRaid } from '../src/sim/battleTurn';
 import { standing } from '../src/sim/battle';
 import {
   arriveHome,
-  distanceFromHome,
-  everyoneHome,
   fieldCrew,
   homeCrew,
   launch,
@@ -38,30 +41,8 @@ import type { JobId } from '../src/data/jobs';
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
 function settled(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    const gap =
-      (Math.abs(at.q - landing.q) +
-        Math.abs(at.r - landing.r) +
-        Math.abs(at.q + at.r - landing.q - landing.r)) /
-      2;
-    if (gap > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
@@ -77,24 +58,7 @@ function ids(state: GameState, count: number): string[] {
 // --- Who is where ---
 
 describe('the steading is where the band lives', () => {
-  it('before the posts go in, everyone walks together', () => {
-    const state = structuredClone(newGame('walk-together'));
-    expect(everyoneHome(state)).toBe(false);
-    expect(fieldCrew(state)).toHaveLength(6);
-    expect(homeCrew(state)).toHaveLength(0);
-    expect(moveOptions(state).length).toBeGreaterThan(0);
-  });
 
-  it('after, nobody walks the map until a party is sent', () => {
-    const state = settled('walk-sent');
-    expect(everyoneHome(state)).toBe(true);
-    expect(moveOptions(state)).toHaveLength(0);
-    const somewhere = moveOptions(structuredClone(newGame('walk-sent')))[0];
-    if (somewhere) expect(canMove(state, somewhere)).toBe(false);
-
-    expect(launch(state, ids(state, 3), 'explore')).toBe(true);
-    expect(moveOptions(state).length).toBeGreaterThan(0);
-  });
 
   it('splits the band in two, and the two do not overlap', () => {
     const state = settled('split');
@@ -113,7 +77,7 @@ describe('the steading is where the band lives', () => {
     expect(launch(state, all, 'raid')).toBe(false);
     expect(launchBlocker(state, [])).toBe('nobody');
 
-    state.party.at = { q: state.settlement!.at.q + 2, r: state.settlement!.at.r };
+    walkOff(state);
     expect(launchBlocker(state, ids(state, 2))).toBe('away');
 
     const homeless = structuredClone(newGame('refuse-nohome'));
@@ -212,37 +176,16 @@ describe('the steading keeps working while they are gone', () => {
     launch(state, ids(state, 2), 'explore');
     expect(state.expedition).toBeDefined();
     // Walk out and back.
-    const away = moveOptions(state)[0]!;
-    state.party.at = away;
+    walkOff(state, 1);
     passDay(state);
     expect(state.expedition, 'came home too early').toBeDefined();
 
-    state.party.at = { ...state.settlement!.at };
+    goHome(state);
     expect(arriveHome(state)).toBe(true);
     expect(state.expedition).toBeUndefined();
     expect(homeCrew(state)).toHaveLength(6);
   });
 
-  it('turning for home only allows steps that shorten the walk', () => {
-    const state = settled('turnback');
-    launch(state, ids(state, 2), 'explore');
-    // Get some distance first.
-    for (let i = 0; i < 3; i++) {
-      const step = moveOptions(state).find(
-        (h) => distance(h, state.settlement!.at) > distanceFromHome(state),
-      );
-      if (!step) break;
-      state.party.at = step;
-    }
-    const far = distanceFromHome(state);
-    expect(far).toBeGreaterThan(0);
-
-    expect(turnForHome(state)).toBe(true);
-    expect(turnForHome(state)).toBe(false); // only once
-    for (const step of moveOptions(state)) {
-      expect(distance(step, state.settlement!.at)).toBeLessThanOrEqual(far);
-    }
-  });
 
   it('a party that loses everybody simply stops existing', () => {
     const state = settled('lost');
@@ -253,7 +196,7 @@ describe('the steading keeps working while they are gone', () => {
     }
     pruneExpedition(state);
     expect(state.expedition).toBeUndefined();
-    expect(key(state.party.at)).toBe(key(state.settlement!.at));
+    expect(state.party.stop).toBe(state.settlement!.stop);
     expect(state.saga.some((e) => e.text.includes('came back'))).toBe(true);
   });
 });
@@ -264,7 +207,7 @@ describe('a hall with its warriors out', () => {
   it('is defended by whoever stayed', () => {
     const state = settled('defend');
     launch(state, ids(state, 4), 'raid');
-    state.party.at = { q: state.settlement!.at.q + 3, r: state.settlement!.at.r };
+    walkOff(state, 3);
 
     startRaid(state, 0);
     const ours = standing(state.battle!, 'warband').map((c) => c.personId);
@@ -301,16 +244,25 @@ describe('sending parties out beats never leaving', () => {
         const out = state.expedition;
         const days = state.day - out.launchedOn;
         if (days >= 4 && !out.returning) turnForHome(state);
-        const options = moveOptions(state);
+        const options = walkOptions(state);
         if (options.length > 0) {
+          const home = state.settlement!.stop ?? 0;
           const step = out.returning
-            ? options.reduce((best, h) =>
-                distance(h, state.settlement!.at) < distance(best, state.settlement!.at) ? h : best,
+            ? options.reduce((best, s) =>
+                daysBetween(state.seed, s, home) < daysBetween(state.seed, best, home) ? s : best,
               )
             : options[(state.day + seed.length) % options.length]!;
-          state.party.at = step;
+          state.party.stop = step;
         }
       }
+      // KEEPING THE HALL, because a band that does the work keeps it (9.12a).
+      // Without this line the arms read never 16, trading 5, emptied 10 — the
+      // wheel looking like a trap, and the five-out arm beating the two-out
+      // arm, which is incoherent. It was not the wheel: it was a harness
+      // written before the verb existed, measuring a player who never noticed
+      // the rule. Holding the feast puts trading back to 13 and the ordering
+      // back the right way round, with every threshold below untouched.
+      if (canKeepHall(state) && sinceKept(state) > KEPT_FOR) keepHall(state);
       passDay(state);
     }
     return {
@@ -442,5 +394,126 @@ describe('expeditions through the game', () => {
     const { save } = migrate({ version: 11, party: { people: [] } });
     expect(save['version']).toBe(SAVE_VERSION);
     expect(save['expedition']).toBeUndefined();
+  });
+});
+
+// 9.15: the number that decides everything, said out loud where it is chosen.
+describe('the launch card says what the party is as a wall', () => {
+  const crewOf = (state: GameState, n: number): string[] =>
+    sworn(state.party.people).slice(0, n).map((p) => p.id);
+
+  it('counts the sworn and not the hands, because hands never reach the field', () => {
+    // THE HANDS HAVE TO EXIST. A landing band is all sworn, so the first cut
+    // of this filtered for hands, got an empty list, and passed on a party of
+    // nobody — it went green against a sabotage that counted hands as
+    // fighters. Four are made hands here, and the guard below insists on it.
+    const state = settleSomewhere('wall-hands');
+    const alive = state.party.people.filter((p) => p.alive);
+    for (const p of alive.slice(0, 4)) p.bond = 'hand';
+    const hands = alive.filter((p) => p.bond === 'hand');
+    expect(hands.length, 'there were no hands, so nothing was measured')
+      .toBeGreaterThanOrEqual(4);
+
+    // Four hands would be a wall if hands could hold one. They cannot.
+    const reading = wallReading(state, hands.map((p) => p.id));
+    expect(reading.sworn).toBe(0);
+    expect(reading.thin).toBe(true);
+    expect(reading.line).toMatch(/Nobody going is sworn/);
+
+    // And a mixed party is worth only its sworn. A landing band is six, so
+    // four hands leaves two sworn: SIX PEOPLE walk out of the gate and the
+    // card still says half a wall — which is the trading-party-of-two fault
+    // stated as plainly as it can be.
+    const swornIds = sworn(state.party.people).map((p) => p.id);
+    const mixed = wallReading(state, [...swornIds, ...hands.map((p) => p.id)]);
+    expect(swornIds.length, 'no sworn left to mix in').toBe(2);
+    expect(mixed.sworn).toBe(2);
+    expect(mixed.thin).toBe(true);
+  });
+
+  it('puts the wall at four, which is where the measurement puts it', () => {
+    // PINNED TO THE LITERAL, NOT TO THE CONSTANT. Written as a loop up to
+    // WALL_ENOUGH and a check at WALL_ENOUGH, this passed with the threshold
+    // moved to three — both goalposts were defined by the thing under test.
+    // Four is the measured cliff (3 stood won 9%, 4 stood won 72%), so four
+    // is what this asserts, and a change to it has to come here and say why.
+    expect(WALL_ENOUGH, 'the measured cliff is at four — see the sweep in expedition.ts')
+      .toBe(4);
+
+    const state = settleSomewhere('wall-count');
+    for (const n of [1, 2, 3]) {
+      const thin = wallReading(state, crewOf(state, n));
+      expect(thin.sworn).toBe(n);
+      expect(thin.thin, `${n} sworn should read as thin`).toBe(true);
+      expect(thin.line).toContain('half a wall');
+    }
+    const enough = wallReading(state, crewOf(state, 4));
+    expect(enough.sworn).toBe(4);
+    expect(enough.thin, 'four sworn is a wall').toBe(false);
+    expect(enough.line).toContain('shoulder to shoulder');
+  });
+
+  it('warns that going heavier only brings more of them out', () => {
+    // The half of the finding that is easy to drop. Past four the foe count
+    // scales with the warband, so a bigger party is not a safer one — and a
+    // line that only said "four is better than three" would send the player
+    // the wrong way at five and six.
+    const state = settleSomewhere('wall-heavy');
+    const big = wallReading(state, crewOf(state, 6));
+    expect(big.thin).toBe(false);
+    expect(big.line).toMatch(/more of them/i);
+  });
+
+  it('agrees with foeCount, which is what actually comes out to meet them', () => {
+    // The claim the wording rests on, checked against the arithmetic the
+    // fight is built from rather than against my memory of a console line.
+    const four = foeCount(WALL_ENOUGH, 2, false);
+    const six = foeCount(6, 2, false);
+    expect(six, 'a bigger party must actually draw a bigger enemy').toBeGreaterThan(four);
+  });
+
+  it('never counts more sworn than the field will hold', () => {
+    // A save that somehow carries more than SWORN_MAX must not be able to
+    // field a wider wall on this card than on the ground.
+    const state = settleSomewhere('wall-cap');
+    for (const p of state.party.people) p.bond = 'sworn';
+    const all = state.party.people.filter((p) => p.alive).map((p) => p.id);
+    expect(wallReading(state, all).sworn).toBeLessThanOrEqual(SWORN_MAX);
+  });
+
+  /**
+   * 11.M2: raiding states its record, the same way `leaveNote` composes
+   * `ABANDON_RECORD` in the sim rather than leaving a renderer to decide on
+   * its own whether to show it — see the comment on `wallReading`'s
+   * `purpose` parameter for why that class of bug matters here specifically.
+   */
+  describe('the record on raiding', () => {
+    it('says nothing when no purpose is given, or the purpose is not a raid', () => {
+      const state = settleSomewhere('record-none');
+      const crew = crewOf(state, 4);
+      expect(wallReading(state, crew).record).toBeUndefined();
+      for (const purpose of ['trade', 'explore', 'fish', 'home'] as const) {
+        expect(wallReading(state, crew, purpose).record, purpose).toBeUndefined();
+      }
+    });
+
+    it('states the record for a raid, thin party or full', () => {
+      const state = settleSomewhere('record-raid');
+      expect(wallReading(state, crewOf(state, 2), 'raid').record).toBe(RAID_RECORD);
+      expect(wallReading(state, crewOf(state, 4), 'raid').record).toBe(RAID_RECORD);
+    });
+
+    it('never refuses — the wall reading itself is unchanged by the record', () => {
+      // States it, never refuses (VOYAGE_RECORD's rule, ABANDON_RECORD's
+      // rule): the record rides alongside the wall math, not instead of it,
+      // so a raid party still learns its odds in the fight it is walking
+      // into.
+      const state = settleSomewhere('record-alongside');
+      const plain = wallReading(state, crewOf(state, 4));
+      const raiding = wallReading(state, crewOf(state, 4), 'raid');
+      expect(raiding.sworn).toBe(plain.sworn);
+      expect(raiding.thin).toBe(plain.thin);
+      expect(raiding.line).toBe(plain.line);
+    });
   });
 });

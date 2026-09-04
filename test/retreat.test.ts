@@ -18,15 +18,17 @@
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { pushMode } from '../src/modes';
 import { canFound, foundSettlement } from '../src/sim/site';
-import { abandonBlocker, abandonSteading, canAbandon } from '../src/sim/retreat';
-import { ABANDON_AFTER, ABANDON_HEART } from '../src/data/retreat';
+import { ABANDON_REASON, abandonBlocker, abandonSteading, canAbandon, leaveNote } from '../src/sim/retreat';
 import { childrenOf } from '../src/sim/lineage';
-import { fromKey, key } from '../src/hex';
+import { ABANDON_AFTER, ABANDON_HEART, ABANDON_RECORD } from '../src/data/retreat';
+import { ROUTE_STOPS } from '../src/sim/route';
+import { walkOff } from './fixtures/stand';
 import type { GameState } from '../src/state/types';
 
 describe('the door exists', () => {
@@ -39,11 +41,19 @@ describe('the door exists', () => {
 
     // THE WHOLE POINT. `foundBlocker` answered `settled` forever before this,
     // so a band that walked out would have been homeless for good.
-    const somewhere = Object.keys(state.world.tiles).map(fromKey).find((h) => {
-      state.party.at = h;
-      return canFound(state, h);
+    //
+    // Walked, not scanned. On a line `foundBlocker` reads the stretch the
+    // band is STANDING on and ignores the hex it is handed, so assigning
+    // `party.at` searched twenty-six hundred hexes while the band never left
+    // stop 8 — and stop 8 answers `taken`, because the rival fenced the
+    // neighbourhood during the days the steading stood there. The search has
+    // to move the band, which is also what the claim means: somewhere on
+    // this coast they can put posts in again.
+    const somewhere = [...Array(ROUTE_STOPS).keys()].find((stop) => {
+      state.party.stop = stop;
+      return canFound(state);
     });
-    expect(somewhere, 'walked out and could never settle again').toBeTruthy();
+    expect(somewhere, 'walked out and could never settle again').toBeDefined();
   });
 
   it('is a real cost in heart, and more than founding gave back', () => {
@@ -70,9 +80,11 @@ describe('and it is not a free look at the ground', () => {
   it('refuses a band that is not standing in it', () => {
     const state = settled('ret-away');
     state.day = state.settlement!.foundedOn + ABANDON_AFTER;
-    const elsewhere = Object.keys(state.world.tiles).map(fromKey)
-      .find((h) => key(h) !== key(state.settlement!.at));
-    state.party.at = elsewhere!;
+    // `walkOff` self-checks that `atHome` agrees the band has gone, which is
+    // exactly what this refusal is built on — assigning `party.at` moved
+    // nobody on a line, so the band was still in its own yard and the
+    // refusal never came.
+    walkOff(state);
     expect(abandonBlocker(state)).toBe('away');
   });
 
@@ -94,13 +106,13 @@ describe('the ground remembers and pays nothing', () => {
    */
   it('leaves a ruin where the hall stood, already picked clean', () => {
     const state = settled('ret-ruin');
-    const at = { ...state.settlement!.at };
+    const at = state.settlement!.stop;
     state.day = state.settlement!.foundedOn + ABANDON_AFTER;
     abandonSteading(state);
 
     const ruin = state.world.places.find((p) => p.kind === 'ruin');
     expect(ruin, 'the ground forgot there was ever a hall on it').toBeTruthy();
-    expect(ruin!.at).toEqual(at);
+    expect(ruin!.stop).toBe(at);
     expect(ruin!.sackedOn, 'the band can loot its own abandoned steading').toBe(state.day);
   });
 });
@@ -120,11 +132,14 @@ describe('the children come along', () => {
     abandonSteading(state);
     expect(state.bairns, 'the children were left standing in an empty yard').toHaveLength(1);
 
-    const somewhere = Object.keys(state.world.tiles).map(fromKey).find((h) => {
-      state.party.at = h;
-      return canFound(state, h);
+    // Somewhere else on this coast that will take posts — the hex version of
+    // this walked `world.tiles`; a line is walked stretch by stretch.
+    const somewhere = [...Array(ROUTE_STOPS).keys()].find((stop) => {
+      state.party.stop = stop;
+      return canFound(state);
     });
-    state.party.at = somewhere!;
+    expect(somewhere, 'walked out and could never settle again').toBeDefined();
+    state.party.stop = somewhere;
     expect(foundSettlement(state)).toBe(true);
     expect(childrenOf(state).map((c) => c.name)).toEqual(['Ásdís']);
     expect(state.bairns, 'they were carried twice').toBeUndefined();
@@ -161,14 +176,58 @@ describe('old saves', () => {
 });
 
 function settled(seed: string): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const at = Object.keys(state.world.tiles).map(fromKey).find((h) => {
-    state.party.at = h;
-    return canFound(state, h);
-  });
-  expect(at, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = at!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   return state;
 }
+
+// 9.14: the door out says what happened to the bands that took it.
+describe('the door out states its record, not only its price', () => {
+  it('says nothing at all to a band with no steading', () => {
+    const state = newGame('leave-none');
+    expect(leaveNote(state)).toBeNull();
+  });
+
+  it('names which rule is refusing rather than going quietly grey', () => {
+    // Freshly founded: the ten-day floor is refusing, and it must say so.
+    const state = settled('leave-toosoon');
+    state.settlement!.foundedOn = state.day;
+    const note = leaveNote(state)!;
+    expect(note.open).toBe(false);
+    expect(note.reason).toBe(ABANDON_REASON.toosoon);
+    // A refusal carries no price and no record — there is nothing to weigh.
+    expect(note.price).toBeUndefined();
+    expect(note.record).toBeUndefined();
+  });
+
+  it('carries BOTH the price and the record when the door is open', () => {
+    // The bug this is for: the panel composed the price and forgot the
+    // record, so the screen named what leaving costs and never what it did.
+    const state = settled('leave-open');
+    state.settlement!.foundedOn = state.day - ABANDON_AFTER - 1;
+    const note = leaveNote(state)!;
+    expect(note.open).toBe(true);
+    expect(note.price).toContain(String(ABANDON_HEART));
+    expect(note.record).toBe(ABANDON_RECORD);
+  });
+
+  it('keeps the price honest about the heart it actually takes', () => {
+    // Named off the constant rather than typed, so a change to what leaving
+    // costs cannot leave the sentence behind saying the old number.
+    const state = settled('leave-price');
+    state.settlement!.foundedOn = state.day - ABANDON_AFTER - 1;
+    const heart = state.party.morale;
+    abandonSteading(state);
+    expect(heart - state.party.morale).toBe(ABANDON_HEART);
+  });
+
+  it('states the record as an outcome and an alternative, not as advice', () => {
+    // The line must survive being softened into nothing. It has to say that
+    // more were killed than saved, and it has to name the other door — a fact
+    // with no alternative in it is discouragement, which this game does not do.
+    expect(ABANDON_RECORD).toMatch(/more died|more were/i);
+    expect(ABANDON_RECORD).toMatch(/stayed/i);
+    // And it must not tell the player what to do.
+    expect(ABANDON_RECORD).not.toMatch(/\byou should\b|\bdo not\b|\bnever\b/i);
+  });
+});

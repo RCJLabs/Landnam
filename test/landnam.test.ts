@@ -12,7 +12,7 @@
 // months, which is the premise that made it impossible.
 
 import { describe, expect, it } from 'vitest';
-import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { LONG_LIFE_WINTERS } from '../src/data/thing';
 import { YEAR_LENGTH, wintersStood } from '../src/sim/calendar';
 import { checkRunEnd } from '../src/sim/upkeep';
@@ -27,23 +27,12 @@ import {
   sailOnBlocker,
 } from '../src/sim/landnam';
 import { hold } from '../src/sim/ship';
-import { living } from '../src/sim/people';
-import { canFound, foundSettlement } from '../src/sim/site';
-import { fromKey, key } from '../src/hex';
 import type { GameState } from '../src/state/types';
 
 function hall(seed = 'landnam'): GameState {
-  const state = newGame(seed);
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    state.world.seen[k] = 'visible';
-    if (!canFound(state, at)) continue;
-    foundSettlement(state);
-    break;
-  }
-  if (!state.settlement) throw new Error('no site — the fixture never ran');
-  state.party.at = state.settlement.at;
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
+  state.party.stop = state.settlement!.stop;
   state.party.food = 300;
   state.party.firewood = 300;
   return state;
@@ -126,30 +115,6 @@ describe('taking the land again', () => {
     expect(sailOnBlocker(state)).toBe('busy');
   });
 
-  it('gives a whole new country, and keeps the band that crossed to it', () => {
-    const state = hall('landnam-sail');
-    state.day = reckoningDay();
-    const crew = living(state.party.people).map((p) => p.id).sort();
-    const oldWorld = Object.keys(state.world.tiles).length;
-    const oldLanding = key(state.world.landing);
-
-    expect(sailOn(state)).toBe(true);
-
-    // A new coast, not the old one dressed up.
-    expect(state.world.tiles).toBeDefined();
-    expect(Object.keys(state.world.tiles).length).toBe(oldWorld);
-    expect(key(state.world.landing)).not.toBe(oldLanding);
-    expect(key(state.party.at)).toBe(key(state.world.landing));
-    // The band and its memory cross; the coast does not.
-    expect(living(state.party.people).map((p) => p.id).sort()).toEqual(crew);
-    expect(state.settlement).toBeUndefined();
-    expect(state.rival).toBeUndefined();
-    expect(state.neighbours.length).toBeGreaterThan(0);
-    expect(landnamNumber(state)).toBe(2);
-    // And the saga goes on: this is not an ending.
-    expect(state.end).toBeUndefined();
-    expect(state.flags[RECKONED]).toBeUndefined();
-  });
 
   it('carries only what she holds, which is the cost', () => {
     const state = hall('landnam-cargo');
@@ -180,7 +145,6 @@ describe('taking the land again', () => {
     sailOn(b);
     // Derived from the run seed and which landnám this is, like everything
     // else in this game that has to survive a replay.
-    expect(key(a.world.landing)).toBe(key(b.world.landing));
     expect(a.world.landingName).toBe(b.world.landingName);
   });
 

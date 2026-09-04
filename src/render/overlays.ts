@@ -14,7 +14,8 @@ import type { GameState } from '../state/types';
 import type { Action } from '../sim/actions';
 import type { UiState } from '../uistate';
 import { canFound } from '../sim/site';
-import { renderMap } from './map';
+import { renderStrip } from './stripMap';
+import { daysInHand } from '../sim/coast';
 import { renderDeeds, type Deed } from './deeds';
 import { coastOf } from '../sim/challenge';
 import {
@@ -94,13 +95,20 @@ export function travelOverlay(
   }
 
   if (ui.mapOpen) {
-    return renderMap(state, () => {
+    const shut = () => {
       ui.mapOpen = false;
       rerender();
-    });
+    };
+    // On a coast the chart is a strip, and it is also the only way to walk
+    // anywhere until 8.3 puts a procession under it — so tapping a stretch
+    // dispatches the step and shuts the card. See render/strip.ts.
+    return renderStrip(state, shut, (to) => {
+      shut();
+      dispatch({ type: 'WALK', to });
+    }, daysInHand(state));
   }
 
-  if (ui.foundingOpen && canFound(state, state.party.at)) {
+  if (ui.foundingOpen && canFound(state)) {
     return renderFounding(
       state,
       () => {

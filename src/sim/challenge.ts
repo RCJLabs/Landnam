@@ -73,19 +73,27 @@ const unpackSeed = (token: string) => (token === '~' ? '' : token.replace(/\+/g,
 function packGhost(g: Ghost): string {
   const name = g.name.replace(/[\s,]+/g, '+') || '~';
   const cause = g.cause.replace(/[^a-z]/gi, '').toLowerCase() || 'gone';
-  return `g${Math.round(g.at.q)},${Math.round(g.at.r)},${name},${Math.max(0, Math.round(g.day))},${cause}`;
+  // The two leading zeroes are the `g<q>,<r>` slot the format has always had.
+  // They carried the ruin's hex and nothing ever read it — `hauntedStop`
+  // derives the stretch from the name, the day and the cause — so the ghost
+  // lost the field in 8.5 and the CODE keeps the slot, because codes get
+  // pasted into chats and an old one has to keep working.
+  return `g0,0,${name},${Math.max(0, Math.round(g.day))},${cause}`;
 }
 
 function unpackGhost(token: string): Ghost | undefined {
   const bits = token.slice(1).split(',');
   if (bits.length < 5) return undefined;
-  const q = Number(bits[0]);
-  const r = Number(bits[1]);
+  // Fields 0 and 1 are the retired hex slot. Still PARSED — a code whose
+  // first two fields are not numbers is a mangled code, and rule 2 of
+  // sim/haunt.ts says a mangled ghost costs the ruin quietly rather than the
+  // coast — but no longer kept.
   const day = Number(bits[3]);
-  if (!Number.isFinite(q) || !Number.isFinite(r) || !Number.isFinite(day)) return undefined;
+  if (!Number.isFinite(Number(bits[0])) || !Number.isFinite(Number(bits[1]))) return undefined;
+  if (!Number.isFinite(day)) return undefined;
   const name = (bits[2] ?? '').replace(/\+/g, ' ').trim();
   if (name === '' || name === '~') return undefined;
-  return { name, at: { q, r }, day: Math.max(0, day), cause: bits[4] ?? 'gone' };
+  return { name, day: Math.max(0, day), cause: bits[4] ?? 'gone' };
 }
 
 export function encodeChallenge(c: Challenge): string {
@@ -204,7 +212,7 @@ export function coastOf(state: GameState): string {
 export function ghostOf(state: GameState): Ghost | undefined {
   const home = state.settlement;
   if (!home || !state.end) return undefined;
-  return { name: home.name, at: home.at, day: state.day, cause: state.end.cause };
+  return { name: home.name, day: state.day, cause: state.end.cause };
 }
 
 /** The code for the run as it stands, mark and all. */

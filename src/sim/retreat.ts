@@ -8,11 +8,11 @@
 // happen twice — this is the whole reason for.
 
 import type { Child, GameState } from '../state/types';
-import { ABANDON_AFTER, ABANDON_HEART } from '../data/retreat';
+import { ABANDON_AFTER, ABANDON_HEART, ABANDON_RECORD } from '../data/retreat';
 import { childrenOf } from './lineage';
 import { atHome } from './site';
 import { chronicle } from './saga';
-import { key } from '../hex';
+import { ruinIdFor } from './places';
 
 /**
  * Why the band cannot walk out, or null when it can.
@@ -58,7 +58,6 @@ export function canAbandon(state: GameState): boolean {
 export function abandonSteading(state: GameState): boolean {
   if (!canAbandon(state)) return false;
   const home = state.settlement!;
-  const at = { q: home.at.q, r: home.at.r };
 
   // The children come along. They are records kept on the settlement, so a
   // naive retreat would simply delete them — and since `childrenOf` feeds
@@ -68,9 +67,12 @@ export function abandonSteading(state: GameState): boolean {
   if (born.length > 0) state.bairns = [...(state.bairns ?? []), ...born];
 
   state.world.places.push({
-    id: `ruin:${key(at)}`,
+    id: ruinIdFor({ stop: home.stop }),
     kind: 'ruin',
-    at,
+    // The stop is the address. Without it the band's own posts were in the
+    // world and unreachable from it — `placeHere` matches on stop, so a band
+    // that walked out could never stand on what it had left.
+    stop: home.stop ?? 0,
     // Made empty. See the note above: a lootable ruin turns this into a
     // windfall and the whole design of the cost falls over.
     sackedOn: state.day,
@@ -87,4 +89,41 @@ export function abandonSteading(state: GameState): boolean {
     'saga',
   );
   return true;
+}
+
+/**
+ * What the door out says: whether it opens, what it costs, and what became of
+ * the bands that took it.
+ *
+ * IN THE SIM BECAUSE IT CAN BE GOT WRONG. The panel used to build these lines
+ * itself, and it built only two of the three — the price was on the face of
+ * the control and the record was nowhere, so a player could read the whole
+ * screen and still believe walking out was an escape. Composed here, the
+ * three cannot come apart, and a test can hold them to it without a browser.
+ *
+ * `open` false means the control is not offered and `reason` says which rule
+ * is refusing — never a grey button with no explanation.
+ */
+export interface LeaveNote {
+  open: boolean;
+  /** Why not, when it is not offered. */
+  reason?: string;
+  /** What leaving costs, when it is. */
+  price?: string;
+  /** What happened to the bands that did. */
+  record?: string;
+}
+
+export function leaveNote(state: GameState): LeaveNote | null {
+  const why = abandonBlocker(state);
+  // Nothing to leave, or nothing left to decide: the door is not refused,
+  // it simply is not there, and a note about it would be noise.
+  if (why === 'nosteading' || why === 'ended') return null;
+  if (why !== null) return { open: false, reason: ABANDON_REASON[why] };
+  return {
+    open: true,
+    price: `Everything raised here is lost, and ${ABANDON_HEART} off every heart. `
+      + 'The stores come with us.',
+    record: ABANDON_RECORD,
+  };
 }

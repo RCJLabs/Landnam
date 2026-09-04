@@ -2,7 +2,6 @@
 // is a battle ACTION — it spends a turn and obeys the same gates as a swing —
 // while morale.ts owns what nerve IS. The cry only calls in there.
 
-import { distance } from '../hex';
 import type { Combatant, GameState } from '../state/types';
 import { activeCombatant, fighterPerson } from './battle';
 import { beat } from './beats';
@@ -45,7 +44,8 @@ export function doWarCry(state: GameState): boolean {
   battle.warCried = true;
 
   for (const c of battle.combatants) {
-    if (c.down || c.fled || distance(c.at, active.at) > WARCRY_RANGE) continue;
+    // Earshot, on a line: the ranks near enough to hear it over a fight.
+    if (c.down || c.fled || Math.abs(c.rank - active.rank) > WARCRY_RANGE) continue;
     if (c.side === active.side) {
       if (!c.broken) {
         c.nerve = Math.min(startingNerve(state, c.personId), c.nerve + WARCRY_HEART);

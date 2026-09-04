@@ -15,6 +15,7 @@ import { makeRng } from '../rng';
 import type { Season } from '../state/types';
 import type { WeatherId } from '../data/weather';
 import { svgEl } from './svg';
+import { GOLD, SNOW } from './palette';
 
 export interface Bounds {
   x: number;
@@ -31,7 +32,7 @@ export function seasonTint(season: Season, b: Bounds): SVGElement | null {
     season === 'winter'
       ? { fill: '#9db8d6', opacity: 0.1 }
       : season === 'autumn'
-        ? { fill: '#d3a441', opacity: 0.07 }
+        ? { fill: GOLD, opacity: 0.07 }
         : season === 'spring'
           ? { fill: '#b9d67a', opacity: 0.05 }
           : null;
@@ -59,7 +60,7 @@ export function skyNodes(weather: WeatherId, b: Bounds): SVGElement[] {
       const line = svgEl('line', {
         x1: b.x - len, y1: y, x2: b.x, y2: y - len * 0.18,
         class: 'gust',
-        stroke: '#dfe6ea',
+        stroke: SNOW,
         'stroke-width': 1.4,
         'stroke-linecap': 'round',
       });
@@ -102,7 +103,7 @@ export function skyNodes(weather: WeatherId, b: Bounds): SVGElement[] {
         rx: b.w * rng.float(0.42, 0.6),
         ry: b.h * 0.14,
         class: 'fogbank',
-        fill: '#dfe6ea',
+        fill: SNOW,
       });
       const style = (fog as SVGElement & { style: CSSStyleDeclaration }).style;
       style.setProperty('--drift', `${rng.float(18, 34).toFixed(0)}px`);

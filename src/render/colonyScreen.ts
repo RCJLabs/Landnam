@@ -5,7 +5,8 @@
 
 import type { GameState } from '../state/types';
 import type { Action } from '../sim/actions';
-import { createColonyView } from './colony';
+import { createSteadingView } from './steadingView';
+import type { ColonyView } from './views';
 import {
   renderBuilds,
   renderColonyActions,
@@ -15,6 +16,8 @@ import {
   renderCrew,
   renderNeeds,
   renderRoom,
+  renderHearth,
+  renderWall,
   renderRations,
 } from './colonyUi';
 import {
@@ -29,7 +32,7 @@ import {
   type ScreenHooks,
 } from '../shell';
 
-let colonyView: ReturnType<typeof createColonyView> | null = null;
+let colonyView: ColonyView | null = null;
 
 /**
  * What the steading's brush has done, for the debug read-out and the bars.
@@ -45,7 +48,11 @@ export function steadingDrawn(): unknown {
 export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
   if (!state.settlement) return;
   const { ui, dispatch, rerender } = h;
-  if (!colonyView) colonyView = createColonyView();
+  // A steading on a coast is a place you walk into, not a ring of ground you
+  // look down on. Both meet `ColonyView`, so nothing below this line changes.
+  if (!colonyView) {
+    colonyView = createSteadingView();
+  }
   if (mapSlot.firstChild !== colonyView.root) mapSlot.replaceChildren(colonyView.root);
 
   // A dead or departed selection must not strand the picker open.
@@ -68,6 +75,8 @@ export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
     hintSlot.replaceChildren(
       renderNeeds(state),
       renderRoom(state),
+      renderHearth(state),
+      renderWall(state),
       renderRations(state, colonyDispatch),
       renderBuilds(state, colonyDispatch),
     );

@@ -3,14 +3,12 @@
 // measurably hurts, so most of this file measures rather than asserts.
 
 import { describe, it, expect } from 'vitest';
-import { distance } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
-import { activeCombatant, standing } from '../src/sim/battle';
+import { activeCombatant, standing, strikeTargets } from '../src/sim/battle';
 import { leaveBattle, startBattle } from '../src/sim/battleTurn';
-import { reachWithZoc } from '../src/sim/zoc';
 import { bestStat, effectiveStat, living } from '../src/sim/people';
 import { passDay } from '../src/sim/upkeep';
 import { LASTING } from '../src/data/injuries';
@@ -41,24 +39,16 @@ function fightAndLeave(state: GameState): GameState {
       continue;
     }
     const foes = standing(battle, 'foe');
-    const adjacent = foes.filter((c) => distance(c.at, active.at) === 1);
+    const adjacent = strikeTargets(cur);
     if (!active.hasActed && adjacent.length > 0) {
       cur = apply(cur, { type: 'B_STRIKE', targetId: adjacent[0]!.personId });
       cur = apply(cur, { type: 'B_END_TURN' });
       continue;
     }
-    const reach = [...reachWithZoc(battle, active).keys()].map((k) => ({
-      q: Number(k.split(',')[0]),
-      r: Number(k.split(',')[1]),
-    }));
-    if (reach.length > 0 && foes.length > 0) {
-      const best = [...reach].sort(
-        (a, b) =>
-          Math.min(...foes.map((f) => distance(a, f.at))) -
-          Math.min(...foes.map((f) => distance(b, f.at))),
-      )[0]!;
-      const moved = apply(cur, { type: 'B_MOVE', to: best });
-      cur = moved === cur ? apply(cur, { type: 'B_END_TURN' }) : moved;
+    if (foes.length > 0) {
+      // Was a `B_DASH` to push up the line. 9.1b took the verb; the line
+      // closes itself at the top of the turn now.
+      cur = apply(cur, { type: 'B_END_TURN' });
       continue;
     }
     cur = apply(cur, { type: 'B_END_TURN' });
@@ -175,7 +165,12 @@ describe('wounds are carried', () => {
   it('a maimed warband fights worse than a whole one', { timeout: 60_000 }, () => {
     // Same headcount on both sides, so the fights are the same size and the
     // only difference is what our people are carrying.
-    const SEEDS = Array.from({ length: 14 }, (_, i) => `maim-${i}`);
+    // NINETY, not fourteen, and for the reason the lethality bar below spells
+    // out: this is a RATE, and fourteen fights cannot carry one. At that
+    // sample the two arms came out 6 wins against 7 on one build and 5
+    // against 4 on the other — the same claim reading both ways round,
+    // decided by which seeds happened to be in the bag.
+    const SEEDS = Array.from({ length: 90 }, (_, i) => `maim-${i}`);
     let wholeWins = 0;
     let maimedWins = 0;
     let wholeLeft = 0;
@@ -187,8 +182,14 @@ describe('wounds are carried', () => {
       for (const person of maimed.party.people) {
         person.injuries.push({ ...LASTING[0]!, id: `m_${person.id}` });
       }
-      startBattle(whole, 'meadow', 2);
-      startBattle(maimed, 'meadow', 2);
+      // A FIGHT THAT CAN BE WON, which at difficulty 2 it could not: both
+      // arms read 0 of 14 wins, so the comparison had no signal in it at all
+      // and fell through to the headcount — where it measured the opposite of
+      // what it claims, because a maimed band's nerve breaks sooner and a
+      // band that runs earlier loses fewer people. It passed for as long as
+      // the coin landed the right way up.
+      startBattle(whole, 'meadow', 0);
+      startBattle(maimed, 'meadow', 0);
       const w = fightAndLeave(whole);
       const m = fightAndLeave(maimed);
       if (w.aftermath!.won) wholeWins++;
@@ -203,8 +204,11 @@ describe('wounds are carried', () => {
         `maimed ${maimedWins}/${SEEDS.length} wins, ${maimedLeft} alive`,
     );
 
-    expect(wholeWins).toBeGreaterThanOrEqual(maimedWins);
-    expect(wholeLeft).toBeGreaterThan(maimedLeft);
+    // Wins, which is what "fights worse" means. The headcount is NOT asserted
+    // and the reason is above: a broken band runs, and running is how you
+    // keep people. Holding both would be holding two claims that pull apart.
+    expect(wholeWins, 'a whole band did not out-fight a maimed one')
+      .toBeGreaterThan(maimedWins);
   });
 });
 
@@ -265,7 +269,18 @@ describe('losing a veteran hurts', () => {
    * fatal — so the shape of the curve is pinned, not just its existence.
    */
   it('death rises with the odds against you, and good play mostly avoids it', { timeout: 120_000 }, () => {
-    const N = 24;
+    // A HUNDRED AND TWENTY, not twenty-four.
+    //
+    // The claim below — a fight you were meant to win is usually survivable —
+    // is a RATE, and twenty-four fights cannot carry one: the standard error
+    // on a rate near 0.4 at that sample is about ten points. It showed when
+    // the coast build changed nothing but the battle stream's key (the fight
+    // is drawn from where it happens, and a line's `party.at` is a
+    // placeholder, so the key had to become the stretch): the same machinery,
+    // the same distribution, a different draw, and easy fights read 13 fatal
+    // of 24 where they had read 7. Neither number was the truth; the
+    // instrument was too coarse to have one.
+    const N = 120;
     const measure = (difficulty: number) => {
       let fatal = 0;
       let dead = 0;

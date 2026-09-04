@@ -2,15 +2,16 @@
 // that job assignment visibly moves the numbers, so most of this file puts
 // two identically-placed bands to work differently and measures the gap.
 
+import { settled as settleSomewhere } from './fixtures/settle';
+import { walkOff } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
-import { fromKey, key } from '../src/hex';
+import { PLOT_COUNT } from '../src/sim/colony';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { currentMode } from '../src/modes';
 import { apply } from '../src/sim/actions';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
 import { seasonOf } from '../src/sim/calendar';
@@ -37,15 +38,11 @@ import { stream } from '../src/rng';
 import type { GameState, SiteReport } from '../src/state/types';
 
 function settled(seed: string): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  for (const k of Object.keys(state.world.tiles)) {
-    state.party.at = fromKey(k);
-    if (canFound(state, state.party.at)) break;
-  }
-  expect(canFound(state, state.party.at), `${seed}: nowhere to settle`).toBe(true);
-  expect(foundSettlement(state)).toBe(true);
-  return state;
+  // The site search is shared now — see test/fixtures/settle.ts. `pick:
+  // 'first'` keeps what this one was: the first ground that will have them,
+  // anywhere in the world, which is the bleak measurement several claims in
+  // this file are actually about. `settledWell` below is the other half.
+  return settleSomewhere(seed, { radius: Infinity, pick: 'first' });
 }
 
 /**
@@ -55,30 +52,8 @@ function settled(seed: string): GameState {
  * much bleaker measurement.
  */
 function settledWell(seed: string, radius = 8): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    const gap =
-      (Math.abs(at.q - landing.q) +
-        Math.abs(at.r - landing.r) +
-        Math.abs(at.q + at.r - landing.q - landing.r)) /
-      2;
-    if (gap > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable near the landing`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   return state;
 }
 
@@ -94,7 +69,7 @@ function withReport(seed: string, override: Partial<SiteReport>): GameState {
     home.report.harbour +
     home.report.defence;
   // The ground has to match the reading, or a fisher has no water to fish.
-  home.plots = makePlots(home.report, home.at, stream(seed, 'colony').derive('replot'));
+  home.plots = makePlots(home.report, stream(seed, 'colony').derive('replot'));
   return state;
 }
 
@@ -111,14 +86,31 @@ describe('the steading has ground of its own', () => {
   it('is a hex patch with the hall in the middle and a watch on it', () => {
     const state = settled('plots-1');
     const home = state.settlement!;
-    // Nineteen hexes at radius two.
+    // Nineteen hexes at radius two — the same COUNT on a line, which
+    // `makePlots` rolls deliberately so a coast steading has the same holdings
+    // as a hex one.
     expect(home.plots).toHaveLength(1 + 3 * PLOT_RADIUS * (PLOT_RADIUS + 1));
     const hall = home.plots.filter((p) => p.kind === 'hall');
     expect(hall).toHaveLength(1);
-    expect(hall[0]!.at).toEqual(home.at);
+    // NOT "in the middle". A coast steading stands on a stretch of shore and
+    // has no ring of ground to be in the middle of — `makePlots` says so and
+    // writes `at` as a plain index, `{q: i, r: 0}`, precisely so nothing
+    // reads it as a coordinate. Asserting the hall sits on `home.at` would
+    // be asserting that two placeholders match.
+    //
+    // What survives is what the plots are FOR: one hall, one watchpost, and
+    // no two of them the same, which is what `plotsFor` and the day's labour
+    // actually read.
+    // The hall is plot 0 — the POSITION is the slot now, since `Plot.at` went
+    // in v62. It held the array index a second time and nothing read it.
+    expect(home.plots[0]!.kind, 'the hall is the first plot').toBe('hall');
+    expect(home.plots.filter((p) => p.kind === 'hall')).toHaveLength(1);
     expect(home.plots.filter((p) => p.kind === 'watchpost')).toHaveLength(1);
-    // No two plots share a hex.
-    expect(new Set(home.plots.map((p) => key(p.at))).size).toBe(home.plots.length);
+    // The distinctness check that stood here asserted that no two plots shared
+    // an index, on an array whose indices are distinct by construction — it
+    // could not fail. What is worth pinning is the SIZE of the yard, which is
+    // what `plotsFor` and the day's labour walk.
+    expect(home.plots).toHaveLength(PLOT_COUNT);
   });
 
   it('is a picture of the reading you settled on', () => {
@@ -448,7 +440,7 @@ describe('COLONY mode', () => {
 
   it('will not open away from the steading, or with no steading at all', () => {
     const away = settled('mode-away');
-    away.party.at = { q: away.settlement!.at.q + 2, r: away.settlement!.at.r };
+    walkOff(away);
     expect(apply(away, { type: 'ENTER_COLONY' })).toBe(away);
 
     const homeless = structuredClone(newGame('mode-none'));
@@ -460,7 +452,7 @@ describe('COLONY mode', () => {
     for (const action of [
       { type: 'CAMP' },
       { type: 'FORAGE' },
-      { type: 'MOVE', to: inside.party.at },
+      { type: 'WALK', to: (inside.party.stop ?? 0) + 1 },
       { type: 'B_END_TURN' },
     ] as const) {
       expect(apply(inside, action), action.type).toBe(inside);

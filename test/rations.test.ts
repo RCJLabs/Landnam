@@ -13,15 +13,22 @@
 
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { foodPerDay, passDay } from '../src/sim/upkeep';
 import { forecast } from '../src/sim/winter';
-import { HALF_RATION_HEART, HALF_RATION_TOLL, RATION_SHARE } from '../src/data/rations';
+import {
+  HALF_RATION_HEART,
+  HALF_RATION_TOLL,
+  RATION_SHARE,
+  TIGHTENED_KILLED,
+  TIGHTENED_OF,
+  TIGHTENED_SAVED,
+  tighteningWorth,
+} from '../src/data/rations';
 import { pushMode } from '../src/modes';
-import { canFound, foundSettlement } from '../src/sim/site';
-import { fromKey } from '../src/hex';
 import type { GameState } from '../src/state/types';
 
 describe('short commons stretch the store', () => {
@@ -149,14 +156,37 @@ describe('old saves', () => {
 });
 
 function settled(seed: string): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const at = Object.keys(state.world.tiles).map(fromKey).find((h) => {
-    state.party.at = h;
-    return canFound(state, h);
-  });
-  expect(at, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = at!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   return state;
 }
+
+// 9.7: the panel names what tightening is worth, not only what it costs.
+describe('the rations control states the record', () => {
+  it('names both halves, so it reads as a record and not a nudge', () => {
+    const line = tighteningWorth();
+    expect(line).toContain(String(TIGHTENED_SAVED));
+    expect(line).toContain(String(TIGHTENED_KILLED));
+    expect(line).toContain(String(TIGHTENED_OF));
+    // It must say what it COST somebody too. A line naming only the bands
+    // saved is an advertisement, and this game does not run those.
+    expect(line).toMatch(/died of it/);
+  });
+
+  it('keeps the numbers the measurement actually found', () => {
+    // Pinned to literals rather than to each other: written as
+    // `SAVED > KILLED` this passes at any pair, which is the tautology a
+    // claim shipped with earlier in this phase. These are the figures from
+    // `says whether short commons save anybody` — 120 seeds on As It Lies.
+    expect(TIGHTENED_SAVED).toBe(22);
+    expect(TIGHTENED_KILLED).toBe(1);
+    expect(TIGHTENED_OF).toBe(120);
+  });
+
+  it('never sells the lever as smaller than it is', () => {
+    // The failure this guards is a well-meaning softening. Tightening is the
+    // second largest measured decision in the game and the line has to carry
+    // that, or it is worth no screen space at all.
+    expect(TIGHTENED_SAVED).toBeGreaterThan(TIGHTENED_KILLED * 10);
+  });
+});

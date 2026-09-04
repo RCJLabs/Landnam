@@ -11,18 +11,18 @@
 //      nothing is a badge, which is the failure mode this milestone exists to
 //      avoid.
 
+import { settled as settleSomewhere } from './fixtures/settle';
+import { standIn } from './fixtures/stand';
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply, type Action } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild, shelterSaving } from '../src/sim/colony';
 import { isEligible, checkOdds, presentEvent } from '../src/sim/events';
-import { moveOptions, moveEffort, isCoastalWater, SEA_EFFORT } from '../src/sim/road';
+import { walkOptions } from '../src/sim/coast';
 import { holdSteading } from '../src/sim/raid';
 import { doStrike } from '../src/sim/strike';
 import { coldNight } from '../src/sim/cold';
@@ -37,25 +37,8 @@ import type { JobId } from '../src/data/jobs';
 const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'warrior'];
 
 function settled(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    if (distance(at, landing) > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
@@ -78,6 +61,7 @@ function duel(base: GameState, side: 'warband' | 'foe'): GameState {
     personId,
     side: from,
     at,
+    rank: 1,
     initiative: 0,
     movesLeft: 3,
     hasActed: false,
@@ -92,9 +76,7 @@ function duel(base: GameState, side: 'warband' | 'foe'): GameState {
   const attacker = side === 'warband' ? ours.id : foe.id;
   s.battle = {
     terrain: 'meadow',
-    width: 3,
-    height: 3,
-    grid: { '0,0': { ground: 'open' }, '1,0': { ground: 'open' } },
+    grid: [{ ground: 'open' }, { ground: 'open' }],
     foes: [foe],
     combatants: [
       stand(ours.id, { q: 0, r: 0 }, 'warband'),
@@ -269,18 +251,6 @@ describe('THE BAR — knowing a thing changes the run', () => {
     expect(bonus(state, 'solace')).toBe(0);
   });
 
-  it("shipwright's eye: a day on the water costs less", () => {
-    const state = structuredClone(newGame('lore-ship'));
-    const water = moveOptions(state).find((h) => isCoastalWater(state, h));
-    expect(water, 'no coastal water beside the landing').toBeTruthy();
-    const plain = moveEffort(state, water!)!;
-
-    const sailor = taught(state, 'shipwright');
-    const learned = moveEffort(sailor, water!)!;
-    expect(learned).toBeLessThan(plain);
-    expect(learned).toBeGreaterThanOrEqual(1);
-    expect(plain).toBe(SEA_EFFORT);
-  });
 
   it('shipwright is taught by the dock, not by a menu', () => {
     const state = settled('lore-dock');
@@ -377,12 +347,16 @@ describe('THE BAR — knowing a thing changes the run', () => {
   });
 
   it('wall-drill: a line is worth more, and standing alone still is not', () => {
+    // Two shoulder to shoulder and one out on his own. On the hex field that
+    // was a hex apart and a hex nine away; on a line it is adjacent ranks
+    // and a rank with nothing beside it — which a line only allows because
+    // this is a fixture rather than a fight, since a real line closes up.
     const battle = {
       grid: {},
       combatants: [
-        { personId: 'a', side: 'warband', at: { q: 0, r: 0 } },
-        { personId: 'b', side: 'warband', at: { q: 1, r: 0 } },
-        { personId: 'c', side: 'warband', at: { q: 9, r: 9 } },
+        { personId: 'a', side: 'warband', at: { q: 0, r: 0 }, rank: 1 },
+        { personId: 'b', side: 'warband', at: { q: 1, r: 0 }, rank: 2 },
+        { personId: 'c', side: 'warband', at: { q: 9, r: 9 }, rank: 9 },
       ].map((c) => ({
         ...c,
         initiative: 0, movesLeft: 3, hasActed: false, throwsLeft: 1, defending: false,
@@ -414,26 +388,34 @@ describe('THE BAR — knowing a thing changes the run', () => {
 
 describe('discoveries in play', () => {
   it('the boulder is drawable in the right country and nowhere else', () => {
-    const state = structuredClone(newGame('lore-card'));
+    // A coast cannot be painted, only walked to — see test/fixtures/stand.ts.
+    // Seeds are walked until one has both countries on it, because a coast
+    // with no hills is a fact about that coast rather than a broken fixture.
+    const state = [...Array(40).keys()]
+      .map((i) => structuredClone(newGame(`lore-card-${i}`)))
+      .find((s) => standIn(s, 'hills') && standIn(s, 'bog'))
+      ?? structuredClone(newGame('lore-card'));
     state.day = 12;
     const def = EVENTS.find((e) => e.id === 'carved-boulder')!;
 
-    const here = `${state.party.at.q},${state.party.at.r}`;
-    state.world.tiles[here]!.terrain = 'hills';
+    expect(standIn(state, 'hills'), 'no hills on this coast').toBe(true);
     expect(isEligible(state, def)).toBe(true);
 
-    state.world.tiles[here]!.terrain = 'bog';
+    expect(standIn(state, 'bog'), 'no bog on this coast').toBe(true);
     expect(isEligible(state, def), 'runes turned up in a bog').toBe(false);
 
-    state.world.tiles[here]!.terrain = 'hills';
+    standIn(state, 'hills');
     state.day = 2;
     expect(isEligible(state, def), 'runes on the second morning ashore').toBe(false);
   });
 
   it('a card that has taught its lesson never comes round again', () => {
-    const state = structuredClone(newGame('lore-repeat'));
+    const state = [...Array(40).keys()]
+      .map((i) => structuredClone(newGame(`lore-repeat-${i}`)))
+      .find((s) => standIn(s, 'hills'))
+      ?? structuredClone(newGame('lore-repeat'));
     state.day = 12;
-    state.world.tiles[`${state.party.at.q},${state.party.at.r}`]!.terrain = 'hills';
+    expect(standIn(state, 'hills'), 'no hills on this coast').toBe(true);
     const def = EVENTS.find((e) => e.id === 'carved-boulder')!;
     expect(isEligible(state, def)).toBe(true);
 
@@ -474,9 +456,9 @@ describe('discoveries in play', () => {
           s = apply(apply(s, { type: 'CHOOSE', index: 0 }), { type: 'DISMISS_EVENT' });
           continue;
         }
-        const options = moveOptions(s);
+        const options = walkOptions(s);
         s = options[i % options.length]
-          ? apply(s, { type: 'MOVE', to: options[i % options.length]! })
+          ? apply(s, { type: 'WALK', to: options[i % options.length]! })
           : apply(s, { type: 'CAMP' });
       }
       learnedTotal += s.lore.length;

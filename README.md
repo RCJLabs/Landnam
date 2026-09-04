@@ -6,31 +6,35 @@ Six of you step off a knarr onto a coast with no name you know. Behind you,
 open sea. Ahead, a country that does not care whether you live. Winter comes
 on the forty-ninth day.
 
-Landnám is a Viking survival-strategy game: hex-map travel, turn-based tactical
-combat, and colony survival, sharing one data model. It runs in a browser,
+Landnám is a Viking survival-strategy game: coast travel, turn-based tactical
+combat, and colony survival, sharing one data model and drawn side-on. It runs in a browser,
 including a phone browser, and ships as a **single self-contained
 `index.html`** that works offline from a `file://` open — no images, no fonts,
 no audio files, no network.
 
 ## Playing (v0.3 — the full loop)
 
-- **Travel** by tapping a marked hex. Rough country costs more days than open
-  ground, and each day eats food and burns firewood.
+- **Travel** by walking up the coast, one stretch at a time. There is one
+  road and it runs two ways, so every day spent pushing out is a day that has
+  to be spent again coming back — that is the whole shape of the decision.
+  A leg takes two to four days on foot; with a sound hull under you a day at
+  the oars covers three stretches. Each day eats food and burns firewood.
 - **Camp** to rest, mend wounds, and cut firewood. **Forage**, **Hunt**, and
   **Fish** to eat — yields depend on terrain, season, and who in the band is
   best suited to the work.
 - **Events** put choices in front of you with the odds shown. Checks roll
   2d6 plus your best hand for the job; they are meant to be lost sometimes.
-- **Fights** zoom into a hex battlefield made from the ground you were
-  standing on. Turn order comes from wits; each fighter gets a move and one
-  action: **Strike**, **Throw** a spear (two or three hexes, clear line only,
-  and then it is gone), **Shove** (contested — into water, the sea finishes
-  it), **Shield** (harder to hit until your next turn) or **Run** (trade the
-  action for a second move).
-- **Hold the line.** Every standing enemy threatens the six hexes around
-  them: step into that ground and your move stops there, and stepping back
-  out costs extra. Run is how you break away. A line is something to be
-  broken, not walked around.
+- **Fights** are two shield walls facing each other, and where you stand in
+  yours is the whole of your tactics. Rank 1 is the front, where the walls
+  meet; the ranks behind it are the men waiting to fill a gap. Turn order
+  comes from wits, and each fighter gets one action: **Strike** (front rank
+  only — there is a man in the way otherwise), **Reach** with a spear from
+  the second rank, past the shoulder of the man in front, **Throw** from
+  anywhere and then it is gone, **Shove**, **Shield** (harder to hit until
+  your next turn) or **Dash** to change your place in the line.
+- **Hold the line.** A shield wall is not something you build here, it is the
+  state the world starts in — and breaking it is what costs you. Stepping out
+  of the front rank leaves a gap somebody has to fill.
 - **The shield wall is the whole game.** A warrior with a shoulder-mate is
   harder to kill; with two, harder still — and the wall shatters the instant
   a link falls. Meanwhile every enemy past the first standing on you makes
@@ -54,18 +58,22 @@ no audio files, no network.
   the veteran you lose is worth more than the one you started with. Win a
   field with bodies on it and you strip it for food and firewood. The
   reckoning waits until you are back on the road.
-- **Take the land.** Every hex you stand on is read on five measures — fresh
-  water, soil, timber, harbour, defensibility — from the ground and what
-  surrounds it. They pull against each other: the best farmland is open
-  country you cannot defend, a crag you can hold grows nothing, a harbour
-  wants sand. No fresh water and you cannot settle at all. When you set the
-  posts it is permanent: one steading, no moving it, and the place takes its
-  name from whatever it is best at. After that, your own ground gives back —
+- **Take the land.** Every stretch of coast is read on five measures — fresh
+  water, soil, timber, harbour, defensibility — from the country it is made
+  of and what lies either side. They pull against each other: the best
+  farmland is open country you cannot defend, a stretch thick with wood has
+  nowhere to beach a knarr. **You have to settle by fresh water**, and a beck
+  comes down to the sea on about half the coast — so the first thing you do
+  with this country is walk it looking for running water. Wood is different:
+  the cutters go out to it, and the further the trees the less they bring
+  back, so how far you are from a stand is a thing you weigh against
+  everything else. When you set the posts it is permanent: one steading, no
+  moving it, and the place takes its name from whatever it is best at. After that, your own ground gives back —
   more from the fields, more firewood, deeper sleep, and fewer things walking
   up on you in the night.
 - **Set them to work.** Once the posts are in, **Steading** opens your own
-  ground: nineteen hexes of field, wood, water and rough laid out from the
-  site you chose. Put people on six jobs — farmer, hunter, fisher,
+  ground, seen side-on: the hall and what you have raised beside it, standing
+  on the stretch you chose. Put people on six jobs — farmer, hunter, fisher,
   woodcutter, builder, warrior. Each leans on one stat and one thing about
   the land, and the panel shows you what *that* person would produce at
   *that* job before you commit. Builders raise shelter and burn less
@@ -125,7 +133,7 @@ coast.
 ```bash
 npm install
 npm run dev       # dev server
-npm test          # vitest: hex math, RNG, worldgen, sim, saves, content lint
+npm test          # vitest: route maths, RNG, sim, saves, content lint
 npm run build     # typecheck + single-file dist/index.html
 npm run release   # build, verify self-containment, zip source
 ```
@@ -155,10 +163,10 @@ status live in [`ROADMAP.md`](./ROADMAP.md). In brief:
 src/
   main.ts        boot + mode router
   modes.ts       TRAVEL | BATTLE | COLONY stack
-  hex/           shared hex math — world map AND battle grid
+  sim/route.ts   the coast: 26 stops, derived from the seed
   rng.ts         seeded streams
   state/         GameState, saves, migrations
-  sim/           pure logic: worldgen, travel, events, upkeep, calendar
+  sim/           pure logic: the coast, travel, events, upkeep, calendar
   render/        SVG views + UI chrome
   data/          events, traits, terrain, names
 ```

@@ -2,6 +2,7 @@
 // word has spread; and when the man with the pennant falls — theirs OR ours —
 // the heart goes out of the whole side he led.
 
+import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { startBattle, startRaid } from '../src/sim/battleTurn';
@@ -16,34 +17,17 @@ import { leaveBattle } from '../src/sim/battleTurn';
 import { seeNeighbours } from '../src/sim/neighbours';
 import { CHAMPION_BYNAMES } from '../src/data/foes';
 import { doStrike } from '../src/sim/strike';
-import { NERVE_LEADER_FELL, fellLeading } from '../src/sim/morale';
+import { NERVE_LEADER_FELL, STEADIED_PER_LINK, fellLeading } from '../src/sim/morale';
 import { leaderOf } from '../src/sim/people';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
-import { fromKey, offsetToAxial } from '../src/hex';
 import { stream } from '../src/rng';
 import type { Combatant, GameState } from '../src/state/types';
 
 /** A settled steading a raid can actually be rolled against. */
 function settled(seed: string): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed);
   state.day = 30;
   return state;
 }
@@ -102,26 +86,37 @@ describe('the fall of the one who led', () => {
     const state = structuredClone(newGame(seed));
     startBattle(state, 'meadow', 2);
     const battle = state.battle!;
-    for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
+    for (let i = 0; i < battle.grid.length; i += 1) battle.grid[i] = { ground: 'open' };
 
     const ours = battle.combatants.filter((c) => c.side === 'warband');
     const foes = battle.combatants.filter((c) => c.side === 'foe');
     const attacker = (attackerSide === 'warband' ? ours : foes)[0]!;
     const target = (attackerSide === 'warband' ? foes : ours)[0]!;
-    attacker.at = offsetToAxial(3, 5);
-    target.at = offsetToAxial(4, 5);
-    // Everyone else parked far away AND spread out — adjacency would make
-    // them wall links, and links soften the shake this test measures. Each
-    // side gets its own rows, four to a row, every hex two apart.
-    const parkRows: Record<'warband' | 'foe', number[]> = { warband: [0, 2], foe: [8, 6] };
-    const parked: Record<'warband' | 'foe', number> = { warband: 0, foe: 0 };
-    [...ours, ...foes]
-      .filter((c) => c !== attacker && c !== target)
-      .forEach((c) => {
-        const n = parked[c.side]++;
-        c.at = offsetToAxial((n % 4) * 2, parkRows[c.side][Math.floor(n / 4)]!);
+    attacker.rank = 1;
+    target.rank = 2;
+    // Everyone else fills the ranks behind them, in order, with nobody
+    // sharing a place.
+    //
+    // This used to park them far apart on the hex field, on the reasoning
+    // that adjacency would make them wall links and links soften the shake
+    // this test measures. There is no equivalent on a line: a wall link IS
+    // an adjacent rank, so standing in the line at all is being linked, and
+    // the only man with no links is one standing alone in a line of one.
+    // What the fixture can still guarantee is that nobody is doubled up on a
+    // rank, which the old version quietly got wrong — it numbered from 1 per
+    // side and collided with the two set above.
+    const fill = (side: Combatant[], fixed: Combatant): void => {
+      let rank = 1;
+      for (const c of side) {
+        if (c === fixed) continue;
+        if (rank === fixed.rank) rank += 1;
+        c.rank = rank;
+        rank += 1;
         c.broken = false;
-      });
+      }
+    };
+    fill(attackerSide === 'warband' ? ours : foes, attacker);
+    fill(attackerSide === 'warband' ? foes : ours, target);
 
     battle.order = [attacker.personId];
     battle.turnIndex = 0;
@@ -139,6 +134,20 @@ describe('the fall of the one who led', () => {
     return { state, attacker, target };
   }
 
+  /**
+   * What the leader's fall must cost a man who is standing in the wall.
+   *
+   * The bar used to be the whole of `NERVE_LEADER_FELL`, and it could be,
+   * because the fixture stood everybody out of the wall where nothing
+   * steadied them. On a line there is no out of the wall — `shakeNerve`
+   * softens every shock by a quarter per shoulder-mate, two mates at most,
+   * so a man in the middle of a line feels half of anything. That is the
+   * design working, not the claim weakening: the claim is that his whole
+   * side feels it, and the honest floor for "feels it" is what the
+   * best-steadied man in the line feels.
+   */
+  const FELT_IN_THE_WALL = NERVE_LEADER_FELL * (1 - 2 * STEADIED_PER_LINK);
+
   it('dropping their champion shakes every man he led', () => {
     const { state, target } = duel('champ-fall', 'warband');
     const battle = state.battle!;
@@ -153,7 +162,7 @@ describe('the fall of the one who led', () => {
     expect(doStrike(state, target.personId)).toBe(true);
     expect(target.down).toBe(true);
     others.forEach((c, i) => {
-      expect(c.broken || c.nerve <= before[i]! - NERVE_LEADER_FELL).toBe(true);
+      expect(c.broken || before[i]! - c.nerve >= FELT_IN_THE_WALL).toBe(true);
     });
     expect(battle.log.some((l) => l.includes('heart went out'))).toBe(true);
   });
@@ -172,7 +181,7 @@ describe('the fall of the one who led', () => {
 
     expect(doStrike(state, target.personId)).toBe(true);
     others.forEach((c, i) => {
-      expect(c.broken || c.nerve <= before[i]! - NERVE_LEADER_FELL).toBe(true);
+      expect(c.broken || before[i]! - c.nerve >= FELT_IN_THE_WALL).toBe(true);
     });
   });
 
@@ -225,6 +234,12 @@ describe('the man who comes back', () => {
     expect(clan.champion?.scars).toBe(1);
     expect(clan.champion?.lastSeen).toBe(state.day);
     expect(state.saga.some((e) => e.text.includes('got off the field alive'))).toBe(true);
+    // 9.5: the line keeps its dread and stops PROMISING a return. He comes
+    // back one time in twenty, so "he will have marked us for it" was an
+    // offer the game does not keep — pinned out here so it cannot drift back.
+    const line = state.saga.find((e) => e.text.includes('got off the field alive'))!.text;
+    expect(line, 'the line went back to promising a return').not.toMatch(/marked us for it/i);
+    expect(line).toMatch(/not have forgotten/i);
   });
 
   it('putting him down is final — the clan loses him', () => {
@@ -253,11 +268,45 @@ describe('the man who comes back', () => {
     expect(him.byname).toBe('the Old Wolf');
     // The log says he is not new.
     expect(battle.log[0]).toContain('had come back for us');
+    // 10.5: and it says how long, which is what `lastSeen` was written for.
+    // Set on day 1 and read on the day of the raid, so the gap is real.
+    expect(battle.log[0], 'lastSeen went unread again').toMatch(/It had been /);
     // And the scars are on him, not just in the text.
     const fresh = structuredClone(besieged('champ-returns'));
     startRaid(fresh, 2);
     const stranger = fresh.battle!.foes.find((f) => f.id === fresh.battle!.champion)!;
     expect(him.maxHealth).toBe(stranger.maxHealth + 2 * SCAR_TOUGHNESS);
+  });
+
+  // 10.5: `Champion.lastSeen` was written and never read for four milestones,
+  // though its own comment said "so the log can say how long it has been". It
+  // says it now. These drive the real raid rather than the private helper,
+  // because the subtle part is that the old value must be read BEFORE the
+  // same function overwrites it with today — a unit test of the helper would
+  // not see that, and it is the half most likely to break.
+  const lineFor = (seed: string, seenOn: number): string => {
+    const s2 = besieged(seed);
+    const clan2 = s2.neighbours[0]!;
+    clan2.champion = { name: 'Starkad', byname: 'the Old Wolf', scars: 2, lastSeen: seenOn };
+    startRaid(s2, 2);
+    return s2.battle!.log[0]!;
+  };
+
+  it('says how long it had been, in the largest unit that has actually passed', () => {
+    // Rounding DOWN: a man seen ninety days ago has not been away a year, and
+    // the log saying so would be a small lie in the one place a run is retold.
+    const day = besieged('gap-scale').day;
+    expect(lineFor('gap-scale', day - 5)).toMatch(/It had been 5 days\./);
+    expect(lineFor('gap-scale', day - 30)).toMatch(/It had been a season\./);
+    expect(lineFor('gap-scale', day - 60)).toMatch(/It had been 2 seasons\./);
+    expect(lineFor('gap-scale', day - 100)).toMatch(/It had been a year\./);
+  });
+
+  it('says nothing when no time has passed', () => {
+    // A save taken mid-fight and reloaded: he is not coming back from
+    // anywhere, and "It had been 0 days" is worse than silence.
+    const day = besieged('gap-none').day;
+    expect(lineFor('gap-none', day)).not.toMatch(/It had been/);
   });
 
   it('the scars stop somewhere — he stays killable', () => {

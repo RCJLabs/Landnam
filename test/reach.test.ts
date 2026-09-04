@@ -10,11 +10,9 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { startBattle } from '../src/sim/battleTurn';
 import { apply } from '../src/sim/actions';
-import { distance, offsetToAxial } from '../src/hex';
 import {
   REACH_DAMAGE_OFF,
   REACH_PENALTY,
-  REACH_RANGE,
   canReachAt,
   doReach,
   reachTargets,
@@ -27,9 +25,8 @@ function field(seed: string): GameState {
   const state = structuredClone(newGame(seed));
   startBattle(state, 'meadow', 2);
   const battle = state.battle!;
-  for (const k of Object.keys(battle.grid)) battle.grid[k] = { ground: 'open' };
-  battle.combatants.forEach((c, i) => {
-    c.at = offsetToAxial(i % 7, c.side === 'warband' ? 8 : 0);
+  for (let i = 0; i < battle.grid.length; i += 1) battle.grid[i] = { ground: 'open' };
+  battle.combatants.forEach((c) => {
     c.broken = false;
     c.down = false;
     c.fled = false;
@@ -45,8 +42,11 @@ function foes(state: GameState): Combatant[] {
 }
 
 /**
- * back — front — foe, in a line. The classic second rank: `back` is two
- * hexes from the foe and `front` is between them.
+ * back — front — foe, in a line. The classic second rank: `back` stands
+ * behind `front`, and puts his spear past `front`'s shoulder.
+ *
+ * It used to say this in hexes — three of them in a row, two apart. Since
+ * 8.1c it says it in ranks, which is what it always meant.
  */
 function ranked(seed: string): {
   state: GameState;
@@ -57,10 +57,14 @@ function ranked(seed: string): {
   const state = field(seed);
   const [back, front] = ours(state) as [Combatant, Combatant];
   const foe = foes(state)[0]!;
-  back.at = offsetToAxial(3, 6);
-  front.at = offsetToAxial(3, 5);
-  foe.at = offsetToAxial(3, 4);
+  back.rank = 2;
+  front.rank = 1;
+  foe.rank = 1;
   const battle = state.battle!;
+  // Everybody else out of the line, so the fixture is exactly three men.
+  for (const c of battle.combatants) {
+    if (c !== back && c !== front && c !== foe) c.down = true;
+  }
   battle.order = [back.personId];
   battle.turnIndex = 0;
   back.hasActed = false;
@@ -70,23 +74,24 @@ function ranked(seed: string): {
 describe('who may thrust', () => {
   it('the fixture is a real second rank', () => {
     const { back, front, foe } = ranked('reach-shape');
-    expect(distance(back.at, foe.at)).toBe(REACH_RANGE);
-    expect(distance(back.at, front.at)).toBe(1);
-    expect(distance(front.at, foe.at)).toBe(1);
+    expect(back.rank).toBe(2);
+    expect(front.rank).toBe(1);
+    expect(foe.rank).toBe(1);
   });
 
   it('a man behind a shield-brother can reach past him', () => {
     const { state, back, front, foe } = ranked('reach-yes');
-    expect(screenFor(state, back, foe)?.personId).toBe(front.personId);
+    expect(screenFor(state, back)?.personId).toBe(front.personId);
     expect(canReachAt(state, back, foe)).toBe(true);
     expect(reachTargets(state).map((c) => c.personId)).toContain(foe.personId);
   });
 
   it('with nobody in front there is nothing to thrust past', () => {
     const { state, back, front, foe } = ranked('reach-nofront');
-    // Move the front rank aside: still two hexes from the foe, no screen.
-    front.at = offsetToAxial(6, 8);
-    expect(screenFor(state, back, foe)).toBeUndefined();
+    // Nobody in front of him any more: he IS the front rank.
+    front.down = true;
+    back.rank = 1;
+    expect(screenFor(state, back)).toBeUndefined();
     expect(canReachAt(state, back, foe)).toBe(false);
     expect(apply(state, { type: 'B_REACH', targetId: foe.personId })).toBe(state);
   });
@@ -100,12 +105,23 @@ describe('who may thrust', () => {
     expect(canReachAt(state, back, foe)).toBe(false);
   });
 
-  it('it is exactly two hexes: not one, not three', () => {
-    const { state, back, foe } = ranked('reach-range');
+  it('it is the second and third rank: not the first, not the fourth', () => {
+    const { state, back, front, foe } = ranked('reach-range');
     expect(canReachAt(state, back, foe)).toBe(true);
-    // Step the thruster up beside the foe: that is a strike, not a thrust.
-    back.at = offsetToAxial(3, 5);
+    // Up into the front rank: that is a strike, not a thrust. There is
+    // nobody's shoulder left to put it past.
+    back.rank = 1;
     expect(canReachAt(state, back, foe)).toBe(false);
+    // And from the very back, the spear is not long enough.
+    back.rank = 4;
+    expect(canReachAt(state, back, foe)).toBe(false);
+    // The third rank can thrust — but only with somebody in the second to
+    // thrust past. A screen is the man DIRECTLY in front, not just anybody
+    // ahead of you in the line.
+    back.rank = 3;
+    expect(canReachAt(state, back, foe), 'nobody in the second rank yet').toBe(false);
+    front.rank = 2;
+    expect(canReachAt(state, back, foe)).toBe(true);
   });
 
   it('nobody thrusts at their own side, or twice in a turn', () => {
@@ -171,15 +187,18 @@ describe('their line has a second rank too', () => {
     const state = field('reach-theirs');
     const [backFoe, frontFoe] = foes(state) as [Combatant, Combatant];
     const us = ours(state)[0]!;
-    backFoe.at = offsetToAxial(3, 2);
-    frontFoe.at = offsetToAxial(3, 3);
-    us.at = offsetToAxial(3, 4);
+    backFoe.rank = 2;
+    frontFoe.rank = 1;
+    us.rank = 1;
     const battle = state.battle!;
+    for (const c of battle.combatants) {
+      if (c !== backFoe && c !== frontFoe && c !== us) c.down = true;
+    }
     battle.order = [backFoe.personId];
     battle.turnIndex = 0;
     backFoe.hasActed = false;
 
-    expect(screenFor(state, backFoe, us)?.personId).toBe(frontFoe.personId);
+    expect(screenFor(state, backFoe)?.personId).toBe(frontFoe.personId);
     expect(canReachAt(state, backFoe, us)).toBe(true);
   });
 });

@@ -7,7 +7,7 @@ import { LAND_TERRAINS, terrainDef } from '../src/data/terrain';
 import { checkOdds, chooseOption, isEligible, presentEvent } from '../src/sim/events';
 import { newGame } from '../src/state/create';
 import { apply } from '../src/sim/actions';
-import { moveOptions } from '../src/sim/road';
+import { walkOptions } from '../src/sim/coast';
 import { encode } from '../src/state/save';
 import type { GameState, Terrain } from '../src/state/types';
 
@@ -317,7 +317,7 @@ describe('the sown field pays off', () => {
   function sownSteading(sowed: boolean): GameState {
     const state = structuredClone(newGame('sown'));
     state.settlement = {
-      at: state.party.at, name: 'Testholt', foundedOn: 1, plots: [],
+      stop: state.party.stop ?? 0, name: 'Testholt', foundedOn: 1, plots: [],
       built: [], queue: [], works: 0, shelter: 0, watch: 0,
     } as unknown as GameState['settlement'];
     state.day = AUTUMN_DAY;
@@ -354,12 +354,30 @@ describe('the sown field pays off', () => {
 
 describe('events in play', () => {
   function playUntilEvent(seed: string, limit = 200): GameState | null {
+    // Walks seeds until one obliges, which is the tolerance the site and
+    // ridge fixtures already use. A coast where the dice hand this band no
+    // card in two hundred turns is a fact about that coast, not a broken
+    // fixture — and pinning one seed until it happens to draw is how a bar
+    // ends up measuring the seed.
+    for (let s = 0; s < 12; s += 1) {
+      const found = playOne(s === 0 ? seed : `${seed}-${s}`, limit);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function playOne(seed: string, limit: number): GameState | null {
     let state = newGame(seed);
     for (let i = 0; i < limit && !state.end; i++) {
       if (state.event) return state;
-      const options = moveOptions(state);
-      state = options[i % options.length]
-        ? apply(state, { type: 'MOVE', to: options[i % options.length]! })
+      // Eats. A walker who never forages starves inside a month on a coast,
+      // and the loop then reports "no event in two hundred turns" when what
+      // it measured was two dozen.
+      if (state.party.food < 24) { state = apply(state, { type: 'FORAGE' }); continue; }
+      const options = walkOptions(state);
+      const to = options[i % Math.max(1, options.length)];
+      state = to !== undefined
+        ? apply(state, { type: 'WALK', to })
         : apply(state, { type: 'CAMP' });
     }
     return null;
@@ -383,8 +401,8 @@ describe('events in play', () => {
   it('travel is blocked while a card is on the table', () => {
     const state = playUntilEvent('event-blocks');
     expect(state).not.toBeNull();
-    const target = moveOptions(state!)[0]!;
-    expect(apply(state!, { type: 'MOVE', to: target })).toBe(state);
+    const target = walkOptions(state!)[0]!;
+    expect(apply(state!, { type: 'WALK', to: target })).toBe(state);
     expect(apply(state!, { type: 'CAMP' })).toBe(state);
   });
 

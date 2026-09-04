@@ -392,8 +392,6 @@ namespace Tables
 	/** Winters stood before the run closes itself out. */
 	constexpr int32_t LongLifeWinters = 5;
 	/** Effort to row a hex of coast, and how far a day's rowing carries. */
-	constexpr int32_t SeaEffort = 2;
-	constexpr int32_t RowReach = 3;
 
 	// --- The steading (stage 5, rung 3) ---
 
@@ -527,6 +525,9 @@ namespace Tables
 		{ "greathall", 14, 11, 5, 2, 12, {  }, {  }, {  }, 1, "longhouse", "", "" },
 		{ "earthworks", 12, 10, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 4 } }, 1, "palisade", "", "" },
 		{ "hof", 7, 7, 0, 2, 0, { "meadhall" }, {  }, {  }, 1, "", "", "" },
+		{ "stonedyke", 30, 34, 0, 0, 0, {  }, { { "timber", 1 } }, { { "defence", 7 } }, 1, "earthworks", "", "" },
+		{ "greathof", 26, 30, 0, 4, 0, {  }, {  }, {  }, 1, "hof", "", "" },
+		{ "shiphowe", 36, 40, 0, 3, 0, { "hof" }, {  }, {  }, 1, "", "", "" },
 	};
 	inline const FBuildingRow* BuildingById(const std::string& Id)
 	{
@@ -545,6 +546,6 @@ namespace Tables
 		{ "watchpost", { "warrior" } },
 	};
 
-	constexpr int32_t SaveVersion = 44;
+	constexpr int32_t SaveVersion = 62;
 }
 }

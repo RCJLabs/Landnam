@@ -13,7 +13,7 @@
 
 import type { GameState } from '../state/types';
 import { nextThaw } from './calendar';
-import { availableJobs, buildBlocker, output, shelterSaving } from './colony';
+import { availableJobs, buildBlocker, output, shelterSaving, standsFor } from './colony';
 import { SHELTER_SAVES } from '../data/jobs';
 import { BUILDINGS, buildingById } from '../data/buildings';
 import { living } from './people';
@@ -44,9 +44,12 @@ export function reachable(state: GameState): boolean {
   const crew = living(state.party.people);
   if (crew.length === 0) return false;
   const jobs = availableJobs(state);
-  const onFoodJob = jobs.find((j) => j.id === 'hunter') ?? jobs.find((j) => j.produces === 'food');
-  const onWoodJob = jobs.find((j) => j.produces === 'firewood');
-  if (!onFoodJob || !onWoodJob) return false;
+  // A steading with no way to eat or no way to burn cannot be walked at all.
+  // This named the hunter too, which read as a preference and was only ever a
+  // presence check.
+  const canEat = jobs.some((j) => j.produces === 'food');
+  const canBurn = jobs.some((j) => j.produces === 'firewood');
+  if (!canEat || !canBurn) return false;
 
   // One projection, with the band free to move people between food and wood
   // as each day demands. A FIXED split was the first attempt and it fired on
@@ -55,8 +58,6 @@ export function reachable(state: GameState): boolean {
   // while hunting is good and cut while the wood is dry, and a verdict has
   // to grant them that much sense before calling them dead.
   void crew;
-  void onFoodJob;
-  void onWoodJob;
   return survivesWinter(state);
 }
 
@@ -122,7 +123,11 @@ function bestSteading(state: GameState): GameState {
   for (let pass = 0; pass < BUILDINGS.length; pass += 1) {
     let added = false;
     for (const b of order) {
-      if (built.includes(b.id)) continue;
+      // Same question as the gate below it asks. Equivalent today — the
+      // blocker answers 'built' for a superseded tier anyway — but a fast
+      // path that disagrees with the slow one is how this class of bug gets
+      // in.
+      if (standsFor(probe, b.id)) continue;
       // Null only — 'timber' means the wood is not there, and this ceiling
       // does not conjure wood.
       if (buildBlocker(probe, b) !== null) continue;
@@ -185,22 +190,34 @@ function walkWinter(state: GameState, steading: GameState): boolean {
   const crew = living(state.party.people);
   const saved = bestShelter(steading);
   const jobs = availableJobs(steading);
-  // NOTE — a measured, deliberate limitation, not an oversight. This picks
-  // the hunter by name rather than the best food trade available, so a band
-  // whose ground and houses make a farmer the better bet is projected on the
-  // wrong work. Taking the max over every producing job instead reads truer
-  // and cuts the verdict's error from 33% to 29% — but it also flips
-  // `cliff.test`'s pivot band (nought of both, day 40, the best site in the
-  // world) from doomed to saveable, and that band being lost is a statement
-  // about the game's difficulty rather than about this projection. Left
-  // alone until that call is made.
-  const foodJob = jobs.find((j) => j.id === 'hunter') ?? jobs.find((j) => j.produces === 'food');
+  // ASKS THE GROUND, PER HAND, since 2026-09-03. It picked the hunter BY
+  // NAME, and the note that stood here deferred the repair "until that call
+  // is made" on the strength of a reading that said the repair made things
+  // worse — 33% wrong becoming 44%.
+  //
+  // THAT READING WAS TRAP 2 INSIDE THE EVALUATION OF A FIX. The bar it was
+  // judged on is `wronglyCondemned / condemned`, and a kinder projection
+  // moves BOTH halves: it condemns fewer bands, so the denominator shrinks
+  // and the ratio can rise while the number of players lied to falls.
+  // Re-measured as COUNTS over the same 900 seeds, the repair is a plain
+  // improvement — see the figures beside it in ROADMAP.md.
+  //
+  // And it was needed anyway: attributed, 54% of the wrongly condemned lived
+  // on the ground ALONE — no mouth buried, nobody robbed, nothing traded, no
+  // road taken. That share is the projection being wrong and nothing else.
+  const foodJobs = jobs.filter((j) => j.produces === 'food');
   const woodJob = jobs.find((j) => j.produces === 'firewood');
-  if (!foodJob || !woodJob) return false;
+  if (foodJobs.length === 0 || !woodJob) return false;
 
   // What each person is worth on either job. Fixed for the run: output()
-  // reads the person and the steading, neither of which this changes.
-  const asFood = crew.map((p) => output(steading, p, foodJob));
+  // reads the person and the steading, neither of which this changes. The
+  // food job is the best one for THIS hand on THIS ground, exactly as the
+  // job picker shows the player.
+  const foodPick = crew.map((p) => foodJobs.reduce(
+    (best, j) => (output(steading, p, j) > output(steading, p, best) ? j : best),
+    foodJobs[0]!,
+  ));
+  const asFood = crew.map((p, i) => output(steading, p, foodPick[i]!));
   const asWood = crew.map((p) => output(steading, p, woodJob));
 
   let food = steading.party.food;
@@ -214,7 +231,9 @@ function walkWinter(state: GameState, steading: GameState): boolean {
     // when what a mouth means changes.
     const mouths = foodPerDay(state);
     const fire = Math.max(0, plannedFirewood(state, day, true) - saved);
-    const foodRatio = ratio(state.day, day, foodJob.seasonal);
+    // One ratio per HAND now rather than one for the band: a fisher's winter
+    // is not a farmer's, and the hands are no longer all on one trade.
+    const foodRatio = foodPick.map((j) => ratio(state.day, day, j.seasonal));
     const woodRatio = ratio(state.day, day, woodJob.seasonal);
 
     // Today's best arrangement: the one leaving the band furthest from
@@ -227,7 +246,7 @@ function walkWinter(state: GameState, steading: GameState): boolean {
       let grown = 0;
       let cut = 0;
       for (let p = 0; p < crew.length; p += 1) {
-        if (p < onFood) grown += asFood[p]! * foodRatio;
+        if (p < onFood) grown += asFood[p]! * foodRatio[p]!;
         else cut += asWood[p]! * woodRatio;
       }
       const nextFood = food + grown - mouths;

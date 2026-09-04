@@ -48,8 +48,15 @@ export function renderEventCard(state: GameState, dispatch: Dispatch): HTMLEleme
 export function renderLesson(lesson: LessonDef, onDismiss: () => void): HTMLElement {
   const card = el('div', { class: 'card event-card lesson-card' }, [
     el('h2', {}, [lesson.title]),
-    el('p', { class: 'event-body' }, [lesson.body]),
-    el('p', { class: 'lesson-point' }, [lesson.point]),
+    // The coast wording when there is one. A lesson is the FIRST prose a new
+    // player reads, and on a coast build the hex one told them to tap a
+    // marked hex — on a map with no hexes to tap.
+    el('p', { class: 'event-body' }, [
+      lesson.coast?.body ?? lesson.body,
+    ]),
+    el('p', { class: 'lesson-point' }, [
+      lesson.coast?.point ?? lesson.point,
+    ]),
     button('Onward', onDismiss, { class: 'primary wide' }),
   ]);
   return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);

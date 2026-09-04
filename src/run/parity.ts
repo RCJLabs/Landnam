@@ -60,14 +60,15 @@ export interface Facet {
 export const FACETS: Facet[] = [
   {
     id: 'world',
-    blurb: 'The generated country: tiles, landing, places. Stage 1 — worldgen.',
+    blurb: 'The coast: its places and what the band has learned of it. Stage 1.',
     of: (s) => s.world,
     samples: (s) => ({
-      tiles: Object.keys(s.world.tiles).length,
       places: s.world.places.length,
-      landingQ: s.world.landing.q,
-      landingR: s.world.landing.r,
-      seen: Object.keys(s.world.seen).length,
+      // `tiles`, `landing` and `seen` stood here until 8.5. There is no
+      // island to count any more; what a saga accumulates about a coast is
+      // where it has stood and what it knows stands there.
+      trodStops: Object.keys(s.world.trodStops ?? {}).length,
+      knownStops: (s.world.knownStops ?? []).length,
     }),
   },
   {
@@ -80,8 +81,7 @@ export const FACETS: Facet[] = [
       food: Math.round(s.party.food),
       firewood: Math.round(s.party.firewood),
       morale: Math.round(s.party.morale),
-      atQ: s.party.at.q,
-      atR: s.party.at.r,
+      stop: s.party.stop ?? 0,
     }),
   },
   {
@@ -118,7 +118,7 @@ export const FACETS: Facet[] = [
       standing: s.neighbours.reduce((a, n) => a + n.standing, 0),
       grudges: s.grudges.length,
       lore: s.lore.length,
-      claims: s.rival?.claims.length ?? 0,
+      claims: s.rival?.claimStops?.length ?? 0,
       outlaws: s.outlaws?.length ?? 0,
     }),
   },

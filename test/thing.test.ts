@@ -14,14 +14,14 @@
 //   4. It is reachable: a band that does the work gets there.
 
 import { describe, it, expect } from 'vitest';
-import { distance, fromKey } from '../src/hex';
-import { newGame } from '../src/state/create';
+import { KEPT_FOR, canKeepHall, keepHall, sinceKept } from '../src/sim/hall';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
+import { strikeTargets } from '../src/sim/battle';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, finishBuilds, queueBuild } from '../src/sim/colony';
 import { nextThaw, wintersStood, SEASON_LENGTH, YEAR_LENGTH } from '../src/sim/calendar';
 import { layDownSaga, reckoningDue } from '../src/sim/landnam';
@@ -74,33 +74,14 @@ const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'w
  * rather than on the thing under test. Third fixture to learn this.
  */
 function settled(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const reach of [radius, Infinity]) {
-    for (const k of Object.keys(state.world.tiles)) {
-      const at = fromKey(k);
-      if (distance(at, landing) > reach) continue;
-      state.party.at = at;
-      if (!canFound(state, at)) continue;
-      const report = siteReport(state.world, at)!;
-      if (report.total > bestScore) {
-        bestScore = report.total;
-        best = at;
-      }
-    }
-    if (best) break;
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search lives in `test/fixtures/settle.ts` now — twenty-two
+  // files carried their own copy of it, and the conversion has to change
+  // one search or twenty-two. What stays here is what this file's tests
+  // actually need on top of a steading.
+  const state = settleSomewhere(seed, { radius, stock: true });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
-  state.party.food = 200;
-  state.party.firewood = 200;
   seeNeighbours(state);
   return state;
 }
@@ -525,18 +506,55 @@ describe('holding one', () => {
   });
 });
 
+/**
+ * Fights whatever is on the field to a finish, plainly: strike whoever the
+ * game says is in reach, end the turn when nobody is.
+ *
+ * Deliberately not clever. A band that plays no better than this and still
+ * reaches the Thing is the claim; a bot that played well would measure the
+ * bot.
+ */
+function holdTheGround(start: GameState): GameState {
+  let state = start;
+  for (let i = 0; i < 600 && state.battle; i += 1) {
+    if (state.battle.outcome) {
+      state = apply(state, { type: 'B_LEAVE' });
+      break;
+    }
+    const targets = strikeTargets(state);
+    let next = targets.length > 0
+      ? apply(state, { type: 'B_STRIKE', targetId: targets[0]!.personId })
+      : state;
+    if (next === state) next = apply(state, { type: 'B_END_TURN' });
+    if (next === state) break;
+    state = next;
+  }
+  if (state.aftermath) state = apply(state, { type: 'DISMISS_AFTERMATH' });
+  return state;
+}
+
 describe('THE BAR — it is reachable by doing the work', () => {
   it('a band that builds the hall, keeps the peace and makes a friend gets there', () => {
     let reached = 0;
     const seeds = ['reach-a', 'reach-b', 'reach-c', 'reach-d'];
     for (const seed of seeds) {
-      const state = settled(seed);
+      let state = settled(seed);
       // The work, done the way a player would do it: raise the hall, deal
       // with the neighbours, and live through two winters.
       queueBuild(state, 'longhouse');
       state.settlement!.works = 999;
       finishBuilds(state);
       queueBuild(state, 'meadhall');
+      state.settlement!.works = 999;
+      finishBuilds(state);
+      // AND THE WALL, because since 2026-08-30 raiders fire the mead hall of
+      // a band that never raised one, and the Thing cannot be called without
+      // a hall to call it in. That is the ruling, not a side effect: the wall
+      // stops guarding only the grain and starts guarding the run's ending.
+      // So walling up is part of "the work" this bar is named for. Without
+      // it the bar reads 1 of 4, which is the measurement the ruling was made
+      // on rather than a regression.
+      queueBuild(state, 'palisade');
       state.settlement!.works = 999;
       finishBuilds(state);
       const friend = state.neighbours[0];
@@ -547,6 +565,28 @@ describe('THE BAR — it is reachable by doing the work', () => {
         state.party.firewood = 300;
         if (state.event) delete state.event;
         passDay(state);
+        // A RAID IS PART OF THE WORK NOW, so the band has to hold its ground
+        // rather than stand in an unresolved battle for the rest of the run.
+        //
+        // This is not the bar being lowered to let a change through. The bar
+        // is "a band that builds the hall, keeps the peace and makes a friend
+        // gets there", and under the old raid rate that band was simply never
+        // raided — the test measured a peaceful run because a raid almost
+        // never came. Once autumn is a reckoning one does come, and a
+        // headless band cannot fight, so `state.battle` was set on about day
+        // 35 and never cleared: measured, 366 of the next 400 days were spent
+        // frozen mid-fight, an outcome no player can reach. Fighting it out
+        // is strictly HARDER than what was measured before — the band must
+        // now survive its autumns as well as build its hall.
+        state = holdTheGround(state);
+        // KEEPING THE HALL IS PART OF THE WORK NOW (9.12a). Same argument as
+        // the raid above: the bar is "a band that does the work gets there",
+        // and since a steading's heart is paid only while the hall is kept, a
+        // band that never holds a feast is not doing the work — it is a
+        // harness written before the verb existed. Without this the bar read
+        // 3 of 4. The food is pinned at 300 above, so this is never a question
+        // of affording it; it is a question of remembering.
+        if (canKeepHall(state) && sinceKept(state) > KEPT_FOR) keepHall(state);
         if (canCallThing(state)) break;
       }
       if (canCallThing(state)) reached += 1;

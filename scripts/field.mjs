@@ -70,14 +70,22 @@ const survey = () => {
     return el ? Math.round(el.getBoundingClientRect().height) : 0;
   };
   const field = document.querySelector('svg.field');
-  // Every ground hex is drawn at the same size, so the first one speaks for
+  // Every fighter is drawn at the same size, so the first one speaks for
   // all of them. Measured on SCREEN, after the SVG has scaled to fit.
-  const hex = field?.querySelector('polygon')?.getBoundingClientRect();
+  // A FIGHTER, not a ground tile. Since 8.1d there are no tiles: the field
+  // is two walls meeting and the thing a thumb has to land on is a man. His
+  // WIDTH is the binding dimension — a line packs men side by side, so what
+  // separates one target from the next is horizontal.
+  const man = field?.querySelector('g.fighter')?.getBoundingClientRect();
   return {
     vh: innerHeight,
     vw: innerWidth,
     field: field ? Math.round(field.getBoundingClientRect().height) : 0,
-    hex: hex ? Math.round(Math.min(hex.width, hex.height)) : 0,
+    hex: man ? Math.round(man.width) : 0,
+    // Is there still a fight to measure? `svg.field` only exists while the
+    // battle view is up, so this is the same question as "is field > 0" —
+    // but asked BY NAME, so a caller can tell the two reasons apart.
+    fighting: !!field,
     saga: h('.saga-slot'),
     lines: document.querySelectorAll('.saga-line').length,
     clipped: [...document.querySelectorAll('.shell button')]
@@ -97,6 +105,14 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   page.on('pageerror', (e) => errors.push(String(e)));
   await page.goto(`file://${process.cwd()}/${PAGE}`);
   await page.waitForTimeout(600);
+  // A FIXED SEED, as `pan.mjs` and `procession.mjs` have always used and
+  // this file never did. Without one every run is a different fight, and
+  // every claim below is a lottery: measured over four runs, one failed with
+  // "no blow landed in 11 turns" purely because that fight ended before
+  // anybody connected. A bar that fails one time in four teaches people to
+  // re-run it, which is how a real regression gets waved through.
+  const seed = page.locator('input').first();
+  if (await seed.count()) await seed.fill(process.env.SEED ?? 'field-bar');
   await page.locator('button', { hasText: /Take the land/i }).first().click();
   await page.waitForTimeout(800);
   await page.evaluate(() => window.landnam.fight(3));
@@ -106,6 +122,40 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
 
   // Fourteen turns, so the log fills up and takes whatever it is going to
   // take. This is the "squeezed as the fight goes on" claim, played out.
+  //
+  // Stopping the moment the fight does is the load-bearing half, and it was
+  // added because the bar went red on a fight that had simply been WON.
+  // Fourteen turns of clicking whatever button is in the action slot can
+  // finish a fight; when it finishes the battle view pops, `svg.field` is
+  // gone, and every measurement below reads zero. The bar then reports "the
+  // field fell to 0% — the log took it", which is not what happened and not
+  // something a layout change could ever fix. So the last LIVE turn is what
+  // gets measured, and how many turns that was is printed, because a fight
+  // that ends on turn three is a different measurement from one that runs
+  // the full fourteen and the reader should be able to see which they got.
+  let late = opening;
+  // Watch for impact marks from here on — see the item 19 block below for
+  // why this is an observer and not a poll.
+  await page.evaluate(() => {
+    window.__blows = { struck: 0, blood: 0, flash: 0 };
+    const bump = (n) => {
+      if (!(n instanceof Element)) return;
+      const cl = n.getAttribute('class') ?? '';
+      if (n.matches?.('g.fighter.struck')) window.__blows.struck += 1;
+      if (cl.includes('fx-blood')) window.__blows.blood += 1;
+      if (cl.includes('hit-flash')) window.__blows.flash += 1;
+    };
+    new MutationObserver((records) => {
+      for (const r of records) {
+        for (const n of r.addedNodes) bump(n);
+        if (r.type === 'attributes') bump(r.target);
+      }
+    }).observe(document.documentElement, {
+      childList: true, subtree: true, attributes: true, attributeFilter: ['class'],
+    });
+  });
+
+  let played = 0;
   for (let turn = 0; turn < 14; turn++) {
     const end = page.locator('.action-slot button', { hasText: /End turn/i }).first();
     const any = (await end.count()) ? end : page.locator('.action-slot button').first();
@@ -113,31 +163,50 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
     await page.waitForTimeout(400);
     const card = page.locator('button', { hasText: /onward|continue|dismiss|close|go on|so be it|leave|back to/i }).first();
     if (await card.count()) { await card.click().catch(() => {}); await page.waitForTimeout(280); }
+    const now = await page.evaluate(survey);
+    if (!now.fighting) break;
+    late = now;
+    played = turn + 1;
   }
-  const late = await page.evaluate(survey);
 
   const share = (m) => Math.round((100 * m.field) / m.vh);
 
   console.log(
     `${w}x${h}: field ${opening.field}px (${share(opening)}%) -> ${late.field}px (${share(late)}%) ` +
-      `after 14 turns, hex ${opening.hex}px -> ${late.hex}px, log ${opening.saga} -> ${late.saga}px ` +
+      `after ${played} turn${played === 1 ? '' : 's'}, a fighter is ${opening.hex}px -> ${late.hex}px, ` +
+      `log ${opening.saga} -> ${late.saga}px ` +
       `(${late.lines} lines)`,
   );
 
   // The field must stay the biggest thing on the screen through a whole
   // fight. Half is a floor, not a target: it sits at 67% on the design size.
   check(late.field > late.vh * 0.5,
-    `${w}x${h}: the field fell to ${share(late)}% of the screen by turn 14`);
+    `${w}x${h}: the field fell to ${share(late)}% of the screen by turn ${played}`);
   check(late.clipped.length === 0, `${w}x${h}: clipped ${late.clipped.join(', ')}`);
 
   // THE BAR THAT CATCHES THE REAL FAILURE. A hex being over 44px is the
   // rule, but at 390 and up the hex is bound by the screen's WIDTH, so no
   // amount of log growth can move it and the rule alone is insensitive to
   // exactly the thing this file is about. What the log actually does is take
-  // from the field, so that is what is measured: a whole fight may not cost
-  // the field more than a tenth of what it opened with.
-  check(late.field >= opening.field * 0.9,
-    `${w}x${h}: fourteen turns took the field from ${opening.field}px to ${late.field}px, ` +
+  // from the field, so that is what is measured.
+  //
+  // IT USED TO ALLOW A TENTH, AND A TENTH WAS TOO MUCH. A player reported
+  // "in battle as people die the screen shrinks" against a build where this
+  // bar was green: measured at 390x844, the field went 606px to 562px over
+  // one death — 7.3%, comfortably inside the tolerance. The log's height was
+  // CAPPED rather than reserved, so it grew into its cap over the first
+  // turns and every line it gained came out of the field. A footnote takes
+  // its space once now, so the honest number is zero and the tolerance is
+  // one pixel of rounding.
+  //
+  // The OTHER half of that report — the frame being sized by who was still
+  // standing — is not measured here. It only bites once a whole rank has
+  // emptied, and a fight played far enough for that is a long browser run
+  // that mostly measures the combat tables. It is `test/line.test.ts`'s
+  // "the field is sized by the fight, not by the survivors" instead, which
+  // is exact, runs in a millisecond, and cannot fail to reach its premise.
+  check(late.field >= opening.field - 1,
+    `${w}x${h}: ${played} turns took the field from ${opening.field}px to ${late.field}px, ` +
       `${Math.round(100 - (100 * late.field) / opening.field)}% of it, and the log took it`);
   check(errors.length === 0, `${w}x${h}: the page reported ${errors[0] ?? ''}`);
 
@@ -146,9 +215,135 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
   // held at every width, including the one that cannot frame the whole grid
   // and now pans instead.
   check(opening.hex >= TAP,
-    `${w}x${h}: a battle hex is ${opening.hex}px, under the ${TAP}px touch target`);
+    `${w}x${h}: a fighter is ${opening.hex}px, under the ${TAP}px touch target`);
   check(late.hex >= TAP,
-    `${w}x${h}: by turn 14 a battle hex is ${late.hex}px, under the ${TAP}px touch target`);
+    `${w}x${h}: by turn ${played} a fighter is ${late.hex}px, under the ${TAP}px touch target`);
+
+  // And the bar has to have MEASURED something. Stopping when the fight
+  // stops fixes a false red; it also opens the way to a false green, because
+  // a fight that ends on turn one leaves `late` equal to `opening` and every
+  // check above passes without a single turn of log growth behind it. That
+  // is the other failure this project keeps finding — a check that quietly
+  // stopped running looks exactly like one that passed — so the number of
+  // turns actually played is itself a bar.
+  // What the fight actually threw, and what the screen did about it.
+  const blows = await page.evaluate(() => ({
+    ...window.__blows,
+    count: (window.landnam.state().battle?.beats ?? []).filter(
+      (b) => ['struck', 'reached', 'threw'].includes(b.kind) && b.result === 'hit' && b.damage > 0,
+    ).length,
+  }));
+
+  check(played >= 4,
+    `${w}x${h}: the fight was over after ${played} turn${played === 1 ? '' : 's'}, ` +
+      'so the log never grew and this width measured nothing');
+
+  // YOU CAN SEE THE WHOLE FIGHT, at every width, without touching it.
+  //
+  // This is the bar the battle format needed and never had. Measured on the
+  // built page before the ranks were stacked: at 390x844 there was NO pan
+  // position from which both walls were visible — at rest 3 of our 6 and 2
+  // of their 4; dragged one way, 4/4 foes and none of ours; dragged the
+  // other, 5/6 of ours and no enemy at all. A tactical view you cannot see
+  // the enemy in, and nothing in this file noticed, because every check here
+  // asked about the SIZE of a fighter and none asked whether he was on
+  // screen.
+  const whole = await page.evaluate(() => {
+    const svg = document.querySelector('svg.field');
+    const st = window.landnam.state();
+    // The fight can be OVER by now — fourteen turns is enough to finish one,
+    // and this file has watched a warband fall to its last man. With no
+    // battle there are no combatants to ask about, and reaching into
+    // `st.battle` regardless is what crashed this script intermittently.
+    if (!svg || !st?.battle) return null;
+    const side = Object.fromEntries(st.battle.combatants.map((c) => [c.personId, c.side]));
+    const men = [...svg.querySelectorAll('g.fighter[data-who]')].map((g) => {
+      const b = g.getBoundingClientRect();
+      return { s: side[g.getAttribute('data-who')], on: b.left >= -0.5 && b.right <= innerWidth + 0.5 };
+    });
+    const tally = (which) => {
+      const all = men.filter((m) => m.s === which);
+      return { on: all.filter((m) => m.on).length, all: all.length };
+    };
+    return { ours: tally('warband'), foes: tally('foe') };
+  });
+  if (!whole) {
+    // Said out loud rather than skipped: a check that quietly stopped
+    // running looks exactly like one that passed, which is a habit this
+    // file already names elsewhere.
+    console.log(`${w}x${h}: the fight was over before the visibility claim could run`);
+  } else {
+  console.log(`${w}x${h}: on screen at rest — ours ${whole.ours.on}/${whole.ours.all}, ` +
+    `theirs ${whole.foes.on}/${whole.foes.all}`);
+  check(whole.foes.all > 0, `${w}x${h}: there is no enemy on the field to see`);
+  check(whole.foes.on === whole.foes.all,
+    `${w}x${h}: ${whole.foes.all - whole.foes.on} of ${whole.foes.all} foes are off screen — ` +
+      'you cannot see who you are fighting');
+  check(whole.ours.on === whole.ours.all,
+    `${w}x${h}: ${whole.ours.all - whole.ours.on} of ${whole.ours.all} of our own are off screen`);
+  }
+
+  // GEAR YOU CAN SEE (art queue item 14), and specifically gear you can see
+  // SPENT. `sim/ranks.ts`: "`throw` is a hand-axe. It reaches anybody, which
+  // is what makes the back rank worth standing in." The whole of that
+  // resource used to reach the screen as a digit on a button — "Throw 1" —
+  // so the axes are drawn on the belt, one per throw a man has left.
+  //
+  // The claim is the correspondence, not the presence: a picture that always
+  // draws two axes is decoration, and one that draws what the sim says is
+  // gear. Checked against `throwsLeft` for every fighter on the field.
+  if (w === 390) {
+    const axes = await page.evaluate(() => {
+      const svg = document.querySelector('svg.field');
+      const st = window.landnam.state();
+      if (!svg || !st?.battle) return null;
+      const left = Object.fromEntries(
+        st.battle.combatants.map((c) => [c.personId, c.down || c.fled ? 0 : c.throwsLeft]),
+      );
+      return [...svg.querySelectorAll('g.fighter[data-who]')].map((g) => ({
+        who: g.getAttribute('data-who'),
+        drawn: g.querySelectorAll('g.belt-axe').length,
+        // The picture shows at most two; past that it is a smear on one hip.
+        want: Math.min(2, left[g.getAttribute('data-who')] ?? 0),
+      }));
+    });
+    if (!axes) {
+      console.log(`${w}x${h}: the fight was over before the gear claim could run`);
+    } else {
+    const carrying = axes.filter((a) => a.want > 0);
+    const wrong = axes.filter((a) => a.drawn !== a.want);
+    console.log(`${w}x${h}: ${carrying.length} of ${axes.length} still carry an axe; ` +
+      `${axes.length - wrong.length} of ${axes.length} drawn right`);
+    check(carrying.length > 0,
+      `${w}x${h}: nobody on the field has a throw left, so the gear claim did NOT run`);
+    check(wrong.length === 0,
+      `${w}x${h}: ${wrong.length} fighters carry the wrong number of axes — ` +
+        wrong.map((a) => `${a.who} drew ${a.drawn} for ${a.want}`).join(', '));
+    }
+  }
+
+  // BLOWS THAT LAND SOMEWHERE (art queue item 19). A landed blow used to be
+  // a flash on the figure's centre and a number over its head — a hit
+  // REPORTED. Now the man takes it: he is shoved along the line the blow came
+  // in on, and a solid hit throws blood at the place it landed.
+  //
+  // Recorded with a MutationObserver rather than polled. These effects live
+  // 300-600ms and a poll loop steps clean over them: measured, a loop
+  // sampling every 70ms across 2.8s of a real fight saw ZERO of eight blows
+  // that the beat stream proves were struck. An observer catches every one.
+  //
+  // Only at the width the game is designed for; the choreography does not
+  // change shape with the viewport.
+  if (w === 390 && blows.count > 0) {
+    console.log(`${w}x${h}: ${blows.count} blows landed — ` +
+      `${blows.struck} recoils, ${blows.blood} spatters, ${blows.flash} flashes`);
+    check(blows.struck > 0,
+      `${w}x${h}: ${blows.count} blows landed and nobody moved — they read as numbers`);
+    check(blows.blood > 0,
+      `${w}x${h}: ${blows.count} blows landed and drew no blood`);
+  } else if (w === 390) {
+    check(false, `${w}x${h}: no blow landed in ${played} turns, so item 19 did NOT run`);
+  }
 
   await page.close();
 }
@@ -159,4 +354,4 @@ if (fail.length > 0) {
   for (const said of fail) console.error(`field: ${said}`);
   process.exit(1);
 }
-console.log(`field OK — the fight keeps the screen, and a hex clears ${TAP}px at every width`);
+console.log(`field OK — the fight keeps the screen, and a fighter clears ${TAP}px at every width`);

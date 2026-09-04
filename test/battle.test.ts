@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { distance, key, offsetToAxial, type Hex } from '../src/hex';
 import { makeRng } from '../src/rng';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
@@ -7,13 +6,12 @@ import { apply, type Action } from '../src/sim/actions';
 import {
   activeCombatant,
   beginBattle,
-  combatantAt,
   fighterPerson,
   isWarbandTurn,
-  reachableHexes,
   standing,
   strikeTargets,
 } from '../src/sim/battle';
+import { RANKS } from '../src/sim/ranks';
 import { ROUND_LIMIT, startBattle } from '../src/sim/battleTurn';
 import {
   generateBattlefield,
@@ -21,6 +19,7 @@ import {
   FIELD_HEIGHT,
   FIELD_WIDTH,
   MIDDLE_ROWS,
+  cell,
 } from '../src/sim/battlefield';
 import { currentMode } from '../src/modes';
 import { eventById } from '../src/data/events';
@@ -54,19 +53,10 @@ function fightItOut(start: GameState, limit = 400): GameState {
     const active = activeCombatant(battle)!;
     const foes = standing(battle, 'foe');
     if (foes.length === 0) break;
-    const options = reachableHexes(battle);
-    if (options.length > 0) {
-      const best = [...options].sort(
-        (a, b) =>
-          Math.min(...foes.map((f) => distance(a, f.at))) -
-          Math.min(...foes.map((f) => distance(b, f.at))),
-      )[0]!;
-      const moved = apply(state, { type: 'B_MOVE', to: best });
-      state = moved === state ? apply(state, { type: 'B_END_TURN' }) : moved;
-      if (moved !== state) continue;
-    } else {
-      state = apply(state, { type: 'B_END_TURN' });
-    }
+    // Nothing in reach. There is no ground to close across since 8.1c, and
+    // since 9.1b nobody spends an action closing either — the line shoulders
+    // forward by itself at the top of the turn, so this just passes.
+    state = apply(state, { type: 'B_END_TURN' });
     void active;
   }
   return state;
@@ -75,13 +65,13 @@ function fightItOut(start: GameState, limit = 400): GameState {
 describe('battlefield generation', () => {
   it.each(FIGHT_TERRAINS.map((t) => [t]))('%s produces a usable field', (terrain) => {
     const { grid, warbandSpots, foeSpots } = generateBattlefield(terrain, makeRng(`bf-${terrain}`));
-    expect(Object.keys(grid)).toHaveLength(FIELD_WIDTH * FIELD_HEIGHT);
+    expect(grid).toHaveLength(FIELD_WIDTH * FIELD_HEIGHT);
     expect(warbandSpots.length).toBeGreaterThanOrEqual(FIELD_HEIGHT);
     expect(foeSpots.length).toBeGreaterThanOrEqual(FIELD_HEIGHT);
 
     // Deployment ground is always clear, so nobody starts entombed.
     for (const spot of [...warbandSpots, ...foeSpots]) {
-      expect(isPassable(grid[key(spot)]!.ground)).toBe(true);
+      expect(isPassable(grid[spot]!.ground)).toBe(true);
     }
   });
 
@@ -96,7 +86,7 @@ describe('battlefield generation', () => {
     for (let i = 0; i < 60; i++) {
       const { grid } = generateBattlefield('mountains', makeRng(`cross-${i}`));
       const anyColumnClear = Array.from({ length: FIELD_WIDTH }, (_, col) =>
-        MIDDLE_ROWS.every((row) => isPassable(grid[key(offsetToAxial(col, row))]!.ground)),
+        MIDDLE_ROWS.every((row) => isPassable(grid[cell(col, row)]!.ground)),
       ).some(Boolean);
       expect(anyColumnClear, `seed cross-${i}`).toBe(true);
     }
@@ -120,15 +110,22 @@ describe('starting a battle', () => {
     expect(standing(state.battle!, 'foe').length).toBeGreaterThan(0);
   });
 
-  it('gives every fighter a distinct hex on passable ground', () => {
+  it('gives every fighter a distinct rank in his own wall', () => {
+    // Was "a distinct hex on passable ground", which is the same claim about
+    // a field that no longer exists — and the same bug it was guarding
+    // against. Two men on one rank is a wall with a man inside another man:
+    // `closeUp` would not fix it, `pick` would hand a tap to whichever came
+    // first in the array, and the renderer would draw one on top of the
+    // other. It has been shipped once already, in this suite's own champion
+    // fixture, which numbered from 1 per side and collided with the two it
+    // had placed by hand.
     const state = battleState('placement', 'forest');
     const battle = state.battle!;
-    const seen = new Set<string>();
-    for (const combatant of battle.combatants) {
-      const k = key(combatant.at);
-      expect(seen.has(k)).toBe(false);
-      seen.add(k);
-      expect(isPassable(battle.grid[k]!.ground)).toBe(true);
+    for (const side of ['warband', 'foe'] as const) {
+      const ranks = battle.combatants.filter((c) => c.side === side).map((c) => c.rank);
+      expect(new Set(ranks).size, `${side} has two men on one rank`).toBe(ranks.length);
+      // And no gaps, front first: a line deploys closed up.
+      expect([...ranks].sort((a, b) => a - b)).toEqual(ranks.map((_, i) => i + 1));
     }
   });
 
@@ -165,91 +162,88 @@ describe('starting a battle', () => {
 });
 
 describe('turns', () => {
-  it('reachable ground is never occupied or impassable', () => {
-    // True of every fighter on every turn, whether or not they can move:
-    // a hemmed-in warrior legitimately has nowhere to go.
-    let cur = battleState('reachable');
-    for (let round = 0; round < 20 && !cur.battle?.outcome; round++) {
-      const options = reachableHexes(cur.battle!);
-      for (const option of options) {
-        expect(combatantAt(cur.battle!, option)).toBeUndefined();
-        expect(isPassable(cur.battle!.grid[key(option)]!.ground)).toBe(true);
-      }
+  // The five tests that stood here were about crossing ground: reachable
+  // hexes, elbow room at deployment, spending movement, and refusing a move
+  // out of range. There is no ground to cross since 8.1c — a fighter's place
+  // is their RANK, and the claims about how a line behaves live in
+  // test/ranks.test.ts, which can make them without a battle existing at all.
+  //
+  // What belongs HERE is the one thing ranks.test.ts cannot see: that a rank
+  // change reaches the line through the real stack. Until 9.1b that was the
+  // `B_DASH` verb; it is now the line closing itself inside `endTurn`.
+
+  it('the line closes on a man with nothing to do, through the whole stack', () => {
+    // This was `a dash changes rank, and swaps with whoever was there` and it
+    // makes the same claim: a rank change reaches the line for real, with a
+    // swap and not a stack. What changed in 9.1b is WHO asks for it — nobody
+    // does. `stepUp` runs inside `endTurn`'s own loop, so the only way to see
+    // it from out here is to pass turns and watch the line tighten.
+    let cur = battleState('close-swap');
+    // Somebody deep with no hand-axes left is the case the whole rule exists
+    // for, and it has to be arranged: at the opening of a fight everybody
+    // still has axes and nobody is stranded.
+    const deep = cur.battle!.combatants
+      .filter((c) => c.side === 'warband' && c.rank > 2)
+      .sort((a, b) => b.rank - a.rank)[0];
+    if (!deep) return;
+    for (const c of cur.battle!.combatants) c.throwsLeft = 0;
+    const was = deep.rank;
+
+    for (let i = 0; i < 40; i++) {
       cur = apply(cur, { type: 'B_END_TURN' });
-    }
-  });
-
-  it('every fighter opens the fight with somewhere to go', () => {
-    // Deployment must leave elbow room. A warrior boxed in by their own
-    // shield-mates on turn one has no legal move and nothing to do.
-    for (let i = 0; i < 25; i++) {
-      const state = battleState(`elbow-${i}`, 'meadow', 1);
-      const battle = state.battle!;
-      for (const combatant of battle.combatants) {
-        battle.turnIndex = battle.order.indexOf(combatant.personId);
-        combatant.movesLeft = 3;
-        expect(
-          reachableHexes(battle).length,
-          `elbow-${i}: ${combatant.personId} is walled in`,
-        ).toBeGreaterThan(0);
+      if (cur.battle?.outcome) break;
+      const now = cur.battle!.combatants.find((c) => c.personId === deep.personId);
+      if (!now || now.down || now.fled) return;
+      if (now.rank < was) {
+        // He came forward, and nobody is sharing a rank with him.
+        const here = cur.battle!.combatants.filter(
+          (c) => c.side === 'warband' && !c.down && !c.fled && c.rank === now.rank,
+        );
+        expect(here, 'two men ended up standing in one rank').toHaveLength(1);
+        return;
       }
     }
+    // Not reached on this seed is not a failure — the fight can end first —
+    // but it must not be reached by the line NEVER closing, which the arena
+    // measures separately (test/wall.test.ts).
   });
 
-  it('someone can always make a move when the fight opens', () => {
-    // If nobody could move at all, the battle would be unplayable.
-    for (const seed of ['open-a', 'open-b', 'open-c']) {
-      const state = battleState(seed, 'mountains');
-      const battle = state.battle!;
-      const anyoneCanMove = battle.combatants.some((c) => {
-        battle.turnIndex = battle.order.indexOf(c.personId);
-        c.movesLeft = 3;
-        return reachableHexes(battle).length > 0;
-      });
-      expect(anyoneCanMove, seed).toBe(true);
+  it('nobody can ask for a rank change any more', () => {
+    // 9.1b, asserted from outside the sim: the two verbs are off the action
+    // list entirely, so `apply` does not know them and hands back the state
+    // it was given. Kept as a test rather than trusted to the type, because
+    // the type is what a JSON-shaped action from a save or a port does not
+    // have to satisfy.
+    const cur = battleState('no-rank-verbs');
+    const them = cur.battle!.combatants.find((c) => c.side === 'foe')!;
+    for (const gone of [
+      { type: 'B_DASH', by: -1 },
+      { type: 'B_SHOVE', targetId: them.personId },
+    ]) {
+      expect(apply(cur, gone as unknown as Action)).toBe(cur);
     }
-  });
-
-  it('moving spends movement and puts the fighter where asked', () => {
-    let cur = battleState('moving');
-    // Find a warband turn where the active fighter actually has somewhere to go.
-    let options: Hex[] = [];
-    for (let i = 0; i < 20; i++) {
-      if (isWarbandTurn(cur)) {
-        options = reachableHexes(cur.battle!);
-        if (options.length > 0) break;
-      }
-      cur = apply(cur, { type: 'B_END_TURN' });
-      if (cur.battle?.outcome) return;
-    }
-    if (options.length === 0) return;
-
-    const before = activeCombatant(cur.battle!)!.movesLeft;
-    const next = apply(cur, { type: 'B_MOVE', to: options[0]! });
-    expect(next).not.toBe(cur);
-    const after = activeCombatant(next.battle!)!;
-    expect(after.at).toEqual(options[0]);
-    expect(after.movesLeft).toBeLessThan(before);
-  });
-
-  it('rejects moving out of reach', () => {
-    let cur = battleState('reach');
-    for (let i = 0; i < 12 && !isWarbandTurn(cur); i++) cur = apply(cur, { type: 'B_END_TURN' });
-    if (!isWarbandTurn(cur)) return;
-    const far: Hex = { q: 40, r: 40 };
-    expect(apply(cur, { type: 'B_MOVE', to: far })).toBe(cur);
   });
 
   it('allows only one strike per turn', () => {
-    // Build a guaranteed adjacency rather than hoping the deployment gives one.
+    // Build a guaranteed reach rather than hoping the deployment gives one.
+    // This used to stand the target on the hex next door; on a line an axe
+    // reaches the enemy's front TWO, so a whole enemy band is in reach and
+    // the fixture has to say which one man is, by putting everybody else
+    // out of it.
     const state = battleState('one-strike');
     const battle = state.battle!;
     const attacker = battle.combatants.find((c) => c.side === 'warband')!;
     const target = battle.combatants.find((c) => c.side === 'foe')!;
     battle.order = [attacker.personId, target.personId];
     battle.turnIndex = 0;
-    target.at = { q: attacker.at.q + 1, r: attacker.at.r };
-    battle.grid[key(target.at)] = { ground: 'open' };
+    attacker.rank = 1;
+    target.rank = 1;
+    let behind = 2;
+    for (const c of battle.combatants) {
+      if (c.side !== 'foe' || c.personId === target.personId) continue;
+      c.rank = RANKS + behind;   // past anything an axe can touch
+      behind += 1;
+    }
 
     expect(strikeTargets(state)).toHaveLength(1);
     const first = apply(state, { type: 'B_STRIKE', targetId: target.personId });
@@ -259,14 +253,20 @@ describe('turns', () => {
     expect(apply(first, { type: 'B_STRIKE', targetId: target.personId })).toBe(first);
   });
 
-  it('refuses strikes on anything not adjacent', () => {
+  it('refuses strikes on anything the front two cannot reach', () => {
     const state = battleState('reach-strike');
     const battle = state.battle!;
     const attacker = battle.combatants.find((c) => c.side === 'warband')!;
     const target = battle.combatants.find((c) => c.side === 'foe')!;
     battle.order = [attacker.personId];
     battle.turnIndex = 0;
-    target.at = { q: attacker.at.q + 5, r: attacker.at.r };
+    attacker.rank = 1;
+    // An axe reaches the front two ranks. Put him behind those.
+    target.rank = 3;
+    expect(apply(state, { type: 'B_STRIKE', targetId: target.personId })).toBe(state);
+    // And from the back rank there is no axe-work at all.
+    target.rank = 1;
+    attacker.rank = 4;
     expect(apply(state, { type: 'B_STRIKE', targetId: target.personId })).toBe(state);
   });
 
@@ -347,7 +347,7 @@ describe('the round trip', () => {
     const travelActions: Action[] = [
       { type: 'CAMP' },
       { type: 'FORAGE' },
-      { type: 'MOVE', to: state.party.at },
+      { type: 'WALK', to: (state.party.stop ?? 0) + 1 },
       { type: 'DISMISS_EVENT' },
     ];
     for (const action of travelActions) {
@@ -399,13 +399,6 @@ describe('reaching a battle through play', () => {
     expect(home.battle).toBeUndefined();
   });
 
-  it('the battlefield ground matches the hex the party stood on', () => {
-    const state = structuredClone(newGame('ground-match'));
-    const terrain = state.world.tiles[key(state.party.at)]!.terrain;
-    state.event = presentEvent(state, eventById('landing-party')!);
-    const fighting = apply(apply(state, { type: 'CHOOSE', index: 0 }), { type: 'DISMISS_EVENT' });
-    expect(fighting.battle!.terrain).toBe(terrain);
-  });
 
   it('a queued fight never leaves a stale flag behind', () => {
     const state = structuredClone(newGame('no-stale'));
@@ -446,23 +439,28 @@ describe('foes fight back', () => {
     expect(lost, 'standing still should sometimes get you killed').toBeGreaterThan(0);
   });
 
-  it('foes close the distance rather than idling', () => {
+  it('foes fight rather than idling', () => {
+    // Was "foes close the distance", measured as the hexes between the
+    // nearest pair shrinking. There is no distance to close on a line — the
+    // two walls start in contact, which is the point of the shape — so the
+    // claim underneath it is what survives: hand the foes six turns and they
+    // must have DONE something to us.
+    //
+    // Worth keeping rather than deleting with the geometry. An AI that
+    // stands there is the failure this was written for, and it stayed
+    // possible right through the conversion: `takeBrokenTurn`, the reach
+    // gates and `battleAi` all changed under it.
     const state = battleState('approach', 'meadow');
-    const battle = state.battle!;
-    const foe = standing(battle, 'foe')[0]!;
-    const startGap = Math.min(
-      ...standing(battle, 'warband').map((w) => distance(foe.at, w.at)),
-    );
+    const before = state.party.people.reduce((n, p) => n + p.health, 0);
     let cur = state;
     for (let i = 0; i < 6 && !cur.battle?.outcome; i++) {
       cur = apply(cur, { type: 'B_END_TURN' });
     }
-    if (cur.battle?.outcome) return;
-    const sameFoe = cur.battle!.combatants.find((c) => c.personId === foe.personId);
-    if (!sameFoe || sameFoe.down) return;
-    const endGap = Math.min(
-      ...standing(cur.battle!, 'warband').map((w) => distance(sameFoe.at, w.at)),
-    );
-    expect(endGap).toBeLessThanOrEqual(startGap);
+    const after = cur.party.people.reduce((n, p) => n + p.health, 0);
+    const shaken = cur.battle!.combatants.some((c) => c.side === 'warband' && c.nerve < 100);
+    expect(
+      after < before || shaken || !!cur.battle?.outcome,
+      'six turns of foes and not a scratch on us',
+    ).toBe(true);
   });
 });

@@ -3,6 +3,7 @@
 // telegraphed in the autumn was an honest one. So the centre of this file is
 // a measurement of the forecast's predictive accuracy.
 
+import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
@@ -19,17 +20,18 @@ import { readFileSync } from 'node:fs';
 const SOURCE = ['src/sim/actions.ts', 'src/sim/travel.ts']
   .map((f) => readFileSync(f, 'utf8'))
   .join('\n');
-import { fromKey } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { EVENTS } from '../src/data/events';
 import { isEligible } from '../src/sim/events';
 import { seasonOf } from '../src/sim/calendar';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign, buildable, queueBuild } from '../src/sim/colony';
 import { suggestedBuild } from '../src/sim/needs';
 import { checkRunEnd, foodPerDay, passDay, SURVIVAL_DAY } from '../src/sim/upkeep';
-import { YEAR_LENGTH } from '../src/sim/calendar';
-import { forecast, markVisible, MARK_WINDOW, PRUDENCE, WINTER_DAY } from '../src/sim/winter';
+import { SEASON_LENGTH, YEAR_LENGTH } from '../src/sim/calendar';
+import {
+  forecast, markVisible, roadDaysLeft, roadMarkVisible,
+  MARK_WINDOW, PRUDENCE, ROAD_MARK_WINDOW, WINTER_DAY,
+} from '../src/sim/winter';
 import { coldNight, sickCount } from '../src/sim/cold';
 import { readiness } from '../src/sim/reach';
 import { telegraphWinter, winterVerdict } from '../src/sim/telegraph';
@@ -50,30 +52,8 @@ function endCause(state: GameState): string {
 }
 
 function settledWell(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    const gap =
-      (Math.abs(at.q - landing.q) +
-        Math.abs(at.r - landing.r) +
-        Math.abs(at.q + at.r - landing.q - landing.r)) /
-      2;
-    if (gap > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
@@ -239,6 +219,48 @@ describe('the winter mark', () => {
   });
 });
 
+describe('the road mark (11.U1)', () => {
+  /**
+   * `markVisible` is false for the whole of a band's search for ground —
+   * `!state.settlement` refuses it outright — so the road needs its own,
+   * separate visibility rule rather than a relaxed version of the winter
+   * one. `forecast()` walks to the next thaw assuming zero production,
+   * which for a roofless band can be months out; the road mark asks a
+   * shorter, honest question instead: days of food on hand, right now.
+   */
+  it('is blank once a roof goes up, however short the stores are', () => {
+    const state = settledWell('road-mark-roofed');
+    state.party.food = 0;
+    expect(roadMarkVisible(state)).toBe(false);
+  });
+
+  it('is blank on the road while food is nowhere near the window', () => {
+    const state = newGame('road-mark-plenty');
+    state.party.food = foodPerDay(state) * (ROAD_MARK_WINDOW + 20);
+    expect(roadMarkVisible(state)).toBe(false);
+  });
+
+  it('comes on once a roofless band is inside the window, and counts down honestly', () => {
+    const state = newGame('road-mark-short');
+    const perDay = foodPerDay(state);
+    state.party.food = perDay * (ROAD_MARK_WINDOW - 1);
+    expect(roadMarkVisible(state)).toBe(true);
+    expect(roadDaysLeft(state)).toBe(ROAD_MARK_WINDOW - 1);
+
+    // And it never claims more days than the stores actually hold.
+    state.party.food = 0;
+    expect(roadDaysLeft(state)).toBe(0);
+    expect(roadMarkVisible(state)).toBe(true);
+  });
+
+  it('goes quiet once the run itself is over', () => {
+    const state = newGame('road-mark-over');
+    state.party.food = 0;
+    state.end = { cause: 'starved', title: '', lines: [] };
+    expect(roadMarkVisible(state)).toBe(false);
+  });
+});
+
 // --- The milestone's bar ---
 
 describe('an unprepared colony dies and it is clearly your fault', () => {
@@ -400,6 +422,58 @@ describe('an unprepared colony dies and it is clearly your fault', () => {
     state.day = 5;
     telegraphWinter(state);
     expect(state.flags['winterTargetGiven']).toBeUndefined();
+  });
+
+  /**
+   * 11.S5, finishing 6.1: at the moment autumn opens, the game names the
+   * coming winter's unknowable-in-advance character — see
+   * `characterOfTheComingWinter` in sim/telegraph.ts, a SEPARATE line from
+   * the food/wood reckoning above (which is a first-run tutorial beat and
+   * stays one). `bite()` is forced to zero for the FIRST winter on purpose
+   * (calendar.ts), and there is nothing true to say about a roll that never
+   * happened, so this stays silent there.
+   */
+  it('says nothing about the winter\'s character in the first autumn', () => {
+    const state = settledWell('quiet-first');
+    state.day = SEASON_LENGTH + 1; // the exact FIRST day of the first autumn — the day gate itself
+    telegraphWinter(state);
+    expect(state.saga.some((e) => /autumn opened/.test(e.text))).toBe(false);
+  });
+
+  /**
+   * From the SECOND winter it has something to say, exactly once — the day
+   * gate means calling it again mid-autumn is silent, matching "8 days out"
+   * in upkeep.ts, which needs no flag for the same reason — and it says one
+   * of three things, which the seed fixes, same discipline as `winterDepth`
+   * itself two tables up.
+   */
+  it('names the winter\'s character once, at the moment the second autumn opens, and the seed decides which', () => {
+    const SECOND_AUTUMN_OPENS = SEASON_LENGTH + 1 + YEAR_LENGTH;
+    const said = new Set<string>();
+    for (let i = 0; i < 20; i += 1) {
+      const state = settledWell(`character-${i}`);
+      state.day = SECOND_AUTUMN_OPENS;
+      state.saga = [];
+      telegraphWinter(state);
+      const lines = state.saga.filter((e) => /autumn opened/.test(e.text));
+      expect(lines, `seed character-${i} gave no reckoning at all`).toHaveLength(1);
+      said.add(lines[0]!.text);
+
+      // A day later in the same autumn: silent. The gate is the day, not a
+      // flag, and this is what proves it is not simply always-on.
+      state.day += 1;
+      state.saga = [];
+      telegraphWinter(state);
+      expect(state.saga.some((e) => /autumn opened/.test(e.text))).toBe(false);
+
+      // FIXED BY THE SEED, replayed from scratch.
+      const replay = settledWell(`character-${i}`);
+      replay.day = SECOND_AUTUMN_OPENS;
+      replay.saga = [];
+      telegraphWinter(replay);
+      expect(replay.saga.find((e) => /autumn opened/.test(e.text))!.text).toBe(lines[0]!.text);
+    }
+    expect(said.size, 'twenty seeds and only one kind of winter among them').toBeGreaterThan(1);
   });
 });
 

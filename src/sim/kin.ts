@@ -12,6 +12,7 @@ import { MEN, WOMEN } from '../data/names';
 import type { Rng } from '../rng';
 import { chronicle } from './saga';
 import { hallPasses } from './household';
+import { passBlade } from './heirloom';
 import { ORPHAN_GRIEF } from '../data/lineage';
 
 /** What a death does to the children it leaves. */
@@ -113,6 +114,10 @@ export function mourn(state: GameState, dead: Person): void {
   // death site already calls `mourn`, and a succession that forgets to be
   // announced is the same bug as a death that forgets to be mourned.
   hallPasses(state, dead);
+  // And the blade changes hands, for the same reason and at the same place:
+  // there are six death sites, and a possession that outlives its owner has
+  // to be handed on at every one of them or at none. See sim/heirloom.ts.
+  passBlade(state, dead);
   // A death that leaves a child costs the steading something for who is left
   // behind rather than only for who is gone — the item's "consequences beyond
   // subtraction", made concrete.

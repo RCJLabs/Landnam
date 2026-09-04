@@ -3,14 +3,13 @@
 // it most lacks against bots that follow a fixed order and against one that
 // never builds at all.
 
+import { settled as settleSomewhere } from './fixtures/settle';
 import { describe, it, expect } from 'vitest';
-import { fromKey } from '../src/hex';
 import { newGame } from '../src/state/create';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { eventChance } from '../src/sim/events';
 import { passDay } from '../src/sim/upkeep';
 import {
@@ -34,7 +33,9 @@ import {
   underway,
   unqueueBuild,
 } from '../src/sim/colony';
-import { daysOfFood, nightsOfFire, readNeeds, suggestedBuild, worstNeed } from '../src/sim/needs';
+import {
+  buildWorthLine, daysOfFood, nightsOfFire, readNeeds, suggestedBuild, worstNeed,
+} from '../src/sim/needs';
 import { BUILDINGS, buildingById, type BuildingId } from '../src/data/buildings';
 import { jobById, type JobId } from '../src/data/jobs';
 import { living } from '../src/sim/people';
@@ -48,30 +49,8 @@ const CREW: JobId[] = ['farmer', 'farmer', 'woodcutter', 'hunter', 'builder', 'w
  * is real — so the search widens rather than giving up.
  */
 function settledWell(seed: string, radius = 14): GameState {
-  const state = structuredClone(newGame(seed));
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    const gap =
-      (Math.abs(at.q - landing.q) +
-        Math.abs(at.r - landing.r) +
-        Math.abs(at.q + at.r - landing.q - landing.r)) /
-      2;
-    if (gap > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people.filter((p) => p.alive).forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));
   return state;
 }
@@ -145,6 +124,56 @@ describe('the four needs', () => {
     for (const p of cold.party.people) p.health = p.maxHealth;
     expect(worstNeed(cold).id).toBe('warmth');
     expect(suggestedBuild(cold, buildable(cold))?.answers).toBe('warmth');
+  });
+
+  /**
+   * 11.U2: the panel already flagged one row `primary` on this exact
+   * decision and never said why. `buildWorthLine` is that reason, and the
+   * bar is that it can never disagree with the sentence `readNeeds` already
+   * put on screen elsewhere — the two must be THE SAME STRING, not two
+   * prose that happen to agree today.
+   */
+  it('gives the flagged building the same reason readNeeds already wrote, and nobody else one', () => {
+    const cold = stocked('worth-cold');
+    cold.day = 40;
+    cold.party.firewood = 8;
+    cold.party.food = 900;
+    cold.party.morale = 95;
+    for (const p of cold.party.people) p.health = p.maxHealth;
+    expect(worstNeed(cold).id).toBe('warmth');
+
+    const pick = suggestedBuild(cold, buildable(cold));
+    expect(pick?.answers).toBe('warmth');
+    expect(buildWorthLine(cold, pick!)).toBe(worstNeed(cold).line);
+
+    // Something that answers a need that is NOT hurting gets no line at
+    // all — a made-up reason would be worse than none.
+    const foodBuilding = buildable(cold).find((b) => b.answers === 'food');
+    expect(foodBuilding, 'need a food building on offer to make this a real check').toBeDefined();
+    expect(buildWorthLine(cold, foodBuilding!)).toBeUndefined();
+  });
+
+  /**
+   * The one INDIRECT case `suggestedBuild` itself takes: fresh ashore,
+   * nothing raised yet, rest is what is hurting and `bud` cannot be queued
+   * before `longhouse` exists to stand it against (`after: ['longhouse']`)
+   * — so the roof stands in for it, and the worth line has to say so
+   * without borrowing the warmth need's own sentence, which would be
+   * naming the wrong scarcity.
+   */
+  it('names the roof for rest, without pretending it is a warmth line', () => {
+    const beaten = settledWell('worth-rest');
+    beaten.party.food = 900;
+    beaten.party.firewood = 400;
+    beaten.party.morale = 90;
+    for (const p of beaten.party.people) p.health = 1;
+    expect(worstNeed(beaten).id).toBe('rest');
+
+    const pick = suggestedBuild(beaten, buildable(beaten));
+    expect(pick?.id).toBe('longhouse');
+    const line = buildWorthLine(beaten, pick!);
+    expect(line).toBeDefined();
+    expect(line).not.toBe(worstNeed(beaten).line);
   });
 });
 
@@ -331,6 +360,15 @@ describe('buildings change the steading', () => {
       // Grant whatever it waits on, then check the ground and purse allow it.
       for (const id of building.after ?? []) {
         if (!home.built.includes(id)) home.built.push(id);
+      }
+      // AND WHAT IT REPLACES, which this fixture did not grant until 9.11
+      // added a tier whose predecessor is nobody's `after`. It passed for
+      // greathall and earthworks by luck: their predecessors happened to have
+      // been pushed as somebody else's prerequisite earlier in the loop. A
+      // fixture that only works in list order is a fixture that will lie the
+      // next time the list changes.
+      if (building.replaces && !home.built.includes(building.replaces)) {
+        home.built.push(building.replaces);
       }
       expect(buildBlocker(state, building), building.id).toBeNull();
     }
@@ -721,5 +759,79 @@ describe('building through the action layer', () => {
     expect(buildable(state)).toHaveLength(0);
     expect(standing({ built: [] } as never)).toEqual([]);
     expect(queueBuild(state, 'longhouse')).toBe(false);
+  });
+});
+
+// 9.11: the late work, and the gate that could not see past an upgrade.
+describe('the work that costs a year', () => {
+  /** A steading with timber to burn and a named list already standing. */
+  function withBuilt(seed: string, ids: BuildingId[]): GameState {
+    const state = stocked(seed, 400);
+    state.settlement!.built.push(...ids);
+    return state;
+  }
+
+  /**
+   * THE BUG THIS FOUND, and it was in shipped content before it was in mine.
+   *
+   * `buildBlocker` checked `after` against `home.built.includes(id)`. An
+   * upgrade REMOVES what it replaces, so the moment earthworks go up the
+   * palisade leaves `built` — and the watchtower, which is `after:
+   * ['palisade']`, became unbuildable for the rest of the run. Nothing caught
+   * it because every bot policy wants the watchtower before the earthworks.
+   */
+  it('lets a walled steading raise a watchtower after the wall is upgraded', () => {
+    const palisade = withBuilt('gate-pal', ['longhouse', 'palisade']);
+    expect(buildBlocker(palisade, buildingById('watchtower')!)).toBeNull();
+
+    // Same steading, wall upgraded. `built` no longer contains 'palisade'.
+    const upgraded = withBuilt('gate-earth', ['longhouse', 'earthworks']);
+    expect(upgraded.settlement!.built).not.toContain('palisade');
+    expect(
+      buildBlocker(upgraded, buildingById('watchtower')!),
+      'the upgraded wall stopped counting as a wall',
+    ).toBeNull();
+  });
+
+  it('still refuses a building whose prerequisite was never raised at all', () => {
+    // The other half: the gate has to keep refusing, or the fix is just a
+    // hole. Nothing replaces the mead hall, so the hof has no back door.
+    const bare = withBuilt('gate-none', ['longhouse']);
+    expect(buildBlocker(bare, buildingById('hof')!)).toBe('after');
+  });
+
+  it('gates the howe on a god-house, by whichever one is standing', () => {
+    const none = withBuilt('howe-none', ['longhouse', 'meadhall']);
+    expect(buildBlocker(none, buildingById('shiphowe')!)).toBe('after');
+    const hof = withBuilt('howe-hof', ['longhouse', 'meadhall', 'hof']);
+    expect(buildBlocker(hof, buildingById('shiphowe')!)).toBeNull();
+    // And by the tier above it, which is the case the engine fix is for.
+    const great = withBuilt('howe-great', ['longhouse', 'meadhall', 'greathof']);
+    expect(great.settlement!.built).not.toContain('hof');
+    expect(buildBlocker(great, buildingById('shiphowe')!)).toBeNull();
+  });
+
+  it('costs more than everything raised before it', () => {
+    // The whole point of the tier. Pinned to literals rather than to the
+    // constants being tested, so it cannot pass by tautology.
+    const late = ['stonedyke', 'greathof', 'shiphowe'] as const;
+    const lateTimber = late.reduce((n, id) => n + buildingById(id)!.timber, 0);
+    const earlyTimber = BUILDINGS
+      .filter((b) => !late.includes(b.id as never))
+      .reduce((n, b) => n + b.timber, 0);
+    expect(lateTimber).toBe(92);
+    expect(earlyTimber).toBe(84);
+    expect(lateTimber, 'the late work stopped being the dear half').toBeGreaterThan(earlyTimber);
+  });
+
+  it('cannot be reached by a band in its first winter', () => {
+    // A sink that a starving band can pour its timber into is not a sink, it
+    // is a trap. Each of the three sits behind something a first winter has
+    // no time for.
+    const fresh = stocked('late-fresh', 400);
+    for (const id of ['stonedyke', 'greathof', 'shiphowe'] as const) {
+      expect(buildBlocker(fresh, buildingById(id)!), `${id} was open on day one`)
+        .not.toBeNull();
+    }
   });
 });

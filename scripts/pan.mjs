@@ -88,13 +88,41 @@ async function openFight(page) {
 const viewBoxOf = (page) =>
   page.evaluate(() => document.querySelector('svg.field').getAttribute('viewBox'));
 
-/** Where the fighter whose turn it is stands, straight off the state. */
+/**
+ * Where the fighter whose turn it is stands, straight off the state.
+ *
+ * A RANK since 8.1d. This used to read `c.at.q` and `c.at.r`, and the field
+ * it read them from is gone — a fighter's place is his rank and nothing
+ * else.
+ */
+/**
+ * Waits for a warband fighter who has NOT yet acted to be up.
+ *
+ * `ourTurn` only asks whose side it is, and since 9.13 that is not enough for
+ * anything that needs the turn to stay put: a fighter who has already acted
+ * has their turn ended for them a fraction of a second later.
+ */
+async function waitUnacted(page) {
+  for (let i = 0; i < 40; i += 1) {
+    const who = await page.evaluate(() => {
+      const b = window.landnam.state()?.battle;
+      if (!b || b.outcome) return null;
+      const a = b.combatants.find((c) => c.personId === b.order[b.turnIndex]);
+      if (!a || a.side !== 'warband' || a.broken || a.down || a.hasActed) return null;
+      return { id: a.personId, rank: a.rank };
+    });
+    if (who) return who;
+    await page.waitForTimeout(150);
+  }
+  return null;
+}
+
 const activeAt = (page) =>
   page.evaluate(() => {
     const battle = window.landnam.state()?.battle;
     if (!battle) return null;
     const a = battle.combatants.find((c) => c.personId === battle.order[battle.turnIndex]);
-    return a ? { q: a.at.q, r: a.at.r, id: a.personId } : null;
+    return a ? { rank: a.rank, id: a.personId } : null;
   });
 
 /** Where one NAMED fighter stands, whoever's turn it happens to be. */
@@ -102,7 +130,7 @@ const posOf = (page, id) =>
   page.evaluate((id) => {
     const battle = window.landnam.state()?.battle;
     const c = battle?.combatants.find((f) => f.personId === id);
-    return c ? { q: c.at.q, r: c.at.r } : null;
+    return c ? { rank: c.rank } : null;
   }, id);
 
 /**
@@ -165,57 +193,166 @@ for (const [w, h] of [[320, 568], [390, 844]]) {
   // turn while the drags were happening, which moves nobody of ours.
   const stoodAfter = await posOf(page, stood.id);
 
-  if (narrow) {
-    check(left !== right, 'the field pans when it cannot frame itself');
-  } else {
-    // The design rule, still held everywhere it can be: a screen that frames
-    // the whole grid at 44px does not move, and a drag on it does nothing.
-    check(left === right, 'a wide screen still frames itself and does not pan');
-  }
+  // THE FIELD FRAMES ITSELF, SO IT DOES NOT MOVE.
+  //
+  // This check asserted the opposite until the ranks were stacked, and its
+  // reasoning carried the same false premise `line.ts` did: "six sworn
+  // against six raiders is twelve ranks, twelve targets at the 44px minimum
+  // is 528px, and no phone this file tests is that wide." Twelve ranks are
+  // not twelve targets — `REACH` says a strike lands on the enemy's first
+  // two ranks, so at most two men are ever tappable and the rest are
+  // scenery. The rule was being applied to every figure drawn.
+  //
+  // With ranks stacked behind each other a six-a-side field is 619 units and
+  // frames whole at 390 (0.630) and 320 (0.517), both clear of the 0.479 the
+  // thumb rule needs. So there is nothing to drag to, and a drag that moved
+  // the view would now be a bug: it would be sliding the fight off a screen
+  // it already fits on.
+  //
+  // The comment this replaces noted that the ORIGINAL claim here was "a
+  // screen that can frame the whole field does not move". It was right, and
+  // it is the claim again.
+  check(left === right,
+    `the field moved under a drag it did not need — ${left} then ${right}`);
   check(
-    !!stoodAfter && stood.q === stoodAfter.q && stood.r === stoodAfter.r,
-    'a drag does NOT order the fighter to walk there',
+    !!stoodAfter && stood.rank === stoodAfter.rank,
+    'a drag does NOT move the fighter in the line',
   );
+
+  // The hazard panning brought with it: a field you can drag is a field you
+  // can drag the fight out of. Shove it hard against each end and check.
+  //
+  // The bar was "SOMEBODY must still be on screen", which was as much as
+  // could be asked of a view that could never show both walls at once. Now
+  // that the field frames itself the honest question is stronger and it is
+  // the one a player asked out loud — "I didn't know where the enemy was":
+  // EVERYBODY is on screen, ours and theirs, and no amount of dragging can
+  // take any of them off it.
+  for (const [fx, tx] of [[0.9, 0.05], [0.05, 0.9]]) {
+    for (let i = 0; i < 4; i += 1) await drag(fx, 0.5, tx, 0.5);
+    const seen = await page.evaluate(() => {
+      const svg = document.querySelector('svg.field');
+      const men = [...svg.querySelectorAll('g.fighter')];
+      const on = men.filter((el) => {
+        const b = el.getBoundingClientRect();
+        return b.left >= -0.5 && b.right <= innerWidth + 0.5;
+      });
+      return { on: on.length, all: men.length };
+    });
+    check(seen.all > 0 && seen.on === seen.all,
+      `dragged ${tx < fx ? 'left' : 'right'} and ${seen.all - seen.on} of ` +
+        `${seen.all} fighters went off the screen with it`);
+  }
 
   // And the tap still works, which is the other half of the same handler.
   //
-  // The hex tapped is one the game itself drew as reachable — the dashed
-  // marker a player aims at — rather than a neighbour guessed at from the
-  // fighter's position. Guessing failed about one run in four: at 320 the
-  // view is panned, so some neighbours are off screen, and the rest can be
-  // water, a wall, occupied, or beyond the fighter's remaining steps. That
-  // read as "tapping is broken" when every tap had been perfectly legal.
+  // It used to tap a dashed marker and expect the fighter to WALK there. That
+  // hex is gone: since 8.1c a fighter's place is their rank, and the only
+  // thing a tap can mean is the armed action on somebody the game has marked
+  // as in reach. Two things changed with it, and both had to be handled here
+  // rather than worked around:
+  //
+  //   - Marks appear only when the ACTIVE fighter can reach somebody, and a
+  //     man in the third rank cannot swing an axe at all. Turn order is
+  //     initiative, not rank, so the first of ours to act is often somebody
+  //     with nothing marked — which is correct, and read as a broken field.
+  //     So this ends turns until it finds one who has a target.
+  //   - The marks are drawn on `Combatant.at`, frozen where the fighter
+  //     deployed, so at 320px they are routinely off the panned view. The
+  //     search takes the first mark actually ON SCREEN, as before.
+  //
+  // Both of those go away in 8.1d when the field is drawn side-on and a rank
+  // is a place on the screen rather than a leftover hex.
   check(await ourTurn(page), 'a warband fighter is up for the tap');
+  const findMark = () =>
+    page.evaluate(() => {
+      const svg = document.querySelector('svg.field');
+      const rect = svg.getBoundingClientRect();
+      for (const el of svg.querySelectorAll('ellipse.mark')) {
+        const b = el.getBoundingClientRect();
+        const cx = b.x + b.width / 2;
+        // The mark is drawn at the man's FEET, so aim a little above it to
+        // land on the man himself — which is what `pick` in render/line.ts
+        // answers for, and what a player's thumb would do.
+        const cy = b.y + b.height / 2 - b.width * 0.5;
+        if (cx < rect.x || cx > rect.x + rect.width) continue;
+        if (cy < rect.y || cy > rect.y + rect.height) continue;
+        return { x: cx, y: cy };
+      }
+      return null;
+    });
+  let mark = await findMark();
+  for (let i = 0; i < 12 && !mark; i += 1) {
+    const end = page.locator('button', { hasText: /^End turn$/ }).first();
+    if (!(await end.count())) break;
+    await end.click().catch(() => {});
+    await page.waitForTimeout(250);
+    if (!(await ourTurn(page))) break;
+    mark = await findMark();
+  }
+  check(!!mark, 'the field marks somebody the active fighter can reach');
   const now = await activeAt(page);
-  const mark = await page.evaluate(() => {
-    const svg = document.querySelector('svg.field');
-    const rect = svg.getBoundingClientRect();
-    for (const el of svg.querySelectorAll('polygon[stroke-dasharray]')) {
-      const b = el.getBoundingClientRect();
-      const cx = b.x + b.width / 2;
-      const cy = b.y + b.height / 2;
-      if (cx < rect.x || cx > rect.x + rect.width) continue;
-      if (cy < rect.y || cy > rect.y + rect.height) continue;
-      return { x: cx, y: cy };
-    }
-    return null;
-  });
-  check(!!mark, 'the field offers somewhere to step');
-  let moved = false;
-  if (mark) {
+  let acted = false;
+  if (mark && now) {
     await page.mouse.click(mark.x, mark.y);
     await page.waitForTimeout(300);
-    const where = await posOf(page, now.id);
-    // Either this fighter moved, or the tap spent their turn and it passed.
-    if (!where || where.q !== now.q || where.r !== now.r) moved = true;
-    else {
-      moved = await page.evaluate((id) => {
-        const b = window.landnam.state()?.battle;
-        return !b || b.order[b.turnIndex] !== id;
-      }, now.id);
-    }
+    // A blow spends the turn, so either it has passed on or this fighter has
+    // acted. Nobody walks anywhere any more, which is the whole point.
+    acted = await page.evaluate((id) => {
+      const b = window.landnam.state()?.battle;
+      if (!b) return true;
+      if (b.order[b.turnIndex] !== id) return true;
+      return !!b.combatants.find((c) => c.personId === id)?.hasActed;
+    }, now.id);
   }
-  check(moved, 'tapping the field still moves a fighter');
+  check(acted, 'tapping a marked foe spends the turn');
+
+  // THE NEW HAZARD, and the direct successor to the one at the top of this
+  // file: bare ground is not an order any more. A tap on an empty part of
+  // the field used to walk a man across it, and it must now do nothing.
+  //
+  // This check used to hunt for an unoccupied ground POLYGON, and when 8.1d
+  // took the tiles away it found none, skipped itself, and printed nothing
+  // at all — a check that quietly stops running looks exactly like a check
+  // that passes. The sky is bare ground that cannot stop existing.
+  // ASKED OF THE FIGHTER, NOT OF THE CLOCK. This used to snapshot
+  // `round:turnIndex:down` before and after the tap and demand they match,
+  // which was a fair way to ask "did the tap order anything" only while turns
+  // advanced solely because somebody pressed a button. Since 9.13 a turn ends
+  // itself once its fighter has acted, so the index moves on its own and the
+  // check read 1:2 -> 1:4 and called it a bare-ground order.
+  //
+  // The rule it is really guarding is that a tap on nothing makes the ACTIVE
+  // FIGHTER do nothing. Asked that way it is immune to the clock — an unacted
+  // fighter is exactly the one the turn will not end by itself — and it is a
+  // stronger statement than the snapshot was, because it names the fighter
+  // instead of a pair of counters that could match by luck.
+  const unacted = await waitUnacted(page);
+  check(!!unacted, 'a warband fighter who has not acted is up for the bare-ground tap');
+  const sky = await page.evaluate(() => {
+    const rect = document.querySelector('svg.field').getBoundingClientRect();
+    // Well above the wall, and clear of the two round buttons top-right.
+    return { x: rect.x + rect.width * 0.3, y: rect.y + rect.height * 0.18 };
+  });
+  const downBefore = await page.evaluate(
+    () => window.landnam.state()?.battle?.combatants.filter((c) => c.down).length ?? -1);
+  await page.mouse.click(sky.x, sky.y);
+  await page.waitForTimeout(300);
+  const after = await page.evaluate((id) => {
+    const b = window.landnam.state()?.battle;
+    const c = b?.combatants.find((f) => f.personId === id);
+    return {
+      up: b?.order[b.turnIndex] === id,
+      acted: !!c?.hasActed,
+      down: b?.combatants.filter((f) => f.down).length ?? -1,
+    };
+  }, unacted?.id ?? '');
+  check(
+    !!unacted && after.up && !after.acted && after.down === downBefore,
+    `a tap on bare ground orders nothing (still up ${after.up}, acted ${after.acted}, `
+      + `down ${downBefore} -> ${after.down})`,
+  );
+
   check(errors.length === 0, `no page errors${errors.length ? `: ${errors[0]}` : ''}`);
 
   await page.close();
@@ -227,4 +364,4 @@ if (fail.length > 0) {
   console.error(`pan check FAILED: ${fail.length} of them.`);
   process.exit(1);
 }
-console.log('pan check passed — the narrow field moves, the wide one does not, and neither taps by accident.');
+console.log('pan check passed — the field moves, stays under the wall, and never taps by accident.');

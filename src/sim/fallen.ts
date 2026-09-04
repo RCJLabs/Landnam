@@ -3,6 +3,7 @@
 
 import type { Fallen } from '../memorial';
 import type { GameState } from '../state/types';
+import { boreBlade } from './heirloom';
 
 /**
  * Everyone the run buried, oldest death first.
@@ -23,6 +24,10 @@ export function fallenOf(state: GameState): Fallen[] {
       fate: person.fate ?? 'was lost',
       day: person.diedOn ?? state.day,
       seed: state.seed,
+      // The one thing on this row that can also be on somebody else's. See
+      // sim/heirloom.ts — a wall of sixty names where five of them bore the
+      // same sword is a wall that says something a list of fates cannot.
+      ...(boreBlade(state, person) ? { blade: boreBlade(state, person)! } : {}),
     }))
     .sort((a, b) => a.day - b.day);
 }

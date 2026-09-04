@@ -5,14 +5,13 @@
 // Both are things a player would notice being false.
 
 import { describe, it, expect } from 'vitest';
-import { fromKey } from '../src/hex';
 import { newGame } from '../src/state/create';
+import { settled as settleSomewhere } from './fixtures/settle';
 import { encode } from '../src/state/save';
 import { migrate } from '../src/state/migrations';
 import { SAVE_VERSION } from '../src/state/version';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
-import { canFound, foundSettlement, siteReport } from '../src/sim/site';
 import { assign } from '../src/sim/colony';
 import { effectiveStat } from '../src/sim/people';
 import { friction, temperOf, TRAITS } from '../src/data/traits';
@@ -43,30 +42,8 @@ function fresh(seed: string): GameState {
 }
 
 function settled(seed: string, radius = 14): GameState {
-  const state = fresh(seed);
-  for (const k of Object.keys(state.world.tiles)) state.world.seen[k] = 'seen';
-  const landing = state.world.landing;
-  let best: GameState['party']['at'] | null = null;
-  let bestScore = -1;
-  for (const k of Object.keys(state.world.tiles)) {
-    const at = fromKey(k);
-    const gap =
-      (Math.abs(at.q - landing.q) +
-        Math.abs(at.r - landing.r) +
-        Math.abs(at.q + at.r - landing.q - landing.r)) /
-      2;
-    if (gap > radius) continue;
-    state.party.at = at;
-    if (!canFound(state, at)) continue;
-    const report = siteReport(state.world, at)!;
-    if (report.total > bestScore) {
-      bestScore = report.total;
-      best = at;
-    }
-  }
-  expect(best, `${seed}: nothing foundable`).toBeTruthy();
-  state.party.at = best!;
-  expect(foundSettlement(state)).toBe(true);
+  // The site search is shared now — see test/fixtures/settle.ts.
+  const state = settleSomewhere(seed, { radius });
   state.party.people
     .filter((p) => p.alive)
     .forEach((p, i) => assign(state, p.id, CREW[i % CREW.length]!));

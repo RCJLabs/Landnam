@@ -110,7 +110,11 @@ export function renderGuide(onClose: () => void): HTMLElement {
   for (const section of GUIDE) {
     list.append(
       el('h3', {}, [section.title]),
-      el('p', { class: 'event-body guide-body' }, [section.body]),
+      // The coast wording where the section has one — the guide names
+      // buttons plainly, and on a coast half of them are different buttons.
+      el('p', { class: 'event-body guide-body' }, [
+        section.coast ?? section.body,
+      ]),
     );
   }
   card.append(list, button('Back', onClose, { class: 'primary wide' }));
