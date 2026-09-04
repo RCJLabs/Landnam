@@ -318,6 +318,28 @@ export interface Policy {
    */
   crewsByOutput?: boolean;
   /**
+   * Whether an empty larder outranks a thin woodpile on the road.
+   *
+   * MEASURED 2026-09-04 (12.H): 24% of sagas on `even` and 43% on `hard` end
+   * before winter even opens, three-quarters of them starved and nine in ten
+   * of them still on the road. Following the days those bands spent with an
+   * empty larder at dawn — 523 and 1235 of them — the settler CAMPED on 45%
+   * and 76% and took in 0.36 food a day against the 2.82 it needed.
+   *
+   * It camps because the wood branch above sits in front of every food verb
+   * and only asks `nights < 6`: in forest, hills or valley a band with a thin
+   * woodpile cuts wood whether or not it has eaten. That is a bot ordering,
+   * not a rule of the game — the same shape as `B_DEFEND` sitting last in
+   * every priority list and reading as "the shield is worth nothing" (9.1).
+   *
+   * So it is a KNOB rather than a fix, and the arm exists to tell two very
+   * different findings apart: if moving food in front of wood empties the
+   * pre-winter graveyard, the opening is survivable and the bot was playing
+   * it badly; if it does not, the opening is too tight and that is a
+   * difficulty question. Off by default so no shipped figure moves under it.
+   */
+  feedsBeforeWood?: boolean;
+  /**
    * Whether the band walks out on a steading the verdict has written off.
    *
    * AUDIT ITEM 6. `readiness()` named this as a way out for a long time while
@@ -1223,7 +1245,12 @@ export function step(state: GameState): Action {
 
   const at = whereOn(state);
   const country = stopAt(state.seed, at).country;
-  if (nights < 6 && (country === 'forest' || country === 'hills' || country === 'valley')) {
+  // THE WOOD BRANCH, and it asks for firewood BEFORE it has asked whether
+  // anybody has eaten. `feedsBeforeWood` is the knob that reorders it — see
+  // the flag, and 12.H's reading of what a band does on an empty larder.
+  const woodFirst = !(policy.feedsBeforeWood && days < 1);
+  if (woodFirst && nights < 6
+    && (country === 'forest' || country === 'hills' || country === 'valley')) {
     return { type:'CAMP' };
   }
 
