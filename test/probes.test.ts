@@ -4044,7 +4044,13 @@ describe('PROBE: 11.U5 — is there a thread of known foes to draw', () => {
         + `      THE LIST AT SAGA END: ${(rowsAtEnd / SEEDS).toFixed(2)} rows a saga`
         + ` | sagas with any row at all ${sagasWithAnyRow}/${SEEDS}`
         + ` | with two or more ${sagasWithTwoRows}/${SEEDS}`
-        + ` | rows naming a man met twice ${scarredAtEnd}`,
+        // NOT "met twice": scars are earned by walking off a field alive, so
+        // scars>0 on a surviving row means he survived the ONE meeting he
+        // had. Whether anybody was ever met a second time is `returns`
+        // above, and only that. The first cut of this line called it "met
+        // twice" and would have reported five of them where the honest
+        // number is nought.
+        + ` | rows naming a man who walked off alive ${scarredAtEnd}`,
       );
     }
     setPolicy(SETTLER);
