@@ -64,6 +64,7 @@ import {
   RAIDER,
   SETTLER,
   armSeed,
+  floorOn,
   nearestStop,
   policy,
   run,
@@ -5089,6 +5090,89 @@ describe('PROBE: 12.H — what kills a band before winter even opens', () => {
 
     // eslint-disable-next-line no-console
     console.log(`PROBE 12.H the road mark's window — ${SEEDS} sagas a country, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * THE WHOLE FLOOR CURVE, because 0-against-9 is two points and a retune
+   * wants a shape.
+   *
+   * 12.H measured that taking the first legal ground beats the settler's
+   * floor by 33 saved / 10 killed at the first spring. That is two arms at
+   * the extremes, and the same mistake as picking a road-mark window by
+   * taste: the question is whether some floor DOMINATES, not whether the
+   * absence of one beats the current value.
+   *
+   * `floorOn` maps a policy's `siteFloor` onto the coast's own scale —
+   * 9 becomes 14, easing a point a week from day 14 down to a hard 12 — so
+   * the effective floor is printed beside each arm rather than left implied.
+   * `siteFloor: 0` is the ABSENCE of a floor and is its own case.
+   *
+   * Reported at BOTH horizons because 12.H showed they disagree: the first
+   * spring is what haste buys, day 400 is where poor ground charges for
+   * itself, and a retune argued on one alone would be a horizon picking its
+   * own answer.
+   */
+  it('sweeps the settling floor at both horizons', { timeout: 7_200_000 }, async () => {
+    const SEEDS = 120;
+    const HORIZON = 400;
+    const WINTER_OPENS = 49;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    const FLOORS = [0, 5, 7, 9];
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      const arms = new Map<number, {
+        spring: boolean[]; standing: boolean[]; earlyDead: number;
+        ruled: number; never: number; settledOnSum: number; settled: number;
+        effective: number;
+      }>();
+
+      for (const floor of FLOORS) {
+        setPolicy({ ...SETTLER, siteFloor: floor });
+        const spring: boolean[] = [];
+        const standing: boolean[] = [];
+        let earlyDead = 0; let ruled = 0; let never = 0;
+        let settledOnSum = 0; let settled = 0;
+        const effective = floorOn(0);
+        for (let i = 0; i < SEEDS; i += 1) {
+          let sawSpring = false;
+          let settledOn = 0;
+          const final = run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+            if (!settledOn && !before.settlement && after.settlement) settledOn = after.day;
+            if (!sawSpring && !after.end && after.day >= SPRING_IN) sawSpring = true;
+          }, terms);
+          spring.push(sawSpring);
+          standing.push(!final.end && final.day >= HORIZON);
+          if (final.end && final.day < WINTER_OPENS) earlyDead += 1;
+          if (final.jarl) ruled += 1;
+          if (settledOn) { settled += 1; settledOnSum += settledOn; } else never += 1;
+        }
+        arms.set(floor, { spring, standing, earlyDead, ruled, never, settledOnSum, settled, effective });
+      }
+      setPolicy(SETTLER);
+
+      const shipped = arms.get(SETTLER.siteFloor)!;
+      const rows = FLOORS.map((floor) => {
+        const a = arms.get(floor)!;
+        let saved = 0; let killed = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          if (!shipped.spring[i] && a.spring[i]) saved += 1;
+          if (shipped.spring[i] && !a.spring[i]) killed += 1;
+        }
+        const n = (b: boolean[]) => b.filter(Boolean).length;
+        return `      floor ${String(floor).padStart(2)} (coast ${a.effective}): `
+          + `died early ${String(a.earlyDead).padStart(3)}, spring ${String(n(a.spring)).padStart(3)}`
+          + ` (vs shipped: saved ${saved}, killed ${killed}), standing ${String(n(a.standing)).padStart(3)}`
+          + `, ruled ${String(a.ruled).padStart(3)}, never settled ${String(a.never).padStart(3)}`
+          + `, settled day ${a.settled ? Math.round(a.settledOnSum / a.settled) : 0}`
+          + (floor === SETTLER.siteFloor ? '   <- as it ships' : '');
+      });
+      out.push(`  ${terms}, ${SEEDS} landings an arm to day ${HORIZON}:\n${rows.join('\n')}`);
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H the settling floor, swept:\n${out.join('\n')}`);
     expect(out.length).toBe(2);
   });
 });
