@@ -7264,6 +7264,60 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-09-04 — 12.H part three: the settler's site floor is the worst arm
+  tested, and the retune is NOT mine to make.** 12.H compared the shipped
+  floor against its absence, which is two points and no shape, so the curve
+  was swept. `floorOn` maps a policy's `siteFloor` onto the coast's scale — 9
+  becomes 14, easing a point a week from day 14 to a hard 12 — and the
+  effective floor is printed beside each arm. 120 landings an arm, to day 400,
+  paired against the shipped value:
+
+  **As It Lies**
+
+  | floor | died before 49 | first spring | vs shipped | standing at 400 | ever ruled | never settled | settled on |
+  |---|---|---|---|---|---|---|---|
+  | 0 (none) | 14 | 97 | saved 28, killed 6 | 19 | 42 | 9 | day 6 |
+  | 5 (coast 10) | 14 | 97 | saved 28, killed 6 | 21 | 43 | 9 | day 6 |
+  | **7 (coast 12)** | **19** | **94** | **saved 21, killed 2** | **27** | **45** | 17 | day 7 |
+  | 9 (coast 14) — ships | 32 | 75 | — | 25 | 37 | 34 | day 15 |
+
+  **A Hard Country**
+
+  | floor | died before 49 | first spring | vs shipped | standing at 400 | ever ruled | never settled |
+  |---|---|---|---|---|---|---|
+  | 0 (none) | 22 | 71 | saved 28, killed 9 | 13 | 23 | 18 |
+  | 5 (coast 10) | 23 | 69 | saved 26, killed 9 | 12 | 22 | 21 |
+  | **7 (coast 12)** | **31** | **69** | **saved 21, killed 4** | **14** | **24** | 31 |
+  | 9 (coast 14) — ships | 45 | 52 | — | 12 | 19 | 48 |
+
+  **Floor 7 is the value, and it is a middle rather than an extreme.** It has
+  much the best paired ratio (21:2 on even, 21:4 on hard, against 28:6 and
+  28:9 for no floor at all), the most bands still standing at day 400 on even
+  (27, above both the shipped 25 and no-floor's 19), and the most that ever
+  rule (45). Taking the first ground buys more springs and pays for them
+  later, exactly as 12.H predicted; 7 keeps most of the gain without the bill.
+  It is also what RAIDER and TURTLE already use, so it would make the three
+  shipped policies agree.
+
+  **THE SHIPPED FLOOR IS LAST ON EVERY COLUMN THAT MATTERS, on both
+  countries.** 32 and 45 bands dead before winter against 19 and 31; 75 and 52
+  springs against 94 and 69; 34 and 48 that never settle at all against 17 and
+  31.
+
+  **And it is still not changed here, deliberately.** This is not a game
+  change — the game plays identically either way — it is a change to WHO the
+  published figures describe. `87/65/38` is a promise on the difficulty menu,
+  and whether that promise should describe a cautious player or a brisk one is
+  a product decision about what the game tells a person before they start, not
+  a measurement. Flipping it would also restate every paired finding in this
+  file against a new baseline and break comparability with everything recorded
+  before today.
+
+  So: **the recommendation is `siteFloor: 7`, and it wants Evan's word.** The
+  work it implies if taken is one line in `harness.ts`, a re-measure of all six
+  hardship figures, a full bar run, and a note in this file marking the
+  baseline change. Instrument: `PROBE 12.H the settling floor, swept`.
+
 - **2026-09-04 — 12.H part two: the road mark I shipped was wallpaper, and the
   panel line I was about to build is REFUTED.** Following 12.H's finding that
   holding out for a site is what kills the opening, the obvious answer was to
