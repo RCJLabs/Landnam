@@ -1406,8 +1406,16 @@ export function counterStopOn(state: GameState): number | null {
 export function run(
   seed: string,
   maxDay: number,
-  /** Called with every state transition, for measurements the tally misses. */
-  watch?: (before: GameState, after: GameState) => void,
+  /**
+   * Called with every state transition, for measurements the tally misses.
+   *
+   * The third argument is the ACTION that caused the transition, added
+   * 2026-09-04 because the alternative was guessing. A probe attributing a
+   * change to "whatever else moved on the same turn" is reading a
+   * correlation; the action is the cause itself, and a watcher that only
+   * wants the two states can keep ignoring it.
+   */
+  watch?: (before: GameState, after: GameState, action: Action) => void,
   hardship: HardshipId = 'even',
   /**
    * Run once on the fresh world, before the first turn. For planting the
@@ -1549,15 +1557,21 @@ export function run(
         });
     }
 
-    let next = apply(state, step(state));
+    // The action is kept rather than inlined into `apply` so the watcher can
+    // be told WHAT moved the state, not only that it moved. A probe that has
+    // to guess the cause from what changed alongside it is a correlation
+    // wearing a measurement's clothes — see the note on the third argument.
+    let act: Action = step(state);
+    let next = apply(state, act);
     if (next === state && state.battle) {
       // A refused battle action must never end the saga — a player whose tap
       // is refused is still in the fight, and the turn can always be ended.
       // The old break here ate half of every sample: see the header.
-      next = apply(state, { type: 'B_END_TURN' });
+      act = { type: 'B_END_TURN' };
+      next = apply(state, act);
     }
     if (next === state) break;
-    if (watch) watch(state, next);
+    if (watch) watch(state, next, act);
     state = next;
   }
   return state;

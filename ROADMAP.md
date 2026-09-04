@@ -6423,27 +6423,50 @@ Three groups, roughly in descending order of how much they change.
   against 150 from every day worked put together.** More food arrives from
   outside the projection than the ground gives.
 
-  **AND THE FIRST EXPLANATION OF IT WAS MINE AND WAS WRONG, which is why the
-  figure above is the only one kept.** The first cut of this probe called
-  everything arriving without a day "a card" and reported 8 of 18 survivors
-  (44%) card-fed — a guess about the source written as a measurement, the
-  same fault this file's own preamble is about. `sim/events.ts` deletes
-  `state.event` when a card resolves, so the source can be PROVEN rather than
-  inferred; re-measured that way it is **0 of 183 from cards, and 0 of 18
-  survivors**. The card hypothesis is refuted outright.
+  **AND THE 183 IS NOW ATTRIBUTED, after two wrong instruments of my own.**
+  MEASURED 2026-09-04, same 300 seeds, `even`, SETTLER, to day 73, by asking
+  `run` to hand the watcher the ACTION that moved the state rather than
+  guessing the cause from what changed alongside the food:
 
-  **So the 183 is unexplained, and that is the lead.** It is not the ground,
-  not a card, and the four things the original attribution ruled out were
-  ruled out by that attribution — so something is feeding condemned bands
-  that nobody has named. Whatever it is decides the repair: if it is a
-  capability the band really has, `walkWinter` should model it; if it is
-  luck, the BAR is judging the panel against something it cannot see. The
-  next instrument should attribute by what else moved alongside the food —
-  an aftermath cleared, an expedition home, a tally counter ticking.
+  | what brought it | units | % | of which to bands that LIVED |
+  |---|---|---|---|
+  | `CAMP` — the day's work | 150 | 45% | 61 |
+  | `CHOOSE` — an event card answered | 97 | 29% | 28 |
+  | `B_LEAVE` — a fight settled up | 86 | 26% | 46 |
 
-  Two limits stand on the figure that survived: it is the UNFLIPPED arm, so
-  it describes the shipped 28% population and not the post-flip 58% one the
-  blocker is about, and the counts are small (65 condemned, 18 lived).
+  **The 183 is 97 of card and 86 of spoils.** And by BAND rather than by
+  unit, which is the number that bears on the panel's claim: of the 18
+  survivors, **10 lived on the ground alone and 8 took food a card or a
+  fight gave them**. So a little under half of the "wrongly condemned who
+  lived" were not wrongly condemned — luck arrived after the verdict, and
+  `reachable` neither can nor should model it. Against the 65 condemned, the
+  share the projection genuinely got wrong is 10/65 = **15%**, not 28%.
+
+  **Both earlier readings of this were mine and both were faulty, in
+  opposite directions.** The first cut called everything arriving without a
+  day "a card" and reported 8 of 18 — the right BAND count, reached by a
+  definition that could not tell a card from a corpse, and a quarter of its
+  units are battle spoils. The second cut set out to prove the source and
+  looked for `state.event` being deleted; but `CHOOSE` only sets
+  `event.outcome`, and `dismissEvent` deletes the card on the NEXT action —
+  so the detector fired a turn after the food had already moved and reported
+  **0 of 183**, refuting a hypothesis that was half right. A check that fires
+  on the wrong turn looks exactly like a check that found nothing. The
+  ROADMAP's own proposed next step — "attribute by what else moved alongside
+  the food" — would have been a third guess of the same kind; naming the
+  action is the cause itself.
+
+  **The repair this points at is the BAR, not `walkWinter`.** 40% is a
+  ceiling on P(lived | condemned), and roughly two-fifths of that numerator
+  is food the projection is not allowed to know about. A bar on the ground
+  share alone (10/65) is a bar on the thing the panel actually claims. This
+  is a ruling for whoever takes the flip, not a change made here: the flip
+  arm has not been re-measured this way.
+
+  Two limits stand on all of the above: it is the UNFLIPPED arm, so it
+  describes the shipped 28% population and not the post-flip 58% one the
+  blocker is about, and the counts are small (65 condemned, 18 lived, 10 of
+  them on the ground alone).
 
   Two hypotheses died on the way here and are recorded so they are not tried
   twice: 11.V did NOT unblock the flip, and the buildings signal in the bar's

@@ -4089,71 +4089,113 @@ describe('PROBE: where the wrongly-condemned actually got their food', () => {
    * Mirrors the bar exactly — same seeds, same `even` terms, same horizon —
    * so the two populations are the same bands.
    */
-  it('splits their food into what the day gave and what a card gave', { timeout: 3_600_000 }, async () => {
+  it('names the action behind every unit of food they took in', { timeout: 3_600_000 }, async () => {
     const SEEDS = 300;
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
+    /**
+     * ATTRIBUTED BY CAUSE, NOT BY COMPANY, since 2026-09-04, and the third
+     * version of this instrument in two days.
+     *
+     * The first cut called every unit that arrived without the day advancing
+     * "a card", which was a guess. The second proved the card half — an event
+     * is present on `state.event` and `sim/events.ts` deletes it when it
+     * resolves — and reported **0 of 183**: the lead was refuted, and the
+     * residue got bigger, not smaller. 183 units reaching condemned bands
+     * with no day and no card is more food than the 150 every worked day
+     * produced between them, and it was unexplained.
+     *
+     * The ROADMAP's own next step was "attribute by what else moved alongside
+     * the food". That would have been a fourth guess. `run` now hands the
+     * watcher the ACTION it applied, so each unit is filed under the thing
+     * that actually caused it. Buckets are collected by observation rather
+     * than declared, so an unforeseen source appears as its own row instead
+     * of being absorbed into a residue.
+     */
+    setPolicy(SETTLER);
     let condemned = 0;
     let lived = 0;
-    let livedWithCardFood = 0;
-    let cardFoodTotal = 0;
-    let dayFoodTotal = 0;
-    let otherStillTotal = 0;
-    let cardFoodAmongLived = 0;
+    /**
+     * AND THE SHARP NUMBER THE TOTALS CANNOT GIVE. Units summed across bands
+     * say what the population ate; they do not say how many BANDS the ground
+     * fed on its own. A survivor who took one unit from a card is not a
+     * survivor the projection got wrong, and one who took ninety is not
+     * ninety of them. So each surviving band is also classed by whether any
+     * of its post-verdict food came from anywhere but the day's work.
+     */
+    let livedOnGroundAlone = 0;
+    let livedOnLuck = 0;
+    const all = new Map<string, number>();
+    const among = new Map<string, number>();
+    let withDay = 0;
+    let withoutDay = 0;
+    let fromCards = 0;
+    const add = (m: Map<string, number>, k: string, n: number) => m.set(k, (m.get(k) ?? 0) + n);
 
     for (let s = 0; s < SEEDS; s += 1) {
       let saidNo = false;
+      const mine = new Map<string, number>();
+      let day = 0;
+      let still = 0;
       let card = 0;
-      let fromDays = 0;
-      let otherStill = 0;
-      const final = run(`winter-inside-${s}`, SPRING_IN, (before, after) => {
+      const final = run(`winter-inside-${s}`, SPRING_IN, (before, after, action) => {
         if (after.end || !after.settlement) return;
         if (!saidNo) {
           if (!markVisible(after) || reachable(after)) return;
           saidNo = true;
           return;
         }
-        // Past the verdict: attribute every rise in the larder.
-        //
-        // PROVEN, NOT INFERRED, since 2026-09-04. The first cut called any
-        // food arriving without the day advancing "a card", which is a guess
-        // about the source dressed as a measurement — nothing showed a card
-        // was the only thing that could do it. An event is PRESENT on
-        // `state.event` and `sim/events.ts` deletes it when it resolves, so
-        // a transition that clears one is a card being answered and nothing
-        // else. Anything else that arrives without a day is now counted
-        // separately rather than folded in, so the claim can be checked.
         const gained = after.party.food - before.party.food;
         if (gained <= 0) return;
+        add(mine, action.type, gained);
+        if (after.day > before.day) day += gained; else still += gained;
         if (before.event && !after.event) card += gained;
-        else if (after.day === before.day) otherStill += gained;
-        else fromDays += gained;
       }, 'even');
       if (!saidNo) continue;
       condemned += 1;
-      cardFoodTotal += card;
-      dayFoodTotal += fromDays;
-      otherStillTotal += otherStill;
-      if (!final.end && final.day >= SPRING_IN) {
+      withDay += day;
+      withoutDay += still;
+      fromCards += card;
+      const survived = !final.end && final.day >= SPRING_IN;
+      if (survived) {
         lived += 1;
-        cardFoodAmongLived += card;
-        if (card > 0) livedWithCardFood += 1;
+        const notTheGround = [...mine.entries()]
+          .filter(([k]) => k !== 'CAMP')
+          .reduce((a, [, n]) => a + n, 0);
+        if (notTheGround > 0) livedOnLuck += 1; else livedOnGroundAlone += 1;
+      }
+      for (const [k, n] of mine) {
+        add(all, k, n);
+        if (survived) add(among, k, n);
       }
     }
 
+    const total = [...all.values()].reduce((a, b) => a + b, 0);
+    const rows = [...all.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, n]) => `    ${k.padEnd(16)} ${Math.round(n).toString().padStart(5)}`
+        + ` (${total ? Math.round((n / total) * 100) : 0}%)`
+        + `   of which to bands that LIVED: ${Math.round(among.get(k) ?? 0)}`);
+
     // eslint-disable-next-line no-console
     console.log(
-      `PROBE where the wrongly-condemned got their food — ${SEEDS} seeds, even terms, to day ${SPRING_IN}:\n`
-      + `  condemned ${condemned}, of whom ${lived} lived (${condemned ? Math.round((lived / condemned) * 100) : 0}% — the bar's ratio)\n`
-      + `  of those ${lived}: ${livedWithCardFood} took food from a CARD after the verdict`
-      + ` (${lived ? Math.round((livedWithCardFood / lived) * 100) : 0}%)\n`
-      + `  food after the verdict, all condemned: ${Math.round(dayFoodTotal)} from days worked,`
-      + ` ${Math.round(cardFoodTotal)} from cards\n`
-      + `  card food among those who LIVED: ${Math.round(cardFoodAmongLived)}`
-      + ` (${lived ? (cardFoodAmongLived / lived).toFixed(1) : 0} a band)\n`
-      + `  food arriving with no day AND no card resolving: ${Math.round(otherStillTotal)}`
-      + ` — the share the first cut would have miscalled a card`,
+      `PROBE what fed the wrongly-condemned — ${SEEDS} seeds, even terms, to day ${SPRING_IN}:\n`
+      + `  condemned ${condemned}, of whom ${lived} lived`
+      + ` (${condemned ? Math.round((lived / condemned) * 100) : 0}% — the bar's ratio)\n`
+      + `  ${Math.round(total)} units of food after the verdict, BY THE ACTION THAT BROUGHT IT:\n`
+      + `${rows.join('\n')}\n`
+      + `  OF THE ${lived} SURVIVORS, by band rather than by unit:\n`
+      + `    lived on the ground alone (every unit from the day's work): ${livedOnGroundAlone}\n`
+      + `    took food a card or a fight gave them:                      ${livedOnLuck}\n`
+      + `  cross-check against the old split: ${Math.round(withDay)} arrived as the day turned,`
+      + ` ${Math.round(withoutDay)} with no day, ${Math.round(fromCards)} seen by the`
+      + ` deleted-event detector (which fires a turn too late — see the note)`,
     );
     expect(condemned).toBeGreaterThan(0);
+    expect(total).toBeGreaterThan(0);
+    // Every unit is filed under some action by construction; this asserts the
+    // buckets and the day/no-day split are two views of ONE population, so a
+    // future edit cannot let them drift apart unnoticed.
+    expect(Math.round(total)).toBe(Math.round(withDay + withoutDay));
   });
 });

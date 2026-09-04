@@ -59,6 +59,16 @@ by the hand that wrote trap 1.** Knowing the rule is not the same as applying
 it, so apply it to the reading in front of you, every time, including when you
 are the one who wrote the warning.
 
+**A check that fires on the wrong TURN looks exactly like a check that found
+nothing** (2026-09-04). Asking whether an event card fed a starving band by
+watching for `state.event` to disappear reported a clean zero, because
+`CHOOSE` only sets `event.outcome` and the card is deleted one action later —
+the food had already moved. The hypothesis was half right and was recorded as
+refuted. When a probe returns nought, the first suspect is the probe: make it
+fire once on a case you have constructed by hand before believing its silence.
+And where the state carries the CAUSE — the action, the id, the tally — read
+the cause, rather than inferring it from what changed alongside.
+
 ## Commands
 
 - `npm run dev` — dev server
