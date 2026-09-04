@@ -6898,11 +6898,65 @@ Three groups, roughly in descending order of how much they change.
   — unblocked but not the worst need — carry no line; every blocked row is
   unchanged. No console errors.
 
-- [ ] **11.U3 The mark should follow the band onto the road.** MEASURED:
-  crewing to the mark is the largest lever in the game, and it lives on the
-  colony panel — so a settled band away from home cannot see it. Related to
-  U1 and distinct: U1 is "never had a roof", this is "has one, is not standing
-  in it".
+- [x] **11.U3 The mark should follow the band onto the road.** — **SHIPPED
+  2026-09-03. The title overstates and the body is exactly right; only the
+  second half of the gap was real.**
+
+  Read in code first, and the two halves part company. The MARK already
+  follows the band: `markVisible` asks `end` and `settlement` and never
+  where anybody is standing, and `renderWinterMark` has been mounted in
+  `travelScreen.ts` all along — a settled band on the road has always seen
+  its food and wood gaps. What does NOT follow is the SENTENCE. `counsel`
+  is rendered in exactly one place, `renderNeeds` on the colony panel, and
+  `ENTER_COLONY` refuses unless `atHome` — so the one line this project
+  measured at saved 30 / killed 3 was unreachable from the road.
+
+  MEASURED before building, because a panel nobody's state ever reaches is
+  the 11.M5 mistake (`PROBE`-style watch over the harness, 20 sagas an arm,
+  `fair`, to day 400): a settled band spends **453 days away from home as a
+  settler and 551 as a raider**; **216 and 161** of those fall inside the
+  mark's own window; and **109 of 216 (50%) and 122 of 161 (76%) have a
+  live counsel behind them**. Denser than the at-home window's own 38% and
+  50%. `homeCrew` was empty on NONE of them, so the advice is never an
+  empty steading's.
+
+  Shipped `roadCounsel` + `roadCounselLine` (`sim/counsel.ts`),
+  `renderRoadCounsel` (`render/ui.ts`), mounted under the winter mark it
+  answers. The road's line is NOT the colony's reprinted: a band away from
+  home cannot re-crew at all, so the bare sentence would name a move the
+  player cannot make from where they stand — the exact fault
+  `test/winter.test.ts` bars `readiness()` for. The verb the road has is
+  the walk, so the line adds it: *"Three more hands on the water would
+  close it. 11 days' walk home."* `counselLine` is reused whole rather
+  than rephrased.
+
+  **A FIXTURE FAULT CAUGHT IN MY OWN HAND, and it is worth recording.**
+  The first cut of the bar put the band away from home by assigning
+  `party.stop` directly. That is a state the game cannot produce: `canWalk`
+  refuses outright while `state.settlement && !state.expedition`, so a
+  settled band with no party out can only ever be at home, and every
+  away-from-home day in the harness reading above is an EXPEDITION day. The
+  bar passed on 28 of 40 landings and was measuring a fiction — CLAUDE.md's
+  trap 1 wearing a test's clothes. Rebuilt to LAUNCH and WALK through
+  `apply`, it speaks on 13 of 40: fewer, and real. (The same fault made the
+  first browser check show a save whose own hint line said "the band is at
+  the steading" while the counsel said seven days out; on a real
+  expedition the two agree — "11d from home" against "11 days' walk home".)
+
+  Two sabotages, one per direction, both re-run against the corrected
+  fixture: stubbing `roadCounsel` silent fails the two "it speaks" bars and
+  not the "holds its tongue" one; removing the `atHome` guard fails only
+  the "holds its tongue" one. Verified live in a browser at 390×844 on a
+  real launched-and-walked save.
+
+  Stated rather than hidden: the walk clause duplicates the distance the
+  expedition hint line already prints one row up. Kept deliberately — the
+  cost belongs INSIDE the sentence naming the move, or the player has to
+  join two facts across two panels to make the decision.
+
+  Not done, and deliberately: `readiness()` is colony-only for the same
+  reason and was left there. The counsel is the measured lever; a second
+  line would be clutter bought with no reading behind it.
 
 - [ ] **11.U4 What the fighting has cost, mid-run.** MEASURED (10.2): battle is
   **39% of the settler's dead and 47% of the raider's**, across about nine
@@ -6932,6 +6986,24 @@ Three groups, roughly in descending order of how much they change.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-03 — 11.U3: the move follows the band onto the road, though the
+  mark already did** — the item's title overstates and its body is exact.
+  `markVisible` never asked where anybody was standing, so the gaps have
+  always shown on the road; what could not follow was `counsel`, rendered
+  only in `renderNeeds` behind an `ENTER_COLONY` that refuses unless
+  `atHome`. Measured the window before building it (20 sagas an arm,
+  `fair`, day 400): **216 settler and 161 raider away-from-home mark-window
+  days, 109 and 122 of them carrying a live counsel nobody could reach** —
+  denser than the at-home window itself. Shipped `roadCounsel`/
+  `roadCounselLine` + `renderRoadCounsel`, reusing `counselLine` whole and
+  adding the one thing the road can act on: the walk home, because a band
+  away cannot re-crew and the bare sentence would name an impossible move.
+  **The first bar was measuring a fiction** — it set `party.stop` by hand,
+  but `canWalk` refuses while settled with no expedition, so that state
+  never occurs; rebuilt on a real LAUNCH + WALK it speaks on 13 of 40
+  landings instead of 28. Two sabotages, one per direction, re-run against
+  the corrected fixture; verified live in a browser.
 
 - **2026-09-03 — 11.U2: the highlighted build row finally says why** — the
   panel already flagged one row `primary` (`suggestedBuild`, the four-axis

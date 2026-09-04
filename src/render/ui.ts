@@ -16,6 +16,7 @@ import {
 } from '../sim/site';
 import { MEASURES, MEASURE_MAX } from '../data/sites';
 import { forecast, markVisible, roadDaysLeft, roadMarkVisible } from '../sim/winter';
+import { roadCounsel, roadCounselLine } from '../sim/counsel';
 import { reachable } from '../sim/reach';
 import { holed, sprung, unseaworthy } from '../sim/ship';
 import { weatherNext, weatherNow } from '../sim/weather';
@@ -170,6 +171,23 @@ export function renderWinterMark(state: GameState): HTMLElement {
     ]),
     row('Food', state.party.food, f.food, f.foodGap),
     row('Wood', state.party.firewood, f.firewood, f.firewoodGap),
+  ]);
+}
+
+/**
+ * What to DO about the mark, for a band that has a roof and is not standing
+ * in it. The mark's numbers already follow the band onto the road —
+ * `markVisible` never asked where anybody was standing — but the sentence
+ * naming the move did not: `counsel` renders only in `renderNeeds`, on a
+ * panel `ENTER_COLONY` refuses to open away from home. 11.U3.
+ *
+ * Sits under the winter mark it answers, in the mark's own clothes.
+ */
+export function renderRoadCounsel(state: GameState): HTMLElement {
+  const said = roadCounsel(state);
+  if (!said) return el('div');
+  return el('div', { class: 'winter-mark road-counsel' }, [
+    el('div', { class: 'mark-head' }, [roadCounselLine(state, said)]),
   ]);
 }
 

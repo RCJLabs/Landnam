@@ -28,7 +28,8 @@
 import type { GameState } from '../state/types';
 import type { JobId } from '../data/jobs';
 import { availableJobs, jobOf, output } from './colony';
-import { homeCrew } from './expedition';
+import { distanceFromHome, homeCrew } from './expedition';
+import { atHome } from './site';
 import { forecast, markVisible } from './winter';
 
 export interface Counsel {
@@ -160,6 +161,49 @@ export function counselLine(c: Counsel): string {
   const where = WHERE[c.job] ?? 'to that work';
   const who = c.hands === 1 ? 'One more hand' : `${cap(WORDS[c.hands] ?? `${c.hands}`)} more hands`;
   return `${who} ${where} would close it.`;
+}
+
+/**
+ * The same counsel, asked from the road — or nothing, when the band is
+ * standing in its own yard and the colony panel already has this.
+ *
+ * 11.U3: `counsel` is rendered in exactly one place, `renderNeeds` on the
+ * colony panel, and `ENTER_COLONY` refuses unless `atHome` — so a settled
+ * band away from home has never been able to reach the one sentence this
+ * project measured at saved 30 / killed 3. MEASURED 2026-09-03 (20 sagas
+ * an arm, `fair`, to day 400): a settled band spends 453 days away from
+ * home as a settler and 551 as a raider; 216 and 161 of those fall inside
+ * the mark's own window, and **109 of 216 (settler) and 122 of 161
+ * (raider) have a live counsel behind them** — a denser hit rate than the
+ * at-home window's own 38% and 50%. `homeCrew` was empty on NONE of them,
+ * so the advice is never the empty steading's.
+ */
+export function roadCounsel(state: GameState): Counsel | undefined {
+  if (!state.settlement || atHome(state)) return undefined;
+  // `counsel` owns the rest of the gate — the mark's window, the ready
+  // store, and whether a safe move exists at all. One formula, not two.
+  return counsel(state);
+}
+
+/**
+ * The counsel as the ROAD reads it: the same move, and then the walk that
+ * stands between the band and making it.
+ *
+ * The colony's sentence cannot simply be reprinted here. A band away from
+ * home cannot re-crew at all — `ENTER_COLONY` refuses unless `atHome` — so
+ * the bare line would name a move the player cannot take from where they
+ * are standing, which is the exact fault `test/winter.test.ts` bars
+ * `readiness()` for. The verb the road HAS is the walk, so the road's line
+ * names the walk, and `counselLine` is reused whole rather than rephrased.
+ */
+export function roadCounselLine(state: GameState, c: Counsel): string {
+  const days = Math.round(distanceFromHome(state));
+  const move = counselLine(c);
+  // Not home and yet no distance to cover is not a sentence worth risking:
+  // say the move alone rather than promise a walk of nought days.
+  if (days < 1) return move;
+  const walk = WORDS[days] ?? `${days}`;
+  return `${move} ${cap(walk)} ${days === 1 ? "day's" : "days'"} walk home.`;
 }
 
 /** Where a job puts a person, in the game's own voice. */

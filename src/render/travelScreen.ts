@@ -21,6 +21,7 @@ import {
   renderWatchMark,
   renderTopBar,
   renderWinterMark,
+  renderRoadCounsel,
   renderRoadMark,
   renderLine,
 } from './ui';
@@ -118,6 +119,7 @@ export function renderTravelScreen(state: GameState, h: ScreenHooks): void {
     renderHint(state),
     renderChaseMark(state),
     renderWinterMark(state),
+    renderRoadCounsel(state),
     renderRoadMark(state),
     renderLine(state),
     renderWaterMark(state),

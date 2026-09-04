@@ -2442,6 +2442,18 @@ button.warcry:disabled {
   white-space: nowrap;
 }
 
+/* 11.U3: what to DO about the mark, for a band that has a roof and is not
+   standing in it. The move is not a warning — it is the way out of one — so
+   it takes the moss the ready mark uses rather than the blood beside it. */
+.winter-mark.road-counsel {
+  border-top-color: var(--moss);
+}
+
+.winter-mark.road-counsel .mark-head {
+  color: var(--moss);
+  margin-bottom: 0;
+}
+
 /* The mark when the mark cannot be met. Not the same as "short": short is a
    target and this is a verdict, so it does not borrow the warning colour it
    has been sitting next to all autumn. */
