@@ -7264,6 +7264,67 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
+- **2026-09-04 — 12.H (opened, measured, NOT acted on): the opening's dead are
+  mostly the cost of looking for good ground, and the instrument is implicated
+  in its own reading.** The biggest block of endings in the game is the one
+  before winter opens, and nothing had looked straight at it — 11.M4 asked its
+  question AT the frost (a population that can only contain bands that reached
+  it) and 11.M1 asked only about bands that never founded. Taken whole, 300
+  sagas a country, settler, to day 49:
+
+  | | ended before day 49 | starved | never settled |
+  |---|---|---|---|
+  | fair | 17/300 (6%) | 35% | 76% |
+  | even | **71/300 (24%)** | 75% | 90% |
+  | hard | **128/300 (43%)** | 71% | 86% |
+
+  They die on the ROAD, hungry, on day 27-30 of a saga, having spent 8.9
+  (even) and 11.2 (hard) days with an empty larder at dawn.
+
+  **Two candidate causes were tested as paired arms, and the first was mine
+  and was wrong.** Following the empty-larder days, the settler CAMPS on 45%
+  and 76% of them and takes in 0.36 food a day against the 2.82 it needs —
+  because the harness's wood branch sits in front of every food verb and asks
+  only `nights < 6`. That looked like the answer. `feedsBeforeWood` moves food
+  first: camps on those days go **1302 to 0** and food verbs 449 to 992, so
+  the arm unquestionably ran — and the graveyard does not move at all (even 71
+  -> 73, paired saved 2 killed 4; hard 128 -> 132, saved 18 killed 22).
+  Foraging twice as often on a pool worked down to 0.46 does not feed six
+  people. **The camping was not the cause.**
+
+  **What IS the cause is holding out for a site.** `siteFloor: 0` — the
+  absence of a floor, take the first legal ground — halves it: **even 71 ->
+  35 (paired saved 41, killed 5), hard 128 -> 67 (saved 69, killed 8)**, with
+  the average settling day going 15-17 -> 6.
+
+  **And the horizon was not allowed to pick that answer.** A day-49 reading
+  can only count what haste saves and never what bad ground charges later, so
+  the same pair was run out to day 400 (150 landings a country): **first
+  spring 96 -> 119 on even (saved 33, killed 10) and 62 -> 84 on hard (saved
+  33, killed 11)**. Still standing at day 400 is roughly a wash — 30 vs 26 on
+  even (saved 11, killed 15), 13 vs 15 on hard — and ever-ruled is slightly
+  better taking the first (45 vs 54, 24 vs 28). The long-run price of poor
+  ground is real and much smaller than the short-run gain.
+
+  **TWO FINDINGS, and the second is uncomfortable.**
+
+  1. **For the player**: the most valuable decision in the opening is when to
+     stop looking, and the game never says so — the same shape as the winter
+     mark before 11.U's counsel, which was the largest effect this project has
+     measured (saved 30, killed 3). This one is bigger.
+  2. **For every figure in this file**: the shipped curve is measured through
+     a settler that holds out for a 9 and gives way from day 14 (6.1's
+     tuning), and a policy that simply takes the first legal ground sees 15
+     more points of first spring. The published 87/65/38 are honest readings
+     of THAT bot; they are not the game's ceiling, and "the opening kills 24%
+     before winter" is partly a statement about the harness.
+
+  **Nothing shipped.** Retuning `siteFloor` would move every published figure
+  and every paired finding measured through it; whether the answer is a
+  reading on the panel, a change to the bot, or neither is Evan's. Instruments
+  in `test/probes.test.ts`; `feedsBeforeWood` is a harness knob, off by
+  default, so no shipped figure moves under it.
+
 - **2026-09-04 — 12.C (opened): the named foe does not die of the front rank,
   and the inherited mechanism was half wrong.** 11.U5 recorded that 11.S1 took
   the recurring antagonist to zero because `anointChampion` picks the

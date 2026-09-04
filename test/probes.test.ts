@@ -51,6 +51,10 @@ import { countryHere } from '../src/sim/coast';
 import { terrainDef } from '../src/data/terrain';
 import { reckoningDue } from '../src/sim/landnam';
 import { reachable } from '../src/sim/reach';
+import { atSea } from '../src/sim/road';
+import { abundance } from '../src/sim/abundance';
+import { placeHere } from '../src/sim/places';
+import { neighbourHere } from '../src/sim/neighbours';
 import { forecast, markVisible } from '../src/sim/winter';
 import {
   CREW,
@@ -4480,5 +4484,391 @@ describe('PROBE: where the wrongly-condemned actually got their food', () => {
     // eslint-disable-next-line no-console
     console.log(`PROBE does the flipped band outrun a stale verdict — ${SEEDS} seeds:\n${rows.join('\n')}`);
     expect(rows.length).toBe(2);
+  });
+});
+
+describe('PROBE: 12.H — what kills a band before winter even opens', () => {
+  /**
+   * THE BIGGEST BLOCK OF ENDINGS IN THE GAME, AND NOTHING HAS EVER LOOKED
+   * STRAIGHT AT IT.
+   *
+   * The long game at day 500 reports, as its first row, how many sagas end
+   * before the first winter opens: 31 of 120 on `even` (23 starved) and 45 of
+   * 120 on `hard` (34 starved). That is more endings than the first winter
+   * itself, and it happens before the winter mark, the counsel, the verdict
+   * or the crewing flip can matter at all.
+   *
+   * WHAT HAS BEEN MEASURED NEARBY IS NOT THIS. 11.M4 asked what separates the
+   * doomed from the survivors AT THE FROST — a population that by
+   * construction can only contain bands that reached it, which is trap 2 with
+   * respect to this question. 11.M1 looked at bands that never founded a
+   * steading, which is a different cut again: it excludes a band that settled
+   * on day 20 and starved on day 40.
+   *
+   * So this takes the whole population — every saga that ends before day 49,
+   * settled or not — over every saga run, and asks what the ending was made
+   * of. Re-taken at 300 seeds a country rather than inherited from the long
+   * game's 120.
+   */
+  it('counts them, and says whether they had land under them', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const WINTER_OPENS = 49;
+    const out: string[] = [];
+
+    for (const terms of ['fair', 'even', 'hard'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      let died = 0;
+      const cause = new Map<string, number>();
+      let hadSettled = 0;
+      let settledOnSum = 0;
+      let neverSettled = 0;
+      let daySum = 0;
+      let hungryDaysSum = 0;
+      let atSeaAtTheEnd = 0;
+      /**
+       * THE DENOMINATOR IS EVERY SAGA, not every death — the question is what
+       * share of a player's runs end this way, and a rate over deaths would
+       * answer a different one.
+       */
+      for (let i = 0; i < SEEDS; i += 1) {
+        let settledOn = 0;
+        let hungryDays = 0;
+        const final = run(armSeed(0, i, SEEDS), WINTER_OPENS, (before, after) => {
+          if (!settledOn && !before.settlement && after.settlement) settledOn = after.day;
+          // A day that turned with nothing in the larder. Counted on the day
+          // tick rather than on every action, or a busy day would count many
+          // times over.
+          if (after.day > before.day && after.party.food <= 0) hungryDays += 1;
+        }, terms);
+        if (!final.end || final.day >= WINTER_OPENS) continue;
+        died += 1;
+        cause.set(final.end.cause, (cause.get(final.end.cause) ?? 0) + 1);
+        daySum += final.day;
+        hungryDaysSum += hungryDays;
+        if (final.settlement) { hadSettled += 1; settledOnSum += settledOn; }
+        else neverSettled += 1;
+        if (atSea(final)) atSeaAtTheEnd += 1;
+      }
+
+      const pc = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : '—');
+      const causes = [...cause.entries()].sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `${k} ${n} (${pc(n, died)})`).join(', ');
+      out.push(
+        `  ${terms.padEnd(5)} ${died}/${SEEDS} sagas ended before day ${WINTER_OPENS}`
+        + ` (${pc(died, SEEDS)}), on day ${died ? Math.round(daySum / died) : 0} on average\n`
+        + `        by cause: ${causes || 'none'}\n`
+        + `        had land under them: ${hadSettled} (${pc(hadSettled, died)},`
+        + ` settled on day ${hadSettled ? Math.round(settledOnSum / hadSettled) : 0} on average),`
+        + ` never settled ${neverSettled} (${pc(neverSettled, died)})\n`
+        + `        days that turned with an empty larder: `
+        + `${died ? (hungryDaysSum / died).toFixed(1) : 0} a band;`
+        + ` still on the water at the end: ${atSeaAtTheEnd}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H the endings before winter — ${SEEDS} sagas a country, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(3);
+  });
+
+  /**
+   * AND WHETHER THE BAND HAD ANYTHING IT COULD HAVE DONE.
+   *
+   * The reading above says these bands die on the ROAD, hungry, with a third
+   * of their whole saga spent on an empty larder — 8.9 days of 27 on `even`.
+   * A slow death with a verb in reach is a design problem; a slow death with
+   * no verb is a difficulty one, and the two want opposite fixes. So this
+   * follows the empty-larder days themselves.
+   *
+   * WHAT IS A FACT ABOUT THE GAME AND WHAT IS A FACT ABOUT THE BOT, kept
+   * apart on purpose, because this file's own preamble is about the two being
+   * confused (`outWith >= 4` read as a rule of the game):
+   *
+   *   - `abundance` and `foodPerDay` are the GAME's answer to "is there
+   *     anything here, and how much do we need". Nothing a policy does
+   *     changes them.
+   *   - which action the band actually took, and what it got, is the
+   *     HARNESS's settler, and is reported as such.
+   *
+   * `canGather` is deliberately NOT the measure. It is `!atHome && !atSea`,
+   * so it is true on nearly every road day and a probe built on it could only
+   * ever report "the verb was available" — a check that cannot fail. What
+   * matters is whether the verb PAYS, which is `abundance` against the mouths
+   * to feed.
+   */
+  it('follows the empty-larder days, and asks whether the ground had anything', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const WINTER_OPENS = 49;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      let bands = 0;
+      let days = 0;
+      let forageSum = 0;
+      let huntSum = 0;
+      let fishSum = 0;
+      let needSum = 0;
+      let gotSum = 0;
+      let placeAtHand = 0;
+      let clanAtHand = 0;
+      const did = new Map<string, number>();
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        let myDays = 0;
+        let myForage = 0; let myHunt = 0; let myFish = 0; let myNeed = 0; let myGot = 0;
+        let myPlace = 0; let myClan = 0;
+        const mine = new Map<string, number>();
+        const final = run(armSeed(0, i, SEEDS), WINTER_OPENS, (before, after, action) => {
+          // The day it was, read on the state the day STARTED from: an empty
+          // larder at dawn is the day the band had to answer.
+          if (after.day <= before.day) return;
+          if (before.settlement || before.party.food > 0) return;
+          myDays += 1;
+          myForage += abundance(before, 'forage');
+          myHunt += abundance(before, 'hunt');
+          myFish += abundance(before, 'fish');
+          myNeed += foodPerDay(before);
+          myGot += Math.max(0, after.party.food - before.party.food);
+          if (placeHere(before)) myPlace += 1;
+          if (neighbourHere(before)) myClan += 1;
+          mine.set(action.type, (mine.get(action.type) ?? 0) + 1);
+        }, terms);
+        if (!final.end || final.day >= WINTER_OPENS || final.settlement) continue;
+        if (myDays === 0) continue;
+        bands += 1;
+        days += myDays;
+        forageSum += myForage; huntSum += myHunt; fishSum += myFish;
+        needSum += myNeed; gotSum += myGot;
+        placeAtHand += myPlace; clanAtHand += myClan;
+        for (const [k, n] of mine) did.set(k, (did.get(k) ?? 0) + n);
+      }
+
+      const per = (n: number) => (days ? (n / days).toFixed(2) : '—');
+      const pc = (n: number) => (days ? `${Math.round((n / days) * 100)}%` : '—');
+      const verbs = [...did.entries()].sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `${k} ${pc(n)}`).join(', ');
+      out.push(
+        `  ${terms}: ${bands} bands, ${days} days that dawned with an empty larder\n`
+        + `      THE GROUND (game): forage left ${per(forageSum)}, game left ${per(huntSum)},`
+        + ` fish left ${per(fishSum)} — 1.00 is untouched ground\n`
+        + `      THE NEED (game):   ${per(needSum)} mouths' worth a day;`
+        + ` a place to trade at hand ${pc(placeAtHand)}, a clan to bargain with ${pc(clanAtHand)}\n`
+        + `      WHAT THE SETTLER DID (bot): ${verbs}\n`
+        + `      and took in ${per(gotSum)} a day against the ${per(needSum)} it needed`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H the empty-larder days — ${SEEDS} sagas a country, settler:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * THE DECIDING ARM: is the opening too tight, or is the bot playing it badly?
+   *
+   * The two readings above cannot tell those apart, and the difference is the
+   * whole item. The band takes in 0.36 food a day against 2.82 — but it
+   * CAMPS on 45% (even) and 76% (hard) of its empty-larder days, because the
+   * harness's wood branch sits in front of every food verb and asks only
+   * `nights < 6`. That is an ordering in `test/fixtures/harness.ts`, not a
+   * rule of the game, and reading it as one would be `outWith >= 4` again.
+   *
+   * `feedsBeforeWood` moves the food verbs ahead of the woodpile on a day
+   * that dawns with nothing to eat, and changes nothing else. Same seeds,
+   * same terms, paired band by band — so what comes out is the size of the
+   * hole the bot was digging, and what is left is the game's own opening.
+   */
+  it('pairs an empty larder against a thin woodpile, and prices the difference', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const WINTER_OPENS = 49;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      const arm = (feeds: boolean) => {
+        setPolicy(feeds ? { ...SETTLER, feedsBeforeWood: true } : SETTLER);
+        const diedBefore: boolean[] = [];
+        let settledBy49 = 0;
+        let camps = 0;
+        let forages = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          let myCamps = 0;
+          let myForages = 0;
+          const final = run(armSeed(0, i, SEEDS), WINTER_OPENS, (before, after, action) => {
+            if (after.day <= before.day) return;
+            if (before.settlement || before.party.food > 0) return;
+            if (action.type === 'CAMP') myCamps += 1;
+            if (action.type === 'FORAGE' || action.type === 'FISH' || action.type === 'HUNT') {
+              myForages += 1;
+            }
+          }, terms);
+          diedBefore.push(!!final.end && final.day < WINTER_OPENS);
+          if (final.settlement) settledBy49 += 1;
+          camps += myCamps;
+          forages += myForages;
+        }
+        return { diedBefore, settledBy49, camps, forages };
+      };
+
+      const base = arm(false);
+      const fed = arm(true);
+      setPolicy(SETTLER);
+
+      // PAIRED, because the two runs share their seeds: the sagas that
+      // CHANGED are the evidence, not the difference of two totals.
+      let saved = 0;
+      let killed = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        if (base.diedBefore[i] && !fed.diedBefore[i]) saved += 1;
+        if (!base.diedBefore[i] && fed.diedBefore[i]) killed += 1;
+      }
+
+      out.push(
+        `  ${terms}: died before day ${WINTER_OPENS} — as it plays`
+        + ` ${base.diedBefore.filter(Boolean).length}/${SEEDS},`
+        + ` feeding first ${fed.diedBefore.filter(Boolean).length}/${SEEDS}\n`
+        + `      paired: saved ${saved}, killed ${killed}\n`
+        + `      settled by day ${WINTER_OPENS}: ${base.settledBy49} -> ${fed.settledBy49}\n`
+        + `      on empty-larder days it camped ${base.camps} -> ${fed.camps},`
+        + ` and went for food ${base.forages} -> ${fed.forages}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H food before wood — ${SEEDS} sagas a country, settler, paired:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * AND THE LAST CONFOUND: are they holding out for good ground?
+   *
+   * Nine in ten of the pre-winter dead never settled, and the harness holds
+   * out for a site worth `floorOn(day)` — a policy, and the arm above just
+   * showed how convincingly a policy ordering can pass for a fact about the
+   * game. `siteFloor: 0` is the ABSENCE of a floor ("take the first legal
+   * ground", see `floorOn`), so this asks what the opening looks like to a
+   * band that settles on the first thing it can.
+   *
+   * Paired on the same seeds, to the same day, so a saga that changes is
+   * evidence and two totals are not.
+   */
+  it('pairs holding out for ground against taking the first that will have you', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const WINTER_OPENS = 49;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      const arm = (floor: number) => {
+        setPolicy({ ...SETTLER, siteFloor: floor });
+        const diedBefore: boolean[] = [];
+        let settled = 0;
+        let settledOnSum = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          let settledOn = 0;
+          const final = run(armSeed(0, i, SEEDS), WINTER_OPENS, (before, after) => {
+            if (!settledOn && !before.settlement && after.settlement) settledOn = after.day;
+          }, terms);
+          diedBefore.push(!!final.end && final.day < WINTER_OPENS);
+          if (final.settlement) { settled += 1; settledOnSum += settledOn; }
+        }
+        return { diedBefore, settled, settledOnSum };
+      };
+
+      const held = arm(SETTLER.siteFloor);
+      const took = arm(0);
+      setPolicy(SETTLER);
+
+      let saved = 0;
+      let killed = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        if (held.diedBefore[i] && !took.diedBefore[i]) saved += 1;
+        if (!held.diedBefore[i] && took.diedBefore[i]) killed += 1;
+      }
+      const day = (a: { settled: number; settledOnSum: number }) =>
+        (a.settled ? Math.round(a.settledOnSum / a.settled) : 0);
+
+      out.push(
+        `  ${terms}: died before day ${WINTER_OPENS} — holding out`
+        + ` ${held.diedBefore.filter(Boolean).length}/${SEEDS},`
+        + ` taking the first ${took.diedBefore.filter(Boolean).length}/${SEEDS}\n`
+        + `      paired: saved ${saved}, killed ${killed}\n`
+        + `      settled by then: ${held.settled} (day ${day(held)} on average)`
+        + ` -> ${took.settled} (day ${day(took)})`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H holding out for ground — ${SEEDS} sagas a country, paired:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * AND WHAT THE HASTE COSTS LATER, which the reading above CANNOT see.
+   *
+   * Taking the first legal ground halves the pre-winter graveyard — saved 41
+   * killed 5 on `even`, saved 69 killed 8 on `hard`. That reading stops at
+   * day 49 by construction, so it can only ever count what haste SAVES and
+   * never what it costs: a band on rubbish ground is alive on day 48 and may
+   * be dead on day 60. Reporting the first number without this one would be
+   * a horizon choosing its own answer.
+   *
+   * 6.1 is the reason to expect a real cost in the other direction — the
+   * settler's floor gives way from day 14 precisely because "a FIXED floor of
+   * 9 never settled at all in 45 of 120 seeds", and because settling late is
+   * close to fatal. So the honest question is which way the trade actually
+   * falls once a winter and two more years are in the picture.
+   */
+  it('runs the same pair out to a saga\'s length, where bad ground can charge for itself', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 150;
+    const HORIZON = 400;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      const arm = (floor: number) => {
+        setPolicy({ ...SETTLER, siteFloor: floor });
+        const sawSpring: boolean[] = [];
+        const standing: boolean[] = [];
+        let ruled = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          let reachedSpring = false;
+          const final = run(armSeed(0, i, SEEDS), HORIZON, (_before, after) => {
+            if (!reachedSpring && !after.end && after.day >= SPRING_IN) reachedSpring = true;
+          }, terms);
+          sawSpring.push(reachedSpring);
+          standing.push(!final.end && final.day >= HORIZON);
+          if (final.jarl) ruled += 1;
+        }
+        return { sawSpring, standing, ruled };
+      };
+
+      const held = arm(SETTLER.siteFloor);
+      const took = arm(0);
+      setPolicy(SETTLER);
+
+      const paired = (a: boolean[], b: boolean[]) => {
+        let saved = 0; let killed = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          if (!a[i] && b[i]) saved += 1;
+          if (a[i] && !b[i]) killed += 1;
+        }
+        return `saved ${saved}, killed ${killed}`;
+      };
+      const n = (a: boolean[]) => a.filter(Boolean).length;
+
+      out.push(
+        `  ${terms}: saw the first spring — holding out ${n(held.sawSpring)}/${SEEDS},`
+        + ` taking the first ${n(took.sawSpring)}/${SEEDS} (${paired(held.sawSpring, took.sawSpring)})\n`
+        + `      still standing at day ${HORIZON} — ${n(held.standing)} vs ${n(took.standing)}`
+        + ` (${paired(held.standing, took.standing)})\n`
+        + `      ever ruled: ${held.ruled} vs ${took.ruled}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.H the price of haste, whole sagas — ${SEEDS} landings a country, paired:\n${out.join('\n')}`);
+    expect(out.length).toBe(2);
   });
 });
