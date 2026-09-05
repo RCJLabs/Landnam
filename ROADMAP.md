@@ -58,6 +58,10 @@
 > founding card carries instead is the record that taking hard ground beats
 > walking on for fair (saved 35, killed 7, p < 0.0001).
 >
+> **12.4 is PART BUILT** — the job picker's two unreachable controls are
+> reachable, and what looked like a second bug turned out to be the bar
+> measuring its own reach.
+>
 > **12.1, 12.2 and 12.3 are BUILT.** 12.2 took the largest lever in the game — crewing to the
 > winter mark, saved 60 and killed 0 — and made it a standing order given
 > once instead of sixty-six taps a saga, on a rule lifted out of the test
@@ -7398,6 +7402,68 @@ would replace — which is why it is third and not fifteenth.
 
 ### UI and what the screen says
 
+- [~] **12.4 — The picker is reachable, and the roster holds still. PART
+  BUILT 2026-09-05.** The defect was re-taken on today's build first, per the
+  item's own "instrument red first", and it had got **worse** than the reading
+  it was opened on: *Healer* with its centre at **109%** of a 320x568 viewport
+  and *Stand them down* at **119%** (the item recorded 105% and 115% on
+  2026-09-04), with `scrollable=false` — two controls that could not be
+  tapped at all, one of them the only way to take somebody off a job.
+
+  **THE FIX IS A CEILING, AND THE FIRST TWO ATTEMPTS WERE WRONG IN WAYS WORTH
+  RECORDING.** `.slot` is `flex: 0 0 auto`, so nothing in the shell may
+  shrink: the hint slot took its full 62dvh and the 303px picker went off the
+  bottom.
+
+  1. Making `.hint-slot` `flex: 0 1 auto` so it yields reads better and
+     **oscillates**: the map slot is `flex: 1 1 auto` with a canvas that sizes
+     itself to its own slot, so a shrinking hint slot resizes the canvas,
+     which changes the map slot's height, which shrinks the hint slot again.
+     The probe caught it — the first crew row walked **159px to 88px over
+     thirty frames and then jumped to 229**, and `elementFromPoint` at its own
+     box returned the map canvas. A control that MOVES cannot be tapped, which
+     is worse than the bug being fixed.
+  2. A bare `@media (max-height: 700px)` ceiling is static and works — and
+     took the same 34dvh off the **battle** log, because the three modes share
+     these slots. `scripts/look.mjs` caught it as *fight@320x568 changed by
+     1.5*. The root now carries `data-screen`, set in the one router in
+     `main.ts`, and the rule is scoped to the colony.
+
+  Measured after: every picker control on screen at 320x568, worst *Stand them
+  down* at **85%**, against 119% before. Unchanged at 390x844.
+
+  **AND THE OTHER HALF OF THIS ITEM WAS A GHOST I CHASED FOR THREE FIXES.**
+  The new bar reported the roster jumping to the top on every tap. I read that
+  as `replaceChildren` dropping the scroll and wrote machinery to carry it
+  across the refill — twice, once with a `scrollHeight` read to force the
+  reflow. Instrumenting the `scrollTop` setter said otherwise: **the only
+  write was the reset, and the offset was already gone before the render
+  began.** The BAR was scrolling to the bottom and then tapping the row at the
+  TOP, and a browser scrolls a focused button into view. The instrument was
+  measuring its own reach. The machinery is not in the commit; the bar taps a
+  row that is actually on screen now.
+
+  What survived that is real and small: 12.2 keyed the scroll reset on the
+  tab AND the picker, so opening the picker reset a scroll nothing had
+  changed. Keyed on the tab alone now, **watched failing** against the old
+  key.
+
+  **`scripts/yard.mjs` gains four picker checks** — the roster holds one
+  position across thirty frames, a tap selects somebody, every picker
+  control's centre is on screen, and the list keeps its place. Watched failing
+  against the pre-12.4 layout (2 controls off screen), against the
+  oscillating version (7 positions, nothing selectable), and against 12.2's
+  key.
+
+  **NOT DONE, and the item is left open for it:** `reach.mjs` still needs a
+  colony save it can produce itself rather than one at a path `bars.mjs` never
+  writes, and `look.mjs` still has no yard scene. The picker's height is
+  driven by `JOBS`, not by the roster, so the "6 and 9 people" clause is
+  answered by construction rather than by measurement — the roster is the part
+  that scales with the band, and it is capped and scrolls.
+
+  The original entry follows.
+
 - [ ] **12.4 — The steading screens, made legible and put under a bar.**
   Nothing repeatable can see the colony half. `reach.mjs` measures the settled
   screens only when a colony save exists at a path `bars.mjs` never writes
@@ -7851,6 +7917,38 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-05 — 12.4 PART BUILT: two controls that could not be tapped, and
+  three fixes for a bug that was not there.** Re-taken on today's build first,
+  the steading's job picker was worse than the item recorded: *Healer* with
+  its centre at 109% of a 320x568 viewport and *Stand them down* at 119%, with
+  nothing to scroll — and *Stand them down* is the only way to take somebody
+  off a job. Every control is on screen now, worst at 85%.
+
+  **The fix is a ceiling, and the first two attempts failed in instructive
+  ways.** Making the hint slot yield (`flex: 0 1 auto`) put it in a feedback
+  loop with the map canvas that sizes itself to its own slot: the first crew
+  row walked 159px to 88px over thirty frames and then jumped to 229, and a
+  hit-test at its own box returned the canvas. A control that moves cannot be
+  tapped. A bare height media query is static and works — and took the same
+  34dvh off the BATTLE log, which `look.mjs` caught. The root carries
+  `data-screen` now, set in the one router, and the rule is scoped.
+
+  **And the other half was a ghost.** The new bar reported the roster jumping
+  to the top on every tap; I wrote machinery to carry the scroll across the
+  re-render, twice, before instrumenting the `scrollTop` setter — which showed
+  the only write was the reset and the offset was already gone before the
+  render began. **The bar was scrolling to the bottom and tapping the row at
+  the top, and a browser scrolls a focused button into view.** The instrument
+  was measuring its own reach. None of that machinery is in this commit. What
+  survived is real and small: 12.2 keyed the reset on the picker as well as
+  the tab, so opening the picker reset a scroll nothing had changed.
+
+  `scripts/yard.mjs` gains four picker checks — the roster holds one position
+  across thirty frames, a tap selects somebody, every control's centre is on
+  screen, and the list keeps its place — each watched failing.
+  **Left open:** `reach.mjs` still cannot make its own colony save and
+  `look.mjs` has no yard scene, so 12.4 stays open for those.
 
 - **2026-09-05 — 12.6 BUILT: the founding card states the record, and the
   "time in it" the item asked for is REFUTED three ways.** The card shows the

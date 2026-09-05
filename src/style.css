@@ -84,6 +84,62 @@ body,
   overscroll-behavior: contain;
 }
 
+/*
+ * AND THE CEILING COMES DOWN ON A SHORT SCREEN (12.4, 2026-09-05).
+ *
+ * The rule above caps this panel at 62dvh, and on a tall phone that is right.
+ * On a 320x568 one it is not: the hint slot took its full 352px, the job
+ * picker took the 303px it wants underneath, and the sum ran 135px past the
+ * bottom of a screen `#app` forbids scrolling. Measured on the built page,
+ * 2026-09-05: *Healer* sat with its centre at 109% of the viewport and *Stand
+ * them down* at 119% — two controls that could not be tapped at all, and
+ * "Stand them down" is the only way to take somebody off a job.
+ *
+ * STATIC, AND THAT IS THE POINT. The first fix for this made `.hint-slot`
+ * `flex: 0 1 auto` so it would yield to the controls, which reads better and
+ * is WRONG: the map slot is `flex: 1 1 auto` with a canvas that sizes itself
+ * to the slot, so a shrinking hint slot resizes the canvas, which changes the
+ * map slot's height, which shrinks the hint slot again. The probe caught it —
+ * the first crew row walked 159px to 88px over thirty frames and then jumped
+ * to 229, and `elementFromPoint` at its own box returned the map canvas. A
+ * roster that moves is a roster you cannot tap, which is worse than the bug
+ * being fixed. A media query cannot oscillate.
+ *
+ * 700px because that is above every phone this has to fit (568 and 667 are
+ * the small ones) and below the 844 the layout was designed on, so no tall
+ * screen loses a row of its build list to a short screen's problem.
+ *
+ * AND SCOPED TO THE COLONY, because the three modes share these slots. The
+ * first cut wrote the rule bare and it took the same 34dvh off the BATTLE
+ * log, which the look bar caught as `fight@320x568 changed by 1.5`. The
+ * picker is the colony's problem; the fight has its own shape and did not
+ * ask for this.
+ */
+@media (max-height: 700px) {
+  :root[data-screen='colony'] .hint-slot {
+    max-height: 28vh;
+    max-height: 28dvh;
+  }
+}
+
+/*
+ * The last resort under the rule above: even with the hint slot yielding
+ * everything it has, a picker taller than the screen would still overflow.
+ * A ceiling and its own scroll means the worst case is a control the player
+ * has to scroll to, rather than one that is not there.
+ *
+ * Deliberately generous, because reaching this is already a failure — the
+ * bar in `scripts/yard.mjs` asserts nothing is off the bottom, so if this
+ * ceiling is ever doing work, something above it has stopped.
+ */
+.action-slot {
+  max-height: 70vh;
+  max-height: 70dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
 .map-slot {
   flex: 1 1 auto;
   min-height: 0;
