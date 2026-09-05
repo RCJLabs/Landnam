@@ -316,6 +316,79 @@ export function scoreWord(score: number): string {
   return SCORE_WORDS[Math.max(0, Math.min(SCORE_WORDS.length - 1, score))]!;
 }
 
+/**
+ * The window the founding record was measured in, and it is narrow on purpose.
+ *
+ * 12.6 asked for the founding card to carry the TIME. It does not, and three
+ * readings are why — each of which killed a different half of that premise on
+ * the floor-7 baseline (2026-09-05):
+ *
+ *   1. THE PREMISE HALVED. "Two-thirds of the bands dead on the road had
+ *      stood on ground they could have taken" re-takes at 40% (even) and 38%
+ *      (hard), over a population that itself halved: 35 bands where the
+ *      floor-9 reading had 49, 76 where it had 87. The band that settles at
+ *      coast 12 rather than 14 does not walk past nearly as much.
+ *   2. THE TRADE IS A COIN. Paired against taking the first legal ground at
+ *      all, first spring reads 117/150 against 119/150 on even and 82 against
+ *      84 on hard — saved 9 killed 7, and saved 10 killed 8. Sixteen and
+ *      eighteen discordant pairs, p about 0.8 both times. There is no
+ *      "settle sooner" to tell anybody.
+ *   3. AND THE CLOCK IS ALREADY THERE. The card washes the screen at 0.82 and
+ *      `style.css` records, at `.overlay.end`, that the travel HUD stays
+ *      legible behind exactly that wash. Printing the larder again is the
+ *      duplication 12.H refuted when it took the road mark off wallpaper.
+ *
+ * WHAT IS RESOLVABLE IS THE OTHER END OF THE CURVE, and it runs against what
+ * this card's own words tell a player. `PROBE 12.6 taking hard ground against
+ * walking on`, 200 landings an arm a country, settler, paired, to day 400:
+ *
+ *   even   first spring 157/200 taking it, 129/200 walking on
+ *          — saved 35, killed 7 (42 pairs, p < 0.0001)
+ *          still standing at day 400: 41 against 38 (p = 0.69)
+ *   hard   first spring 108/200 taking it, 80/200 walking on
+ *          — saved 33, killed 5 (38 pairs, p < 0.0001)
+ *          still standing at day 400: 23 against 17 (p = 0.11)
+ *
+ * Walking on also means a third to a half more bands never raise a steading
+ * at all — 54 against 29 on even, 87 against 58 on hard. And the long game
+ * charges nothing for the haste: the cost the floor-9 sweep suggested might
+ * be waiting at day 400 is not there.
+ *
+ * THE WINDOW IS THE WINDOW THE ARMS DISAGREED IN. One arm took ground from a
+ * total of 12, the other held out for 14, so 12 and 13 are the only totals
+ * where they ever chose differently — and a record shown outside its own
+ * evidence is the fault 12.3 spent a day undoing across five constants. Below
+ * 12 neither arm ever settled and this says nothing; at 14 and above both
+ * took it and there was no decision to price.
+ */
+export const FOUND_RECORD_FROM = 12;
+export const FOUND_RECORD_TO = 14;
+
+/**
+ * The record, stated and never urged — the same rule `RAID_RECORD`,
+ * `VOYAGE_RECORD` and `ABANDON_RECORD` keep. The game does not tell the
+ * player what to do anywhere else, and a band that wants better ground is
+ * entitled to go and look for it.
+ */
+export const FOUNDING_RECORD =
+  'Bands that took ground like this saw their first spring more often than '
+  + 'bands that walked on hoping for better, and no fewer of them were still '
+  + 'standing four years later. More of those who walked on never raised a '
+  + 'steading at all.';
+
+/**
+ * The record, for a card standing on ground it was measured on — or nothing.
+ *
+ * Silent outside the window rather than softened, because the honest answer
+ * on ground nobody measured is no answer.
+ */
+export function foundingRecord(state: GameState): string | undefined {
+  const total = reportHere(state).total;
+  return total >= FOUND_RECORD_FROM && total < FOUND_RECORD_TO
+    ? FOUNDING_RECORD
+    : undefined;
+}
+
 export function verdictFor(total: number): Verdict {
   // Which scale this world reads on — see COAST_VERDICTS for the measurement.
   // A coast totals roughly twice a hex site, so the hex bands called 95% of

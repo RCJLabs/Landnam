@@ -9,7 +9,7 @@
 import { traitById } from '../../data/traits';
 import { fullName, effectiveStat } from '../../sim/people';
 import { XP_PER_ADVANCE } from '../../sim/consequences';
-import { reportHere, scoreWord, strongestOf, verdictFor } from '../../sim/site';
+import { foundingRecord, reportHere, scoreWord, strongestOf, verdictFor } from '../../sim/site';
 import { moodOf, MOOD_WORD } from '../../sim/minds';
 import { known } from '../../sim/lore';
 import { jobOf } from '../../sim/colony';
@@ -48,6 +48,7 @@ export function renderFounding(
   }
 
   const strong = MEASURES.find((m) => m.id === strongest)!;
+  const record = foundingRecord(state);
 
   return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [
     el('div', { class: 'card founding' }, [
@@ -64,6 +65,16 @@ export function renderFounding(
       el('p', { class: 'outcome grim' }, [
         'The posts go in once. There is no second steading and no moving this one.',
       ]),
+      // 12.6: THE RECORD, ON THE GROUND IT WAS MEASURED ON. Every other line
+      // on this card is about the ground and every one of them argues for
+      // walking on — "Hard ground: it could be held, by people with nothing
+      // better" is what a player reads before deciding. Measured, that advice
+      // is backwards: taking ground like this saw first spring 157 times in
+      // 200 against 129 for walking on, paired saved 35 killed 7, p < 0.0001,
+      // and cost nothing by day 400. Stated and never urged, the same rule
+      // `RAID_RECORD` and `ABANDON_RECORD` keep — and shown only inside the
+      // window the measurement covers. See sim/site.ts for both.
+      ...(record ? [el('p', { class: 'outcome' }, [record])] : []),
       el('div', { class: 'choices' }, [
         button('Set the posts', confirm, { class: 'choice primary' }),
         button('Walk on', cancel, { class: 'choice' }),

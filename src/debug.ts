@@ -19,7 +19,7 @@ import { steadingDrawn } from './render/colonyScreen';
 import { fieldDrawn } from './render/battleScreen';
 import type { GameState } from './state/types';
 import { startBattle, startRaid } from './sim/battleTurn';
-import { canFound, foundSettlement } from './sim/site';
+import { canFound, foundSettlement, stopReport } from './sim/site';
 import { weatherNow } from './sim/weather';
 import { countryHere, learnStop, standingAt } from './sim/coast';
 import { ROUTE_STOPS } from './sim/route';
@@ -51,6 +51,7 @@ declare global {
       raid(difficulty?: number): void;
       visit(id?: string): void;
       settle(): boolean;
+      standOn(from: number, to: number): number | null;
       build(id: string): boolean;
       stock(food?: number, firewood?: number): void;
       skip(days?: number): void;
@@ -122,6 +123,37 @@ export function installDebug(hooks: DebugHooks): void {
      * than forcing one where the rules say no, so what it settles is a
      * settlement the game would have allowed.
      */
+    /**
+     * Walks the band to the first stretch whose site total falls in
+     * `[from, to)` and stands them on it, without founding.
+     *
+     * 12.6, and it exists for the reason `visit()` does: the founding card's
+     * record speaks only on ground totalling 12 or 13, and reaching such a
+     * stretch by playing is several days' walk and the luck to have looked in
+     * the right direction. The walk is FABRICATED, not waived — each stretch
+     * is learned on the way, because knowing the ground is one of the rules
+     * and `foundBlocker` refuses an unknown one.
+     *
+     * Returns the total it stopped on, or null if the coast has no such
+     * stretch, so a bar reads "there was nothing to stand on" as a skip
+     * rather than as a card that failed to say its line.
+     */
+    standOn(from: number, to: number): number | null {
+      const state = hooks.get();
+      if (!state || currentMode(state) !== 'TRAVEL' || state.settlement) return null;
+      const next = cloneState(state);
+      for (let stop = 0; stop < ROUTE_STOPS; stop += 1) learnStop(next, stop);
+      for (let stop = standingAt(next); stop < ROUTE_STOPS; stop += 1) {
+        next.party.stop = stop;
+        const total = stopReport(next.seed, stop).total;
+        if (total >= from && total < to && canFound(next)) {
+          hooks.commit(next);
+          return total;
+        }
+      }
+      return null;
+    },
+
     settle() {
       const state = hooks.get();
       if (!state || currentMode(state) !== 'TRAVEL' || state.settlement) return false;

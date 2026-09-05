@@ -52,8 +52,13 @@
 > that gave the game a third act.
 >
 > **CURRENT MILESTONE (from 2026-09-05): Phase 12 — the audit of 2026-09-05.**
-> Fifteen items, below, from a full read of every subsystem. **12.1, 12.2 and
-> 12.3 are BUILT.** 12.2 took the largest lever in the game — crewing to the
+> Fifteen items, below, from a full read of every subsystem. **12.1, 12.2,
+> 12.3 and 12.6 are BUILT** — and 12.6 shipped the OPPOSITE of what it asked
+> for: its "carry the time" premise was refuted three ways, and what the
+> founding card carries instead is the record that taking hard ground beats
+> walking on for fair (saved 35, killed 7, p < 0.0001).
+>
+> **12.1, 12.2 and 12.3 are BUILT.** 12.2 took the largest lever in the game — crewing to the
 > winter mark, saved 60 and killed 0 — and made it a standing order given
 > once instead of sixty-six taps a saga, on a rule lifted out of the test
 > harness into `sim/orders.ts`; a band told once ends up 0.7 points from a
@@ -7537,6 +7542,83 @@ would replace — which is why it is third and not fifteenth.
   a saga under orders. Needs `Settlement.orders`, SAVE_VERSION 63 + migration,
   and the verb driven through `apply` so headless and parity see it.
 
+- [x] **12.6 — Take This Land? carries the record, and NOT the time.
+  BUILT 2026-09-05.** The item asked for the founding card to carry the clock.
+  It does not, and the reason is three readings rather than a judgement — each
+  killed a different half of the premise on the floor-7 baseline:
+
+  1. **THE PREMISE HALVED.** "Two-thirds of the bands dead on the road had
+     stood on ground they could have taken" re-takes at **40% (even) and 38%
+     (hard)**, over a population that itself halved: **35 bands where the
+     floor-9 reading had 49**, 76 where it had 87. A band that settles at
+     coast 12 rather than 14 does not walk past nearly as much. Same probe,
+     300 sagas a country.
+  2. **THE TRADE IS A COIN.** Paired against taking the first legal ground at
+     all, first spring reads **117/150 against 119/150** on even and 82
+     against 84 on hard — saved 9 killed 7, and saved 10 killed 8. Sixteen and
+     eighteen discordant pairs, **p about 0.8 both times**. There is no
+     "settle sooner" to tell anybody. The floor-9 sweep's shape — haste buys
+     springs and pays for them later — has evaporated, because floor 7 is
+     already most of the way to the optimum.
+  3. **AND THE CLOCK IS ALREADY THERE.** The overlay washes at 0.82 and
+     `style.css` records at `.overlay.end` that the travel HUD stays legible
+     behind exactly that wash — "a day counter and a half-cut HEA". Printing
+     the larder again is the duplication 12.H refuted when it took the road
+     mark off wallpaper.
+
+  **A FOURTH READING WAS BUILT, READ, AND THEN DISCARDED BY ITS OWN AUTHOR.**
+  A cross-tab of first spring by settling-day band against verdict band, over
+  a pooled no-floor and floor-7 arm, showed the day mattering more than the
+  ground on `hard` — 28 points of spread against 22 — and settling LATER
+  reading better (61% by day 7, 89% by day 15-21). That is survivor selection
+  and nothing else: the table conditions on having raised a steading, and a
+  band still alive on day 21 to settle is a band that survived three weeks on
+  the road. **The denominator selects itself, which is trap 2, and the margin
+  cannot be read causally at all.** It is kept as a probe with that warning
+  written into it, because the table is still the right shape for a question
+  somebody will ask again.
+
+  **WHAT SHIPPED IS THE OTHER END OF THE CURVE, and it runs against what this
+  card's own words tell a player.** `floorOn` maps siteFloor 7 to coast 12 and
+  9 to coast 14, and the verdict bands put 12-13 in **Hard ground** — so the
+  pairing below is exactly one decision, taken at every site that offers it:
+  take the hard ground, or walk on hoping for fair. `PROBE 12.6`, 200 landings
+  an arm a country, settler, paired, to day 400:
+
+  | | first spring | paired | still standing at 400 |
+  |---|---|---|---|
+  | even | **157/200** taking it vs 129/200 walking on | **saved 35, killed 7** (42 pairs, p < 0.0001) | 41 vs 38 (p = 0.69) |
+  | hard | **108/200** vs 80/200 | **saved 33, killed 5** (38 pairs, p < 0.0001) | 23 vs 17 (p = 0.11) |
+
+  Walking on also means **a third to a half more bands never raise a steading
+  at all** — 54 against 29 on even, 87 against 58 on hard — and the long game
+  charges nothing for the haste. The card meanwhile reads *"Hard ground — it
+  could be held, by people with nothing better"*, which is the line a player
+  sees before walking on.
+
+  So `FOUNDING_RECORD` is stated on the card in the voice `RAID_RECORD`,
+  `VOYAGE_RECORD` and `ABANDON_RECORD` all use — the record, never an
+  instruction — **and gated to totals 12 and 13, the only ones the two arms
+  ever disagreed about.** Below 12 neither arm settled and it says nothing;
+  at 14 and above both took the site and there was no decision to price. A
+  record shown outside its own evidence is what 12.3 spent a day undoing.
+
+  **`scripts/founding.mjs` is the fourteenth browser bar**, and it exists
+  because nothing else can see whether a computed sentence reaches the card —
+  the exact fault 12.1 found on the colony screens. It asserts the record is
+  there inside the window and **absent above it**, the second being what keeps
+  the first from passing on a record printed everywhere. Watched failing both
+  ways. It leans on a new debug hook, `standOn(from, to)`, for the same reason
+  `visit()` exists: reaching coast-12 ground by playing is several days' walk
+  and the luck to have looked in the right direction.
+
+  One thing caught in my own test rather than in the code: the
+  instruction-check regex was copied from `retreat.test.ts` and its `\bnever\b`
+  fired on the record's own phrase "never raised a steading at all". Matched
+  on second-person address now, which is what actually marks an instruction.
+
+  The original entry follows.
+
 - [ ] **12.6 — Take This Land? with the time in it.** 12.H's first finding is
   unaddressed for the player. Two-thirds of bands dead on the road before
   winter had stood on foundable ground, first on day 3 with 6.9 (even) / 4.5
@@ -7769,6 +7851,49 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-05 — 12.6 BUILT: the founding card states the record, and the
+  "time in it" the item asked for is REFUTED three ways.** The card shows the
+  verdict, five measures, a strength, a weakness and the one-way warning —
+  all of it about the ground, and every line of it arguing for walking on.
+  12.6 wanted the clock added. It is not, and the item's own premise is why:
+
+  1. **the premise halved** — "two-thirds of the road-dead had stood on
+     foundable ground" re-takes at 40% / 38% on floor 7, over a population
+     that halved too (35 bands where there were 49);
+  2. **the trade is a coin** — paired against taking the first legal ground,
+     first spring is 117/150 vs 119/150 on even, saved 9 killed 7, p ≈ 0.8;
+  3. **the clock is already legible** behind the card's 0.82 wash, which
+     `style.css` records in its own words — the duplication 12.H refuted when
+     it took the road mark off wallpaper.
+
+  **A fourth reading I built myself was discarded on its own evidence.** A
+  cross-tab of spring by settling-day against verdict showed the day
+  out-separating the ground on `hard`, and settling LATER reading better. That
+  is survivor selection: the table conditions on having raised a steading, so
+  a band settling on day 21 is one that survived three weeks. The denominator
+  selects itself — trap 2 — and the margin is not causal. Kept as a probe with
+  the warning written into it.
+
+  **What shipped is the resolvable end of the curve**, and it inverts the
+  card's own advice. Coast 12-13 is *Hard ground*, whose line reads "it could
+  be held, by people with nothing better":
+
+  | | first spring | paired | at day 400 |
+  |---|---|---|---|
+  | even | 157/200 taking it vs 129/200 walking on | **saved 35, killed 7** (p < 0.0001) | 41 vs 38 (p = 0.69) |
+  | hard | 108/200 vs 80/200 | **saved 33, killed 5** (p < 0.0001) | 23 vs 17 (p = 0.11) |
+
+  Walking on also leaves a third to a half more bands never settling at all,
+  and costs nothing later. `FOUNDING_RECORD` says so on the card in the voice
+  the raid, voyage and abandon records use — stated, never urged — **gated to
+  totals 12 and 13, the only ones the arms disagreed about.**
+
+  **`scripts/founding.mjs` is the fourteenth browser bar**, because nothing
+  else can see whether a computed sentence reaches the card — 12.1's fault
+  exactly. It checks the record is present in the window AND absent above it,
+  the second keeping the first honest. Watched failing both ways.
+  `npm test` 1606 passed / 94 files, all 14 browser bars green.
 
 - **2026-09-05 — 12.2 BUILT: the largest lever in the game stops costing
   sixty-six taps.** Crewing to the winter mark is the biggest effect this
