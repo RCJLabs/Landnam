@@ -15,6 +15,7 @@ import {
   renderColonyHint,
   renderCrew,
   renderNeeds,
+  renderOrders,
   renderRoom,
   renderHearth,
   renderWall,
@@ -35,6 +36,21 @@ import {
 } from '../shell';
 
 let colonyView: ColonyView | null = null;
+
+/**
+ * Which tab the hint slot was last filled with, so a switch can put it back
+ * to the top.
+ *
+ * FOUND BY `scripts/yard.mjs`, 2026-09-05, at 320x568: the slot is one
+ * scrolling element shared by both tabs and `replaceChildren` does not touch
+ * `scrollTop`, so a player who scrolled the roster — or simply tapped a
+ * control near the bottom of it, which is what the bar did — arrived on the
+ * Build tab already scrolled 99px past the first build row. That is 12.1's
+ * finding exactly, reached by a different route: the tab does not open on its
+ * own list. It was there before 12.2 and nothing had ever looked, because
+ * until the standing order there was no reason to touch the bottom of Work.
+ */
+let filledFor: string | null = null;
 
 /**
  * What the steading's brush has done, for the debug read-out and the bars.
@@ -73,6 +89,14 @@ export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
 
   // Work and Build are two views of the same steading. Selecting a person
   // always wins, because the picker replaces the action bar.
+  // A switch between the two views starts at the top of the new one. Keyed on
+  // the tab AND the picker, because the picker replaces the whole slot too.
+  const filling = `${ui.colonyTab}:${ui.picked ? 'picked' : 'list'}`;
+  if (filling !== filledFor) {
+    hintSlot.scrollTop = 0;
+    filledFor = filling;
+  }
+
   if (ui.colonyTab === 'build' && !ui.picked) {
     // THE BUILD TAB OPENS ON THE BUILD LIST, which it did not until
     // 2026-09-05 (12.1): needs, room, rations and the leave control took 527px
@@ -91,12 +115,18 @@ export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
       renderLeaving(state, colonyDispatch),
     );
   } else {
+    // 12.2: the standing order sits BELOW the roster it commands, not above
+    // it. The tab's job is the crew, and 12.1's finding was that a control
+    // stacked over a list pushes the list off a phone — the Build tab opened
+    // on zero rows for exactly that reason. So the order is the last thing
+    // here, in reach without being in the way.
     hintSlot.replaceChildren(
       renderColonyHint(state),
       renderCrew(state, ui.picked, (id) => {
         ui.picked = id;
         rerender();
       }),
+      renderOrders(state, colonyDispatch),
     );
   }
 

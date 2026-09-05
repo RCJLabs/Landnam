@@ -8,6 +8,7 @@ import type { HardshipId } from '../data/hardship';
 // it rather than buried in the model.
 import type { Beat, WorldBeat } from '../sim/beats';
 import type { Mark } from '../sim/challenge';
+import type { OrderId } from '../sim/orders';
 
 export type { HardshipId };
 
@@ -548,6 +549,15 @@ export interface Settlement {
   built: string[];
   /** Building ids waiting, head first. Builders work the head. */
   queue: string[];
+  /**
+   * The household's standing order, if it has been given one.
+   *
+   * Absent means nobody has said anything and the crew stays where it was
+   * put — which is the game as it has always been, and is why this is
+   * optional rather than defaulted. See sim/orders.ts for what the one order
+   * does and why there is only one.
+   */
+  orders?: OrderId;
   /** Builder-days banked against the head of the queue. */
   works: number;
   /**

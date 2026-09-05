@@ -149,6 +149,48 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
   });
   check(!counselStrayed, `yard ${at}: the counsel is on screen but not with the roster`);
 
+  // --- 5. The standing order is on the tab it commands, and it works ---
+  //
+  // 12.2. The order sets the jobs in the roster above it, so it belongs on
+  // Work; and it is one tap, which is the entire claim of the item — 66
+  // assignment taps a saga became this. A control that is present but does
+  // not change the state on a tap would pass a screenshot and fail a player.
+  const orders = await page.evaluate(() => {
+    const slot = document.querySelector('.hint-slot');
+    const mark = slot?.querySelector('.room-mark.orders');
+    const btn = mark?.querySelector('button');
+    return mark
+      ? { head: mark.querySelector('.mark-head')?.textContent?.trim() ?? '', label: btn?.textContent?.trim() ?? '' }
+      : null;
+  });
+  check(orders !== null, `yard ${at}: the Work tab has no standing-orders control`);
+  if (orders) {
+    check(
+      /No standing orders/i.test(orders.head),
+      `yard ${at}: a fresh steading opens already under orders — "${orders.head}"`,
+    );
+    const give = page.locator('.hint-slot .room-mark.orders button').first();
+    await give.click({ timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(400);
+    await clearOverlay(page);
+    const after = await page.evaluate(() => {
+      const mark = document.querySelector('.hint-slot .room-mark.orders');
+      return {
+        head: mark?.querySelector('.mark-head')?.textContent?.trim() ?? '',
+        lit: Boolean(document.querySelector('.hint-slot .room-mark.orders.on')),
+        stored: window.landnam?.state?.().settlement?.orders ?? null,
+      };
+    });
+    check(
+      after.stored === 'mark',
+      `yard ${at}: one tap on the order left the settlement at "${after.stored}"`,
+    );
+    check(
+      /Under standing orders/i.test(after.head) && after.lit,
+      `yard ${at}: the order was given but the panel still reads "${after.head}"`,
+    );
+  }
+
   // --- 2. The Build tab opens on the build list ---
   const build = page.locator('.action-slot button', { hasText: /^Build$/ }).first();
   check(await build.count() > 0, `yard ${at}: there is no Build tab`);

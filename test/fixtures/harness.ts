@@ -24,6 +24,8 @@ import { newGame } from '../../src/state/create';
 import { seasonOf } from '../../src/sim/calendar';
 import { apply, type Action } from '../../src/sim/actions';
 import { atSea } from '../../src/sim/road';
+import { currentMode } from '../../src/modes';
+import { atHome } from '../../src/sim/site';
 import { canGather, canFish } from '../../src/sim/gathering';
 import { abundance } from '../../src/sim/abundance';
 import { canFound } from '../../src/sim/site';
@@ -289,6 +291,22 @@ export interface Policy {
    * the frost and it sat below the bars, not on them.
    */
   crewsToNeed: boolean;
+  /**
+   * Whether the band gives the STANDING ORDER once and lets the game crew it,
+   * instead of the bot reassigning by hand every day.
+   *
+   * 12.2. The two arms are meant to be the same band played two ways, so this
+   * is mutually exclusive with `crewsToNeed` above rather than a second copy
+   * of it: with orders on, the bot dispatches `SET_ORDERS` on the first day it
+   * has a steading and then never issues `ASSIGN` again, and `sim/orders.ts`
+   * does the work the block below used to do.
+   *
+   * That is what the Done-when measures. If the two arms diverge, either the
+   * lift changed the rule or the rule was never what the harness thought it
+   * was — and both are findings, which is why the knob stays after the item
+   * ships rather than being deleted with the old block.
+   */
+  followsOrders?: boolean;
   /**
    * Whether the daily crewing picks the food job the GROUND pays best,
    * instead of always reaching for the hunter.
@@ -702,6 +720,15 @@ export let policy: Policy = SETTLER;
  * before.
  */
 export let recrewed = 0;
+/**
+ * Taps the orders arm spent giving the order, across the last `run`.
+ *
+ * An instrument counter rather than a finding: an arm that ties its control
+ * exactly is usually a knob that never fired (CLAUDE.md, trap 3), and this
+ * one CAN fail to fire — `ENTER_COLONY` refuses off the home stretch. The bar
+ * asserts this is non-zero before it reads any outcome.
+ */
+export let ordersGiven = 0;
 /** How many steadings the bot has walked out on since a test zeroed it. */
 export let walkedOut = 0;
 /**
@@ -1506,6 +1533,10 @@ export function run(
   if (prepare) prepare(state);
   let jobsSet = false;
   walkOutHold = 0;
+  // Per run, unlike `walkedOut` and `recrewed`, which a caller accumulates
+  // across a sample and resets itself. This one is read as "did the order
+  // land in THIS saga", so a running total would answer a different question.
+  ordersGiven = 0;
   /** Which season the current crew was picked for. */
   let crewedFor = '';
 
@@ -1609,7 +1640,38 @@ export function run(
       if ((state.party.rations ?? 'full') !== want) state.party.rations = want;
     }
 
-    if (policy.crewsToNeed && state.settlement && markVisible(state)) {
+    // ORDERS ARM: walk into the yard, say it once, walk out again.
+    //
+    // THREE ACTIONS THROUGH `apply`, NOT A FIELD WRITTEN ON THE SETTLEMENT.
+    // The bot everywhere else in this file reaches past the interface — it
+    // calls `assign` and sets rations on the state directly — and that is the
+    // very habit 12.12 is queued to fix. It cannot be the habit here: the
+    // whole claim of 12.2 is that a PLAYER can have this for a handful of
+    // taps, and a measurement taken by writing the field would be a
+    // measurement of something no player can do.
+    //
+    // Guarded on being at home and in TRAVEL with nothing on the table,
+    // because `ENTER_COLONY` refuses otherwise — a bot that dispatched it
+    // from the road would set no order and the arm would silently be the
+    // control. `ordersGiven` counts what actually landed, and the bar asserts
+    // it, for exactly that reason.
+    if (policy.followsOrders && state.settlement && !state.settlement.orders
+      && atHome(state) && currentMode(state) === 'TRAVEL'
+      && !state.event && !state.aftermath) {
+      for (const act of [
+        { type: 'ENTER_COLONY' },
+        { type: 'SET_ORDERS', orders: 'mark' },
+        { type: 'LEAVE_COLONY' },
+      ] as Action[]) {
+        const next = apply(state, act);
+        if (next === state) break;
+        if (watch) watch(state, next, act);
+        state = next;
+        ordersGiven += 1;
+      }
+    }
+
+    if (policy.crewsToNeed && !policy.followsOrders && state.settlement && markVisible(state)) {
       const need = forecast(state);
       const shortWood = state.party.firewood < need.firewood;
       const shortFood = state.party.food < need.food;
