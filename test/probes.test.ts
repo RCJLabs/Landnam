@@ -5456,4 +5456,230 @@ describe('PROBE: 12.3 — the re-takes on the floor-7 baseline', () => {
     );
     expect(byName.length).toBe(SEEDS);
   });
+
+  /**
+   * WHAT DECIDES A SAGA: WHEN THE POSTS GO IN, OR WHAT THEY GO INTO?
+   *
+   * 12.6's whole question, and the reason it is a probe before it is a card.
+   * The founding panel shows the verdict, five measures, a strength, a
+   * weakness and the one-way warning — every line of it about the GROUND. It
+   * says nothing about the day or the larder. 12.H found that two-thirds of
+   * the bands dead on the road before winter had stood on ground they could
+   * have taken, first around day 3 with about a week's food in hand, which
+   * suggests the silent half is the half that matters.
+   *
+   * "Suggests" is not a finding. The card should carry the time only if the
+   * SETTLING DAY separates outcomes at least as sharply as the VERDICT does —
+   * otherwise the panel is right as it stands and 12.6 is a decline.
+   *
+   * TWO ARMS POOLED, AND THAT IS DELIBERATE. The shipped settler holds out
+   * for coast 12, so on its own it can never show what a poor site does — the
+   * verdict column would be truncated at exactly the end the question is
+   * about. The no-floor arm takes the first legal ground and spans the range.
+   * Pooling them is a DESCRIPTIVE cross-tab and is reported as one: the cells
+   * are not a controlled comparison, and the paired arms in `PROBE 12.H the
+   * price of haste` are what decide whether haste pays. This says what the
+   * card could honestly tell a player who is standing there.
+   */
+  it('crosses the settling day against the ground, for what the founding card could say', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    const out: string[] = [];
+
+    // Bands chosen to sit either side of the settler's own floor (coast 12)
+    // and of the verdict words the card already prints, so a row of this
+    // table can be read against a line the player has actually seen.
+    const GROUND: { label: string; from: number }[] = [
+      { label: 'bare/hard (<14)', from: 0 },
+      { label: 'fair (14-16)', from: 14 },
+      { label: 'good (17)', from: 17 },
+      { label: 'rich (18+)', from: 18 },
+    ];
+    const DAYS: { label: string; upTo: number }[] = [
+      { label: 'by day 7', upTo: 7 },
+      { label: 'day 8-14', upTo: 14 },
+      { label: 'day 15-21', upTo: 21 },
+      { label: 'day 22-28', upTo: 28 },
+      { label: 'day 29+', upTo: Infinity },
+    ];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      /** One row per saga that ever raised a steading. */
+      const landed: { day: number; total: number; lived: boolean }[] = [];
+      let neverSettled = 0;
+
+      for (const floor of [SETTLER.siteFloor, 0]) {
+        setPolicy({ ...SETTLER, id: `floor${floor}`, siteFloor: floor });
+        for (let i = 0; i < SEEDS; i += 1) {
+          let day = 0;
+          let total = 0;
+          const final = run(armSeed(0, i, SEEDS), SPRING_IN, (before, after) => {
+            // The FIRST roof, read off the transition rather than off the
+            // final state: a band that founds and is later burned out or
+            // walks away would otherwise vanish from the table, and those
+            // are exactly the sagas a card about haste is talking about.
+            if (day || !after.settlement || before.settlement) return;
+            day = after.day;
+            total = stopReport(after.seed, after.settlement.stop ?? 0).total;
+          }, terms);
+          if (!day) { neverSettled += 1; continue; }
+          landed.push({ day, total, lived: !final.end && final.day >= SPRING_IN });
+        }
+      }
+      setPolicy(SETTLER);
+
+      const cell = (rows: typeof landed) => {
+        if (!rows.length) return '   —   ';
+        const lived = rows.filter((r) => r.lived).length;
+        return `${String(Math.round((lived / rows.length) * 100)).padStart(3)}% /${String(rows.length).padStart(4)}`;
+      };
+      const bandOf = (total: number) => {
+        let found = 0;
+        GROUND.forEach((g, ix) => { if (total >= g.from) found = ix; });
+        return found;
+      };
+      const dayBandOf = (day: number) => DAYS.findIndex((d) => day <= d.upTo);
+
+      const head = `      ${'settled'.padEnd(10)}${GROUND.map((g) => g.label.padStart(12)).join('')}`;
+      const body = DAYS.map((d, di) => {
+        const row = GROUND.map((_g, gi) =>
+          cell(landed.filter((r) => dayBandOf(r.day) === di && bandOf(r.total) === gi)).padStart(12));
+        return `      ${d.label.padEnd(10)}${row.join('')}`;
+      });
+
+      // The two margins, which are what actually answer the question: how
+      // much does each axis move the rate ON ITS OWN?
+      const margin = (pick: (r: typeof landed[number]) => number, of: { label: string }[]) =>
+        of.map((b, ix) => {
+          const rows = landed.filter((r) => pick(r) === ix);
+          return `${b.label} ${cell(rows).trim()}`;
+        }).join(' | ');
+
+      const spread = (pick: (r: typeof landed[number]) => number, n: number) => {
+        const rates = Array.from({ length: n }, (_v, ix) => {
+          const rows = landed.filter((r) => pick(r) === ix);
+          return rows.length >= 20 ? (rows.filter((r) => r.lived).length / rows.length) * 100 : null;
+        }).filter((r): r is number => r !== null);
+        return rates.length > 1 ? Math.max(...rates) - Math.min(...rates) : 0;
+      };
+
+      out.push(
+        `  ${terms}: ${landed.length} landings that raised a steading`
+        + ` (${neverSettled} never did), share that saw the first spring\n`
+        + `${head}\n${body.join('\n')}\n`
+        + `      by day alone:    ${margin((r) => dayBandOf(r.day), DAYS)}\n`
+        + `      by ground alone: ${margin((r) => bandOf(r.total), GROUND)}\n`
+        + `      SPREAD — day ${spread((r) => dayBandOf(r.day), DAYS.length).toFixed(0)} points,`
+        + ` ground ${spread((r) => bandOf(r.total), GROUND.length).toFixed(0)} points`
+        + ' (bands under 20 landings dropped from the spread, not from the table)',
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.6 the day against the ground — ${SEEDS} landings an arm a country,`
+      + ` settler at floor ${SETTLER.siteFloor} and at no floor, pooled, to day ${SPRING_IN}:\n`
+      + out.join('\n'),
+    );
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * WALKING ON FROM HARD GROUND: WHAT DOES IT ACTUALLY COST?
+   *
+   * 12.6 asked for the founding card to carry the TIME. Three readings say it
+   * should not, and they are worth keeping together because each killed a
+   * different half of the premise:
+   *
+   *   1. the premise halved. "Two-thirds of the bands dead on the road had
+   *      stood on foundable ground" reads 40% (even) / 38% (hard) on floor 7,
+   *      over a population that itself halved — 35 bands where there were 49;
+   *   2. the trade is a coin. Paired floor 7 against no floor at all, first
+   *      spring is 117/150 vs 119/150 on even and 82 vs 84 on hard — saved 9
+   *      killed 7, and saved 10 killed 8. Sixteen and eighteen discordant
+   *      pairs, p about 0.8 both times;
+   *   3. and the clock is already there. The overlay washes at 0.82 and
+   *      `style.css` records that the travel HUD stays legible behind it —
+   *      the same duplication 12.H refuted when it took the road mark down
+   *      from wallpaper.
+   *
+   * SO THIS ASKS THE OTHER END OF THE CURVE, which the sweep says is where
+   * the resolvable difference lives. `floorOn` maps siteFloor 7 to coast 12
+   * and 9 to coast 14, and the verdict bands put 12-13 in HARD GROUND and 14
+   * in FAIR. So the pairing below is exactly one decision, taken at every site
+   * that offers it: TAKE the hard ground, or walk on hoping for fair.
+   *
+   * That decision is the one the card's own words push the wrong way on.
+   * "Hard ground — It could be held, by people with nothing better" is the
+   * line a player reads before walking on.
+   */
+  it('prices walking on from hard ground, which is what the card argues for', { timeout: 5_400_000 }, async () => {
+    const SEEDS = 200;
+    const HORIZON = 400;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'hard'] as HardshipId[]) {
+      const arm = (floor: number) => {
+        setPolicy({ ...SETTLER, id: `floor${floor}`, siteFloor: floor });
+        const spring: boolean[] = [];
+        const standing: boolean[] = [];
+        let ruled = 0;
+        let roofless = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          let sawSpring = false;
+          let everRoofed = false;
+          const final = run(armSeed(0, i, SEEDS), HORIZON, (_before, after) => {
+            if (!sawSpring && !after.end && after.day >= SPRING_IN) sawSpring = true;
+            if (after.settlement) everRoofed = true;
+          }, terms);
+          spring.push(sawSpring);
+          standing.push(!final.end && final.day >= HORIZON);
+          if (final.jarl) ruled += 1;
+          if (!everRoofed) roofless += 1;
+        }
+        return { spring, standing, ruled, roofless };
+      };
+
+      // TAKES hard ground (coast 12) against WALKS ON for fair (coast 14).
+      const takes = arm(7);
+      const walks = arm(9);
+      setPolicy(SETTLER);
+
+      const paired = (a: boolean[], b: boolean[]) => {
+        let saved = 0;
+        let killed = 0;
+        for (let i = 0; i < SEEDS; i += 1) {
+          if (!b[i] && a[i]) saved += 1;
+          if (b[i] && !a[i]) killed += 1;
+        }
+        const n = saved + killed;
+        let tail = 0;
+        let choose = 1;
+        for (let k = 0; k <= n; k += 1) {
+          if (k > 0) choose = (choose * (n - k + 1)) / k;
+          if (k >= Math.max(saved, killed) || k <= Math.min(saved, killed)) tail += choose;
+        }
+        const p = n > 0 ? tail / 2 ** n : 1;
+        return `taking it saved ${saved}, killed ${killed} (${n} pairs, p = ${p.toFixed(4)})`;
+      };
+      const n = (a: boolean[]) => a.filter(Boolean).length;
+
+      out.push(
+        `  ${terms}: first spring — takes hard ground ${n(takes.spring)}/${SEEDS},`
+        + ` walks on for fair ${n(walks.spring)}/${SEEDS} — ${paired(takes.spring, walks.spring)}\n`
+        + `      still standing at day ${HORIZON} — ${n(takes.standing)} vs ${n(walks.standing)}`
+        + ` — ${paired(takes.standing, walks.standing)}\n`
+        + `      ever ruled ${takes.ruled} vs ${walks.ruled};`
+        + ` never raised a steading at all ${takes.roofless} vs ${walks.roofless}`,
+      );
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.6 taking hard ground against walking on — ${SEEDS} landings an arm a country,`
+      + ` settler, paired, to day ${HORIZON}:\n${out.join('\n')}`,
+    );
+    expect(out.length).toBe(2);
+  });
 });
