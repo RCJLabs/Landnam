@@ -51,9 +51,14 @@
 > 9.5, 9.6, 9.8, 9.9, 9.10, 9.11, 9.12a, 9.13, 9.14, 9.15 — with 9.12a the one
 > that gave the game a third act.
 >
-> **NO CURRENT MILESTONE (from 2026-09-04). Phase 11 is CLOSED, all fifteen
-> items** — S1–S5, M1–M5, U1–U5 — and nothing has been queued behind it. The
-> next one is Evan's to open.
+> **CURRENT MILESTONE (from 2026-09-05): Phase 12 — the audit of 2026-09-05.**
+> Fifteen items, below, from a full read of every subsystem. **Working on
+> 12.1 — the yard turns its own days**, and its first job is 12.3's discipline
+> applied to its own premise: the numbers it rests on are floor-9 readings and
+> are being re-taken before a line is written.
+>
+> **Phase 11 is CLOSED, all fifteen items** — S1–S5, M1–M5, U1–U5. Seven
+> shipped a change; eight were closed on their own measurement without one.
 >
 > **Seven of the fifteen shipped a change. Eight were closed on their own
 > measurement without one**, which is the phase's real result: the discipline
@@ -7257,6 +7262,302 @@ Three groups, roughly in descending order of how much they change.
 - **Enriching the ending screen to name the road.** Offered under 10.1 on
   2026-09-02 and declined. Recorded here so it is not proposed a third time by
   somebody who forgets it was already answered.
+
+## Phase 12 — the audit of 2026-09-05
+
+Fifteen items, from a full read of every subsystem on the build that shipped
+the settler-floor retune. **The method is recorded because it is part of the
+reading:** ten readers, one per lens (travel, battle, colony, people, content,
+the two halves of the render layer, the meta layer, the measurement apparatus,
+and a historian whose only job was this file's decline history); six proposers
+from distinct angles; fifty-one candidates, each put to three adversarial
+verifiers — *already declined?*, *premise real?*, *feasible under the pillars?*
+Fifteen candidates were fully verified and every one survived with corrections,
+which are folded into the entries below. One was refuted outright. The
+remaining thirty-five carry **UNVERIFIED** where their verifiers did not run.
+
+**TWO ITEMS ALREADY WEAR PHASE 12 NUMBERS.** 12.C (the named foe walks away)
+and 12.H (the opening's dead) were opened ad hoc on 2026-09-04, before this
+queue existed. They are closed and are NOT renumbered; the queue below runs
+12.1 to 12.15 and the two older letters stand as they are.
+
+**THE STANDING CAVEAT ON EVERY NUMBER HERE.** The settler floor moved from
+coast 14 to 12 on 2026-09-04 and every published figure moved with it. Any
+figure below dated earlier is a reading of a different player, and is marked
+so. **12.3 is the item that fixes this**, and five other items cite readings it
+would replace — which is why it is third and not fifteenth.
+
+### The three overhauls
+
+- [ ] **12.1 — The yard turns its own days.** The game's largest measured lever
+  lives on a screen that cannot pass a day. COLONY accepts only enter, leave,
+  assign, queue, unqueue, rations and abandon (`src/sim/actions.ts:56-64`,
+  gate at `:139`), so the loop the winter counsel exists for — read the mark,
+  move a hand, pass the day — costs *Back to the land → Act → Rest → Act → The
+  steading* before the picker's two taps. **Seven taps for the move measured
+  at saved 45 / killed 0 of 120** (balance harness, even, 2026-08-31, floor 9
+  — re-take under 12.3). Four more silences on the same screens, all code
+  readings of 2026-09-05: the counsel renders only on the Build tab
+  (`colonyScreen.ts:74-82`) while ASSIGN is dispatched from the Work tab's
+  picker (`colonyUi.ts:402-487`); the hearth mark sits on the Build tab but
+  KEEP_HALL is a TravelAction refused while COLONY is current
+  (`travel.ts:36`); the Build tab opens on **zero build rows** at 390×844
+  (needs 162 + room 61 + rations/leave 304 = 527px above a list that begins
+  547px into a 523px slot — Playwright probe, one save at day 34, 6 people,
+  2026-09-04); and COLONY mounts no card overlay (`colonyScreen.ts:101`
+  against `travelScreen.ts:189`), so an event drawn on a colony day cannot be
+  answered there.
+  **Done when** one tap on the colony screen advances the day; the counsel
+  renders beside the roster it instructs; the first build row is visible at
+  scroll 0 at both viewports and the leave control sits below the last row;
+  the counsel → assign → day path is ≤ 3 taps, down from 7; and the
+  300-landing curve is unchanged, because no sim rule moved but the new verb's
+  admission.
+
+- [ ] **12.7 — A new visual identity, decided on the real renderers.**
+  The only identity decision on record is one sentence — "Ten art directions
+  were mocked up and three shortlisted; oil on canvas won" (:11247-11249,
+  2026-08-25) — the ten unnamed, the seven dropped unrecorded, and the mockup
+  it was made on drew a **hex** island and loaded Google Fonts. Evan's ask for
+  a different-game look lives only in a plan file that still assumes hexes.
+  The render readers found three directions feasible inside the current split:
+  **pixel** (the canvas-in-foreignObject path exists and is cached per
+  country; the figures leave the DOM, which touches `fx.ts:190-197`, 25 CSS
+  keyframes and every bar querying SVG); **woodcut** (hatch tiles as paints
+  the way `knot.ts` already is; drops the built page's distinct colours from
+  124 to under 40 and removes the canvas cost); **embroidery** (the game is
+  already side-on with figures in profile since 2026-08-29 — the smallest
+  change that reads as a different object). Isometric contradicts "drawn
+  side-on" and rewrites `line.ts`; low-poly 3D is the Unreal port's job.
+  **Step 0 is hygiene**: close the two holes in the one-ink test (it never
+  scans `render/cards/`; shared hexes respelled in `style.css` pass) and
+  delete the hex-era art code — `mapDefs`, `oilFlag.ts`, `camera.ts`, the dead
+  half of `terrainArt.ts` (a scan on 2026-09-05 found 176 unreferenced exports
+  and four modules with no importer).
+  **Done when** a gallery of ten panels drawn from the REAL derivations
+  (`processionScene`, `composeYard`, `line.ts`, `lookOf` — one seed, one stop,
+  one fight moment) is published and this file names the direction chosen and
+  the nine dropped; after the swap no renderer imports the old painter, the
+  look bar is green at both sizes including a yard scene, and the page still
+  ships zero external assets and runs from `file://`. **UNVERIFIED** — the
+  direction candidates were in the verify queue when the session limit hit.
+
+- [ ] **12.11 — The other landnám has hands.** **THIS REVERSES A RECORDED
+  INTENT and is Evan's call before it is work.** The rival's smallness is
+  stated three times as a decision — "He is deliberately small: a name, a
+  hall, and the ground he has taken" (:12315-12318, 2026-08-22). It is queued
+  because the measurement says the small rival costs more than he gives: met
+  by 32% / 40% of sagas, he refuses founding in 30-37% of them (60 an arm,
+  2026-08-31, floor 9 — and the verifier notes the "fenced" counter fires on
+  any transition where he blocks, so 30-37% is an upper bound). `rival.ts`
+  exports claims and chronicle only; `rivalHolds` has zero readers anywhere.
+  For two runs in three he is a fence and never a person.
+  **Done when** on 120 landings an arm at floor 7 the share of sagas in which
+  any rival interaction fires — a verb dispatched at him, a fence answered,
+  his standing moved — is ≥ 40%, against 0% today by construction; the curve
+  holds within tolerance; an old save migrates with his standing at the clan
+  default. Note for the build: `might` is **derived**, not stored — "derived,
+  not stored" is a pillar.
+
+### UI and what the screen says
+
+- [ ] **12.4 — The steading screens, made legible and put under a bar.**
+  Nothing repeatable can see the colony half. `reach.mjs` measures the settled
+  screens only when a colony save exists at a path `bars.mjs` never writes
+  (`reach.mjs:61,238-246`; `bars.mjs:31-36`), and it files a control clipped
+  by the viewport as *scrolled* because `#app` is `overflow:hidden`
+  (`reach.mjs:97`; `style.css:27-29`); `look.mjs` has no yard scene. The one
+  measurement taken (Playwright, 2026-09-04) found the job picker overflowing
+  at 320×568 with nothing to scroll it — Healer at 105% of the viewport,
+  *Stand them down* at 115%, the yard collapsed to 0px (`.action-slot` has no
+  ceiling, `style.css:45-47`, where `.hint-slot` has one at `:79-85`).
+  **Three steps, in order: instrument red first, then the fix, then the
+  bless.** Done when `bars.mjs` exits non-zero on today's build at 320×568 for
+  the colony picker and zero after; reach prints colony work, build and picker
+  rows at both viewports with no hand-made save; every picker button's centre
+  is ≤ 100% of the viewport at 6 and 9 people; the look bar holds a yard scene.
+
+- [ ] **12.5 — The top bar stops hiding its own warnings.** On any day with a
+  Sky or Tomorrow chip the Heart stat scrolls off at 390 wide; at home in
+  autumn the *Winter in N days* badge is itself off-screen. Measured on the
+  built page 2026-09-04 (N=1): day 1 overflows 30px, day 34 overflows 151px
+  with Heart and the badge gone, 320 wide loses Wood and Heart on day 1.
+  **The fix must honour a recorded decision**: the sideways scroll and
+  never-shrinking stats are deliberate (:17589-17601, 2026-08-06 — a long
+  fighter name must never paint over its neighbour), so the answer is folding
+  chips (Day+Season, Sky+Tomorrow) and letting the badge wrap, not shrinking.
+  Done when `scripts/topbar.mjs` is red on today's build and green after, at
+  both viewports on all four screens, with the road and title look re-blessed
+  once.
+
+- [ ] **12.15 — Take the HUD out of the illustration.** A 4px health bar under
+  every fighter (`figures.ts:258-270`), a floating "−N" per blow
+  (`fx.ts:324-330`), a gold ring, dashed target ellipses — and a *Steps* stat
+  in the fight's top bar (`battleUi.ts:39`) reading a movement counter for a
+  mechanic that left with the dash and the shove in 9.1b (:4278-4340).
+  Independent of 12.7 and the same size whichever direction wins.
+  Done when after twelve struck turns `field.mjs` finds no health-bar rects
+  and no floating damage text, the top bar has no Steps stat, and a two-figure
+  fixture at 44px distinguishes a man at full health from one at a third.
+  **UNVERIFIED.**
+
+### Gameplay
+
+- [ ] **12.2 — Standing orders.** 11.S4 is a GO with a settled design and
+  nothing built (:6605-6650). Crewing to the mark daily is the largest effect
+  measured here — 20/120 against 65/120 saw spring, paired saved 45 killed 0
+  (even, 2026-08-31, floor 9) — and costs 94 assignment taps a saga, 530 in
+  the worst, over 15,773 settled band-days (PROBE 11.S4, 120 seeds to day 500,
+  2026-09-03). Two verifier corrections carry: the "asks the ground" order **is
+  already the shipped bot** since the flip (`crewsByOutput` on all three
+  policies), so the live arms are *as-is* against *to the mark*; and the older
+  saved-30 / killed-3 figure is HEX-ERA and must not be quoted.
+  Done when a settler that sets *to the mark* once and issues no further
+  assignment sees first spring within 5 points of the daily-crewed settler at
+  300 landings on even — watched failing with `followOrders` stubbed out — an
+  *as-is* saga is state-hash identical to today's, and the tap probe reads ≤ 5
+  a saga under orders. Needs `Settlement.orders`, SAVE_VERSION 63 + migration,
+  and the verb driven through `apply` so headless and parity see it.
+
+- [ ] **12.6 — Take This Land? with the time in it.** 12.H's first finding is
+  unaddressed for the player. Two-thirds of bands dead on the road before
+  winter had stood on foundable ground, first on day 3 with 6.9 (even) / 4.5
+  (hard) days' food in hand (300 sagas a country, 2026-09-04, **floor 9**),
+  and the founding card shows the verdict, five measures, strength, weakness
+  and the one-way warning — nothing about food or the frost
+  (`cards/decide.ts:26-73`). Every line on it pushes toward holding out.
+  **Verifier correction:** "the game never says so" overstates — `guide.ts:26`
+  and `:37-38` already say settle lean rather than late; it is the
+  moment-of-decision surface that is silent. **Two steps, the second
+  conditional**: re-take on floor 7 with a no-floor arm first (300 landings a
+  country, by verdict band and settling-day band); only then compose
+  `foundReading(state)` in sim and mount it when founding is permitted.
+
+- [ ] **12.8 — The one decision in a fight gets its odds.** The player's
+  recurring choice is which marked foe to hit, and nothing informs it. A
+  strike is 2d6 + might + wallPush + edge against a deterministic evasion
+  (`strike.ts:71-74`; `swing.ts:129-148`) that is nowhere on screen, while
+  event cards elsewhere show their odds. Battle is 28% of the settler's dead
+  and 43% of the raider's (11.U4, 120 an arm, fair, 2026-09-03 — the older
+  39%/47% did NOT survive re-taking and must not be quoted).
+  Done when a pure `hitOdds()` matches the empirical hit rate over ≥ 2,000
+  seeded swings within 3 points and reads 0/1 at the ends; the arena arm's
+  figures are filed with N=300 and a date **as a reading of a bot**; and
+  `field.mjs` finds an odds label on every tappable foe.
+
+- [ ] **12.13 — The title outlives the man, and the coast can take it back.**
+  `Jarldom` is `{name, since}` (`types.ts:713-718`), written once
+  (`thing.ts:195`) and never cleared; `mourn` passes the hall, the blade and
+  the orphans on a death and knows nothing of the title, so **the band stays
+  jarl under a dead man**. Ruling changes word, a raider cap, a joining draw,
+  goodwill, tribute, and the Thing closing behind you — and nothing can end
+  it. The long-game bar stops at day 500, 43 days after the reckoning opens.
+  Done when a test kills the ruling jarl and the state no longer names a dead
+  man and the Thing is callable; the 700-day readout shows a non-zero "lost
+  the title" count at N=120 on fair; the ever-rule figures are restated on the
+  longer horizon with N and date. Whether the title lapses or passes to the
+  heir is a design call for Evan.
+
+### Content and the retelling
+
+- [ ] **12.9 — The teaching describes a game that no longer exists.** The
+  first things a new player reads name a hall to tap (`guide.ts:48`), a map
+  (`:58`, `:63`), standing shoulder to shoulder, and Shove and Dash — verbs
+  deleted in 9.1b. The `body`/`coast` split on guide and lesson entries was
+  built for the flag era when two games shipped; there is one now.
+  **Verifier correction, an instrument fault worth carrying:** a lesson-reach
+  probe driven by the harness cannot see colony lessons, because the harness
+  never dispatches ENTER_COLONY. Three steps: lint red first, then the
+  rewrite, then a reach probe at N=120 driven through `apply`.
+
+- [ ] **12.10 — The last screen and the book say what the run said.**
+  `RunEnd.lines` — the winter verdict, the jarl lines, the survived lines —
+  has exactly one reader, the screen-reader live region (`announce.ts:89`);
+  the rendered ending shows a generic closing instead, and the comment
+  claiming the lines are "inside it, said in prose" (`closing.ts:157-159`) is
+  not true. The chronicle splices to its last 300 entries and the book shows
+  160, so **a 700-day saga's book lacks its landing, founding and
+  proclamation** (8 of 30 bot runs hit the cap; the longest keeps entries from
+  day 266 only). Told lines repeat verbatim because the dedupe compares only
+  against the immediately previous entry. **Verifier corrections:** there is
+  no jsdom in the toolchain — assert on `composeSaga`'s text, not the DOM; and
+  10.1's decline is nearby, so the survived lines that name the road are the
+  ones to leave alone.
+
+- [ ] **12.14 — The deck remembers what the band did.** Eighteen condition
+  kinds and not one reads the band's history: no winters stood, no tally, no
+  oath broken, no jarl, no outlaw abroad, no rival met. The only deed-shaped
+  gates are two scalars. **Of 103 cards, none mentions the jarl.** The
+  raider's reached set is a subset of the settler's — at least 92 of 103
+  shared. **Verifier correction that shrinks step 1:** *foresworn* and
+  *ruling* are already expressible with the existing `flagSet` condition and
+  winters-stood is a day threshold; only the tally, the outlaw and the rival
+  need new kinds.
+  Done when settler/raider reached-set overlap falls by ≥ 8 cards at 120
+  landings a policy; a history-gated card is drawn in ≥ 30% of raider sagas
+  and ≤ 5% of settler sagas that never sacked; the spring figures hold within
+  0.05.
+
+### Measurement — the instrument is also the bot
+
+- [ ] **12.3 — Re-take every inherited reading on the floor-7 baseline.**
+  This file rules that nothing measured before 2026-09-04 is comparable with
+  anything after (:7295-7300), and **only the six hardship figures have been
+  re-taken.** Still load-bearing and stale: 12.C's "cost the curve nothing"
+  (87/65/39 against 87/65/38) and its 13% / 24% recurrence, at 80 landings
+  through the old floor; the ever-rule figures at N=120, a sample this file
+  calls too thin to set a promise with; the player-facing constants on the
+  rations panel and the watch mark; and every Phase 9-11 paired finding quoted
+  as a fact about the game. **Ranked third because 12.1, 12.2, 12.6, 12.11 and
+  12.13 all cite readings this would replace.** Done when every constant named
+  carries instrument, date and N beside it in source and matches its re-take
+  within the governing bar's tolerance, no player-facing number is a floor-9
+  reading, and this file's comparability note names what was and was not
+  re-taken. **UNVERIFIED** (its own verifiers did not run; the premise is this
+  file's ruling and code changed on 2026-09-04).
+
+- [ ] **12.12 — An instrument for the human, and a bot that plays the
+  player's game.** No instrument has ever watched a person play the coast: the
+  only network call is the same-origin freshness check (`freshness.ts:32`,
+  with `offline.test.ts` banning anything else), there is no action recorder
+  in the page, and the recording tools went with the hexes (:125-130).
+  Meanwhile the bot every figure comes from **bypasses the player's
+  interface** — it calls `assign`, `queueBuild` and `abandonSteading` directly
+  and sets rations on the state (`harness.ts:1520-1634`), never opens the
+  colony screen, and answers every card with `{type:'CHOOSE', index:0}`
+  (`:767`) on a deck whose authors already order choices around it.
+  **Probe first**: count every action the shipped bot takes that the deeds
+  sheet or colony verb set would not have offered a player, and make it fire
+  on a constructed case before trusting the figure. Then the recorder (prefs
+  store, not the save — no SAVE_VERSION bump), *Copy the play*, an interface
+  bot whose off-menu count is exactly zero, and the first committed human
+  coast runs replayed in `npm test` with a pinned hash. **Verifier caution:** a
+  committed human run is a fixture a bot cannot re-record — the hex-era long
+  run was re-recorded four times as rules moved.
+
+### Refuted, and recorded so it is not proposed again
+
+- **A wedding across the fence** — a kin tie to a neighbour clan. Nothing in
+  this file declines it; the **code** does. `maybePair` pairs only within the
+  band (`household.ts:45-103`) and the "sworn" tie the proposal wanted to
+  reuse does not exist in the shape it assumed. Refuted on a code read,
+  2026-09-05.
+
+### Considered, sound, and not in the fifteen
+
+Kept here because each is real work with a real premise, and cheaper than
+anything above: **sweep the card-choice policy** the whole curve is measured
+through (one harness knob, one paired probe — do it first if 12.12 waits);
+**what a lost raid takes**, the autumn lever 6.5c explicitly asked for and
+nobody has swept; **the man who walked away** (loose champions, four in five
+of all named foes, can never return by construction — needs 12.3 first);
+**the knarr's six decide something** (traits read in three places; folded
+into 12.14); **Phase 7's frozen contract** — four of seven contract files
+have drifted since the 2026-08-25 freeze and the parity harness is gone, so
+lift it or park it, after 12.12's recordings; and a hygiene queue —
+**browser bars in CI**, a **slow-phone cost bar**, a **frozen corpus of
+played saves**, the **challenge code's missing world hash**, **file splits
+along drawn seams**, and a **dead-exports rule test**.
 
 ## Parking Lot (ideas, not commitments)
 
