@@ -221,7 +221,6 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
       () => dispatch({ type: 'SET_RATIONS', rations: other }),
       { class: 'action wide' },
     ),
-    renderLeaving(state, dispatch),
   ]);
 }
 
@@ -237,8 +236,15 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
  * going grey with no explanation. A player who wants to leave can leave;
  * nothing here suggests they should, and nothing here hides what happened to
  * the ones who did.
+ *
+ * LIFTED OUT OF `renderRations` ON 2026-09-05 (12.1). It was nested inside
+ * the rations block, so the quietest control on the panel rendered ABOVE the
+ * build list — 408px into a 523px slot on a phone, with zero build rows
+ * visible behind it (Playwright, 390x844, day 34, six people, 2026-09-04).
+ * The colony screen mounts it last now. Rations did NOT move with it: they
+ * belong beside the room mark, which is a decision of its own.
  */
-function renderLeaving(state: GameState, dispatch: Dispatch): HTMLElement {
+export function renderLeaving(state: GameState, dispatch: Dispatch): HTMLElement {
   // Every word of this is `leaveNote`, in the sim, where a test can hold the
   // three parts together without a browser. The panel used to compose them
   // here and composed only two — the price and the refusal — so the RECORD
@@ -391,6 +397,14 @@ export function renderColonyHint(state: GameState): HTMLElement {
     idle > 0
       ? `${idle} with nothing to do — tap a name, then a job`
       : `${ground || 'bare ground'} — tap a name to change their work`,
+    // 12.1: THE INSTRUCTION GOES BESIDE THE THING IT INSTRUCTS. The counsel
+    // names the smallest move that closes the winter mark — the largest lever
+    // this project has measured (crewed daily 89 of 120 saw spring against 29
+    // for a crew set once; paired saved 60, killed 0; balance harness, even,
+    // floor 7, 2026-09-05) — and it rendered only on the Build tab, while the
+    // roster and the job picker that carry it out are here on Work. Same
+    // composer, `counselSpan`, so the two mounts cannot word it differently.
+    ...counselSpan(state),
   ]);
 }
 
@@ -498,17 +512,31 @@ export function renderColonyActions(
   const person = selected ? state.party.people.find((p) => p.id === selected) : undefined;
   if (person) return renderJobPicker(state, person, dispatch);
 
-  const bar = el('div', { class: 'actionbar' });
-  bar.append(
+  // TWO ROWS, and the split is what each row IS: the top one chooses which
+  // view of the steading you are looking at, the bottom one does something.
+  // Four across does not fit 320px — `.action` is `flex: 1 1 0` and 'Back to
+  // the land' has no room at a quarter of the bar — and the battle screen
+  // already stacks two bars this way (`.action-stack`, render/battleUi.ts).
+  const tabs = el('div', { class: 'actionbar' });
+  tabs.append(
     button('Work', () => setTab('work'), {
       class: `action${tab === 'work' ? ' primary' : ''}`,
     }),
     button('Build', () => setTab('build'), {
       class: `action${tab === 'build' ? ' primary' : ''}`,
     }),
+  );
+
+  // 12.1: the yard turns its own days. 'Rest' rather than a new word, because
+  // it is the same verb the road offers at home and the same day underneath —
+  // see the CAMP branch in sim/actions.ts.
+  const doing = el('div', { class: 'actionbar' });
+  doing.append(
+    button('Rest', () => dispatch({ type: 'CAMP' }), { class: 'action primary' }),
     button('Back to the land', () => dispatch({ type: 'LEAVE_COLONY' }), { class: 'action' }),
   );
-  return bar;
+
+  return el('div', { class: 'action-stack' }, [tabs, doing]);
 }
 
 /**

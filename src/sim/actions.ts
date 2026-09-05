@@ -63,6 +63,24 @@ const COLONY_TYPES = new Set([
   'ABANDON',
 ]);
 
+/**
+ * The one TRAVEL verb the yard answers too: passing a day.
+ *
+ * 12.1. A settled band spends about half its turns at the steading, and until
+ * now every one of those days had to be passed from the road — Back to the
+ * land, Act, Rest, then Act and The steading to come back. Five taps around
+ * the move this project measures as its largest lever: crewing to the winter
+ * mark daily saw spring 89 times in 120 against 29 for a crew set once and
+ * left, paired saved 60 killed 0 (balance harness, even, floor 7, 2026-09-05
+ * — the floor-9 reading of the same bar was saved 45).
+ *
+ * DELIBERATELY NOT IN `COLONY_TYPES`, which is the set of verbs that belong
+ * to the yard ALONE — the guard below refuses those anywhere else, and CAMP
+ * has to keep working on the road. Kept as its own set so the two rules stay
+ * legible: one says "only here", the other says "here as well".
+ */
+const COLONY_ALSO = new Set(['CAMP']);
+
 const BATTLE_TYPES = new Set([
   'B_STRIKE',
   'B_THROW',
@@ -136,7 +154,28 @@ export function apply(state: GameState, action: Action): GameState {
   }
 
   if (currentMode(state) === 'COLONY') {
-    if (!COLONY_TYPES.has(action.type)) return state;
+    if (!COLONY_TYPES.has(action.type) && !COLONY_ALSO.has(action.type)) return state;
+    if (action.type === 'CAMP') {
+      // ONE DAY-TICK, NOT TWO. The day passes in the yard through the very
+      // function the road passes it through — `applyTravel` reaching `doCamp`,
+      // which already knows what being at home means (no wood cut, a deeper
+      // mend, the whole band rested rather than the field crew). A second
+      // copy of the day here could drift from that one, and the two would
+      // disagree about a band standing in the same place.
+      //
+      // A CARD STOPS THE DAY, and it has to be said here rather than left to
+      // the gate below: this branch runs BEFORE the aftermath and event
+      // checks, so without this the yard would tick past a card the road
+      // would have stopped for. The colony screen mounts the same overlay the
+      // road does, so the card can be answered where it is drawn.
+      if (state.event || state.aftermath) return state;
+      const next = applyTravel(state, action);
+      if (next === state) return state;
+      // Same rule as the road's: an event may have drawn steel, and one card
+      // does not get stacked on another.
+      if (!next.end && !next.battle) maybeFireEvent(next);
+      return next;
+    }
     if (action.type === 'LEAVE_COLONY') {
       const next = popMode(state);
       return next === state ? state : { ...cloneState(state), modes: next.modes };

@@ -41,6 +41,51 @@ export interface OverlayHooks {
 }
 
 /** The one overlay travel mode should be showing, or null for none. */
+/**
+ * What the GAME is saying that cannot wait — above anything the player opened,
+ * because it is the game asking whether there is any more game.
+ *
+ * Split out of `travelOverlay` on 2026-09-05 (12.1) so the yard can ask the
+ * same questions in the same order. Two copies of a priority chain drift; one
+ * cannot.
+ */
+function urgent(state: GameState, hooks: OverlayHooks): HTMLElement | null {
+  if (state.end) return renderRunEnd(state, hooks.onRunOver);
+  if (state.jarl && state.flags['ruleTaken'] === undefined) {
+    return renderProclamation(
+      state,
+      () => hooks.dispatch({ type: 'RULE_ON' }),
+      () => hooks.dispatch({ type: 'LAY_DOWN_RULE' }),
+    );
+  }
+  return null;
+}
+
+/**
+ * What the game is waiting to be ANSWERED — below anything the player opened,
+ * so a card never snatches a panel out from under a tap, and the teaching last
+ * of all so nothing the game itself is saying is pushed aside by it.
+ */
+function answering(state: GameState, hooks: OverlayHooks): HTMLElement | null {
+  if (state.aftermath) return renderAftermath(state, hooks.dispatch);
+  if (state.event) return renderEventCard(state, hooks.dispatch);
+  return hooks.lesson();
+}
+
+/**
+ * The yard's overlay: everything the game is saying, and none of the road's
+ * own panels — the map, the deeds sheet and the founding card belong to a band
+ * that is walking.
+ *
+ * 12.1. Until this existed the colony screen mounted the lesson alone
+ * (`colonyScreen.ts`), so a card drawn on a day passed in the yard could be
+ * neither seen nor answered there. That did not matter while the yard could
+ * not turn a day; it is load-bearing now that it can.
+ */
+export function colonyOverlay(state: GameState, hooks: OverlayHooks): HTMLElement | null {
+  return urgent(state, hooks) ?? answering(state, hooks);
+}
+
 export function travelOverlay(
   state: GameState,
   deeds: Deed[],
@@ -48,19 +93,8 @@ export function travelOverlay(
 ): HTMLElement | null {
   const { ui, dispatch, rerender } = hooks;
 
-  if (state.end) {
-    return renderRunEnd(state, hooks.onRunOver);
-  }
-
-  // Proclaimed and not yet answered. Above everything the player opened,
-  // because it is the game asking whether there is any more game.
-  if (state.jarl && state.flags['ruleTaken'] === undefined) {
-    return renderProclamation(
-      state,
-      () => dispatch({ type: 'RULE_ON' }),
-      () => dispatch({ type: 'LAY_DOWN_RULE' }),
-    );
-  }
+  const speaking = urgent(state, hooks);
+  if (speaking) return speaking;
 
   if (ui.launchOpen && state.settlement && !state.expedition) {
     return renderLaunch(
@@ -151,10 +185,5 @@ export function travelOverlay(
     );
   }
 
-  if (state.aftermath) return renderAftermath(state, dispatch);
-  if (state.event) return renderEventCard(state, dispatch);
-
-  // Last, so nothing the game itself is saying is ever pushed aside by the
-  // teaching. lessonDue() enforces the same rule from the other side.
-  return hooks.lesson();
+  return answering(state, hooks);
 }

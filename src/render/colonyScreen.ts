@@ -19,7 +19,9 @@ import {
   renderHearth,
   renderWall,
   renderRations,
+  renderLeaving,
 } from './colonyUi';
+import { colonyOverlay } from './overlays';
 import {
   actionSlot,
   asNodes,
@@ -72,13 +74,21 @@ export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
   // Work and Build are two views of the same steading. Selecting a person
   // always wins, because the picker replaces the action bar.
   if (ui.colonyTab === 'build' && !ui.picked) {
+    // THE BUILD TAB OPENS ON THE BUILD LIST, which it did not until
+    // 2026-09-05 (12.1): needs, room, rations and the leave control took 527px
+    // above a list that began 547px into a 523px slot, so a phone showed ZERO
+    // build rows until the player scrolled past the door out (Playwright,
+    // 390x844, day 34, six people, 2026-09-04). Order is now what the tab is
+    // for, then what it costs, then the way out — `renderLeaving` last,
+    // because it is meant to be the quietest thing here and was sitting third.
     hintSlot.replaceChildren(
+      renderBuilds(state, colonyDispatch),
       renderNeeds(state),
       renderRoom(state),
       renderHearth(state),
       renderWall(state),
       renderRations(state, colonyDispatch),
-      renderBuilds(state, colonyDispatch),
+      renderLeaving(state, colonyDispatch),
     );
   } else {
     hintSlot.replaceChildren(
@@ -98,6 +108,10 @@ export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
     }, colonyDispatch),
   );
   sagaSlot.replaceChildren(renderColonyFooter(state));
-  overlaySlot.replaceChildren(...asNodes(h.lesson()));
+  // Everything the game is saying, not the lesson alone — the yard can turn a
+  // day now, so a card drawn on one has to be answerable where it is drawn.
+  // See render/overlays.ts: the same chain the road uses, minus the road's
+  // own panels.
+  overlaySlot.replaceChildren(...asNodes(colonyOverlay(state, h)));
   nameOverlays();
 }
