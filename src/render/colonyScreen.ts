@@ -89,12 +89,27 @@ export function renderColonyScreen(state: GameState, h: ScreenHooks): void {
 
   // Work and Build are two views of the same steading. Selecting a person
   // always wins, because the picker replaces the action bar.
-  // A switch between the two views starts at the top of the new one. Keyed on
-  // the tab AND the picker, because the picker replaces the whole slot too.
-  const filling = `${ui.colonyTab}:${ui.picked ? 'picked' : 'list'}`;
-  if (filling !== filledFor) {
+  // A switch between the two views starts at the top of the new one.
+  //
+  // KEYED ON THE TAB ALONE, and the first cut (12.2) keyed on the picker too.
+  // Opening the picker does not change what is in this slot — the roster
+  // stays exactly where it was — so resetting the scroll there would throw
+  // the list back to the top for no reason. Only a tab switch changes what
+  // this panel is showing, and that is the case 12.1 opened it for.
+  //
+  // AND NOTHING MORE THAN THIS IS NEEDED, which took three wrong fixes to
+  // establish. `scripts/yard.mjs` reported the roster jumping to zero on
+  // every tap; I read that as `replaceChildren` dropping the scroll and wrote
+  // machinery to carry it across the refill, twice. Instrumenting the
+  // `scrollTop` setter said otherwise: the only write was the one below, and
+  // the offset was already gone before this function was entered. The BAR was
+  // scrolling to the bottom and then tapping the row at the TOP, and a
+  // browser scrolls a focused button into view. The instrument was measuring
+  // its own reach. The check is kept — it has teeth, watched failing against
+  // the picker-keyed version — and the machinery is not.
+  if (ui.colonyTab !== filledFor) {
     hintSlot.scrollTop = 0;
-    filledFor = filling;
+    filledFor = ui.colonyTab;
   }
 
   if (ui.colonyTab === 'build' && !ui.picked) {

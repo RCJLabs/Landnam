@@ -165,6 +165,13 @@ function render(): void {
   // so the three mode branches below cannot each forget it.
   cry(state);
   labelTravelMap(state);
+  // WHICH SCREEN IS UP, ON THE ROOT, FOR THE STYLESHEET TO SEE (12.4). The
+  // three modes share one set of slots, so a rule written for one of them
+  // reaches all three: the short-screen ceiling the colony's job picker needs
+  // shrank the BATTLE log by the same amount, and the look bar caught it.
+  // Set here rather than in each screen because there is one router and three
+  // branches, and a branch that forgot would leave the last mode's rule up.
+  document.documentElement.dataset['screen'] = currentMode(state).toLowerCase();
 
   if (currentMode(state) === 'BATTLE' && state.battle) {
     renderBattleScreen(state, hooks);

@@ -236,6 +236,106 @@ for (const size of [{ width: 390, height: 844 }, { width: 320, height: 568 }]) {
     }
   }
 
+  // --- 6. The job picker is reachable, and holds still to be tapped ---
+  //
+  // 12.4. This is where the steading half of the game is actually played and
+  // nothing had ever looked: the one measurement taken (Playwright,
+  // 2026-09-04) found the picker overflowing at 320x568 with nothing to
+  // scroll it, and re-taken on 2026-09-05 it was worse — *Healer* with its
+  // centre at 109% of the viewport and *Stand them down* at 119%, the latter
+  // being the only way to take somebody off a job.
+  //
+  // THREE ASSERTIONS, AND THE MIDDLE ONE IS THE ONE THAT EARNED ITS KEEP.
+  // The first fix for the overflow made `.hint-slot` shrink to yield, which
+  // put it in a feedback loop with the map canvas that sizes itself to its
+  // own slot: the first crew row walked 159px to 88px over thirty frames and
+  // then jumped to 229. A control that MOVES is a control you cannot tap, and
+  // it passes any check that only asks where things are once.
+  await page.locator('.action-slot button', { hasText: /^Work$/ }).first()
+    .click({ timeout: 2000 }).catch(() => {});
+  await page.waitForTimeout(300);
+  const first = page.locator('.crew-row').first();
+  if (await first.count()) {
+    const walk = await page.evaluate(() => new Promise((done) => {
+      const row = document.querySelector('.crew-row');
+      if (!row) { done([]); return; }
+      const seen = new Set();
+      let n = 0;
+      const tick = () => {
+        const r = row.getBoundingClientRect();
+        seen.add(`${Math.round(r.top)},${Math.round(r.height)}`);
+        n += 1;
+        if (n < 30) requestAnimationFrame(tick);
+        else done([...seen]);
+      };
+      requestAnimationFrame(tick);
+    }));
+    check(
+      walk.length === 1,
+      `yard ${at}: the roster will not hold still — the first row took`
+        + ` ${walk.length} different positions over thirty frames (${walk.join(' ')})`,
+    );
+
+    // Scrolled down the roster FIRST, because that is the state the next
+    // check is about and a slot sitting at zero cannot show a jump to zero.
+    await page.evaluate(() => {
+      const slot = document.querySelector('.hint-slot');
+      if (slot) slot.scrollTop = slot.scrollHeight;
+    });
+    await page.waitForTimeout(150);
+    const scrolled = await page.evaluate(() => document.querySelector('.hint-slot')?.scrollTop ?? 0);
+
+    // AND THE ROW TAPPED IS ONE THAT IS ACTUALLY ON SCREEN. The first cut of
+    // this scrolled to the bottom and then tapped `.crew-row` — the row at
+    // the TOP — and reported the roster jumping back to zero. It was the
+    // browser doing what browsers do: clicking a button focuses it, and a
+    // focused element gets scrolled into view. The bar was measuring its own
+    // reach, not the game's behaviour, and it cost three wrong fixes before
+    // the setter was instrumented and said so.
+    const visible = page.locator('.crew-row').nth(
+      Math.max(0, (await page.locator('.crew-row').count()) - 1),
+    );
+    await visible.click({ timeout: 4000 }).catch(() => {});
+    await page.waitForTimeout(350);
+    check(
+      await page.locator('.crew-row.selected').count() > 0,
+      `yard ${at}: tapping a name in the roster selected nobody`,
+    );
+    // AND THE LIST STAYS WHERE THE PLAYER LEFT IT. 12.2 reset this slot's
+    // scroll whenever the picker opened as well as on a tab switch, so a
+    // player who scrolled down to the sixth name and tapped it watched the
+    // roster jump back to the first. It does not eat the tap — measured, the
+    // selection still lands — but the list moving under the finger on every
+    // tap is its own fault, and nothing was watching for it.
+    if (scrolled > 0) {
+      const after = await page.evaluate(() => document.querySelector('.hint-slot')?.scrollTop ?? 0);
+      check(
+        after > 0,
+        `yard ${at}: tapping a name threw the roster back to the top`
+          + ` (scrollTop ${scrolled} -> ${after})`,
+      );
+    }
+
+    const picker = await page.evaluate((h) => [...document.querySelectorAll('.action-slot button')]
+      .map((b) => {
+        const r = b.getBoundingClientRect();
+        return {
+          label: (b.textContent ?? '').trim().slice(0, 24),
+          centre: Math.round((((r.top + r.bottom) / 2) / h) * 100),
+        };
+      }), size.height);
+    check(
+      picker.length > 2,
+      `yard ${at}: the job picker did not open (${picker.length} controls)`,
+    );
+    const beyond = picker.filter((b) => b.centre > 100);
+    check(
+      beyond.length === 0,
+      `yard ${at}: ${beyond.length} picker controls have their centre off the screen — `
+        + beyond.map((b) => `${b.label} at ${b.centre}%`).join(', '),
+    );
+  }
+
   // --- 4. Nothing on either tab is off the bottom ---
   const spill = await page.evaluate((h) => {
     const out = [];
