@@ -31,6 +31,22 @@ export interface HardshipDef {
   /**
    * What the harness measured for this setting, AS NUMBERS.
    *
+   * THE INSTRUMENT, THE DATE AND THE N, because these are printed to a player
+   * before they agree to them (12.3, 2026-09-05, settler, floor 7):
+   *
+   *   `spring` — `each setting is measured, and they are ordered`
+   *     (test/balance.test.ts), 300 landings a country to day 73. 300 rather
+   *     than 60 since 2026-08-19, and the note on `CURVE_SEEDS` says what 60
+   *     cost: As It Lies was published at 72% off one sixty-seed run while
+   *     the game was running at 52%.
+   *
+   *   `ruled` — the long game, 120 sagas a country to day 500, with an
+   *     8-point tolerance. RE-TAKEN AT 300 on 2026-09-05, because 120 cannot
+   *     resolve a figure to 8 points: fair **46.0% (+/-5.6)**, even **39.3%
+   *     (+/-5.5)**, hard **20.7% (+/-4.6)**, against the 46 / 38 / 20 below.
+   *     All three hold; the intervals are known now rather than assumed, and
+   *     the bar's tolerance turns out to be the right width after all.
+   *
    * The prose the player reads is generated from these by `measuredLine`,
    * and the balance harness asserts these against what it has just measured.
    * Both halves matter and neither existed before 2026-08-19:

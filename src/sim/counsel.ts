@@ -1,12 +1,18 @@
 // What to actually DO about the winter mark.
 //
-// THE MEASUREMENT THIS EXISTS FOR. The balance harness ran three arms over
-// the same 120 landings on As It Lies: a band that picks a crew on settling
-// day and never touches it saw spring 21 times; a band that moves hands onto
-// whatever the mark says it is short of, day by day, saw spring 48 times.
-// Saved 30, killed 3. It is the largest single effect this project has ever
-// measured — bigger than short commons, which saved 14 — and adding a
-// season-aware layer on top of it changed the outcome on NOT ONE SEED.
+// THE MEASUREMENT THIS EXISTS FOR, RE-TAKEN 2026-09-05 (12.3). The balance
+// harness runs the arms over the same 120 landings on As It Lies: a band that
+// picks a crew on settling day and never touches it sees spring 29 times; a
+// band that moves hands onto whatever the mark says it is short of, day by
+// day, sees spring 89 times. **Paired: saved 60, killed 0** (floor 7). It is
+// the largest single effect this project has ever measured — short commons,
+// the other winter lever, is saved 35 against killed 5 on 809 seeds — and
+// adding a season-aware layer on top of it changed the outcome on NOT ONE
+// SEED.
+//
+// The figures this file shipped with — 21 against 48, saved 30 killed 3 —
+// are HEX-ERA and must not be quoted. They are kept in this sentence only so
+// that a reader who finds them elsewhere knows what they were.
 //
 // So the most valuable thing a player can know about this game is "read the
 // mark and move somebody". And until this file existed the game never said
@@ -170,10 +176,11 @@ export function counselLine(c: Counsel): string {
  * 11.U3: `counsel` is rendered in exactly one place, `renderNeeds` on the
  * colony panel, and `ENTER_COLONY` refuses unless `atHome` — so a settled
  * band away from home has never been able to reach the one sentence this
- * project measured at saved 30 / killed 3. MEASURED 2026-09-03 (20 sagas
- * an arm, `fair`, to day 400): a settled band spends 453 days away from
- * home as a settler and 551 as a raider; 216 and 161 of those fall inside
- * the mark's own window, and **109 of 216 (settler) and 122 of 161
+ * project measures at saved 60 / killed 0 (see the head of this file; the
+ * saved-30 figure this line used to quote is hex-era). MEASURED 2026-09-03
+ * (20 sagas an arm, `fair`, to day 400): a settled band spends 453 days
+ * away from home as a settler and 551 as a raider; 216 and 161 of those
+ * fall inside the mark's own window, and **109 of 216 (settler) and 122 of 161
  * (raider) have a live counsel behind them** — a denser hit rate than the
  * at-home window's own 38% and 50%. `homeCrew` was empty on NONE of them,
  * so the advice is never the empty steading's.

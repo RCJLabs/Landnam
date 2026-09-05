@@ -208,9 +208,12 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
       el('span', { class: 'mark-gap' }, [
         // WORTH, NOT ONLY PRICE (9.7). On full shares this said "nobody goes
         // short", which is reassurance on the one screen where tightening is
-        // the largest thing the player can do — measured at 22 bands saved in
-        // 120 against 1 lost. Said only when the larder will not reach spring,
-        // so it is a fact about THIS winter and not a standing lecture.
+        // one of the two largest things the player can do — re-taken at 35
+        // bands saved against 5 lost, over the 809 in 960 where this very
+        // condition put the line on screen (12.3, floor 7, 2026-09-05; see
+        // `data/rations.ts` for why the denominator is 809 and not 960).
+        // Said only when the larder will not reach spring, so it is a fact
+        // about THIS winter and not a standing lecture.
         half
           ? `${HALF_RATION_HEART} off every heart`
           : forecast(state).foodGap < 0 ? tighteningWorth() : 'nobody goes short',

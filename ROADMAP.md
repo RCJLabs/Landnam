@@ -52,11 +52,14 @@
 > that gave the game a third act.
 >
 > **CURRENT MILESTONE (from 2026-09-05): Phase 12 — the audit of 2026-09-05.**
-> Fifteen items, below, from a full read of every subsystem. **12.1 is BUILT**
-> — the yard turns its own days — and its premise was re-taken on the floor-7
-> baseline first, where the lever it rests on is BIGGER than the figure the
-> entry inherited: 89 of 120 saw spring against 29, paired saved 60 killed 0,
-> where the floor-9 reading said 45.
+> Fifteen items, below, from a full read of every subsystem. **12.1 and 12.3
+> are BUILT.** 12.1 gave the yard its own days; 12.3 re-took every inherited
+> reading the rest of the phase leans on, and three of the seven moved — the
+> crewing lever is BIGGER than the entry it was quoted in (saved 60, not 45),
+> the crewing chore is SMALLER (66 taps a saga, not 94), and short commons
+> shrank because the band it saves got healthier, not because the lever broke.
+> Two promises the player reads were restated on the re-takes, and two bars
+> that could no longer fail honestly were rewritten.
 >
 > **Phase 11 is CLOSED, all fifteen items** — S1–S5, M1–M5, U1–U5. Seven
 > shipped a change; eight were closed on their own measurement without one.
@@ -4186,6 +4189,13 @@ printing on every run and nothing was acting on. Every item below carries the
 measurement that asked for it; none of them is a guess about what might be
 nice. Four groups, in the shape they were proposed and chosen from.
 
+> **READ EVERY NUMBER BELOW AS A FLOOR-9 READING.** The settler's site floor
+> moved from 9 to 7 — coast 14 to coast 12 — on 2026-09-04, and the bot every
+> figure in this section came from is not the bot that plays the game now.
+> **12.3 re-took the load-bearing ones on 2026-09-05** and its entry names
+> which held, which moved, and which were never re-taken at all. A figure here
+> is a dated record of an instrument; it is not a fact about the game.
+
 ### Things that exist and do not pay
 
 - [x] **9.1 The dead verbs** — **THE SHIELD WAS NOT DEAD. THE MEASUREMENT
@@ -5642,6 +5652,13 @@ numbers taken fresh, not from the parking lot. Every item below carries the
 instrument, the date and the N, and anything not yet measured says so in
 capitals rather than being written as a finding.
 
+> **READ EVERY NUMBER BELOW AS A FLOOR-9 READING.** The settler's site floor
+> moved from 9 to 7 — coast 14 to coast 12 — on 2026-09-04, and the bot every
+> figure in this section came from is not the bot that plays the game now.
+> **12.3 re-took the load-bearing ones on 2026-09-05** and its entry names
+> which held, which moved, and which were never re-taken at all. A figure here
+> is a dated record of an instrument; it is not a fact about the game.
+
 **The reading it is opened from.** `PROBE: the Phase 10 audit`, 120 landings a
 policy over the same seeds, both bots reported apart because half of Phase 9's
 bad numbers came from reading one bot's habits as a rule of the game:
@@ -6149,6 +6166,13 @@ measurement it rests on, and the ones resting on nothing say so in capitals.**
 Phase 10's own finding is the reason for the discipline: this game reported
 itself badly, and six items in a row were opened on numbers that did not
 survive being re-taken.
+
+> **READ EVERY NUMBER BELOW AS A FLOOR-9 READING.** The settler's site floor
+> moved from 9 to 7 — coast 14 to coast 12 — on 2026-09-04, and the bot every
+> figure in this section came from is not the bot that plays the game now.
+> **12.3 re-took the load-bearing ones on 2026-09-05** and its entry names
+> which held, which moved, and which were never re-taken at all. A figure here
+> is a dated record of an instrument; it is not a fact about the game.
 
 Three groups, roughly in descending order of how much they change.
 
@@ -7296,13 +7320,13 @@ would replace — which is why it is third and not fifteenth.
   gate at `:139`), so the loop the winter counsel exists for — read the mark,
   move a hand, pass the day — costs *Back to the land → Act → Rest → Act → The
   steading* before the picker's two taps. **Seven taps for the move measured
-  at saved 45 / killed 0 of 120** (balance harness, even, 2026-08-31, floor 9
-  — re-take under 12.3). Four more silences on the same screens, all code
-  readings of 2026-09-05: the counsel renders only on the Build tab
-  (`colonyScreen.ts:74-82`) while ASSIGN is dispatched from the Work tab's
-  picker (`colonyUi.ts:402-487`); the hearth mark sits on the Build tab but
-  KEEP_HALL is a TravelAction refused while COLONY is current
-  (`travel.ts:36`); the Build tab opens on **zero build rows** at 390×844
+  at saved 60 / killed 0 of 120** (balance harness, even, floor 7, re-taken
+  2026-09-05 under 12.3; the floor-9 reading of the same bar was saved 45).
+  Four more silences on the same screens, all code readings of 2026-09-05:
+  the counsel renders only on the Build tab (`colonyScreen.ts:74-82`) while
+  ASSIGN is dispatched from the Work tab's picker (`colonyUi.ts:402-487`);
+  the hearth mark sits on the Build tab but KEEP_HALL is a TravelAction
+  refused while COLONY is current (`travel.ts:36`); the Build tab opens on **zero build rows** at 390×844
   (needs 162 + room 61 + rations/leave 304 = 527px above a list that begins
   547px into a 523px slot — Playwright probe, one save at day 34, 6 people,
   2026-09-04); and COLONY mounts no card overlay (`colonyScreen.ts:101`
@@ -7406,13 +7430,26 @@ would replace — which is why it is third and not fifteenth.
 
 - [ ] **12.2 — Standing orders.** 11.S4 is a GO with a settled design and
   nothing built (:6605-6650). Crewing to the mark daily is the largest effect
-  measured here — 20/120 against 65/120 saw spring, paired saved 45 killed 0
-  (even, 2026-08-31, floor 9) — and costs 94 assignment taps a saga, 530 in
-  the worst, over 15,773 settled band-days (PROBE 11.S4, 120 seeds to day 500,
-  2026-09-03). Two verifier corrections carry: the "asks the ground" order **is
-  already the shipped bot** since the flip (`crewsByOutput` on all three
-  policies), so the live arms are *as-is* against *to the mark*; and the older
-  saved-30 / killed-3 figure is HEX-ERA and must not be quoted.
+  measured here. **BOTH ITS NUMBERS WERE RE-TAKEN BY 12.3 ON 2026-09-05 AND
+  BOTH MOVED**, in opposite directions, which is why this entry now quotes the
+  re-takes and keeps the originals only as the record of what was read before:
+
+  |  | floor 9 (2026-08-31/09-03) | floor 7 (2026-09-05) |
+  |---|---|---|
+  | crewed daily vs set once, saw spring | 20/120 → 65/120, **saved 45, killed 0** | 29/120 → 89/120, **saved 60, killed 0** |
+  | the chore it costs | **94 taps a saga, 0.51 a day, worst 530** | **66 taps a saga, 0.28 a day, worst 257** |
+
+  The lever got BIGGER with the better bot and the chore got SMALLER — a band
+  that settles sooner has more days at home to spread the same crewing over
+  (24,018 settled band-days against 15,773 on the same 120 seeds). Both are
+  PROBE 11.S4 and the crewing bar, unchanged instruments, re-run on the
+  floor-7 baseline. Two verifier corrections carry: the "asks the ground"
+  order **is already the shipped bot** since the flip (`crewsByOutput` on all
+  three policies), so the live arms are *as-is* against *to the mark* — and
+  the probe's third arm now **ties its control to the tap** (6768 against
+  6768), which is trap 3 in CLAUDE.md and means that arm no longer measures
+  anything and must be dropped or re-pointed before it is quoted again. The
+  older saved-30 / killed-3 figure is HEX-ERA and must not be quoted.
   Done when a settler that sets *to the mark* once and issues no further
   assignment sees first spring within 5 points of the daily-crewed settler at
   300 landings on even — watched failing with `followOrders` stubbed out — an
@@ -7439,8 +7476,10 @@ would replace — which is why it is third and not fifteenth.
   strike is 2d6 + might + wallPush + edge against a deterministic evasion
   (`strike.ts:71-74`; `swing.ts:129-148`) that is nowhere on screen, while
   event cards elsewhere show their odds. Battle is 28% of the settler's dead
-  and 43% of the raider's (11.U4, 120 an arm, fair, 2026-09-03 — the older
-  39%/47% did NOT survive re-taking and must not be quoted).
+  and 43% of the raider's (11.U4, 120 an arm, fair, 2026-09-03, **floor 9** —
+  the older 39%/47% did NOT survive re-taking and must not be quoted, and this
+  pair was NOT re-taken by 12.3 either, so it is a claim about a bot that has
+  since changed).
   Done when a pure `hitOdds()` matches the empirical hit rate over ≥ 2,000
   seeded swings within 3 points and reads 0/1 at the ends; the arena arm's
   figures are filed with N=300 and a date **as a reading of a bot**; and
@@ -7500,6 +7539,91 @@ would replace — which is why it is third and not fifteenth.
   0.05.
 
 ### Measurement — the instrument is also the bot
+
+- [x] **12.3 — Re-take every inherited reading on the floor-7 baseline.
+  BUILT 2026-09-05.** What was re-taken, on the same instruments,
+  settler, floor 7 — every row is *the recorded figure* against *the re-take*:
+
+  | reading | recorded | re-taken 2026-09-05 | |
+  |---|---|---|---|
+  | crewing to the mark vs set once | saved 45, killed 0 (120, even, floor 9) | **saved 60, killed 0** (120, even) | bigger |
+  | the crewing chore (11.S4) | 94 taps a saga, 0.51 a day, worst 530 | **66 taps, 0.28 a day, worst 257** (120 to day 500) | smaller |
+  | 12.C named-foe recurrence | 13% settler / 24% raider (80 landings) | **14% / 23%** (150 landings, fair) | holds |
+  | the road mark's window (12.H) | 3 days = 48% lit, reaching 47/49 and 87/87 | **45% lit, reaching 26/28 and 63/63** (300 a country) | holds |
+  | short commons, as the panel prints it | saved 22, killed 1, of 120 | **saved 35, killed 5, of 809** (960 seeds) | smaller |
+  | ever-rule, the menu's own promise | 46 / 38 / 20 (120 a country) | **46.0 +/-5.6, 39.3 +/-5.5, 20.7 +/-4.6** (300 a country) | holds |
+  | raiding, as `RAID_RECORD` states it | saved 7, killed 20, "three for every one" | **saved 17, killed 36** (200 paired) | sign holds, ratio removed |
+
+  **THREE OF THE SEVEN MOVED, AND EVERY MOVE HAS A CAUSE THAT IS THE RETUNE
+  RATHER THAN A REGRESSION.** A band that settles at coast 12 instead of 14
+  settles sooner: it has more days at home to spread the same crewing over
+  (24,018 settled band-days against 15,773), fewer days walking with nothing
+  (28 bands starve on the road where 49 did), and it sees its first spring
+  76% of the time instead of 37% — which is why short commons shrank. The
+  lever did not break; the strip of bands where twenty-four days of stretched
+  stores turns a winter got narrower because far fewer bands are in trouble.
+
+  **TWO BARS WERE RESTATED RATHER THAN KEPT.** `rations.test.ts` asserted
+  `SAVED > KILLED * 10` — the floor-9 ratio written down as a law, and the
+  honest ratio is nearer seven. It is now a two-sided exact binomial on the
+  discordant pairs, watched failing on the same instrument's 120-seed reading
+  (saved 4 / killed 2, p = 0.69) and its 240-seed one (10 and 2, p = 0.039).
+  And the suite's own short-commons bar was asserting `saved > killed` on SIX
+  discordant pairs; it runs at 480 now (saved 21, killed 2), where the sign
+  is resolvable.
+
+  **ONE PROBE WAS WRONG BEFORE IT WAS RIGHT, and it is the day's lesson.**
+  The hypothesis was trap 2: the bar counts 120 seeds while the panel shows
+  its line only to a band whose forecast is short, so the denominator does not
+  match the audience. The first cut of the selector asked
+  `party.rations === 'full'` — but `rations` is OPTIONAL and absent means full
+  shares, so it returned a clean zero it could never have returned anything
+  else from, and the hypothesis nearly went down as refuted. Constructing the
+  case by hand caught it. Re-run, the correction turned out to be REAL AND
+  SMALL: 809 of 960 bands are told at some point, because the forecast walks
+  to the next thaw and almost every autumn projects short before the fields
+  come in. The 151 never told contain 2 bands that saw spring — they die
+  before founding at all — so the line is withheld from nobody it could save.
+
+  **THE MENU'S PROMISE WAS SET FROM A SAMPLE THAT COULD NOT RESOLVE IT, AND
+  IT HELD ANYWAY.** `odds.ruled` is asserted by the long-game bar at 120 sagas
+  a country against an 8-point tolerance — but two standard errors on a rate
+  near 0.4 at N=120 is about 9 points, so the bar could not tell a drift from
+  a coin and has never been able to. Re-taken at 300 (22 minutes, outside the
+  suite): every one of the three lands inside its interval and inside the
+  tolerance. The right conclusion is not that the bar was fine; it is that the
+  bar was lucky, and the intervals are written into `hardship.ts` now so the
+  next person knows what the figure can and cannot say.
+
+  **AND A RATIO CAME OFF A SENTENCE THE PLAYER READS.** `RAID_RECORD` said
+  raiding kills "about three for every one it spared", from 20 against 7 —
+  27 discordant pairs. Re-taken at 200 landings it is 36 against 17, a point
+  estimate of 2.1 with a 95% interval on the ratio running from about 1.2 to
+  4.1: three was never outside that interval and neither is two, which is the
+  honest way of saying the sample cannot resolve the magnitude. It resolves
+  the SIGN, at p = 0.01, so the sign is what the sentence claims now — "more
+  died for it than were saved by it, and by no small margin". Raiding is if
+  anything worse on this floor than it was, in absolute terms: 44/200 stand
+  without it against 25/200 with, where the old reading was 29 against 16.
+  The war crew still fails to close the gap (saved 18, killed 14), and
+  `relaxFrom` is still exactly dead.
+
+  **Not re-taken at all**, and the entry says so rather than implying
+  otherwise: 11.U4's 28%/43% battle share, the voyage and abandon records'
+  directional claims, and every Phase 9-11 paired finding not in the table
+  above — those sections carry a note at their head now saying what their
+  numbers are readings OF.
+
+  **Done when, against the original entry below:** every constant it named
+  carries instrument, date and N in source (`rations.ts`, `hardship.ts`,
+  `winter.ts`, `counsel.ts`, `expedition.ts`) — done; no player-facing number
+  is a floor-9 reading — done, and there are exactly four such numbers: the
+  rations line, the two menu odds, and the raid record's ratio, which is gone
+  because it was never resolvable; and this file names what was and was not
+  re-taken — done, in the table above, the paragraph below it, and the note
+  now standing at the head of Phases 9, 10 and 11.
+
+  The original entry follows.
 
 - [ ] **12.3 — Re-take every inherited reading on the floor-7 baseline.**
   This file rules that nothing measured before 2026-09-04 is comparable with
@@ -7565,6 +7689,64 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-05 — 12.3 BUILT: six inherited readings re-taken, three of them
+  wrong, and two player-facing promises restated.** The floor moved on
+  2026-09-04 and every figure in this file older than that is a reading of a
+  different player. Six were load-bearing enough to re-take on the same
+  instruments, settler, floor 7:
+
+  | reading | recorded | re-taken | |
+  |---|---|---|---|
+  | crewing to the mark | saved 45, killed 0 | **saved 60, killed 0** | bigger |
+  | the crewing chore | 94 taps a saga, worst 530 | **66 taps, worst 257** | smaller |
+  | named-foe recurrence | 13% / 24% | **14% / 23%** | holds |
+  | the road mark's window | 3 days = 48% lit, 47/49 and 87/87 | **45% lit, 26/28 and 63/63** | holds |
+  | ever-rule, the menu's promise | 46 / 38 / 20 at N=120 | **46.0, 39.3, 20.7 at N=300** | holds |
+  | short commons, as the panel prints it | saved 22, killed 1, of 120 | **saved 35, killed 5, of 809** | smaller |
+  | raiding, as the record states it | saved 7, killed 20 | **saved 17, killed 36** | sign holds |
+
+  **Every move has the retune as its cause, not a regression.** A band that
+  settles at coast 12 rather than 14 settles sooner: more days at home to
+  spread the crewing over (24,018 settled band-days against 15,773), fewer
+  days walking with nothing (28 starve on the road where 49 did), and a first
+  spring 76% of the time instead of 37% — which is why short commons shrank.
+  The strip where twenty-four days of stretched stores turns a winter got
+  narrower because far fewer bands are in trouble.
+
+  **Two things the player reads were restated.** The rations panel promised
+  *22 in 120 lived by tightening, 1 died of it*; it now says **35 in 809, and
+  5 died** — 809 rather than 960 because the line is shown only to a band
+  whose forecast is short, and that is the population it addresses. And
+  `RAID_RECORD` claimed raiding kills "about three for every one it spared";
+  at 53 discordant pairs the ratio's 95% interval runs 1.2 to 4.1, so the
+  ratio was never a reading. The sign is, at p = 0.01, and the sentence
+  claims that instead.
+
+  **Two bars were restated rather than kept**, both of which had stopped being
+  able to fail honestly. `rations.test.ts` asserted `SAVED > KILLED * 10` —
+  the floor-9 ratio written down as a law; it is a two-sided exact binomial on
+  the discordant pairs now, **watched failing** on the same instrument's
+  120-seed reading (p = 0.69) and its 240-seed one (p = 0.039). And the
+  suite's own short-commons bar was asserting `saved > killed` on six
+  discordant pairs; it runs at 480 (saved 21, killed 2), where the sign
+  resolves.
+
+  **The day's instrument fault was mine, and it is the same family as always.**
+  The audience selector asked `party.rations === 'full'` — but `rations` is
+  optional and absent means full shares, so it returned a clean zero it could
+  never have returned anything else from, and the hypothesis nearly went into
+  this file as refuted. Constructing the case by hand caught it, which is the
+  rule CLAUDE.md already carries. Re-run, the correction was real and small:
+  809 of 960 bands are told at some point, and the 151 never told are bands
+  that die before founding at all — so the line is withheld from nobody it
+  could have saved.
+
+  Phases 9, 10 and 11 each carry a note at their head now saying their numbers
+  are floor-9 readings, and naming 12.3 as what re-took the load-bearing ones.
+  **Not re-taken, and said so rather than implied:** 11.U4's 28%/43% battle
+  share, the voyage and abandon records' directional claims, and every other
+  Phase 9-11 paired finding.
 
 - **2026-09-05 — 12.1 BUILT: the yard turns its own days.** The colony could
   not pass one. Every day a settled band spent at home went through the road —

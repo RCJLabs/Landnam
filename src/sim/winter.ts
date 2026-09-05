@@ -255,6 +255,21 @@ export function markVisible(state: GameState): boolean {
  * and NONE of 87 on `hard` — and roughly halves the noise. It is still lit on
  * half the road days, and that is not overclaimed: the road is a hungry
  * place, and the mark is now merely frequent rather than permanent.
+ *
+ * RE-TAKEN ON THE FLOOR-7 BASELINE (12.3, same probe, 300 sagas a country,
+ * settler, 2026-09-05) — the curve above was measured the day before the
+ * settler's floor moved, so it is a reading of a different player:
+ *
+ *   window   lit, even   reached   |   lit, hard   reached
+ *     10        95%       28/28    |     96%        63/63
+ *      5        60%       27/28    |     87%        63/63
+ *      3        45%       26/28    |     65%        63/63   <- what ships
+ *      2        34%       26/28    |     55%        62/63
+ *
+ * Every lit share holds within five points and the verdict is unchanged. The
+ * one thing that moved is the POPULATION: 28 bands starve on the road where
+ * 49 did, and 63 where 87 did. A band that settles sooner spends fewer days
+ * walking with nothing, which is the retune working, not the mark changing.
  */
 export const ROAD_MARK_WINDOW = 3;
 

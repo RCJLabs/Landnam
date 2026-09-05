@@ -4043,13 +4043,23 @@ describe('the first winter, from inside', () => {
    * that cannot beat nothing is decoration with a cost.
    */
   it('says whether short commons save anybody', { timeout: 300_000 }, () => {
-    // A HUNDRED AND TWENTY, and the number is measured rather than picked.
-    // At sixty this read "saved 3, killed 1" — four discordant pairs, which
-    // is noise, and a bar built on it would have flipped on the dice. At two
-    // hundred and forty it is saved 32, killed 3, and survival goes 64/240 to
-    // 93/240. A hundred and twenty is where the effect is resolvable inside a
-    // runtime this file can afford.
-    const SEEDS = 120;
+    // FOUR HUNDRED AND EIGHTY, AND A HUNDRED AND TWENTY USED TO BE ENOUGH.
+    //
+    // The original note said so and was right at the time: at 60 this read
+    // saved 3 / killed 1, at 120 saved 22 / killed 1, and at 240 saved 32 /
+    // killed 3. Then the settler's floor moved from 9 to 7 (2026-09-04) and
+    // the bot it measures started seeing spring 76% of the time instead of
+    // 37%, which left far fewer bands in the strip where stretched stores
+    // turn a winter. On the same 120 seeds the lever now reads **saved 4,
+    // killed 2** — six discordant pairs, and `expect(saved).toBeGreaterThan
+    // (killed)` on six pairs is a coin this bar would have gone on calling a
+    // finding (12.3, 2026-09-05).
+    //
+    // 480 puts it back at roughly 20 discordant pairs, which is where the
+    // sign is resolvable again. The published constant on the rations panel
+    // is taken at 960 by `PROBE 12.3 short commons by audience`, which is too
+    // slow to sit in the suite; this is the bar that has to keep passing.
+    const SEEDS = 480;
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
     const sample = (p: Policy): { lived: boolean[]; leanDays: number } => {

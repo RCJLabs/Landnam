@@ -45,24 +45,53 @@ export const HALF_RATION_TOLL = 10;
  *
  * 9.7 ASKED FOR WINTER TO BECOME A SEASON YOU PLAY, on the premise that it
  * "offers almost no decisions". It already holds the two largest decisions in
- * the game — over 120 seeds on As It Lies:
+ * the game. The original reading, over 120 seeds on As It Lies:
  *
  *   full shares      44/120 saw spring
  *   short commons    65/120                 paired: saved 22, killed 1
  *
- *   crew set once    20/120 saw spring
- *   crewed to the mark, daily  65/120       paired: saved 45, killed 0
- *
- * Nothing else this repo has measured comes near saved 45 and killed nobody.
  * So the fault is not that winter has no decisions; it is the fault 9.3 and
  * 9.4 both turned out to be — the panel names the PRICE of the lever and
  * never its worth. The rations control says "2 off every heart" and, when the
  * band is on full shares, "nobody goes short", which reads as reassurance on
  * exactly the screen where tightening is the thing that would save them.
+ *
+ * RE-TAKEN 2026-09-05 (12.3), AND BOTH HALVES OF THE OLD FIGURE WERE WRONG
+ * FOR THIS BOT. `PROBE 12.3 short commons by audience`, 960 seeds an arm,
+ * settler, floor 7, As It Lies, to day 73:
+ *
+ *   full shares      728/960 saw spring
+ *   short commons                          paired: saved 35, killed 5
+ *
+ * Two separate corrections, and it is worth keeping them apart because only
+ * one of them was the hypothesis:
+ *
+ * 1. THE DENOMINATOR WAS WRONG FOR ITS AUDIENCE. The bar counts all 960
+ *    seeds; the panel shows this line only when `forecast(state).foodGap < 0`
+ *    (`colonyUi.ts`), to a band that has been told it will not reach spring.
+ *    A band never short cannot be saved by tightening and is not being
+ *    addressed. So the published figure is now over the 809 seeds where the
+ *    line was actually on screen. The correction is real and it turned out to
+ *    be SMALL — 809 of 960 bands are told at some point, because the forecast
+ *    walks to the next thaw and almost every band's autumn projects short
+ *    before its fields come in. The 151 never told contain 2 bands that saw
+ *    spring: they are bands that died before they ever founded a steading, so
+ *    the line is withheld from nobody tightening could have saved.
+ * 2. THE LEVER GOT SMALLER BECAUSE THE BAND GOT HEALTHIER. 22 saved in 120
+ *    was read on the floor-9 bot, where full shares saw spring 44 times in
+ *    120 (37%). The floor-7 bot settles sooner and sees spring 728 times in
+ *    960 (76%), so far fewer bands sit in the narrow strip where 24 days of
+ *    stretched stores turns the winter. Nothing about short commons changed.
+ *
+ * Stated at 960 rather than at the bar's 120 because this is printed to the
+ * player: at 120 the same instrument reads saved 4 / killed 2, six discordant
+ * pairs, which cannot resolve its own sign. At 40 pairs it can — the exact
+ * binomial on 35 of 40 is about 5e-7, and `test/rations.test.ts` fails any
+ * future restatement whose margin does not clear that bar.
  */
-export const TIGHTENED_SAVED = 22;
-export const TIGHTENED_KILLED = 1;
-export const TIGHTENED_OF = 120;
+export const TIGHTENED_SAVED = 35;
+export const TIGHTENED_KILLED = 5;
+export const TIGHTENED_OF = 809;
 
 /**
  * The line the panel shows on full shares when the larder will not reach
