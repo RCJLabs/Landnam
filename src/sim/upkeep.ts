@@ -20,6 +20,7 @@ import { living } from './people';
 import { stream } from '../rng';
 import { noteFirstWork, shelterSaving, workTheDay } from './colony';
 import { coldNight, sickCount } from './cold';
+import { followOrders } from './orders';
 import { telegraphWinter, winterVerdict } from './telegraph';
 import { driftMoods, feudsComeDue, maybeFireFeud, stirGrudges } from './minds';
 import { arriveHome, pruneExpedition } from './expedition';
@@ -312,6 +313,14 @@ export function passDay(state: GameState): boolean {
   rivalDay(state);
   // And a man we drove out, who has been waiting.
   maybeOutlawStrike(state);
+
+  // AND THE STANDING ORDER COMES BEFORE THE WORK, because the point of an
+  // order is that the day is worked to it. 12.2: this is the crewing rule
+  // that produced the largest effect this project has measured, moved out of
+  // the test harness and into the game so that a player can have it for one
+  // tap instead of sixty-six. It does nothing at all unless a steading has
+  // been given the order — see sim/orders.ts.
+  followOrders(state);
 
   // Work comes before eating: what the day produced is available to the mouths
   // it has to feed that same evening.

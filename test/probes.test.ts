@@ -5390,4 +5390,70 @@ describe('PROBE: 12.3 — the re-takes on the floor-7 baseline', () => {
     );
     expect(all.n).toBe(SEEDS);
   });
+
+  /**
+   * WHICH RULE SHOULD A STANDING ORDER FOLLOW? (12.2's opening question.)
+   *
+   * 11.S4 argued that standing orders are a real decision because three
+   * plausible orders gave three different outcomes: leave the crew alone
+   * against keep the mark met is saved 30 / killed 3 (hex-era, do not quote),
+   * and keep the mark met BY NAME against keep it on the ground that pays
+   * best is saved 11 / killed 1 (11.S2d, 2026-09-03, floor 9).
+   *
+   * That second pair decides what 12.2 SHIPS, so it has to be re-taken before
+   * a line is written. If asking the ground still wins, then "by name" is a
+   * dominated option and offering it to a player would be dressing a worse
+   * choice as a decision — the order ships asking the ground, and there are
+   * two orders on the panel, not three.
+   *
+   * `crewsByOutput` is the knob and both arms are taken by toggling it, which
+   * is exactly why 11.S2 kept the knob rather than deleting it after the flip.
+   */
+  it('re-takes whether a standing order should ask the ground or a name', { timeout: 3_600_000 }, () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    const arm = (byOutput: boolean): boolean[] => {
+      setPolicy({ ...SETTLER, id: byOutput ? 'ground' : 'name', crewsByOutput: byOutput });
+      const lived: boolean[] = [];
+      for (let s = 0; s < SEEDS; s += 1) {
+        const final = run(armSeed(0, s, SEEDS), SPRING_IN, undefined, 'even');
+        lived.push(!final.end && final.day >= SPRING_IN);
+      }
+      return lived;
+    };
+
+    const byName = arm(false);
+    const byGround = arm(true);
+    setPolicy(SETTLER);
+
+    let saved = 0;
+    let killed = 0;
+    for (let s = 0; s < SEEDS; s += 1) {
+      if (!byName[s] && byGround[s]) saved += 1;
+      if (byName[s] && !byGround[s]) killed += 1;
+    }
+    // The exact binomial on the discordant pairs, for the same reason
+    // `rations.test.ts` carries one: a paired difference is only a finding
+    // when the sample can tell its sign from a coin.
+    const n = saved + killed;
+    let tail = 0;
+    let choose = 1;
+    for (let k = 0; k <= n; k += 1) {
+      if (k > 0) choose = (choose * (n - k + 1)) / k;
+      if (k >= Math.max(saved, killed) || k <= Math.min(saved, killed)) tail += choose;
+    }
+    const p = n > 0 ? tail / 2 ** n : 1;
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.2 which rule a standing order follows — ${SEEDS} seeds an arm,`
+      + ` settler, floor 7, As It Lies, to day ${SPRING_IN}:\n`
+      + `  keeps the mark met, food job BY NAME    — ${byName.filter(Boolean).length}/${SEEDS} saw spring\n`
+      + `  keeps the mark met, ASKS THE GROUND     — ${byGround.filter(Boolean).length}/${SEEDS} saw spring\n`
+      + `  paired: asking the ground saved ${saved}, killed ${killed}`
+      + ` (${n} discordant pairs, exact p = ${p.toFixed(4)})`,
+    );
+    expect(byName.length).toBe(SEEDS);
+  });
 });

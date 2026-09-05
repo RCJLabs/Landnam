@@ -1960,6 +1960,13 @@ button.relearn {
   border-color: var(--blood);
 }
 
+/* 12.2: a band under standing orders. Marked the same way short commons is —
+   a border, not a new colour — because both are "a rule is running here",
+   and the panel already teaches that shape. */
+.room-mark.orders.on {
+  border-color: var(--gold);
+}
+
 /* The winter mark's labels are "Food" and "Wood"; this one's is "Under the
    roof", which folded into three lines inside a 3.5em column. */
 .room-mark .mark-row {

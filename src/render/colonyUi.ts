@@ -28,6 +28,7 @@ import { wallMark } from '../sim/raid';
 import { foodPerDay } from '../sim/upkeep';
 import { leaveNote } from '../sim/retreat';
 import { HALF_RATION_HEART, tighteningWorth } from '../data/rations';
+import { ORDER_WORTH } from '../sim/orders';
 import { forecast } from '../sim/winter';
 import { sickCount } from '../sim/cold';
 import { reachable, readiness } from '../sim/reach';
@@ -222,6 +223,49 @@ export function renderRations(state: GameState, dispatch: Dispatch): HTMLElement
     button(
       half ? `Full shares again (${wouldEat} a day)` : `Go onto short commons (${wouldEat} a day)`,
       () => dispatch({ type: 'SET_RATIONS', rations: other }),
+      { class: 'action wide' },
+    ),
+  ]);
+}
+
+/**
+ * The standing order: the household's rule for who works what, given once.
+ *
+ * 12.2, AND IT IS A CHORE CONTROL BEFORE IT IS A STRATEGY ONE. Crewing to the
+ * winter mark is the largest effect this project has measured — 89 of 120
+ * bands saw first spring against 29 for a crew set on settling day and never
+ * touched, paired saved 60 and killed 0 (balance harness, even, floor 7,
+ * 2026-09-05). It also costs 66 assignment taps in an ordinary saga and 257
+ * in a long one (PROBE 11.S4, re-taken 2026-09-05), every one of them the
+ * output of a rule read off the panel this control sits on.
+ *
+ * MOUNTED ON WORK, WITH THE ROSTER IT COMMANDS. The same reasoning that moved
+ * the counsel here in 12.1: an instruction belongs beside the thing it
+ * instructs, and what this order does is set the jobs in the list below it.
+ *
+ * The worth is stated on the face of it and the price is not hidden either —
+ * a band under orders is a band whose crew moves without being asked, which
+ * is the thing a player might not want. `SET_ORDERS` takes it back at the
+ * same cost it was given.
+ */
+export function renderOrders(state: GameState, dispatch: Dispatch): HTMLElement {
+  const home = state.settlement;
+  if (!home) return el('div');
+  const under = home.orders === 'mark';
+  return el('div', { class: `room-mark orders${under ? ' on' : ''}` }, [
+    el('div', { class: 'mark-head' }, [under ? 'Under standing orders' : 'No standing orders']),
+    el('div', { class: 'mark-row' }, [
+      el('span', { class: 'mark-name' }, ['The crew']),
+      el('span', { class: 'mark-value' }, [under ? 'works the mark' : 'stays where you put it']),
+      el('span', { class: 'mark-gap' }, [
+        under
+          ? 'hands move to whatever the mark is short of'
+          : ORDER_WORTH,
+      ]),
+    ]),
+    button(
+      under ? 'We will set our own hands' : 'Work whatever the mark asks',
+      () => dispatch({ type: 'SET_ORDERS', orders: under ? null : 'mark' }),
       { class: 'action wide' },
     ),
   ]);

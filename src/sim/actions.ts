@@ -13,6 +13,7 @@ import { doDefend } from './footwork';
 import { doWarCry } from './warcry';
 import { endTurn, leaveBattle } from './battleTurn';
 import { assign, makePlots, queueBuild, unqueueBuild } from './colony';
+import type { OrderId } from './orders';
 import { atHome } from './site';
 import { abandonSteading } from './retreat';
 import { stream } from '../rng';
@@ -42,6 +43,7 @@ export type ColonyAction =
   | { type: 'QUEUE_BUILD'; building: BuildingId }
   | { type: 'UNQUEUE_BUILD'; building: BuildingId }
   | { type: 'SET_RATIONS'; rations: Rations }
+  | { type: 'SET_ORDERS'; orders: OrderId | null }
   | { type: 'ABANDON' };
 
 export type Action =
@@ -60,6 +62,7 @@ const COLONY_TYPES = new Set([
   'QUEUE_BUILD',
   'UNQUEUE_BUILD',
   'SET_RATIONS',
+  'SET_ORDERS',
   'ABANDON',
 ]);
 
@@ -216,6 +219,31 @@ export function apply(state: GameState, action: Action): GameState {
           ? 'We went onto short commons. Everyone knew what it was for and nobody said so.'
           : 'Full shares again. It was the first evening in a while that anybody talked at the fire.',
         action.rations === 'half' ? 'grim' : 'good',
+      );
+      return next;
+    }
+    if (action.type === 'SET_ORDERS') {
+      // The chore lever. A steading decision for the same reason rations are:
+      // it is the household's rule for the season, given standing in the yard
+      // where the mark that answers it is shown. Refused when nothing would
+      // change, so the day's UI does not report a move that did nothing.
+      //
+      // The order does NOT crew the band on the turn it is given. It is
+      // intent, and the band works to it on its days — which is what makes it
+      // one tap instead of sixty-six, and is also why a player who wants a
+      // hand somewhere today can still put them there by hand.
+      const want = action.orders ?? undefined;
+      if ((state.settlement?.orders ?? undefined) === want) return state;
+      if (!state.settlement) return state;
+      const next = cloneState(state);
+      if (want) next.settlement!.orders = want;
+      else delete next.settlement!.orders;
+      chronicle(
+        next,
+        want
+          ? 'It was settled at the fire: whatever the mark asks for, that is what we work.'
+          : 'We would set our own hands from now on, and the mark could say what it liked.',
+        'plain',
       );
       return next;
     }

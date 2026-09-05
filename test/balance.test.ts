@@ -26,6 +26,7 @@ import { describe, it, expect } from 'vitest';
 import { newGame } from '../src/state/create';
 import { effectsOn, SEASON_LENGTH, seasonOf, winterDepth, YEAR_LENGTH } from '../src/sim/calendar';
 import { markHaze } from '../src/sim/winter';
+import { ORDERS_KILLED, ORDERS_OF, ORDERS_SAVED } from '../src/sim/orders';
 import { bumped, makeWatch } from '../src/render/motion';
 import { apply } from '../src/sim/actions';
 import { atSea } from '../src/sim/road';
@@ -82,6 +83,7 @@ import {
   armSeed,
   foundAnywhere,
   measured,
+  ordersGiven,
   policy,
   raidTargetOn,
   recrewed,
@@ -4151,15 +4153,20 @@ describe('the first winter, from inside', () => {
     const SEEDS = 120;
     const SPRING_IN = SEASON_LENGTH * 3 + 1;
 
-    const sample = (p: Policy): { lived: boolean[]; moves: number } => {
+    const sample = (p: Policy): { lived: boolean[]; moves: number; roofed: boolean[] } => {
       setPolicy(p);
       setRecrewed(0);
       const lived: boolean[] = [];
+      const roofed: boolean[] = [];
       for (let s = 0; s < SEEDS; s += 1) {
-        const final = run(`winter-inside-${s}`, SPRING_IN, undefined, 'even');
+        let got = false;
+        const final = run(`winter-inside-${s}`, SPRING_IN, (_b, after) => {
+          if (after.settlement) got = true;
+        }, 'even');
         lived.push(!final.end && final.day >= SPRING_IN);
+        roofed.push(got);
       }
-      return { lived, moves: recrewed };
+      return { lived, moves: recrewed, roofed };
     };
 
     // The crew picked on settling day and never touched again — what the
@@ -4192,7 +4199,11 @@ describe('the first winter, from inside', () => {
       `  crewed to the mark, daily    — ${spring(need.lived)}/${SEEDS} saw spring ` +
         `(saved ${worth.saved}, killed ${worth.killed})\n` +
       `  and re-crewed by season too  — ${spring(season.lived)}/${SEEDS} saw spring ` +
-        `(saved ${extra.saved}, killed ${extra.killed} on top), ${season.moves} hands moved`,
+        `(saved ${extra.saved}, killed ${extra.killed} on top), ${season.moves} hands moved\n` +
+      `  bands that ever got a roof under either arm: ` +
+        `${need.roofed.filter((got, s) => got || season.roofed[s] || fixed.roofed[s]).length} — the denominator ` +
+        `the colony panel quotes this lever over, since a band with no steading ` +
+        `cannot be crewed either way`,
     );
 
     // THE INSTRUMENT FIRST. A season arm that never moved anybody is the
@@ -4211,6 +4222,112 @@ describe('the first winter, from inside', () => {
       `crewing to the winter mark saved ${worth.saved} and killed ${worth.killed} — `
         + `if it stops paying, the mark has stopped being worth reading`,
     ).toBeGreaterThan(worth.killed);
+
+    // AND THE FIGURE THE PANEL PRINTS, kept honest against the run that
+    // produced it. `sim/orders.ts` quotes this lever to the player, and a
+    // constant in a source file drifts from the game silently — which is the
+    // fault 12.3 spent a day undoing across five of them. Its denominator is
+    // the bands that ever raised a steading, because a band still walking
+    // cannot be crewed by either arm and does not belong under a sentence
+    // about crewing.
+    // The UNION of the two arms, not one of them. A seed where the band
+    // founds under one policy and dies walking under the other is still a
+    // seed this sentence could be addressed to, and letting the treatment arm
+    // pick its own denominator is how a ratio ends up selecting itself.
+    const roofed = need.roofed.filter((got, s) => got || fixed.roofed[s]).length;
+    expect(ORDERS_SAVED, 'the panel quotes a figure this run does not support').toBe(worth.saved);
+    expect(ORDERS_KILLED).toBe(worth.killed);
+    expect(ORDERS_OF).toBe(roofed);
+  });
+
+  /**
+   * DOES THE ORDER BUY WHAT THE TAPS BOUGHT? (12.2, and the bar the item set.)
+   *
+   * The bar above says crewing to the mark daily is the largest effect this
+   * project has measured. 11.S4 then counted what it costs a person: 66
+   * assignment taps in an ordinary saga and 257 in a long one, every one of
+   * them the output of a two-line rule read off a panel already showing both
+   * halves of it. 12.2 moved that rule into `sim/orders.ts` so a player can
+   * have it for a handful of taps instead.
+   *
+   * SO THE CLAIM IS AN EQUIVALENCE, AND AN EQUIVALENCE NEEDS BOTH HALVES.
+   * A band that gives the order once has to end up roughly where the band
+   * that was crewed by hand every day ends up — otherwise the lift changed
+   * the rule — AND the arm has to actually have given the order, because two
+   * arms that agree because neither did anything is the tie this repo has
+   * mistaken for a finding three times.
+   *
+   * Five points at 300 landings is the tolerance the item set. Two standard
+   * errors on a rate near 0.75 at N=300 is about five points, so the bar is
+   * asking for agreement inside what the sample can resolve, and no tighter.
+   */
+  it('says whether one order buys what sixty-six taps bought', { timeout: 900_000 }, () => {
+    const SEEDS = 300;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    const sample = (p: Policy): {
+      lived: boolean[]; told: number; taps: number; founded: number;
+    } => {
+      setPolicy(p);
+      let told = 0;
+      let taps = 0;
+      let founded = 0;
+      const lived: boolean[] = [];
+      for (let s = 0; s < SEEDS; s += 1) {
+        let mine = 0;
+        let roofed = false;
+        const final = run(`winter-inside-${s}`, SPRING_IN, (before, after, action) => {
+          // The tap count is read off the ACTION, not inferred from a job
+          // that changed alongside it: the harness's own crewing block
+          // mutates `state` before `apply`, so a watcher comparing the two
+          // states sees a band already reassigned and counts nothing. That
+          // exact fault is what 11.S4 had to fix before it could count at all.
+          if (action.type === 'ASSIGN' && after !== before) mine += 1;
+          if (after.settlement) roofed = true;
+        }, 'even');
+        if (roofed) founded += 1;
+        if (ordersGiven > 0) told += 1;
+        taps += mine;
+        lived.push(!final.end && final.day >= SPRING_IN);
+      }
+      return { lived, told, taps, founded };
+    };
+
+    const byHand = sample(SETTLER);
+    const byOrder = sample({ ...SETTLER, id: 'orders', followsOrders: true });
+    setPolicy(SETTLER);
+
+    const rate = (a: boolean[]) => a.filter(Boolean).length / SEEDS;
+    const gap = Math.abs(rate(byHand.lived) - rate(byOrder.lived)) * 100;
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `standing orders against the daily chore, ${SEEDS} seeds on As It Lies:\n` +
+      `  crewed by hand, every day — ${byHand.lived.filter(Boolean).length}/${SEEDS} saw spring\n` +
+      `  told once, then left to it — ${byOrder.lived.filter(Boolean).length}/${SEEDS} saw spring` +
+        ` (${byOrder.told} of the ${byOrder.founded} that ever got a roof gave the order)\n` +
+      `  the gap: ${gap.toFixed(1)} points`,
+    );
+
+    // THE INSTRUMENT, BEFORE THE OUTCOME. An arm that never reached the yard
+    // gave no order and is the control wearing a different id.
+    expect(byOrder.told, 'no saga in the orders arm ever gave the order').toBeGreaterThan(SEEDS / 2);
+    // A band with no roof cannot be crewed by either arm, so the honest
+    // denominator for "did the order land" is the bands that founded at all.
+    // Anything short of that is a saga the orders arm played WITHOUT the
+    // lever the other arm had, which makes the comparison below conservative
+    // rather than flattering — worth knowing, and worth not overstating.
+    expect(byOrder.told).toBeLessThanOrEqual(byOrder.founded);
+    // And the order has to be doing the work the hand used to: the orders arm
+    // issues ASSIGN never, the hand arm constantly. Counted on the action, so
+    // this cannot pass on a watcher that sees nothing.
+    expect(byOrder.taps, 'the orders arm was still issuing assignments by hand').toBe(0);
+
+    expect(
+      gap,
+      `one order and sixty-six taps are ${gap.toFixed(1)} points apart —`
+        + ' either the rule changed when it moved into the sim, or it is not the same rule',
+    ).toBeLessThanOrEqual(5);
   });
 
   /**

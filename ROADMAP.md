@@ -52,8 +52,15 @@
 > that gave the game a third act.
 >
 > **CURRENT MILESTONE (from 2026-09-05): Phase 12 — the audit of 2026-09-05.**
-> Fifteen items, below, from a full read of every subsystem. **12.1 and 12.3
-> are BUILT.** 12.1 gave the yard its own days; 12.3 re-took every inherited
+> Fifteen items, below, from a full read of every subsystem. **12.1, 12.2 and
+> 12.3 are BUILT.** 12.2 took the largest lever in the game — crewing to the
+> winter mark, saved 60 and killed 0 — and made it a standing order given
+> once instead of sixty-six taps a saga, on a rule lifted out of the test
+> harness into `sim/orders.ts`; a band told once ends up 0.7 points from a
+> band crewed by hand every day, and a band told nothing plays the
+> byte-identical game.
+>
+> **12.1 and 12.3 are BUILT.** 12.1 gave the yard its own days; 12.3 re-took every inherited
 > reading the rest of the phase leans on, and three of the seven moved — the
 > crewing lever is BIGGER than the entry it was quoted in (saved 60, not 45),
 > the crewing chore is SMALLER (66 taps a saga, not 94), and short commons
@@ -7428,6 +7435,79 @@ would replace — which is why it is third and not fifteenth.
 
 ### Gameplay
 
+- [x] **12.2 — Standing orders. BUILT 2026-09-05.** The largest lever in the
+  game cost 66 taps a saga to work. It costs three now, once, and the band
+  keeps working it.
+
+  **THE ITEM'S OWN PREMISE HAD TO BE RE-DECIDED FIRST.** 11.S4 argued that
+  standing orders are a real decision because THREE orders gave three
+  outcomes. 12.3 then found that two of the three are the same code path —
+  `crewsByOutput` is the shipped bot on all policies since the flip — so the
+  live question was only whether the third, "keep the mark met by NAME", is
+  worth offering. `PROBE 12.2`, 300 landings on As It Lies, settler, floor 7:
+
+  | the rule the order follows | saw spring |
+  |---|---|
+  | keeps the mark met, food job by name | 202/300 |
+  | keeps the mark met, **asks the ground** | **230/300** |
+
+  Paired, asking the ground **saved 29 and killed 1** over 30 discordant
+  pairs, exact p < 0.0001 — bigger than the floor-9 reading of saved 11 /
+  killed 1 (11.S2d). So by-name is dominated, and **one order ships, not
+  two**: an option measured to be worse than the one beside it is not a
+  decision, it is a trap wearing a menu. That is why the panel has a single
+  control rather than the three-way picker the item imagined.
+
+  **WHAT SHIPPED.** `sim/orders.ts` holds the rule, lifted whole out of
+  `test/fixtures/harness.ts` and deliberately unimproved — changing a rule and
+  the place it lives in the same commit leaves nothing to compare the
+  re-measure against. `Settlement.orders` stores the intent (SAVE_VERSION 63,
+  migration is a pure pass-through: absent IS the game as it was, and
+  backfilling would hand a two-hundred-day saga a rule nobody agreed to).
+  `SET_ORDERS` goes through `apply` like every other steading verb, and the
+  control sits on the Work tab **below the roster it commands** — 12.1's rule
+  that an instruction belongs beside the thing it instructs, and that a
+  control stacked over a list pushes the list off a phone.
+
+  **THE EQUIVALENCE, WHICH IS THE WHOLE CLAIM**, at 300 landings on even:
+
+  | | saw spring | assignment taps |
+  |---|---|---|
+  | crewed by hand, every day | 227/300 | 66 a saga |
+  | told once, then left to it | **229/300** | **0** |
+
+  **0.7 points apart**, and the order landed in **242 of the 242 sagas that
+  ever raised a steading** — a band still walking cannot be crewed by either
+  arm, which is the honest denominator and it is 100%. Watched failing with
+  `followOrders` stubbed: the arms come apart by **45.7 points**.
+
+  **AND A BAND WITH NO ORDER PLAYS THE IDENTICAL GAME.** Eight sagas to day
+  400, hashed field by field, taken on the built tree and again with `src/`
+  and the harness reverted to 344b6cc: all eight matched. `version` is
+  excluded from that hash and the exclusion is the reason it is worth
+  anything — the first cut included it, all eight differed, and the whole
+  difference was this item's own SAVE_VERSION bump. **A hash that moves for a
+  reason that is not the game moving is a check that cannot pass.** The
+  hashes are pinned as a bar now, watched failing both ways: against a rule
+  that ignores the order, and against an orders arm that never gives one.
+
+  **THE YARD BAR FOUND A BUG THAT WAS ALWAYS THERE.** The hint slot is one
+  scrolling element shared by Work and Build, and `replaceChildren` does not
+  touch `scrollTop` — so a player who scrolled the roster arrived on the Build
+  tab 99px past its first row, which is 12.1's finding reached by another
+  route. Nothing had ever looked, because until the standing order there was
+  no reason to touch the bottom of Work. Fixed by resetting the slot on a tab
+  switch.
+
+  **The figure the panel prints** — *60 bands in 96 lived by working the mark;
+  0 died of it* — is asserted by the crewing bar against what that run has
+  just measured, so it cannot go stale the way five other published numbers
+  did before 12.3. Its denominator is the 96 bands that raised a steading
+  under **either** arm, taken as the union rather than from the treated one,
+  because a denominator the treatment picks for itself is trap 2.
+
+  The original entry follows.
+
 - [ ] **12.2 — Standing orders.** 11.S4 is a GO with a settled design and
   nothing built (:6605-6650). Crewing to the mark daily is the largest effect
   measured here. **BOTH ITS NUMBERS WERE RE-TAKEN BY 12.3 ON 2026-09-05 AND
@@ -7689,6 +7769,48 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-05 — 12.2 BUILT: the largest lever in the game stops costing
+  sixty-six taps.** Crewing to the winter mark is the biggest effect this
+  project has measured — 89 of 120 bands saw first spring against 29 for a
+  crew set on settling day, paired saved 60 and killed 0 — and every one of
+  those days was a tap a person had to make, 66 in an ordinary saga and 257
+  in a long one. The rule producing them was two lines long and lived in the
+  test harness, which is to say the game did not have it. It does now.
+
+  **The item's premise was re-decided before a line was written.** 11.S4 sold
+  standing orders as a three-way choice; 12.3 had already found two of the
+  three to be the same code path. `PROBE 12.2` settled the survivor at 300
+  landings: keeping the mark met **by asking the ground** saw spring 230/300
+  against 202/300 **by name** — paired, saved 29 and killed 1 over 30
+  discordant pairs, p < 0.0001. So one order ships. An option measured to be
+  worse than the one beside it is not a decision.
+
+  | | saw spring | assignment taps |
+  |---|---|---|
+  | crewed by hand, every day | 227/300 | 66 a saga |
+  | told once, then left to it | **229/300** | **0** |
+
+  0.7 points apart, and the order landed in **242 of the 242 sagas that ever
+  raised a steading**. Watched failing with the rule stubbed: 45.7 points.
+
+  **A band with no order plays the byte-identical game**, verified by hashing
+  eight sagas to day 400 on the built tree and again with `src/` reverted to
+  344b6cc. The first cut of that check included `version` in the hash, every
+  saga differed, and the entire difference was this item's own SAVE_VERSION
+  bump — a hash that moves for a reason that is not the game moving is a check
+  that cannot pass. The eight are pinned as a bar now, watched failing in both
+  directions.
+
+  **The yard bar found a bug that predates the item.** The hint slot is one
+  scrolling element shared by both colony tabs and `replaceChildren` leaves
+  `scrollTop` alone, so a player who scrolled the roster reached the Build tab
+  99px past its first row — 12.1's finding by another route, invisible until
+  there was a reason to touch the bottom of the Work tab. Fixed.
+
+  Ships with SAVE_VERSION 63 and a pass-through migration: `orders` absent IS
+  the game as it was, and backfilling would hand an old saga a rule nobody
+  agreed to. `npm test` 1602 passed / 93 files, all 13 browser bars green.
 
 - **2026-09-05 — 12.3 BUILT: six inherited readings re-taken, three of them
   wrong, and two player-facing promises restated.** The floor moved on

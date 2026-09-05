@@ -708,6 +708,20 @@ export const MIGRATIONS: Record<number, Migration> = {
    * still `plots[0]` in every save that has one. Only a settled band has plots
    * at all; everything else passes through.
    */
+  /**
+   * v63: `Settlement.orders` arrives, and every old save keeps saying nothing.
+   *
+   * A pure pass-through, and that is the decision rather than the absence of
+   * one. `orders` absent IS the game before 12.2 — the crew stays where the
+   * player put it — so there is nothing to translate. Setting it to `mark`
+   * here would hand a two-hundred-day saga a rule it never agreed to and
+   * change how its next winter goes.
+   *
+   * It bumps the version and touches nothing, which is what a save shape
+   * gaining an optional field with a meaningful absence looks like.
+   */
+  62: (save) => ({ ...save, version: 63 }),
+
   61: (save) => {
     const home = save['settlement'];
     if (!home || typeof home !== 'object') return { ...save, version: 62 };

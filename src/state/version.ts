@@ -226,7 +226,15 @@
 //             the hex coordinate 8.5 set out to retire. Its only reader was a
 //             test asserting the values were distinct, on an array whose
 //             indices are distinct by construction.
-export const SAVE_VERSION = 62;
+// v63 (12.2): Settlement gained the optional `orders` — the household's
+//             standing rule for who works what. Absent means nobody has given
+//             one, which is every saga played before this and is also the
+//             game's own default: the crew stays where it was put. NOT
+//             backfilled to the one order that exists. A band that has been
+//             crewed by hand for two hundred days has been played a
+//             particular way, and quietly handing it a standing order would
+//             change how its next winter goes without anybody deciding to.
+export const SAVE_VERSION = 63;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';
