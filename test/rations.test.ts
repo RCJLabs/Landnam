@@ -177,16 +177,42 @@ describe('the rations control states the record', () => {
     // Pinned to literals rather than to each other: written as
     // `SAVED > KILLED` this passes at any pair, which is the tautology a
     // claim shipped with earlier in this phase. These are the figures from
-    // `says whether short commons save anybody` — 120 seeds on As It Lies.
-    expect(TIGHTENED_SAVED).toBe(22);
-    expect(TIGHTENED_KILLED).toBe(1);
-    expect(TIGHTENED_OF).toBe(120);
+    // `PROBE 12.3 short commons by audience` — 960 seeds an arm on As It
+    // Lies, settler, floor 7, 2026-09-05, counted over the 809 of them where
+    // the panel's own condition put this line on screen. The floor-9 reading
+    // of the same lever was 22 / 1 / 120 and is not comparable: a different
+    // bot, and a denominator that included bands the panel never speaks to.
+    expect(TIGHTENED_SAVED).toBe(35);
+    expect(TIGHTENED_KILLED).toBe(5);
+    expect(TIGHTENED_OF).toBe(809);
   });
 
-  it('never sells the lever as smaller than it is', () => {
-    // The failure this guards is a well-meaning softening. Tightening is the
-    // second largest measured decision in the game and the line has to carry
-    // that, or it is worth no screen space at all.
-    expect(TIGHTENED_SAVED).toBeGreaterThan(TIGHTENED_KILLED * 10);
+  it('will not publish a figure that cannot resolve its own sign', () => {
+    // WAS `SAVED > KILLED * 10`, AND TEN WAS THE FLOOR-9 RATIO WRITTEN DOWN
+    // AS A LAW. It did not survive the re-take — the honest ratio is nearer
+    // seven — and a threshold picked from one reading is exactly what this
+    // repo keeps catching itself doing.
+    //
+    // So the guard is on the thing that actually matters about a number
+    // printed to a player: whether the sample it came from can tell the
+    // lever's sign from a coin. Saved and killed are the discordant pairs of
+    // a paired trial, so the null is a fair coin over their sum, and this is
+    // the two-sided exact binomial on it.
+    //
+    // It is not a tautology and it is not free: it FAILS on the same
+    // instrument's 120-seed reading (saved 4, killed 2 — p = 0.69) and on its
+    // 240-seed reading (10 and 2 — p = 0.039), and passes here at 35 and 5
+    // (p = 5e-7). Softening the line, or restating it from a thin run, breaks
+    // this test.
+    const n = TIGHTENED_SAVED + TIGHTENED_KILLED;
+    let tail = 0;
+    let choose = 1;
+    for (let k = 0; k <= n; k += 1) {
+      if (k > 0) choose = (choose * (n - k + 1)) / k;
+      if (k >= TIGHTENED_SAVED || k <= TIGHTENED_KILLED) tail += choose;
+    }
+    const p = tail / 2 ** n;
+    expect(TIGHTENED_SAVED).toBeGreaterThan(TIGHTENED_KILLED);
+    expect(p).toBeLessThan(0.01);
   });
 });

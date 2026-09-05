@@ -396,11 +396,31 @@ export interface WallReading {
  *   paired — saved 7, killed 20
  *
  * Down from the item's own opening figure (saved 9, killed 22) but the same
- * shape and the same conclusion: raiding kills roughly three bands for every
- * one it saves. `PROBE: 10.3b` ruled out the obvious objections — a war crew
- * recovers some of it (saved 13, killed 9 against raiding-with-the-settler's-
- * crew) but not the gap to a band that never raids at all, and RAIDER's own
- * `relaxFrom` is a dead knob at this site floor (saved 0, killed 0).
+ * shape and the same conclusion: raiding kills bands it does not save.
+ * `PROBE: 10.3b` ruled out the obvious objections — a war crew recovers some
+ * of it (saved 13, killed 9 against raiding-with-the-settler's-crew) but not
+ * the gap to a band that never raids at all, and RAIDER's own `relaxFrom` is
+ * a dead knob at this site floor (saved 0, killed 0).
+ *
+ * RE-TAKEN ON THE FLOOR-7 BASELINE (12.3, same probe, 200 seeds, paired,
+ * 2026-09-05), and the FINDING held while the NUMBER IN THE SENTENCE did not:
+ *
+ *   raiding off   44/200 standing, avg day 197
+ *   raiding on    25/200 standing, avg day 154
+ *   paired — saved 17, killed 36
+ *
+ * The war crew still fails to close it (saved 18, killed 14) and `relaxFrom`
+ * is still exactly dead (saved 0, killed 0) — an arm tying its control to the
+ * tap, which here is the right reading rather than a broken instrument,
+ * because 10.3b established the same thing on a different floor.
+ *
+ * SO THE RATIO CAME OFF THE PLAYER'S SENTENCE. It said "about three for every
+ * one it spared", from 20 against 7 — 27 discordant pairs. At 53 pairs the
+ * point estimate is 2.1, and the 95% interval on the ratio runs from about
+ * 1.2 to 4.1: three was never outside it and neither is two, which is another
+ * way of saying the sample cannot resolve the magnitude at all. What it can
+ * resolve, and does at p = 0.01, is the SIGN. That is what the sentence says
+ * now, and it says it just as hard.
  *
  * States it, never refuses — same rule as `VOYAGE_RECORD` and
  * `ABANDON_RECORD`: the game does not tell the player what to do anywhere
@@ -409,8 +429,8 @@ export interface WallReading {
  */
 export const RAID_RECORD =
   'Of the bands that went out under arms, more died for it than were saved '
-  + 'by it — about three for every one it spared. Winning the fight and '
-  + 'surviving the saga are not the same question.';
+  + 'by it, and by no small margin. Winning the fight and surviving the saga '
+  + 'are not the same question.';
 
 export function wallReading(state: GameState, going: string[], purpose?: Purpose): WallReading {
   // Through `sworn()` rather than filtering on the bond here, so the cap it

@@ -47,6 +47,7 @@ import { effectiveStat } from '../src/sim/people';
 import type { Combatant, GameState } from '../src/state/types';
 import { groundAtStop } from '../src/sim/fishery';
 import { atHome, stopReport } from '../src/sim/site';
+import { counsel } from '../src/sim/counsel';
 import { countryHere } from '../src/sim/coast';
 import { terrainDef } from '../src/data/terrain';
 import { reckoningDue } from '../src/sim/landnam';
@@ -3995,7 +3996,11 @@ describe('PROBE: 11.U5 — is there a thread of known foes to draw', () => {
    * it have, and how many of them would name a man met more than once?
    */
   it('counts the rows such a list would have, and the foes ever met twice', { timeout: 3_600_000 }, async () => {
-    const SEEDS = 80;
+    // 150, NOT 80, since 2026-09-05 (12.3). The 80-landing reading was taken
+    // through the old settler floor and 12.3 rules it a reading of a different
+    // player; re-taking it at the same thin N would have carried the sample
+    // size this file already called too small to set a promise with.
+    const SEEDS = 150;
     const HORIZON = 400;
     const out: string[] = [];
 
@@ -4088,7 +4093,8 @@ describe('PROBE: 11.U5 — is there a thread of known foes to draw', () => {
    * not a figure about another.
    */
   it('measures the champion\'s rank, and how he leaves the field', { timeout: 3_600_000 }, async () => {
-    const SEEDS = 80;
+    // 150 for 12.3's re-take — see the note on the probe above.
+    const SEEDS = 150;
     const HORIZON = 400;
     const out: string[] = [];
 
@@ -5174,5 +5180,214 @@ describe('PROBE: 12.H — what kills a band before winter even opens', () => {
     // eslint-disable-next-line no-console
     console.log(`PROBE 12.H the settling floor, swept:\n${out.join('\n')}`);
     expect(out.length).toBe(2);
+  });
+});
+
+describe('PROBE: 12.3 — the re-takes on the floor-7 baseline', () => {
+  /**
+   * HOW MUCH OF A SAGA IS THE LOOP 12.1 SHORTENED?
+   *
+   * The figure 12.1 was opened on — "a settled player spends about half their
+   * turns standing at the steading, 47%" (60 sagas, even, to day 400,
+   * 2026-08-31) — does not measure that. Its denominator is every HARNESS
+   * ACTION, battle turns included, and the harness never opens COLONY at all;
+   * it is a share of a bot's action mix, not of a player's days. It is also a
+   * floor-9 reading, which 12.3 rules describes a different player.
+   *
+   * So this asks the question in the shape the item needed: of the days a
+   * settled band lives, how many does it spend AT HOME — and of those, how
+   * many fall inside the winter mark's own window, where the counsel speaks
+   * and the loop 12.1 cut from seven taps to three is the whole game.
+   *
+   * `atHome` is the game's own answer to where the band is standing, and
+   * `markVisible` to whether the mark is a live target. Neither is a policy.
+   */
+  it('says what share of a settled saga is spent standing in the yard', { timeout: 3_600_000 }, async () => {
+    const SEEDS = 150;
+    const HORIZON = 400;
+    const out: string[] = [];
+
+    for (const terms of ['even', 'fair'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      let sagas = 0;
+      let settledDays = 0;
+      let homeDays = 0;
+      let markDays = 0;
+      let counselDays = 0;
+
+      for (let i = 0; i < SEEDS; i += 1) {
+        let mySettled = 0;
+        let myHome = 0;
+        let myMark = 0;
+        let myCounsel = 0;
+        run(armSeed(0, i, SEEDS), HORIZON, (before, after) => {
+          // One count per DAY, on the day tick, or a busy day counts many
+          // times over and the share becomes a share of actions again — which
+          // is the exact fault this probe exists to correct.
+          if (after.day <= before.day || !before.settlement || before.end) return;
+          mySettled += 1;
+          if (!atHome(before)) return;
+          myHome += 1;
+          if (!markVisible(before)) return;
+          myMark += 1;
+          if (counsel(before)) myCounsel += 1;
+        }, terms);
+        if (mySettled === 0) continue;
+        sagas += 1;
+        settledDays += mySettled;
+        homeDays += myHome;
+        markDays += myMark;
+        counselDays += myCounsel;
+      }
+
+      const pc = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : '—');
+      out.push(
+        `  ${terms}: ${sagas} sagas, ${settledDays} days lived after settling\n`
+        + `      standing in the yard: ${homeDays} (${pc(homeDays, settledDays)})\n`
+        + `      of those, inside the winter mark's window: ${markDays} (${pc(markDays, homeDays)})\n`
+        + `      and with a live counsel behind it: ${counselDays} (${pc(counselDays, homeDays)}`
+        + ` of yard days) — the days 12.1's loop is the whole game`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.3 the yard's share of a settled saga — ${SEEDS} landings an arm,`
+      + ` settler, floor 7, to day ${HORIZON}:\n${out.join('\n')}`,
+    );
+    expect(out.length).toBe(2);
+  });
+
+  /**
+   * EVER-RULE AT 300, BECAUSE 120 CANNOT SET THE PROMISE IT IS SETTING.
+   *
+   * `hardship.ts` publishes 46 / 38 / 20 on the difficulty menu — a promise to
+   * the player — and the long-game bar reads them at 120 sagas a country, a
+   * sample this file's own history calls too thin to set a promise with. At
+   * N=120 the standard error on a figure near 40% is about 4.5 points, so the
+   * 95% interval is roughly ±9 and the bar's own 8-point tolerance sits INSIDE
+   * the noise: it cannot tell a drift from a coin.
+   *
+   * Run outside `npm test` deliberately — 900 sagas to day 500 is over an hour
+   * and the suite is not the place for it. What it produces is the figure the
+   * menu should quote, with an interval small enough to mean something.
+   */
+  it('re-takes ever-rule at 300 sagas a country', { timeout: 7_200_000 }, async () => {
+    const SEEDS = 300;
+    const LAST_DAY = 500;
+    const out: string[] = [];
+
+    for (const terms of ['fair', 'even', 'hard'] as HardshipId[]) {
+      setPolicy(SETTLER);
+      let ruled = 0;
+      let lived = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        const final = run(armSeed(0, i, SEEDS), LAST_DAY, undefined, terms);
+        if (final.jarl) ruled += 1;
+        if (!final.end) lived += 1;
+      }
+      const share = ruled / SEEDS;
+      // The 95% interval on a proportion, so the figure is quoted with what it
+      // can actually resolve rather than as a point.
+      const se = Math.sqrt((share * (1 - share)) / SEEDS);
+      out.push(
+        `  ${terms.padEnd(5)} ever ruled ${ruled}/${SEEDS} = ${(share * 100).toFixed(1)}%`
+        + ` (+/- ${(1.96 * se * 100).toFixed(1)} at 95%), still standing at day ${LAST_DAY}: ${lived}`,
+      );
+    }
+    setPolicy(SETTLER);
+
+    // eslint-disable-next-line no-console
+    console.log(`PROBE 12.3 ever-rule at ${SEEDS} a country, floor 7, to day ${LAST_DAY}:\n${out.join('\n')}`);
+    expect(out.length).toBe(3);
+  });
+
+  /**
+   * SHORT COMMONS, MEASURED ON THE BAND THE PANEL IS SPEAKING TO.
+   *
+   * `rations.ts` publishes SAVED 22 / KILLED 1 / OF 120 and the rations panel
+   * says it out loud — "22 bands in 120 lived by tightening; 1 died of it" —
+   * on the one screen where tightening is the largest move available. On the
+   * floor-7 baseline the same bar reads saved 4, killed 2, which looks like
+   * the lever collapsing.
+   *
+   * It is not, and restating 22/1/120 as 4/2/120 would swap one wrong number
+   * for another. THE DENOMINATOR IS WRONG FOR ITS AUDIENCE — trap 2. The bar
+   * runs 120 seeds and counts every one of them, including bands whose larder
+   * was always going to reach spring; the panel shows the line only when
+   * `forecast(state).foodGap < 0` (colonyUi.ts:216), to a band that has been
+   * told it will not. A band never short cannot be saved by tightening and is
+   * not being addressed, so it does not belong under the line.
+   *
+   * So this selects on the arm where the line is on screen — the FULL-shares
+   * run, on a day with a steading, on full shares, with the gap negative —
+   * and pairs saved and killed inside that set only.
+   */
+  it('re-takes short commons on the band the panel addresses', { timeout: 3_600_000 }, () => {
+    // NINE HUNDRED AND SIXTY, because the constant this sets is printed to the
+    // player. At 240 the reading was saved 10 / killed 2 on 198 addressed — a
+    // McNemar p of about 0.04 on twelve discordant pairs, which is enough to
+    // keep the sign and nowhere near enough to publish a ratio with.
+    const SEEDS = 960;
+    const SPRING_IN = SEASON_LENGTH * 3 + 1;
+
+    const arm = (p: Policy): { lived: boolean[]; told: boolean[] } => {
+      setPolicy(p);
+      const lived: boolean[] = [];
+      const told: boolean[] = [];
+      for (let s = 0; s < SEEDS; s += 1) {
+        let spoken = false;
+        const final = run(`winter-inside-${s}`, SPRING_IN, (_before, after) => {
+          // EXACTLY the panel's own condition, read off colonyUi.ts:196-216,
+          // so the selector cannot be a paraphrase of it. `rations` is
+          // OPTIONAL and absent means full shares, so the test is `!== 'half'`
+          // — the first cut of this probe asked `=== 'full'` and returned a
+          // clean zero it could never have returned anything else from.
+          if (spoken || !after.settlement || after.party.rations === 'half') return;
+          if (forecast(after).foodGap < 0) spoken = true;
+        }, 'even');
+        lived.push(!final.end && final.day >= SPRING_IN);
+        told.push(spoken);
+      }
+      return { lived, told };
+    };
+
+    // Same instrument as the bar: the control is the beltless policy, because
+    // SETTLER tightens and would otherwise be compared against himself.
+    const full = arm({ ...SETTLER, id: 'loose', tightensBelt: false });
+    const lean = arm(SETTLER);
+    setPolicy(SETTLER);
+
+    const tally = (pick: (s: number) => boolean) => {
+      let n = 0; let saved = 0; let killed = 0; let livedFull = 0;
+      for (let s = 0; s < SEEDS; s += 1) {
+        if (!pick(s)) continue;
+        n += 1;
+        if (full.lived[s]) livedFull += 1;
+        if (!full.lived[s] && lean.lived[s]) saved += 1;
+        if (full.lived[s] && !lean.lived[s]) killed += 1;
+      }
+      return { n, saved, killed, livedFull };
+    };
+
+    const addressed = tally((s) => full.told[s] === true);
+    const rest = tally((s) => full.told[s] !== true);
+    const all = tally(() => true);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.3 short commons by audience — ${SEEDS} seeds an arm, settler,`
+      + ` floor 7, As It Lies, to day ${SPRING_IN}:\n`
+      + `  told (panel line on screen): ${addressed.n} seeds —`
+      + ` ${addressed.livedFull} saw spring on full shares,`
+      + ` saved ${addressed.saved}, killed ${addressed.killed}\n`
+      + `  never told:                  ${rest.n} seeds —`
+      + ` ${rest.livedFull} saw spring on full shares,`
+      + ` saved ${rest.saved}, killed ${rest.killed}\n`
+      + `  every seed (the bar's own denominator): ${all.n} —`
+      + ` saved ${all.saved}, killed ${all.killed}`,
+    );
+    expect(all.n).toBe(SEEDS);
   });
 });
