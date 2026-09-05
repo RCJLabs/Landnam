@@ -31,7 +31,7 @@ import { spawnSync } from 'node:child_process';
 const BARS = [
   ['offline', []], ['larder', []], ['pan', []], ['field', []],
   ['landscape', []], ['reach', []], ['reach', ['320x568']],
-  ['strip', []], ['procession', []], ['hearth', []], ['ending', []],
+  ['strip', []], ['procession', []], ['hearth', []], ['yard', []], ['ending', []],
   ['look', []],
 ];
 

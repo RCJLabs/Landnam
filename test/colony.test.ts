@@ -449,14 +449,72 @@ describe('COLONY mode', () => {
 
   it('refuses travel and battle orders while you are in the steading', () => {
     const inside = apply(settled('mode-block'), { type: 'ENTER_COLONY' });
+    // CAMP LEFT THIS LIST ON 2026-09-05 (12.1), deliberately: passing a day
+    // is the one road verb the yard answers too, because the band is standing
+    // in its own steading and a day there is a day. Everything else that
+    // belongs to the road is still refused, which is what this bar is for.
     for (const action of [
-      { type: 'CAMP' },
       { type: 'FORAGE' },
       { type: 'WALK', to: (inside.party.stop ?? 0) + 1 },
       { type: 'B_END_TURN' },
     ] as const) {
       expect(apply(inside, action), action.type).toBe(inside);
     }
+  });
+
+  /**
+   * 12.1 — THE YARD TURNS ITS OWN DAYS, and it turns them the ROAD'S way.
+   *
+   * A settled band spends about half its turns at the steading, and until now
+   * every one of them had to be passed from the road: Back to the land, Act,
+   * Rest, then Act and The steading to come back — five taps around the move
+   * this project measures as its largest lever (crewing to the winter mark
+   * daily saw spring 89 of 120 against 29 for a crew set once, paired saved
+   * 60 killed 0; balance harness, even, floor 7, 2026-09-05).
+   *
+   * THE BAR IS ON SAMENESS, not on the day happening. Two day-ticks that can
+   * drift are the defect; one is the fix. So this passes the same day both
+   * ways from the same state and demands the results agree on every field but
+   * the mode stack — which is the only thing that should differ, because one
+   * band is standing in the yard and the other on its own doorstep.
+   */
+  it('passes a day in the yard, identically to resting on the road at home', () => {
+    const home = settled('mode-day');
+    const inside = apply(home, { type: 'ENTER_COLONY' });
+
+    const yardDay = apply(inside, { type: 'CAMP' });
+    const roadDay = apply(home, { type: 'CAMP' });
+
+    expect(yardDay, 'the yard refused the day').not.toBe(inside);
+    expect(yardDay.day).toBe(home.day + 1);
+    // Still in the steading afterwards: passing a day is not leaving.
+    expect(currentMode(yardDay)).toBe('COLONY');
+    expect(yardDay.modes).toEqual(['TRAVEL', 'COLONY']);
+
+    // Everything else is the road's day, field for field.
+    const strip = (g: GameState) => JSON.stringify({ ...g, modes: undefined });
+    expect(strip(yardDay)).toBe(strip(roadDay));
+  });
+
+  it('will not turn the day while a card is on the table', () => {
+    const inside = apply(settled('mode-day-card'), { type: 'ENTER_COLONY' });
+    // The colony branch runs BEFORE the event gate, so this rule has to be
+    // its own: without it the yard would tick past a card the road stops for.
+    const carded = structuredClone(inside);
+    carded.event = {
+      id: 'test-card',
+      title: 'A man at the gate',
+      body: 'He wants feeding.',
+      choices: [{ label: 'Feed him' }],
+    };
+    expect(apply(carded, { type: 'CAMP' })).toBe(carded);
+
+    // And the same for an aftermath still to be dismissed.
+    const bloodied = structuredClone(inside);
+    bloodied.aftermath = {
+      killed: [], maimed: [], ran: [], foesDown: 0, food: 0, firewood: 0, won: true,
+    };
+    expect(apply(bloodied, { type: 'CAMP' })).toBe(bloodied);
   });
 
   it('assigns through the action layer, and refuses nonsense', () => {

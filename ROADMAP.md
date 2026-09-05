@@ -52,10 +52,11 @@
 > that gave the game a third act.
 >
 > **CURRENT MILESTONE (from 2026-09-05): Phase 12 — the audit of 2026-09-05.**
-> Fifteen items, below, from a full read of every subsystem. **Working on
-> 12.1 — the yard turns its own days**, and its first job is 12.3's discipline
-> applied to its own premise: the numbers it rests on are floor-9 readings and
-> are being re-taken before a line is written.
+> Fifteen items, below, from a full read of every subsystem. **12.1 is BUILT**
+> — the yard turns its own days — and its premise was re-taken on the floor-7
+> baseline first, where the lever it rests on is BIGGER than the figure the
+> entry inherited: 89 of 120 saw spring against 29, paired saved 60 killed 0,
+> where the floor-9 reading said 45.
 >
 > **Phase 11 is CLOSED, all fifteen items** — S1–S5, M1–M5, U1–U5. Seven
 > shipped a change; eight were closed on their own measurement without one.
@@ -7289,7 +7290,7 @@ would replace — which is why it is third and not fifteenth.
 
 ### The three overhauls
 
-- [ ] **12.1 — The yard turns its own days.** The game's largest measured lever
+- [x] **12.1 — The yard turns its own days. BUILT 2026-09-05.** The game's largest measured lever
   lives on a screen that cannot pass a day. COLONY accepts only enter, leave,
   assign, queue, unqueue, rations and abandon (`src/sim/actions.ts:56-64`,
   gate at `:139`), so the loop the winter counsel exists for — read the mark,
@@ -7564,6 +7565,60 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-05 — 12.1 BUILT: the yard turns its own days.** The colony could
+  not pass one. Every day a settled band spent at home went through the road —
+  *Back to the land, Act, Rest, Act, The steading* — five taps wrapped around
+  the two of the job picker, for the move this project measures as its largest
+  lever.
+
+  **THE PREMISE WAS RE-TAKEN BEFORE A LINE WAS WRITTEN**, per 12.3, and it did
+  not shrink: the same bar on the floor-7 baseline reads **crew set once 29 of
+  120 saw spring, crewed to the mark daily 89 — paired saved 60, killed 0**
+  (balance harness, even, 2026-09-05). The floor-9 figure the entry inherited
+  was saved 45. The lever got bigger with the better bot, not smaller.
+
+  **What shipped, five silences closed:**
+  - `CAMP` is admitted in COLONY and routed through `applyTravel` — **one
+    day-tick, not two**. A colony day is the road's day at home, and
+    `test/colony.test.ts` pins it: the same day passed both ways from the same
+    state must agree on every field but the mode stack. Watched failing with
+    the verb withdrawn.
+  - **A card stops the day**, said explicitly in the colony branch because
+    that branch runs BEFORE the event gate — without it the yard would tick
+    past a card the road stops for. Watched failing with the guard removed.
+  - The colony screen mounts the **card overlay**, not the lesson alone. The
+    overlay chain was factored into `urgent()` / `answering()` so the road and
+    the yard cannot drift about what the game is saying (`render/overlays.ts`).
+  - The **counsel** renders on the Work tab beside the roster it instructs,
+    through the same `counselSpan` composer that feeds the Build tab — two
+    mounts, one wording.
+  - The **Build tab opens on its build list**. `renderLeaving` was nested
+    inside `renderRations`, so the quietest control on the panel drew above
+    the list; it is lifted out and mounted last. Rations did NOT move — they
+    belong beside the room mark, which is a decision of its own.
+
+  **`scripts/yard.mjs` is the thirteenth browser bar** and the first automated
+  thing that has ever seen the settled screens: it passes a day in the yard,
+  checks the day moved by one and the player is still in it, checks the
+  counsel is with the roster if it is on screen at all, checks the first build
+  row is inside the slot at scroll 0 with the door out below the last row, and
+  checks nothing on either tab is off the bottom — at 390x844 and 320x568.
+  **Watched failing** against the old tab order, which it catches at 320x568
+  (first row 414px into a 352px slot). It did NOT catch that order at 390x844
+  on a freshly-settled steading, which is worth saying plainly: the bar is a
+  floor, not a proof at every state — the audit's original finding was on a
+  day-34 save with more marks stacked above the list.
+
+  **The tap count is 3, down from 7**: the yard opens on Work
+  (`uistate.ts:50`), so the counsel and the roster are already there — a name,
+  a job, and Rest. Curve unchanged at 95/77/51, because no sim rule moved but
+  the new verb's admission. `npm test` 1585 passed / 92 files, all thirteen
+  browser bars green.
+
+  **Not done here, and left to 12.4:** `reach.mjs` still needs a colony save
+  it can produce itself, and `look.mjs` still has no yard scene. The yard bar
+  covers the layout claims 12.1 made; it does not replace the reach survey.
 
 - **2026-09-04 — 12.H part four, RULED AND TAKEN: the settler's floor is 7, and
   every published figure now describes a different player.** The sweep put the
