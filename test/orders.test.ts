@@ -9,6 +9,7 @@
 // rule the harness was working to.
 
 import { describe, it, expect } from 'vitest';
+import { fnv } from '../src/sim/hash';
 import { settled as settleSomewhere } from './fixtures/settle';
 import { apply } from '../src/sim/actions';
 import { passDay } from '../src/sim/upkeep';
@@ -283,14 +284,6 @@ describe('the game a band without orders plays', () => {
     7: 'cd6b0fac',
   };
 
-  const fnv = (text: string): string => {
-    let h = 0x811c9dc5;
-    for (let i = 0; i < text.length; i += 1) {
-      h ^= text.charCodeAt(i);
-      h = Math.imul(h, 0x01000193) >>> 0;
-    }
-    return h.toString(16).padStart(8, '0');
-  };
 
   it('is the same game, saga for saga, to the last field', { timeout: 900_000 }, () => {
     setPolicy(SETTLER);

@@ -27,6 +27,7 @@ import { strandTarget } from '../sim/sea';
 import { fallOnReport } from '../sim/raid';
 import { button, el } from './svg';
 import { copyText } from './clipboard';
+import { describePlay, playSoFar } from '../record';
 
 export interface Deed {
   id: string;
@@ -382,6 +383,29 @@ export function renderDeeds(deeds: Deed[], close: () => void, coast?: string): H
         note,
         button('Copy the coast', () => {
           note.replaceChildren(copyText(coast) ? `Copied — ${coast}` : coast);
+        }, { class: 'action secondary wide' }),
+      ]),
+    );
+  }
+
+  // COPY THE PLAY (12.12). The instrument's one control.
+  //
+  // Beside the coast code because it is the same kind of thing — a run,
+  // handed to somebody else — and unlike the coast code it CANNOT be shown
+  // on screen: a saga is thousands of actions. So the line says what is
+  // there rather than showing it, and the button is the only way out.
+  //
+  // Silent when there is nothing recorded, which is a save from before the
+  // recorder or a run continued from another device (see `resumePlay`).
+  const play = playSoFar();
+  if (play && play.acts.length > 0) {
+    const said = el('p', { class: 'coast-blurb' }, [describePlay(play)]);
+    card.append(
+      el('div', { class: 'coast' }, [
+        said,
+        button('Copy the play', () => {
+          const ok = copyText(JSON.stringify(play));
+          said.replaceChildren(ok ? `Copied — ${describePlay(play)}` : describePlay(play));
         }, { class: 'action secondary wide' }),
       ]),
     );

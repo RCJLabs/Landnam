@@ -44,6 +44,8 @@ import { bookEntries } from '../src/sim/saga';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
 import { apply } from '../src/sim/actions';
+import { settled } from './fixtures/settle';
+import { currentMode } from '../src/modes';
 import { activeCombatant, beginBattle, fighterPerson, standing, strikeTargets } from '../src/sim/battle';
 import { reachTargets, throwTargets } from '../src/sim/strike';
 import { effectiveStat } from '../src/sim/people';
@@ -68,6 +70,8 @@ import {
   RAIDER,
   SETTLER,
   armSeed,
+  auditOff,
+  auditOn,
   floorOn,
   nearestStop,
   policy,
@@ -6140,4 +6144,163 @@ describe('PROBE 12.13: does the jarl ever die, and what happens to the title', (
     expect(reached, 'no saga reached a jarldom, so this probe measured nothing')
       .toBeGreaterThan(0);
   }, 1_800_000);
+});
+
+describe('PROBE 12.12: what the bot does that the interface would refuse', () => {
+  /**
+   * Every figure in ROADMAP.md was taken from a bot that reaches past the
+   * player's door. `assign`, `queueBuild`, `abandonSteading` and the rations
+   * field are all reachable from the yard — `ASSIGN`, `QUEUE_BUILD`,
+   * `ABANDON`, `SET_RATIONS` are real verbs in the action union — and `apply`
+   * refuses every one of them outside COLONY, which the bot never enters
+   * except for 12.2's orders arm.
+   *
+   * So this does not ask "did the bot do something odd". It asks the GATE:
+   * for each direct mutation, would `apply` have handed the same state back
+   * to a player dispatching the same thing? See `reached` in the harness.
+   */
+  const SEEDS = 30;
+  const LAST_DAY = 400;
+
+  it('fires on a case built by hand, and stays quiet on the one beside it', () => {
+    // CLAUDE.md: a check that cannot fire looks exactly like a check that
+    // found nothing. Two states, one action, and the audit must separate
+    // them — otherwise a zero below would mean nothing at all.
+    const home = settled('audit-fixture');
+    const who = home.party.people[0]!;
+    const act = { type: 'ASSIGN', personId: who.id, job: 'woodcutter' } as const;
+
+    // ON THE ROAD, which is where the bot does all of this from.
+    expect(currentMode(home)).toBe('TRAVEL');
+    expect(apply(home, act), 'the yard verb was accepted from the road')
+      .toBe(home);
+
+    // IN THE YARD, where a player would be standing to do it.
+    const inside = apply(home, { type: 'ENTER_COLONY' });
+    expect(inside, 'a settled band at home could not open its own steading')
+      .not.toBe(home);
+    expect(currentMode(inside)).toBe('COLONY');
+    expect(apply(inside, act), 'the yard refused a yard verb from inside the yard')
+      .not.toBe(inside);
+  });
+
+  it('counts the reaches, verb by verb', () => {
+    setPolicy(SETTLER);
+    const byVerb = new Map<string, { off: number; landed: number }>();
+    const byMode = new Map<string, number>();
+    let settledSagas = 0;
+
+    for (let s = 0; s < SEEDS; s += 1) {
+      auditOn();
+      const end = run(`curve-${s}`, LAST_DAY, undefined, 'even');
+      const seen = auditOff();
+      if (end.settlement || seen.length > 0) settledSagas += 1;
+      // ONLY MOVES THAT LANDED. `assign` and `queueBuild` refuse plenty on
+      // their own — no plot, already built — and a refusal the SIM made is
+      // not the bot reaching past the interface.
+      for (const row of seen.filter((m) => m.landed)) {
+        const cell = byVerb.get(row.type) ?? { off: 0, landed: 0 };
+        cell.landed += 1;
+        if (row.wouldRefuse) {
+          cell.off += 1;
+          byMode.set(row.mode, (byMode.get(row.mode) ?? 0) + 1);
+        }
+        byVerb.set(row.type, cell);
+      }
+    }
+
+    const landed = [...byVerb.values()].reduce((n, c) => n + c.landed, 0);
+    const off = [...byVerb.values()].reduce((n, c) => n + c.off, 0);
+    console.log(
+      `PROBE 12.12 — ${SEEDS} settler sagas on even to day ${LAST_DAY}\n`
+      + `  yard moves the bot LANDED by calling the sim directly: ${landed}\n`
+      + `  of those, moves the interface would have refused: ${off}`
+      + ` (${landed ? Math.round((off / landed) * 100) : 0}%)\n`
+      + [...byVerb].map(([verb, c]) => `    ${verb.padEnd(14)} ${
+        String(c.off).padStart(5)} off-menu of ${c.landed} landed`).join('\n')
+      + `\n  where it was standing when it did: ${
+        [...byMode].map(([m, n]) => `${m} ${n}`).join(', ') || '—'}\n`
+      + `  sagas that settled at all: ${settledSagas}/${SEEDS}`,
+    );
+
+    expect(landed, 'the audit saw nothing at all — it is not wired to the bot')
+      .toBeGreaterThan(0);
+  }, 900_000);
+
+  it('and the interface bot reaches past nothing', () => {
+    // THE OTHER ARM. Same policy, same seeds, one flag: every yard move goes
+    // ENTER_COLONY -> verb -> LEAVE_COLONY through `apply`. A move the
+    // interface refuses does not happen, so nothing can be off-menu.
+    //
+    // It is also a DIFFERENT BAND, and the second half of this print is why:
+    // the moves it could not make are moves the shipped bot made from the
+    // road and from inside a fight, and they are the reason every figure in
+    // ROADMAP.md belongs to a player who does not exist.
+    setPolicy({ ...SETTLER, id: 'interface', throughTheInterface: true });
+    let off = 0;
+    let landed = 0;
+    let blocked = 0;
+    const wanted = new Map<string, number>();
+    for (let s = 0; s < SEEDS; s += 1) {
+      auditOn();
+      run(`curve-${s}`, LAST_DAY, undefined, 'even');
+      for (const row of auditOff()) {
+        if (!row.landed) {
+          blocked += 1;
+          wanted.set(row.type, (wanted.get(row.type) ?? 0) + 1);
+          continue;
+        }
+        landed += 1;
+        if (row.wouldRefuse) off += 1;
+      }
+    }
+    setPolicy(SETTLER);
+
+    console.log(
+      `PROBE 12.12 — the interface bot, ${SEEDS} sagas on even to day ${LAST_DAY}\n`
+      + `  yard moves that landed: ${landed}\n`
+      + `  OFF-MENU among them: ${off}\n`
+      + `  moves it wanted and the interface stopped: ${blocked}\n`
+      + `    ${[...wanted].map(([t, n]) => `${t} ${n}`).join(', ') || 'none'}`,
+    );
+
+    // The Done-when, and the only assertion here. Note what it is NOT:
+    // `blocked` is large, and that is the interface WORKING — a player
+    // standing in a fight cannot crew the steading either. Off-menu means the
+    // bot GOT something a player could not.
+    expect(off, 'the interface bot got something a player could not').toBe(0);
+    expect(landed, 'it made no yard moves at all, so nothing was measured')
+      .toBeGreaterThan(0);
+  }, 900_000);
+
+  it('counts the card choices the bot never made', () => {
+    // The other half of "a bot that plays the player's game": `step` answers
+    // every card with `{type:'CHOOSE', index:0}`. A card with one option is
+    // not a decision; a card with three is, and the bot takes the same one
+    // every time. This counts how much of the deck is a decision the figures
+    // have never seen anybody make.
+    setPolicy(SETTLER);
+    let cards = 0;
+    let withChoice = 0;
+    const options = new Map<number, number>();
+    for (let s = 0; s < SEEDS; s += 1) {
+      run(`curve-${s}`, LAST_DAY, (before, after) => {
+        if (before.event || !after.event) return;
+        cards += 1;
+        const n = after.event.choices.length;
+        options.set(n, (options.get(n) ?? 0) + 1);
+        if (n > 1) withChoice += 1;
+      }, 'even');
+    }
+    console.log(
+      `PROBE 12.12 — cards drawn over ${SEEDS} sagas: ${cards}\n`
+      + `  cards that offered a real choice (>1 option): ${withChoice}`
+      + ` (${cards ? Math.round((withChoice / cards) * 100) : 0}%)\n`
+      + `  options per card: ${[...options].sort((a, b) => a[0] - b[0])
+        .map(([n, c]) => `${n}: ${c}`).join(', ')}\n`
+      + '  every one of them answered with index 0.',
+    );
+    expect(cards, 'no card was drawn in 30 sagas, so this measured nothing')
+      .toBeGreaterThan(0);
+  }, 900_000);
 });

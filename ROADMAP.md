@@ -8610,8 +8610,9 @@ would replace — which is why it is third and not fifteenth.
   re-taken. **UNVERIFIED** (its own verifiers did not run; the premise is this
   file's ruling and code changed on 2026-09-04).
 
-- [ ] **12.12 — An instrument for the human, and a bot that plays the
-  player's game.** No instrument has ever watched a person play the coast: the
+- [~] **12.12 — An instrument for the human, and a bot that plays the
+  player's game. PART BUILT 2026-09-06; the committed human run is Evan's to
+  play.** No instrument has ever watched a person play the coast: the
   only network call is the same-origin freshness check (`freshness.ts:32`,
   with `offline.test.ts` banning anything else), there is no action recorder
   in the page, and the recording tools went with the hexes (:125-130).
@@ -8628,6 +8629,100 @@ would replace — which is why it is third and not fifteenth.
   coast runs replayed in `npm test` with a pinned hash. **Verifier caution:** a
   committed human run is a fixture a bot cannot re-record — the hex-era long
   run was re-recorded four times as rules moved.
+
+  **THE CLAIMS RE-TAKEN.** Six hold as written; one is not a thing code can
+  settle and one needed a correction.
+
+  - The freshness check is still the only outbound call in `src/` — one
+    `fetch`, no XHR, no socket.
+  - There was no recorder. There is one now.
+  - The bot's four side doors are all there, and every one of them has a real
+    verb in the action union it is bypassing: `ASSIGN`, `QUEUE_BUILD`,
+    `ABANDON`, `SET_RATIONS`. `apply` refuses all four outside COLONY.
+  - `step` still answers every card with index 0 (`:845` now).
+  - **"Never opens the colony screen" is now half wrong, and 12.2 is why.**
+    The orders arm walks in, says it, and walks out through `apply` — the
+    only part of the bot that uses the door. It was written after this item.
+  - **"a deck whose authors already order choices around it" is not
+    checkable**: it is a claim about what the card writers intended, and no
+    reading of the data settles it. What CAN be measured is how much of the
+    deck the figures have never seen anybody decide — see below.
+
+  **PROBE 12.12**, 30 settler sagas on even to day 400. It asks the GATE, not
+  the mode beside it: for each direct mutation, would `apply` have handed the
+  same state back to a player dispatching the same thing? Fired first on a
+  hand-built case — a settled band at home, one `ASSIGN`, refused from the
+  road and accepted from inside the yard — so that a zero would have meant
+  something.
+
+  | | landed by calling the sim | the interface would have refused |
+  |---|---|---|
+  | `ASSIGN` | 17,207 | **17,207** |
+  | `SET_RATIONS` | 1,276 | **1,276** |
+  | `QUEUE_BUILD` | 250 | **250** |
+  | **all** | **18,733** | **18,733 (100%)** |
+
+  **Not one of the bot's steading moves is one a player could have made.**
+  11,639 were taken from the road and **7,094 from inside a battle** — the
+  band every published figure describes crews its yard mid-fight.
+
+  **The cards, the other half:** 650 drawn, **626 of them (96%) offered more
+  than one option** — 557 with two, 58 with three, 11 with four — and every
+  one was answered with index 0. Whatever the deck's authors meant by the
+  order, no measurement in this file has ever seen that choice made.
+
+  **THE INTERFACE BOT**, same policy, same seeds, one flag
+  (`throughTheInterface`): every yard move goes ENTER_COLONY → verb →
+  LEAVE_COLONY through `apply`.
+
+  | | |
+  |---|---|
+  | yard moves that landed | 9,839 |
+  | **off-menu among them** | **0** |
+  | moves it wanted and the interface stopped | 16,197 |
+
+  The zero was watched breaking: with the door-shut branch falling back to the
+  side door it reads 10,105. The 16,197 is **the interface working**, not
+  failing — a player standing in a fight cannot crew the steading either —
+  and it counts ATTEMPTS, not distinct moves: the queue loop asks again every
+  morning the door is shut, which is most of the 7,083 `QUEUE_BUILD` in it.
+
+  **AND ONE COUNTER OF MINE MEASURED TWO THINGS AT ONCE**, which is this
+  file's oldest fault committed again. The first cut had a single `refused`
+  field meaning both "the bot did it anyway" and "the bot was stopped", so the
+  interface arm reported **16,197 refused** — a number that reads as total
+  failure and describes the feature working perfectly. Split into `landed` and
+  `wouldRefuse`, with off-menu defined as both together.
+
+  **WHAT SHIPPED.** `src/record.ts` — the recorder, in the prefs store beside
+  the mute and the lessons read, no SAVE_VERSION bump. It holds the OPENING
+  (what was typed, the terms, the clock) and then every action that landed;
+  not the states, because `apply` is pure and storing them would be storing
+  the run twice. `src/opening.ts` lifts the six lines `startRun` used to build
+  inline, so a recording can reproduce the state its actions were taken
+  against from one copy of that code rather than two. *Copy the play* sits on
+  the Day card beside *Copy the coast*, and `scripts/procession.mjs` checks it
+  MOUNTS — a thing computed and never shown looks exactly like a thing that
+  works. `scripts/play.mjs` stamps a copied recording with the state it ends
+  on. `src/sim/hash.ts` is the one FNV now, folding the copy `orders.test.ts`
+  had kept since 12.2.
+
+  A recording knows when it has fallen out of step with its own save (seed and
+  day) and drops itself rather than becoming a fixture that cannot replay.
+  `replay` reports WHERE it stopped rather than stepping over a refused move,
+  because a refused move means a rule shifted under a run somebody played —
+  which is the entire value of the fixture.
+
+  **WHAT IS NOT DONE, AND CANNOT BE DONE HERE: the committed human run.**
+  `test/fixtures/plays/` is empty and `test/humanplay.test.ts` asserts that it
+  is — a test that quietly passed over an empty folder would be a check that
+  cannot fail. It goes red the day the first run lands, telling whoever
+  dropped it in what to delete. The replay-and-pin loop above it was proved
+  end to end on a bot-made recording (57 moves to day 42, stamped, replayed,
+  and watched failing on both a bent hash and a spliced move) and that
+  recording was then deleted: **a fixture a bot can re-record is exactly what
+  the item's verifier caution says this must not be.** Evan plays, taps *Copy
+  the play*, saves the JSON, runs `node scripts/play.mjs`, deletes one test.
 
 ### Refuted, and recorded so it is not proposed again
 
@@ -8658,6 +8753,38 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.12 PART BUILT: something is finally watching a person
+  play, and the bot's side doors are counted.** `PROBE 12.12`, 30 settler
+  sagas on even to day 400: the harness landed **18,733 steading moves by
+  calling the sim directly and the player's interface would have refused every
+  one** — 11,639 taken from the road and **7,094 from inside a battle**. Every
+  figure in this file describes a band that crews its yard mid-fight. Of 650
+  cards drawn, 626 offered more than one option and all 650 were answered with
+  index 0.
+
+  **The interface bot** (`throughTheInterface`) does the same work through
+  ENTER_COLONY → verb → LEAVE_COLONY: **off-menu zero**, watched breaking to
+  10,105 under sabotage. The 16,197 moves it wanted and did not get are the
+  interface working, not failing.
+
+  **AND ONE OF MY OWN COUNTERS MEASURED TWO THINGS AT ONCE.** A single
+  `refused` field meant both "the bot did it anyway" and "the bot was
+  stopped", so the interface arm first reported 16,197 refused — a number that
+  reads as total failure and describes the feature working. Split into
+  `landed` and `wouldRefuse`.
+
+  **Shipped:** the recorder in the prefs store (no SAVE_VERSION bump), *Copy
+  the play* on the Day card with a browser bar that checks it MOUNTS,
+  `scripts/play.mjs` to stamp a copied run, `src/opening.ts` so a recording
+  can rebuild the state it was taken against from one copy of that code, and
+  `src/sim/hash.ts` folding the FNV `orders.test.ts` had kept since 12.2.
+
+  **NOT DONE: the committed human run.** `test/fixtures/plays/` is empty and
+  a test asserts that it is, so the gap cannot be forgotten. The replay-and-pin
+  loop was proved end to end on a bot-made recording and that recording was
+  then deleted — a fixture a bot can re-record is the thing the item's own
+  verifier caution forbids.
 
 - **2026-09-06 — 12.13 BUILT: the jarldom ends with the man, and the coast can
   be asked again.** `Jarldom` was a NAME and a day, written when the Thing
