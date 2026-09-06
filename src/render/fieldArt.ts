@@ -16,14 +16,24 @@ import { makeRng } from '../rng';
 import { terrainDef } from '../data/terrain';
 import type { Ground, Terrain } from '../state/types';
 import { ALL_TERRAINS } from '../data/terrain';
-import { copies, latticeCentres, mix, scatter, type Mark } from './terrainArt';
+import { copies, latticeCentres, mix, scatter, type Mark } from './marks';
 import { svgEl } from './svg';
 import { BLACK, SUN, WATER, WHITE } from './palette';
 
 /**
- * The battle grid's hex size. render/battle.ts draws with this — one
- * constant, imported there, so the lattice these patterns tile on cannot
- * drift from the grid they are painted onto.
+ * The size of the lattice these patterns tile on.
+ *
+ * IT IS NOT THE FIELD'S GRID, and the comment here said it was until 12.7:
+ * "render/battle.ts draws with this — one constant, imported there, so the
+ * lattice these patterns tile on cannot drift from the grid they are painted
+ * onto". `render/battle.ts` has not imported it since 8.5 made the
+ * battlefield a plain rectangle addressed by `cell(col, row)`, so the
+ * coupling the comment promised had been gone for a week and nothing said so.
+ *
+ * A lattice is still the right shape for a TILE — it is the smallest
+ * arrangement of stamp points that closes without stamping the same mark in
+ * the same place on every repeat (see `latticeCentres`). This number is just
+ * how coarse the texture is, and it answers to nothing but the eye.
  */
 export const FIELD_HEX = 30;
 export const FIELD_INRADIUS = (Math.sqrt(3) / 2) * FIELD_HEX;

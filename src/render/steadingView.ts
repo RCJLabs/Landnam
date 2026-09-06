@@ -8,7 +8,7 @@ import {
   FOLK_H, GROUND_Y, HOUSE_HALF, ROOF_OVERSAIL, composeYard, steadingScene,
   type Raised, type Standing, type SteadingScene,
 } from './steading';
-import { mix } from './terrainArt';
+import { mix } from './marks';
 import { countryHere } from '../sim/coast';
 import type { GameState } from '../state/types';
 import type { ColonyView } from './views';

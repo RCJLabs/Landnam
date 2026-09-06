@@ -10,6 +10,8 @@
   --parchment-dim: #a99c81;
   --gold: #d3a441;
   --blood: #b23b2e;
+  --rust: #c2703a;
+  --soot: #2b2a22;
   --moss: #7d9150;
   --sea: #1d3b52;
   --tap: 44px;
@@ -177,7 +179,7 @@ canvas.oil {
   height: 100%;
   display: block;
   touch-action: manipulation;
-  background: #2b2a22;
+  background: var(--soot);
 }
 
 button[disabled='true'] {
@@ -1510,7 +1512,7 @@ h2.grim {
 }
 
 .strip-limit {
-  fill: #c2703a;
+  fill: var(--rust);
   font-size: 11px;
 }
 
@@ -1592,8 +1594,8 @@ h2.grim {
   color: var(--parchment-dim);
 }
 
-.site-standing.hostile { color: #b23b2e; }
-.site-standing.cold { color: #c2703a; }
+.site-standing.hostile { color: var(--blood); }
+.site-standing.cold { color: var(--rust); }
 .site-standing.wary { color: #b6a06a; }
 .site-standing.friendly { color: #7fa05a; }
 .site-standing.sworn { color: #5fa389; }

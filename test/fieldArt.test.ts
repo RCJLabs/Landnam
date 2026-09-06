@@ -1,11 +1,15 @@
-// The battlefield's ground patterns, held to the same bars the travel map's
-// are — because the travel map already paid for these lessons with a real
-// phone bug ("the mountains and trees are in the hexes weird") and a repaint
-// that grew with the map.
+// The battlefield's ground patterns, held to the bars the travel map's
+// patterns paid for with a real phone bug ("the mountains and trees are in
+// the hexes weird") and a repaint that grew with the map.
+//
+// The map's own patterns are gone (12.7 deleted them with the rest of the
+// hex-era art code), so this is now the ONLY place the scatter, the tile and
+// the inradius bound are held against a real caller — which is why
+// `test/marks.test.ts` does not duplicate them against a fixture lattice.
 
 import { describe, expect, it } from 'vitest';
 import { makeRng } from '../src/rng';
-import { scatter } from '../src/render/terrainArt';
+import { scatter } from '../src/render/marks';
 import {
   FIELD_CENTRES,
   FIELD_HEX,
@@ -21,10 +25,12 @@ import {
 import { ALL_TERRAINS } from '../src/data/terrain';
 
 describe('the field lattice', () => {
-  it('tiles on the battle hex, not the travel one', () => {
-    // battle.ts imports FIELD_HEX, so the grid and the pattern lattice
-    // cannot drift — but the tile has to close over that hex or the seams
-    // rule lines across the field.
+  it('closes over its own lattice, or the seams rule lines across the field', () => {
+    // "battle.ts imports FIELD_HEX, so the grid and the pattern lattice
+    // cannot drift" stood here until 12.7 and was not true: battle.ts stopped
+    // importing it when 8.5 made the field a rectangle. The tile still has to
+    // close over the lattice it stamps on — that is what this measures, and
+    // it is all it ever measured.
     expect(FIELD_TILE_W).toBeCloseTo(2 * Math.sqrt(3) * FIELD_HEX, 10);
     expect(FIELD_TILE_H).toBeCloseTo(4 * 1.5 * FIELD_HEX, 10);
   });
