@@ -7,8 +7,8 @@
 import './style.css';
 
 import { currentMode } from './modes';
-import { makeSeedPhrase } from './rng';
-import { newGame } from './state/create';
+import { openRun } from './opening';
+import { beginPlay, note, resumePlay } from './record';
 import { clearSave, hasSave, load, save } from './state/save';
 import type { GameState } from './state/types';
 import { apply, type Action } from './sim/actions';
@@ -17,8 +17,6 @@ import { applyMotionPref } from './motion';
 import { installKnot } from './render/knot';
 import { buzz } from './haptics';
 import { lastHardship, rememberHardship } from './hardshipPref';
-import { decodeChallenge } from './sim/challenge';
-import { haunt } from './sim/haunt';
 import type { HardshipId } from './data/hardship';
 import { cuesFor, hushAmbience, playAll } from './audio';
 import { lessonDue } from './sim/lessons';
@@ -83,6 +81,10 @@ function dispatch(action: Action): void {
   if (next === before) return;
   state = next;
   save(state);
+  // 12.12: the instrument. AFTER the refusal check above, so the recording
+  // holds only moves that landed — which is what makes a replay able to say
+  // "this action does nothing now" and mean the rules moved.
+  note(action, next);
   // What changed IS what the game sounds like — see src/audio/cues.ts. Doing
   // it here rather than inside the sim keeps every reducer pure.
   //
@@ -102,18 +104,16 @@ function startRun(seed: string, hardship: HardshipId = lastHardship()): void {
   // What was typed may be a challenge code rather than a seed, in which case
   // it brings its own seed AND its own terms — a shared run has to mean the
   // same thing to both people, and half of what it means is the country.
-  const challenge = decodeChallenge(seed);
-  const finalSeed = challenge ? challenge.seed || makeSeedPhrase(Date.now())
-    : seed || makeSeedPhrase(Date.now());
-  const terms = challenge ? challenge.hardship : hardship;
+  // Built by `openRun` rather than here, so the recorder can reproduce this
+  // exact opening from what was typed — see src/opening.ts and src/record.ts.
+  // The clock is read once and written into the recording, because an empty
+  // entry means "make me a seed phrase" and a replay has to get the same one.
+  const now = Date.now();
+  state = openRun(seed, hardship, now);
   // Remembered for the next title screen only; the terms themselves ride on
   // the run, so a saga carries the country it was played in.
-  rememberHardship(terms);
-  state = newGame(finalSeed, terms);
-  if (challenge?.mark) state.chasing = challenge.mark;
-  // Somebody else's steading, if the code brought one. Never fatal: a ghost
-  // naming ground this world put under the sea simply is not there.
-  if (challenge?.ghost) haunt(state, challenge.ghost);
+  rememberHardship(state.hardship ?? hardship);
+  beginPlay({ entry: seed, hardship }, now, state);
   save(state);
   resetForRun(ui);
   mountGame();
@@ -126,6 +126,8 @@ function continueRun(): void {
     return;
   }
   state = loaded;
+  // Only if the recording is still this run's — see `resumePlay`.
+  resumePlay(state);
   mountGame();
 }
 

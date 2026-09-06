@@ -308,6 +308,23 @@ export interface Policy {
    */
   followsOrders?: boolean;
   /**
+   * 12.12: do the steading's work through the door a player uses.
+   *
+   * Off by default, and it MUST stay off for every published figure: this bot
+   * plays a different game. `PROBE 12.12` measured 18,733 yard moves over 30
+   * settler sagas to day 400 and the interface would have refused every one
+   * — 11,639 taken from the road and 7,094 from inside a battle. With this
+   * on, `reached` dispatches ENTER_COLONY, the verb, and LEAVE_COLONY through
+   * `apply` instead of calling the sim directly, so a move the interface
+   * refuses does not happen at all.
+   *
+   * A knob rather than a replacement, and deliberately so. The shipped bot's
+   * numbers are what every table in ROADMAP.md is written against; swapping
+   * it out would invalidate all of them at once with nothing to compare the
+   * new ones to.
+   */
+  throughTheInterface?: boolean;
+  /**
    * Whether the daily crewing picks the food job the GROUND pays best,
    * instead of always reaching for the hunter.
    *
@@ -499,7 +516,9 @@ export function recrew(state: GameState): number {
       if (j.produces !== 'food') continue;
       if (output(state, p, j) > output(state, p, best)) best = j;
     }
-    if (best.id !== p.job && assign(state, p.id, best.id)) moved += 1;
+    if (best.id === p.job) continue;
+    if (reached(state, { type: 'ASSIGN', personId: p.id, job: best.id },
+      () => assign(state, p.id, best.id))) moved += 1;
   }
   return moved;
 }
@@ -731,6 +750,162 @@ export let recrewed = 0;
 export let ordersGiven = 0;
 /** How many steadings the bot has walked out on since a test zeroed it. */
 export let walkedOut = 0;
+
+/**
+ * 12.12 — THE AUDIT: what the bot did that the player's interface refuses.
+ *
+ * This file's bot reaches past the door. `assign`, `queueBuild`,
+ * `abandonSteading` and the rations field are all reachable from the yard by
+ * `ASSIGN`, `QUEUE_BUILD`, `ABANDON` and `SET_RATIONS`, and `apply` refuses
+ * every one of them unless the mode stack is in COLONY — which the bot never
+ * enters. So every figure in ROADMAP.md was taken from a player who can crew
+ * the steading from the middle of the road.
+ *
+ * Counted by ASKING THE GATE, not by reading the mode beside it: `refused` is
+ * `apply(state, action) === state` on the state the bot is about to mutate,
+ * which is the interface itself answering. A mode check here would be a
+ * second copy of the rule, able to drift from the one that decides.
+ */
+export interface YardMove {
+  /** The action a player would have had to take. */
+  type: string;
+  day: number;
+  /** Did the state actually change? */
+  landed: boolean;
+  /**
+   * Would the interface have handed the state straight back?
+   *
+   * SEPARATE FROM `landed`, and the first cut of this conflated them — which
+   * made one counter mean two things and the interface arm read 16,197
+   * "refused" for moves it correctly never made. An OFF-MENU move is
+   * `landed && wouldRefuse`: the bot got something a player could not. A move
+   * that was blocked is `!landed`, and that is the interface working.
+   */
+  wouldRefuse: boolean;
+  /** Where the bot was standing when it tried. */
+  mode: string;
+}
+
+/** The moves that happened anyway. The figure the item asks for. */
+export function offMenu(seen: YardMove[]): YardMove[] {
+  return seen.filter((m) => m.landed && m.wouldRefuse);
+}
+
+let audit: YardMove[] | undefined;
+
+/**
+ * The current run's watcher, so the interface arm's own dispatches reach it.
+ *
+ * Module-level rather than threaded, for the same reason `adopt` exists: the
+ * alternative is a new parameter on seven call sites in the file every
+ * published figure comes from.
+ */
+let watching: ((before: GameState, after: GameState, action: Action) => void) | undefined;
+
+/** Starts recording. Off by default: it calls `apply` per mutation. */
+export function auditOn(): void {
+  audit = [];
+}
+
+/** Stops, and hands back what was seen. */
+export function auditOff(): YardMove[] {
+  const seen = audit ?? [];
+  audit = undefined;
+  return seen;
+}
+
+/**
+ * Does the thing, and notes it if the audit is on.
+ *
+ * `action` is what a PLAYER would have had to dispatch to get the same
+ * result, and it is put to `apply` on the state as it stands BEFORE the
+ * mutation — after it, the answer would be about a different state.
+ *
+ * ONLY MUTATIONS THAT LANDED ARE COUNTED. `assign` and `queueBuild` refuse
+ * plenty on their own — a job with no plot, a building already up — and a
+ * refusal the SIM made is not the bot reaching past the interface. Counting
+ * attempts would inflate the figure with moves that changed nothing, which
+ * is the shape of fault this file keeps a section of CLAUDE.md about.
+ */
+function reached(state: GameState, action: Action, did: () => boolean): boolean {
+  if (policy.throughTheInterface) return throughTheDoor(state, action);
+  if (!audit) return did();
+  const wouldRefuse = apply(state, action) === state;
+  const mode = currentMode(state);
+  const day = state.day;
+  const landed = did();
+  audit.push({ type: action.type, day, landed, wouldRefuse, mode });
+  return landed;
+}
+
+/**
+ * Copies a state onto another one, in place.
+ *
+ * `apply` is pure and hands back a new object; the chores below mutate the
+ * one they were given and the loop holds the reference. Rather than thread a
+ * box through seven call sites in the file every published figure comes from,
+ * the new state is poured into the old one. Sound because `GameState` is the
+ * plain serializable object the save is made of — there is nothing in it that
+ * a key-by-key copy loses — and because `apply` has already cloned, so the
+ * two never share anything that is about to be written.
+ */
+function adopt(into: GameState, from: GameState): void {
+  const target = into as unknown as Record<string, unknown>;
+  const source = from as unknown as Record<string, unknown>;
+  for (const key of Object.keys(target)) if (!(key in source)) delete target[key];
+  Object.assign(target, source);
+}
+
+/**
+ * THE INTERFACE ARM (12.12). Does the same thing by the door a player uses.
+ *
+ * Opens the steading, dispatches, and walks back out — every step through
+ * `apply`, so a move the interface refuses simply does not happen. That is
+ * the whole point: `PROBE 12.12` found 18,733 yard moves in 30 sagas and the
+ * interface would have refused ALL of them, 7,094 of them made while the band
+ * was standing in a battle.
+ *
+ * IT OPENS AND SHUTS THE DOOR PER MOVE, which is more taps than a person
+ * would spend — a player opens the yard once and does five things. The STATE
+ * is the same either way (the mode stack comes back to TRAVEL), and this arm
+ * exists to measure what a player can REACH, not to count their taps; 12.2's
+ * orders arm is the one that measures taps. Kept simple on purpose: a batched
+ * version would need the chores restructured, and restructuring the bot and
+ * changing what it can do in the same commit leaves nothing to compare.
+ */
+function throughTheDoor(state: GameState, action: Action): boolean {
+  const opened = apply(state, { type: 'ENTER_COLONY' });
+  // The door is shut: away from home, a card on the table, or standing in a
+  // fight. A player in that spot cannot crew the steading either, so neither
+  // does this bot. Nothing lands, and nothing is off-menu — being stopped by
+  // the interface is the interface working.
+  if (opened === state) {
+    if (audit) {
+      audit.push({
+        type: action.type, day: state.day, landed: false, wouldRefuse: true,
+        mode: currentMode(state),
+      });
+    }
+    return false;
+  }
+  if (watching) watching(state, opened, { type: 'ENTER_COLONY' });
+
+  const done = apply(opened, action);
+  // `wouldRefuse` is false whenever it landed, and that is not a shortcut:
+  // it landed BY GOING THROUGH `apply`, so the interface is what accepted it.
+  if (audit) {
+    audit.push({
+      type: action.type, day: state.day, landed: done !== opened,
+      wouldRefuse: done === opened, mode: 'COLONY',
+    });
+  }
+  if (watching) watching(opened, done, action);
+
+  const out = apply(done, { type: 'LEAVE_COLONY' });
+  if (watching) watching(done, out, { type: 'LEAVE_COLONY' });
+  adopt(state, out);
+  return done !== opened;
+}
 /**
  * The day the bot may settle again after walking out. PER RUN — reset at the
  * top of `run()`, unlike `settleNotBefore`, which a sweep sets deliberately
@@ -1532,6 +1707,7 @@ export function run(
   let state = structuredClone(newGame(seed, hardship));
   if (prepare) prepare(state);
   let jobsSet = false;
+  watching = watch;
   walkOutHold = 0;
   // Per run, unlike `walkedOut` and `recrewed`, which a caller accumulates
   // across a sample and resets itself. This one is read as "did the order
@@ -1548,14 +1724,14 @@ export function run(
     // on the reading it can act on soonest.
     if (policy.retreatsBelow !== undefined && state.settlement && canAbandon(state)
       && stopReport(state.seed, state.settlement.stop ?? 0).total < policy.retreatsBelow) {
-      abandonSteading(state);
+      reached(state, { type: 'ABANDON' }, () => abandonSteading(state));
       walkedOut += 1;
       walkOutHold = state.day + 6;
     }
 
     if (policy.retreats && state.settlement && markVisible(state)
       && !reachable(state) && canAbandon(state)) {
-      abandonSteading(state);
+      reached(state, { type: 'ABANDON' }, () => abandonSteading(state));
       walkedOut += 1;
       // And it walks. Without this the bot re-founds on the hex it just
       // abandoned the following morning — `foundBlocker` does not care that
@@ -1576,7 +1752,11 @@ export function run(
     if (state.settlement && !jobsSet) {
       state.party.people
         .filter((p) => p.alive)
-        .forEach((p, ix) => assign(state, p.id, policy.crew[ix % policy.crew.length]!));
+        .forEach((p, ix) => {
+          const job = policy.crew[ix % policy.crew.length]!;
+          reached(state, { type: 'ASSIGN', personId: p.id, job },
+            () => assign(state, p.id, job));
+        });
       jobsSet = true;
       crewedFor = seasonOf(state.day);
     }
@@ -1611,10 +1791,12 @@ export function run(
           // One of each off the list — the repeatable búð would otherwise
           // win this loop forever and the late tier would never be reached.
           if (state.settlement.built.includes(b as never)) continue;
-          if (queueBuild(state, b as never)) break;
+          if (reached(state, { type: 'QUEUE_BUILD', building: b as never },
+            () => queueBuild(state, b as never))) break;
         }
         if (state.settlement.queue.length === 0 && crowding(state) > 0) {
-          queueBuild(state, 'bud');
+          reached(state, { type: 'QUEUE_BUILD', building: 'bud' },
+            () => queueBuild(state, 'bud'));
         }
       }
     }
@@ -1637,7 +1819,12 @@ export function run(
     if (policy.tightensBelt && state.settlement && markVisible(state)) {
       const short = forecast(state).foodGap < 0;
       const want = short ? 'half' : 'full';
-      if ((state.party.rations ?? 'full') !== want) state.party.rations = want;
+      if ((state.party.rations ?? 'full') !== want) {
+        reached(state, { type: 'SET_RATIONS', rations: want }, () => {
+          state.party.rations = want;
+          return true;
+        });
+      }
     }
 
     // ORDERS ARM: walk into the yard, say it once, walk out again.
@@ -1680,7 +1867,8 @@ export function run(
         .filter((p) => p.alive)
         .forEach((p, ix) => {
           if (keepBuilder && ix === 0) {
-            assign(state, p.id, 'builder');
+            reached(state, { type: 'ASSIGN', personId: p.id, job: 'builder' },
+              () => assign(state, p.id, 'builder'));
             return;
           }
           // WHICH food job. 'hunter' was hardcoded in all three branches
@@ -1691,9 +1879,17 @@ export function run(
               .reduce((best, id) => (output(state, p, jobById(id)!) > output(state, p, jobById(best)!)
                 ? id : best), 'hunter' as JobId)
             : 'hunter';
-          if (shortWood && shortFood) assign(state, p.id, ix % 2 ? 'woodcutter' : eats);
-          else if (shortWood) assign(state, p.id, ix < 4 ? 'woodcutter' : eats);
-          else if (shortFood) assign(state, p.id, ix < 4 ? eats : 'woodcutter');
+          const job: JobId | null = shortWood && shortFood
+            ? (ix % 2 ? 'woodcutter' : eats)
+            : shortWood
+              ? (ix < 4 ? 'woodcutter' : eats)
+              : shortFood
+                ? (ix < 4 ? eats : 'woodcutter')
+                : null;
+          if (job) {
+            reached(state, { type: 'ASSIGN', personId: p.id, job },
+              () => assign(state, p.id, job));
+          }
         });
     }
 

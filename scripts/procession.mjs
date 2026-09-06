@@ -414,6 +414,46 @@ for (const [w, h] of [[390, 844], [320, 568]]) {
       await b.click({ timeout: 1200 }).catch(() => {});
       await page.waitForTimeout(180);
     }
+    // ------------------------------------------------------------ 12.12
+    //
+    // THE RECORDER REACHED THE SCREEN. `src/record.ts` notes every landed
+    // dispatch and `Copy the play` hands it over, and both are worth exactly
+    // nothing if the control never mounts — which is the fault the `yard` and
+    // `founding` bars exist about. Checked HERE because this is the one bar
+    // that already takes a real turn through the sheet: the Camp above is a
+    // dispatch, so by now there is something to copy.
+    await page.locator('.action-slot button', { hasText: /^Act$/ }).first()
+      .click({ timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(500);
+    const play = await page.evaluate(() => {
+      const said = [...document.querySelectorAll('.overlay .coast-blurb')]
+        .map((el) => el.textContent ?? '');
+      return {
+        button: [...document.querySelectorAll('.overlay button')]
+          .some((b) => /copy the play/i.test(b.textContent ?? '')),
+        line: said.find((t) => /moves to day/i.test(t)) ?? '',
+        stored: (() => {
+          try {
+            const raw = localStorage.getItem('landnam_play');
+            return raw ? JSON.parse(raw).acts.length : -1;
+          } catch { return -2; }
+        })(),
+      };
+    });
+    console.log(`390x844: the play so far — ${play.stored} moves recorded, `
+      + `line "${play.line}"`);
+    check(play.stored > 0,
+      `390x844: nothing was recorded after a turn was taken (${play.stored})`);
+    check(play.button, '390x844: the Day card offers no Copy the play');
+    check(/\d+ moves? to day \d+/.test(play.line),
+      `390x844: the play line does not say what is there — "${play.line}"`);
+    for (let i = 0; i < 6; i++) {
+      const b = page.locator('.overlay .card button').first();
+      if (!(await b.count())) break;
+      await b.click({ timeout: 1200 }).catch(() => {});
+      await page.waitForTimeout(180);
+    }
+
     const camped = await readLight();
     console.log(`390x844: walking wash ${walking.wash} fire ${walking.fire} · ` +
       `camped wash ${camped.wash} fire ${camped.fire} stars ${camped.stars}`);
