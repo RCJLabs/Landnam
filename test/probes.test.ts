@@ -5978,3 +5978,166 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
     expect(settler.size).toBeGreaterThan(0);
   }, 900_000);
 });
+
+describe('PROBE 12.13: does the jarl ever die, and what happens to the title', () => {
+  /**
+   * The item's claim is a code read: `Jarldom` is `{name, since}`, written
+   * once in `thing.ts` and cleared nowhere, and `mourn` — the single funnel
+   * all six death paths run through — passes the hall, the blade and the
+   * orphans and knows nothing of the title. All of that holds on today's
+   * build. What a code read CANNOT say is whether the bug ever bites: a
+   * jarldom that always outlives its jarl is a different item from one where
+   * the man dies in one run out of forty.
+   *
+   * THE CAUSE, NOT WHAT MOVED ALONGSIDE IT. The death is read off the
+   * transition itself — a person whose full name is the stored jarl's going
+   * `alive` to not — rather than inferred from the title still standing while
+   * the band shrank. CLAUDE.md, 2026-09-04.
+   *
+   * Day 700 rather than the long bar's 500 because the reckoning opens on day
+   * 457 (five winters; `wintersStood` puts the fifth spring at day 457), so
+   * 500 leaves 43 days of jarldom to die in. The item asks for the longer
+   * horizon for exactly this reason.
+   *
+   * Same seed family (`curve-N`), same policy and same terms as the long bar,
+   * so the two readings can be set beside each other.
+   */
+  const SEEDS = 120;
+  const LAST_DAY = 700;
+
+  interface Row {
+    seed: string;
+    /** Day the Thing carried. */
+    since: number;
+    /** Day the man it named stopped being alive, if he did. */
+    died?: number;
+    /**
+     * The action the death LANDED ON, which is not the same as what killed
+     * him and must not be read as it. `CAMP` means the day tick applied a
+     * wound or a winter; the harness's verb is the turn, not the cause.
+     */
+    on?: string;
+    /**
+     * The day `state.jarl` actually went away, read off the transition.
+     *
+     * This is what makes the probe say the same thing on both arms. "Days
+     * from the death to the end of the run" measures the bug on a build that
+     * has it and measures NOTHING on a build that does not — it would go on
+     * reporting the same figure after the fix, about a title that no longer
+     * stands. Asking when the title ended is the question either way.
+     */
+    lapsed?: number;
+    /** Times the Thing carried again after one had ended. */
+    regained: number;
+    /** The last day of the run. */
+    last: number;
+  }
+
+  /**
+   * How a death is spotted, in one place so the probe below and the check
+   * above cannot drift. `Jarldom` stores a NAME, not an id — that is the
+   * shape fault this item exists about — so this is the best key there is
+   * until the shape changes.
+   */
+  const jarlDied = (before: GameState, after: GameState, name: string): boolean => {
+    const was = before.party.people.find((p) => `${p.name} ${p.byname}` === name);
+    const now = after.party.people.find((p) => `${p.name} ${p.byname}` === name);
+    return !!was?.alive && !!now && !now.alive;
+  };
+
+  it('fires on a death it was handed, before its silence is believed', () => {
+    // CLAUDE.md, 2026-09-04: when a probe returns nought the first suspect is
+    // the probe. So this hands it the exact case it is looking for and
+    // watches it say yes — and hands it two near misses and watches it say
+    // no. Without this, "no jarl ever died" and "the detector never worked"
+    // are the same output.
+    const before = structuredClone(newGame('jarl-fixture'));
+    const man = before.party.people[0]!;
+    const name = `${man.name} ${man.byname}`;
+    before.jarl = { name, since: 200 };
+
+    const killed = structuredClone(before);
+    killed.party.people[0]!.alive = false;
+    expect(jarlDied(before, killed, name), 'the detector missed a death handed to it').toBe(true);
+
+    // Somebody else dying is not the jarl dying.
+    const other = structuredClone(before);
+    other.party.people[1]!.alive = false;
+    expect(jarlDied(before, other, name)).toBe(false);
+
+    // And a man already dead does not die twice — the probe latches on the
+    // first, so a repeat would be a second reading of one event.
+    expect(jarlDied(killed, killed, name)).toBe(false);
+  });
+
+  it('counts the jarls who died in office, and how long the title stood on them', async () => {
+    setPolicy(SETTLER);
+    const rows: Row[] = [];
+    let reached = 0;
+
+    for (let i = 0; i < SEEDS; i += 1) {
+      const seed = `curve-${i}`;
+      let name: string | undefined;
+      let since = 0;
+      let died: number | undefined;
+      let on: string | undefined;
+      let lapsed: number | undefined;
+      let regained = 0;
+      const end = run(seed, LAST_DAY, (before, after, action) => {
+        if (!name && after.jarl) {
+          name = after.jarl.name;
+          since = after.jarl.since;
+        }
+        if (!name) return;
+        if (before.jarl && !after.jarl && lapsed === undefined) lapsed = after.day;
+        if (!before.jarl && after.jarl && lapsed !== undefined) regained += 1;
+        if (died !== undefined) return;
+        if (jarlDied(before, after, name)) {
+          died = after.day;
+          on = action.type;
+        }
+      }, 'fair');
+      if (!name) continue;
+      reached += 1;
+      rows.push({ seed, since, died, on, lapsed, regained, last: end.day });
+    }
+
+    const dead = rows.filter((r) => r.died !== undefined);
+    const stoodDead = (r: Row): number => (r.lapsed ?? r.last) - r.died!;
+    const heldByDead = dead.reduce((sum, r) => sum + stoodDead(r), 0);
+    const turns = new Map<string, number>();
+    for (const r of dead) turns.set(r.on!, (turns.get(r.on!) ?? 0) + 1);
+    // AND WHETHER THE SHORTER HORIZON WOULD SEE ANY OF IT. The item asks for
+    // a 700-day readout; the long bar runs to 500 and costs eleven minutes of
+    // the suite at 120 seeds. If the count at 500 is already non-zero, the
+    // extension buys nothing but runtime, and that is a decision this line
+    // exists to make rather than assume.
+    const by500 = dead.filter((r) => r.died! <= 500).length;
+
+    console.log(
+      `PROBE 12.13 — ${SEEDS} settler sagas on fair to day ${LAST_DAY}\n`
+      + `  became jarl: ${reached}/${SEEDS}\n`
+      + `  the man the Thing named died in office: ${dead.length}/${reached}\n`
+      + `  ...of those, dead by day 500: ${by500}\n`
+      + `  days the title stood on a dead man: ${heldByDead}`
+      + `${dead.length ? ` (median ${
+        [...dead].map(stoodDead).sort((a, b) => a - b)[Math.floor(dead.length / 2)]
+      })` : ''}\n`
+      + `  the TURN it landed on (not the cause): ${
+        [...turns].map(([k, v]) => `${k} ${v}`).join(', ') || '—'}\n`
+      + `  proclaimed on day: ${rows.length ? Math.min(...rows.map((r) => r.since)) : '—'}`
+      + `..${rows.length ? Math.max(...rows.map((r) => r.since)) : '—'}\n`
+      + `  died on day: ${dead.length ? Math.min(...dead.map((r) => r.died!)) : '—'}`
+      + `..${dead.length ? Math.max(...dead.map((r) => r.died!)) : '—'}\n`
+      + `  the coast granted it again after losing it: ${
+        rows.reduce((n, r) => n + r.regained, 0)} times`
+      + ` in ${rows.filter((r) => r.regained > 0).length} sagas`,
+    );
+
+    // Asserts nothing about the count — that is the reading. It asserts the
+    // instrument ran: no jarldoms at all would mean this measured the harness
+    // failing to reach the endgame, not the title outliving anybody.
+    expect(reached, 'no saga reached a jarldom, so this probe measured nothing')
+      .toBeGreaterThan(0);
+  }, 1_800_000);
+});

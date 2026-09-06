@@ -22,6 +22,7 @@
 
 import { hardshipById, type HardshipId } from '../data/hardship';
 import { wintersStood } from './calendar';
+import { everRuled } from './jarldom';
 import type { GameState, Ghost } from '../state/types';
 
 /** What a run got to. The thing another player is chasing. */
@@ -162,7 +163,10 @@ export function markOf(state: GameState): Mark {
   return {
     day: state.day,
     winters: wintersStood(state.day),
-    ...(state.jarl ? { jarl: true } : {}),
+    // `everRuled`, not `state.jarl`: the mark reads "a jarldom TAKEN", and
+    // since 12.13 a jarldom can end with the man it was granted to. A band
+    // that ruled two winters and buried its jarl took one.
+    ...(everRuled(state) ? { jarl: true } : {}),
   };
 }
 

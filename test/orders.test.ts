@@ -257,10 +257,30 @@ describe('the game a band without orders plays', () => {
     // drew none of the ten. Seed 4 drew `the-long-bargain`; seed 7 drew
     // `the-other-mans-shore`, `the-wall-that-held` and `men-who-have-fought`.
     // A rule change would have moved all eight.
-    4: 'e6e7ecb5',
+    //
+    // RE-PINNED AGAIN 2026-09-06 BY 12.13 — the same two, and for two
+    // DIFFERENT reasons, which is the whole of the check.
+    //
+    // The title now ends with the man the Thing named, and it carries his id
+    // and a `jarldoms` count that it did not carry before. Run in both trees
+    // and hashed twice — once whole, once with `jarl` and those two flags
+    // taken out:
+    //
+    //   seeds 0-3, 5, 6  never proclaimed  ->  byte-identical, whole hash
+    //   seed 4           proclaimed, jarl lived  ->  WHOLE hash moved,
+    //                    bare hash 4f88ec7a both sides: nothing but the
+    //                    title's own new fields is different
+    //   seed 7           proclaimed, jarl DIED, coast granted it again
+    //                    ->  bare hash 8feaee7c -> 8815512e: the saga really
+    //                    is a different one from the day he was carried out
+    //
+    // One saga in eight diverging in the sim, and it is the one where the
+    // feature fired. A rule change would have moved the six that never
+    // reached a Thing.
+    4: '2409f371',
     5: '6f41c1d1',
     6: '5a9b0577',
-    7: '71d664e8',
+    7: 'cd6b0fac',
   };
 
   const fnv = (text: string): string => {

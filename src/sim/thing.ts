@@ -42,6 +42,7 @@ import { bestStat, fullName, living } from './people';
 import { chronicle } from './saga';
 import { atHome } from './site';
 import { standsFor } from './colony';
+import { JARLDOMS } from './jarldom';
 
 export interface Need {
   id: NeedId;
@@ -192,7 +193,12 @@ export function callThing(state: GameState): ThingResult | null {
     // and stop the game, it now grants the rule and leaves the closing to
     // the player — see layDownRule. A coast that has just been told who
     // lives on it starts behaving accordingly (sim/word.ts).
-    state.jarl = { name, since: state.day };
+    state.jarl = { name, since: state.day, id: speaker?.id };
+    // Counted here rather than derived from `state.jarl` later, because since
+    // 12.13 a jarldom can END: "is there a jarl" and "was there ever one" are
+    // two questions now, and the menu's promise, the challenge mark and the
+    // saga's title all want the second. See sim/jarldom.ts.
+    state.flags[JARLDOMS] = (state.flags[JARLDOMS] ?? 0) + 1;
     return { proclaimed: true, text, jarl: name };
   }
 

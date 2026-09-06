@@ -8093,10 +8093,10 @@ would replace — which is why it is third and not fifteenth.
   figures are filed with N=300 and a date **as a reading of a bot**; and
   `field.mjs` finds an odds label on every tappable foe.
 
-- [ ] **12.13 — The title outlives the man, and the coast can take it back.**
-  `Jarldom` is `{name, since}` (`types.ts:713-718`), written once
-  (`thing.ts:195`) and never cleared; `mourn` passes the hall, the blade and
-  the orphans on a death and knows nothing of the title, so **the band stays
+- [x] **12.13 — The title outlives the man, and the coast can take it back.
+  BUILT 2026-09-06.** `Jarldom` is `{name, since}` (`types.ts:713-718`), written
+  once (`thing.ts:195`) and never cleared; `mourn` passes the hall, the blade
+  and the orphans on a death and knows nothing of the title, so **the band stays
   jarl under a dead man**. Ruling changes word, a raider cap, a joining draw,
   goodwill, tribute, and the Thing closing behind you — and nothing can end
   it. The long-game bar stops at day 500, 43 days after the reckoning opens.
@@ -8105,6 +8105,107 @@ would replace — which is why it is third and not fifteenth.
   the title" count at N=120 on fair; the ever-rule figures are restated on the
   longer horizon with N and date. Whether the title lapses or passes to the
   heir is a design call for Evan.
+
+  **ALL FIVE CLAIMS RE-TAKEN ON TODAY'S BUILD AND ALL FIVE HOLD** — line
+  numbers had drifted (`types.ts:738-744`, `thing.ts:195` exact), nothing else
+  had. `state.jarl` is assigned in exactly one place in `src/` and cleared in
+  none; `mourn` calls `hallPasses`, `passBlade`, `orphaned` and stops. The six
+  things ruling changes are all real and all found: `JARL_WORD` in `word.ts`,
+  the `+2` fame inside `raiderCap`, `JARL_DRAW` in `joining.ts`, the goodwill
+  freeze in `driftStandings`, `renderTribute`, and `canCallThing` returning
+  false. The reckoning opens on **day 457** (fifth spring, `wintersStood`), so
+  the 500-day horizon really does leave 43 days.
+
+  **AND THE BUG IS NOT A CORNER.** `PROBE 12.13`, 120 settler sagas on fair to
+  day 700, taken on a clean worktree at `HEAD` and again on the working tree:
+
+  | | before | after |
+  |---|---|---|
+  | became jarl | 57/120 | 57/120 |
+  | the man the Thing named died in office | **33/57** | 33/57 |
+  | days the title stood on a dead man | **4680 (median 104)** | **0** |
+  | the coast granted it again after losing it | 0 | **21 times in 15 sagas** |
+
+  **Fifty-eight per cent of all jarldoms were held by a corpse**, for a median
+  of 104 days each, still collecting three of word, the joining draw, frozen
+  goodwill and a season's tribute — with the Thing shut behind them.
+
+  Every figure above the last two ties EXACTLY across the arms, and that is
+  the instrument working rather than trap 3: they are all measured at or
+  before the first death, which is upstream of anything the change can touch.
+  The two that move are the two measured after it.
+
+  **THE RULING: IT LAPSES.** The hall passes and the blade passes because they
+  are POSSESSIONS and `hallPasses` follows a rule about property — the next
+  living sworn man off the knarr. A jarldom is not property: the Thing named a
+  MAN, and the text it writes says so. A coast that hands the title down
+  unasked is a coast with no say in who rules it, and the Thing is the one
+  institution in this game that exists to have that say. So the title dies
+  with him and the checklist reopens — the winters are still stood, the hall
+  still stands, the friends are still friends — and taking it back costs a
+  feast and a 2d6 against fourteen, the same price it cost the first time.
+
+  **THE OTHER ARM WAS MEASURED, NOT ARGUED AWAY** (scratch worktree, same
+  seeds, same day):
+
+  | | it lapses (shipped) | it passes to the heir |
+  |---|---|---|
+  | jarldoms that ended with the man | 33 of 57 | 7 of 57 |
+  | the title changed hands with no Thing | never | 45 times |
+  | the coast granted it again | 21 in 15 sagas | 4 in 4 sagas |
+
+  Under the heir rule the title only ever comes back to the coast when the
+  band runs out of sworn men — seven times in a hundred and twenty sagas — so
+  the Thing is still, in effect, shut for good after it carries once. **Evan's
+  call stands open**: the heir arm is one line of `sim/jarldom.ts`.
+  *(One instrument note, because the line is easy to misread: the probe's
+  "days the title stood on a dead man" reads 3847 on the heir arm and does NOT
+  mean that. Nothing sits on a corpse there — the title moves the same day.
+  The metric is written against the lapse arm and only means what it says
+  there.)*
+
+  **WHAT SHIPPED.** `src/sim/jarldom.ts` holds the rule, beside `household.ts`
+  and `heirloom.ts` in the same list `mourn` already walks — one small module
+  per thing that outlives its owner. `Jarldom` gains an optional `id`
+  (SAVE_VERSION 66); the migration resolves it off the save's own roster where
+  the name picks out exactly one person and declines where it does not, and
+  `isTheJarl` falls back to the name either way. `everRuled` is the new
+  question for anything about the band's RECORD, and `challenge.ts`'s mark now
+  asks it — "a jarldom taken" means taken, not still held.
+
+  **THE CHANGE WOULD HAVE SILENTLY MOVED THE DIFFICULTY MENU, AND THAT IS THE
+  NEAR MISS WORTH RECORDING.** The long bar counted `if (state.jarl)` on the
+  last day and fed it to `allJarlsBy`, which is checked against
+  `odds.ruled` — "fraction of bands that were ever proclaimed jarl". Correct
+  while a jarldom could not end; the moment it can, that line quietly becomes
+  "still ruling when the run stopped". Switched to `everRuled`, and the
+  measured figures come back **45 / 57 / 25 of 120 — identical to the
+  pre-change readings**, which is what says the switch was the right one.
+  `ruledYears` had the same fault and is counted as days-with-a-jarl now.
+
+  **TWO CRITERIA MET DIFFERENTLY FROM THE WAY THEY WERE WRITTEN, both on a
+  measurement:**
+
+  1. **The horizon stays at 500.** The item asked for a 700-day readout
+     because day 500 is only 43 days past the reckoning. That reasoning is
+     about how long a jarldom lasts, and the deaths do not wait for it:
+     proclamations land on days 169–482 and **29 of the 33 deaths land by day
+     500**. The bar reads 30 / 31 / 13 lost titles at N=120 on even / fair /
+     hard, at day 500. Moving to 700 would add about five minutes to a suite
+     that already runs forty-eight, and buy four cases.
+  2. **The ever-rule figures need no restatement.** That was the thing to
+     check rather than assume, and it was checked: the last proclamation in
+     120 fair sagas is day 482, so day 500 already sees every band that ever
+     gets there, and 700 measured the same 57/120. `odds.ruled` is left as it
+     stands.
+
+  **The orders hash re-pin is paired, as 12.14's was.** Run in both trees and
+  hashed twice, once whole and once with `jarl` and its two flags removed:
+  the six seeds that never reached a Thing are byte-identical whole; seed 4
+  was proclaimed and its jarl lived, so only the title's own new fields moved
+  (bare hash 4f88ec7a both sides); seed 7's jarl died and the coast granted it
+  again, and its bare hash moved. One saga in eight diverging in the sim, and
+  it is the one where the feature fired.
 
 ### Content and the retelling
 
@@ -8557,6 +8658,35 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.13 BUILT: the jarldom ends with the man, and the coast can
+  be asked again.** `Jarldom` was a NAME and a day, written when the Thing
+  carried and cleared nowhere, and `mourn` — the one funnel all six death
+  paths run through — passed the hall, the blade and the orphans and knew
+  nothing about it. Measured before building: **33 of 57 jarldoms in 120 fair
+  sagas to day 700 were held by a dead man**, a median of 104 days each, still
+  drawing three of word, the joining draw, frozen goodwill and a season's
+  tribute, with the Thing shut behind them. After: nought, and the coast
+  granted it again 21 times in 15 sagas.
+
+  **It lapses rather than passing to the heir, and the heir arm was measured
+  rather than argued away**: under it the title changes hands 45 times with no
+  Thing and comes back to the coast only when the band runs out of sworn men —
+  seven times in a hundred and twenty sagas. That fork is still Evan's, and it
+  is one line of `sim/jarldom.ts`.
+
+  **THE NEAR MISS: the change would have silently moved the difficulty menu.**
+  The long bar counted `if (state.jarl)` on the last day and fed it to the
+  `odds.ruled` check — "ever proclaimed jarl". Correct while a jarldom could
+  not end; the moment it can, that line means "still ruling when the run
+  stopped". Switched to `everRuled`, and the figures come back 45/57/25 of 120,
+  identical to before.
+
+  **Two criteria met differently and on a measurement**: the horizon stays at
+  500, because 29 of the 33 deaths land by day 500 and the bar reads 30/31/13
+  lost titles there; and the ever-rule figures need no restatement, because
+  the last proclamation in 120 fair sagas is day 482. SAVE_VERSION 66, with a
+  migration that resolves the jarl's id off the save's own roster.
 
 - **2026-09-06 — 12.15 BUILT: the fighters stop wearing a readout, and the
   readout turned out to be holding up the thumb rule.** The 4px health bar,

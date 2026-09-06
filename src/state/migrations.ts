@@ -721,6 +721,42 @@ export const MIGRATIONS: Record<number, Migration> = {
    * gaining an optional field with a meaningful absence looks like.
    */
   /**
+   * v66 (12.13): `Jarldom` gains the person's id, resolved from the name.
+   *
+   * Not a pass-through, because it CAN do better than one. The old shape
+   * carried only `fullName(speaker)`, and every save that has a jarldom also
+   * has the roster the Thing picked from, so the id is recoverable here and
+   * the ongoing code does not have to keep guessing from a string.
+   *
+   * When it cannot be recovered — a jarl no longer on the roster, a name two
+   * people share — the field is left absent and `isTheJarl` falls back to
+   * the name, which is exactly as well as the old save could ever have done.
+   * A save with no jarldom passes straight through.
+   */
+  65: (save) => {
+    const jarl = save['jarl'];
+    if (!jarl || typeof jarl !== 'object') return { ...save, version: 66 };
+    const j = jarl as Record<string, unknown>;
+    if (typeof j['id'] === 'string' || typeof j['name'] !== 'string') {
+      return { ...save, version: 66 };
+    }
+    const party = save['party'] as Record<string, unknown> | undefined;
+    const people = Array.isArray(party?.['people']) ? party['people'] : [];
+    const matches = people.filter((p) => {
+      if (!p || typeof p !== 'object') return false;
+      const person = p as Record<string, unknown>;
+      return `${person['name']} ${person['byname']}` === j['name'];
+    }) as Record<string, unknown>[];
+    // Exactly one, or leave it alone: a name two people share is the case the
+    // id exists to settle, and guessing which of them the Thing meant would
+    // be inventing a fact about somebody's saga.
+    if (matches.length !== 1 || typeof matches[0]!['id'] !== 'string') {
+      return { ...save, version: 66 };
+    }
+    return { ...save, jarl: { ...j, id: matches[0]!['id'] }, version: 66 };
+  },
+
+  /**
    * v65 (12.15): `movesLeft` comes off every combatant.
    *
    * A save taken mid-fight carries the field; nothing reads it and the type
