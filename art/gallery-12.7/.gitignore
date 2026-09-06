@@ -1,0 +1,3 @@
+# `check.mjs` and `zoom.mjs` write screenshots here while you are looking at
+# the panels. They are how you check the drawing, not something to keep.
+*.png
