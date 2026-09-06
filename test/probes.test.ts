@@ -5683,8 +5683,13 @@ describe('PROBE: 12.3 — the re-takes on the floor-7 baseline', () => {
     );
     expect(out.length).toBe(2);
   });
-  // ---------------------------------------------------------------- 12.9
+});
 
+describe('PROBE: 12.9 — does a played saga reach the teaching', () => {
+  // It landed inside 12.3's describe on the first cut, because the insertion
+  // replaced the file's last `});` — which closed a describe, not the file.
+  // A probe filed under another probe's heading is a reading attributed to
+  // the wrong instrument, which is the one thing this file exists not to do.
   it('measures which lessons a played saga actually reaches', () => {
     // THE INSTRUMENT AND ITS LIMIT, BOTH STATED.
     //
@@ -5746,5 +5751,7 @@ describe('PROBE: 12.3 — the re-takes on the floor-7 baseline', () => {
       + `    never reached in any saga: ${never.length ? never.join(', ') : 'none'}`,
     );
     expect(rows.length).toBe(allLessonIds().length);
-  });
+    expect(never, 'a lesson no played saga reaches is content nobody sees')
+      .toEqual([]);
+  }, 600_000);
 });
