@@ -5900,6 +5900,12 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
     ]);
     const drewHistory = new Map<string, number>();
     const cleanSettlers = { n: 0, drew: 0 };
+    // PER CARD, because "a history card" as one set answers the wrong
+    // question. The item's criterion assumes history means RAIDING history;
+    // most of these ten are gated on history a settler accumulates — bargains
+    // struck, raids held, battles stood, an assembly carried. A set that
+    // mixes the two cannot separate the policies and it is not supposed to.
+    const perCard = new Map<string, { raider: number; clean: number }>();
 
     for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
       setPolicy(pol);
@@ -5907,6 +5913,7 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
       let sagasWithHistory = 0;
       for (let i = 0; i < SEEDS; i += 1) {
         let sawHistory = false;
+        const cardsHere = new Set<string>();
         const final = run(`deck-${i}`, HORIZON, (before, after) => {
           const id = after.event?.id;
           if (!id || before.event?.id === id) return;
@@ -5918,12 +5925,19 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
           // instrument telling you what it actually put in the set.
           if (!CARD_IDS.has(id)) return;
           seen.add(id);
-          if (HISTORY.has(id)) sawHistory = true;
+          if (HISTORY.has(id)) { sawHistory = true; cardsHere.add(id); }
         });
         if (sawHistory) sagasWithHistory += 1;
-        if (name === 'settler' && final.tally.sackings === 0) {
+        const clean = name === 'settler' && final.tally.sackings === 0;
+        if (clean) {
           cleanSettlers.n += 1;
           if (sawHistory) cleanSettlers.drew += 1;
+        }
+        for (const id of cardsHere) {
+          const row = perCard.get(id) ?? { raider: 0, clean: 0 };
+          if (name === 'raider') row.raider += 1;
+          if (clean) row.clean += 1;
+          perCard.set(id, row);
         }
       }
       reached.set(name, seen);
@@ -5952,7 +5966,14 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
       + ` settler ${drewHistory.get('settler')}/${SEEDS}`
       + ` (${Math.round((drewHistory.get('settler')! / SEEDS) * 100)}%)\n`
       + `  settlers that never sacked: ${cleanSettlers.drew}/${cleanSettlers.n}`
-      + `${cleanSettlers.n ? ` (${Math.round((cleanSettlers.drew / cleanSettlers.n) * 100)}%)` : ''}`,
+      + `${cleanSettlers.n ? ` (${Math.round((cleanSettlers.drew / cleanSettlers.n) * 100)}%)` : ''}\n`
+      + [...HISTORY].map((id) => {
+        const row = perCard.get(id) ?? { raider: 0, clean: 0 };
+        const r = Math.round((row.raider / SEEDS) * 100);
+        const c = cleanSettlers.n ? Math.round((row.clean / cleanSettlers.n) * 100) : 0;
+        return `    ${id.padEnd(26)} raider ${String(r).padStart(3)}%`
+          + `  settler-never-sacked ${String(c).padStart(3)}%`;
+      }).join('\n'),
     );
     expect(settler.size).toBeGreaterThan(0);
   }, 900_000);
