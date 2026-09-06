@@ -5887,11 +5887,27 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
     const CARD_IDS = new Set(EVENTS.map((e) => e.id));
     const reached = new Map<string, Set<string>>();
 
+    // The ten cards 12.14 added, so the second criterion can be read off the
+    // same run: a history card in >= 30% of raider sagas and <= 5% of settler
+    // sagas THAT NEVER SACKED. The settler denominator is restricted on
+    // purpose — a settler who did sack has earned them, and counting those
+    // would be asking whether the gates work by including the runs that pass.
+    const HISTORY = new Set([
+      'the-reckoning-of-spoils', 'the-name-they-use', 'the-one-we-drove-out',
+      'the-other-mans-shore', 'the-jarls-portion', 'men-who-have-fought',
+      'the-wall-that-held', 'the-count-of-the-dead', 'the-oath-we-broke',
+      'the-long-bargain',
+    ]);
+    const drewHistory = new Map<string, number>();
+    const cleanSettlers = { n: 0, drew: 0 };
+
     for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
       setPolicy(pol);
       const seen = new Set<string>();
+      let sagasWithHistory = 0;
       for (let i = 0; i < SEEDS; i += 1) {
-        run(`deck-${i}`, HORIZON, (before, after) => {
+        let sawHistory = false;
+        const final = run(`deck-${i}`, HORIZON, (before, after) => {
           const id = after.event?.id;
           if (!id || before.event?.id === id) return;
           // CARDS ONLY. `state.event.id` is "an event id from data/events, OR
@@ -5902,9 +5918,16 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
           // instrument telling you what it actually put in the set.
           if (!CARD_IDS.has(id)) return;
           seen.add(id);
+          if (HISTORY.has(id)) sawHistory = true;
         });
+        if (sawHistory) sagasWithHistory += 1;
+        if (name === 'settler' && final.tally.sackings === 0) {
+          cleanSettlers.n += 1;
+          if (sawHistory) cleanSettlers.drew += 1;
+        }
       }
       reached.set(name, seen);
+      drewHistory.set(name, sagasWithHistory);
     }
     setPolicy(SETTLER);
 
@@ -5923,7 +5946,13 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
       + `${raiderOnly.length ? ` (${raiderOnly.slice(0, 8).join(', ')})` : ''};`
       + ` settler-only ${settlerOnly.length}`
       + `${settlerOnly.length ? ` (${settlerOnly.slice(0, 8).join(', ')})` : ''}\n`
-      + `  never reached by either: ${EVENTS.length - new Set([...settler, ...raider]).size}`,
+      + `  never reached by either: ${EVENTS.length - new Set([...settler, ...raider]).size}\n`
+      + `  a history card was drawn in: raider ${drewHistory.get('raider')}/${SEEDS}`
+      + ` (${Math.round((drewHistory.get('raider')! / SEEDS) * 100)}%),`
+      + ` settler ${drewHistory.get('settler')}/${SEEDS}`
+      + ` (${Math.round((drewHistory.get('settler')! / SEEDS) * 100)}%)\n`
+      + `  settlers that never sacked: ${cleanSettlers.drew}/${cleanSettlers.n}`
+      + `${cleanSettlers.n ? ` (${Math.round((cleanSettlers.drew / cleanSettlers.n) * 100)}%)` : ''}`,
     );
     expect(settler.size).toBeGreaterThan(0);
   }, 900_000);
