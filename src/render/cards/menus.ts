@@ -110,11 +110,9 @@ export function renderGuide(onClose: () => void): HTMLElement {
   for (const section of GUIDE) {
     list.append(
       el('h3', {}, [section.title]),
-      // The coast wording where the section has one — the guide names
-      // buttons plainly, and on a coast half of them are different buttons.
-      el('p', { class: 'event-body guide-body' }, [
-        section.coast ?? section.body,
-      ]),
+      // One wording, since 12.9 — see data/guide.ts for why the `coast`
+      // fallback that stood here was a place for stale text to hide.
+      el('p', { class: 'event-body guide-body' }, [section.body]),
     );
   }
   card.append(list, button('Back', onClose, { class: 'primary wide' }));

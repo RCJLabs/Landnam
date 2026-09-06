@@ -48,15 +48,13 @@ export function renderEventCard(state: GameState, dispatch: Dispatch): HTMLEleme
 export function renderLesson(lesson: LessonDef, onDismiss: () => void): HTMLElement {
   const card = el('div', { class: 'card event-card lesson-card' }, [
     el('h2', {}, [lesson.title]),
-    // The coast wording when there is one. A lesson is the FIRST prose a new
-    // player reads, and on a coast build the hex one told them to tap a
-    // marked hex — on a map with no hexes to tap.
-    el('p', { class: 'event-body' }, [
-      lesson.coast?.body ?? lesson.body,
-    ]),
-    el('p', { class: 'lesson-point' }, [
-      lesson.coast?.point ?? lesson.point,
-    ]),
+    // One wording. This read `lesson.coast?.body ?? lesson.body` until 12.9,
+    // from the flag era when two builds shipped — and the fallback is what
+    // let the shadowed `body` go stale unseen: it told a new player to tap a
+    // marked hex for nine days after the hexes were deleted, and nobody could
+    // have noticed, because nobody was being shown it.
+    el('p', { class: 'event-body' }, [lesson.body]),
+    el('p', { class: 'lesson-point' }, [lesson.point]),
     button('Onward', onDismiss, { class: 'primary wide' }),
   ]);
   return el('div', { class: 'overlay', role: 'dialog', 'aria-modal': 'true' }, [card]);

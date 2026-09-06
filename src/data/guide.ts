@@ -11,12 +11,13 @@ export interface GuideSection {
   id: string;
   title: string;
   body: string;
-  /**
-   * The same section, written for a coast. Data rather than a flag, for the
-   * reason `LessonDef.coast` gives: `data/` does not import `sim/`, and these
-   * are rewordings rather than substitutions because a stretch is not a day.
-   */
-  coast?: string;
+  // THE `coast` FIELD IS GONE (12.9). It carried the same section written
+  // for a coast, from the flag era when two builds shipped; the renderer
+  // showed `coast ?? body`, so a `body` under a `coast` rewording was text
+  // nobody could see. That is not hypothetical — "Everything costs a day:
+  // walking a hex" sat in this file for nine days after the hexes were
+  // deleted, invisible and therefore uncorrected. There is one build, so
+  // there is one wording, and `test/teaching.test.ts` can see all of it.
 }
 
 export const GUIDE: GuideSection[] = [
@@ -28,14 +29,12 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-day',
     title: 'The Day',
-    body: 'Everything costs a day: walking a hex, foraging, camping, bartering, fighting. The Act button lists what this ground offers today, with each deed\'s cost and gain — greyed deeds tell you why they are refused. Days are the resource that actually runs out.',
-    coast: 'Everything costs at least a day: foraging, camping, bartering, fighting — and walking on up the coast costs the whole leg, which the button prices before you take it. The Act button lists what this stretch offers today, with each deed\'s cost and gain — greyed deeds tell you why they are refused. Days are the resource that actually runs out.',
+    body: 'Everything costs at least a day: foraging, camping, bartering, fighting — and walking on up the coast costs the whole leg, which the button prices before you take it. The Act button lists what this stretch offers today, with each deed\'s cost and gain — greyed deeds tell you why they are refused. Days are the resource that actually runs out.',
   },
   {
     id: 'the-ground',
     title: 'Ground Worth Holding',
-    body: 'The panel under the map reads any hex you stand on: water, soil, timber, harbour, defensibility. Founding needs fresh water outright, and the posts go in ONCE — there is no second steading. Settle lean rather than late: a band still walking when winter lands cannot stockpile.',
-    coast: 'The panel under the road reads the stretch you are standing on: water, soil, timber, harbour, defensibility. Founding needs fresh water outright, and the posts go in ONCE — there is no second steading. Settle lean rather than late: a band still walking when winter lands cannot stockpile.',
+    body: 'The panel under the road reads the stretch you are standing on: water, soil, timber, harbour, defensibility. Founding needs fresh water outright, and the posts go in ONCE — there is no second steading. Settle lean rather than late: a band still walking when winter lands cannot stockpile.',
   },
   {
     id: 'the-winter',
@@ -45,22 +44,22 @@ export const GUIDE: GuideSection[] = [
   {
     id: 'the-steading',
     title: 'The Steading',
-    body: 'Once settled, tap the hall to enter the steading. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. A steading that is fed, built and on good terms with the coast DRAWS settlers, who arrive as hands: labour on the road, and another body in the line when a raid comes to the yard. A band that is FEARED and has taken something worth sharing draws men of the other kind, who come armed and fill a gap in the wall. Both need a bed and food to spare.',
+    body: 'Once settled, Act offers The steading — your yard, your people and the build queue. Everyone needs a job the ground supports; the Build tab queues what timber becomes — the longhouse sleeps you, the palisade holds raids, the búð makes room to grow. A steading that is fed, built and on good terms with the coast DRAWS settlers, who arrive as hands: labour on the road, and another body in the line when a raid comes to the yard. A band that is FEARED and has taken something worth sharing draws men of the other kind, who come armed and fill a gap in the wall. Both need a bed and food to spare.',
   },
   {
     id: 'the-fight',
     title: 'Steel',
-    body: 'Fights are turn-based on a small field. Stand your people SHOULDER TO SHOULDER: the shield wall guards everyone in it and adds weight to their blows. The gold pennant marks the leader, whose war-cry — once a fight — puts heart into every friend in earshot and dread into every foe. A man with a shield-brother between him and a foe can put a SPEAR past him: reach beats standing idle in the back rank. Nerve breaks before bodies do — a side whose fighters all break has lost.',
+    body: 'Fights are turn-based, both sides in ranks. THE LINE FORMS ITSELF — there is nothing to move: a man who can reach nobody shoulders forward, and that is his turn. Your choice is the blow: Strike, Throw, Shield, or a SPEAR past the shield-brother in front. Every marked foe carries the odds of it landing. The wall guards everyone in it and adds weight to their blows. The gold pennant marks the leader, whose War-cry — once a fight — puts heart into every friend in earshot and dread into every foe. Nerve breaks before bodies do: a side whose fighters all break has lost.',
   },
   {
     id: 'the-coast',
     title: 'The Coast',
-    body: 'Four neighbours share this coast, and they remember everything. Once the posts are in they come and look at YOU, one a fortnight, and each goes on the map. Barter feeds standing, and traders talk — every bargain names something on the coast you would never have found. Falling on a camp is the other trade: a season of their stores for forty-five standing and a fight. Robbed camps put their stores back over a season, so a band that lives this way works a circuit. The angriest neighbour is where raids come from, and a raid always names its sender.',
+    body: 'Four neighbours share this coast, and they remember everything. Once the posts are in they come and look at YOU, one a fortnight, and each goes on the Chart. Barter feeds standing, and traders talk — every bargain names something on the coast you would never have found. Falling on a camp is the other trade: a season of their stores for forty-five standing and a fight. Robbed camps put their stores back over a season, so a band that lives this way works a circuit. The angriest neighbour is where raids come from, and a raid always names its sender.',
   },
   {
     id: 'the-places',
     title: 'Places',
-    body: 'The map holds fixed places: a monastery, a trading town, a wreck and an iron seam. They are on this coast, not across the world — but you must LEARN of them, by walking past or by hearing of one from somebody you trade with. Stand on one and Act offers what it will do for you. The town keeps a market and deals both ways; the house will sell you bread for firewood. Steel is the OTHER option, and it is final: a place is taken once, and a place you have taken has nobody left to deal with.',
+    body: 'The coast holds fixed places: a monastery, a trading town, a wreck and an iron seam. They are on this coast, not across the world — but you must LEARN of them, by walking past or by hearing of one from somebody you trade with. Stand on one and Act offers what it will do for you. The town keeps a market and deals both ways; the house will sell you bread for firewood. Steel is the OTHER option, and it is final: a place is taken once, and a place you have taken has nobody left to deal with.',
   },
   {
     id: 'the-sea',
