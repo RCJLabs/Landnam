@@ -40,6 +40,7 @@ import { DEATHS } from '../src/data/injuries';
 import { rivalBlocks } from '../src/sim/rival';
 import { lessonDue, allLessonIds } from '../src/sim/lessons';
 import { THING_OPENING } from '../src/data/thing';
+import { bookEntries } from '../src/sim/saga';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
 import { apply } from '../src/sim/actions';
@@ -5803,8 +5804,12 @@ describe('PROBE: 12.10 — what the book loses, and what the ending never says',
         earliestKept.push(saga[0]!.day);
       }
 
-      // The window the ending actually renders (closing.ts: slice(-160)).
-      const window = saga.slice(-160);
+      // THE WINDOW THE ENDING ACTUALLY RENDERS. This read `saga.slice(-160)`
+      // and was not updated when 12.10 changed what the book is built from,
+      // so its first post-fix run reported the founding still lost in 63 of
+      // 105 runs — a measurement of code that no longer ships. `bookEntries`
+      // is what `cards/closing.ts` calls now.
+      const window = bookEntries(state, 160);
       for (const [key, re] of SPINE) {
         // "Had it" means the run reached the moment at all — a band that
         // never founded cannot lose its founding, and counting it as a loss
@@ -5854,6 +5859,9 @@ describe('PROBE: 12.10 — what the book loses, and what the ending never says',
       `PROBE 12.10 the book and the ending — ${SEEDS} sagas, settler, to day ${HORIZON}:\n`
       + `  entries a saga: ${(totalEntries / SEEDS).toFixed(0)} average, cap ${300}\n`
       + `  hit the 300 cap: ${hitCap}/${SEEDS} (${Math.round((hitCap / SEEDS) * 100)}%)`
+      + `${hitCap === 0 ? ' — note: the stutter fix alone took ~25 entries a saga off,'
+        + ' so nothing reaches the cap at this horizon and `keep` is NOT exercised here;'
+        + ' test/book.test.ts floods 900 days to prove it' : ''}`
       + `${earliestKept.length ? `; of those the book starts at day ${earliestKept[0]} at best,`
         + ` ${medianEarliest} median, ${earliestKept[earliestKept.length - 1]} at worst` : ''}\n`
       + `  LOST TO THE CAP — landing ${lostToCap.get('landing')},`
