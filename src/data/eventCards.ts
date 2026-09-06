@@ -2283,7 +2283,13 @@ export const EVENTS: EventDef[] = [
         label: 'Tell it the other way',
         success: {
           text: 'It was told as a saga, and by the end of it three people wanted to be in one. The men who had been in one did not join in the laughing.',
-          effects: [{ t: 'morale', n: 2 }, { t: 'learn', lore: 'shieldcraft' }],
+          // NO `learn` HERE, and the lore lint is why: a card that teaches a
+          // discovery has to be gated on not already knowing it, or it hands
+          // shieldcraft to a band that has had it for a year. Gating the whole
+          // card that way would be worse — telling war stories does not
+          // require ignorance of the shield wall — so the teaching comes off
+          // instead of the card being bent to keep it.
+          effects: [{ t: 'morale', n: 4 }],
         },
       },
     ],
