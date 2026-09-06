@@ -11,6 +11,7 @@
 
 import type { Battle, Combatant, GameState } from '../state/types';
 import { activeCombatant, fighterPerson, strikeTargets } from '../sim/battle';
+import { hitOdds } from '../sim/swing';
 import { reachTargets, throwTargets } from '../sim/strike';
 import { isLeader } from '../sim/warcry';
 import { beatsSince } from '../sim/beats';
@@ -453,6 +454,49 @@ export function createBattleView(onTap: (personId: string | null) => void): Batt
             'stroke-dasharray': aim === 'throw' ? '6 4' : aim === 'reach' ? '3 3' : '',
           }),
         );
+        // AND WHAT IT WOULD COST TO TRY (12.8). The player's recurring
+        // decision in a fight is which marked foe to hit, and until now the
+        // only thing on the screen about it was that he could be reached.
+        // Every term of the swing but the dice is already known — see
+        // `hitOdds` — so this was computable all along and simply never
+        // computed, on a screen where event cards print their own odds.
+        //
+        // Only for the STRIKE. Throw and reach roll their own arithmetic and
+        // a number that silently meant something else on two of the three
+        // aims would be worse than none — those get their own when somebody
+        // measures them.
+        if (aim !== 'throw' && aim !== 'reach' && active) {
+          const odds = Math.round(hitOdds(state, active, target) * 100);
+          layers.overlay.append(
+            svgEl('text', {
+              class: 'mark-odds',
+              x: p.x,
+              // STAGGERED BY RANK, because `RANK_STEP` is about 39 units and
+              // "100%" at this size is about 50 wide — so two marked foes in
+              // neighbouring ranks printed their odds straight through each
+              // other, which a screenshot showed as "100%100%".
+              //
+              // A FULL RANK_GAP * 0.42, not the 0.24 the first stagger used:
+              // each rank back is also `RAISE` higher, so that offset arrived
+              // as a net fifteen units against a label fifteen units tall and
+              // the two still touched. The bar measures the overlap now
+              // rather than my leaving it to the eye.
+              y: p.y + RANK_GAP * 0.13 + RANK_GAP * 0.30
+                + (target.rank % 2 === 1 ? 0 : RANK_GAP * 0.42),
+              'text-anchor': 'middle',
+              fill: ink,
+              // SIZED IN USER UNITS, NOT PIXELS, and the first cut was 11px
+              // in the stylesheet — which is 11 units of a viewBox scaled to
+              // fit the slot, so on a phone it rendered as about four pixels
+              // of illegible red. `scripts/field.mjs` found the nodes, in the
+              // right places, with the right text, and passed: it was
+              // checking that the number EXISTED, not that anybody could read
+              // it. A fifth of a rank's gap holds against every zoom the
+              // field takes, because that is what the field is measured in.
+              'font-size': RANK_GAP * 0.22,
+            }, [document.createTextNode(`${odds}%`)]),
+          );
+        }
       }
     }
 

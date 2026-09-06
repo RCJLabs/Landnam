@@ -58,6 +58,10 @@
 > founding card carries instead is the record that taking hard ground beats
 > walking on for fair (saved 35, killed 7, p < 0.0001).
 >
+> **12.8 is BUILT** — every marked foe says what hitting him is worth, on odds
+> that are exact rather than modelled; and the fight owns 42% / 66% of the
+> dead, not the 28% / 43% on file.
+>
 > **12.5 is BUILT** — the top bar wraps instead of scrolling its own warnings
 > off the side, on all four screens; four folds and a fifteenth browser bar.
 >
@@ -7791,6 +7795,74 @@ would replace — which is why it is third and not fifteenth.
   country, by verdict band and settling-day band); only then compose
   `foundReading(state)` in sim and mount it when founding is permitted.
 
+- [x] **12.8 — The one decision in a fight gets its odds. BUILT 2026-09-06.**
+  **The premise was re-taken first and it is STRONGER than the item claims.**
+  12.3 named 11.U4's battle share as one of the figures it did NOT re-take, so
+  this opened by taking it: on the floor-7 baseline, over 120 landings an arm
+  to day 400, battle owns **42% of the settler's dead and 66% of the
+  raider's** — against the 28% / 43% this entry quoted from floor 9, and past
+  even 10.2's original 39% / 47%. The fight matters more than the record says,
+  not less.
+
+  **THE ODDS WERE COMPUTABLE ALL ALONG AND SIMPLY NEVER COMPUTED.** A strike
+  is `2d6 + might + wallPush + edge` against `evasion`, and every term but the
+  dice is known to the game before the tap. `hitOdds` is therefore EXACT
+  rather than fitted — the tail of a distribution with thirty-six outcomes —
+  and reads a flat 1 where the blow cannot miss and 0 where it cannot land,
+  because a foe who cannot be hit is worth saying plainly rather than as "1%".
+
+  **Held against the swing the game actually strikes**, not against a second
+  copy of the rule: `test/odds.test.ts` plays real seeded fights, quotes the
+  odds before each blow and reads the result off that blow's own beat. **13,404
+  seeded strikes, worst judged bucket 1.1 points out.** Bucketed rather than
+  averaged, because two errors either side cancel in a mean and pass a
+  function that tells the player nothing true.
+
+  **TWO INSTRUMENT FAULTS OF MY OWN, both the same family and both caught:**
+  - the first cut read the result off the LAST beat in the stream, and was
+    twenty-five points wrong in every bucket — including the one where the
+    odds are 100%, which landed 75%. A blow that KILLS appends more beats
+    after its own, so the last beat is a hit's consequence rather than the
+    hit. Reading a cause off "whatever moved last" is exactly what CLAUDE.md
+    warns about, and it presented as a clean, consistent, entirely wrong
+    figure;
+  - and the first gate judged buckets at n = 100, where two standard errors is
+    four and a half points — so a 3-point tolerance failed on a bucket 1.5
+    standard errors out. **A tolerance the sample cannot resolve is the fault
+    this repo keeps finding in its own bars**; the gate is n = 350 now, which
+    is where three points is resolvable.
+
+  **`scripts/field.mjs` holds the other half**: every marked foe carries a
+  label, no label without a mark, and each reads as a percentage. Asserted as
+  a PAIRING rather than a count, so five marks and five labels in the wrong
+  places cannot pass. **The first cut of that ran after the fourteen striking
+  turns and reported "no foe was in reach" at all four widths — the fight was
+  over, nothing was marked, and the claim never ran once while looking exactly
+  like a claim that passed.** It runs at the opening now, ends the turn until
+  something is marked, and FAILS rather than shrugs if nothing ever is.
+
+  Watched failing both ways: the label withheld from the screen (2 of 2 marked
+  foes carry no odds) and `hitOdds` stubbed to certainty (10.3 points out).
+
+  Only the STRIKE gets a number. Throw and reach roll their own arithmetic,
+  and a figure that silently meant something else on two of the three aims
+  would be worse than none.
+
+  **AND A THIRD FAULT THE BAR COULD NOT SEE, WHICH IS WHY I LOOKED.** The
+  first cut set the label at `font-size: 11px` in the stylesheet — eleven
+  units of a viewBox scaled to the slot, which reaches a phone as about four
+  pixels of illegible red. Every check passed: the nodes existed, in the right
+  places, with the right text. **Presence is not legibility.** A screenshot
+  showed it, and then showed the next one too — the labels of two marked foes
+  printed through each other as "100%100%", because `RANK_STEP` is 39 units
+  and "100%" is about 50 wide. Both are now measured by the bar rather than
+  left to my eye: labels must be at least 9 CSS pixels tall, and no two may
+  overlap. The first stagger was not enough either, because each rank back is
+  also `RAISE` higher and that ate a third of the offset — which the overlap
+  check caught rather than another screenshot.
+
+  The original entry follows.
+
 - [ ] **12.8 — The one decision in a fight gets its odds.** The player's
   recurring choice is which marked foe to hit, and nothing informs it. A
   strike is 2d6 + might + wallPush + edge against a deterministic evasion
@@ -8009,6 +8081,36 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.8 BUILT: the fight's one decision finally says what it is
+  worth, and the premise came back stronger than the item claimed.** 12.3 had
+  named 11.U4's battle share as a figure it did NOT re-take, so this opened by
+  taking it: on floor 7, battle owns **42% of the settler's dead and 66% of
+  the raider's**, against the 28% / 43% the entry quoted from floor 9.
+
+  The odds were computable all along. A strike is `2d6 + might + wallPush +
+  edge` against `evasion`, so `hitOdds` is EXACT rather than fitted — the tail
+  of a thirty-six-outcome distribution — and reads a flat 1 or 0 at the ends
+  rather than "99%" and "1%". Held against the swing the game actually
+  strikes over **13,404 seeded strikes, worst bucket 1.1 points out**,
+  bucketed rather than averaged so two errors either side cannot cancel.
+
+  **Two instrument faults of my own, both caught before they shipped.** The
+  first cut read the blow's result off the LAST beat in the stream and was
+  twenty-five points wrong in every bucket — including the 100% one, which
+  landed 75% — because a killing blow appends more beats after its own.
+  Reading a cause off whatever moved last is precisely what CLAUDE.md warns
+  about, and it presented as a clean, consistent, entirely wrong number. And
+  the first bucket gate judged at n = 100, where two standard errors is four
+  and a half points, so a 3-point tolerance failed on noise; it is n = 350
+  now, which is where three points can be resolved.
+
+  `scripts/field.mjs` holds the screen's half — every marked foe carries a
+  label, no label without a mark, asserted as a pairing rather than a count.
+  **Its own first cut ran after fourteen striking turns and reported "no foe
+  was in reach" at all four widths: the fight was over, and the claim never
+  ran once while looking exactly like one that passed.** It runs at the
+  opening now and fails rather than shrugs.
 
 - **2026-09-06 — 12.5 BUILT: the top bar was hiding the one line that says how
   much summer is left.** Re-taken on today's build first, and the item had

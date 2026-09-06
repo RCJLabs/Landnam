@@ -148,6 +148,51 @@ export function evasion(state: GameState, target: Combatant): number {
 }
 
 /**
+ * The chance this swing lands properly, as a fraction of 1.
+ *
+ * 12.8. THE PLAYER'S RECURRING DECISION IN A FIGHT IS WHICH MARKED FOE TO
+ * HIT, and nothing on the screen informed it. A strike is `2d6 + might +
+ * wallPush + edge` against `evasion`, and every term of that except the dice
+ * is already known to the game before the tap — so the odds were computable
+ * all along and simply never computed. Event cards elsewhere print theirs.
+ *
+ * EXACT, NOT ESTIMATED, and that is worth saying because "odds on a game
+ * screen" usually means a model of something noisy. There is one random term
+ * here and it is two six-sided dice, so this is the tail of a distribution
+ * with thirty-six outcomes rather than a fit to anything. `test/odds.test.ts`
+ * holds it against the swing the game actually rolls over thousands of seeded
+ * strikes.
+ *
+ * WHAT "LANDS" MEANS. A roll under `evasion` is not nothing — it chips one
+ * off a lone fighter, or is turned aside by a full wall — but it cannot kill
+ * and it is not what the player is choosing between. The number on a foe is
+ * the chance of a real blow.
+ */
+export function hitOdds(state: GameState, attacker: Combatant, target: Combatant): number {
+  const person = fighterPerson(state, attacker.personId);
+  const might = person ? effectiveStat(person, 'might') : 1;
+  const need = evasion(state, target) - might - wallPush(state, attacker) - edge(state, attacker);
+  return atLeastOn2d6(need);
+}
+
+/**
+ * P(2d6 >= n), from the thirty-six outcomes rather than a formula nobody can
+ * check by eye. Reads exactly 1 at or below 2 and exactly 0 above 12, which
+ * is the pair of ends `hitOdds` has to get right: a foe who cannot be missed
+ * and a foe who cannot be hit are both things the player should be told
+ * plainly rather than as "99%" and "1%".
+ */
+export function atLeastOn2d6(n: number): number {
+  if (n <= 2) return 1;
+  if (n > 12) return 0;
+  let ways = 0;
+  for (let a = 1; a <= 6; a += 1) {
+    for (let b = 1; b <= 6; b += 1) if (a + b >= n) ways += 1;
+  }
+  return ways / 36;
+}
+
+/**
  * Every kill goes through here, whichever verb dealt it. Exported for the
  * same reason as `actionRng`: the fall's bookkeeping — the kill tally, the
  * nerve shaken while the fallen still counts as a link, the leader's fall

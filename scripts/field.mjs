@@ -120,6 +120,95 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
 
   const opening = await page.evaluate(survey);
 
+  // --- 12.8: every foe the player can hit says what hitting him is worth ---
+  //
+  // The recurring decision in a fight is which marked foe to strike, and the
+  // odds were computable all along — `hitOdds` is the tail of a 2d6, with
+  // every other term already known before the tap. The sim's half is held by
+  // `test/odds.test.ts` against thousands of real seeded swings; what that
+  // cannot see is whether the number reaches the screen, which is the fault
+  // 12.1 found on the colony panels and 12.4 found again on this one.
+  //
+  // Asserted as a PAIRING rather than a count: every mark has an odds label,
+  // and there is no label without a mark. A count alone would pass on a
+  // screen that drew five marks and five labels in the wrong places.
+  //
+  // AT THE OPENING OF THE FIGHT, not after it. The first cut ran this at the
+  // end of the fourteen striking turns below and reported "no foe was in
+  // reach" at all three widths — the fight was over, nothing was marked, and
+  // the claim never ran once while looking exactly like a claim that passed.
+  // Round one always has men on both sides and something to aim at.
+  // Wait for a turn that HAS something to aim at. The opening initiative can
+  // be the foes', and a bar that shrugged at that reported "no foe was in
+  // reach" four times over while the feature it was written for went
+  // unchecked. Ends the turn a few times rather than assuming.
+  for (let tries = 0; tries < 8; tries += 1) {
+    if (await page.locator('svg.field .mark').count()) break;
+    const end = page.locator('.action-slot button', { hasText: /^End turn$/ }).first();
+    if (await end.count()) await end.click({ timeout: 1200 }).catch(() => {});
+    await page.waitForTimeout(500);
+  }
+
+  const odds = await page.evaluate(() => {
+    const svg = document.querySelector('svg.field');
+    if (!svg) return null;
+    const marks = [...svg.querySelectorAll('.mark')];
+    const labels = [...svg.querySelectorAll('.mark-odds')];
+    const near = marks.filter((m) => {
+      const a = m.getBoundingClientRect();
+      return labels.some((l) => {
+        const b = l.getBoundingClientRect();
+        return Math.abs((a.left + a.right) / 2 - (b.left + b.right) / 2) < 24 && b.top >= a.top - 2;
+      });
+    });
+    // AND NO TWO OF THEM ON TOP OF EACH OTHER. Two marked foes in
+    // neighbouring ranks printed their odds through one another — a
+    // screenshot read "100%100%" — and every other check here passed, because
+    // the nodes existed, in the right places, with the right text. Presence
+    // is not legibility.
+    let collided = 0;
+    for (let i = 0; i < labels.length; i += 1) {
+      for (let j = i + 1; j < labels.length; j += 1) {
+        const a = labels[i].getBoundingClientRect();
+        const c = labels[j].getBoundingClientRect();
+        if (a.left < c.right && c.left < a.right && a.top < c.bottom && c.top < a.bottom) collided += 1;
+      }
+    }
+    return {
+      marks: marks.length,
+      labels: labels.length,
+      paired: near.length,
+      collided,
+      // In CSS pixels, because the field is drawn in a viewBox that gets
+      // scaled to the slot: a font-size that reads fine in user units can
+      // land on the phone as four pixels of illegible red, which is exactly
+      // what the first cut shipped and what this survey did not notice.
+      tallest: labels.reduce((h, l) => Math.max(h, l.getBoundingClientRect().height), 0),
+      texts: labels.map((l) => l.textContent || ''),
+    };
+  });
+  if (odds && odds.marks > 0) {
+    check(odds.paired === odds.marks,
+      `${w}x${h}: ${odds.marks - odds.paired} of ${odds.marks} marked foes carry no odds`);
+    check(odds.labels === odds.marks,
+      `${w}x${h}: ${odds.labels} odds labels for ${odds.marks} marks`);
+    check(odds.texts.every((t) => /^\d{1,3}%$/.test(t)),
+      `${w}x${h}: an odds label does not read as a percentage — ${odds.texts.join(', ')}`);
+    check(odds.collided === 0,
+      `${w}x${h}: ${odds.collided} pair(s) of odds labels are drawn on top of each other`);
+    check(odds.tallest >= 9,
+      `${w}x${h}: the odds read ${odds.tallest.toFixed(1)}px tall — too small to read`);
+    console.log(`${w}x${h}: ${odds.marks} marked foes, each saying its odds (${odds.texts.join(' ')})`);
+  } else if (odds) {
+    // A FAILURE, not a shrug. Eight turns into a fight with men standing on
+    // both sides there is always something to aim at, so no marks here means
+    // the marks stopped being drawn — and a claim that quietly stops running
+    // looks exactly like one that passes.
+    check(false, `${w}x${h}: nothing was marked after eight turns, so the odds claim never ran`);
+  }
+
+
+
   // Fourteen turns, so the log fills up and takes whatever it is going to
   // take. This is the "squeezed as the fight goes on" claim, played out.
   //
