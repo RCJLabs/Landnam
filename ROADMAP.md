@@ -58,6 +58,9 @@
 > founding card carries instead is the record that taking hard ground beats
 > walking on for fair (saved 35, killed 7, p < 0.0001).
 >
+> **12.5 is BUILT** — the top bar wraps instead of scrolling its own warnings
+> off the side, on all four screens; four folds and a fifteenth browser bar.
+>
 > **12.4 is BUILT** — the job picker's two unreachable controls are
 > reachable, what looked like a second bug turned out to be the bar measuring
 > its own reach, and both instruments (`reach.mjs`, `look.mjs`) can now see
@@ -7517,6 +7520,58 @@ would replace — which is why it is third and not fifteenth.
   rows at both viewports with no hand-made save; every picker button's centre
   is ≤ 100% of the viewport at 6 and 9 people; the look bar holds a yard scene.
 
+- [x] **12.5 — The top bar stops hiding its own warnings. BUILT 2026-09-06.**
+  Re-taken on today's build first, and **the item had found half of it**: the
+  fault is on all four screens, not just travel.
+
+  | | 390x844 | 320x568 |
+  |---|---|---|
+  | travel, day 1 | fits | 32px over, **Heart** off |
+  | travel, day 34 | 151px over, **Heart** and the badge off | 221px over, **Wood, Heart**, badge off |
+  | the steading | fits | 68px over, **Watch, Idle** off |
+  | a fight | fits | 68px over, **Wall, Steps** off |
+
+  **THE 2026-08-06 DECISION IS KEPT, and it was never the thing at fault.**
+  Stats refuse to shrink because a squeezed value once painted over its
+  neighbour, and the bar was made to scroll sideways instead. Nobody had
+  asked what the SCROLL cost. It cost the bar its own warnings — the badge
+  saying how much summer is left was the furthest right of everything on the
+  screen. `flex-wrap` keeps every chip unshrinkable and replaces the scroll
+  with a second line, so the paint-over problem stays solved and nothing can
+  be off the side.
+
+  **Three folds, each two chips carrying one reading:** Day + Season, today's
+  sky + tomorrow's, and Ours + Theirs into **Line 6 v 4**. The banners are out
+  of the chip row — `.topbar-stack` puts them under it, full width, where a
+  statement about the run belongs.
+
+  **AND THE FIELD BAR CAUGHT THE PRICE, which is why there is a fourth fold.**
+  A six-chip battle bar took a second row at 320x568 and pushed the
+  battlefield to **49% of the screen — one point under the floor
+  `scripts/field.mjs` has held since the field-shrinking bug.** A bar is not
+  something to loosen because a change wants room, so the fighter's body and
+  nerve became one chip — *Ingimund 14/14 · 76*, the state of the man whose
+  turn it is. The fight is back to 56% and on one row at both widths.
+
+  A twenty-pixel trim of gap and chip padding came with it, and it is chrome
+  rather than content: `flex: 0 0 auto` is untouched. Its only job is how
+  OFTEN the second row appears — without it a seven-chip fight bar wrapped at
+  390 where it had been hiding nothing, which would have been a regression on
+  a screen that had no fault.
+
+  **What it costs, measured rather than waved at:** at 390 nothing gained a
+  row; at 320 the travel bar is one row and the steading two. On an autumn
+  day with a weather chip and the badge the travel chrome is 115px of a
+  568px screen. That is the price of a warning the player can see.
+
+  `scripts/topbar.mjs` is the **fifteenth browser bar**: nothing off the side,
+  and no banner riding the stat scroll, at both widths on all four screens.
+  Watched failing on today's build with seven faults. Thirteen look screens
+  re-blessed — more than the road and title the item expected, because the
+  bar is on every screen.
+
+  The original entry follows.
+
 - [ ] **12.5 — The top bar stops hiding its own warnings.** On any day with a
   Sky or Tomorrow chip the Heart stat scrolls off at 390 wide; at home in
   autumn the *Winter in N days* badge is itself off-screen. Measured on the
@@ -7954,6 +8009,39 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.5 BUILT: the top bar was hiding the one line that says how
+  much summer is left.** Re-taken on today's build first, and the item had
+  found half of it — the fault is on all four screens, not just travel:
+
+  | | 390x844 | 320x568 |
+  |---|---|---|
+  | travel, day 1 | fits | 32px over, Heart off |
+  | travel, day 34 | 151px over, Heart and the badge off | 221px over, Wood, Heart, badge off |
+  | the steading | fits | 68px over, Watch and Idle off |
+  | a fight | fits | 68px over, Wall and Steps off |
+
+  **The 2026-08-06 decision is kept and was never at fault.** Stats refuse to
+  shrink because a squeezed value once painted over its neighbour, and the bar
+  was made to scroll sideways instead. Nobody had asked what the scroll cost:
+  it cost the bar its warnings, and "Winter in 15 days" was the furthest right
+  thing on the screen. `flex-wrap` keeps every chip unshrinkable and replaces
+  the scroll with a second line.
+
+  Three folds, each two chips carrying one reading — Day + Season, today's sky
+  + tomorrow's, and Ours + Theirs into **Line 6 v 4** — and the banners moved
+  out of the chip row into `.topbar-stack` beneath it.
+
+  **The field bar caught the price, and that is why there is a fourth fold.** A
+  six-chip battle bar took a second row at 320x568 and pushed the battlefield
+  to 49% of the screen — one point under the floor `scripts/field.mjs` has
+  held since the field-shrinking bug. A bar is not something to loosen because
+  a change wants room, so the fighter's body and nerve became one chip. The
+  fight is back to 56% and on one row at both widths.
+
+  `scripts/topbar.mjs` is the fifteenth browser bar, watched failing with
+  seven faults on today's build. Thirteen look screens re-blessed — more than
+  the road and title the item expected, because the bar is on every screen.
 
 - **2026-09-05 — 12.4 BUILT: two controls that could not be tapped, three
   fixes for a bug that was not there, and two instruments that had never

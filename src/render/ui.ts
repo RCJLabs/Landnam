@@ -68,32 +68,56 @@ export function renderTopBar(state: GameState): HTMLElement {
   const sky = weatherNow(state);
   const next = weatherNext(state);
 
+  // FOLDED, TWO PAIRS OF THEM (12.5). Eight chips do not fit 390px and the
+  // two that scrolled off were Heart and the winter badge — the bar hiding
+  // its own warnings. Day and Season are one reading of the calendar and
+  // always both present; today's sky and tomorrow's are one reading of the
+  // weather and appear together or not at all. Folding each pair costs
+  // nothing a player was using and buys back two slots.
+  const weatherWarn = sky.shutsTheSea || sky.firewood > 0
+    || next.shutsTheSea || next.firewood > 0;
   const bar = el('div', { class: 'topbar' }, [
-    stat('Day', `${state.day}`),
-    stat('Season', effects.label, season === 'winter'),
+    stat('Day', `${state.day} · ${effects.label}`, season === 'winter'),
     // The sky is only worth a slot when it is doing something. Fair weather
     // is three days in four, and a stat that reads "Fair" most of the time
-    // teaches the eye to skip the bar — the same reason Day is left out.
-    ...(sky.id === 'fair' ? [] : [stat('Sky', sky.label, sky.shutsTheSea || sky.firewood > 0)]),
-    // TOMORROW, which is the whole of the weather item: a gale you can see
-    // coming is a decision about today, and one you cannot is a dice roll.
-    // A slot rather than a hint on purpose — the hint line carries the one
-    // thing the player should do next, and a warning that elbowed the
-    // strandhogg prompt aside would cost more than it told.
-    ...(next.id === 'fair'
+    // teaches the eye to skip the bar — the same reason Day carries the
+    // season rather than flashing on its own.
+    //
+    // TOMORROW is the whole of the weather item: a gale you can see coming is
+    // a decision about today, and one you cannot is a dice roll. Said with
+    // today's sky in one chip, with an arrow between them, so the pair reads
+    // as the change it is.
+    ...(sky.id === 'fair' && next.id === 'fair'
       ? []
-      : [stat('Tomorrow', next.label, next.shutsTheSea || next.firewood > 0)]),
+      : [stat(
+        sky.id === 'fair' ? 'Tomorrow' : 'Sky',
+        sky.id === 'fair'
+          ? next.label
+          : next.id === 'fair' || next.label === sky.label
+            ? sky.label
+            : `${sky.label} → ${next.label}`,
+        weatherWarn,
+      )]),
     stat('Band', `${band}`, band <= 2, moved.band),
     stat('Food', `${food}`, daysOfFood <= 2, moved.food),
     stat('Wood', `${wood}`, nightsOfWood <= 2, moved.wood),
     stat('Heart', `${heart}`, state.party.morale < 30, moved.heart),
   ]);
 
+  // THE BANNERS STAND OUTSIDE THE ROW OF CHIPS (12.5), and they used to be
+  // appended into it. They are statements about the run, not stats, and as
+  // flex children of the bar they were simply the two rightmost things in it
+  // — so "Winter in 15 days", the one line on the screen that says how much
+  // summer is left, sat off the right-hand edge on a 390px phone in the
+  // middle of autumn. Below the chips they are always the full width of the
+  // screen and cannot be anywhere else.
+  const banners: HTMLElement[] = [];
+
   // The rule, counted in the only currency it is measured in. Without this
   // the jarldom is a line in the log and nothing on the screen.
   if (state.jarl) {
     const years = yearsRuled(state);
-    bar.append(
+    banners.push(
       el('div', { class: 'jarl-band' }, [
         years > 0
           ? `${state.jarl.name}, jarl — ${years} ${years === 1 ? 'winter' : 'winters'} held`
@@ -103,9 +127,9 @@ export function renderTopBar(state: GameState): HTMLElement {
   }
 
   if (untilWinter > 0 && untilWinter <= 16) {
-    bar.append(el('div', { class: 'winter-warning' }, [`Winter in ${untilWinter} days`]));
+    banners.push(el('div', { class: 'winter-warning' }, [`Winter in ${untilWinter} days`]));
   }
-  return bar;
+  return banners.length ? el('div', { class: 'topbar-stack' }, [bar, ...banners]) : bar;
 }
 
 /**

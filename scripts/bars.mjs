@@ -32,7 +32,7 @@ const BARS = [
   ['offline', []], ['larder', []], ['pan', []], ['field', []],
   ['landscape', []], ['reach', []], ['reach', ['320x568']],
   ['strip', []], ['procession', []], ['hearth', []], ['yard', []],
-  ['founding', []], ['ending', []],
+  ['founding', []], ['topbar', []], ['ending', []],
   ['look', []],
 ];
 
