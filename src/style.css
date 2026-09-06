@@ -208,18 +208,50 @@ button[disabled='true'] {
 
 /* --- Top bar --- */
 
+/*
+ * THE BAR WRAPS RATHER THAN SCROLLING SIDEWAYS (12.5, 2026-09-06).
+ *
+ * It scrolled, and the 2026-08-06 decision below — stats never shrink — is
+ * why it did. That decision stands and is not what changed here. What was
+ * never checked is what the SCROLL cost, and measured on the built page it
+ * cost the bar its own warnings:
+ *
+ *   travel day 34   390px: 151px over, Heart and "Winter in 15 days" off
+ *                   320px: 221px over, Wood, Heart and the badge off
+ *   travel day 1    320px:  32px over, Heart off
+ *   the steading    320px:  68px over, Watch and Idle off
+ *   a fight         320px:  68px over, Wall and Steps off
+ *
+ * A stat bar that must be scrolled is a nuisance; a WARNING that must be
+ * scrolled to is not a warning at all, and the badge that says how many days
+ * of summer are left was the furthest right of everything.
+ *
+ * `flex-wrap` keeps the whole of the old decision — every chip still refuses
+ * to shrink, so a long value still cannot paint over its neighbour — and
+ * replaces the sideways scroll with a second line. The cost is vertical, it
+ * is paid only on the screens and widths that need it, and it is the cheaper
+ * of the two: `scripts/topbar.mjs` holds the line.
+ */
 .topbar {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  /*
+   * A POINT OFF THE GAP AND THE PADDING, and it is not tidying. Wrapping
+   * guarantees nothing is ever off the side; the trim decides how OFTEN the
+   * second row appears, which is a different job. Without it a seven-chip
+   * fight bar needed 388px of a 374px content box at 390 wide and wrapped —
+   * costing a row on a screen that was hiding nothing — and the travel bar
+   * missed a single row at 320 by ten pixels. Twenty pixels back puts both
+   * on one line and leaves the guarantee where it belongs.
+   *
+   * It trims CHROME, not content: `.stat` keeps `flex: 0 0 auto`, so the
+   * 2026-08-06 rule that a value may never be squeezed under its own width
+   * is untouched.
+   */
+  gap: 3px;
   padding: 6px 8px;
   background: var(--ink-soft);
   border-bottom: 1px solid var(--edge);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.topbar::-webkit-scrollbar {
-  display: none;
 }
 
 .stat {
@@ -233,7 +265,7 @@ button[disabled='true'] {
   flex: 0 0 auto;
   min-width: 48px;
   max-width: 40vw;
-  padding: 2px 6px;
+  padding: 2px 5px;
   border-radius: 5px;
   background: #2a241b;
   overflow: hidden;
@@ -254,7 +286,9 @@ button[disabled='true'] {
   font-size: 17px;
   font-weight: 700;
   line-height: 1.15;
-  /* The bar scrolls sideways rather than growing a second row. */
+  /* Never wrapped inside a chip: a value that broke across two lines would
+     make one chip taller than its neighbours and stagger the whole row. The
+     BAR grows a second row when it must (12.5); a chip never does. */
   white-space: nowrap;
   max-width: 100%;
   overflow: hidden;
@@ -263,6 +297,30 @@ button[disabled='true'] {
 
 .stat.warn .stat-value {
   color: var(--blood);
+}
+
+/*
+ * 12.5: `align-self` and `margin-left: auto` were how these two banners were
+ * pushed to the right-hand end of the chip row. They do not live in that row
+ * any more — `.topbar-stack` puts them under it, full width — so what those
+ * two properties did is now done by being a block in a column, and the pair
+ * is kept only for a banner that somehow still finds itself in a flex row.
+ */
+.topbar-stack {
+  display: flex;
+  flex-direction: column;
+  background: var(--ink-soft);
+  border-bottom: 1px solid var(--edge);
+}
+
+.topbar-stack > .topbar {
+  border-bottom: 0;
+}
+
+.topbar-stack > .winter-warning,
+.topbar-stack > .jarl-band {
+  margin: 0 8px 6px;
+  text-align: center;
 }
 
 .winter-warning {

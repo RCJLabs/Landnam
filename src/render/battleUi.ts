@@ -22,19 +22,38 @@ export function renderBattleBar(state: GameState): HTMLElement {
 
   const bar = el('div', { class: 'topbar' }, [
     stat('Round', `${battle.round}`),
-    stat('Ours', `${standing(battle, 'warband').length}`),
-    stat('Theirs', `${standing(battle, 'foe').length}`),
+    // FOLDED (12.5), for the same reason Day and Season are on the road: two
+    // chips carrying one reading. Seven chips did not fit a 390px bar — Wall
+    // and Steps were off the side of a 320px one entirely — and how many are
+    // standing on each side is a single fact about the field, read faster
+    // side by side than as two numbers a chip apart.
+    stat('Line', `${standing(battle, 'warband').length} v ${standing(battle, 'foe').length}`),
   ]);
 
   if (person && active) {
     const links = wallLinks(battle, active).length;
     bar.append(
-      // The name is the label and the health is the value: one long string
+      // The name is the label and the condition is the value: one long string
       // holding both was what overflowed the cell in the first place, and
       // whose turn it is already reads off the hint line.
-      stat(person.name, `${person.health}/${person.maxHealth}`,
-        person.health <= person.maxHealth * 0.3),
-      stat('Nerve', active.broken ? 'BROKEN' : `${Math.round(active.nerve)}`, active.nerve < 30),
+      //
+      // BODY AND NERVE IN ONE CHIP (12.5). They were two, and two would not
+      // fit: with the bar wrapping rather than hiding its right-hand end, a
+      // six-chip battle bar took a second row at 320x568 and pushed the
+      // battlefield to 49% of the screen — one point under the floor
+      // `scripts/field.mjs` has held since the field-shrinking bug, and a bar
+      // is not something to loosen because a change wants room. This is one
+      // reading either way: the state of the man whose turn it is, flesh and
+      // spirit, which is what the player is deciding about. BROKEN takes the
+      // whole chip, because a man who has broken has no other condition worth
+      // reading.
+      stat(
+        person.name,
+        active.broken
+          ? 'BROKEN'
+          : `${person.health}/${person.maxHealth} · ${Math.round(active.nerve)}`,
+        person.health <= person.maxHealth * 0.3 || active.nerve < 30 || active.broken,
+      ),
       stat('Wall', links > 0 ? `+${wallBonus(battle, active)}` : '—', links === 0),
       stat('Steps', `${active.movesLeft}`, active.movesLeft === 0),
     );
