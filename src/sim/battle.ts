@@ -38,8 +38,6 @@ import {
   steadingFieldFrom,
 } from './battlefield';
 
-export const BASE_MOVES = 3;
-
 // --- Lookups ---
 
 /**
@@ -450,7 +448,6 @@ export function beginBattle(
       side: 'warband',
       rank: ourLine.indexOf(person) + 1,
       initiative: 0,
-      movesLeft: BASE_MOVES,
       hasActed: false,
       // Everyone carries something worth throwing once.
       throwsLeft: 1,
@@ -473,7 +470,6 @@ export function beginBattle(
       side: 'foe',
       rank: theirLine.indexOf(foe) + 1,
       initiative: 0,
-      movesLeft: BASE_MOVES,
       hasActed: false,
       throwsLeft: archetypeOf(foe)?.throws ?? 1,
       defending: false,
@@ -559,7 +555,6 @@ export function strikeTargets(state: GameState): Combatant[] {
 function refreshTurn(battle: Battle): void {
   const active = activeCombatant(battle);
   if (!active) return;
-  active.movesLeft = BASE_MOVES;
   active.hasActed = false;
   // A raised shield lasts until your own next turn, and no longer.
   active.defending = false;

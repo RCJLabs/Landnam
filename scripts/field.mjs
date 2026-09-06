@@ -31,6 +31,9 @@
 // Playwright stays optional, as in scripts/offline.mjs.
 
 import { existsSync } from 'node:fs';
+// The repo's own decoder — `scripts/lookSignature.mjs` exists because Node
+// has no image decoder and this repo will not take a dependency for one.
+import { decodePng } from './lookSignature.mjs';
 
 const PAGE = 'dist/app.html';
 const CHROME = process.env.CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
@@ -209,6 +212,35 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
 
 
 
+  // ---------------------------------------------------------------- 12.15
+  //
+  // THE HUD IS OUT OF THE ILLUSTRATION, and this is what holds it out. Each
+  // of these was on the field until 12.15: a 4px health bar under every man,
+  // a `−N` floating off every blow, and a Steps stat reading a movement
+  // counter for a mechanic that left with the dash in 9.1b.
+  //
+  // Checked AFTER the striking turns below rather than at the opening, since
+  // a bar that only ever looked at turn zero would pass on a field that grew
+  // a readout the moment somebody was hit.
+  const hudAfter = async () => page.evaluate(() => {
+    const field = document.querySelector('svg.field');
+    const rects = field ? [...field.querySelectorAll('rect')] : [];
+    return {
+      // A health bar is a short wide rect under a figure. Measured by SHAPE
+      // rather than by class, because a class is a name somebody can change
+      // and a 4px readout is a 4px readout whatever it is called.
+      bars: rects.filter((r) => {
+        const h = r.getBBox?.().height ?? 0;
+        const w = r.getBBox?.().width ?? 0;
+        return h > 0 && h <= 6 && w >= h * 4;
+      }).length,
+      floats: document.querySelectorAll('.float-dmg').length,
+      steps: [...document.querySelectorAll('.stat-label')]
+        .some((el) => /steps/i.test(el.textContent || '')),
+      stats: [...document.querySelectorAll('.stat-label')].map((el) => el.textContent),
+    };
+  });
+
   // Fourteen turns, so the log fills up and takes whatever it is going to
   // take. This is the "squeezed as the fight goes on" claim, played out.
   //
@@ -269,6 +301,17 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
 
   // The field must stay the biggest thing on the screen through a whole
   // fight. Half is a floor, not a target: it sits at 67% on the design size.
+  // 12.15's three removals, on the field as it stands after the striking
+  // turns above.
+  const hud = await hudAfter();
+  check(hud.bars === 0,
+    `${w}x${h}: ${hud.bars} health-bar rect(s) still drawn under the fighters`);
+  check(hud.floats === 0,
+    `${w}x${h}: ${hud.floats} floating damage number(s) still on the field`);
+  check(!hud.steps,
+    `${w}x${h}: the top bar still carries a Steps stat — ${hud.stats.join(', ')}`);
+  console.log(`${w}x${h}: no bars, no floating numbers; bar reads ${hud.stats.join(' · ')}`);
+
   check(late.field > late.vh * 0.5,
     `${w}x${h}: the field fell to ${share(late)}% of the screen by turn ${played}`);
   check(late.clipped.length === 0, `${w}x${h}: clipped ${late.clipped.join(', ')}`);
@@ -432,6 +475,68 @@ for (const [w, h] of [[412, 915], [390, 844], [360, 640], [320, 568]]) {
       `${w}x${h}: ${blows.count} blows landed and drew no blood`);
   } else if (w === 390) {
     check(false, `${w}x${h}: no blow landed in ${played} turns, so item 19 did NOT run`);
+  }
+
+  // A MAN AT A THIRD MUST NOT LOOK LIKE A MAN AT FULL, AT 44px.
+  //
+  // The other half of taking the bar off. Removing a readout is easy; the
+  // work is making the figure carry what it said, and the figure only counts
+  // if it carries it at the size a thumb needs — 44px, the same TAP the rest
+  // of this file measures against.
+  //
+  // A PICTURE COMPARED, not an attribute read. Asking whether the tunic fill
+  // string differs would pass on a change of one part in 255, which is a
+  // difference no eye has. So: two men drawn by `figure()` itself through the
+  // debug hook, screenshotted at 44px, and the halves diffed pixel by pixel.
+  if (w === 390) {
+    await page.evaluate((px) => window.landnam.twoMen(px), TAP);
+    await page.waitForTimeout(120);
+    const host = page.locator('#twomen');
+    const shot = await host.screenshot();
+    const png = decodePng(shot);
+    let differing = 0;
+    let counted = 0;
+    const half = Math.floor(png.w / 2);
+    const at = (x, y) => (png.w * y + x) * png.bpp;
+    for (let y = 0; y < png.h; y += 1) {
+      for (let x = 0; x < half; x += 1) {
+        const a = at(x, y);
+        const b = at(x + half, y);
+        counted += 1;
+        const d = Math.abs(png.px[a] - png.px[b])
+          + Math.abs(png.px[a + 1] - png.px[b + 1])
+          + Math.abs(png.px[a + 2] - png.px[b + 2]);
+        if (d > 24) differing += 1;
+      }
+    }
+    const pct = counted ? (differing / counted) * 100 : 0;
+    await page.evaluate(() => document.getElementById('twomen')?.remove());
+    // WHERE THE SIX COMES FROM, AND WHAT IT BINDS ON.
+    //
+    // This diff measures EVERY health signal on the man at once, so a
+    // threshold has to be set against the floor the other signals already
+    // give — otherwise it passes on a figure whose tunic says nothing. Three
+    // readings, this instrument, 2026-09-06, one run each at 390x844:
+    //
+    //   every health signal cut out ................ 0.0%
+    //   shield wear only (tunic and lean cut) ...... 4.5%
+    //   as it ships ................................ 8.4%
+    //
+    // The first version of this check asked for 2% and would have passed at
+    // 4.5 — that is, on the game exactly as it was BEFORE 12.15, which is
+    // the thing the item exists to change. The middle reading is the finding
+    // worth keeping: the crack at a third is two pixels and does vanish, but
+    // the 22% ink disc laid over the whole shield beside it does not, and it
+    // was already carrying a fifth of a screen's worth of difference.
+    //
+    // So: six. Above the 4.5% the shield gives on its own, below the 8.4%
+    // the tunic and the lean take it to, and re-measured rather than assumed
+    // each time either number is touched.
+    check(pct >= 6,
+      `${w}x${h}: a man at a third looks like a man at full at ${TAP}px `
+      + `(${pct.toFixed(1)}% of pixels differ, and the shield alone gives 4.5) `
+      + `— the tunic is not carrying the wound`);
+    console.log(`${w}x${h}: whole against hurt at ${TAP}px — ${pct.toFixed(1)}% of pixels differ`);
   }
 
   await page.close();

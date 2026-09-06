@@ -226,6 +226,11 @@
 //             the hex coordinate 8.5 set out to retire. Its only reader was a
 //             test asserting the values were distinct, on an array whose
 //             indices are distinct by construction.
+// v65 (12.15): Combatant LOST `movesLeft` — a counter the sim wrote in four
+// places and no rule ever read, left behind when 9.1b took the dash and the
+// shove off the bar. The migration strips it from a battle in flight, so a
+// save made mid-fight does not carry a field the type no longer has.
+//
 // v64 (12.10): SagaEntry gained the optional `keep` — the once-a-run moments
 // the chronicle's 300-entry cap steps over instead of dropping. Absent on
 // every old entry, which leaves an old book behaving exactly as before.
@@ -237,7 +242,7 @@
 //             crewed by hand for two hundred days has been played a
 //             particular way, and quietly handing it a standing order would
 //             change how its next winter goes without anybody deciding to.
-export const SAVE_VERSION = 64;
+export const SAVE_VERSION = 65;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

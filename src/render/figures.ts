@@ -32,7 +32,8 @@ import { beltAxes } from './gear';
 import { crack, shieldTurned } from './shield';
 import type { Person } from '../state/types';
 import { svgEl } from './svg';
-import { BLOOD, GOLD, HAFT, MOSS, PALE_IRON, SKIN, STEEL } from './palette';
+import { BLOOD, GOLD, HAFT, PALE_IRON, SKIN, STEEL } from './palette';
+import { mix } from './marks';
 
 /** One tone for skin, as `walker.ts` uses; a second one is a smudge here. */
 
@@ -89,6 +90,31 @@ export function figure(
   const headY = groundY - h * 0.875;
   const headR = h * 0.105;
 
+  /**
+   * THE WOUND IS ON THE MAN, NOT ON A BAR UNDER HIM (12.15).
+   *
+   * A 4px rect under every fighter was information the illustration was not
+   * carrying, so the picture could afford to say nothing about a man's state
+   * and did. Taking the bar off is only honest if the figure answers the same
+   * question, and the answer has to survive 44px — the tap minimum this game
+   * holds itself to — where a shield crack is two pixels and vanishes.
+   *
+   * Half of that was wrong and the measuring found it. The crack does vanish,
+   * but the 22% ink disc laid over the whole shield below a third does not:
+   * on its own it moves 4.5% of a 44px figure's pixels (`scripts/field.mjs`,
+   * 2026-09-06). The picture was already saying something; it was not saying
+   * enough, and it said nothing at all above a third.
+   *
+   * So it is the TUNIC that darkens: a large area, which is the only kind of
+   * signal that survives being made small. `hurt` runs 0 at full health to 1
+   * at nothing, and everything below reads it.
+   */
+  const hurt = Math.max(0, Math.min(1, 1 - s.health));
+  // Toward blood rather than toward black: a man going grey reads as cold or
+  // as night, and this has to mean one thing only. Capped short of the full
+  // mix so two hurt men still tell each other apart by their own wool.
+  const bloodied = hurt > 0 ? mix(look.tunic, BLOOD, hurt * 0.6) : look.tunic;
+
   const g = svgEl('g', s.broken ? { class: 'fighter', opacity: '0.6' } : { class: 'fighter' });
 
   // Standing weight.
@@ -138,7 +164,7 @@ export function figure(
   const leg = (foot: number, shade: number): SVGElement => svgEl('path', {
     d: `M ${cx} ${hipY} L ${cx + foot * 0.55} ${(hipY + groundY) / 2} L ${cx + foot} ${groundY}`,
     fill: 'none',
-    stroke: darken(look.tunic, shade),
+    stroke: darken(bloodied, shade),
     'stroke-width': h * 0.058,
     'stroke-linecap': 'round',
     'stroke-linejoin': 'round',
@@ -148,19 +174,25 @@ export function figure(
   // in a shield wall is not standing to attention.
   g.append(leg(-f * h * 0.13, 0.45));
 
-  // The body: a tunic, leaning into the wall.
-  const lean = f * h * 0.025;
+  // The body: a tunic, leaning into the wall — and carrying the wound.
+  //
+  // A HURT MAN LEANS FURTHER. The lean is what a man in a wall does anyway,
+  // so pushing it as he tires costs the figure no new idiom and changes the
+  // SILHOUETTE, which is the second thing that survives 44px after a large
+  // colour. The box he stands in does not move: `line.ts` sizes taps off
+  // FIGURE_H and a man who shrank when hurt would shrink his own tap target.
+  const lean = f * h * (0.025 + hurt * 0.045);
   g.append(
     svgEl('path', {
       d: `M ${cx - h * 0.1 + lean} ${shoulderY} L ${cx + h * 0.1 + lean} ${shoulderY}` +
          ` L ${cx + h * 0.085} ${hipY} L ${cx - h * 0.085} ${hipY} Z`,
-      fill: look.tunic,
-      stroke: darken(look.tunic, 0.4),
+      fill: bloodied,
+      stroke: darken(bloodied, 0.4),
       'stroke-width': 1,
     }),
     svgEl('line', {
       x1: cx - h * 0.085, y1: hipY - h * 0.01, x2: cx + h * 0.085, y2: hipY - h * 0.01,
-      stroke: darken(look.tunic, 0.55), 'stroke-width': h * 0.022,
+      stroke: darken(bloodied, 0.55), 'stroke-width': h * 0.022,
     }),
   );
   g.append(leg(f * h * 0.1, 0.15));
@@ -255,18 +287,35 @@ export function figure(
     }));
   }
 
-  // Health bar under the figure — information first, decoration second, and
-  // the same geometry the counter had so nothing about reading a line moves.
-  const width = radius * 2;
-  g.append(
-    svgEl('rect', {
-      x: cx - width / 2, y: groundY + 4, width, height: 4, fill: INK, opacity: 0.6,
-    }),
-    svgEl('rect', {
-      x: cx - width / 2, y: groundY + 4,
-      width: Math.max(0, width * s.health), height: 4,
-      fill: s.health > 0.5 ? MOSS : s.health > 0.25 ? GOLD : BLOOD,
-    }),
-  );
+  // NO HEALTH BAR. Two 4px rects stood here — a readout the illustration was
+  // not carrying, drawn under a man who told you nothing himself. The tunic
+  // and the lean carry it now, and `scripts/field.mjs` holds both ends: no
+  // bar rects after twelve struck turns, and a man at a third distinguishable
+  // from a man at full at 44px.
+  //
+  // THE BAR WAS ALSO THE TAP TARGET, and that is why this rect is here.
+  //
+  // `FIGURE_W` in line.ts is `FIGURE_R * 2` and says why in its own comment:
+  // "the widest is the health bar under him, at exactly twice the radius".
+  // The view scales the field so FIGURE_W clears 44px, so deleting the bar
+  // took every man under the touch minimum at every width. Taken twice on the
+  // built page with `scripts/field.mjs` (2026-09-06), the rect commented out
+  // and back in:
+  //
+  //     412x915  40px -> 59px      390x844  38px -> 55px
+  //     360x640  30px -> 44px      320x568  30px -> 44px
+  //
+  // A HUD element was holding up the thumb rule, and 360 and 320 sat exactly
+  // ON the line — which is why this is a rect of `radius * 2` and not a
+  // rounder number that happens to look safe.
+  //
+  // So the hit area stays and the readout goes. It is transparent because it
+  // is not information: it is the surface a thumb lands on, the width the tap
+  // maths already assumes, and `pointer-events` is what it is for.
+  g.append(svgEl('rect', {
+    x: cx - radius, y: groundY - h, width: radius * 2, height: h + radius * 0.12,
+    fill: 'transparent',
+    class: 'fighter-tap',
+  }));
   return g;
 }

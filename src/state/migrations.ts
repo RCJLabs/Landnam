@@ -721,6 +721,34 @@ export const MIGRATIONS: Record<number, Migration> = {
    * gaining an optional field with a meaningful absence looks like.
    */
   /**
+   * v65 (12.15): `movesLeft` comes off every combatant.
+   *
+   * A save taken mid-fight carries the field; nothing reads it and the type
+   * no longer has it, so it is stripped rather than left to sit in the JSON
+   * as a fact about a mechanic that left in 9.1b. A save with no battle in
+   * flight has nothing to strip and passes through.
+   */
+  64: (save) => {
+    const battle = save['battle'];
+    if (!battle || typeof battle !== 'object') return { ...save, version: 65 };
+    const b = battle as Record<string, unknown>;
+    const combatants = Array.isArray(b['combatants']) ? b['combatants'] : [];
+    return {
+      ...save,
+      battle: {
+        ...b,
+        combatants: combatants.map((c) => {
+          if (!c || typeof c !== 'object') return c;
+          const { movesLeft: _gone, ...rest } = c as Record<string, unknown>;
+          void _gone;
+          return rest;
+        }),
+      },
+      version: 65,
+    };
+  },
+
+  /**
    * v64 (12.10): `SagaEntry` gained the optional `keep` — the landmarks the
    * 300-entry cap must step over.
    *

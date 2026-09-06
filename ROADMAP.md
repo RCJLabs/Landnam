@@ -7737,16 +7737,84 @@ would replace — which is why it is third and not fifteenth.
   both viewports on all four screens, with the road and title look re-blessed
   once.
 
-- [ ] **12.15 — Take the HUD out of the illustration.** A 4px health bar under
-  every fighter (`figures.ts:258-270`), a floating "−N" per blow
-  (`fx.ts:324-330`), a gold ring, dashed target ellipses — and a *Steps* stat
-  in the fight's top bar (`battleUi.ts:39`) reading a movement counter for a
-  mechanic that left with the dash and the shove in 9.1b (:4278-4340).
+- [x] **12.15 — Take the HUD out of the illustration. BUILT 2026-09-06.** A 4px
+  health bar under every fighter (`figures.ts:258-270`), a floating "−N" per
+  blow (`fx.ts:324-330`), a gold ring, dashed target ellipses — and a *Steps*
+  stat in the fight's top bar (`battleUi.ts:39`) reading a movement counter
+  for a mechanic that left with the dash and the shove in 9.1b (:4278-4340).
   Independent of 12.7 and the same size whichever direction wins.
   Done when after twelve struck turns `field.mjs` finds no health-bar rects
   and no floating damage text, the top bar has no Steps stat, and a two-figure
   fixture at 44px distinguishes a man at full health from one at a third.
-  **UNVERIFIED.**
+
+  **ALL FIVE CLAIMS RE-TAKEN ON TODAY'S BUILD AND ALL FIVE TRUE** — the line
+  numbers had drifted, the things had not. Three came off. **Two were kept,
+  and that is a ruling rather than an omission**: the gold ring says whose
+  turn it is and the dashed ellipses say who can be struck, and nothing else
+  on the field says either. Neither is in the Done when, and both are drawn on
+  the GROUND a man stands on — the one part of him no neighbouring rank
+  overlaps, which is why the target marks live there too. Taking them off
+  would be removing information with nothing to put in its place, which is the
+  opposite of this item.
+
+  **WHAT REPLACED THE BAR.** The tunic darkens toward blood as a man is worn
+  down, and he leans further into the wall. Large area and silhouette, because
+  those are what survive being made small: a shield crack at 44px is two
+  pixels. Colour toward BLOOD rather than toward black, capped at 0.6 of the
+  mix, so two hurt men still tell each other apart by their own wool.
+
+  **THE HEALTH BAR WAS THE TAP TARGET.** `FIGURE_W = FIGURE_R * 2` and
+  `line.ts` says why in its own comment — "the widest is the health bar under
+  him, at exactly twice the radius". `NEEDED_SCALE` is `TAP_MIN / FIGURE_W`,
+  so removing the bar took every man under the 44px minimum on the spot. Taken
+  twice on the built page, `scripts/field.mjs`, 2026-09-06, the hit rect
+  commented out and back in:
+
+  | | no hit rect | with it |
+  |---|---|---|
+  | 412x915 | 40px | 59px |
+  | 390x844 | 38px | 55px |
+  | 360x640 | **30px** | 44px |
+  | 320x568 | **30px** | 44px |
+
+  A HUD element was holding up the thumb rule. So `figures.ts` now appends a
+  transparent `fighter-tap` rect of exactly `radius * 2` — the width the tap
+  maths already assumes — and the readout is what went. Note that 360 and 320
+  sit ON the line, not above it.
+
+  **`movesLeft` WAS WRITTEN IN FOUR PLACES AND READ BY ONE.** `beginBattle`
+  set it twice, `refreshTurn` reset it, `doDefend` zeroed it, and its only
+  reader in the whole codebase was the Steps stat this item deletes. No rule
+  consulted it; there is no positioning verb in the action union at all, which
+  `test/teaching.test.ts` has pinned since 12.9. Deleting the stat would have
+  left a field in every save meaning nothing, so `Combatant` loses it —
+  SAVE_VERSION 65, with a migration that strips it from a battle in flight.
+
+  **THE FIRST CUT OF THE 44px CHECK WOULD HAVE PASSED ON THE GAME AS IT WAS
+  BEFORE THIS ITEM**, and that is the finding worth keeping here. The check
+  diffs two `figure()`-drawn men at 44px pixel by pixel, and it therefore
+  measures EVERY health signal at once, so a threshold has to be set against
+  what the others already give. Three readings, same instrument, one run each
+  at 390x844:
+
+  | | pixels differing |
+  |---|---|
+  | every health signal cut out | 0.0% |
+  | shield wear only, tunic and lean neutralised | **4.5%** |
+  | as it ships | 8.4% |
+
+  It asked for 2%. Sabotaging the tunic and the lean left it green at 4.5, so
+  it was validated by the SUM of the signals and could not fail on the
+  regression it exists to catch — a check that cannot fail looks exactly like
+  a check that passes. It asks for 6 now, above the shield's own floor and
+  below the shipped reading, and was watched going red under that same
+  sabotage before being believed.
+
+  The 4.5 is itself a correction to this item's premise. The crack at a third
+  does vanish at 44px, as claimed — but the 22% ink disc laid over the whole
+  shield beside it does not, and it was already carrying a fifth of a screen's
+  worth of difference. The picture was not silent below a third. It was silent
+  ABOVE it, which is where a player spends most of a fight.
 
 ### Gameplay
 
@@ -8489,6 +8557,31 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.15 BUILT: the fighters stop wearing a readout, and the
+  readout turned out to be holding up the thumb rule.** The 4px health bar,
+  the floating `−N` and the *Steps* stat all came off; the tunic darkens
+  toward blood and the man leans further instead. The gold ring and the target
+  ellipses were KEPT — they are the only thing on the field saying whose turn
+  it is and who can be struck, and neither is in the item's own criteria.
+
+  **Deleting the bar took every fighter under 44px** (412/390/360/320 wide:
+  59→40, 55→38, 44→30, 44→30, `scripts/field.mjs`, both directions), because
+  `FIGURE_W` is documented as the bar's width and `NEEDED_SCALE` divides by
+  it. A transparent hit rect of the same width holds the rule now.
+
+  **`movesLeft` was written in four places and read only by the stat**, so it
+  leaves `Combatant` too — SAVE_VERSION 65 with a migration that strips it
+  from a battle in flight.
+
+  **The new 44px check would have passed on the game as it was before the
+  item.** It diffs two men pixel by pixel and so measures every health signal
+  together; sabotaging the tunic and the lean still left 4.5% differing,
+  against 8.4% shipped and 0.0% with everything cut. It asked for 2. It asks
+  for 6 now and was watched going red. The 4.5 is a correction to the item's
+  premise: the crack at a third does vanish at 44px, but the 22% ink disc over
+  the whole shield does not — the picture was not silent below a third, it was
+  silent above it.
 
 - **2026-09-06 — 12.14 PART BUILT: the deck can ask what the band did, and two
   of the three criteria are refused rather than bought.** Eighteen condition
