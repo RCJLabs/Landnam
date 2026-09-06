@@ -8197,6 +8197,20 @@ would replace — which is why it is third and not fifteenth.
   what actually proves `keep` is `test/book.test.ts`, which floods 900 days.
   Each of the four fixes was watched failing against the code it replaced.
 
+  **The `look` bar caught the ending changing and it was right to** — 2.0 at
+  `ending@390x844`, all of it in the bottom rows where the closing chapter
+  is. Looked at, agreed, blessed: under *THE STORES GAVE OUT* the first
+  sentence is the generic closing from the bank and everything after it is
+  the run's own words, which until now only a screen-reader user was given.
+
+  **NOTED, NOT FIXED — for whoever takes the ending TEXT next.** With the
+  lines finally visible, one reads oddly: *"By day 11 there had been nothing
+  in the store for a long time."* Day 11 and "a long time" do not sit
+  together. The wording is `upkeep.ts`'s own and predates this item; 12.10's
+  scope is WHERE those lines are shown, not what they say, and the verifier's
+  note asks that the survived lines be left alone. It only became visible
+  because the lines now reach a sighted player at all.
+
   The original entry follows.
 
 - [ ] **12.10 — The last screen and the book say what the run said.**
