@@ -39,6 +39,7 @@ import { EVENTS } from '../src/data/events';
 import { DEATHS } from '../src/data/injuries';
 import { rivalBlocks } from '../src/sim/rival';
 import { lessonDue, allLessonIds } from '../src/sim/lessons';
+import { THING_OPENING } from '../src/data/thing';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
 import { apply } from '../src/sim/actions';
@@ -5754,4 +5755,114 @@ describe('PROBE: 12.9 — does a played saga reach the teaching', () => {
     expect(never, 'a lesson no played saga reaches is content nobody sees')
       .toEqual([]);
   }, 600_000);
+});
+describe('PROBE: 12.10 — what the book loses, and what the ending never says', () => {
+  it('measures the cap, the window, and the repeats', () => {
+    // FOUR READINGS, all off one played saga per seed.
+    //
+    // The spine is identified by the text the sim itself writes, not by
+    // guessing which lines matter: the landing is the day-1 entry `newGame`
+    // seeds, the founding says "set the first post", the proclamation is the
+    // Thing's opening. Reading the CAUSE rather than inferring it.
+    const SEEDS = 120;
+    const HORIZON = 700;
+    setPolicy({ ...SETTLER, id: 'book', followsOrders: true });
+
+    const SPINE: [string, RegExp][] = [
+      ['landing', /grounded at .* on a grey morning/],
+      ['founding', /set the first post|We set the first post/],
+      // Was `/THING|assembly|jarl/i`, which matched ANY mention of a jarl and
+      // reported `hadIt` 120/120 — including runs that never called a Thing.
+      // The denominator selected itself (trap 2). This is the sim's own
+      // constant, so the row counts the moment rather than the word.
+      ['proclamation', new RegExp(THING_OPENING.slice(0, 40).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))],
+    ];
+
+    let hitCap = 0;
+    let earliestKept: number[] = [];
+    const lostToCap = new Map(SPINE.map(([k]) => [k, 0]));
+    const lostToWindow = new Map(SPINE.map(([k]) => [k, 0]));
+    const hadIt = new Map(SPINE.map(([k]) => [k, 0]));
+    let sagasWithRepeat = 0;
+    let repeatEntries = 0;
+    let totalEntries = 0;
+    let longest = 0;
+
+    for (let i = 0; i < SEEDS; i += 1) {
+      const state = run(`book-${i}`, HORIZON);
+      const saga = state.saga;
+      totalEntries += saga.length;
+      longest = Math.max(longest, state.day);
+
+      // Did this run lose anything? `saga[0].day > 1` is the tell: the day-1
+      // landing entry is seeded by `newGame`, so a first entry from any later
+      // day means the splice has eaten the front of the book.
+      const capped = (saga[0]?.day ?? 1) > 1;
+      if (capped) {
+        hitCap += 1;
+        earliestKept.push(saga[0]!.day);
+      }
+
+      // The window the ending actually renders (closing.ts: slice(-160)).
+      const window = saga.slice(-160);
+      for (const [key, re] of SPINE) {
+        // "Had it" means the run reached the moment at all — a band that
+        // never founded cannot lose its founding, and counting it as a loss
+        // would be a denominator selecting itself.
+        const inBook = saga.some((e) => re.test(e.text));
+        const inWindow = window.some((e) => re.test(e.text));
+        if (inBook) {
+          hadIt.set(key, hadIt.get(key)! + 1);
+          if (!inWindow) lostToWindow.set(key, lostToWindow.get(key)! + 1);
+        }
+      }
+      // The founding and the landing are once-a-run and cannot recur, so a
+      // run that founded but has no founding line lost it to the CAP.
+      if (capped && state.settlement && !saga.some((e) => SPINE[1]![1].test(e.text))) {
+        lostToCap.set('founding', lostToCap.get('founding')! + 1);
+      }
+      if (capped && !saga.some((e) => SPINE[0]![1].test(e.text))) {
+        lostToCap.set('landing', lostToCap.get('landing')! + 1);
+      }
+
+      // Repeats the dedupe cannot see. `chronicle` compares only against the
+      // entry immediately before, so a line two apart is written twice.
+      //
+      // MEASURED IN A WINDOW, and the first cut was not. Counting any text
+      // seen anywhere earlier in a 700-day saga returned 15,233 across
+      // 120/120 runs — which is a chronicle doing its job, not a stutter:
+      // "We ate thin" on day 50 and again on day 400 is the log working. A
+      // stutter is a repeat close enough to read as one, so the window is
+      // ECHO (4), the same distance `fresh()` already avoids reusing a line
+      // within.
+      let repeats = 0;
+      for (let k = 1; k < saga.length; k += 1) {
+        const text = saga[k]!.text;
+        if (saga[k - 1]!.text === text) continue;
+        if (saga.slice(Math.max(0, k - 4), k - 1).some((e) => e.text === text)) repeats += 1;
+      }
+      if (repeats > 0) sagasWithRepeat += 1;
+      repeatEntries += repeats;
+    }
+
+    earliestKept = earliestKept.sort((a, b) => a - b);
+    const medianEarliest = earliestKept.length
+      ? earliestKept[Math.floor(earliestKept.length / 2)]! : 0;
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.10 the book and the ending — ${SEEDS} sagas, settler, to day ${HORIZON}:\n`
+      + `  entries a saga: ${(totalEntries / SEEDS).toFixed(0)} average, cap ${300}\n`
+      + `  hit the 300 cap: ${hitCap}/${SEEDS} (${Math.round((hitCap / SEEDS) * 100)}%)`
+      + `${earliestKept.length ? `; of those the book starts at day ${earliestKept[0]} at best,`
+        + ` ${medianEarliest} median, ${earliestKept[earliestKept.length - 1]} at worst` : ''}\n`
+      + `  LOST TO THE CAP — landing ${lostToCap.get('landing')},`
+      + ` founding ${lostToCap.get('founding')}\n`
+      + SPINE.map(([k]) => `  lost to the ending's 160-entry window — ${k}:`
+        + ` ${lostToWindow.get(k)}/${hadIt.get(k)} of the runs that had one`).join('\n')
+      + `\n  stutters the dedupe cannot see (a line repeated within 4): ${repeatEntries} across`
+      + ` ${sagasWithRepeat}/${SEEDS} sagas`,
+    );
+    expect(hitCap).toBeGreaterThanOrEqual(0);
+  }, 900_000);
 });
