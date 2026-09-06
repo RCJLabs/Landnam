@@ -5874,3 +5874,48 @@ describe('PROBE: 12.10 — what the book loses, and what the ending never says',
     expect(hitCap).toBeGreaterThanOrEqual(0);
   }, 900_000);
 });
+describe('PROBE: 12.14 — what the deck remembers', () => {
+  it('measures which cards each policy ever reaches', () => {
+    // The reached SET, not the draw count: the item's claim is that the
+    // raider's cards are a subset of the settler's, which is a claim about
+    // what the deck can distinguish rather than about frequency.
+    //
+    // Read off `state.event.id` at the transition that sets it — the cause —
+    // rather than inferred from what changed alongside.
+    const SEEDS = 120;
+    const HORIZON = 500;
+    const reached = new Map<string, Set<string>>();
+
+    for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
+      setPolicy(pol);
+      const seen = new Set<string>();
+      for (let i = 0; i < SEEDS; i += 1) {
+        run(`deck-${i}`, HORIZON, (before, after) => {
+          const id = after.event?.id;
+          if (id && before.event?.id !== id) seen.add(id);
+        });
+      }
+      reached.set(name, seen);
+    }
+    setPolicy(SETTLER);
+
+    const settler = reached.get('settler')!;
+    const raider = reached.get('raider')!;
+    const shared = [...raider].filter((id) => settler.has(id));
+    const raiderOnly = [...raider].filter((id) => !settler.has(id));
+    const settlerOnly = [...settler].filter((id) => !raider.has(id));
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.14 the deck's reach — ${SEEDS} landings a policy, to day ${HORIZON},`
+      + ` ${EVENTS.length} cards in the deck:\n`
+      + `  settler reaches ${settler.size}, raider reaches ${raider.size}\n`
+      + `  shared ${shared.length}; raider-only ${raiderOnly.length}`
+      + `${raiderOnly.length ? ` (${raiderOnly.slice(0, 8).join(', ')})` : ''};`
+      + ` settler-only ${settlerOnly.length}`
+      + `${settlerOnly.length ? ` (${settlerOnly.slice(0, 8).join(', ')})` : ''}\n`
+      + `  never reached by either: ${EVENTS.length - new Set([...settler, ...raider]).size}`,
+    );
+    expect(settler.size).toBeGreaterThan(0);
+  }, 900_000);
+});
