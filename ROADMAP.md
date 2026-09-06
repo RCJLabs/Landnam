@@ -62,6 +62,13 @@
 > that are exact rather than modelled; and the fight owns 42% / 66% of the
 > dead, not the 28% / 43% on file.
 >
+> **12.14 is PART BUILT** — the deck can ask about the band's history at last
+> (four condition kinds, ten cards, six of ten gates separating correctly),
+> and **two of its three "Done when" criteria are not met on purpose**: one is
+> unreachable by adding content, the other measures a set that mixes raiding
+> history with settler history. Both are argued in the entry rather than
+> bought by bending the cards.
+>
 > **12.10 is BUILT** — the run's own closing lines had one reader in the whole
 > codebase (the screen-reader region), 39% of long sagas had lost their
 > landing AND their founding to a blind FIFO, and a third of one settled book
@@ -8227,6 +8234,96 @@ would replace — which is why it is third and not fifteenth.
   10.1's decline is nearby, so the survived lines that name the road are the
   ones to leave alone.
 
+- [~] **12.14 — The deck can ask what the band did. BUILT 2026-09-06, and TWO
+  OF THE THREE "DONE WHEN" CRITERIA ARE NOT MET — deliberately, with the
+  reasons below rather than the content bent to fit them.**
+
+  **The premise held exactly.** 18 condition kinds, 103 cards, and the words
+  "jarl", "outlaw" and "rival" appear in none of them. Re-taken on the deck's
+  reach (120 landings a policy, day 500, `state.event.id` read at the
+  transition that sets it): settler 101, raider 94, **shared 93** — the item
+  said "at least 92 of 103", and the raider's set is nearly a subset, broken
+  by exactly one card (`the-argument`).
+
+  **The verifier's correction is HALF right, and the failing half changed the
+  design.** `foresworn` is expressible with `flagSet` and winters-stood is a
+  `dayMin`, both as claimed. But `ruling` is **not** `flagSet: 'ruleTaken'`:
+  `travel.ts` sets that flag inside the `RULE_ON` player action, where its own
+  comment says it "marks the card as read". Gating content on it would mean
+  "the player pressed Rule on", so a band that rules with the proclamation
+  unread would be told it does not. `ruling` reads `state.jarl`.
+
+  Four kinds shipped: `tally` (keyed to the `Tally` interface, so one kind
+  covers sackings, battles, foesFelled, raidsHeld and bargains rather than
+  five copies of one idea), `ruling`, `outlawed`, `metRival`. Ten cards.
+
+  **WHAT THE THREE CRITERIA ACTUALLY DID:**
+
+  | criterion | result |
+  |---|---|
+  | overlap falls by ≥ 8 cards | **NOT MET** — shared went 93 → 98 |
+  | history card ≥ 30% raider, ≤ 5% clean settler | **NOT MET** — 20% / 25% |
+  | spring figures hold within 0.05 | **MET** — the balance bars pass; As It Lies 77% |
+
+  **The first cannot be met by adding content, and that is arithmetic rather
+  than effort.** A reached set is "every card ever drawn across 120 sagas", so
+  a new card can only GROW it; shared rose because the deck grew and both
+  policies reach more of it. The only route to −8 is putting history gates on
+  eight cards that currently fire for both — taking existing content away from
+  one policy to move a number. Some of that is right and some of it is not,
+  and doing eight of them because the criterion says eight is gaming it.
+
+  **The second measures the wrong set.** "A history-gated card" assumes
+  history means RAIDING history; seven of the ten gate on history a settler
+  accumulates — bargains struck, raids held at home, battles stood, an
+  assembly carried. A peaceful settler with six battles and five bargains
+  genuinely HAS that history, so 25% of clean settlers drawing one is correct
+  behaviour and not a leak. Narrowing the set to sacking gates alone would
+  satisfy the criterion and make it **unfailable**: `sackings === 0` cannot
+  pass a `sackings >= 3` gate by construction.
+
+  **Per card is the reading worth keeping** (raider % / settler-never-sacked
+  %): `the-name-they-use` 3/0, `the-reckoning-of-spoils` 3/0,
+  `the-other-mans-shore` 6/0, `the-jarls-portion` 0/13, `the-wall-that-held`
+  4/13, `the-count-of-the-dead` 6/13, `men-who-have-fought` 5/8,
+  `the-long-bargain` 7/4. **Six of the ten separate in the right direction**,
+  and the deck can now ask a question it could not ask at all.
+
+  **THE TWO THAT FIRE FOR NEITHER POLICY ARE A FACT ABOUT THE BOT.**
+  `the-one-we-drove-out` and `the-oath-we-broke` read 0/0 — trap 3, an arm
+  that never runs looking exactly like one that does not work. Answered by
+  hand rather than left as a silence: `test/deckhistory.test.ts` builds the
+  states and both open, and a band without them does not. **The harness never
+  drives anybody out and never breaks an oath.** They are named `PLAYER_ONLY`
+  in the balance bar the way `blot` is named `PLAYER_CALLED`, with the rule
+  that every entry must carry a reachability test — otherwise the list is a
+  way to make the bar stop complaining, which is the opposite of its purpose.
+
+  **A find outside the item: the content lint kept its own copy of the truth.**
+  `SIM_FLAGS` was ten names typed by hand, and a card gated on `oath:foresworn`
+  failed as "waiting for a day that never comes" — because the sim writes that
+  flag THROUGH A CONSTANT and a literal scan cannot see it. Harvested now,
+  resolving `flags[CONST]` as well as `flags['literal']`: **19 flags against
+  the hand list's 10**, missing `oath:foresworn`, `oath:since`, `oath:mark`,
+  `landnam`, `reckoned`, `abandoned`, `leanDays`, `lastBorn`, `lastPaired`.
+  Nine legitimate gates it would have rejected, and it could equally have
+  accepted a dead one. Watched failing on a genuinely dead flag.
+
+  **The suite found two more, both right.** The lore lint caught my own card
+  teaching shieldcraft without being gated on not knowing it; the teaching
+  came off rather than the card being bent. And the orders re-pin needed the
+  OPPOSITE check to 12.10's: that change was in the book, so the test was
+  "nothing but the saga moved"; this one is in the game, so the test is "only
+  the sagas that drew a new card moved" — six of eight seeds byte-identical
+  and drew none of the ten, seed 4 drew one, seed 7 drew three. A rule change
+  would have moved all eight.
+
+  **LEFT OPEN FOR EVAN:** whether to buy the two unmet criteria. The lever is
+  card weight, and 6.4's blot measurement is the record of what that costs —
+  at the weight it needed for reach it displaced the autumn food cards and
+  spring survival fell seven points. That is a trade to make on purpose, not
+  to sneak in. The original entry follows.
+
 - [ ] **12.14 — The deck remembers what the band did.** Eighteen condition
   kinds and not one reads the band's history: no winters stood, no tally, no
   oath broken, no jarl, no outlaw abroad, no rival met. The only deed-shaped
@@ -8392,6 +8489,27 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.14 PART BUILT: the deck can ask what the band did, and two
+  of the three criteria are refused rather than bought.** Eighteen condition
+  kinds could not read the tally, the outlaws, the rival or the jarldom; of
+  103 cards the words jarl, outlaw and rival appeared in none. Four kinds and
+  ten cards later, six of the ten gates separate the policies correctly.
+
+  **The verifier's `ruling` shortcut does not hold**: `ruleTaken` is set by the
+  RULE_ON player action and means "the notice was read", so a band that rules
+  with it unread would have been told it does not.
+
+  **Criterion 1 cannot be met by adding cards** — a reached set only grows, so
+  overlap rose 93 → 98; the only route down is taking content off one policy
+  to move a number. **Criterion 2 measures a mixed set** — seven of the ten
+  gate on history a settler earns, and narrowing to sacking gates would make
+  the check unfailable by construction. Criterion 3 (spring within 0.05) is
+  met. All three are recorded with their reasoning.
+
+  **The content lint kept its own copy of the truth**: `SIM_FLAGS` was ten
+  hand-typed names and missed nine real flags, including the one my card
+  needed, because the sim writes it through a constant. Harvested now.
 
 - **2026-09-06 — 12.10 BUILT: the ending says what the run said, and the book
   keeps its own spine.** All four claims held and the measurement was worse
