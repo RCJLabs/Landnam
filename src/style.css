@@ -2077,6 +2077,19 @@ button.relearn {
 /* 12.2: a band under standing orders. Marked the same way short commons is —
    a border, not a new colour — because both are "a rule is running here",
    and the panel already teaches that shape. */
+/* 12.8: the odds under a marked foe, in the mark's own ink so it reads as part
+   of the mark rather than a second thing to look at. The SIZE is set on the
+   element in user units — see render/battle.ts — because a pixel size here is
+   a size in a viewBox that gets scaled to the slot, which is how the first
+   cut shipped a number four pixels tall. */
+.mark-odds {
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(10, 8, 6, 0.75);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
 .room-mark.orders.on {
   border-color: var(--gold);
 }
