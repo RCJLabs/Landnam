@@ -4,7 +4,7 @@
 // Card bodies are written in the moment; outcome text is past tense, because
 // outcomes are what gets copied into the saga log.
 
-import type { Season, Stats, Terrain } from '../state/types';
+import type { Season, Stats, Tally, Terrain } from '../state/types';
 import { EVENTS } from './eventCards';
 import type { LoreId } from './lore';
 import type { BuildingId } from './buildings';
@@ -49,7 +49,38 @@ export type Condition =
   /** The band already knows this. Lets one discovery lead to another. */
   | { c: 'known'; lore: LoreId }
   /** This building is standing at the steading. */
-  | { c: 'built'; building: BuildingId };
+  | { c: 'built'; building: BuildingId }
+  // --- WHAT THE BAND HAS DONE (12.14) ---
+  //
+  // Eighteen kinds before these four, and not one of them could ask about the
+  // band's own history: no tally, no outlaw, no rival, no jarl. The deck knew
+  // where you were standing, what season it was and what was in the store,
+  // and nothing at all about who you had become. Of 103 cards, none mentioned
+  // the jarl, the outlaw or the rival — the words do not appear in the file.
+  /**
+   * A named counter in the tally has reached at least this.
+   *
+   * ONE KIND rather than four, because `Tally` is already a record of named
+   * counters and a `sackings` condition beside a `battles` condition beside a
+   * `foesFelled` condition would be three copies of the same idea drifting
+   * apart. `of` is keyed to the interface, so a counter added there is
+   * immediately askable and a counter renamed fails the type check.
+   */
+  | { c: 'tally'; of: keyof Tally; min: number }
+  /**
+   * The band rules — an assembly carried them and they have not laid it down.
+   *
+   * NOT `flagSet: 'ruleTaken'`, which is what the item's verifier suggested
+   * and is a different fact: `travel.ts` sets that flag in the `RULE_ON`
+   * player action, where the comment says it "marks the card as read". Gating
+   * content on it would mean "the player pressed Rule on", and a band that
+   * rules but left the proclamation unread would be told it does not.
+   */
+  | { c: 'ruling' }
+  /** The band has driven at least this many of its own people out. */
+  | { c: 'outlawed'; min: number }
+  /** The other landnamsmadr has been met — face to face, not heard of. */
+  | { c: 'metRival' };
 
 export type Effect =
   | { t: 'food'; n: number }

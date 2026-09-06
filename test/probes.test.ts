@@ -5884,6 +5884,7 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
     // rather than inferred from what changed alongside.
     const SEEDS = 120;
     const HORIZON = 500;
+    const CARD_IDS = new Set(EVENTS.map((e) => e.id));
     const reached = new Map<string, Set<string>>();
 
     for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
@@ -5892,7 +5893,15 @@ describe('PROBE: 12.14 — what the deck remembers', () => {
       for (let i = 0; i < SEEDS; i += 1) {
         run(`deck-${i}`, HORIZON, (before, after) => {
           const id = after.event?.id;
-          if (id && before.event?.id !== id) seen.add(id);
+          if (!id || before.event?.id === id) return;
+          // CARDS ONLY. `state.event.id` is "an event id from data/events, OR
+          // 'feud' for a quarrel between two people" (state/types.ts), and the
+          // first cut counted the pseudo-id as a card — which is how the
+          // never-reached row came out at MINUS one, a union larger than the
+          // deck. A count that cannot be negative coming back negative is the
+          // instrument telling you what it actually put in the set.
+          if (!CARD_IDS.has(id)) return;
+          seen.add(id);
         });
       }
       reached.set(name, seen);

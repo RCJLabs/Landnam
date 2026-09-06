@@ -2111,5 +2111,286 @@ export const EVENTS: EventDef[] = [
       },
     ],
   },
-
+  // ==================================================================
+  // WHAT THE BAND DID (12.14)
+  //
+  // The deck had eighteen condition kinds and not one of them could ask
+  // about the band's own history. Measured over 120 landings a policy to day
+  // 500: the settler reached 102 of 103 cards and the raider 94, sharing 93
+  // — the two play a different game and were told almost the same story.
+  //
+  // These are gated on the tally, the outlaws, the rival and the jarldom, so
+  // they can only reach a band that earned them. Weights are small on
+  // purpose: the deck is zero-sum, and 6.4's blot measurement is the record
+  // of what a heavy card costs — at the weight it needed for reach it
+  // displaced the autumn cards that hand out food, and spring survival fell
+  // seven points.
+  // ==================================================================
+  {
+    id: 'the-reckoning-of-spoils',
+    title: 'What We Took',
+    body: 'Somebody has been keeping count, the way somebody always does, and at '
+      + 'the fire he says the number out loud. It is a bigger number than anyone '
+      + 'had been carrying in their head, and the hall goes quiet around it.',
+    weight: 6,
+    when: [{ c: 'tally', of: 'sackings', min: 3 }, { c: 'atHome' }],
+    choices: [
+      {
+        label: 'Let it be said',
+        success: {
+          text: 'The number was said and not argued with. Men who had been uneasy about the work found they were prouder of it than they had admitted.',
+          effects: [{ t: 'morale', n: 6 }],
+        },
+      },
+      {
+        label: 'Say what it cost',
+        success: {
+          text: 'The other number was harder to hear: whose camps, and what was left of them. Some of the hall would not meet the eye of the man who said it.',
+          effects: [{ t: 'morale', n: -3 }, { t: 'standing', n: 6, who: 'angriest' }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-name-they-use',
+    title: 'The Name They Use For Us',
+    body: 'A trader lets it slip, and then will not take it back: up the coast they '
+      + 'do not call this band by the name of its steading. They call it by what it '
+      + 'does. He says it plainly, and then finds somewhere else to look.',
+    weight: 5,
+    when: [{ c: 'tally', of: 'sackings', min: 5 }],
+    choices: [
+      {
+        label: 'Take it as a name',
+        success: {
+          text: 'The name was taken up the way a shield is taken up, and men who wanted to be feared were pleased to be. The ones who came looking afterwards were not traders.',
+          effects: [{ t: 'morale', n: 5 }, { t: 'standing', n: -8, who: 'angriest' }],
+        },
+      },
+      {
+        label: 'Send him off with a gift',
+        check: { stat: 'wits', dc: 10 },
+        success: {
+          text: 'He went off with more than he came with and a story about generous people, which is a thing that also travels.',
+          effects: [{ t: 'food', n: -4 }, { t: 'standing', n: 8, who: 'angriest' }],
+        },
+        failure: {
+          text: 'He took the gift and told the story he had already decided on. Nothing was bought but the food was gone.',
+          effects: [{ t: 'food', n: -4 }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-one-we-drove-out',
+    title: 'Word of the Driven-Out',
+    body: 'Somebody we put outside the law has been seen, alive and inland, and not '
+      + 'alone. Whoever is with them was not with them when they left here.',
+    weight: 6,
+    when: [{ c: 'outlawed', min: 1 }, { c: 'settled' }],
+    choices: [
+      {
+        label: 'Let them be',
+        success: {
+          text: 'Nobody went after them. It was not spoken of again, which is not the same as being forgotten.',
+          effects: [],
+        },
+      },
+      {
+        label: 'Put a watch on the road',
+        success: {
+          text: 'Two of ours slept badly by the road for a week and saw nothing at all. The hall was easier for knowing somebody was out there watching.',
+          effects: [{ t: 'morale', n: 4 }, { t: 'food', n: -3 }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-other-mans-shore',
+    title: 'His Boundary Stones',
+    body: 'The other landnamsmadr has set stones where he says his ground ends, and '
+      + 'they are further along the coast than they were. He has not come to say so.',
+    weight: 6,
+    when: [{ c: 'metRival' }, { c: 'settled' }],
+    choices: [
+      {
+        label: 'Move them back',
+        check: { stat: 'might', dc: 10 },
+        success: {
+          text: 'The stones went back where they had been, and were not moved again that season. Whether he noticed, he never said.',
+          effects: [{ t: 'morale', n: 4 }],
+        },
+        failure: {
+          text: 'They were heavier than they looked and the ground was frozen. Two men went home with their backs wrecked and the stones where he put them.',
+          effects: [{ t: 'wound', n: 3, count: 2 }],
+        },
+      },
+      {
+        label: 'Leave them and remember',
+        success: {
+          text: 'The stones stayed. So did the memory of where they had been, which is the kind of thing a coast settles later and badly.',
+          effects: [{ t: 'morale', n: -2 }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-jarls-portion',
+    title: 'A Man With a Grievance',
+    body: 'He has walked two days to stand in the hall and say that a matter was '
+      + 'judged wrongly, and that the one who judged it was ours. He is not shouting. '
+      + 'He has brought witnesses.',
+    weight: 6,
+    when: [{ c: 'ruling' }],
+    choices: [
+      {
+        label: 'Hear it out and rule again',
+        check: { stat: 'wits', dc: 10 },
+        success: {
+          text: 'It was heard properly and ruled the other way, and he went home telling people the rule on this coast can be argued with. That is worth more than the judgement was.',
+          effects: [{ t: 'standing', n: 10, who: 'angriest' }],
+        },
+        failure: {
+          text: 'It was heard and ruled the same way, at length. He went home saying he had been heard, which was not what he came for.',
+          effects: [{ t: 'standing', n: -4, who: 'friendliest' }],
+        },
+      },
+      {
+        label: 'The matter is closed',
+        success: {
+          text: 'He was told the matter was closed and he closed his mouth. Word of that went up the coast faster than any judgement.',
+          effects: [{ t: 'standing', n: -8, who: 'angriest' }, { t: 'morale', n: 2 }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'men-who-have-fought',
+    title: 'The Ones Who Have Stood It',
+    body: 'A young one asks, at the fire, what a shield wall is actually like, and '
+      + 'the men who have been in one look at each other before anybody answers.',
+    weight: 5,
+    when: [{ c: 'tally', of: 'battles', min: 6 }, { c: 'atHome' }],
+    choices: [
+      {
+        label: 'Tell it true',
+        success: {
+          text: 'It was told without any of the good parts, and the young one went quiet. Everyone who had stood in one slept better for having said it out loud.',
+          effects: [{ t: 'morale', n: 5 }],
+        },
+      },
+      {
+        label: 'Tell it the other way',
+        success: {
+          text: 'It was told as a saga, and by the end of it three people wanted to be in one. The men who had been in one did not join in the laughing.',
+          effects: [{ t: 'morale', n: 2 }, { t: 'learn', lore: 'shieldcraft' }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-wall-that-held',
+    title: 'The Wall That Held',
+    body: 'It is a year to the day since they came at the steading and did not get '
+      + 'in. Somebody remembers, and says so, and the hall works out that most of '
+      + 'them had forgotten.',
+    weight: 5,
+    when: [{ c: 'tally', of: 'raidsHeld', min: 2 }, { c: 'atHome' }],
+    choices: [
+      {
+        label: 'Drink to it',
+        success: {
+          text: 'They drank to the ones who stood in the gap, and to the ones who did not get up afterwards. It cost a night of stores and was worth it.',
+          effects: [{ t: 'food', n: -5 }, { t: 'morale', n: 8 }],
+        },
+      },
+      {
+        label: 'Walk the wall instead',
+        success: {
+          text: 'Instead of drinking they walked the whole line of it in the dark, and found two places that would not hold a second time.',
+          effects: [{ t: 'firewood', n: -4 }, { t: 'morale', n: 3 }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-count-of-the-dead',
+    title: 'How Many We Have Killed',
+    body: 'The tally of men this band has put down is not written anywhere, but two '
+      + 'of ours have been keeping it separately and tonight they compare. The '
+      + 'numbers are close and neither is small.',
+    weight: 5,
+    when: [{ c: 'tally', of: 'foesFelled', min: 12 }],
+    choices: [
+      {
+        label: 'Say it is the country',
+        success: {
+          text: 'It was agreed that a country like this makes such numbers of anybody, and the fire was let go out. Nobody was much comforted.',
+          effects: [{ t: 'morale', n: -2 }],
+        },
+      },
+      {
+        label: 'Say it is us',
+        success: {
+          text: 'It was agreed that it was us and not the country, and something hardened in the hall that made the next fight easier and the next winter colder.',
+          effects: [{ t: 'morale', n: 4 }, { t: 'standing', n: -5, who: 'friendliest' }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-oath-we-broke',
+    title: 'What Was Sworn',
+    body: 'An old man on the road knows the words that were said at a blót here, '
+      + 'and can say them back. He is not accusing anybody. He just wanted us to '
+      + 'know that the words got out.',
+    weight: 6,
+    when: [{ c: 'flagSet', flag: 'oath:foresworn' }],
+    choices: [
+      {
+        label: 'Feed him and hear him',
+        success: {
+          text: 'He ate, and said his piece, and left it there. What he had come to say was that a coast remembers oaths longer than the men who swear them.',
+          effects: [{ t: 'food', n: -3 }, { t: 'morale', n: 3 }],
+        },
+      },
+      {
+        label: 'Send him on',
+        success: {
+          text: 'He was sent on without food. He went, and told it in the next steading with our name attached.',
+          effects: [{ t: 'standing', n: -6, who: 'angriest' }],
+        },
+      },
+    ],
+  },
+  {
+    id: 'the-long-bargain',
+    title: 'The Trader Who Keeps Coming',
+    body: 'He has dealt with this band more times than either of us has counted, '
+      + 'and this time he does not haggle. He says what he wants and waits, because '
+      + 'he already knows what we are like.',
+    weight: 5,
+    when: [{ c: 'tally', of: 'bargains', min: 5 }],
+    choices: [
+      {
+        label: 'Deal as always',
+        success: {
+          text: 'It was done in half the time it usually takes and both sides came off it content, which is what a long dealing buys.',
+          effects: [{ t: 'food', n: 8 }, { t: 'standing', n: 5, who: 'friendliest' }],
+        },
+      },
+      {
+        label: 'Squeeze him this once',
+        check: { stat: 'wits', dc: 11 },
+        success: {
+          text: 'He gave more than he meant to and laughed about it, but he wrote it down somewhere behind his eyes.',
+          effects: [{ t: 'food', n: 14 }, { t: 'standing', n: -4, who: 'friendliest' }],
+        },
+        failure: {
+          text: 'He heard the new tone, packed up mid-sentence, and took the season\'s trade three steadings along.',
+          effects: [{ t: 'standing', n: -8, who: 'friendliest' }],
+        },
+      },
+    ],
+  },
 ];
