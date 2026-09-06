@@ -13,8 +13,7 @@
 import { standsFor } from './sim/colony';
 import { cloneState } from './state/clone';
 import { currentMode } from './modes';
-import { wantPainting } from './render/oilFlag';
-import { travelDrawn, travelSample } from './render/travelScreen';
+import { travelDrawn } from './render/travelScreen';
 import { steadingDrawn } from './render/colonyScreen';
 import { fieldDrawn } from './render/battleScreen';
 import type { GameState } from './state/types';
@@ -37,8 +36,6 @@ export interface DebugHooks {
   get(): GameState | null;
   /** Saves and redraws, exactly as a dispatch would. */
   commit(next: GameState): void;
-  /** Tears the travel view down and builds it again, keeping the run. */
-  remount(): void;
 }
 
 declare global {
@@ -55,11 +52,9 @@ declare global {
       build(id: string): boolean;
       stock(food?: number, firewood?: number): void;
       skip(days?: number): void;
-      paint(on?: boolean | null): void;
       drawn(): unknown;
       steading(): unknown;
       field(): unknown;
-      painted(points: readonly (readonly [number, number])[]): (number | null)[];
     };
   }
 }
@@ -237,14 +232,6 @@ export function installDebug(hooks: DebugHooks): void {
       hooks.commit(next);
     },
 
-    // Paints the country instead of drawing it — art queue, oil renderer.
-    // Takes effect on the next mount, so this remounts by hand rather than
-    // pretending a live swap works.
-    paint(on: boolean | null = true) {
-      wantPainting(on);
-      hooks.remount();
-    },
-
     // What the map renderer is holding, in terms both backends can answer.
     // scripts/repaint.mjs reads this rather than counting SVG nodes, so the
     // same bar defends the painted map and the drawn one.
@@ -261,14 +248,6 @@ export function installDebug(hooks: DebugHooks): void {
 
     field() {
       return fieldDrawn();
-    },
-
-    // Brightness of the PAINTED country at world points. scripts/repaint.mjs
-    // uses it to check the glaze tiles rather than stacks, which cannot be
-    // asked of the screen: seeing a field big enough to measure means zooming
-    // out, and zooming out is what blurs the seam away.
-    painted(points) {
-      return travelSample(points);
     },
 
     // Winds the calendar on. Reaching the endgame honestly is two years of

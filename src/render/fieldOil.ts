@@ -17,7 +17,7 @@
 import type { Rng } from '../rng';
 import type { Terrain } from '../state/types';
 import { openBase } from './fieldArt';
-import { mix } from './terrainArt';
+import { mix } from './marks';
 import { paintPatch, patchRng, rampOf } from './oil';
 import { GROUND_Y, RANK_GAP } from './line';
 import { svgEl } from './svg';

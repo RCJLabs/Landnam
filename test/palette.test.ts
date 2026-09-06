@@ -4,8 +4,26 @@ import { GOLD, NAMED_IN_CSS, SHARED, alpha } from '../src/render/palette';
 import { COLD, WARM, folkLook } from '../src/render/look';
 import { BLOOD, HAFT, PARCHMENT, SLATE, WATER } from '../src/render/palette';
 
-const RENDERERS = readdirSync('src/render').filter((n) => n.endsWith('.ts'));
-const read = (f: string): string => readFileSync(`src/render/${f}`, 'utf8');
+/**
+ * Every renderer, INCLUDING the ones in subdirectories.
+ *
+ * 12.7 step 0: this was `readdirSync('src/render')` and nothing else, so
+ * `src/render/cards/` — six files, every full-screen card the game shows —
+ * was outside the one-ink rule entirely. It happens to be clean today, which
+ * is the least reassuring way for a hole to be found: nothing had been
+ * stopping it, and the rule would have gone on passing while a card respelled
+ * whatever it liked.
+ */
+function renderers(dir = 'src/render'): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (
+    e.isDirectory()
+      ? renderers(`${dir}/${e.name}`)
+      : e.name.endsWith('.ts') ? [`${dir}/${e.name}`] : []
+  ));
+}
+
+const RENDERERS = renderers();
+const read = (f: string): string => readFileSync(f, 'utf8');
 
 describe('one hand drew this', () => {
   // THE CLAIM OF THE ITEM, and the only thing that keeps it true. A shared
@@ -18,7 +36,7 @@ describe('one hand drew this', () => {
   it('spells a shared colour in exactly one place', () => {
     const offences: string[] = [];
     for (const f of RENDERERS) {
-      if (f === 'palette.ts') continue;
+      if (f.endsWith('/palette.ts')) continue;
       const src = read(f);
       for (const [name, hex] of SHARED) {
         const re = new RegExp(`(['"\`])${hex}\\b`, 'i');
@@ -50,6 +68,35 @@ describe('one hand drew this', () => {
       expect(m, `style.css does not define --${name}`).toBeTruthy();
       expect(m![1]!.toLowerCase()).toBe(hex.toLowerCase());
     }
+  });
+
+  it('never lets the stylesheet respell a colour it has a name for', () => {
+    // THE SECOND HOLE (12.7 step 0). The check above asks that every name in
+    // `NAMED_IN_CSS` is defined with the right value — and nothing asked
+    // whether a shared colour ALSO appears somewhere else in the file, spelled
+    // out. Three did: `#c2703a` twice with no `--rust` at all, `#2b2a22` once
+    // with no `--soot`, and `#b23b2e` once beside the `--blood` that already
+    // held it.
+    //
+    // This is the stylesheet half of the rule the renderers have kept since
+    // the audit, and it was missing for the same reason the first hole was:
+    // the rule was written to look where the fault was expected.
+    const css = readFileSync('src/style.css', 'utf8');
+    const named = new Map(NAMED_IN_CSS.map(([n, hex]) => [hex.toLowerCase(), n]));
+    const offences: string[] = [];
+    for (const [name, hex] of SHARED) {
+      const uses = [...css.matchAll(new RegExp(`${hex}\\b`, 'gi'))].length;
+      if (!uses) continue;
+      const varName = named.get(hex.toLowerCase());
+      const declared = varName && new RegExp(`--${varName}:\\s*${hex}\\b`, 'i').test(css) ? 1 : 0;
+      if (uses > declared) {
+        offences.push(
+          `style.css writes ${hex} ${uses} time(s) but declares it ${declared} —`
+          + ` ${varName ? `use var(--${varName})` : `name ${name} in NAMED_IN_CSS and use the variable`}`,
+        );
+      }
+    }
+    expect(offences).toEqual([]);
   });
 
   it('lets a colour be dimmed without being written out again', () => {
@@ -97,8 +144,8 @@ describe('nobody keeps a second wardrobe', () => {
     expect(wardrobe.length).toBeGreaterThan(6);
     const offences: string[] = [];
     for (const f of RENDERERS) {
-      if (f === 'look.ts' || f === 'palette.ts') continue;
-      const src = readFileSync(`src/render/${f}`, 'utf8');
+      if (f.endsWith('/look.ts') || f.endsWith('/palette.ts')) continue;
+      const src = read(f);
       for (const c of wardrobe) {
         if (new RegExp(`(['"\`])${c}\\b`, 'i').test(src)) {
           offences.push(`${f} keeps its own copy of ${c}`);

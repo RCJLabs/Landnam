@@ -62,6 +62,11 @@
 > that are exact rather than modelled; and the fight owns 42% / 66% of the
 > dead, not the 28% / 43% on file.
 >
+> **12.7 STEP 0 is BUILT** — the one-ink test had two holes and the second was
+> hiding three live offences in `style.css`; 1,197 lines of hex-era art code
+> are deleted, and the item's "176 unreferenced exports" re-takes as a figure
+> that was never a count of dead code. Naming the direction is still Evan's.
+>
 > **12.5 is BUILT** — the top bar wraps instead of scrolling its own warnings
 > off the side, on all four screens; four folds and a fifteenth browser bar.
 >
@@ -7363,6 +7368,72 @@ would replace — which is why it is third and not fifteenth.
   300-landing curve is unchanged, because no sim rule moved but the new verb's
   admission.
 
+- [~] **12.7 — A new visual identity, decided on the real renderers. STEP 0
+  BUILT 2026-09-06; the direction is still Evan's to name.**
+
+  **Both holes in the one-ink test were real, and the second was hiding live
+  offences.** `test/palette.test.ts` read `readdirSync('src/render')` and
+  nothing else, so `src/render/cards/` — six files, every full-screen card the
+  game shows — was outside the rule entirely; it is clean today, which is the
+  least reassuring way for a hole to be found. The stylesheet hole was not
+  clean: the test asserted that every name in `NAMED_IN_CSS` was declared with
+  the right value, and never that a shared colour ALSO appeared elsewhere in
+  the file spelled out. Three did — `#c2703a` twice with no `--rust` at all,
+  `#2b2a22` once with no `--soot`, `#b23b2e` once beside the `--blood` that
+  already held it. Both rules had been written to look where the fault was
+  expected. Each new check was watched failing on exactly the offence it had
+  been blind to, before it was believed.
+
+  **The item's own dead-code figure did not survive being re-taken.** "A scan
+  on 2026-09-05 found 176 unreferenced exports and four modules with no
+  importer" re-takes (2026-09-06, `scratchpad/deadscan.mjs`, a name scan over
+  `src/`, `test/` and `scripts/`) as **215 and 6** — and neither number is a
+  count of deletable code. Most of the 215 are types consumed STRUCTURALLY:
+  every `*Beat` in `sim/beats.ts`, `ColonyAction`, `Fate`, `Mood` — members of
+  an exported union or fields of an exported interface, load-bearing though no
+  other file writes their name. Three of the 6 are artifacts of the scan
+  (`audio/index.ts` and `render/cards/index.ts` are imported as directories,
+  `env.d.ts` is ambient). **Trap 2**: what counted as "referenced" selected
+  its own denominator. Deleting on the 176 would have taken the beat types.
+
+  What survived being checked one at a time is what was deleted:
+  `render/repaint.ts` (the hex map's paint diff, no importer anywhere),
+  `render/camera.ts` (imported only by its own test), `render/oilFlag.ts` (one
+  importer, whose flag `paintingWanted()` had no reader — so
+  `window.landnam.paint()` was inert), `sim/noise.ts` (the fractal noise the
+  hex landmass came out of, no importer), `mapDefs` in `render/svg.ts`, and
+  the chain `TravelView.sample` → `travelSample` → `window.landnam.painted()`,
+  whose only named consumer is `scripts/repaint.mjs`, deleted in 8.5.
+  `debug.remount()` went with the paint hook it existed for.
+
+  `render/terrainArt.ts` was two files in one and lost the larger: 527 lines
+  down to 155 as **`render/marks.ts`**, renamed because a file named for
+  terrain art holding no terrain art is a thing the next reader has to rule
+  out. Gone with it: eight per-terrain `<pattern>` recipes, `terrainPatterns`,
+  `reliefDef`, `deepOceanFill`, `terrainFill`, `patternId`, `RECIPES`, `HEX`,
+  `INRADIUS`, `CENTRES`, `TILE_W`, `TILE_H`. What is left is the sunflower
+  scatter, the tile wrap and the colour mix — what `render/fieldArt.ts` builds
+  the BATTLEFIELD's texture from. `scatter`'s `centres` and `copies`' tile
+  size were defaulted to the map's lattice and are required now: the default
+  was the last thing in the file pointing at a grid that is not drawn.
+
+  `test/terrainArt.test.ts` (172 lines) did not survive intact and should not
+  have — six of its eleven tests asserted things about the hex map (`HEX` is
+  26; `RECIPES.mountains` fits an inradius of 22.5; `terrainFill` names a
+  pattern that is built). The lattice and the scatter stay pinned, and pinned
+  better, in `test/fieldArt.test.ts` against the caller that exists; the two
+  claims nothing else makes — the colour mix and the wrap — move to
+  `test/marks.test.ts`, both watched failing under sabotage first.
+
+  **Kept deliberately: `src/run/parity.ts`** (198 lines, no importer). It is
+  the C++ port's facet contract, written before the port on purpose so the
+  port has something to be wrong against — not art code, and deleting it would
+  destroy work for a project still in flight.
+
+  Net: 24 files, 310 added, **1,197 deleted**. No sim rule moved, no save
+  shape moved, `SAVE_VERSION` unchanged. **What is left of 12.7 is the
+  gallery and the ruling.** The original entry follows.
+
 - [ ] **12.7 — A new visual identity, decided on the real renderers.**
   The only identity decision on record is one sentence — "Ten art directions
   were mocked up and three shortlisted; oil on canvas won" (:11247-11249,
@@ -8081,6 +8152,77 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.7 step 0 BUILT: the one-ink rule now looks where the fault
+  actually was, and 1,197 lines describing a deleted coordinate system are
+  gone.** Step 0 was the fully-specified half of 12.7; naming the visual
+  direction is Evan's call and is untouched.
+
+  **Both holes in the one-ink test were real, and one of them was hiding
+  live offences.** `test/palette.test.ts` read `readdirSync('src/render')` and
+  nothing else, so `src/render/cards/` — six files, every full-screen card the
+  game shows — sat outside the rule entirely; it happens to be clean today,
+  which is the least reassuring way to find a hole. The second hole was not
+  clean. The test checked that every name in `NAMED_IN_CSS` was declared with
+  the right value, and never that a shared colour ALSO appeared elsewhere in
+  the stylesheet spelled out. Three did: `#c2703a` twice with no `--rust` at
+  all, `#2b2a22` once with no `--soot`, and `#b23b2e` once beside the
+  `--blood` that already held it. Both rules were written to look where the
+  fault was expected to be. Each new check was watched failing on exactly the
+  offence it had been blind to before it was believed.
+
+  **The item's own dead-code figure did not survive being re-taken, and the
+  way it failed is the interesting part.** The entry said "a scan on
+  2026-09-05 found 176 unreferenced exports and four modules with no
+  importer". Re-taken on 2026-09-06 (instrument: `scratchpad/deadscan.mjs`, a
+  name scan over `src/`, `test/` and `scripts/`) the figures came out 215 and
+  6 — and neither is a count of deletable code. Of the 215, the large
+  majority are types consumed STRUCTURALLY: every `*Beat` in `sim/beats.ts`,
+  `ColonyAction`, `Fate`, `Mood` — members of an exported union or fields of
+  an exported interface, load-bearing though no other file writes their name.
+  Of the 6 modules, three were artifacts of the scan itself (`audio/index.ts`
+  and `render/cards/index.ts` are imported as directories, `env.d.ts` is
+  ambient). **This is trap 2 in CLAUDE.md**: the ratio's denominator — what
+  counts as "referenced" — selected itself. Deleting on the 176 would have
+  taken the beat types with it.
+
+  What survived being checked one at a time is what was deleted:
+  `render/repaint.ts` (the hex map's paint diff, no importer anywhere),
+  `render/camera.ts` (imported only by its own test), `render/oilFlag.ts`
+  (one importer, whose flag `paintingWanted()` had no reader — so
+  `window.landnam.paint()` was inert), `sim/noise.ts` (the fractal noise the
+  hex landmass was generated from, no importer), `mapDefs` in `render/svg.ts`,
+  and the chain `TravelView.sample` → `travelSample` → `window.landnam
+  .painted()`, whose only named consumer is `scripts/repaint.mjs`, deleted in
+  8.5. `debug.remount()` went with the paint hook it existed for.
+
+  `render/terrainArt.ts` was two files in one and lost the larger: 527 lines
+  down to 155 as `render/marks.ts`, renamed because a file named for terrain
+  art that contains no terrain art is a thing the next reader has to rule out.
+  Gone with it: eight per-terrain `<pattern>` recipes, `terrainPatterns`,
+  `reliefDef`, `deepOceanFill`, `terrainFill`, `patternId`, `RECIPES`, `HEX`,
+  `INRADIUS`, `CENTRES`, `TILE_W`, `TILE_H`. What is left is the sunflower
+  scatter, the tile wrap and the colour mix — the parts `render/fieldArt.ts`
+  builds the BATTLEFIELD's texture from. `scatter`'s `centres` and `copies`'
+  tile size were defaulted to the map's lattice and are required now: the
+  default was the last thing in the file pointing at a grid that is not drawn.
+
+  `test/terrainArt.test.ts` (172 lines) did not survive intact and should not
+  have: six of its eleven tests asserted things about the hex map — `HEX` is
+  26, `RECIPES.mountains` fits an inradius of 22.5, `terrainFill` names a
+  pattern that is built. The lattice and the scatter are still pinned, and
+  pinned better, in `test/fieldArt.test.ts` against the caller that exists.
+  `test/marks.test.ts` keeps the two claims nothing else makes — the colour
+  mix and the wrap — and both were watched failing under sabotage (drop the
+  hex pad; drop the far-edge wrap) before being trusted.
+
+  **Kept deliberately: `src/run/parity.ts`** (198 lines, no importer). It is
+  the C++ port's facet contract, written before the port on purpose so the
+  port has something to be wrong against. It is not art code and deleting it
+  would be destroying work for a project still in flight.
+
+  Net: **24 files, 310 added, 1,197 deleted.** No sim rule moved; no save
+  shape moved; `SAVE_VERSION` unchanged.
 
 - **2026-09-06 — 12.8 BUILT: the fight's one decision finally says what it is
   worth, and the premise came back stronger than the item claimed.** 12.3 had

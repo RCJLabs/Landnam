@@ -408,7 +408,6 @@ export function createProcessionView(): TravelView {
       duplicates: 0,
       work,
     }),
-    sample: (points: readonly (readonly [number, number])[]) => points.map(() => null),
     update,
     // A coast has no camera to move: the band is always in the middle of its
     // own stretch, because the picture IS where they are standing.

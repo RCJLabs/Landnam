@@ -36,8 +36,6 @@ export interface TravelView {
   /** What the slot mounts, in order: the painting, if any, then the picture. */
   nodes: Node[];
   drawn(): DrawnReport;
-  /** Brightness of the painting at world points. Empty unless it is painted. */
-  sample(points: readonly (readonly [number, number])[]): (number | null)[];
   /** Re-draws from current state, preserving whatever the view is showing. */
   update(state: GameState): void;
   /**

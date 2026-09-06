@@ -19,7 +19,7 @@
 
 import { makeRng, type Rng } from '../rng';
 import type { Person } from '../state/types';
-import { mix } from './terrainArt';
+import { mix } from './marks';
 import { BLACK, BLOOD, GOLD, HAFT, INK, IRON, PARCHMENT, SKIN, SLATE, WATER, WHITE } from './palette';
 
 export const darken = (hex: string, amount: number): string => mix(hex, BLACK, amount);

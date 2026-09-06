@@ -16,7 +16,7 @@
 //
 // `Math.random` is banned project-wide and it is banned twice over here.
 
-import { mix } from './terrainArt';
+import { mix } from './marks';
 import { makeRng, type Rng } from '../rng';
 import { BLACK, PARCHMENT, WHITE } from './palette';
 

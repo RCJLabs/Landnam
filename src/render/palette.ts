@@ -99,6 +99,14 @@ export const NAMED_IN_CSS: ReadonlyArray<readonly [string, string]> = [
   ['gold', GOLD],
   ['blood', BLOOD],
   ['moss', MOSS],
+  // 12.7 step 0. `rust` and `soot` are here because the stylesheet was
+  // already USING them, spelled out: `#c2703a` twice and `#2b2a22` once, none
+  // of them as a variable. The one-ink test could not see it — it checked
+  // that every name here matched, and never that a shared colour appeared
+  // anywhere else in the file. A rule that only looks where it expects to
+  // find the fault is the same shape as a check that cannot fail.
+  ['rust', RUST],
+  ['soot', SOOT],
 ];
 
 /**
