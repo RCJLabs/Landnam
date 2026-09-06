@@ -38,6 +38,7 @@ import { BUILDINGS } from '../src/data/buildings';
 import { EVENTS } from '../src/data/events';
 import { DEATHS } from '../src/data/injuries';
 import { rivalBlocks } from '../src/sim/rival';
+import { lessonDue, allLessonIds } from '../src/sim/lessons';
 import { ROUTE_STOPS } from '../src/sim/route';
 import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
 import { apply } from '../src/sim/actions';
@@ -5682,4 +5683,75 @@ describe('PROBE: 12.3 — the re-takes on the floor-7 baseline', () => {
     );
     expect(out.length).toBe(2);
   });
+});
+
+describe('PROBE: 12.9 — does a played saga reach the teaching', () => {
+  // It landed inside 12.3's describe on the first cut, because the insertion
+  // replaced the file's last `});` — which closed a describe, not the file.
+  // A probe filed under another probe's heading is a reading attributed to
+  // the wrong instrument, which is the one thing this file exists not to do.
+  it('measures which lessons a played saga actually reaches', () => {
+    // THE INSTRUMENT AND ITS LIMIT, BOTH STATED.
+    //
+    // `test/lessons.test.ts` already asserts every lesson is REACHABLE, and
+    // it does so by building a state per lesson by hand — a state with
+    // COLONY pushed onto the mode stack, an expedition assigned, a battle
+    // started. That proves a condition can be satisfied. It is a figure
+    // measured in a fixture (CLAUDE.md, trap 1), and it cannot tell you
+    // whether a saga somebody plays ever arrives at one.
+    //
+    // This asks the other question: over N real sagas driven through
+    // `apply`, which lessons come due? The cause is read directly —
+    // `lessonDue` is the same call the renderer makes, evaluated on every
+    // state transition — rather than inferred from what changed alongside.
+    //
+    // THE LIMIT. The bot enters the steading exactly once a saga and leaves
+    // in the same tick (harness.ts, the orders arm), so `inColony` is true
+    // for one transition rather than for the many turns a player spends
+    // there. A colony-gated lesson therefore gets one chance, not a fair
+    // one. The roadmap recorded this as "the harness never dispatches
+    // ENTER_COLONY", which was true when written and is not now: 12.2 made
+    // the orders arm dispatch it. Re-taken 2026-09-06.
+    const SEEDS = 120;
+    const HORIZON = 400;
+    setPolicy({ ...SETTLER, id: 'teaching', followsOrders: true });
+
+    const reachedIn = new Map<string, number>();
+    const firstDay = new Map<string, number[]>();
+    for (const id of allLessonIds()) {
+      reachedIn.set(id, 0);
+      firstDay.set(id, []);
+    }
+
+    for (let i = 0; i < SEEDS; i += 1) {
+      const taught: string[] = [];
+      run(`teach-${i}`, HORIZON, (_before, after) => {
+        const due = lessonDue(after, taught);
+        if (!due) return;
+        taught.push(due.id);
+        reachedIn.set(due.id, reachedIn.get(due.id)! + 1);
+        firstDay.get(due.id)!.push(after.day);
+      });
+    }
+
+    const rows = allLessonIds().map((id) => {
+      const n = reachedIn.get(id)!;
+      const days = firstDay.get(id)!.sort((a, b) => a - b);
+      const median = days.length ? days[Math.floor(days.length / 2)]! : 0;
+      return `    ${id.padEnd(16)} ${String(n).padStart(3)}/${SEEDS}`
+        + ` (${String(Math.round((n / SEEDS) * 100)).padStart(3)}%)`
+        + `${days.length ? `  median day ${median}` : '  — never'}`;
+    });
+    const never = allLessonIds().filter((id) => reachedIn.get(id) === 0);
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.9 lesson reach — ${SEEDS} sagas through apply, settler+orders,`
+      + ` to day ${HORIZON}:\n${rows.join('\n')}\n`
+      + `    never reached in any saga: ${never.length ? never.join(', ') : 'none'}`,
+    );
+    expect(rows.length).toBe(allLessonIds().length);
+    expect(never, 'a lesson no played saga reaches is content nobody sees')
+      .toEqual([]);
+  }, 600_000);
 });

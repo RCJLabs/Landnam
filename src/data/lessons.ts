@@ -52,20 +52,18 @@ export interface LessonDef {
   body: string;
   /** What the player should take away, in one line under the body. */
   point: string;
-  /**
-   * The same lesson, told for a coast.
-   *
-   * Carried as DATA rather than branched on a flag, because nothing in
-   * `data/` imports from `sim/` and that boundary is worth more than the
-   * convenience — the renderer picks (see `render/cards/interrupt.ts`).
-   *
-   * It is a rewording and not a word-swap, deliberately. Substituting
-   * "stretch" for "hex" would ship a falsehood: a hex is one day and a
-   * stretch is a whole leg, two to five, which is why the road button says
-   * "On up the coast · 2d". A lesson that misprices the day teaches the one
-   * thing this game is about wrong.
-   */
-  coast?: { body?: string; point?: string };
+  // THE `coast` FIELD IS GONE (12.9). It carried the same lesson told for a
+  // coast, from the flag era when two builds shipped; `render/cards/
+  // interrupt.ts` showed `coast?.body ?? body`, so a `body` under a coast
+  // rewording was text nobody could see — and "Tap a marked hex to walk" sat
+  // here, invisible, for nine days after the hexes were deleted. Invisible
+  // text does not get corrected, because nobody is looking at it. One build,
+  // one wording, and `test/teaching.test.ts` can see all of it.
+  //
+  // The rewording it carried was never a word-swap and the replacement is not
+  // either: a hex was one day and a stretch is a whole leg, two to five,
+  // which is why the road button says "On up the coast · 2d". Teaching that
+  // misprices the day teaches the one thing this game is about wrong.
   when: LessonWhen[];
 }
 
@@ -85,12 +83,8 @@ export const LESSONS: LessonDef[] = [
   {
     id: 'the-day',
     title: 'The First Day',
-    body: 'Six of you came off the knarr with what you could carry, and the country in front of you is nobody\'s. Every hex you cross is a day of your life, and the days are what run out first.',
-    point: 'Tap a marked hex to walk. Tap Act for everything else you can do with a day.',
-    coast: {
-      body: 'Six of you came off the knarr with what you could carry, and the coast in front of you is nobody\'s. Every stretch of it costs days to walk — some more than others — and the days are what run out first.',
-      point: 'Walk on up the coast, or open the Chart and tap a stretch. Tap Act for everything else you can do with a day.',
-    },
+    body: 'Six of you came off the knarr with what you could carry, and the coast in front of you is nobody\'s. Every stretch of it costs days to walk — some more than others — and the days are what run out first.',
+    point: 'Walk on up the coast, or open the Chart and tap a stretch. Tap Act for everything else you can do with a day.',
     when: [{ c: 'dayMin', day: 2 }],
   },
   {
@@ -108,7 +102,7 @@ export const LESSONS: LessonDef[] = [
   {
     id: 'the-ground',
     title: 'Ground Worth Holding',
-    body: 'This is the kind of place a man could put posts in. The reading under the map is what the land is actually good for — and no two good things ever come together, so the choice is which lack you can live with.',
+    body: 'This is the kind of place a man could put posts in. The reading under the road is what the land is actually good for — and no two good things ever come together, so the choice is which lack you can live with.',
     point: 'Founding is one way and there is no second steading. Without fresh water it is refused outright.',
     when: [{ c: 'canSettle' }],
   },
@@ -129,8 +123,8 @@ export const LESSONS: LessonDef[] = [
   {
     id: 'the-line',
     title: 'The Line',
-    body: 'They came on faster than anyone could form up. A man alone with his shield is a man being flanked; two standing shoulder to shoulder are worth more than three scattered across the field.',
-    point: 'Stand your people next to each other. The wall is worth more than any single blow.',
+    body: 'They came on faster than anyone could form up, and the line did what a line does: whoever could reach nobody shouldered forward until it closed. A man locked into that wall is guarded by it and hits harder for it; a man out at the end of it is a man being flanked.',
+    point: 'The wall forms itself — what you choose is the blow. Every marked foe carries the odds of it landing.',
     when: [{ c: 'inBattle' }],
   },
   {

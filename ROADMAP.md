@@ -62,6 +62,11 @@
 > that are exact rather than modelled; and the fight owns 42% / 66% of the
 > dead, not the 28% / 43% on file.
 >
+> **12.9 is BUILT** — the teaching named a hall to tap, a deleted map and a
+> shoulder-to-shoulder order with no verb behind it; a lint written first and
+> watched red found seven such in visible text and the folded `coast ?? body`
+> fallback was hiding five more. Every lesson is reached by a played saga.
+>
 > **12.7 STEP 0 is BUILT and THE GALLERY IS PUBLISHED** — the one-ink test had
 > two holes and the second was hiding three live offences in `style.css`;
 > 1,197 lines of hex-era art code are deleted; and ten treatments of one REAL
@@ -8023,6 +8028,94 @@ would replace — which is why it is third and not fifteenth.
 
 ### Content and the retelling
 
+- [x] **12.9 — The teaching describes this game again. BUILT 2026-09-06.**
+
+  **THE PREMISE, RE-TAKEN. Three of the item's four citations hold; the
+  fourth does not.** "Tap the hall" is stale — the steading is entered from
+  the Act list, by a deed labelled *The steading* (`render/deeds.ts:249`).
+  Guide `the-coast` and `the-places` do say "the map", and neither carried a
+  `coast` rewording, so both were text a player actually read. "Shoulder to
+  shoulder" is stale twice over, and worse than the entry says: the `Action`
+  union has **no positioning verb at all** — Strike, Throw, Shield, War-cry,
+  Spear, End turn, Leave, and nothing that stands anybody anywhere.
+
+  **"Shove and Dash" does not survive.** Neither word appears in `guide.ts`
+  or `lessons.ts`. They exist only in `sim/` comments explaining their own
+  removal — `footwork.ts`, `ranks.ts`, `battleAi.ts` — and were read out of
+  those into a claim about the teaching.
+
+  **The item also under-counted: the lint found SEVEN offences in visible
+  text**, including `lessons.ts` `the-ground` ("the reading under the map")
+  and the whole `the-line` lesson, neither of which the entry names.
+
+  **AND THE `coast ?? body` FALLBACK WAS HIDING FIVE MORE.** Two guide
+  sections and one lesson carried coast rewordings, so their stale `body` —
+  "walking a hex", "any hex you stand on", "Tap a marked hex to walk" — was
+  text NOBODY COULD SEE, and therefore text nobody corrected, for the nine
+  days since 8.5. That is the argument for folding the split rather than
+  patching the visible half: `body`/`coast` was built for the flag era when
+  two builds shipped, there is one now, and folding it is what lets a lint be
+  complete instead of a check on half the words.
+
+  **Step 1, the lint, was written first and watched red on all seven**
+  (`test/teaching.test.ts`). Every ban is paired with the fact that justifies
+  it, asserted rather than commented — `src/hex/` is gone, the action union
+  carries no `MOVE|STAND|SHOVE|DASH|RANK|STEP`, `deeds.ts` really does label
+  the deed *The steading* — so a re-added feature fails the pairing and the
+  next reader is told to revisit the ban rather than delete a rule they no
+  longer understand. The fourth assertion (every control the teaching names
+  is a real harvested label) was already green, so it was sabotaged to
+  confirm it can fail.
+
+  **Step 2, the rewrite**, with every new claim checked against the code
+  rather than written from memory: the odds under a marked foe are mounted
+  (`battle.ts:469`, from 12.8), `stepUp` really does shoulder a man forward
+  when he can reach nobody, the leader's pennant really is gold, and
+  neighbours really do go on the Chart. The rewritten fight section came out
+  at 666 characters against the 600 bar `lessons.test.ts` has held since 5.2;
+  the prose was tightened to 571 rather than the bar loosened.
+
+  **Step 3, the reach probe** — 120 sagas through `apply`, settler with
+  orders, to day 400, reproduced exactly on two runs (2026-09-06):
+
+  | lesson | reached | median day | | lesson | reached | median day |
+  |---|---|---|---|---|---|---|
+  | the-saga-ahead | 120/120 | 2 | | the-road | 86/120 (72%) | 84 |
+  | the-day | 120/120 | 3 | | the-ground | 51/120 (43%) | 10 |
+  | the-store | 118/120 (98%) | 7 | | the-place | 51/120 (43%) | 77 |
+  | the-line | 111/120 (93%) | 30 | | the-thing | 50/120 (42%) | 170 |
+  | the-work | 104/120 (87%) | 7 | | the-quarrel | 43/120 (36%) | 260 |
+  | the-mark | 103/120 (86%) | 25 | | the-hull | 15/120 (13%) | 201 |
+  | the-hands | 92/120 (77%) | 46 | | the-word | 87/120 (73%) | 127 |
+
+  **Never reached in any saga: none.** So the fixture-built reachability test
+  in `lessons.test.ts` was not hiding dead content — it was only failing to
+  prove the interesting thing. The rare ones are rare for reasons that read
+  as true: a holed hull at 13%, the Thing at 42%, a quarrel at 36%.
+
+  **THE VERIFIER'S OWN CORRECTION IS NOW PARTLY STALE**, and the probe says
+  so rather than inheriting it. "A lesson-reach probe driven by the harness
+  cannot see colony lessons, because the harness never dispatches
+  ENTER_COLONY" was true when written; **12.2's orders arm dispatches it**.
+  What survives is the LIMIT, which the probe states in its own comment: the
+  bot enters the steading once a saga and leaves in the same tick, so a
+  colony-gated lesson gets one chance rather than a fair one — which makes
+  `the-work` at 87% a floor, not a rate.
+
+  **Two faults of mine in the probe**, both found by reading its output
+  rather than by a check: it landed inside 12.3's `describe` (a reading filed
+  under another instrument's heading), and it timed out at vitest's 60s
+  default while its SYNCHRONOUS body ran to completion and printed a true
+  reading — a red probe whose numbers are right is worse than a red one,
+  because the numbers get used and the red gets explained away.
+
+  **NOT ACTED ON, RECORDED:** `the-ground` at 43% is the one figure worth
+  another look. It fires on `canSettle`, and this bot settles to a floor by
+  policy where a player wanders — so 43% may be a fact about the bot rather
+  than about the teaching. It is not asserted either way here.
+
+  The original entry follows.
+
 - [ ] **12.9 — The teaching describes a game that no longer exists.** The
   first things a new player reads name a hall to tap (`guide.ts:48`), a map
   (`:58`, `:63`), standing shoulder to shoulder, and Shove and Dash — verbs
@@ -8212,6 +8305,31 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.9 BUILT: the teaching stops describing a game that no
+  longer exists, and the fallback that hid half of it is gone.** Three of the
+  item's four citations held; "Shove and Dash" did not — neither word is in
+  `guide.ts` or `lessons.ts`, they survive only in `sim/` comments explaining
+  their own removal. The lint found **seven** offences in visible text, not
+  four, and folding `body`/`coast` exposed **five more** that no reader could
+  ever have seen: "walking a hex", "any hex you stand on", "Tap a marked hex
+  to walk", sitting under coast rewordings for the nine days since 8.5.
+  Invisible text does not get corrected, because nobody is looking at it.
+
+  `test/teaching.test.ts` was written first and watched red on all seven, each
+  ban paired with the fact that justifies it — `src/hex/` gone, no positioning
+  verb in the action union, `deeds.ts` labelling the deed *The steading* — so a
+  re-added feature fails the pairing rather than silently voiding a rule. The
+  one assertion already green was sabotaged to prove it could fail.
+
+  The reach probe (120 sagas through `apply`, settler+orders, day 400, twice)
+  says **every lesson is reached by a played saga** — the fixture-built
+  reachability test was not hiding dead content, only failing to prove the
+  interesting thing. Two faults of mine in the probe: it landed inside 12.3's
+  describe, and it printed a true reading while marked timed out.
+
+  The verifier's correction that the harness never dispatches `ENTER_COLONY`
+  is now stale — 12.2 made it — and the probe records the real limit instead.
 
 - **2026-09-06 — 12.7: the gallery is published, and it draws the game rather
   than a picture of it.** Ten treatments of ONE moment —

@@ -85,11 +85,7 @@ describe('the lessons are content, not code', () => {
     // separation is the whole difference between "woven in" and "a tutorial".
     const CONTROLS = /\b(tap|button|screen|menu|press|click)\b/i;
     for (const lesson of LESSONS) {
-      expect(lesson.body).not.toMatch(CONTROLS);
-      // The coast wording is held to the same rule — it is the one players
-      // read once the flag flips, so a control name smuggled into it would
-      // break the same separation the hex body is guarded for.
-      if (lesson.coast?.body) expect(lesson.coast.body, lesson.id).not.toMatch(CONTROLS);
+      expect(lesson.body, lesson.id).not.toMatch(CONTROLS);
     }
     expect(LESSONS.some((l) => CONTROLS.test(l.point))).toBe(true);
   });
