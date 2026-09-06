@@ -61,6 +61,9 @@ export function newGame(seed: string, hardship: HardshipId = BALANCED_HARDSHIP):
         day: 1,
         text: `${ship.name} grounded at ${landingName} on a grey morning, and six of us stepped down into water to the knee. Behind us, open sea. Ahead, a country with no name we knew.`,
         tone: 'saga',
+        // The first line of the book, and the book must not lose it. See
+        // SagaEntry.keep — 39% of long sagas dropped this entry entirely.
+        keep: true,
       },
       {
         day: 1,

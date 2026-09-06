@@ -541,6 +541,8 @@ export function foundSettlement(state: GameState): boolean {
     `${eldest ? `${eldest.name} set the first post` : 'We set the first post'} and we called the place ${name}. ` +
       `${verdictFor(report.total).line} Whatever came after, we would meet it here.`,
     'saga',
+    // Never evicted: the land-taking is the moment the run stops being a walk.
+    true,
   );
   state.party.morale = Math.min(100, state.party.morale + 8);
   return true;

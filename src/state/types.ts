@@ -324,6 +324,21 @@ export interface SagaEntry {
   day: number;
   text: string;
   tone: SagaTone;
+  /**
+   * A moment the book must never lose (12.10).
+   *
+   * The chronicle keeps 300 entries and drops the oldest, which is right for
+   * a day's weather and wrong for the day the posts went in. Measured over
+   * 120 sagas to day 700: 39% hit the cap, and EVERY one of those had lost
+   * both its landing and its founding — not trimmed, gone. A book that opens
+   * on day 332 is not the record of that run.
+   *
+   * Marked at the call site rather than inferred from tone, because `saga`
+   * tone also marks every season opening and there are dozens of those. Only
+   * the once-a-run moments carry it: the landing, the founding, the Thing,
+   * and taking land again.
+   */
+  keep?: true;
 }
 
 // --- Events ---

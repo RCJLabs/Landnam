@@ -362,9 +362,23 @@ export function composeSaga(state: GameState): Saga {
   // --- The end ---
   const closingBank = state.end ? CLOSINGS[state.end.cause] : undefined;
   const closing = closingBank ? rng.derive('closing').pick(closingBank) : FALLBACK_CLOSING;
+  // WHAT THE RUN ACTUALLY SAID, which nobody who could see it ever read.
+  //
+  // `state.end.lines` holds the specific ending — the day the store ran out,
+  // the winter verdict that says the band WAS told in the autumn, why a fed
+  // band broke anyway — and until 12.10 it had exactly one reader in the
+  // codebase: the screen-reader live region (`announce.ts:89`). The rendered
+  // ending showed only the generic closing picked here, and a comment in
+  // `render/cards/closing.ts` claimed the lines were "inside it, said in
+  // prose". They were not.
+  //
+  // They go in the closing chapter rather than into the renderer, so the
+  // ending, the shareable text and the announcement all read the same words —
+  // and so the claim is testable on `composeSaga` without a DOM.
+  const said = state.end?.lines ?? [];
   chapters.push({
     heading: state.end?.title ?? 'And After',
-    text: closing,
+    text: [closing, ...said].join(' '),
   });
 
   return { title, chapters, seed: state.seed, days: state.day };

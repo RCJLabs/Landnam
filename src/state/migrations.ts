@@ -720,6 +720,20 @@ export const MIGRATIONS: Record<number, Migration> = {
    * It bumps the version and touches nothing, which is what a save shape
    * gaining an optional field with a meaningful absence looks like.
    */
+  /**
+   * v64 (12.10): `SagaEntry` gained the optional `keep` — the landmarks the
+   * 300-entry cap must step over.
+   *
+   * An old save's entries carry no flag, so nothing in its book is protected
+   * and the next eviction behaves exactly as it did before. That is the
+   * right answer rather than a shortcoming: the landing this save has
+   * already lost cannot be recovered by a migration, and guessing which of
+   * its surviving lines were landmarks — by matching text, or by tone —
+   * would be inventing a record of somebody's run. New moments from here on
+   * are marked as they happen.
+   */
+  63: (save) => ({ ...save, version: 64 }),
+
   62: (save) => ({ ...save, version: 63 }),
 
   61: (save) => {

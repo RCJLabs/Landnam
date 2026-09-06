@@ -124,7 +124,7 @@ export function layDownRule(state: GameState): boolean {
         : `${wintersStood(state.day)} winters, and a hall full of people who came when they were called.`,
     ],
   };
-  chronicle(state, `${state.jarl.name} laid the rule down, and the saga was closed.`, 'saga');
+  chronicle(state, `${state.jarl.name} laid the rule down, and the saga was closed.`, 'saga', true);
   return true;
 }
 
@@ -183,7 +183,7 @@ export function callThing(state: GameState): ThingResult | null {
   const rng = stream(state.seed, 'events').derive(`thing:${state.day}`);
   const proclaimed = rng.roll(2, 6) + thingStanding(state) >= THING_DC;
 
-  chronicle(state, THING_OPENING, 'saga');
+  chronicle(state, THING_OPENING, 'saga', true);
 
   if (proclaimed) {
     const text = rng.derive('carried').pick(PROCLAIMED).replace(/\{name\}/g, name);
