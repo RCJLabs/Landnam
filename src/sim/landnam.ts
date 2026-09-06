@@ -157,6 +157,9 @@ export function sailOn(state: GameState): boolean {
       + `${world.landingName} was the name we gave the beach we came up on. `
       + `This is the ${ordinal(nth)} time we have taken land.`,
     'saga',
+    // A second landnám is a landmark too — the book of a band that moved
+    // coasts is unreadable without the day they left the first one.
+    true,
   );
   return true;
 }

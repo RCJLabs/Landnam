@@ -221,15 +221,34 @@ describe('the verb', () => {
  * not the game moving is a check that cannot pass.
  */
 describe('the game a band without orders plays', () => {
+  /**
+   * RE-PINNED 2026-09-06 BY 12.10, and the re-pin was earned rather than
+   * shrugged at.
+   *
+   * 12.10 changed the CHRONICLE — the dedupe window, and a `keep` flag on the
+   * entries the 300-cap must not evict — and `state.saga` is part of the
+   * state this hashes, so all eight moved. That is not the same as the game
+   * moving, and the difference is the whole worth of this bar.
+   *
+   * SO IT WAS CHECKED RATHER THAN ASSUMED: the same eight seeds were hashed
+   * with `saga` excluded as well as `version`, on this tree and again with
+   * `src/` reverted to the commit before 12.10, and all eight matched exactly
+   * — 730f8adf, 731c2376, 7f9ca4de, 63d06cb4, e2f039ea, eb67123c, f4b661ad,
+   * 52dcf3d3. Every byte of divergence is in the book. No sim rule moved and
+   * no RNG stream diverged into the world.
+   *
+   * A pinned hash re-pinned without that check is a bar that has been quietly
+   * lowered to whatever the code now does.
+   */
   const PINNED: Record<number, string> = {
-    0: 'a2d4430e',
-    1: '85ee2878',
-    2: 'dca4b610',
-    3: '2021a352',
-    4: 'd306f466',
-    5: '2a8df8ce',
-    6: '4103b5b8',
-    7: '9906c483',
+    0: 'c9332d68',
+    1: 'f978e270',
+    2: '8a098a9d',
+    3: '3d41e638',
+    4: 'fd2cedc9',
+    5: '6f41c1d1',
+    6: '5a9b0577',
+    7: '0ad334c7',
   };
 
   const fnv = (text: string): string => {

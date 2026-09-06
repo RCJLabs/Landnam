@@ -226,6 +226,9 @@
 //             the hex coordinate 8.5 set out to retire. Its only reader was a
 //             test asserting the values were distinct, on an array whose
 //             indices are distinct by construction.
+// v64 (12.10): SagaEntry gained the optional `keep` — the once-a-run moments
+// the chronicle's 300-entry cap steps over instead of dropping. Absent on
+// every old entry, which leaves an old book behaving exactly as before.
 // v63 (12.2): Settlement gained the optional `orders` — the household's
 //             standing rule for who works what. Absent means nobody has given
 //             one, which is every saga played before this and is also the
@@ -234,7 +237,7 @@
 //             crewed by hand for two hundred days has been played a
 //             particular way, and quietly handing it a standing order would
 //             change how its next winter goes without anybody deciding to.
-export const SAVE_VERSION = 63;
+export const SAVE_VERSION = 64;
 
 /** localStorage key. Never reuse across incompatible shapes. */
 export const SAVE_KEY = 'landnam_save';

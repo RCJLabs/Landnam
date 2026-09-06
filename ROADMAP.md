@@ -62,6 +62,11 @@
 > that are exact rather than modelled; and the fight owns 42% / 66% of the
 > dead, not the 28% / 43% on file.
 >
+> **12.10 is BUILT** — the run's own closing lines had one reader in the whole
+> codebase (the screen-reader region), 39% of long sagas had lost their
+> landing AND their founding to a blind FIFO, and a third of one settled book
+> was the same sentence about resting at Ormnes. All four zero now.
+>
 > **12.9 is BUILT** — the teaching named a hall to tap, a deleted map and a
 > shoulder-to-shoulder order with no verb behind it; a lint written first and
 > watched red found seven such in visible text and the folded `coast ?? body`
@@ -8126,6 +8131,88 @@ would replace — which is why it is third and not fifteenth.
   never dispatches ENTER_COLONY. Three steps: lint red first, then the
   rewrite, then a reach probe at N=120 driven through `apply`.
 
+- [x] **12.10 — The last screen and the book say what the run said. BUILT
+  2026-09-06.**
+
+  **All four claims held**, which is unusual for this phase, and the
+  measurement is worse than the entry's. Verified on the code: `end.lines` is
+  read at `announce.ts:89` and nowhere else; `composeSaga` never touched it
+  and picked a generic closing from a bank by seed; `MAX_ENTRIES` is 300 with
+  an oldest-first splice; `closing.ts` rendered `slice(-160)`; and the dedupe
+  compared `saga[length - 1]` only.
+
+  **The instrument, 120 sagas to day 700, settler (2026-09-06):**
+
+  | | before | after |
+  |---|---|---|
+  | hit the 300 cap | 47/120 (39%) | 0/120 |
+  | of those, book opens on | day 332 median, 556 worst | — |
+  | lost the landing to the cap | 47 of 47 | 0 |
+  | lost the founding to the cap | 47 of 47 | 0 |
+  | founding lost to the ending's window | 63/105 | **0/105** |
+  | proclamation lost to the window | 34/39 | **0/39** |
+  | stutters (a line repeated within 4) | 7,936 across 119/120 | **0** |
+
+  The entry's "8 of 30 runs" understates it: **every** capped run had lost
+  both its landing and its founding, not trimmed but gone from `state.saga`.
+
+  **The stutter is the one worth quoting.** One settled saga wrote *"We rested
+  at Ormnes, and the work went on around us"* on days 513, 515, 517, 520, 521,
+  522, 525, 527, 528, 529, 531, 532, 533, 534, 536, 539... — a third of that
+  book was one sentence, because the guard caught a repeat only when two
+  identical days landed back to back and a weather line fell between each
+  pair.
+
+  **The fix, four parts, all in `sim/` so they are testable without a DOM**
+  (the verifier's correction: there is no jsdom): `chronicle` dedupes over
+  `ECHO` (4), the window `fresh()` already used, so both halves of the repeat
+  rule agree what "lately" means; `SagaEntry.keep` marks the four once-a-run
+  moments and eviction steps over them; `bookEntries` gives the ending every
+  landmark plus the last 160; and `composeSaga` puts `end.lines` in the
+  closing chapter, so the ending, the shareable text and the screen-reader
+  announcement finally say the same words. `SAVE_VERSION` 64, pass-through
+  migration — **no attempt is made to reconstruct an old save's landmarks by
+  matching text or tone, because that would be inventing a record of somebody
+  else's run.** 10.1's survived lines are untouched: nothing here rewrites a
+  line, only where it is shown.
+
+  **THREE FAULTS OF MY OWN IN THE INSTRUMENT, and the third is the one to
+  learn from.** (1) The proclamation row matched `/THING|assembly|jarl/i`,
+  which hits any mention of a jarl, and reported `hadIt` 120/120 including
+  runs that never called a Thing — the denominator selected itself, and
+  correcting it INVERTED the finding from 0/120 to 8/9. (2) The repeat row
+  counted any text seen anywhere earlier in a 700-day saga: 15,233 across
+  120/120, which is a chronicle doing its job rather than a defect — "We ate
+  thin" on day 50 and again on day 400 is the log working. (3) **The window
+  rows were never updated when the fix changed what the book is built from,
+  so the first post-fix run measured `slice(-160)` — code that no longer
+  ships — and reported the founding still lost in 63 of 105 runs.** An
+  instrument that is not re-pointed at the thing you changed reports on the
+  thing you deleted.
+
+  **And one row that reads like success and is not.** "Hit the cap: 0/120" is
+  not evidence that `keep` works: the stutter fix alone took ~25 entries off
+  every saga (222 → 197), so nothing reaches 300 at this horizon and the
+  eviction rule is never exercised. The probe now says so in its own output;
+  what actually proves `keep` is `test/book.test.ts`, which floods 900 days.
+  Each of the four fixes was watched failing against the code it replaced.
+
+  **The `look` bar caught the ending changing and it was right to** — 2.0 at
+  `ending@390x844`, all of it in the bottom rows where the closing chapter
+  is. Looked at, agreed, blessed: under *THE STORES GAVE OUT* the first
+  sentence is the generic closing from the bank and everything after it is
+  the run's own words, which until now only a screen-reader user was given.
+
+  **NOTED, NOT FIXED — for whoever takes the ending TEXT next.** With the
+  lines finally visible, one reads oddly: *"By day 11 there had been nothing
+  in the store for a long time."* Day 11 and "a long time" do not sit
+  together. The wording is `upkeep.ts`'s own and predates this item; 12.10's
+  scope is WHERE those lines are shown, not what they say, and the verifier's
+  note asks that the survived lines be left alone. It only became visible
+  because the lines now reach a sighted player at all.
+
+  The original entry follows.
+
 - [ ] **12.10 — The last screen and the book say what the run said.**
   `RunEnd.lines` — the winter verdict, the jarl lines, the survived lines —
   has exactly one reader, the screen-reader live region (`announce.ts:89`);
@@ -8305,6 +8392,28 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.10 BUILT: the ending says what the run said, and the book
+  keeps its own spine.** All four claims held and the measurement was worse
+  than the entry's: 47 of 120 sagas hit the 300-entry cap by day 700 and
+  **every one had lost both its landing and its founding**; the ending's
+  160-entry window dropped the founding from 63 of 105 runs and the
+  proclamation from 34 of 39; and 7,936 stutters ran across 119 of 120
+  sagas — one book wrote "We rested at Ormnes" on days 513, 515, 517, 520,
+  521, 522, 525... Every one of those is zero now.
+
+  `state.end.lines` — the winter verdict, the day the store ran out, why a fed
+  band broke anyway — had exactly ONE reader: the screen-reader live region. A
+  sighted player got a generic closing picked from a bank by seed, under a
+  comment claiming the lines were "inside it, said in prose". They are now.
+
+  **Three faults of my own in the probe**, and the third is the lesson: its
+  window rows were never re-pointed when the fix changed what the book is
+  built from, so the first post-fix run measured `slice(-160)` — deleted code
+  — and reported the founding still lost in 63 of 105 runs. An instrument not
+  aimed at the thing you changed reports on the thing you removed. Also: a
+  regex that matched any mention of a jarl (denominator selecting itself,
+  which inverted the finding once fixed), and a repeat count with no locality.
 
 - **2026-09-06 — 12.9 BUILT: the teaching stops describing a game that no
   longer exists, and the fallback that hid half of it is gone.** Three of the

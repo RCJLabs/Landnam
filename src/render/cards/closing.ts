@@ -11,6 +11,7 @@ import { composeSaga, sagaText } from '../../sim/sagagen';
 import type { Fallen } from '../../memorial';
 import type { GameState } from '../../state/types';
 import { button, el } from '../svg';
+import { bookEntries } from '../../sim/saga';
 import { chronicle, dayOfSeason, isTold, told } from '../chronicle';
 import { beats, challengeOf, describeMark, markOf } from '../../sim/challenge';
 import { copyText } from '../clipboard';
@@ -65,7 +66,10 @@ export function renderSagaBook(
   // Arranged by `render/chronicle.ts` — grouped into seasons, adjacent
   // repeats folded, nothing hidden and nothing moved. See that file for why
   // a view must not quietly edit somebody's record of their own run.
-  const blocks = chronicle(state.saga.slice(-160));
+  // Every landmark, plus the last 160. `slice(-160)` alone dropped the
+  // founding from 42 of the 58 runs that had one and the proclamation from 8
+  // of 9 — see sim/saga.ts `bookEntries`.
+  const blocks = chronicle(bookEntries(state, 160));
   for (const block of blocks) {
     list.append(el('h3', { class: 'chronicle-season' }, [block.heading]));
     let lit = false;
@@ -154,9 +158,19 @@ export function renderRunEnd(state: GameState, onRestart: () => void): HTMLEleme
   const explored = Math.round(exploredFraction(state.world) * 100);
   const saga = composeSaga(state);
 
-  // The saga IS the ending screen now. What used to be here — the closing
-  // lines, the roll of the dead — is inside it, said in prose, so the last
-  // thing the player reads is a story about their run rather than a receipt.
+  // The saga IS the ending screen. What used to be here — the closing lines,
+  // the roll of the dead — is inside it, said in prose, so the last thing the
+  // player reads is a story about their run rather than a receipt.
+  //
+  // THAT WAS NOT TRUE WHEN IT WAS WRITTEN, and 12.10 made it true. The
+  // closing lines were NOT inside the saga: `composeSaga` picked a generic
+  // closing from a bank by seed and never touched `state.end.lines`, which
+  // had one reader in the whole codebase — the screen-reader live region in
+  // `announce.ts`. A sighted player was told a band starved; a player using a
+  // screen reader was told which day the store ran out and that the autumn
+  // mark had said so. The lines are in the closing chapter now (see
+  // sim/sagagen.ts), which is also what makes the claim testable without a
+  // DOM — `test/book.test.ts` asserts it on the composed text.
   const body = el('div', { class: 'end-summary' });
   // ONE illuminated capital for the whole ending, on the first chapter that
   // opens with a letter — the same rule the chronicle keeps per season, and
