@@ -14,6 +14,8 @@ import { standsFor } from './sim/colony';
 import { cloneState } from './state/clone';
 import { currentMode } from './modes';
 import { travelDrawn } from './render/travelScreen';
+import { figure } from './render/figures';
+import { svgEl } from './render/svg';
 import { steadingDrawn } from './render/colonyScreen';
 import { fieldDrawn } from './render/battleScreen';
 import type { GameState } from './state/types';
@@ -55,6 +57,8 @@ declare global {
       drawn(): unknown;
       steading(): unknown;
       field(): unknown;
+      /** Two men at a given size, one whole and one at a third. 12.15. */
+      twoMen(px: number): void;
     };
   }
 }
@@ -248,6 +252,39 @@ export function installDebug(hooks: DebugHooks): void {
 
     field() {
       return fieldDrawn();
+    },
+
+    // TWO MEN AT A GIVEN SIZE, one whole and one at a third.
+    //
+    // 12.15 took the health bar off the fighters, and that is only honest if
+    // the figure answers the same question — at 44px, the tap minimum this
+    // game holds itself to, where a shield crack is two pixels. A claim about
+    // what a person can SEE wants a picture compared, not an attribute read,
+    // so `scripts/field.mjs` calls this and diffs the two halves.
+    //
+    // It draws through `figure()` itself. A fixture that redrew a man its own
+    // way would be measuring the fixture (CLAUDE.md, trap 1).
+    twoMen(px: number) {
+      document.getElementById('twomen')?.remove();
+      const host = document.createElement('div');
+      host.id = 'twomen';
+      host.style.cssText = `position:fixed;left:0;top:0;z-index:9999;background:#4a5340;`
+        + `width:${px * 2}px;height:${px * 2}px;display:flex`;
+      const state = hooks.get();
+      const person = state?.party.people[0];
+      if (!person) return;
+      for (const health of [1, 0.33]) {
+        const svg = svgEl('svg', {
+          viewBox: `0 0 ${px} ${px * 2}`,
+          width: `${px}`, height: `${px * 2}`,
+        });
+        svg.append(figure(px / 2, px * 0.62, px * 0.42, person, {
+          friendly: true, health, active: false, defending: false,
+          broken: false, pennant: null, facing: 1, throws: 0,
+        }));
+        host.append(svg);
+      }
+      document.body.append(host);
     },
 
     // Winds the calendar on. Reaching the endgame honestly is two years of

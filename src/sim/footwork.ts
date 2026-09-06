@@ -44,7 +44,6 @@ export function doDefend(state: GameState): boolean {
   const person = fighterPerson(state, active.personId);
   active.hasActed = true;
   active.defending = true;
-  active.movesLeft = 0;
   beat(battle, { kind: 'defended', who: active.personId });
   battle.log.push(`${person?.name ?? 'Someone'} set their shield.`);
   return true;

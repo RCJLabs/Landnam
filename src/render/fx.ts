@@ -320,14 +320,17 @@ export function showBeat(
         if (b.result === 'hit') {
           spawn(spatter(at.x, at.y, dx, dy, b.damage, `${b.n}:${b.target}`), 620);
         }
+        // NO FLOATING NUMBER (12.15). A `−N` rose off every blow, which is
+        // the one thing on this field that could not be mistaken for part of
+        // the world: a figure in a shield wall does not have a digit over his
+        // head. What the blow WAS is already said three ways — the flash, the
+        // spatter, and the kick this line gives him — and how much he has
+        // left is on his tunic now rather than in arithmetic.
+        //
+        // `blowKick(b.damage)` still reads the damage, so a heavy blow still
+        // moves a man further than a glance. The number is gone, not the
+        // weight of it.
         shove(root, b.target, dx, dy, blowKick(b.damage));
-        const text = svgEl('text', {
-          x: t.x, y: t.y - HEX * 0.55,
-          class: `float-dmg${soft ? ' glance' : ''}`,
-          'text-anchor': 'middle',
-        });
-        text.textContent = `−${b.damage}`;
-        spawn(text, 900);
       }
     }, arrival);
     return;

@@ -55,7 +55,12 @@ export function renderBattleBar(state: GameState): HTMLElement {
         person.health <= person.maxHealth * 0.3 || active.nerve < 30 || active.broken,
       ),
       stat('Wall', links > 0 ? `+${wallBonus(battle, active)}` : '—', links === 0),
-      stat('Steps', `${active.movesLeft}`, active.movesLeft === 0),
+      // STEPS IS GONE (12.15), and it had been a readout of nothing since
+      // 9.1b. It printed `movesLeft`, a counter the sim wrote in four places
+      // and NO RULE EVER READ — there is no positioning verb in the action
+      // union at all (see test/teaching.test.ts, which pins that). A number
+      // on the bar that changes and decides nothing teaches a player to
+      // watch it, which is worse than not showing it.
     );
   }
   return bar;

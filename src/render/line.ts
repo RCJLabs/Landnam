@@ -174,8 +174,15 @@ export const FIGURE_R = RANK_GAP * 0.46;
  *
  * It was `FIGURE_R * 2.08` because the widest thing on a HEAD-ON fighter was
  * his shield, drawn at `rx: radius * 1.04`. Fighters are drawn in profile
- * now and no part of one reaches that far: the widest is the health bar
- * under him, at exactly twice the radius.
+ * now and no DRAWN part of one reaches that far — the widest was the health
+ * bar under him, at exactly twice the radius.
+ *
+ * That bar went in 12.15, and taking it off took every man under the touch
+ * minimum on the spot: 55px to 38px at 390 wide, 44px to 30px at 320. So the
+ * width this constant names is now a transparent `fighter-tap` rect in
+ * `figures.ts`, drawn at `radius * 2` for that reason and no other. A HUD
+ * element was holding up the thumb rule; a hit area holds it up now, and the
+ * two are the same width on purpose.
  *
  * Four percent, and it cost the touch rule. `NEEDED_SCALE` is
  * `TAP_MIN / FIGURE_W`, so a `FIGURE_W` that overstates the man makes the

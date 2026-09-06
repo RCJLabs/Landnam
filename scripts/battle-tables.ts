@@ -54,7 +54,6 @@ import {
   WALL_ROW,
 } from '../src/sim/battlefield';
 import {
-  BASE_MOVES,
   MAX_FOES,
   MAX_RAIDERS,
   MAX_RAIDERS_FAMED,
@@ -335,7 +334,6 @@ ${lasting}
 	constexpr int32_t MiddleRowFirst = ${num(MIDDLE_ROWS[0]!)};
 	constexpr int32_t MiddleRowCount = ${num(MIDDLE_ROWS.length)};
 
-	constexpr int32_t BaseMoves = ${num(BASE_MOVES)};
 	constexpr int32_t MaxFoes = ${num(MAX_FOES)};
 	constexpr int32_t MaxRaiders = ${num(MAX_RAIDERS)};
 	constexpr int32_t MaxRaidersFamed = ${num(MAX_RAIDERS_FAMED)};

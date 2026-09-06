@@ -63,7 +63,6 @@ function duel(base: GameState, side: 'warband' | 'foe'): GameState {
     at,
     rank: 1,
     initiative: 0,
-    movesLeft: 3,
     hasActed: false,
     throwsLeft: 1,
     defending: false,
@@ -359,7 +358,7 @@ describe('THE BAR — knowing a thing changes the run', () => {
         { personId: 'c', side: 'warband', at: { q: 9, r: 9 }, rank: 9 },
       ].map((c) => ({
         ...c,
-        initiative: 0, movesLeft: 3, hasActed: false, throwsLeft: 1, defending: false,
+        initiative: 0, hasActed: false, throwsLeft: 1, defending: false,
         kills: 0, nerve: 60, broken: false, fled: false, down: false,
       })),
     } as unknown as Battle;

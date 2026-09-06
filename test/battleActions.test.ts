@@ -43,7 +43,6 @@ function duel(seed = 'duel'): {
   // them; a line has no ground and adjacency is not a place any more.
   us.rank = 1;
   them.rank = 1;
-  us.movesLeft = 3;
   us.hasActed = false;
   us.defending = false;
   them.defending = false;
@@ -113,7 +112,10 @@ describe('strike and defend', () => {
     const us = activeCombatant(after.battle!)!;
     expect(us.defending).toBe(true);
     expect(us.hasActed).toBe(true);
-    expect(us.movesLeft).toBe(0);
+    // `movesLeft` was asserted here and is gone (12.15): the sim wrote it in
+    // four places and no rule ever read it, so it measured nothing about
+    // whether the shield went up. `hasActed` and `defending` are the state
+    // that actually gates the turn, and they are asserted beside this.
     // And nothing else can be done with the turn.
     expect(apply(after, { type: 'B_DEFEND' })).toBe(after);
   });

@@ -2251,26 +2251,10 @@ g.fighter.struck {
   100% { opacity: 0; transform: scale(1.25); }
 }
 
-.fx .float-dmg {
-  fill: var(--parchment);
-  font-size: 15px;
-  font-weight: 700;
-  paint-order: stroke;
-  stroke: var(--ink);
-  stroke-width: 3px;
-  animation: fx-float 900ms ease-out both;
-}
-
-.fx .float-dmg.glance {
-  fill: var(--parchment-dim);
-  font-size: 12px;
-}
-
-@keyframes fx-float {
-  0% { opacity: 0; transform: translateY(4px); }
-  15% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-16px); }
-}
+/* `.float-dmg` and its `fx-float` keyframes stood here until 12.15, when the
+   `−N` came off every blow. Deleted rather than left dormant: a rule with no
+   element is a rule the next reader has to look up before they can be sure it
+   is dead, and this stylesheet is the one copy of the game's ink. */
 
 /* The cry: two rings rolling out from the leader, one on the other's heels. */
 .fx .cry-ring {

@@ -206,7 +206,6 @@ namespace Tables
 	constexpr int32_t MiddleRowFirst = 2;
 	constexpr int32_t MiddleRowCount = 5;
 
-	constexpr int32_t BaseMoves = 3;
 	constexpr int32_t MaxFoes = 6;
 	constexpr int32_t MaxRaiders = 9;
 	constexpr int32_t MaxRaidersFamed = 14;

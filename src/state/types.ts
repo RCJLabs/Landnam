@@ -415,8 +415,6 @@ export interface Combatant {
    */
   rank: number;
   initiative: number;
-  /** Movement left this turn. */
-  movesLeft: number;
   /** The one action per turn has been spent. */
   hasActed: boolean;
   /** Spears and hand-axes: thrown once and gone. */
