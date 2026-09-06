@@ -740,6 +740,15 @@ export interface Jarldom {
   name: string;
   /** The day it carried. */
   since: number;
+  /**
+   * The person the Thing named, by id (v66).
+   *
+   * The name alone was the whole record until 12.13, and it could not answer
+   * the one question the title had never been asked: is this man still alive?
+   * Optional because a save taken before the jarldom could end has no id to
+   * migrate from anything but the name — see `isTheJarl`.
+   */
+  id?: string;
 }
 
 // --- Root ---

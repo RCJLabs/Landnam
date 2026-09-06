@@ -13,6 +13,7 @@ import type { Rng } from '../rng';
 import { chronicle } from './saga';
 import { hallPasses } from './household';
 import { passBlade } from './heirloom';
+import { titleLapses } from './jarldom';
 import { ORPHAN_GRIEF } from '../data/lineage';
 
 /** What a death does to the children it leaves. */
@@ -127,6 +128,11 @@ export function mourn(state: GameState, dead: Person): void {
   // file for `isWoman` and `kinOf`, so putting it the other way round would
   // be a cycle. Only the constant is imported.
   orphaned(state, dead);
+  // And the RULE does not pass, for the same reason and at the same place.
+  // The hall and the blade are possessions and go to the next man off the
+  // knarr; the Thing named a person, so the title ends with them and the
+  // coast has to be asked again. sim/jarldom.ts carries the argument.
+  titleLapses(state, dead);
   const other = kinOf(state.party.people, dead);
   if (!other || !other.alive) return;
   other.morale = Math.max(0, other.morale - KIN_GRIEF);

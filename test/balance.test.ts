@@ -48,7 +48,8 @@ import { campStores } from '../src/sim/plunder';
 import { strandTarget } from '../src/sim/sea';
 import { placeKind, PLACE_KINDS } from '../src/data/places';
 import { angerLevel, neighbourHere } from '../src/sim/neighbours';
-import { canCallThing, hasSpeakers, thingNeeds, yearsRuled } from '../src/sim/thing';
+import { canCallThing, hasSpeakers, thingNeeds } from '../src/sim/thing';
+import { everRuled } from '../src/sim/jarldom';
 import type { NeedId } from '../src/data/thing';
 import { SPEAKER_STANDING } from '../src/data/thing';
 import { launchBlocker, provisionsFor } from '../src/sim/expedition';
@@ -1301,7 +1302,16 @@ describe('the long game', () => {
   it('plays to day 500 and reports what the years actually do', { timeout: 1_800_000 }, async () => {
     void LONG_TERMS;
     let reachedJarl = 0;
-    let ruledYears = 0;
+    /**
+     * Jarldoms that ended with the man rather than with the player (12.13).
+     *
+     * A separate counter from `reachedJarl` on purpose: the menu promises
+     * "ever proclaimed jarl", and since the title can lapse those are two
+     * different questions asked of the same run.
+     */
+    let lostTitle = 0;
+    /** Days a jarl actually sat, counted as the days go by. */
+    let ruledDays = 0;
     let alive = 0;
     let days = 0;
     /* eslint-disable prefer-const */
@@ -1380,6 +1390,8 @@ describe('the long game', () => {
      */
     const firstWinters: Record<string, number> = {};
     const allJarlsBy: Record<string, number> = {};
+    /** Jarldoms that ended with the man who held them (12.13). */
+    const lostTitleBy: Record<string, number> = {};
     /**
      * How many sagas reached a SECOND winter, per country — the bar under
      * `DEFAULT_HARDSHIP` below.
@@ -1392,7 +1404,7 @@ describe('the long game', () => {
     const secondWintersBy: Record<string, number> = {};
 
     for (const TERMS of ['even', 'fair', 'hard'] as HardshipId[]) {
-    reachedJarl = 0; ruledYears = 0; alive = 0; days = 0;
+    reachedJarl = 0; lostTitle = 0; ruledDays = 0; alive = 0; days = 0;
     earlyFoes = 0; earlyFights = 0; lateFoes = 0; lateFights = 0; raids = 0;
     sawSecondWinter = 0; everHadHall = 0; everHadFriend = 0; everCouldCall = 0;
     for (const k of Object.keys(ends)) delete ends[k];
@@ -1413,6 +1425,13 @@ describe('the long game', () => {
       let peak = -100;
       const ticked = new Set<NeedId>();
       const state = run(`curve-${s}`, LAST_DAY, (before, after) => {
+        // THE TITLE, WATCHED RATHER THAN READ AT THE END (12.13). Both of
+        // these used to be answered by `state.jarl` on the last day, which
+        // was the same question while a jarldom could not end and is not any
+        // more: a band whose jarl died in year four would read as a band that
+        // never ruled and never held a winter.
+        if (before.jarl && !after.jarl) lostTitle += 1;
+        if (after.jarl && after.day > before.day) ruledDays += after.day - before.day;
         if (!before.battle && after.battle) {
           const n = after.battle.foes.length;
           if (after.day <= 169) {
@@ -1509,10 +1528,11 @@ describe('the long game', () => {
       if (hall) everHadHall += 1;
       if (friend) everHadFriend += 1;
       if (couldCall) everCouldCall += 1;
-      if (state.jarl) {
-        reachedJarl += 1;
-        ruledYears += yearsRuled(state);
-      }
+      // `everRuled`, not `state.jarl`: this feeds `allJarlsBy`, which the
+      // menu-odds bar below checks against `odds.ruled` — "fraction that were
+      // ever proclaimed jarl". Reading the last day would quietly turn that
+      // into "still ruling when the run stopped".
+      if (everRuled(state)) reachedJarl += 1;
       if (!state.end) alive += 1;
       if (state.end) ends[state.end.cause] = (ends[state.end.cause] ?? 0) + 1;
       raids += state.tally.raids;
@@ -1545,8 +1565,9 @@ describe('the long game', () => {
             `food (median), ${mid('band')} souls of whom ${mid('sworn')} sworn, ` +
             `${mid('built')} raised, word ${mid('word')}, heart ${mid('morale')}`
           : 'nobody got past a third year'}\n` +
-        `  ${reachedJarl} became jarl, ${ruledYears} winters ruled between them; ` +
-        `${alive} still standing at the end\n` +
+        `  ${reachedJarl} became jarl, ${Math.round(ruledDays / YEAR_LENGTH)} winters ruled ` +
+        `between them (${ruledDays} days), ` +
+        `${lostTitle} buried theirs; ${alive} still standing at the end\n` +
         `  ends: ${Object.entries(ends).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}\n` +
         `  foes per fight: ${per(earlyFoes, earlyFights)} early (${earlyFights} fights), ` +
         `${per(lateFoes, lateFights)} late (${lateFights} fights); ${raids} raids\n` +
@@ -1557,6 +1578,7 @@ describe('the long game', () => {
     allEarlyFoes += earlyFoes; allEarlyFights += earlyFights;
     allLateFoes += lateFoes; allLateFights += lateFights;
     allJarlsBy[TERMS] = reachedJarl;
+    lostTitleBy[TERMS] = lostTitle;
     secondWintersBy[TERMS] = sawSecondWinter;
     allFriends += everHadFriend; allCouldCall += everCouldCall;
     allHalls += everHadHall; allSecondWinters += sawSecondWinter; allJarls += reachedJarl;
@@ -1615,6 +1637,28 @@ describe('the long game', () => {
       `  ${sixEver} ticked all six at some point; one short: ${
           Object.entries(everShort).map(([k, v]) => `${k} ${v}`).join(', ') || 'none'}`,
     );
+
+    // AND A JARLDOM CAN BE LOST (12.13).
+    //
+    // The title was `{name, since}`, written when the Thing carried and
+    // cleared nowhere, so a band went on ruling under a dead man — 33 of 57
+    // jarldoms in 120 fair sagas to day 700, for a median of 104 days each
+    // (PROBE 12.13, 2026-09-06). It ends with him now, and this is what says
+    // so from inside the game rather than from a fixture.
+    //
+    // A REACHABILITY BAR, deliberately: "did this ever happen" survives a
+    // sample this file has already been burned by reading counts off. The
+    // paired probe puts the figure at 29 by day 500 on fair, so a zero here
+    // is a feature that stopped running, not a thin sample.
+    //
+    // Held on `fair` alone because that is where the endgame happens: the
+    // same probe found `even` reaching a jarldom in 45 of 120 and `hard` in
+    // 25, and a bar on the arm where the thing is rare is a bar that flakes.
+    expect(
+      lostTitleBy['fair'] ?? 0,
+      'no jarldom ended with the man who held it in 120 fair sagas — either the '
+        + 'title stopped lapsing, or the harness stopped reaching the endgame',
+    ).toBeGreaterThan(0);
 
     // AND WHAT THE MENU PROMISES ABOUT RULING IS TRUE.
     //
