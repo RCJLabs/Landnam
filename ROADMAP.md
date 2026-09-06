@@ -62,10 +62,13 @@
 > that are exact rather than modelled; and the fight owns 42% / 66% of the
 > dead, not the 28% / 43% on file.
 >
-> **12.7 STEP 0 is BUILT** — the one-ink test had two holes and the second was
-> hiding three live offences in `style.css`; 1,197 lines of hex-era art code
-> are deleted, and the item's "176 unreferenced exports" re-takes as a figure
-> that was never a count of dead code. Naming the direction is still Evan's.
+> **12.7 STEP 0 is BUILT and THE GALLERY IS PUBLISHED** — the one-ink test had
+> two holes and the second was hiding three live offences in `style.css`;
+> 1,197 lines of hex-era art code are deleted; and ten treatments of one REAL
+> moment (seed `landnam-gallery`, day 261, Skarphedin down at Ormgarth) are on
+> the wall, drawn from `standAt`, `lookOf`, `steadingScene` and
+> `processionScene` rather than from a mockup. **Naming the direction and the
+> nine dropped is Evan's, and is the only thing 12.7 still wants.**
 >
 > **12.5 is BUILT** — the top bar wraps instead of scrolling its own warnings
 > off the side, on all four screens; four folds and a fifteenth browser bar.
@@ -7431,8 +7434,65 @@ would replace — which is why it is third and not fifteenth.
   destroy work for a project still in flight.
 
   Net: 24 files, 310 added, **1,197 deleted**. No sim rule moved, no save
-  shape moved, `SAVE_VERSION` unchanged. **What is left of 12.7 is the
-  gallery and the ruling.** The original entry follows.
+  shape moved, `SAVE_VERSION` unchanged.
+
+  **THE GALLERY IS BUILT AND PUBLISHED (2026-09-06), AND THE RULING IS NOT
+  MADE.** Ten treatments of ONE moment, at
+  `https://claude.ai/code/artifact/825ab2dc-2533-402c-9b9e-9d697220d37e`,
+  source in `art/gallery-12.7/`.
+
+  The moment is real, which was the entire point of the item's "from the REAL
+  derivations". `npm run scene` (`test/scene.test.ts`, excluded from `npm
+  test` the way the probes are) plays seed `landnam-gallery` to day 261 and
+  stops at the first round where blood has been drawn: the band camped in
+  winter forest at stop 5, their steading **Steinlund** with eleven roofs on
+  the skyline, the rival's hall **Ormgarth** one stop on, round 2, Skarphedin
+  down under Hallvard, six against four. Every position is `standAt`, every
+  colour `lookOf`, every roof `steadingScene().raised`, the sky and season
+  `processionScene`. The panels differ in MATERIAL and in nothing else — a
+  style gallery whose panels show different subjects compares nothing.
+
+  The ten: **as it stands** (the control — without it there is nothing to
+  prefer anything to), **woodcut**, **embroidery**, **16-bit pixel**,
+  **illuminated vellum**, **carved rune-stone**, **ink wash**, **papercraft**,
+  **glyph lattice**, **cloisonné enamel**. Isometric and low-poly 3D are named
+  on the page as ruled out, with the reasons this entry already gave.
+
+  **Four faults of my own, every one found by LOOKING rather than by a check
+  passing** — the checks were green through all four:
+
+  - the wall came out a smear, because each man was drawn at 2.1x `FIGURE_W`
+    while the ranks are 21px apart. The 2.29x overlap that remains is the
+    game's own;
+  - the rune-stone outlined every part, so ten overlapping men made scribble.
+    A carver does not outline — he sinks the ground and leaves the figure
+    proud;
+  - the ink wash printed instead of soaking: alpha .40 over three passes with
+    1.6px of jitter, under a label that said wet;
+  - **the pixel panel rasterised the SVG through a `data:` URI** — the one
+    plate on the page that could have gone blank with no error under a
+    stricter image policy. It draws straight to canvas with `Path2D` now.
+    A blank plate and no error is what a broken check looks like.
+
+  And a fifth, in the extractor, caught only because the committed source was
+  rebuilt from scratch before commit: foes are `Person` objects but live on
+  `battle.foes`, not in `party.people`, so looking only in the party gave
+  every enemy **no look at all** and four men whose every proportion was NaN.
+
+  **What the wall shows that the list of styles does not:** the real fork is
+  not a style at all. Three of the ten — pixel, ink wash, glyph lattice — take
+  the figures out of the DOM or out of colour, and that prices the CSS
+  keyframes, `battle.ts`'s screen-to-world path, and most of the fifteen bars.
+  The other seven stay SVG and are a change of ink rather than of engine.
+
+  Two costs on the page are VERIFIED: `battle.ts` converts screen to world
+  through an SVG `viewBox`, and `scripts/look.mjs` fails for all ten —
+  including doing nothing — until a person blesses the new picture. Every
+  other figure in the Costs column is marked on the page as **an estimate, not
+  a measurement**, because it is a judgement from reading the renderers.
+
+  **Still open, and Evan's:** name the direction and the nine dropped. The
+  original entry follows.
 
 - [ ] **12.7 — A new visual identity, decided on the real renderers.**
   The only identity decision on record is one sentence — "Ten art directions
@@ -8152,6 +8212,34 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-06 — 12.7: the gallery is published, and it draws the game rather
+  than a picture of it.** Ten treatments of ONE moment —
+  `https://claude.ai/code/artifact/825ab2dc-2533-402c-9b9e-9d697220d37e`,
+  source in `art/gallery-12.7/`, scene by `npm run scene`.
+
+  The 2026-08-25 decision was made on a mockup that drew a hex island and
+  loaded Google Fonts. So this one draws nothing of its own: seed
+  `landnam-gallery` played to day 261, stopped at the first round with blood
+  on the ground, and every position, colour, name and roofline read out of
+  `standAt`, `lookOf`, `steadingScene` and `processionScene`. Steinlund's
+  eleven roofs on the skyline, Ormgarth one stop on, Skarphedin down under
+  Hallvard in round 2.
+
+  **Four faults of mine, all found by looking at the pictures while every
+  check stayed green**, and a fifth found only by rebuilding the committed
+  source from scratch: each man drawn at 2.1x `FIGURE_W` against a 21px rank
+  step, so the wall was a smear; the rune-stone outlining every part into
+  scribble; the ink wash printing instead of soaking; the pixel panel
+  rasterising through a `data:` URI, the one plate able to go blank with no
+  error; and the extractor looking for foes in `party.people` when they live
+  on `battle.foes`, which gave four men a proportion of NaN.
+
+  The wall's own finding is that the fork is not a style: three directions
+  take the figures out of the DOM and price the keyframes, the pointer path
+  and most of the fifteen bars; seven stay SVG and are a change of ink. Two
+  costs on the page are verified and the rest are marked estimates, on
+  purpose. **The ruling is Evan's and is not made.**
 
 - **2026-09-06 — 12.7 step 0 BUILT: the one-ink rule now looks where the fault
   actually was, and 1,197 lines describing a deleted coordinate system are

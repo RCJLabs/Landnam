@@ -28,7 +28,8 @@
     "ending": "npm run build && node scripts/ending.mjs",
     "look": "npm run build && node scripts/look.mjs",
     "look:bless": "npm run build && LOOK_BLESS=1 node scripts/look.mjs",
-    "probes": "PROBES=1 vitest run test/probes.test.ts"
+    "probes": "PROBES=1 vitest run test/probes.test.ts",
+    "scene": "SCENE=1 vitest run test/scene.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

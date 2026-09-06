@@ -1,0 +1,1457 @@
+<title>Ten Hands at Ormgarth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Spectral:wght@300;400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #16140f;
+    --panel: #1e1b15;
+    --raised: #262218;
+    --rule: #3a342a;
+    --text: #e6ded0;
+    --dim: #a1988a;
+    --faint: #776f63;
+    --gold: #d3a441;
+    --blood: #b23b2e;
+    --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --body: 'Spectral', Georgia, serif;
+    --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  /* Deliberately single-theme. This is a wall of specimens under gallery
+     lighting; a light version would put ten different grounds against a
+     white page and half the panels would stop reading as objects. */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--body);
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 96px; }
+
+  header { padding: 72px 0 0; }
+  .kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(2.4rem, 7vw, 4.1rem);
+    line-height: 1.02;
+    letter-spacing: -.015em;
+    margin: 0 0 20px;
+    text-wrap: balance;
+  }
+  .standfirst {
+    font-size: clamp(1.02rem, 2.3vw, 1.22rem);
+    color: var(--dim);
+    max-width: 62ch;
+    margin: 0 0 8px;
+  }
+  .standfirst strong { color: var(--text); font-weight: 600; }
+
+  /* The provenance block is the load-bearing part of this page. A style
+     gallery is only worth anything if every panel shows the same subject,
+     and the only way to prove that is to say where the subject came from. */
+  .prov {
+    margin: 44px 0 0;
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    padding: 26px 26px 22px;
+  }
+  .prov h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 16px;
+    font-weight: 500;
+  }
+  .prov-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
+    gap: 18px 28px;
+    margin: 0 0 22px;
+  }
+  .prov-grid div { min-width: 0; }
+  .prov-grid dt {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    margin: 0 0 3px;
+  }
+  .prov-grid dd {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text);
+    overflow-wrap: anywhere;
+  }
+  .prov-note { color: var(--dim); font-size: 14.5px; margin: 0 0 18px; max-width: 78ch; }
+  .prov-note code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--gold);
+    background: #241f17;
+    padding: 1px 5px;
+  }
+  #prov-log {
+    list-style: none;
+    margin: 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.85;
+    color: var(--dim);
+  }
+  #prov-log li::before { content: '· '; color: var(--faint); }
+
+  .wall-head { margin: 76px 0 26px; }
+  .wall-head h2 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(1.55rem, 4vw, 2.15rem);
+    margin: 0 0 10px;
+    letter-spacing: -.01em;
+  }
+  .wall-head p { color: var(--dim); margin: 0; max-width: 66ch; }
+
+  #wall {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+  @media (min-width: 900px) { #wall { grid-template-columns: 1fr 1fr; gap: 38px 34px; } }
+
+  .panel {
+    margin: 0;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .panel.control { border-color: #55492f; }
+  .plate {
+    background: var(--raised);
+    border-bottom: 1px solid var(--rule);
+    line-height: 0;
+  }
+  .plate svg, .plate canvas { display: block; width: 100%; height: auto; }
+  .plate canvas { aspect-ratio: 440 / 260; }
+
+  figcaption { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0;
+  }
+  .panel h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.42rem;
+    margin: 0;
+    letter-spacing: -.005em;
+  }
+  .thesis { margin: 0; color: var(--text); font-size: 15.2px; }
+  .spec {
+    margin: 6px 0 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 8px 14px;
+    font-size: 13.6px;
+  }
+  .spec dt {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding-top: 3px;
+  }
+  .spec dd { margin: 0; color: var(--dim); }
+
+  .close { margin: 84px 0 0; border-top: 1px solid var(--rule); padding-top: 40px; }
+  .close h2 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    margin: 0 0 18px;
+  }
+  .close h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 34px 0 12px;
+    font-weight: 500;
+  }
+  .close p { color: var(--dim); max-width: 74ch; margin: 0 0 14px; }
+  .close p strong { color: var(--text); font-weight: 600; }
+  .close code { font-family: var(--mono); font-size: 12.5px; color: var(--gold); }
+  .ruled-out { display: grid; gap: 12px; margin: 0 0 8px; }
+  .ruled-out div { border-left: 2px solid var(--rule); padding-left: 16px; }
+  .ruled-out b { font-family: var(--display); font-weight: 600; font-size: 1.05rem; color: var(--text); display: block; margin-bottom: 2px; }
+  .ruled-out span { color: var(--dim); font-size: 14.6px; }
+  .caveat {
+    margin-top: 34px;
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--blood);
+    background: var(--panel);
+    padding: 20px 22px;
+  }
+  .caveat p:last-child { margin-bottom: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="kicker">Landnám · 12.7 · one scene, ten treatments</p>
+    <h1>Ten hands at Ormgarth</h1>
+    <p class="standfirst">The only identity decision on record is one sentence — <em>“Ten art directions were mocked up and three shortlisted; oil on canvas won”</em> — the ten unnamed and the seven dropped unrecorded. The roadmap also records what that decision was made on: <strong>a mockup that drew a hex island and loaded Google Fonts</strong> — a fixture, offered as a fact about the game. That mockup is gone and the claim cannot be re-taken, which is itself the argument for what follows. <strong>This wall draws nothing of its own.</strong></p>
+  </header>
+
+  <section class="prov">
+    <h2>Where this scene came from</h2>
+    <p class="prov-note">One seeded saga, played to day 261 by the test harness, stopped at the first round where blood had been drawn. Every position, colour, name, proportion and roofline below is read from the game’s own derivations — <code>processionScene</code>, <code>steadingScene</code>, <code>standAt</code>, <code>lookOf</code> — not authored for the picture. The ten panels differ in <em>material</em> and in nothing else.</p>
+    <div class="prov-grid">
+      <div><dt>Seed</dt><dd id="prov-seed">—</dd></div>
+      <div><dt>Day</dt><dd id="prov-day">—</dd></div>
+      <div><dt>Stop on the route</dt><dd id="prov-stop">—</dd></div>
+      <div><dt>Season · sky · country</dt><dd id="prov-country">—</dd></div>
+      <div><dt>Their steading</dt><dd id="prov-steading">—</dd></div>
+      <div><dt>The hall one stop on</dt><dd id="prov-rival">—</dd></div>
+      <div><dt>Round of the fight</dt><dd id="prov-round">—</dd></div>
+    </div>
+    <ul id="prov-log"></ul>
+  </section>
+
+  <div class="wall-head">
+    <h2>The wall</h2>
+    <p>Ten materials for the same moment: six ranks against four, a man down in the front rank, a winter forest, and eleven roofs of their own steading on the skyline behind. The first panel is the game as it ships — without it there is nothing to prefer anything to.</p>
+  </div>
+
+  <div id="wall"></div>
+
+  <section class="close">
+    <h2>What this wall cannot do</h2>
+    <p><strong>It cannot choose.</strong> Naming the direction is yours, and the item’s own “done when” asks the roadmap to record the one chosen <em>and the nine dropped</em> — which is the part the 2026-08-25 decision skipped and the reason we are here again.</p>
+
+    <h3>Two directions are not on the wall, and why</h3>
+    <div class="ruled-out">
+      <div><b>Isometric 2.5D</b><span>Contradicts “drawn side-on”, which is a pillar rather than a preference, and rewrites <code>line.ts</code> — the file that decides a man is the same height in every rank, which is what makes a shield wall read as one.</span></div>
+      <div><b>Low-poly 3D</b><span>That is the Unreal port’s job. Doing it here would build a second renderer to throw away.</span></div>
+    </div>
+
+    <h3>What is honest about the costs above, and what is not</h3>
+    <p>Two things in the Costs rows are <strong>verified</strong>: that <code>battle.ts</code> converts screen coordinates to world through an SVG <code>viewBox</code>, so any canvas or WebGL surface needs that path rewritten; and that <code>scripts/look.mjs</code> compares screenshots against a blessed baseline, so <em>every one of the ten</em> — including doing nothing — fails it until a person blesses the new picture.</p>
+    <p>Everything else in those rows is <strong>an estimate, not a measurement</strong>. Node counts, composite cost and “lowest of the nine” are judgements from reading the renderers, not readings taken from an instrument. They are marked that way on purpose: the last time a number about this game’s art was written down as a conclusion, ten roadmap items inherited it.</p>
+
+    <div class="caveat">
+      <p><strong>The one thing to decide first is not a style.</strong> Three of these — pixel, ink wash, and the glyph lattice — take the figures out of the DOM or out of colour entirely. That is a decision about the <em>architecture</em>, and it prices itself: the CSS keyframes, the pointer path, and most of the fifteen browser bars.</p>
+      <p>The other seven stay SVG, which means any of them is a change of ink rather than a change of engine, and could be tried behind a flag in a day.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+const SCENE = {
+ "seed": "landnam-gallery",
+ "day": 261,
+ "stop": 5,
+ "country": "forest",
+ "weather": "fair",
+ "season": "winter",
+ "rival": "Ormgarth",
+ "steading": {
+  "name": "Steinlund",
+  "greened": 0.645,
+  "trodden": 1,
+  "smoke": true,
+  "woodpile": 1,
+  "width": 936.708,
+  "ground": {
+   "field": 5,
+   "wood": 8,
+   "water": 1,
+   "rough": 3
+  },
+  "children": [
+   "Helga",
+   "Odd"
+  ],
+  "raised": [
+   {
+    "name": "Farm plots",
+    "x": 48.708,
+    "size": 0.7772727272727273
+   },
+   {
+    "name": "Búð",
+    "x": 122.708,
+    "size": 0.7318181818181819
+   },
+   {
+    "name": "Smokehouse",
+    "x": 196.708,
+    "size": 0.7318181818181819
+   },
+   {
+    "name": "Storehouse",
+    "x": 270.70799999999997,
+    "size": 0.7772727272727273
+   },
+   {
+    "name": "Watchtower",
+    "x": 344.70799999999997,
+    "size": 0.7772727272727273
+   },
+   {
+    "name": "Mead hall",
+    "x": 418.70799999999997,
+    "size": 0.9136363636363637
+   },
+   {
+    "name": "Great hall",
+    "x": 492.70799999999997,
+    "size": 1.05
+   },
+   {
+    "name": "Dock",
+    "x": 566.708,
+    "size": 0.7772727272727273
+   },
+   {
+    "name": "Stone dyke",
+    "x": 640.708,
+    "size": 1.35
+   },
+   {
+    "name": "Great hof",
+    "x": 714.708,
+    "size": 1.35
+   },
+   {
+    "name": "Ship-howe",
+    "x": 788.708,
+    "size": 1.35
+   }
+  ]
+ },
+ "round": 2,
+ "log": [
+  "Bui put a spear into Vemund (2).",
+  "Thorbjorg shouldered forward into the line.",
+  "Kalf struck Skarphedin (3).",
+  "Vemund saw Skarphedin go down.",
+  "Skarphedin went down under Hallvard.",
+  "Glum's spear went wide of Vemund."
+ ],
+ "figures": [
+  {
+   "name": "Vemund",
+   "side": "warband",
+   "rank": 2,
+   "down": false,
+   "nerve": 73,
+   "x": -98.098176,
+   "y": 622,
+   "field": "#b23b2e",
+   "accent": "#d3a441",
+   "cloak": "#5a482c",
+   "motifKind": 3,
+   "motifTilt": 3.690182136406596,
+   "tunic": "#7d7360",
+   "hair": "#a55a34",
+   "beard": 2,
+   "stride": 0.22772216447629035,
+   "build": 1.006431362554431
+  },
+  {
+   "name": "Skarphedin",
+   "side": "warband",
+   "rank": 1,
+   "down": true,
+   "nerve": 67,
+   "x": -59.519999999999996,
+   "y": 630,
+   "field": "#e8dcc0",
+   "accent": "#8a2f24",
+   "cloak": "#896b2a",
+   "motifKind": 2,
+   "motifTilt": 3.6341555236332885,
+   "tunic": "#7a6a4e",
+   "hair": "#785b43",
+   "beard": 1,
+   "stride": 0.3486177136655897,
+   "build": 0.9489810783043504
+  },
+  {
+   "name": "Ragnheid",
+   "side": "warband",
+   "rank": 1,
+   "down": false,
+   "nerve": 85,
+   "x": -59.519999999999996,
+   "y": 630,
+   "field": "#b23b2e",
+   "accent": "#d3a441",
+   "cloak": "#5a482c",
+   "motifKind": 0,
+   "motifTilt": 2.9605683250856107,
+   "tunic": "#7d7360",
+   "hair": "#c9a86a",
+   "beard": 2,
+   "stride": 0.3368271444924176,
+   "build": 1.0427018393948675
+  },
+  {
+   "name": "Thorbjorg",
+   "side": "warband",
+   "rank": 4,
+   "down": false,
+   "nerve": 93,
+   "x": -175.254528,
+   "y": 606,
+   "field": "#d3a441",
+   "accent": "#b23b2e",
+   "cloak": "#5a482c",
+   "motifKind": 2,
+   "motifTilt": 6.142845938830157,
+   "tunic": "#7a6a4e",
+   "hair": "#47392c",
+   "beard": 0,
+   "stride": 0.17464041244238615,
+   "build": 0.9294407199323178
+  },
+  {
+   "name": "Bergthora",
+   "side": "warband",
+   "rank": 5,
+   "down": false,
+   "nerve": 100,
+   "x": -213.83270400000004,
+   "y": 598,
+   "field": "#b23b2e",
+   "accent": "#8a6f43",
+   "cloak": "#5a1f17",
+   "motifKind": 3,
+   "motifTilt": 1.2879578300076469,
+   "tunic": "#5f5642",
+   "hair": "#c9a86a",
+   "beard": 2,
+   "stride": 0.9284961423836648,
+   "build": 0.9307117778062821
+  },
+  {
+   "name": "Jorunn",
+   "side": "warband",
+   "rank": 3,
+   "down": false,
+   "nerve": 92,
+   "x": -136.676352,
+   "y": 614,
+   "field": "#b23b2e",
+   "accent": "#8a6f43",
+   "cloak": "#896b2a",
+   "motifKind": 4,
+   "motifTilt": 1.3209886374619313,
+   "tunic": "#7a6a4e",
+   "hair": "#6b4a30",
+   "beard": 0,
+   "stride": 0.46008007251657546,
+   "build": 0.9464320142194629
+  },
+  {
+   "name": "Kalf",
+   "side": "foe",
+   "rank": 2,
+   "down": false,
+   "nerve": 58,
+   "x": 98.098176,
+   "y": 622,
+   "field": "#3f4a5a",
+   "accent": "#8fa0b4",
+   "cloak": "#29303b",
+   "motifKind": 4,
+   "motifTilt": 5.502961136854003,
+   "tunic": "#6b5f4a",
+   "hair": "#a55a34",
+   "beard": 2,
+   "stride": 0.6130926350597292,
+   "build": 1.0277180279791356
+  },
+  {
+   "name": "Hallvard",
+   "side": "foe",
+   "rank": 1,
+   "down": false,
+   "nerve": 63,
+   "x": 59.519999999999996,
+   "y": 630,
+   "field": "#4a555f",
+   "accent": "#8fa0b4",
+   "cloak": "#29303b",
+   "motifKind": 3,
+   "motifTilt": 2.9762097910611662,
+   "tunic": "#5f5642",
+   "hair": "#a55a34",
+   "beard": 2,
+   "stride": 0.9415361364372075,
+   "build": 0.9884829838573933
+  },
+  {
+   "name": "Glum",
+   "side": "foe",
+   "rank": 3,
+   "down": false,
+   "nerve": 70,
+   "x": 136.676352,
+   "y": 614,
+   "field": "#3f4a5a",
+   "accent": "#2e5468",
+   "cloak": "#5d6875",
+   "motifKind": 3,
+   "motifTilt": 2.116800807033109,
+   "tunic": "#7a6a4e",
+   "hair": "#c9a86a",
+   "beard": 1,
+   "stride": 0.5040624681860209,
+   "build": 1.0408476939424873
+  },
+  {
+   "name": "Bui",
+   "side": "foe",
+   "rank": 4,
+   "down": false,
+   "nerve": 63,
+   "x": 175.254528,
+   "y": 606,
+   "field": "#8fa0b4",
+   "accent": "#3f4a5a",
+   "cloak": "#30373e",
+   "motifKind": 2,
+   "motifTilt": 4.308037008633464,
+   "tunic": "#916f4a",
+   "hair": "#a55a34",
+   "beard": 1,
+   "stride": 0.7397450387943536,
+   "build": 0.9236939750984311
+  }
+ ],
+ "line": {
+  "rankGap": 96,
+  "figureH": 297.6,
+  "figureW": 88.32000000000001,
+  "groundY": 630,
+  "extent": {
+   "x": -152.856576,
+   "y": 0,
+   "w": 305.713152,
+   "h": 900
+  }
+ },
+ "palette": {
+  "PARCHMENT": "#e8dcc0",
+  "GOLD": "#d3a441",
+  "EMBER": "#e0a94f",
+  "SUN": "#ffe9b8",
+  "BRASS": "#c9a468",
+  "RUST": "#c2703a",
+  "BLOOD": "#b23b2e",
+  "PALE_IRON": "#9fb0c4",
+  "STEEL": "#cfd8dc",
+  "IRON": "#5b6570",
+  "SLATE": "#3f4a5a",
+  "WATER": "#2e5468",
+  "SKY": "#8b9aa8",
+  "HAZE": "#a8afb2",
+  "SNOW": "#dfe6ea",
+  "SKIN": "#c6a184",
+  "HAFT": "#8a6f43",
+  "ROPE": "#8a7c5e",
+  "TIMBER": "#3a3324",
+  "MOSS": "#7d9150",
+  "SOOT": "#2b2a22",
+  "INK": "#14110d",
+  "EDGE": "#463c2c",
+  "WHITE": "#ffffff",
+  "BLACK": "#000000"
+ }
+}
+;
+// The shared geometry layer. EVERY panel draws this and only this — the
+// difference between two panels is the treatment, never the subject.
+//
+// Nothing here is invented. Positions come from `standAt`, heights from
+// FIGURE_H and each person's own `build`, colours from `lookOf`, the roofline
+// from `steadingScene().raised`, the weather and season from
+// `processionScene`. See scene.test.ts for how they were taken.
+
+const W = 440;
+const H = 260;
+
+// World -> panel. Ground at 638 sits at y 215; scale 0.55 so the tallest head
+// clears the top edge. Men are the SAME height in every rank (line.ts: "a
+// deep line is a longer field, not smaller men"), so there is no perspective
+// scaling here — only the 8-unit lift per rank the game already applies.
+const S = 0.55;
+const px = (wx) => wx * S + 220;
+const py = (wy) => 215 - (638 - wy) * S;
+
+function figures(scene) {
+  const h = scene.line.figureH * S;
+  const w = scene.line.figureW * S;
+  // Back ranks first, so the front of a wall overlaps the men behind it —
+  // `paintOrder` in line.ts, kept because it is what makes a wall read as one.
+  return [...scene.figures]
+    .sort((a, b) => b.rank - a.rank)
+    .map((f) => ({
+      ...f,
+      cx: px(f.x),
+      feet: py(f.y),
+      h: h * f.build,
+      w,
+      facing: f.side === 'warband' ? 1 : -1,
+    }));
+}
+
+/**
+ * One man, in parts, in his own unit box.
+ *
+ * x runs -0.5..0.5 across his shoulders, y runs 0 at the crown to 1 at his
+ * feet. Every treatment gets the same parts and decides what to do with them
+ * — that is what makes the ten comparable rather than ten different drawings.
+ */
+function parts(f) {
+  const d = f.facing;
+  // Proportions, in his own unit box: crown at 0, feet at 1, shoulders half a
+  // FIGURE_W across. A head is a seventh of him, which is why he reads as a
+  // man at 48 pixels wide and did not when this box was twice as wide.
+  const s = f.stride;
+  return {
+    shadow: { cx: 0, cy: 0.995, rx: 0.62, ry: 0.035 },
+    legBack: `M ${-0.14 * d} 0.54 L ${(-0.30 - s * 0.16) * d} 0.99 L ${(-0.08 - s * 0.16) * d} 0.99 L ${0.04 * d} 0.54 Z`,
+    legFront: `M ${0.10 * d} 0.54 L ${(0.24 + s * 0.14) * d} 0.99 L ${(0.46 + s * 0.14) * d} 0.99 L ${0.30 * d} 0.54 Z`,
+    // The cloak hangs off the shoulder away from the enemy and reaches his calf.
+    cloak: `M ${-0.30 * d} 0.17 Q ${-0.78 * d} 0.36 ${-0.56 * d} 0.86 Q ${-0.30 * d} 0.78 ${-0.14 * d} 0.55 Z`,
+    // Tunic: shoulder, waist, hem.
+    body: `M ${-0.42 * d} 0.18 Q ${-0.34 * d} 0.36 ${-0.40 * d} 0.58 L ${0.42 * d} 0.58 Q ${0.36 * d} 0.36 ${0.44 * d} 0.18 Z`,
+    head: { cx: 0.07 * d, cy: 0.085, r: 0.072 },
+    hair: `M ${-0.02 * d} 0.085 Q ${-0.01 * d} -0.005 ${0.10 * d} 0.015 Q ${0.20 * d} 0.035 ${0.19 * d} 0.10 Q ${0.10 * d} 0.045 ${-0.02 * d} 0.085 Z`,
+    beard: f.beard === 0 ? null
+      : `M ${0.02 * d} 0.115 Q ${(0.19 + f.beard * 0.03) * d} 0.135 ${0.09 * d} ${0.175 + f.beard * 0.028} Q ${-0.01 * d} 0.16 ${0.02 * d} 0.115 Z`,
+    // Side-on: the shield is edge-on to us, held out in front of his chest.
+    shield: { cx: 0.44 * d, cy: 0.33, rx: 0.115, ry: 0.185 },
+    // The spear rakes forward over the man in front — the reason the back
+    // ranks are worth drawing at all.
+    spear: { x1: -0.42 * d, y1: 0.44, x2: 1.30 * d, y2: -0.10 },
+    arm: `M ${0.20 * d} 0.22 Q ${0.42 * d} 0.27 ${0.40 * d} 0.34`,
+  };
+}
+
+/** A man on the ground. Drawn long and low so he reads as fallen, not short. */
+function fallenParts(f) {
+  const d = f.facing;
+  return {
+    body: `M ${-1.25 * d} 0.975 Q ${-0.55 * d} 0.86 ${0.15 * d} 0.885 Q ${0.85 * d} 0.91 ${1.20 * d} 0.995 Z`,
+    head: { cx: 1.05 * d, cy: 0.915, r: 0.055 },
+    shield: { cx: -0.55 * d, cy: 0.955, rx: 0.30, ry: 0.035 },
+  };
+}
+
+/**
+ * The roofline of the steading, far off behind the fight.
+ *
+ * Eleven buildings stand at Steinlund and their `size` comes off what each
+ * cost to raise, so the hall really is the tall one. Compressed onto the
+ * horizon rather than laid out at yard scale — it is a skyline here, not a
+ * plan.
+ */
+function roofline(scene, y, x0, x1) {
+  const b = scene.steading.raised;
+  const span = (x1 - x0) / b.length;
+  return b.map((h, i) => {
+    const cx = x0 + span * (i + 0.5);
+    const w = span * 0.78;
+    const ht = 9 + h.size * 15;
+    return { cx, w, h: ht, y, name: h.name, peak: y - ht };
+  });
+}
+
+/** Trees for forest country — the band is standing in forest (processionScene). */
+function trees(scene, rng, y, count) {
+  const out = [];
+  for (let i = 0; i < count; i += 1) {
+    const t = i / (count - 1);
+    out.push({ x: 12 + t * (W - 24) + (rng() - 0.5) * 26, y, h: 22 + rng() * 26 });
+  }
+  return out;
+}
+
+/** Deterministic, because a gallery that reshuffles itself cannot be compared. */
+function makeRng(seed) {
+  let s = 0;
+  for (const c of seed) s = (s * 31 + c.charCodeAt(0)) >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+// Ten treatments of one moment.
+//
+// Each function takes the scene and returns SVG (or paints a canvas). They all
+// call the same `figures()`, `parts()` and `roofline()` from geom.js, so what
+// differs between any two panels is the MATERIAL — the ink, the ground, the
+// mark — and never the subject. That is the whole design of this page: a
+// style gallery whose panels show different things compares nothing.
+
+
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const n = (v) => Math.round(v * 100) / 100;
+
+/** Place a unit-box part into panel space. */
+function fit(f) {
+  return {
+    // A man occupies exactly FIGURE_W across his shoulders. This read
+    // `f.w * 2.1` in the first cut and the wall came out a smear: the ranks
+    // are 21px apart and every man was drawn 102px wide. The 2.29x overlap
+    // that remains is the game's own — line.ts really does stand them that
+    // close — and it is what makes a wall read as a wall.
+    X: (ux) => n(f.cx + ux * f.w),
+    Y: (uy) => n(f.feet - f.h + uy * f.h),
+    S: (u) => n(u * f.h),
+    W: (u) => n(u * f.w),
+  };
+}
+
+/** A part path, with its unit coordinates mapped into the panel. */
+function path(f, d) {
+  const { X, Y } = fit(f);
+  return d.replace(/(-?\d*\.?\d+) (-?\d*\.?\d+)/g, (_, a, b) => `${X(+a)} ${Y(+b)}`);
+}
+
+// ---------------------------------------------------------------- 1. as it stands
+
+function asItStands(scene) {
+  const rng = makeRng('stands');
+  const fs = figures(scene);
+  const roofs = roofline(scene, 150, 40, 400);
+  let s = `<defs><linearGradient id="s1sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#2c3a48"/><stop offset="1" stop-color="#6b7887"/></linearGradient></defs>
+  <rect width="${W}" height="${H}" fill="url(#s1sky)"/>`;
+  // Winter, and the band is camped — so this is night, the way render/light.ts
+  // decides it: `hasCamped` plus the season, not an hour the sim does not have.
+  s += `<circle cx="360" cy="44" r="15" fill="#dfe6ea" opacity=".85"/>`;
+  s += roofs.map((r) => `<path d="M ${n(r.cx - r.w / 2)} ${r.y} L ${n(r.cx)} ${n(r.peak)} L ${n(r.cx + r.w / 2)} ${r.y} Z" fill="#3f4a5a"/>`).join('');
+  s += `<rect x="0" y="150" width="${W}" height="${H - 150}" fill="#4a5340"/>`;
+  s += `<rect x="0" y="150" width="${W}" height="4" fill="#5d6a4d"/>`;
+  for (let i = 0; i < 26; i += 1) {
+    const x = rng() * W; const h = 16 + rng() * 22;
+    s += `<path d="M ${n(x)} 152 L ${n(x - h * 0.22)} ${n(152 - h)} L ${n(x + h * 0.22)} ${n(152 - h)} Z" fill="#2f3a2c" opacity=".8"/>`;
+  }
+  for (const f of fs) {
+    const { X, Y, S } = fit(f);
+    if (f.down) {
+      const p = fallenParts(f);
+      s += `<path d="${path(f, p.body)}" fill="${f.tunic}" opacity=".9"/>`;
+      s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" fill="#c6a184"/>`;
+      s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx)}" ry="${S(p.shield.ry)}" fill="${f.field}" opacity=".8"/>`;
+      continue;
+    }
+    const p = parts(f);
+    s += `<ellipse cx="${X(p.shadow.cx)}" cy="${Y(p.shadow.cy)}" rx="${S(p.shadow.rx)}" ry="${S(p.shadow.ry)}" fill="#000" opacity=".28"/>`;
+    s += `<line x1="${X(p.spear.x1)}" y1="${Y(p.spear.y1)}" x2="${X(p.spear.x2)}" y2="${Y(p.spear.y2)}" stroke="#8a6f43" stroke-width="2"/>`;
+    s += `<path d="${path(f, p.cloak)}" fill="${f.cloak}"/>`;
+    s += `<path d="${path(f, p.legBack)}" fill="#4a4033"/><path d="${path(f, p.legFront)}" fill="#5a4e3e"/>`;
+    s += `<path d="${path(f, p.body)}" fill="${f.tunic}"/>`;
+    s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" fill="#c6a184"/>`;
+    s += `<path d="${path(f, p.hair)}" fill="${f.hair}"/>`;
+    if (p.beard) s += `<path d="${path(f, p.beard)}" fill="${f.hair}"/>`;
+    s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx)}" ry="${S(p.shield.ry)}" fill="${f.field}"/>`;
+    s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx * 0.34)}" ry="${S(p.shield.ry * 0.34)}" fill="${f.accent}"/>`;
+  }
+  return s;
+}
+
+// ---------------------------------------------------------------- 2. woodcut
+
+function woodcut(scene) {
+  const rng = makeRng('woodcut');
+  const fs = figures(scene);
+  const roofs = roofline(scene, 150, 40, 400);
+  const K = '#14110d';
+  let s = `<defs>
+    <pattern id="w2h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="${K}" stroke-width="1.5"/></pattern>
+    <pattern id="w2t" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)">
+      <line x1="0" y1="0" x2="0" y2="4" stroke="${K}" stroke-width="1"/></pattern>
+  </defs>
+  <rect width="${W}" height="${H}" fill="#e8dcc0"/>`;
+  // Tone is hatching, never a tint: a block prints or it does not.
+  s += `<rect x="0" y="0" width="${W}" height="150" fill="url(#w2t)" opacity=".5"/>`;
+  s += roofs.map((r) => `<path d="M ${n(r.cx - r.w / 2)} ${r.y} L ${n(r.cx)} ${n(r.peak)} L ${n(r.cx + r.w / 2)} ${r.y} Z" fill="${K}"/>`).join('');
+  s += `<rect x="0" y="150" width="${W}" height="${H - 150}" fill="url(#w2h)" opacity=".55"/>`;
+  s += `<line x1="0" y1="150" x2="${W}" y2="150" stroke="${K}" stroke-width="3"/>`;
+  for (let i = 0; i < 22; i += 1) {
+    const x = rng() * W; const h = 14 + rng() * 20;
+    s += `<path d="M ${n(x)} 151 L ${n(x - h * 0.24)} ${n(151 - h)} L ${n(x + h * 0.24)} ${n(151 - h)} Z" fill="${K}"/>`;
+  }
+  for (const f of fs) {
+    const { X, Y, S } = fit(f);
+    const ink = `fill="#e8dcc0" stroke="${K}" stroke-width="2.4" stroke-linejoin="round"`;
+    if (f.down) {
+      const p = fallenParts(f);
+      s += `<path d="${path(f, p.body)}" ${ink}/>`;
+      s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" ${ink}/>`;
+      s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx)}" ry="${S(p.shield.ry)}" fill="#b23b2e" stroke="${K}" stroke-width="2.4"/>`;
+      continue;
+    }
+    const p = parts(f);
+    s += `<line x1="${X(p.spear.x1)}" y1="${Y(p.spear.y1)}" x2="${X(p.spear.x2)}" y2="${Y(p.spear.y2)}" stroke="${K}" stroke-width="3"/>`;
+    s += `<path d="${path(f, p.cloak)}" fill="url(#w2h)" stroke="${K}" stroke-width="2.4"/>`;
+    s += `<path d="${path(f, p.legBack)}" ${ink}/><path d="${path(f, p.legFront)}" ${ink}/>`;
+    s += `<path d="${path(f, p.body)}" fill="url(#w2t)" stroke="${K}" stroke-width="2.4"/>`;
+    s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" ${ink}/>`;
+    s += `<path d="${path(f, p.hair)}" fill="${K}"/>`;
+    if (p.beard) s += `<path d="${path(f, p.beard)}" fill="${K}"/>`;
+    // THE ONE SPOT COLOUR. Every shield, and nothing else on the block.
+    s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx)}" ry="${S(p.shield.ry)}" fill="#b23b2e" stroke="${K}" stroke-width="2.6"/>`;
+  }
+  return s;
+}
+
+// ---------------------------------------------------------------- 3. embroidery
+
+const WOOL = ['#b8482f', '#2f4b63', '#7a8b3f', '#c9a02c', '#3d3227', '#9c6a3a', '#d8cbb0'];
+const toWool = (hex) => {
+  const c = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [r, g, b] = c(hex);
+  let best = WOOL[0]; let bd = 1e9;
+  for (const w of WOOL) {
+    const [wr, wg, wb] = c(w);
+    const d = (r - wr) ** 2 + (g - wg) ** 2 + (b - wb) ** 2;
+    if (d < bd) { bd = d; best = w; }
+  }
+  return best;
+};
+
+function embroidery(scene) {
+  const fs = figures(scene);
+  const roofs = roofline(scene, 158, 50, 390);
+  const LINEN = '#e3d8bd';
+  let s = `<defs>
+    <pattern id="e3weave" width="3" height="3" patternUnits="userSpaceOnUse">
+      <rect width="3" height="3" fill="${LINEN}"/>
+      <line x1="0" y1="1.5" x2="3" y2="1.5" stroke="#cfc2a2" stroke-width=".7"/>
+      <line x1="1.5" y1="0" x2="1.5" y2="3" stroke="#d8ccae" stroke-width=".7"/></pattern>
+  </defs><rect width="${W}" height="${H}" fill="url(#e3weave)"/>`;
+  // The borders are the form, not decoration: a Bayeux panel is captioned
+  // above and populated below, and the caption is the game's own saga line.
+  const band = (y) => {
+    let o = `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="#8a7c5e" stroke-width="1.2"/>`;
+    for (let x = 6; x < W; x += 22) o += `<path d="M ${x} ${y - 7} q 5 7 11 0 q -5 -7 -11 0" fill="none" stroke="#8a7c5e" stroke-width="1.2"/>`;
+    return o;
+  };
+  s += band(30) + band(H - 26);
+  s += `<text x="${W / 2}" y="21" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="#4b3f2c" letter-spacing="1.5">HIC SKARPHEDIN CECIDIT</text>`;
+  s += roofs.map((r) => `<path d="M ${n(r.cx - r.w / 2)} ${r.y} L ${n(r.cx)} ${n(r.peak)} L ${n(r.cx + r.w / 2)} ${r.y} Z" fill="#c9a02c" stroke="#3d3227" stroke-width="1.4"/>`).join('');
+  s += `<path d="M 0 158 L ${W} 158" stroke="#3d3227" stroke-width="1.6"/>`;
+  s += `<rect x="0" y="158" width="${W}" height="60" fill="#7a8b3f" opacity=".35"/>`;
+  for (const f of fs) {
+    const { X, Y, S } = fit(f);
+    // Stitch, not line: a dashed stroke with round caps is what wool laid in
+    // couching actually looks like at this size.
+    const stitch = `stroke="#3d3227" stroke-width="1.9" stroke-dasharray="3 2.4" stroke-linecap="round" fill="none"`;
+    if (f.down) {
+      const p = fallenParts(f);
+      s += `<path d="${path(f, p.body)}" fill="${toWool(f.tunic)}"/><path d="${path(f, p.body)}" ${stitch}/>`;
+      s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" fill="#d8cbb0"/>`;
+      s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" ${stitch}/>`;
+      continue;
+    }
+    const p = parts(f);
+    s += `<line x1="${X(p.spear.x1)}" y1="${Y(p.spear.y1)}" x2="${X(p.spear.x2)}" y2="${Y(p.spear.y2)}" stroke="#3d3227" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round"/>`;
+    for (const [d, fill] of [[p.cloak, toWool(f.cloak)], [p.legBack, '#3d3227'], [p.legFront, '#9c6a3a'], [p.body, toWool(f.tunic)]]) {
+      s += `<path d="${path(f, d)}" fill="${fill}"/><path d="${path(f, d)}" ${stitch}/>`;
+    }
+    s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" fill="#d8cbb0"/>`;
+    s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" ${stitch}/>`;
+    s += `<path d="${path(f, p.hair)}" fill="${toWool(f.hair)}"/>`;
+    if (p.beard) s += `<path d="${path(f, p.beard)}" fill="${toWool(f.hair)}"/>`;
+    s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx)}" ry="${S(p.shield.ry)}" fill="${toWool(f.field)}"/>`;
+    s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx)}" ry="${S(p.shield.ry)}" ${stitch}/>`;
+  }
+  return s;
+}
+
+// ---------------------------------------------------------------- 4. pixel (canvas)
+
+const RAMP = ['#14110d', '#2b2a22', '#463c2c', '#5b6570', '#8a6f43', '#c2703a', '#b23b2e',
+  '#d3a441', '#e8dcc0', '#7d9150', '#3f4a5a', '#2e5468', '#8b9aa8', '#dfe6ea', '#c6a184', '#ffffff'];
+
+function quantise(r, g, b) {
+  let best = RAMP[0]; let bd = 1e9;
+  for (const h of RAMP) {
+    const R = parseInt(h.slice(1, 3), 16); const G = parseInt(h.slice(3, 5), 16); const B = parseInt(h.slice(5, 7), 16);
+    const d = (r - R) ** 2 + (g - G) ** 2 + (b - B) ** 2;
+    if (d < bd) { bd = d; best = h; }
+  }
+  return best;
+}
+
+function pixel(scene, canvas) {
+  // Drawn STRAIGHT to the canvas with Path2D, not by rasterising the SVG
+  // panel through a data: URI. That round trip worked locally and would have
+  // been the one panel on this page able to fail silently under a stricter
+  // image policy — a blank plate and no error is exactly what a broken check
+  // looks like. Path2D takes SVG path data, so the geometry is still shared.
+  const SC = 4;
+  const w = Math.round(W / SC); const h = Math.round(H / SC);
+  const off = document.createElement('canvas');
+  off.width = w; off.height = h;
+  const o = off.getContext('2d');
+  o.scale(1 / SC, 1 / SC);
+  const rng = makeRng('stands');
+
+  const sky = o.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#2c3a48'); sky.addColorStop(1, '#6b7887');
+  o.fillStyle = sky; o.fillRect(0, 0, W, H);
+  o.fillStyle = '#dfe6ea';
+  o.beginPath(); o.arc(360, 44, 15, 0, Math.PI * 2); o.fill();
+  o.fillStyle = '#3f4a5a';
+  for (const r of roofline(scene, 150, 40, 400)) {
+    o.beginPath(); o.moveTo(r.cx - r.w / 2, r.y); o.lineTo(r.cx, r.peak); o.lineTo(r.cx + r.w / 2, r.y); o.fill();
+  }
+  o.fillStyle = '#4a5340'; o.fillRect(0, 150, W, H - 150);
+  o.fillStyle = '#5d6a4d'; o.fillRect(0, 150, W, 4);
+  o.fillStyle = '#2f3a2c';
+  for (let i = 0; i < 26; i += 1) {
+    const x = rng() * W; const th = 16 + rng() * 22;
+    o.beginPath(); o.moveTo(x, 152); o.lineTo(x - th * 0.22, 152 - th); o.lineTo(x + th * 0.22, 152 - th); o.fill();
+  }
+  const fill = (d, col) => { o.fillStyle = col; o.fill(new Path2D(d)); };
+  for (const f of figures(scene)) {
+    const { X, Y, S } = fit(f);
+    if (f.down) {
+      const fp = fallenParts(f);
+      fill(path(f, fp.body), f.tunic);
+      o.fillStyle = '#c6a184'; o.beginPath(); o.arc(X(fp.head.cx), Y(fp.head.cy), S(fp.head.r), 0, Math.PI * 2); o.fill();
+      continue;
+    }
+    const pt = parts(f);
+    o.fillStyle = 'rgba(0,0,0,.28)';
+    o.beginPath(); o.ellipse(X(pt.shadow.cx), Y(pt.shadow.cy), S(pt.shadow.rx), S(pt.shadow.ry), 0, 0, Math.PI * 2); o.fill();
+    o.strokeStyle = '#8a6f43'; o.lineWidth = 2;
+    o.beginPath(); o.moveTo(X(pt.spear.x1), Y(pt.spear.y1)); o.lineTo(X(pt.spear.x2), Y(pt.spear.y2)); o.stroke();
+    fill(path(f, pt.cloak), f.cloak);
+    fill(path(f, pt.legBack), '#4a4033');
+    fill(path(f, pt.legFront), '#5a4e3e');
+    fill(path(f, pt.body), f.tunic);
+    o.fillStyle = '#c6a184'; o.beginPath(); o.arc(X(pt.head.cx), Y(pt.head.cy), S(pt.head.r), 0, Math.PI * 2); o.fill();
+    fill(path(f, pt.hair), f.hair);
+    if (pt.beard) fill(path(f, pt.beard), f.hair);
+    o.fillStyle = f.field;
+    o.beginPath(); o.ellipse(X(pt.shield.cx), Y(pt.shield.cy), S(pt.shield.rx), S(pt.shield.ry), 0, 0, Math.PI * 2); o.fill();
+    o.fillStyle = f.accent;
+    o.beginPath(); o.ellipse(X(pt.shield.cx), Y(pt.shield.cy), S(pt.shield.rx * 0.34), S(pt.shield.ry * 0.34), 0, 0, Math.PI * 2); o.fill();
+  }
+
+  // Sixteen colours and an ordered dither. The ramp IS the game's palette —
+  // that is what makes this the game at 16-bit rather than a filter over it.
+  const d = o.getImageData(0, 0, w, h);
+  const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      const i = (y * w + x) * 4;
+      const bias = (BAYER[y % 4][x % 4] / 16 - 0.5) * 42;
+      const clamp = (v) => Math.max(0, Math.min(255, v + bias));
+      const hex = quantise(clamp(d.data[i]), clamp(d.data[i + 1]), clamp(d.data[i + 2]));
+      d.data[i] = parseInt(hex.slice(1, 3), 16);
+      d.data[i + 1] = parseInt(hex.slice(3, 5), 16);
+      d.data[i + 2] = parseInt(hex.slice(5, 7), 16);
+      d.data[i + 3] = 255;
+    }
+  }
+  o.putImageData(d, 0, 0);
+  const c = canvas.getContext('2d');
+  canvas.width = W; canvas.height = H;
+  c.imageSmoothingEnabled = false;
+  c.drawImage(off, 0, 0, W, H);
+}
+
+// ---------------------------------------------------------------- 5. vellum
+
+function vellum(scene) {
+  const rng = makeRng('vellum');
+  const fs = figures(scene);
+  const GOLD = '#c8a13c';
+  let s = `<defs>
+    <linearGradient id="v5g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e6c964"/><stop offset=".5" stop-color="#f2e3a8"/><stop offset="1" stop-color="#b8902f"/></linearGradient>
+  </defs><rect width="${W}" height="${H}" fill="#efe4c6"/>`;
+  for (let i = 0; i < 90; i += 1) {
+    s += `<circle cx="${n(rng() * W)}" cy="${n(rng() * H)}" r="${n(0.4 + rng() * 1.1)}" fill="#c9b territory"/>`.replace('#c9b territory', '#cbbb93');
+  }
+  // The decorated border and the rubricated initial ARE the object: the
+  // saga is the thing you are looking at, and the fight is an illustration in it.
+  s += `<rect x="9" y="9" width="${W - 18}" height="${H - 18}" fill="none" stroke="${GOLD}" stroke-width="3"/>`;
+  s += `<rect x="15" y="15" width="${W - 30}" height="${H - 30}" fill="none" stroke="#8a2f24" stroke-width="1.2"/>`;
+  for (let x = 22; x < W - 22; x += 26) {
+    s += `<path d="M ${x} 12 q 6.5 9 13 0 q -6.5 -9 -13 0" fill="none" stroke="${GOLD}" stroke-width="1.4"/>`;
+    s += `<path d="M ${x} ${H - 12} q 6.5 -9 13 0 q -6.5 9 -13 0" fill="none" stroke="${GOLD}" stroke-width="1.4"/>`;
+  }
+  // The caption sits in the LOWER margin, under a ruled line — where a
+  // manuscript actually puts it. It ran across the top in the first cut and
+  // the shield wall was drawn straight through the words.
+  s += `<line x1="26" y1="${H - 52}" x2="${W - 26}" y2="${H - 52}" stroke="#8a7c5e" stroke-width=".9"/>`;
+  s += `<text x="30" y="${H - 26}" font-family="Georgia,serif" font-size="30" fill="#8a2f24" font-weight="700">H</text>`;
+  s += `<text x="52" y="${H - 34}" font-family="Georgia,serif" font-size="12" fill="#3b3225">ér fell Skarphedin í annarri hríð,</text>`;
+  s += `<text x="52" y="${H - 21}" font-family="Georgia,serif" font-size="12" fill="#3b3225">ok Hallvard stóð yfir honum.</text>`;
+  for (const f of fs) {
+    const { X, Y, S } = fit(f);
+    const outline = `stroke="#3b3225" stroke-width="1.3"`;
+    if (f.down) {
+      const p = fallenParts(f);
+      s += `<path d="${path(f, p.body)}" fill="#8a6f43" ${outline}/>`;
+      s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" fill="#e8d9b8" ${outline}/>`;
+      continue;
+    }
+    const p = parts(f);
+    s += `<line x1="${X(p.spear.x1)}" y1="${Y(p.spear.y1)}" x2="${X(p.spear.x2)}" y2="${Y(p.spear.y2)}" stroke="#3b3225" stroke-width="1.6"/>`;
+    s += `<path d="${path(f, p.cloak)}" fill="${f.cloak}" ${outline}/>`;
+    s += `<path d="${path(f, p.legBack)}" fill="#6b5a44" ${outline}/><path d="${path(f, p.legFront)}" fill="#7d6a50" ${outline}/>`;
+    s += `<path d="${path(f, p.body)}" fill="${f.tunic}" ${outline}/>`;
+    s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" fill="#e8d9b8" ${outline}/>`;
+    s += `<path d="${path(f, p.hair)}" fill="${f.hair}"/>`;
+    if (p.beard) s += `<path d="${path(f, p.beard)}" fill="${f.hair}"/>`;
+    // Gold leaf, and only on the shields — the expensive thing goes where the
+    // eye is meant to go.
+    s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx)}" ry="${S(p.shield.ry)}" fill="url(#v5g)" stroke="#8a6a1f" stroke-width="1.3"/>`;
+  }
+  return s;
+}
+
+// ---------------------------------------------------------------- 6. rune-stone
+
+function runestone(scene) {
+  const rng = makeRng('stone');
+  const fs = figures(scene);
+  let s = `<defs>
+    <linearGradient id="r6s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8e8c85"/><stop offset="1" stop-color="#6d6b64"/></linearGradient>
+  </defs><rect width="${W}" height="${H}" fill="url(#r6s)"/>`;
+  for (let i = 0; i < 240; i += 1) {
+    s += `<circle cx="${n(rng() * W)}" cy="${n(rng() * H)}" r="${n(0.4 + rng() * 1.3)}" fill="${rng() > 0.5 ? '#a3a099' : '#585650'}" opacity=".5"/>`;
+  }
+  // FIRST CUT WAS A TANGLE, and the fault is worth naming: it outlined every
+  // part of every man, so ten overlapping figures came out as scribble. A
+  // carver does not outline — he sinks the ground away and leaves the figure
+  // proud. So each form is a FILLED plane with a lit edge above and a shadow
+  // edge below, and the red pigment goes only in the deepest cuts.
+  const relief = (d, fill) => `<path d="${d}" fill="#4a4842" opacity=".5" transform="translate(1.6,1.6)"/>`
+    + `<path d="${d}" fill="#b4b1a8" opacity=".55" transform="translate(-1.4,-1.4)"/>`
+    + `<path d="${d}" fill="${fill}"/>`;
+  const ellipse = (cx, cy, rx, ry) => `M ${cx - rx} ${cy} a ${rx} ${ry} 0 1 0 ${rx * 2} 0 a ${rx} ${ry} 0 1 0 ${-rx * 2} 0`;
+  const groove = (d, w) => `<path d="${d}" fill="none" stroke="#9e3b2c" stroke-width="${w}" stroke-linecap="round"/>`;
+
+  s += `<path d="M 14 14 L ${W - 14} 14 L ${W - 14} ${H - 14} L 14 ${H - 14} Z" fill="none" stroke="#4a4842" stroke-width="5" opacity=".6" transform="translate(1.4,1.4)"/>`;
+  s += `<path d="M 14 14 L ${W - 14} 14 L ${W - 14} ${H - 14} L 14 ${H - 14} Z" fill="none" stroke="#b4b1a8" stroke-width="5" opacity=".6" transform="translate(-1.4,-1.4)"/>`;
+  s += groove(`M 14 14 L ${W - 14} 14 L ${W - 14} ${H - 14} L 14 ${H - 14} Z`, 2.6);
+  for (const f of fs) {
+    const { X, Y, S } = fit(f);
+    if (f.down) {
+      const p = fallenParts(f);
+      s += relief(path(f, p.body), '#7d7b73');
+      continue;
+    }
+    const p = parts(f);
+    // The whole man as ONE plane, so a wall of them reads as a frieze.
+    s += relief(path(f, p.cloak), '#77756d');
+    s += relief(path(f, p.legBack), '#75736b');
+    s += relief(path(f, p.legFront), '#7d7b73');
+    s += relief(path(f, p.body), '#828077');
+    s += relief(ellipse(X(p.head.cx), Y(p.head.cy), S(p.head.r), S(p.head.r)), '#8a887f');
+    s += relief(ellipse(X(p.shield.cx), Y(p.shield.cy), S(p.shield.rx), S(p.shield.ry)), '#6f6d66');
+    // Pigment: the shield boss and the spear, the two things a carver picks out.
+    s += groove(ellipse(X(p.shield.cx), Y(p.shield.cy), S(p.shield.rx * 0.42), S(p.shield.ry * 0.42)), 2.6);
+    s += groove(`M ${X(p.spear.x1)} ${Y(p.spear.y1)} L ${X(p.spear.x2)} ${Y(p.spear.y2)}`, 2);
+  }
+  // A band of runes along the foot, which is where they actually go.
+  s += groove(`M 30 ${H - 30} q 62 -14 124 0 q 62 14 124 0 q 62 -14 124 0`, 2.6);
+  for (let i = 0; i < 16; i += 1) {
+    const x = 40 + i * 23;
+    s += groove(`M ${x} ${H - 40} L ${x} ${H - 22}`, 1.8);
+    if (i % 3 === 0) s += groove(`M ${x} ${H - 38} L ${x + 7} ${H - 31}`, 1.8);
+    if (i % 4 === 1) s += groove(`M ${x} ${H - 30} L ${x + 6} ${H - 24}`, 1.8);
+  }
+  return s;
+}
+
+// ---------------------------------------------------------------- 7. ink wash (canvas)
+
+function inkwash(scene, canvas) {
+  canvas.width = W * 2; canvas.height = H * 2;
+  const c = canvas.getContext('2d');
+  c.scale(2, 2);
+  c.fillStyle = '#f4f1e8'; c.fillRect(0, 0, W, H);
+  const rng = makeRng('wash');
+  const fs = figures(scene);
+
+  // FIRST CUT WAS BLOBS AND STICKS. A brush does not paint an ellipse; it is
+  // laid down, dragged and lifted, so a stroke is WIDE where it started and
+  // dry where it left. This is that: a tapered quad from A to B, with the
+  // edge jittered and the ink re-laid a few times so tone builds where the
+  // hand lingered.
+  const stroke = (x1, y1, x2, y2, w1, w2, a, col) => {
+    const ang = Math.atan2(y2 - y1, x2 - x1) + Math.PI / 2;
+    const dx = Math.cos(ang); const dy = Math.sin(ang);
+    // Soft edge and low alpha per pass: ink SOAKS, it does not print. The
+    // first cut used alpha .40 over three passes with 1.6px of jitter and came
+    // out as cut rectangles — the label said wet and the mark said vinyl.
+    c.save(); c.globalAlpha = a; c.fillStyle = col;
+    c.filter = 'blur(1.1px)';
+    for (let k = 0; k < 5; k += 1) {
+      const j = () => (rng() - 0.5) * 5.5;
+      c.beginPath();
+      c.moveTo(x1 + dx * w1 + j(), y1 + dy * w1 + j());
+      c.quadraticCurveTo((x1 + x2) / 2 + dx * w1 * 0.8 + j() * 2, (y1 + y2) / 2 + dy * w1 * 0.8 + j() * 2,
+        x2 + dx * w2 + j(), y2 + dy * w2 + j());
+      c.lineTo(x2 - dx * w2 + j(), y2 - dy * w2 + j());
+      c.quadraticCurveTo((x1 + x2) / 2 - dx * w1 * 0.8 + j() * 2, (y1 + y2) / 2 - dy * w1 * 0.8 + j() * 2,
+        x1 - dx * w1 + j(), y1 - dy * w1 + j());
+      c.closePath(); c.fill();
+    }
+    c.restore();
+  };
+  const dab = (x, y, r, a, col) => {
+    c.save(); c.globalAlpha = a; c.fillStyle = col;
+    c.filter = 'blur(1.4px)';
+    c.beginPath();
+    for (let k = 0; k < 4; k += 1) {
+      c.ellipse(x + (rng() - 0.5) * r * 0.5, y + (rng() - 0.5) * r * 0.5,
+        r * (0.75 + rng() * 0.4), r * (0.7 + rng() * 0.4), rng() * 3, 0, Math.PI * 2);
+    }
+    c.fill(); c.restore();
+  };
+
+  // The ground is one dragged stroke and nothing else. The space is the picture.
+  stroke(48, 215, 396, 211, 2, 8, 0.10, '#3a3830');
+  for (const f of fs) {
+    const { X, Y } = fit(f);
+    const p = f.down ? fallenParts(f) : parts(f);
+    if (f.down) {
+      stroke(X(-1.1), Y(0.97), X(1.05), Y(0.93), 4, 2, 0.16, '#22201b');
+      continue;
+    }
+    // A man: one loaded downstroke for the body, a dab for the head, a dry
+    // drag for the spear. Three marks, as promised on the label.
+    stroke(X(0), Y(0.16), X(0.14 * f.facing), Y(0.99), f.w * 0.32, f.w * 0.14, 0.13, '#22201b');
+    dab(X(0.07 * f.facing), Y(0.085), f.w * 0.16, 0.22, '#14110d');
+    stroke(X(p.spear.x1), Y(p.spear.y1), X(p.spear.x2), Y(p.spear.y2), 1.7, 0.4, 0.15, '#3a3830');
+    // The shield: one turn of a loaded brush, and the only red on the page
+    // besides the seal — where the eye is meant to go.
+    dab(X(p.shield.cx), Y(p.shield.cy), f.w * 0.21, 0.20, '#8a3a2c');
+  }
+  // One seal, bottom right, the way a wash is signed.
+  c.fillStyle = '#a8322a'; c.fillRect(W - 54, H - 50, 30, 30);
+  c.fillStyle = '#f4f1e8';
+  c.font = '600 11px Georgia, serif'; c.textAlign = 'center';
+  c.fillText('LAND', W - 39, H - 34); c.fillText('NÁM', W - 39, H - 23);
+}
+
+// ---------------------------------------------------------------- 8. papercraft
+
+function papercraft(scene) {
+  const rng = makeRng('paper');
+  const fs = figures(scene);
+  const roofs = roofline(scene, 152, 40, 400);
+  let s = `<defs>
+    <filter id="p8s" x="-30%" y="-30%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="2.4" stdDeviation="2.4" flood-color="#2a2418" flood-opacity=".34"/></filter>
+    <filter id="p8f" x="-30%" y="-30%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="1.2" stdDeviation="1.1" flood-color="#2a2418" flood-opacity=".3"/></filter>
+  </defs><rect width="${W}" height="${H}" fill="#cfd9de"/>`;
+  // Every layer is a sheet with a shadow under it, so depth is physical
+  // rather than painted — the one idiom on this page that a phone screen was
+  // designed for.
+  s += `<path d="M 0 116 Q 110 100 220 116 Q 330 132 440 112 L 440 260 L 0 260 Z" fill="#9fb4bd" filter="url(#p8s)"/>`;
+  s += roofs.map((r) => `<path d="M ${n(r.cx - r.w / 2)} ${r.y} L ${n(r.cx)} ${n(r.peak)} L ${n(r.cx + r.w / 2)} ${r.y} Z" fill="#7c6a52" filter="url(#p8f)"/>`).join('');
+  s += `<path d="M 0 150 Q 120 142 240 152 Q 350 160 440 148 L 440 260 L 0 260 Z" fill="#7f8f5c" filter="url(#p8s)"/>`;
+  s += `<path d="M 0 188 Q 130 180 260 190 Q 360 197 440 186 L 440 260 L 0 260 Z" fill="#63754a" filter="url(#p8s)"/>`;
+  for (let i = 0; i < 14; i += 1) {
+    const x = rng() * W; const h = 20 + rng() * 26;
+    s += `<path d="M ${n(x)} 154 L ${n(x - h * 0.3)} ${n(154 - h)} L ${n(x + h * 0.3)} ${n(154 - h)} Z" fill="#4e6040" filter="url(#p8f)"/>`;
+  }
+  for (const f of fs) {
+    const { X, Y, S } = fit(f);
+    if (f.down) {
+      const p = fallenParts(f);
+      s += `<path d="${path(f, p.body)}" fill="${f.tunic}" filter="url(#p8f)"/>`;
+      s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" fill="#d3ae8d" filter="url(#p8f)"/>`;
+      continue;
+    }
+    const p = parts(f);
+    s += `<line x1="${X(p.spear.x1)}" y1="${Y(p.spear.y1)}" x2="${X(p.spear.x2)}" y2="${Y(p.spear.y2)}" stroke="#8a6f43" stroke-width="3" filter="url(#p8f)"/>`;
+    s += `<path d="${path(f, p.cloak)}" fill="${f.cloak}" filter="url(#p8f)"/>`;
+    s += `<path d="${path(f, p.legBack)}" fill="#584a38" filter="url(#p8f)"/><path d="${path(f, p.legFront)}" fill="#6a5a44" filter="url(#p8f)"/>`;
+    s += `<path d="${path(f, p.body)}" fill="${f.tunic}" filter="url(#p8s)"/>`;
+    s += `<circle cx="${X(p.head.cx)}" cy="${Y(p.head.cy)}" r="${S(p.head.r)}" fill="#d3ae8d" filter="url(#p8f)"/>`;
+    s += `<path d="${path(f, p.hair)}" fill="${f.hair}"/>`;
+    s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx)}" ry="${S(p.shield.ry)}" fill="${f.field}" filter="url(#p8s)"/>`;
+    s += `<ellipse cx="${X(p.shield.cx)}" cy="${Y(p.shield.cy)}" rx="${S(p.shield.rx * 0.36)}" ry="${S(p.shield.ry * 0.36)}" fill="${f.accent}"/>`;
+  }
+  return s;
+}
+
+// ---------------------------------------------------------------- 9. terminal
+
+function terminal(scene) {
+  // A glyph lattice. Every figure is resolved to the cells it occupies, so
+  // this is the same geometry as every other panel — read at 6x10 instead of
+  // in colour.
+  //
+  // The first cut drew each man as a single column of `|` and came out as
+  // scattered punctuation: at 21px between ranks and 7px cells, most men fell
+  // in the same column and overwrote each other. A man is three columns wide
+  // here, which is what FIGURE_W actually is in cells, and the wall closes up
+  // the way it does in every other panel.
+  const CW = 6; const CH = 10;
+  const cols = Math.floor(W / CW); const rows = Math.floor(H / CH);
+  const grid = Array.from({ length: rows }, () => Array(cols).fill(' '));
+  const ink = Array.from({ length: rows }, () => Array(cols).fill(0));
+  const put = (c, r, ch, weight = 1) => {
+    if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+    if (weight >= ink[r][c]) { grid[r][c] = ch; ink[r][c] = weight; }
+  };
+  const groundRow = Math.floor(py(638) / CH);
+  for (let c = 0; c < cols; c += 1) put(c, groundRow + 1, '=', 0.5);
+  for (const r of roofline(scene, 150, 40, 400)) {
+    const c = Math.floor(r.cx / CW); const top = Math.floor(r.peak / CH);
+    put(c, top, '/', 0.6); put(c + 1, top, '\\', 0.6);
+    for (let y = top + 1; y <= groundRow - 4; y += 1) { put(c, y, '|', 0.4); put(c + 1, y, '|', 0.4); }
+  }
+  for (const f of figures(scene)) {
+    const c = Math.floor(f.cx / CW);
+    const feet = Math.floor(f.feet / CH);
+    const top = Math.floor((f.feet - f.h) / CH);
+    const w = f.side === 'warband' ? 1 : -1;
+    if (f.down) {
+      for (let i = -3; i <= 3; i += 1) put(c + i, feet, '~', 3);
+      put(c + 3 * w, feet, '@', 3);
+      continue;
+    }
+    // A man: head, mailed body over three columns, legs, and his shield in
+    // the column facing the enemy.
+    put(c, top, '@', 2);
+    const chest = top + 1;
+    const hip = Math.round(top + (feet - top) * 0.62);
+    for (let y = chest; y <= hip; y += 1) {
+      put(c - 1, y, '#', 2); put(c, y, '#', 2); put(c + 1, y, '#', 2);
+    }
+    for (let y = hip + 1; y < feet; y += 1) { put(c - 1, y, '|', 2); put(c + 1, y, '|', 2); }
+    put(c + 2 * w, Math.round(top + (feet - top) * 0.34), '0', 3);
+    put(c + 2 * w, Math.round(top + (feet - top) * 0.34) + 1, '0', 3);
+    // The spear, raked forward over the man in front.
+    for (let k = 1; k <= 6; k += 1) put(c + k * w, chest - Math.round(k * 0.55), '/', 1.5);
+  }
+  const text = grid.map((r) => r.join('').replace(/\s+$/, '')).join('\n');
+  return `<rect width="${W}" height="${H}" fill="#0d0f0c"/>
+    <text font-family="ui-monospace,Menlo,Consolas,monospace" font-size="9.5" fill="#e0a94f" xml:space="preserve">`
+    + text.split('\n').map((l, i) => `<tspan x="4" y="${11 + i * CH}">${esc(l)}</tspan>`).join('')
+    + `</text>`;
+}
+
+// ---------------------------------------------------------------- 10. enamel
+
+function enamel(scene) {
+  const fs = figures(scene);
+  const roofs = roofline(scene, 150, 46, 394);
+  const GOLD = '#d8b451';
+  let s = `<defs>
+    <linearGradient id="n10b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3226"/><stop offset="1" stop-color="#241f18"/></linearGradient>
+    <linearGradient id="n10h" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".5"/><stop offset=".5" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+  </defs><rect width="${W}" height="${H}" fill="url(#n10b)"/>`;
+  // Cloisonné: every cell is bounded by a gold wire and filled with one
+  // saturated, glassy colour. No blends anywhere — the wire does the drawing
+  // and the glass does the colour.
+  const cell = (d, fill) => `<path d="${d}" fill="${fill}"/><path d="${d}" fill="none" stroke="${GOLD}" stroke-width="1.9" stroke-linejoin="round"/>`;
+  s += cell(`M 0 150 L ${W} 150 L ${W} ${H} L 0 ${H} Z`, '#1d4a52');
+  s += cell(`M 0 190 Q 120 182 240 192 Q 350 199 440 188 L 440 260 L 0 260 Z`, '#2c6b5c');
+  s += roofs.map((r) => cell(`M ${n(r.cx - r.w / 2)} ${r.y} L ${n(r.cx)} ${n(r.peak)} L ${n(r.cx + r.w / 2)} ${r.y} Z`, '#7b2d24')).join('');
+  for (const f of fs) {
+    const { X, Y, S } = fit(f);
+    if (f.down) {
+      const p = fallenParts(f);
+      s += cell(path(f, p.body), '#5a3a6b');
+      continue;
+    }
+    const p = parts(f);
+    s += `<line x1="${X(p.spear.x1)}" y1="${Y(p.spear.y1)}" x2="${X(p.spear.x2)}" y2="${Y(p.spear.y2)}" stroke="${GOLD}" stroke-width="2.2"/>`;
+    s += cell(path(f, p.cloak), f.side === 'warband' ? '#2f4f7a' : '#6b2f2a');
+    s += cell(path(f, p.legBack), '#3d3227');
+    s += cell(path(f, p.legFront), '#4d4030');
+    s += cell(path(f, p.body), f.side === 'warband' ? '#1f6a72' : '#8a3b1e');
+    const r = S(p.head.r);
+    s += cell(`M ${X(p.head.cx) - r} ${Y(p.head.cy)} a ${r} ${r} 0 1 0 ${r * 2} 0 a ${r} ${r} 0 1 0 ${-r * 2} 0`, '#e6d3a8');
+    const rx = S(p.shield.rx); const ry = S(p.shield.ry);
+    const sh = `M ${X(p.shield.cx) - rx} ${Y(p.shield.cy)} a ${rx} ${ry} 0 1 0 ${rx * 2} 0 a ${rx} ${ry} 0 1 0 ${-rx * 2} 0`;
+    s += cell(sh, '#9c1f2e');
+    s += `<path d="${sh}" fill="url(#n10h)"/>`;
+  }
+  return s;
+}
+
+const DIRECTIONS = [
+  {
+    id: 'stands', fn: 'asItStands', kind: 'svg',
+    name: 'As it stands',
+    tech: 'SVG', control: true,
+    thesis: 'The game today, drawn from the same data as the other nine. Without it on the wall there is nothing to prefer anything to.',
+    assets: 'n/a — this is the baseline.',
+    cost: 'None. It is what ships.',
+  },
+  {
+    id: 'woodcut', fn: 'woodcut', kind: 'svg',
+    name: 'Woodcut',
+    tech: 'SVG',
+    thesis: 'Heavy keylines, hatching for tone, one spot colour on the whole block. Reads at arm’s length on a phone in a way none of the painted directions do.',
+    assets: 'Little. Hatching is a pattern tile, and the repo already treats a tile as a paint (render/knot.ts).',
+    cost: 'Lowest of the nine. Stays SVG, so every bar keeps its selectors. Drops the built page’s distinct colours sharply, which is a size win, not a cost.',
+  },
+  {
+    id: 'embroidery', fn: 'embroidery', kind: 'svg',
+    name: 'Embroidery',
+    tech: 'SVG',
+    thesis: 'Linen ground, wool laid in couched stitch, flat fills, figures in profile, a captioned border. The game is already side-on with figures in profile — this is the smallest change that reads as a different object.',
+    assets: 'Little. The weave is a 3px tile; the stitch is a dashed stroke.',
+    cost: 'Low. Quantises every look to a wool palette, so lookOf’s output is mapped rather than used raw — the one place it stops being “one person, one look” in the literal sense.',
+  },
+  {
+    id: 'pixel', fn: 'pixel', kind: 'canvas',
+    name: '16-bit pixel',
+    tech: 'Canvas',
+    thesis: 'A quarter-scale buffer, a sixteen-colour ramp, an ordered dither, blitted up hard-edged. The ramp is the game’s own palette.',
+    assets: 'Large. Hand-drawn sprites would beat anything procedural here, and this is the direction where the zero-asset rule costs the most.',
+    cost: 'High. The figures leave the DOM, so the CSS keyframes and every bar that counts SVG nodes need rewriting, and battle.ts’s pointer path converts screen to world through an SVG viewBox.',
+  },
+  {
+    id: 'vellum', fn: 'vellum', kind: 'svg',
+    name: 'Illuminated vellum',
+    tech: 'SVG',
+    thesis: 'Gold leaf, a rubricated initial, a decorated border, ruled text. The saga stops being a log beside the picture and becomes the object you are looking at.',
+    assets: 'Some. Gold is a gradient; a real illuminator’s letterforms are not.',
+    cost: 'Low to middling. Stays SVG. Wants a display face the game does not have, and the zero-asset rule means drawing it or living with a system serif.',
+  },
+  {
+    id: 'runestone', fn: 'runestone', kind: 'svg',
+    name: 'Carved rune-stone',
+    tech: 'SVG',
+    thesis: 'Every form cut three times — a pale edge, a dark edge, pigment in the groove — so it reads as incised rather than drawn. Grey granite, red in the cuts.',
+    assets: 'Little. The speckle is procedural; the relief is two offset strokes.',
+    cost: 'Middling. Three strokes per form is roughly triple the node count of the same drawing flat, which is the one thing the repo has measured itself against before.',
+  },
+  {
+    id: 'inkwash', fn: 'inkwash', kind: 'canvas',
+    name: 'Ink wash',
+    tech: 'Canvas',
+    thesis: 'A man is three strokes and no more. Tone builds where the brush lingered, the ground is mostly empty, and one red seal signs it.',
+    assets: 'Some. Real brush textures would help; the wet edge is the hard part procedurally.',
+    cost: 'High, same as pixel — it leaves the DOM. Also the least legible of the ten at 320px, which is the width the bars hold the game to.',
+  },
+  {
+    id: 'papercraft', fn: 'papercraft', kind: 'svg',
+    name: 'Papercraft',
+    tech: 'SVG',
+    thesis: 'Layered cut sheets, each with a shadow under it, so depth is physical rather than painted. The one modern mobile idiom on the wall.',
+    assets: 'Little.',
+    cost: 'Low, with one catch: a drop-shadow filter per layer is the most expensive thing on this page for a phone to composite, and the repo has already been bitten once by a backdrop that quietly repainted every turn.',
+  },
+  {
+    id: 'terminal', fn: 'terminal', kind: 'svg',
+    name: 'Glyph lattice',
+    tech: 'DOM text',
+    thesis: 'The same geometry resolved to a 7×11 character grid. Radical, nearly free, and honest about a game that is fundamentally numbers.',
+    assets: 'None. This is the only direction the zero-asset rule costs nothing at all.',
+    cost: 'Total, and cheap. Every visual bar becomes meaningless and would be deleted rather than translated — which is exactly what 8.5 did to the five map bars, so there is precedent for doing it honestly.',
+  },
+  {
+    id: 'enamel', fn: 'enamel', kind: 'svg',
+    name: 'Cloisonné enamel',
+    tech: 'SVG',
+    thesis: 'Gold wire bounds every cell; one saturated glass colour fills it. No blends anywhere — the wire draws and the glass colours. Period-plausible for the brooches these people actually wore.',
+    assets: 'Little.',
+    cost: 'Low. Stays SVG and halves the palette. Costs lookOf the most of any direction here: cell colours are chosen for the glass, so a person’s own shield ground stops being what you see.',
+  },
+];
+
+function panelSVG(inner) {
+  return `<svg viewBox="0 0 440 260" role="img" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
+}
+
+function build(scene, T) {
+  const wall = document.getElementById('wall');
+  for (const d of DIRECTIONS) {
+    const fig = document.createElement('figure');
+    fig.className = `panel${d.control ? ' control' : ''}`;
+    fig.innerHTML = `
+      <div class="plate" data-id="${d.id}"></div>
+      <figcaption>
+        <p class="eyebrow">${d.tech}${d.control ? ' · baseline' : ''}</p>
+        <h3>${d.name}</h3>
+        <p class="thesis">${d.thesis}</p>
+        <dl class="spec">
+          <dt>Costs</dt><dd>${d.cost}</dd>
+          <dt>With assets</dt><dd>${d.assets}</dd>
+        </dl>
+      </figcaption>`;
+    wall.append(fig);
+    const plate = fig.querySelector('.plate');
+    if (d.kind === 'canvas') {
+      const c = document.createElement('canvas');
+      c.className = 'cv';
+      plate.append(c);
+      const r = T[d.fn](scene, c);
+      if (r && r.then) r.catch(() => {});
+    } else {
+      plate.innerHTML = panelSVG(T[d.fn](scene));
+    }
+  }
+}
+
+function start(scene, T) {
+  document.getElementById('prov-seed').textContent = scene.seed;
+  document.getElementById('prov-day').textContent = scene.day;
+  document.getElementById('prov-stop').textContent = scene.stop;
+  document.getElementById('prov-country').textContent = `${scene.season}, ${scene.weather}, ${scene.country}`;
+  document.getElementById('prov-steading').textContent = `${scene.steading.name} (${scene.steading.raised.length} raised)`;
+  document.getElementById('prov-rival').textContent = scene.rival ?? '—';
+  document.getElementById('prov-round').textContent = scene.round;
+  const log = document.getElementById('prov-log');
+  log.innerHTML = scene.log.map((l) => `<li>${l.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</li>`).join('');
+  build(scene, T);
+}
+
+const T = { asItStands, woodcut, embroidery, pixel, vellum, runestone, inkwash, papercraft, terminal, enamel };
+start(SCENE, T);
+</script>

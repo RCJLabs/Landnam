@@ -87,6 +87,12 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       ...(process.env['PROBES'] ? [] : ['test/probes.test.ts']),
+      // `test/scene.test.ts` is not a test either — it is the extractor that
+      // writes the 12.7 gallery's scene out of the real derivations. It
+      // asserts nothing and it writes a file, so it is a tool that happens to
+      // need the TypeScript sim; same treatment as the probes, and for the
+      // same reason. `npm run scene`.
+      ...(process.env['SCENE'] ? [] : ['test/scene.test.ts']),
     ],
   },
   build: {
