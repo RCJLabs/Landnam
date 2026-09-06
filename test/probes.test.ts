@@ -5874,3 +5874,107 @@ describe('PROBE: 12.10 — what the book loses, and what the ending never says',
     expect(hitCap).toBeGreaterThanOrEqual(0);
   }, 900_000);
 });
+describe('PROBE: 12.14 — what the deck remembers', () => {
+  it('measures which cards each policy ever reaches', () => {
+    // The reached SET, not the draw count: the item's claim is that the
+    // raider's cards are a subset of the settler's, which is a claim about
+    // what the deck can distinguish rather than about frequency.
+    //
+    // Read off `state.event.id` at the transition that sets it — the cause —
+    // rather than inferred from what changed alongside.
+    const SEEDS = 120;
+    const HORIZON = 500;
+    const CARD_IDS = new Set(EVENTS.map((e) => e.id));
+    const reached = new Map<string, Set<string>>();
+
+    // The ten cards 12.14 added, so the second criterion can be read off the
+    // same run: a history card in >= 30% of raider sagas and <= 5% of settler
+    // sagas THAT NEVER SACKED. The settler denominator is restricted on
+    // purpose — a settler who did sack has earned them, and counting those
+    // would be asking whether the gates work by including the runs that pass.
+    const HISTORY = new Set([
+      'the-reckoning-of-spoils', 'the-name-they-use', 'the-one-we-drove-out',
+      'the-other-mans-shore', 'the-jarls-portion', 'men-who-have-fought',
+      'the-wall-that-held', 'the-count-of-the-dead', 'the-oath-we-broke',
+      'the-long-bargain',
+    ]);
+    const drewHistory = new Map<string, number>();
+    const cleanSettlers = { n: 0, drew: 0 };
+    // PER CARD, because "a history card" as one set answers the wrong
+    // question. The item's criterion assumes history means RAIDING history;
+    // most of these ten are gated on history a settler accumulates — bargains
+    // struck, raids held, battles stood, an assembly carried. A set that
+    // mixes the two cannot separate the policies and it is not supposed to.
+    const perCard = new Map<string, { raider: number; clean: number }>();
+
+    for (const [name, pol] of [['settler', SETTLER], ['raider', RAIDER]] as const) {
+      setPolicy(pol);
+      const seen = new Set<string>();
+      let sagasWithHistory = 0;
+      for (let i = 0; i < SEEDS; i += 1) {
+        let sawHistory = false;
+        const cardsHere = new Set<string>();
+        const final = run(`deck-${i}`, HORIZON, (before, after) => {
+          const id = after.event?.id;
+          if (!id || before.event?.id === id) return;
+          // CARDS ONLY. `state.event.id` is "an event id from data/events, OR
+          // 'feud' for a quarrel between two people" (state/types.ts), and the
+          // first cut counted the pseudo-id as a card — which is how the
+          // never-reached row came out at MINUS one, a union larger than the
+          // deck. A count that cannot be negative coming back negative is the
+          // instrument telling you what it actually put in the set.
+          if (!CARD_IDS.has(id)) return;
+          seen.add(id);
+          if (HISTORY.has(id)) { sawHistory = true; cardsHere.add(id); }
+        });
+        if (sawHistory) sagasWithHistory += 1;
+        const clean = name === 'settler' && final.tally.sackings === 0;
+        if (clean) {
+          cleanSettlers.n += 1;
+          if (sawHistory) cleanSettlers.drew += 1;
+        }
+        for (const id of cardsHere) {
+          const row = perCard.get(id) ?? { raider: 0, clean: 0 };
+          if (name === 'raider') row.raider += 1;
+          if (clean) row.clean += 1;
+          perCard.set(id, row);
+        }
+      }
+      reached.set(name, seen);
+      drewHistory.set(name, sagasWithHistory);
+    }
+    setPolicy(SETTLER);
+
+    const settler = reached.get('settler')!;
+    const raider = reached.get('raider')!;
+    const shared = [...raider].filter((id) => settler.has(id));
+    const raiderOnly = [...raider].filter((id) => !settler.has(id));
+    const settlerOnly = [...settler].filter((id) => !raider.has(id));
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `PROBE 12.14 the deck's reach — ${SEEDS} landings a policy, to day ${HORIZON},`
+      + ` ${EVENTS.length} cards in the deck:\n`
+      + `  settler reaches ${settler.size}, raider reaches ${raider.size}\n`
+      + `  shared ${shared.length}; raider-only ${raiderOnly.length}`
+      + `${raiderOnly.length ? ` (${raiderOnly.slice(0, 8).join(', ')})` : ''};`
+      + ` settler-only ${settlerOnly.length}`
+      + `${settlerOnly.length ? ` (${settlerOnly.slice(0, 8).join(', ')})` : ''}\n`
+      + `  never reached by either: ${EVENTS.length - new Set([...settler, ...raider]).size}\n`
+      + `  a history card was drawn in: raider ${drewHistory.get('raider')}/${SEEDS}`
+      + ` (${Math.round((drewHistory.get('raider')! / SEEDS) * 100)}%),`
+      + ` settler ${drewHistory.get('settler')}/${SEEDS}`
+      + ` (${Math.round((drewHistory.get('settler')! / SEEDS) * 100)}%)\n`
+      + `  settlers that never sacked: ${cleanSettlers.drew}/${cleanSettlers.n}`
+      + `${cleanSettlers.n ? ` (${Math.round((cleanSettlers.drew / cleanSettlers.n) * 100)}%)` : ''}\n`
+      + [...HISTORY].map((id) => {
+        const row = perCard.get(id) ?? { raider: 0, clean: 0 };
+        const r = Math.round((row.raider / SEEDS) * 100);
+        const c = cleanSettlers.n ? Math.round((row.clean / cleanSettlers.n) * 100) : 0;
+        return `    ${id.padEnd(26)} raider ${String(r).padStart(3)}%`
+          + `  settler-never-sacked ${String(c).padStart(3)}%`;
+      }).join('\n'),
+    );
+    expect(settler.size).toBeGreaterThan(0);
+  }, 900_000);
+});

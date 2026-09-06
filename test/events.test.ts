@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { readdirSync, readFileSync } from 'node:fs';
 import { EVENTS, eventById } from '../src/data/events';
 import { TRAITS, traitById } from '../src/data/traits';
 import { LORE } from '../src/data/lore';
@@ -18,12 +19,37 @@ const STATS = ['might', 'wits', 'spirit', 'craft'];
 /**
  * Flags the sim itself sets, as opposed to the ones event cards raise. A gate
  * naming one of these is legitimate even though no card sets it.
+ *
+ * HARVESTED, NOT LISTED (12.14). This was ten names typed out by hand — a
+ * second copy of the truth, and it had already drifted: `oath:foresworn` is
+ * written every time a band breaks an oath (`sim/oath.ts`), and a card gated
+ * on it failed this lint as "waiting for a day that never comes". The list
+ * was missing it because the sim writes that one THROUGH A CONSTANT, and a
+ * hand-list only ever contains what somebody remembered.
+ *
+ * So both forms are read off the source: `flags['literal']` and
+ * `flags[SOME_CONST]` where the constant resolves to a string literal
+ * anywhere in `src/`. A lint that keeps its own copy of what it is checking
+ * can be wrong in both directions — it would also have accepted a gate on a
+ * flag nothing sets, as long as the name was in the list.
  */
-const SIM_FLAGS = [
-  'hungerStreak', 'pendingBattle', 'pendingBattleDifficulty', 'pendingRaid',
-  'ruleTaken', 'thingCalledOn', 'thingsCalled', 'winterLastWarning',
-  'winterTargetGiven', 'workedOnce',
-];
+function simFlags(): Set<string> {
+  const files = (dir: string): string[] => readdirSync(dir, { withFileTypes: true })
+    .flatMap((e) => (e.isDirectory() ? files(`${dir}/${e.name}`)
+      : e.name.endsWith('.ts') ? [`${dir}/${e.name}`] : []));
+  const src = files('src').map((f) => readFileSync(f, 'utf8')).join('\n');
+  const consts = new Map<string, string>();
+  for (const m of src.matchAll(/const (\w+) = '([^']+)'/g)) consts.set(m[1]!, m[2]!);
+  const out = new Set<string>();
+  for (const m of src.matchAll(/flags\['([^']+)'\]/g)) out.add(m[1]!);
+  for (const m of src.matchAll(/flags\[([A-Z_][A-Z_0-9]*)\]/g)) {
+    const v = consts.get(m[1]!);
+    if (v) out.add(v);
+  }
+  return out;
+}
+
+const SIM_FLAGS = simFlags();
 
 /**
  * Cards nothing draws at random, because something else asks for them.
@@ -163,7 +189,7 @@ describe('content lint: events', () => {
       );
       for (const flag of needs) {
         expect(
-          others || SIM_FLAGS.includes(flag) || !setsItself.has(flag),
+          others || SIM_FLAGS.has(flag) || !setsItself.has(flag),
           `${event.id}: needs '${flag}' and is the only thing that sets it`,
         ).toBe(true);
       }

@@ -112,6 +112,15 @@ export function conditionHolds(state: GameState, condition: Condition): boolean 
       // By ROLE, so a card gated on a palisade still fires behind
       // earthworks. A tier that switches content off is a tier nobody wants.
       return standsFor(state, condition.building);
+    // --- what the band has done (12.14) ---
+    case 'tally':
+      return state.tally[condition.of] >= condition.min;
+    case 'ruling':
+      return state.jarl !== undefined;
+    case 'outlawed':
+      return (state.outlaws?.length ?? 0) >= condition.min;
+    case 'metRival':
+      return state.rival?.met === true;
   }
 }
 

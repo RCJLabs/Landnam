@@ -2564,7 +2564,24 @@ describe('what play actually reaches', () => {
       const flag = chainFlag(id);
       return flag !== undefined && flagsSet.has(flag);
     });
-    const shut = neverOpened.filter((id) => !chainShort.includes(id));
+    /**
+     * Cards gated on a state THIS BOT CANNOT REACH, as opposed to a state the
+     * game cannot reach. Same shape as `PLAYER_CALLED` in events.test.ts: a
+     * named exception rather than a loosened rule.
+     *
+     * 12.14 added history gates, and two of them sit behind player verbs the
+     * harness never uses — it drives nobody out and it never breaks an oath.
+     * Every entry here MUST have a hand-built reachability test in
+     * `test/deckhistory.test.ts` proving a real state opens the card; without
+     * that this list is just a way to make the bar stop complaining, which is
+     * the opposite of what it is for. The list is deliberately tiny and every
+     * addition is a claim somebody has to defend.
+     */
+    const PLAYER_ONLY = new Set(['the-one-we-drove-out', 'the-oath-we-broke']);
+    const shut = neverOpened
+      .filter((id) => !chainShort.includes(id))
+      .filter((id) => !PLAYER_ONLY.has(id));
+    const botCannot = neverOpened.filter((id) => PLAYER_ONLY.has(id));
     const unlucky = cold.filter((id) => (openDays[id] ?? 0) > 0);
     // The deck is what EVENTS holds; `feud` and `thing` are cards the sim
     // builds by hand and were quietly inflating this ratio above 100%.
@@ -2584,6 +2601,8 @@ describe('what play actually reaches', () => {
             Math.max(1, totalDraws) * 100,
         )}%)\n` +
         `  never eligible (unreachable): ${shut.join(', ') || 'none'}\n` +
+        `  never eligible, but only because the BOT cannot get there: ` +
+        `${botCannot.join(', ') || 'none'}\n` +
         `  pool averaged ${(poolSize / Math.max(1, daysSeen)).toFixed(1)} cards a day; ` +
         `model predicts ${Object.values(share).reduce((a, b) => a + b, 0).toFixed(0)} draws against ${totalDraws} seen\n` +
         `  on the road: ${totalDraws - drawsSettled} draws over ${daysSeen - daysSettled} days ` +

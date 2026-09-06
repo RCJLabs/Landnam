@@ -245,10 +245,22 @@ describe('the game a band without orders plays', () => {
     1: 'f978e270',
     2: '8a098a9d',
     3: '3d41e638',
-    4: 'fd2cedc9',
+    // RE-PINNED 2026-09-06 BY 12.14, and only these two moved.
+    //
+    // Unlike 12.10's re-pin, this change IS in the game: ten history-gated
+    // cards were added to the deck, so a saga that draws one plays out
+    // differently from here. The check that makes the re-pin honest is
+    // therefore the opposite one — not "nothing but the book moved", but
+    // "only the sagas that drew a new card moved".
+    //
+    // Measured: seeds 0-3, 5 and 6 are byte-identical to the old pins and
+    // drew none of the ten. Seed 4 drew `the-long-bargain`; seed 7 drew
+    // `the-other-mans-shore`, `the-wall-that-held` and `men-who-have-fought`.
+    // A rule change would have moved all eight.
+    4: 'e6e7ecb5',
     5: '6f41c1d1',
     6: '5a9b0577',
-    7: '0ad334c7',
+    7: '71d664e8',
   };
 
   const fnv = (text: string): string => {
