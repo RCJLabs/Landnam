@@ -177,6 +177,46 @@ const SCENES = [
       await clearCards(page);
     }
   }],
+  ['yard', '.crew', async (page) => {
+    // THE SETTLED HALF OF THE GAME HAD NEVER BEEN PHOTOGRAPHED (12.4). This
+    // bar has watched the road, the chronicle, two fights and the ending
+    // since it was written, and not the screen a settled band spends about
+    // nine days in ten standing on — so every change to the steading's
+    // panels has landed unwatched, including the two this item shipped.
+    //
+    // FROM A FRESH PAGE, for the reason the ending scene above it learned
+    // the hard way: a scene that inherits whatever the last one left cannot
+    // be sure what it is photographing. The save goes first or the reload
+    // resumes.
+    //
+    // AND LAST IN THE TABLE, which is not tidiness. The first cut sat this
+    // between `chronicle` and `fight`, and resetting the page moved what the
+    // two fight scenes inherited — they drifted 3.7 and 3.3 at once. A
+    // baseline re-blessed because a scene ABOVE it changed its own subject is
+    // a baseline that has stopped meaning anything. Nothing follows this, so
+    // it can reset what it likes.
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(`file://${process.cwd()}/${PAGE}`);
+    await page.waitForSelector('.overlay.title', { timeout: 15000 });
+    await page.waitForTimeout(900);
+    await page.locator('.overlay.title input').first().fill('look-bar');
+    await page.locator('button', { hasText: /Take the land/i }).first().click();
+    await page.waitForTimeout(900);
+    await clearCards(page);
+    const founded = await page.evaluate(() => window.landnam?.settle?.() ?? false);
+    if (!founded) return 'skip';
+    await page.waitForTimeout(700);
+    await clearCards(page);
+    await page.locator('.action-slot button', { hasText: /^Act$/ }).first()
+      .click({ timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(400);
+    const enter = page.locator('.overlay button')
+      .filter({ has: page.locator('.deed-label', { hasText: /^The steading$/ }) }).first();
+    if (!(await enter.count())) return 'skip';
+    await enter.click({ timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(800);
+    await clearCards(page);
+  }],
 ];
 
 /** Which bands of the picture moved, in plain words. */

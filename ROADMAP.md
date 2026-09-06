@@ -58,9 +58,10 @@
 > founding card carries instead is the record that taking hard ground beats
 > walking on for fair (saved 35, killed 7, p < 0.0001).
 >
-> **12.4 is PART BUILT** — the job picker's two unreachable controls are
-> reachable, and what looked like a second bug turned out to be the bar
-> measuring its own reach.
+> **12.4 is BUILT** — the job picker's two unreachable controls are
+> reachable, what looked like a second bug turned out to be the bar measuring
+> its own reach, and both instruments (`reach.mjs`, `look.mjs`) can now see
+> the settled half of the game without a hand-made save.
 >
 > **12.1, 12.2 and 12.3 are BUILT.** 12.2 took the largest lever in the game — crewing to the
 > winter mark, saved 60 and killed 0 — and made it a standing order given
@@ -7402,8 +7403,8 @@ would replace — which is why it is third and not fifteenth.
 
 ### UI and what the screen says
 
-- [~] **12.4 — The picker is reachable, and the roster holds still. PART
-  BUILT 2026-09-05.** The defect was re-taken on today's build first, per the
+- [x] **12.4 — The picker is reachable, the roster holds still, and both
+  instruments now see the steading. BUILT 2026-09-05.** The defect was re-taken on today's build first, per the
   item's own "instrument red first", and it had got **worse** than the reading
   it was opened on: *Healer* with its centre at **109%** of a 320x568 viewport
   and *Stand them down* at **119%** (the item recorded 105% and 115% on
@@ -7455,12 +7456,48 @@ would replace — which is why it is third and not fifteenth.
   oscillating version (7 positions, nothing selectable), and against 12.2's
   key.
 
-  **NOT DONE, and the item is left open for it:** `reach.mjs` still needs a
-  colony save it can produce itself rather than one at a path `bars.mjs` never
-  writes, and `look.mjs` still has no yard scene. The picker's height is
-  driven by `JOBS`, not by the roster, so the "6 and 9 people" clause is
-  answered by construction rather than by measurement — the roster is the part
-  that scales with the band, and it is capped and scrolls.
+  **AND THE TWO INSTRUMENTS ARE CLOSED TOO (same day, second commit).**
+
+  `reach.mjs` measured the settled screens only when a save happened to sit at
+  `/tmp/colony.json`, a path `bars.mjs` never writes — so on every automated
+  run it printed *"(no /tmp/colony.json — the settled screens were not
+  measured)"* and none were. It settles for itself now through
+  `window.landnam.settle()`, the same fabricated walk `yard.mjs` uses, and
+  surveys **three** colony screens (work, build, picker) at both viewports
+  with no hand-made fixture. The old save path is kept above it, because a
+  played band is a better sample than one that landed this morning.
+
+  **Two faults in its own rules came out with it**, and together they are why
+  this survey never reported the picker:
+
+  - it counted `overflow: hidden` as a scrolling ancestor. `#app` is exactly
+    that — it is how this game refuses a page scroll — so **every** control
+    below the fold was filed as "reached by scrolling, like any long list".
+    The one thing that cannot be reached by scrolling is a thing inside
+    `overflow: hidden`, and the survey was excusing precisely those;
+  - and it had **no upper bound at all**. `frac` is a fraction of the viewport
+    and nothing stopped it exceeding 1, so a control at 119% passed a rule
+    that only ever asked whether a control sat too HIGH.
+
+  Both fixed, and reach now names the same two controls at 109% and 119% that
+  the yard bar found independently — **watched red against the pre-12.4
+  layout and green after**.
+
+  `look.mjs` gains a **yard scene**, and it had been photographing the road,
+  the chronicle, two fights and the ending since it was written while never
+  once looking at the screen a settled band stands on nine days in ten. It
+  sits LAST in the table, which is not tidiness: the first cut sat it between
+  `chronicle` and `fight`, and resetting the page moved what the two fight
+  scenes inherited — they drifted 3.7 and 3.3 at once. **A baseline re-blessed
+  because a scene above it changed its own subject is a baseline that has
+  stopped meaning anything.** Thirteen screens blessed.
+
+  **Answered by construction rather than by measurement**, and said so: the
+  picker's height is driven by `JOBS`, not by the roster, so the "6 and 9
+  people" clause does not bite. The roster is the part that scales with the
+  band, and it is capped and scrolls — at 320x568 it shows three names of six
+  with the standing-orders control below the fold inside a scrolling slot,
+  which is this file's own standard for a long list.
 
   The original entry follows.
 
@@ -7918,8 +7955,9 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
 
 ## Changelog
 
-- **2026-09-05 — 12.4 PART BUILT: two controls that could not be tapped, and
-  three fixes for a bug that was not there.** Re-taken on today's build first,
+- **2026-09-05 — 12.4 BUILT: two controls that could not be tapped, three
+  fixes for a bug that was not there, and two instruments that had never
+  looked at half the game.** Re-taken on today's build first,
   the steading's job picker was worse than the item recorded: *Healer* with
   its centre at 109% of a 320x568 viewport and *Stand them down* at 119%, with
   nothing to scroll — and *Stand them down* is the only way to take somebody
@@ -7947,8 +7985,25 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   `scripts/yard.mjs` gains four picker checks — the roster holds one position
   across thirty frames, a tap selects somebody, every control's centre is on
   screen, and the list keeps its place — each watched failing.
-  **Left open:** `reach.mjs` still cannot make its own colony save and
-  `look.mjs` has no yard scene, so 12.4 stays open for those.
+  **AND THEN CLOSED, in a second commit the same day.** `reach.mjs` settles
+  for itself now and surveys three colony screens at both viewports with no
+  hand-made save — it had been printing "(no /tmp/colony.json — the settled
+  screens were not measured)" on every automated run since it was written.
+  Two faults in its own rules came out with it, and together they are why it
+  never reported the picker: it counted `overflow: hidden` as a scrolling
+  ancestor, so every control below the fold was excused as "reached by
+  scrolling" when `#app` is exactly what makes scrolling impossible; and it
+  had no upper bound at all, so a control at 119% passed a rule that only
+  asked whether a control sat too high. Reach now names the same two controls
+  the yard bar found, watched red before and green after.
+
+  `look.mjs` gains a yard scene — it had photographed the road, the
+  chronicle, two fights and the ending since it was written, and never the
+  screen a settled band stands on nine days in ten. It goes LAST in the
+  table: the first cut sat it mid-chain and resetting the page moved what the
+  two fight scenes inherited, drifting them 3.7 and 3.3 at once. A baseline
+  re-blessed because a scene above it changed its own subject has stopped
+  meaning anything. Thirteen screens blessed.
 
 - **2026-09-05 — 12.6 BUILT: the founding card states the record, and the
   "time in it" the item asked for is REFUTED three ways.** The card shows the

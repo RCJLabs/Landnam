@@ -91,14 +91,28 @@ const survey = (primarySelector) => [...document.querySelectorAll('button, [role
     const q = el.getBoundingClientRect();
     // Clipped by a scrolling ancestor? Then its position on the page says
     // nothing — it is reached by scrolling, like any long list.
+    // `auto` and `scroll` ONLY, and `hidden` is the whole point of the fix.
+    // 12.4: `#app` is `overflow: hidden`, which is how this game refuses a
+    // page scroll — so counting it as a scrolling ancestor filed EVERY
+    // control below the fold as "reached by scrolling, like any long list".
+    // The one thing that cannot be reached by scrolling is a thing inside
+    // `overflow: hidden`, and this survey was excusing exactly those.
     let hidden = false;
     for (let p = el.parentElement; p; p = p.parentElement) {
       const cs = getComputedStyle(p);
-      if (cs.overflowY === 'auto' || cs.overflowY === 'scroll' || cs.overflowY === 'hidden') {
+      if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') {
         const r = p.getBoundingClientRect();
         if (q.bottom > r.bottom + 1 || q.top < r.top - 1) { hidden = true; break; }
       }
     }
+    // OFF THE BOTTOM IS NOT THE SAME AS BEHIND A SCROLL, and folding the two
+    // together is the second half of how the job picker's unreachable
+    // controls went unreported here (12.4). `hidden` means a scrolling
+    // ancestor is clipping it — the player scrolls and it comes back.
+    // `offscreen` with no such ancestor means it is past the edge of a
+    // viewport `#app` forbids scrolling, and nothing brings it back. The
+    // first is fine and is excluded from the survey; the second is a fault
+    // and is reported as one.
     const offscreen = q.top >= innerHeight || q.bottom <= 0;
     return {
       primary: el.matches(primarySelector),
@@ -106,7 +120,8 @@ const survey = (primarySelector) => [...document.querySelectorAll('button, [role
       w: Math.round(q.width),
       h: Math.round(q.height),
       frac: +((q.top + q.height / 2) / innerHeight).toFixed(3),
-      scrolled: hidden || offscreen,
+      scrolled: hidden,
+      stranded: !hidden && offscreen,
     };
   });
 
@@ -172,7 +187,14 @@ async function look(label, act, save) {
   if (act) await act(page);
 
   const found = await page.evaluate(survey, PRIMARY_SELECTOR);
-  const onScreen = found.filter((t) => !t.scrolled);
+  // Stranded targets are reported by their own rule below and left out of
+  // the survey, so one fault does not print twice under two names.
+  const onScreen = found.filter((t) => !t.scrolled && !t.stranded);
+  for (const t of found.filter((s) => s.stranded)) {
+    check(false,
+      `${label}: "${t.text}" is past the bottom of the screen`
+        + ` (centre at ${Math.round(t.frac * 100)}%) with no scroll to reach it`);
+  }
   const worst = onScreen.reduce((a, t) => (t.frac < a ? t.frac : a), 1);
   console.log(`\n${label}: ${onScreen.length} on screen, ${found.length - onScreen.length} behind a scroll, highest at ${Math.round(worst * 100)}%`);
 
@@ -190,6 +212,16 @@ async function look(label, act, save) {
       check(t.frac > HARD,
         `${label}: "${t.text}" is a primary control at ${Math.round(t.frac * 100)}% of the screen — the hard band, where the hand has to shuffle`);
     }
+    // AND NOTHING MAY HANG HALF OFF THE BOTTOM (12.4). This survey had no
+    // upper bound at all: `frac` is a fraction of the viewport and nothing
+    // stopped it exceeding 1, so the thumb rule — which only ever asked
+    // whether a control was too HIGH — passed a control at 119% of the
+    // screen. A target wholly past the edge is caught by the stranded rule
+    // above; this catches the one still touching the fold with its centre
+    // beyond it, which no scroll brings back either.
+    check(t.frac <= 1,
+      `${label}: "${t.text}" has its centre at ${Math.round(t.frac * 100)}% of the screen —`
+        + ' below the fold, with no scroll to reach it');
   }
   check(errors.length === 0, `${label}: the page reported ${errors[0] ?? ''}`);
   await page.close();
@@ -235,14 +267,81 @@ await look('deeds at the reckoning', async (p) => {
   await p.locator('button', { hasText: /^Act$/ }).click();
   await p.waitForTimeout(600);
 });
-if (COLONY) {
-  await look('colony work', null, COLONY);
-  await look('colony build', async (p) => {
-    const build = p.locator('.shell button', { hasText: /^Build$/i }).first();
-    if (await build.count()) { await build.click().catch(() => {}); await p.waitForTimeout(600); }
-  }, COLONY);
-} else {
-  console.log('\n(no /tmp/colony.json — the settled screens were not measured)');
+/**
+ * Into the steading, from a run this script started itself.
+ *
+ * 12.4. THE SETTLED HALF OF THE GAME WAS OUTSIDE THIS SURVEY, and not because
+ * anybody decided it should be: the colony screens were measured only when a
+ * save happened to exist at `/tmp/colony.json`, a path `bars.mjs` never
+ * writes. So on every automated run the message printed was "(no
+ * /tmp/colony.json — the settled screens were not measured)" and nothing was.
+ *
+ * `window.landnam.settle()` fabricates the walk to foundable ground the same
+ * way `scripts/yard.mjs` does, so the survey reaches the yard on its own with
+ * no hand-made fixture. The old save path is kept below it — a real save is
+ * still the better sample when somebody has one, because it carries a band
+ * that has been played rather than one that landed this morning.
+ */
+async function intoTheYard(p) {
+  // ALREADY THERE IS A SUCCESS. When `/tmp/colony.json` exists the save path
+  // above has loaded a settled band, and `settle()` correctly refuses one —
+  // so the first cut of this returned false, the tab and picker clicks never
+  // ran, and all three colony screens reported the identical Work tab while
+  // looking perfectly healthy. Two of the three were measuring the same
+  // screen under different names, which is worse than not measuring them.
+  const inYard = async () => (await p.locator('.action-slot button', { hasText: /^Back to the land$/ }).count()) > 0;
+  if (await inYard()) return true;
+
+  const founded = await p.evaluate(() => window.landnam?.settle?.() ?? false);
+  if (!founded) return false;
+  await p.waitForTimeout(600);
+  for (let i = 0; i < 4; i += 1) {
+    const card = p.locator('.overlay button').first();
+    if (!(await card.count())) break;
+    await card.click().catch(() => {});
+    await p.waitForTimeout(300);
+  }
+  await p.locator('.action-slot button', { hasText: /^Act$/ }).first()
+    .click({ timeout: 2000 }).catch(() => {});
+  await p.waitForTimeout(400);
+  const enter = p.locator('.overlay button')
+    .filter({ has: p.locator('.deed-label', { hasText: /^The steading$/ }) }).first();
+  if (!(await enter.count())) return false;
+  await enter.click({ timeout: 2000 }).catch(() => {});
+  await p.waitForTimeout(700);
+  for (let i = 0; i < 4; i += 1) {
+    const card = p.locator('.overlay button').first();
+    if (!(await card.count())) break;
+    await card.click().catch(() => {});
+    await p.waitForTimeout(300);
+  }
+  return inYard();
+}
+
+let reachedYard = false;
+await look('colony work', async (p) => {
+  reachedYard = await intoTheYard(p);
+}, COLONY);
+await look('colony build', async (p) => {
+  if (!(await intoTheYard(p))) return;
+  const build = p.locator('.action-slot button', { hasText: /^Build$/i }).first();
+  if (await build.count()) { await build.click().catch(() => {}); await p.waitForTimeout(600); }
+}, COLONY);
+await look('colony picker', async (p) => {
+  if (!(await intoTheYard(p))) return;
+  const work = p.locator('.action-slot button', { hasText: /^Work$/i }).first();
+  if (await work.count()) { await work.click().catch(() => {}); await p.waitForTimeout(400); }
+  const row = p.locator('.crew-row').first();
+  if (await row.count()) { await row.click().catch(() => {}); await p.waitForTimeout(500); }
+}, COLONY);
+
+// The instrument check that the message above used to stand in for: if the
+// survey never got inside, it measured the road three more times and must
+// say so rather than reporting a clean sweep of screens it never saw.
+if (!COLONY && !reachedYard) {
+  console.error('reach: could not reach the steading, so the settled screens were NOT measured.');
+  await browser.close();
+  process.exit(2);
 }
 
 await browser.close();
