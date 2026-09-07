@@ -38,11 +38,11 @@ import { type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
 import { EVENTS } from '../src/data/events';
 import { DEATHS } from '../src/data/injuries';
-import { RIVAL_SETTLES, rivalBlocks } from '../src/sim/rival';
+import { RIVAL_SETTLES, rivalBlocks, rivalHere, speakBlocker } from '../src/sim/rival';
 import { lessonDue, allLessonIds } from '../src/sim/lessons';
 import { THING_OPENING } from '../src/data/thing';
 import { bookEntries } from '../src/sim/saga';
-import { ROUTE_STOPS } from '../src/sim/route';
+import { ROUTE_STOPS, daysBetween } from '../src/sim/route';
 import { knowsStop, standingAt, walkOptions } from '../src/sim/coast';
 import { apply } from '../src/sim/actions';
 import { settled } from './fixtures/settle';
@@ -6540,4 +6540,172 @@ describe('PROBE 12.11: what the rival costs, on the floor-7 baseline', () => {
     const readers = ['src/sim/site.ts'];
     for (const f of readers) expect(readFileSync(f, 'utf8')).toContain('rivalBlocks');
   });
+});
+
+describe('PROBE 12.16: is the other landnám actually answered', () => {
+  /**
+   * The item's own Done-when, measured. It is written against the sagas where
+   * he is MET rather than against all of them, and that denominator is the
+   * point: 12.11 asked for an interaction in ≥ 40% of sagas, which exceeds
+   * the rate at which he is met at all (33% — `PROBE 12.11`, 2026-09-07). You
+   * cannot parley with a man you have never seen, so that criterion was out
+   * of reach by arithmetic, the same shape of fault 12.14's first criterion
+   * had. This one can be met or missed on the merits.
+   *
+   * PAIRED, because two of the four criteria are about a DIFFERENCE: met must
+   * not fall, and his cost must stay where the re-take put it. The arm is one
+   * policy flag, so the two runs are the same band with one habit changed.
+   */
+  const SEEDS = 120;
+  const LAST_DAY = 400;
+
+  it('counts the days the door was actually open', async () => {
+    /**
+     * WHY THE FIRST CUT NEVER FIRED, measured rather than guessed.
+     *
+     * The bot's gate was `state.settlement && speakBlocker(state) === null`,
+     * and over 120 sagas it returned `SPEAK_RIVAL` exactly nought times — the
+     * two arms tied on every outcome, which is CLAUDE.md's trap 3 and here
+     * meant literally that the feature never ran.
+     *
+     * So: on how many days is his hall in sight at all, and how many of those
+     * days is the band settled? He lands `RIVAL_APART` stretches from our
+     * landing and a settled band mostly sits at home, so the suspicion is
+     * that "settled" and "near him" barely overlap. This says.
+     */
+    setPolicy(SETTLER);
+    let hereDays = 0;
+    let hereSettled = 0;
+    let hereUnsettled = 0;
+    let openDays = 0;
+    let sagasWithAnyOpen = 0;
+    // AND HOW FAR HIS HALL IS FROM THE HALL WE BUILT, which is the number
+    // two guessed thresholds got wrong in a row: an opportunistic gate that
+    // never fired, then a three-day travel bound that never fired either.
+    // He lands `RIVAL_APART` stretches off our landing; what matters is the
+    // walk from where the band actually settles, in DAYS, and that is this.
+    const reach: number[] = [];
+    for (let s = 0; s < 60; s += 1) {
+      let anyOpen = false;
+      const end = run(`curve-${s}`, LAST_DAY, (before, after) => {
+        if (after.day === before.day) return;
+        if (!rivalHere(after)) return;
+        hereDays += 1;
+        if (after.settlement) hereSettled += 1;
+        else hereUnsettled += 1;
+        if (speakBlocker(after) === null) { openDays += 1; anyOpen = true; }
+      }, 'even');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (anyOpen) sagasWithAnyOpen += 1;
+      if (end.settlement && end.rival?.stop !== undefined) {
+        reach.push(daysBetween(end.seed, end.settlement.stop ?? 0, end.rival.stop));
+      }
+    }
+    const sorted = [...reach].sort((a, b) => a - b);
+    console.log(
+      `PROBE 12.16 — where the door was open, 60 sagas on even
+`
+      + `  days with his hall in sight: ${hereDays}
+`
+      + `    of them, band settled: ${hereSettled}; still walking: ${hereUnsettled}
+`
+      + `  days nothing at all blocked a visit: ${openDays},`
+      + ` in ${sagasWithAnyOpen}/60 sagas\n`
+      + `  days' walk from our hall to his, over ${reach.length} settled sagas: `
+      + `${sorted.length ? `${sorted[0]}..${sorted[sorted.length - 1]}` : '—'}, `
+      + `median ${sorted.length ? sorted[Math.floor(sorted.length / 2)] : '—'}\n`
+      + `    within 3 days: ${reach.filter((d) => d <= 3).length}; `
+      + `within 6: ${reach.filter((d) => d <= 6).length}; `
+      + `within 10: ${reach.filter((d) => d <= 10).length}`,
+    );
+    expect(hereDays, 'his hall was never in sight, so this measured nothing')
+      .toBeGreaterThan(0);
+  }, 1_800_000);
+
+  it('answers the Done-when, criterion by criterion', async () => {
+    interface Row {
+      exists: boolean; met: boolean; spoke: number; yielded: boolean;
+      real: boolean; spring: boolean; settled: boolean;
+      /**
+       * Was his hall EVER reachable — a day when nothing at all stood between
+       * the band and a visit?
+       *
+       * The denominator criterion 1 has to use, and the reason is geography
+       * rather than the feature: over 49 settled sagas the walk from our hall
+       * to his is a median of 24 days (2..79), only 3 of them inside three
+       * days. A band that never sees his door cannot be asked to knock on it,
+       * and a criterion written against all met sagas is measuring where the
+       * seed put two halls.
+       */
+      couldSpeak: boolean;
+    }
+    const arm = async (speaks: boolean): Promise<Row[]> => {
+      setPolicy({ ...SETTLER, id: speaks ? 'settler' : 'mute', speaksToRival: speaks });
+      const rows: Row[] = [];
+      for (let s = 0; s < SEEDS; s += 1) {
+        let spoke = 0;
+        let yielded = false;
+        let real = false;
+        let alive73 = false;
+        let couldSpeak = false;
+        const end = run(`curve-${s}`, LAST_DAY, (before, after, action) => {
+          if (after.day >= 73 && !after.end) alive73 = true;
+          if (!couldSpeak && after.day > before.day && speakBlocker(after) === null) {
+            couldSpeak = true;
+          }
+          // THE ACTION ITSELF, not something that moved alongside it.
+          if (action.type === 'SPEAK_RIVAL' && after !== before) spoke += 1;
+          if (before.rival && after.rival
+            && (before.rival.claimStops ?? []).length > (after.rival.claimStops ?? []).length) {
+            yielded = true;
+          }
+          if (after.settlement || !after.rival || real) return;
+          if (rivalBlocks(after) && foundBlocker(after) === 'taken'
+            && foundBlocker({ ...after, rival: undefined }) !== 'taken') real = true;
+        }, 'even');
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        rows.push({
+          exists: !!end.rival, met: end.rival?.met === true, spoke, yielded, real,
+          spring: alive73, settled: !!end.settlement, couldSpeak,
+        });
+      }
+      return rows;
+    };
+
+    const speaking = await arm(true);
+    const mute = await arm(false);
+    setPolicy(SETTLER);
+
+    const met = speaking.filter((r) => r.met);
+    const answered = met.filter((r) => r.spoke > 0);
+    const share = met.length ? answered.length / met.length : 0;
+    // The reachable set, and the share within it — see `couldSpeak`.
+    const could = speaking.filter((r) => r.met && r.couldSpeak);
+    const tookIt = could.filter((r) => r.spoke > 0);
+    const reachedShare = could.length ? tookIt.length / could.length : 0;
+    const metShare = (rows: Row[]) => rows.filter((r) => r.met).length / SEEDS;
+    const count = (rows: Row[], f: (r: Row) => boolean) => rows.filter(f).length;
+    const pc = (n: number) => `${Math.round(n * 100)}%`;
+
+    console.log(
+      `PROBE 12.16 — ${SEEDS} settler sagas on even to day ${LAST_DAY}, floor 7\n`
+      + `  he exists on ${count(speaking, (r) => r.exists)}; met on ${met.length}`
+      + ` (${pc(metShare(speaking))})\n`
+      + `  1. OF THOSE MET, spoken to: ${answered.length}/${met.length} (${pc(share)})\n`
+      + `     of those met AND ever able to: ${tookIt.length}/${could.length}`
+      + ` (${pc(reachedShare)})  [Done when >= 60%]\n`
+      + `     visits in all: ${speaking.reduce((n, r) => n + r.spoke, 0)};`
+      + ` a fence opened in ${count(speaking, (r) => r.yielded)} sagas\n`
+      + `     met, speaking arm ${pc(metShare(speaking))} against mute ${pc(metShare(mute))}`
+      + '  [Done when within 5 points]\n'
+      + `  3. HIS COST, paired: he was the reason posts were refused in `
+      + `${count(speaking, (r) => r.real)} speaking, ${count(mute, (r) => r.real)} mute\n`
+      + `     saw a spring: ${count(speaking, (r) => r.spring)} speaking, `
+      + `${count(mute, (r) => r.spring)} mute; settled `
+      + `${count(speaking, (r) => r.settled)} against ${count(mute, (r) => r.settled)}`,
+    );
+
+    expect(met.length, 'nobody met him, so this measured nothing')
+      .toBeGreaterThan(0);
+  }, 1_800_000);
 });

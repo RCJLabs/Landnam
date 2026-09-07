@@ -48,6 +48,7 @@ import { strandTarget } from '../../src/sim/sea';
 import { placeKind } from '../../src/data/places';
 import { bargainBlocker, canFallOn, neighbourHere } from '../../src/sim/neighbours';
 import { canCallThing, hasSpeakers } from '../../src/sim/thing';
+import { GUEST_GIFT, speakBlocker, speakCooldown } from '../../src/sim/rival';
 import { fieldCrew, launchBlocker, provisionsFor } from '../../src/sim/expedition';
 import { sailBlocker } from '../../src/sim/voyage';
 import { BARTER_FOOD } from '../../src/data/clans';
@@ -325,6 +326,16 @@ export interface Policy {
    */
   throughTheInterface?: boolean;
   /**
+   * 12.16: go up to the other landnamsmadr's hall.
+   *
+   * ON for the shipped settler, because it is what a competent player does
+   * and the whole item is that the verb exists to be used. A knob rather than
+   * a hard rule so the arm can be turned off and the pair measured — the
+   * item's own Done-when asks that his cost stays where the 12.11 re-take put
+   * it, and that is a question about the difference.
+   */
+  speaksToRival?: boolean;
+  /**
    * Whether the daily crewing picks the food job the GROUND pays best,
    * instead of always reaching for the hunter.
    *
@@ -573,6 +584,7 @@ export const SETTLER: Policy = {
    * and figures in ROADMAP.md taken before 2026-09-04 were measured through
    * the old floor and are not comparable with ones taken after.
    */
+  speaksToRival: true,
   siteFloor: 7,
   /**
    * And gives way as winter closes, which is the whole difference between a
@@ -1207,10 +1219,57 @@ export function step(state: GameState): Action {
   if (canCallThing(state)) return { type:'CALL_THING' };
 
   if (state.settlement) {
+    // GO UP TO THE OTHER LANDNAMSMADR (12.16), when we are passing his door
+    // anyway and there is something to be had by it.
+    //
+    // INSIDE THIS BLOCK, and the first cut was not — it sat below it, and a
+    // settled band never gets there because every path out of `if
+    // (state.settlement)` returns. So the bot spoke to him nought times in
+    // 120 sagas and both arms tied on every outcome, which is CLAUDE.md's
+    // trap 3 pointing at a branch that could not be reached. The probe that
+    // found it counted the days the door was open: 942 days with his hall in
+    // sight, 930 of them SETTLED — the exact opposite of the guess the dead
+    // gate was built on, which was that a settled band is never near him.
+    //
+    // Opportunistic rather than a journey: a player who walks past a man's
+    // hall with stores in hand goes in; one three stretches away and busy
+    // does not. `speakBlocker` owns every reason not to, and the extra two
+    // conditions are the bot's own judgement — there is no point going if he
+    // holds nothing but his own hall, and the gift must not come out of the
+    // winter.
     // Out on an errand. Which errand decides everything below, because the
     // two are opposites: one carries food in to make a friend, the other
     // takes a place off the coast and is remembered for it.
     const out = state.expedition;
+
+    const worthSeeing = policy.speaksToRival
+      && !!state.rival && state.rival.met && state.rival.stop !== undefined
+      && (state.rival.claimStops ?? []).some((c) => c !== state.rival!.stop)
+      && state.party.food > GUEST_GIFT + foodPerDay(state) * 12
+      && speakCooldown(state) === 0;
+
+    if (worthSeeing && speakBlocker(state) === null) {
+      return { type: 'SPEAK_RIVAL' };
+    }
+
+    // AND IT DOES NOT WALK TO HIM, which was tried and taken out again.
+    //
+    // The obvious next move, when the opportunistic visit reached only 6 of
+    // the 39 sagas that meet him, was to let the bot make the journey. It was
+    // written, bounded at three days out of the steading, and it fired
+    // exactly nought times — the arm came back byte-identical, which is trap
+    // 3 twice in one afternoon.
+    //
+    // THE MEASUREMENT THAT SETTLED IT: over 49 settled sagas the walk from
+    // our hall to his is a MEDIAN OF TWENTY-FOUR DAYS, 2 to 79, with only 3
+    // of them inside three days and 6 inside ten. He lands `RIVAL_APART`
+    // stretches off the landing and the band settles wherever the ground
+    // will have it; the two are rarely neighbours. A month of walking out of
+    // a settled steading to carry a man eight of food is not a competent
+    // player, it is a search — so the bot goes when it is passing and not
+    // otherwise, and the item's own criterion is written against the sagas
+    // where his hall is actually reachable rather than against all of them.
+
     if (out) {
       if (out.purpose === 'explore') {
         // Walking the country to find out what is in it. Aims at the
