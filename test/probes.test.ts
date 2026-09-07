@@ -19,6 +19,7 @@
 // there is still exactly one bot, so a probe and a bar cannot drift apart.
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { newGame } from '../src/state/create';
 import { SEASON_LENGTH, YEAR_LENGTH, seasonOf } from '../src/sim/calendar';
 import { ailingCount, careToday } from '../src/sim/sickness';
@@ -37,7 +38,7 @@ import { type HardshipId } from '../src/data/hardship';
 import { BUILDINGS } from '../src/data/buildings';
 import { EVENTS } from '../src/data/events';
 import { DEATHS } from '../src/data/injuries';
-import { rivalBlocks } from '../src/sim/rival';
+import { RIVAL_SETTLES, rivalBlocks } from '../src/sim/rival';
 import { lessonDue, allLessonIds } from '../src/sim/lessons';
 import { THING_OPENING } from '../src/data/thing';
 import { bookEntries } from '../src/sim/saga';
@@ -6303,4 +6304,240 @@ describe('PROBE 12.12: what the bot does that the interface would refuse', () =>
     expect(cards, 'no card was drawn in 30 sagas, so this measured nothing')
       .toBeGreaterThan(0);
   }, 900_000);
+});
+
+describe('PROBE 12.11: what the rival costs, on the floor-7 baseline', () => {
+  /**
+   * 12.11 reverses a decision this file recorded three times as deliberate —
+   * "He is deliberately small: a name, a hall, and the ground he has taken"
+   * (2026-08-26) — so it is Evan's call before it is work, and the least a
+   * probe can do is make sure he is deciding on a number from today.
+   *
+   * THE NUMBER IN THE ITEM IS STALE TWICE OVER. It was taken on 2026-08-31 at
+   * floor 9, and 12.3 ruled that nothing measured before 2026-09-04 is
+   * comparable with anything after. Its own verifier also noted the counter
+   * was loose: `PROBE: is the rival ever actually seen` sets `blocked` on ANY
+   * transition where `rivalBlocks` is true of the ground underfoot, whether
+   * or not the band was trying to put posts in — so 30-37% was an upper
+   * bound and was recorded as one.
+   *
+   * So this counts the fence three ways, tightening each time, and the drop
+   * between them is the reading:
+   *
+   *   1. LOOSE   — he holds ground we stood on. The old measure.
+   *   2. REAL    — the ground refused our posts, AND would not have without
+   *                him. Asked by putting the same question to a copy of the
+   *                state with him taken out, which is the cause rather than
+   *                something that moved alongside it.
+   *   3. COSTLY  — real, and the stretch met the bot's own settling floor.
+   *                He turned the band off ground it wanted.
+   *
+   * And then the question the item actually rests on — does he cost more than
+   * he gives — is answered PAIRED: the same seeds played twice, once with him
+   * and once with him lifted out of the world before the first turn. A
+   * comparison of fenced sagas against unfenced ones would select its own
+   * denominator (CLAUDE.md, trap 2): a band that meets him is a band that
+   * walked far.
+   */
+  const SEEDS = 120;
+  const LAST_DAY = 400;
+
+  it('fires each counter on a case built by hand', () => {
+    // Three counters, three constructed states, before any of them is
+    // believed over 120 sagas.
+    const state = settled('rival-fixture');
+    // Stand the band somewhere unsettled, with a rival whose hall is here.
+    delete (state as { settlement?: unknown }).settlement;
+    state.day = RIVAL_SETTLES + 1;
+    const here = standingAt(state);
+    state.rival = {
+      leader: 'Thorgest', hall: 'Thorgestholt', stop: here,
+      claimStops: [here], lastClaim: 0, met: true, told: true,
+    } as NonNullable<GameState['rival']>;
+
+    // 1. LOOSE.
+    expect(rivalBlocks(state), 'he stands here and does not block').toBe(true);
+    // 2. REAL — and the counterfactual is what makes it real.
+    expect(foundBlocker(state)).toBe('taken');
+    const without = { ...state, rival: undefined };
+    expect(
+      foundBlocker(without),
+      'the ground refuses posts for a reason that is not him, so this fixture '
+        + 'cannot tell the two apart',
+    ).not.toBe('taken');
+    // 3. And he must NOT count when he is nowhere near.
+    const away = { ...state, rival: { ...state.rival!, stop: here + 9, claimStops: [here + 9] } };
+    expect(rivalBlocks(away), 'he blocked ground nine stretches from his hall').toBe(false);
+  });
+
+  it('counts the fence three ways, and prices it against a coast without him', async () => {
+    setPolicy(SETTLER);
+    interface Row {
+      exists: boolean; met: boolean;
+      loose: boolean; real: boolean; costly: boolean;
+      settled: boolean; settledOn: number; spring: boolean; day: number;
+    }
+    const arm = async (withRival: boolean): Promise<Row[]> => {
+      const rows: Row[] = [];
+      for (let s = 0; s < SEEDS; s += 1) {
+        let loose = false;
+        let real = false;
+        let costly = false;
+        let settledOn = 0;
+        // ALIVE WHEN SPRING CAME, which is what every other paired reading in
+        // this file means by "saw spring": `run(seed, 73)` and `!state.end`.
+        // Caught here inside the longer run rather than swept twice. The
+        // first cut asked `end.day >= 73`, which counts a band that died on
+        // day 80 as having seen the spring it did not live to work.
+        let alive73 = false;
+        const end = run(`curve-${s}`, LAST_DAY, (before, after) => {
+          if (after.day >= 73 && !after.end) alive73 = true;
+          if (!before.settlement && after.settlement) settledOn = after.day;
+          // THE FENCE COUNTERS ONLY MEAN ANYTHING BEFORE THE POSTS ARE IN, so
+          // they stop here — but `met` MUST NOT, and the first cut of this
+          // put it below the return. It then measured "met before settling"
+          // under the name `met` and read 13%, which is a counter measuring
+          // something other than its own name: the exact fault CLAUDE.md
+          // opens with. Read off the final state instead, where it is a fact
+          // about the whole saga.
+          if (!after.rival || after.settlement) return;
+          if (!rivalBlocks(after)) return;
+          loose = true;
+          if (foundBlocker(after) !== 'taken') return;
+          // THE CAUSE, ASKED DIRECTLY: the same ground, the same day, with
+          // him lifted out. A shallow copy is enough — `foundBlocker` only
+          // reads — and it is the difference between "he was standing there"
+          // and "he is the reason".
+          if (foundBlocker({ ...after, rival: undefined }) === 'taken') return;
+          real = true;
+          if (stopReport(after.seed, standingAt(after)).total >= floorOn(after.day)) {
+            costly = true;
+          }
+        }, 'even', withRival ? undefined : (state) => { state.rival = undefined; });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        rows.push({
+          exists: !!end.rival, met: end.rival?.met === true, loose, real, costly,
+          settled: !!end.settlement, settledOn,
+          spring: alive73,
+          day: end.day,
+        });
+      }
+      return rows;
+    };
+
+    const withHim = await arm(true);
+    const without = await arm(false);
+    const pc = (n: number, of: number) => (of === 0 ? '—' : `${Math.round((n / of) * 100)}%`);
+    const exists = withHim.filter((r) => r.exists).length;
+    const count = (rows: Row[], f: (r: Row) => boolean) => rows.filter(f).length;
+
+    // PAIRED, not two averages: the same seed is the same country and the
+    // same cards, so a seed that settled in one arm and not the other is the
+    // rival doing it. Two means over 120 would hide 20 saved against 20
+    // killed and report nothing.
+    let savedSpring = 0;
+    let killedSpring = 0;
+    let laterBy = 0;
+    let pairs = 0;
+    for (let s = 0; s < SEEDS; s += 1) {
+      const a = withHim[s]!;
+      const b = without[s]!;
+      if (a.spring && !b.spring) savedSpring += 1;
+      if (!a.spring && b.spring) killedSpring += 1;
+      if (a.settled && b.settled) { laterBy += a.settledOn - b.settledOn; pairs += 1; }
+    }
+
+    console.log(
+      `PROBE 12.11 — ${SEEDS} settler sagas on even to day ${LAST_DAY}, floor 7\n`
+      + `  he exists on ${exists}/${SEEDS} coasts; met on ${
+        count(withHim, (r) => r.met)} (${pc(count(withHim, (r) => r.met), exists)})\n`
+      + '  THE FENCE, tightening:\n'
+      + `    1. he held ground we stood on ......... ${
+        count(withHim, (r) => r.loose)} (${pc(count(withHim, (r) => r.loose), exists)})\n`
+      + `    2. and it was HIM refusing our posts .. ${
+        count(withHim, (r) => r.real)} (${pc(count(withHim, (r) => r.real), exists)})\n`
+      + `    3. on ground that met our own floor ... ${
+        count(withHim, (r) => r.costly)} (${pc(count(withHim, (r) => r.costly), exists)})\n`
+      + `  PAIRED against the same coasts with him lifted out:\n`
+      + `    settled at all: ${count(withHim, (r) => r.settled)} with him, ${
+        count(without, (r) => r.settled)} without\n`
+      + `    saw a spring: ${count(withHim, (r) => r.spring)} with him, ${
+        count(without, (r) => r.spring)} without`
+      + ` — he saved ${savedSpring} and killed ${killedSpring}\n`
+      + `    where both settled (${pairs}), he cost ${
+        pairs ? (laterBy / pairs).toFixed(1) : '—'} days of walking on average`,
+    );
+
+    expect(exists, 'no coast had a rival on it, so this measured nothing')
+      .toBeGreaterThan(0);
+  }, 1_800_000);
+
+  it('shows where the inherited 30-37% went', async () => {
+    /**
+     * THE OLD FIGURE REPRODUCES. `PROBE: is the rival ever actually seen`,
+     * run on today's build, gives "his ground refused our posts in 37%" on
+     * even and 35% on fair — against the 30-37% the item inherited from
+     * 2026-08-31 at floor 9. The game has not moved. So the gap between that
+     * and the 7% above is entirely in the counting, and this says where.
+     *
+     * The old counter fires on ANY transition where he holds the ground
+     * underfoot — INCLUDING after the posts are already in, when founding is
+     * not in question and he is refusing nothing. Its own verifier said it
+     * was an upper bound. This puts a number on how much of it that is.
+     *
+     * Sixty seeds on even, the old probe's own sample, so the two are
+     * comparable rather than merely similar.
+     */
+    setPolicy(SETTLER);
+    const OLD_SEEDS = 60;
+    let everBlocked = 0;
+    let beforeSettling = 0;
+    let onlyAfterSettling = 0;
+    for (let s = 0; s < OLD_SEEDS; s += 1) {
+      let ever = false;
+      let before = false;
+      run(`curve-${s}`, LAST_DAY, (_was, after) => {
+        if (!after.rival || !rivalBlocks(after)) return;
+        ever = true;
+        if (!after.settlement) before = true;
+      }, 'even');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (ever) everBlocked += 1;
+      if (before) beforeSettling += 1;
+      if (ever && !before) onlyAfterSettling += 1;
+    }
+    const pc = (n: number) => `${Math.round((n / OLD_SEEDS) * 100)}%`;
+    console.log(
+      `PROBE 12.11 — where the inherited figure went, ${OLD_SEEDS} sagas on even
+`
+      + `  he held ground underfoot at some point .......... ${everBlocked} (${pc(everBlocked)})
+`
+      + `  ...and the posts were NOT yet in ................ ${beforeSettling} (${pc(beforeSettling)})
+`
+      + `  ...he only ever did it to an already-settled band  ${onlyAfterSettling}`
+      + ` (${pc(onlyAfterSettling)})`,
+    );
+    expect(everBlocked, 'he never blocked anybody, so this measured nothing')
+      .toBeGreaterThan(0);
+  }, 900_000);
+
+  it('and nothing in the game points a verb at him', () => {
+    // The Done-when's "0% today by construction", asserted rather than
+    // measured as a zero over sagas — a zero from a sweep and a zero from a
+    // thing that cannot happen look identical, and only one of them is a
+    // fact about the design.
+    const actions = readFileSync('src/sim/actions.ts', 'utf8');
+    const verbs = [...actions.matchAll(/\{ type: '([A-Z_]+)'/g)].map((m) => m[1]!);
+    expect(verbs.length, 'no verbs found — the scan is broken, not the game')
+      .toBeGreaterThan(10);
+    expect(
+      verbs.filter((t) => /RIVAL|FENCE|CHALLENGE|PARLEY/.test(t)),
+      'a verb points at the rival now — 12.11 has moved, revisit this probe',
+    ).toEqual([]);
+
+    // And he is not on the deeds sheet either: `rivalBlocks` has one reader
+    // in `src/`, and it is `foundBlocker` saying no.
+    const readers = ['src/sim/site.ts'];
+    for (const f of readers) expect(readFileSync(f, 'utf8')).toContain('rivalBlocks');
+  });
 });

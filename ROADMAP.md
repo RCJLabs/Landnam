@@ -7540,9 +7540,17 @@ would replace — which is why it is third and not fifteenth.
   direction candidates were in the verify queue when the session limit hit.
 
 - [ ] **12.11 — The other landnám has hands.** **THIS REVERSES A RECORDED
-  INTENT and is Evan's call before it is work.** The rival's smallness is
+  INTENT and is Evan's call before it is work.**
+
+  > **RE-TAKEN 2026-09-07 ON THE FLOOR-7 BASELINE, AND THE COST CASE DOES NOT
+  > SURVIVE.** `PROBE 12.11`. The item is kept open because its *other*
+  > observation does survive — see the recommendation at the foot of this
+  > entry — but nothing below the original text should be built on the
+  > 30–37% any more.
+
+  The rival's smallness is
   stated three times as a decision — "He is deliberately small: a name, a
-  hall, and the ground he has taken" (:12315-12318, 2026-08-22). It is queued
+  hall, and the ground he has taken" (2026-08-26). It is queued
   because the measurement says the small rival costs more than he gives: met
   by 32% / 40% of sagas, he refuses founding in 30-37% of them (60 an arm,
   2026-08-31, floor 9 — and the verifier notes the "fenced" counter fires on
@@ -7555,6 +7563,84 @@ would replace — which is why it is third and not fifteenth.
   holds within tolerance; an old save migrates with his standing at the clan
   default. Note for the build: `might` is **derived**, not stored — "derived,
   not stored" is a pillar.
+
+  ---
+
+  **THE RE-TAKE.** 120 settler sagas on even to day 400, floor 7, 2026-09-07.
+
+  **The game has not moved.** The original instrument, run unchanged on
+  today's build, reproduces its own figures: met 38% / refused 37% on even,
+  35% / 35% on fair, against the inherited 32–40% and 30–37%. So the gap
+  below is entirely in the COUNTING, and the verifier's caution was right.
+
+  **Where the inherited 37% went**, measured rather than argued, on the old
+  probe's own 60 seeds:
+
+  | | |
+  |---|---|
+  | he held ground underfoot at some point | 22 (37%) |
+  | ...and the posts were **not yet in** | 6 (10%) |
+  | ...he only ever did it to an **already-settled** band | **16 (27%)** |
+
+  **More than seven-tenths of the figure the item rests on is bands that had
+  already put their hall up**, walking later across ground he had fenced,
+  with founding not in question and him refusing nothing.
+
+  **The fence, counted three ways** at 120 seeds, each tighter than the last —
+  the third asks the cause directly, by putting the same question to a copy of
+  the state with him lifted out:
+
+  | | of 120 |
+  |---|---|
+  | he held ground we stood on, unsettled | 8 (7%) |
+  | and it was **him** refusing our posts | **4 (3%)** |
+  | on ground that met the bot's own settling floor | 4 (3%) |
+
+  **And what he costs, PAIRED** — the same seeds played twice, once with him
+  lifted out of the world before the first turn. `makeRival` draws inside
+  `newGame`, so removing him afterwards leaves the country, the landing and
+  every card identical: it is the same saga with one man taken out of it. A
+  comparison of fenced sagas against unfenced ones would have selected its own
+  denominator, since a band that meets him is a band that walked far.
+
+  | | with him | without |
+  |---|---|---|
+  | settled at all | 103 | 105 |
+  | saw a spring | 95 | 98 |
+
+  **He saved 0 and killed 3** over 120 pairs — one-directional, and at three
+  discordant pairs not resolvable (exact p = 0.125). Where both arms settled,
+  he cost **0.2 days of walking** on average.
+
+  **AND THE HALF OF THE PREMISE THAT DOES HOLD.** Met in 33% (my sample) to
+  38% (the old instrument's) of sagas, exactly as the item says. `rivalBlocks`
+  has one reader in `src/` — `foundBlocker`, saying no — and the action union
+  contains no verb that names him, so the Done-when's "0% by construction" is
+  a fact about the design rather than a thin sample.
+
+  **One correction to the item's own text:** "`rivalHolds` has zero readers
+  anywhere" is stale. It has four, all in `test/rival.test.ts`. No SIM reader,
+  so the shape of the finding stands; the sentence does not.
+
+  **RECOMMENDED RULING — the case splits in two, and only one half survives.**
+
+  1. **The cost case is closed.** "He costs more than he gives" was built on a
+     counter three-quarters composed of settled bands. On today's baseline he
+     turns an unsettled band off ground it wanted in **3%** of sagas and costs
+     a fifth of a day's walking. There is nothing here to fix, and building
+     hands for him to reduce this cost would be paying for a problem that was
+     an artefact of the instrument.
+  2. **A much smaller content question is left standing, and it does NOT
+     reverse the 2026-08-26 decision.** A third of runs meet a named man with
+     a hall, and there is no verb in the game that points at him. That is an
+     argument about content, not cost, and it can be answered without
+     simulating a second colony behind him — one verb and a standing that can
+     move would do it, which is what the original note actually refused to
+     build ("There is no second colony being simulated behind him and there is
+     not meant to be"). If Evan wants that, it is a small item and should be
+     re-written as one rather than kept as this one.
+
+  Either way the entry above should not be built as written.
 
 ### UI and what the screen says
 
@@ -8753,6 +8839,42 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-07 — 12.11's cost case does not survive being re-taken.** The item
+  is queued on "the small rival costs more than he gives": met by 32-40% of
+  sagas, refusing founding in 30-37%. `PROBE 12.11`, 120 settler sagas on even
+  to day 400 at floor 7.
+
+  **The game has not moved** — the original instrument, run unchanged today,
+  reproduces its own numbers (met 38%, refused 37% on even). The gap is
+  entirely in the counting, exactly as that probe's own verifier warned.
+
+  **Where the 37% went**, measured on the old probe's own 60 seeds: 22 sagas
+  had him holding ground underfoot at some point, but in **16 of them the band
+  had already put its hall up** and was merely walking past a fence, with
+  founding not in question. Only 6 had him on ground before the posts went in.
+
+  **Counted three ways** at 120 seeds, the third asking the cause directly by
+  putting the same question to a copy of the state with him lifted out: he
+  held ground an unsettled band stood on in 8 (7%); he was the reason posts
+  were refused in **4 (3%)**; on ground meeting the bot's own floor, 4 (3%).
+
+  **PAIRED against the same coasts with him removed** — `makeRival` draws
+  inside `newGame`, so the country, the landing and every card stay identical:
+  settled 103 against 105, saw a spring 95 against 98. **He saved 0 and killed
+  3** of 120 pairs, which at three discordant pairs is not resolvable, and
+  cost **0.2 days of walking**.
+
+  **The half that holds:** he is met in a third of runs and no verb in the
+  game points at him. So the cost case is closed and a much smaller content
+  question is left standing — one that does not reverse the 2026-08-26
+  decision, because it needs no second colony behind him. Evan's call either
+  way; the entry as written should not be built.
+
+  **And my own first cut of the probe measured "met before settling" under the
+  name `met`** and read 13% against the true 33% — a counter measuring
+  something other than its own name, caught by the disagreement with the
+  inherited figure.
 
 - **2026-09-06 — 12.12 PART BUILT: something is finally watching a person
   play, and the bot's side doors are counted.** `PROBE 12.12`, 30 settler
