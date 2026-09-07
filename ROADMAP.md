@@ -7388,8 +7388,9 @@ would replace — which is why it is third and not fifteenth.
   300-landing curve is unchanged, because no sim rule moved but the new verb's
   admission.
 
-- [~] **12.7 — A new visual identity, decided on the real renderers. STEP 0
-  BUILT 2026-09-06; the direction is still Evan's to name.**
+- [x] **12.7 — A new visual identity, decided on the real renderers. CLOSED
+  2026-09-07: THE DIRECTION IS THE ONE IT ALREADY HAS.** Step 0 built
+  2026-09-06; the wall published the same day; the ruling below.
 
   **Both holes in the one-ink test were real, and the second was hiding live
   offences.** `test/palette.test.ts` read `readdirSync('src/render')` and
@@ -7508,8 +7509,47 @@ would replace — which is why it is third and not fifteenth.
   other figure in the Costs column is marked on the page as **an estimate, not
   a measurement**, because it is a judgement from reading the renderers.
 
-  **Still open, and Evan's:** name the direction and the nine dropped. The
-  original entry follows.
+  **THE RULING, 2026-09-07: IT STAYS AS IT IS.** Evan named the control.
+
+  That is a decision and not a shrug, and the wall was built so it could be
+  one: "As it stands" is on it precisely because *without it there is nothing
+  to prefer anything to*. Nine directions were drawn of the same moment, in
+  the same data, and none of them was worth what it cost. The game keeps the
+  look 8.x paid for — side-on, one person one look, one ink — and the art
+  budget goes to the thing the player actually complained about, which was
+  never the material.
+
+  **THE NINE DROPPED, each with the reason it lost.** This is the half of the
+  2026-08-25 decision that was skipped, and skipping it is why this item
+  existed a second time.
+
+  | | why not |
+  |---|---|
+  | **Woodcut** | The runner-up, and the cheapest of the nine — stays SVG, drops the built page's distinct colours, most legible at arm's length. Lost only to "nothing is worth doing". |
+  | **Cloisonné enamel** | The most distinctive and the most period-plausible. Costs `lookOf` the most of any direction: cell colours are chosen for the glass, so a person's own shield ground stops being what you see. |
+  | **Embroidery** | The smallest change that reads as a different object — but it quantises every look to a wool palette, so `lookOf`'s output is mapped rather than used raw. |
+  | **Carved rune-stone** | Three strokes per form to read as incised: roughly triple the node count of the same drawing flat, which is the one thing this repo has measured itself against before. |
+  | **Illuminated vellum** | Stays SVG, but wants a display face the game does not have — and zero assets means drawing one or living with a system serif. |
+  | **Papercraft** | The one modern mobile idiom on the wall. A drop-shadow filter per layer is the most expensive thing on that page for a phone to composite, and this repo has already been bitten once by a backdrop that quietly repainted every turn. |
+  | **16-bit pixel** | Leaves the DOM. CSS keyframes, every bar that counts SVG nodes, and `battle.ts`'s screen-to-world path all rewritten — and it is the direction the zero-asset rule costs most. |
+  | **Ink wash** | Leaves the DOM for the same price, and is the least legible of the ten at 320px, which is the width the bars hold the game to. |
+  | **Glyph lattice** | Nearly free and the only direction the zero-asset rule costs nothing at all. Every visual bar becomes meaningless and would be deleted rather than translated. A real option, and a different game. |
+
+  **Two more were ruled out before the wall**, and are named on the page with
+  their reasons: **isometric 2.5D** contradicts "drawn side-on", which is a
+  pillar rather than a preference, and rewrites the file that makes a shield
+  wall read as one; **low-poly 3D** is the Unreal port's job, and doing it here
+  would build a second renderer to throw away.
+
+  **THE GALLERY AND ITS EXTRACTOR STAY IN THE REPO** — `art/gallery-12.7/`,
+  `test/scene.test.ts`, `npm run scene`. That is the whole difference between
+  this ruling and the 2026-08-25 one: that decision's mockups are gone, so its
+  claim cannot be re-taken, and a mockup that drew a hex island and loaded
+  Google Fonts is what it was made on. This one can be re-opened by anybody
+  who wants to look, on a moment that is still derived from the real
+  renderers.
+
+  The original entry follows.
 
 - [ ] **12.7 — A new visual identity, decided on the real renderers.**
   The only identity decision on record is one sentence — "Ten art directions
@@ -8935,6 +8975,24 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-07 — 12.7 CLOSED: the direction is the one it already has.** Evan
+  named the control. Nine directions were drawn of one real moment in the real
+  data and none was worth what it cost; the game keeps the look 8.x paid for.
+
+  **The nine are recorded with the reason each lost**, which is the half of
+  the 2026-08-25 decision that was skipped and the reason this item existed a
+  second time. Woodcut was the runner-up and the cheapest of the nine; enamel
+  the most distinctive and the most expensive to `lookOf`; pixel, ink wash and
+  the glyph lattice all leave the DOM and price the keyframes, the node-counting
+  bars and `battle.ts`'s screen-to-world path. Isometric and low-poly 3D were
+  ruled out before the wall, with reasons.
+
+  **`art/gallery-12.7/` and `test/scene.test.ts` stay in the repo.** That is
+  the whole difference between this ruling and the last one: the 2026-08-25
+  mockups are gone, so that claim cannot be re-taken, and it was made on a
+  mockup that drew a hex island and loaded Google Fonts. This one can be
+  re-opened by anybody who wants to look.
 
 - **2026-09-07 — 12.16 PART BUILT: the other landnám can be spoken to, and
   the thing that governs the item is the geography.** `SPEAK_RIVAL` — one
@@ -13556,6 +13614,14 @@ Naval battles · winter solstice festivals · named legendary weapons · bloodli
   cannot see the thing it is guarding is not a bar.
 
 - **2026-08-25 — The country, painted** — the oil renderer, behind `?paint`.
+
+  > **SUPERSEDED. Read 12.7's ruling of 2026-09-07 instead.** The renderer
+  > this entry describes painted HEXES and went with them; `render/oilFlag.ts`
+  > and the paint hook were deleted in 12.7's step 0, having been inert. The
+  > "oil on canvas won" below names a decision taken on mockups that no longer
+  > exist, on a map that no longer exists. The direction on record now is the
+  > one the game already has, chosen against nine drawn alternatives that are
+  > still in the repo.
 
   Ten art directions were mocked up and three shortlisted; oil on canvas won.
   The objection to it was never taste, it was arithmetic: a painting sounds
