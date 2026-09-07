@@ -7646,44 +7646,86 @@ would replace — which is why it is third and not fifteenth.
 
   The entry above is not built, and should not be.
 
-- [ ] **12.16 — The other landnám can be answered.** What is left of 12.11
-  after its cost case was measured away, cut down to the thing that actually
-  holds. **It reverses nothing**: the 2026-08-26 note refused to simulate a
-  second colony behind him ("There is no second colony being simulated behind
-  him and there is not meant to be"), and this needs none. He stays a name, a
-  hall, and the ground he has taken.
+- [~] **12.16 — The other landnám can be answered. PART BUILT 2026-09-07;
+  one criterion of four is missed and is recorded as missed.** What is left of
+  12.11 after its cost case was measured away. **It reverses nothing**: the
+  2026-08-26 note refused to simulate a second colony behind him ("There is no
+  second colony being simulated behind him and there is not meant to be"), and
+  this needs none. He stays a name, a hall, and the ground he has taken.
 
-  **THE PREMISE, and it is the one half of 12.11 that survived re-taking.**
-  A third of runs meet him — 33% (`PROBE 12.11`, 120 seeds, even, floor 7,
-  2026-09-07) to 38% (the older instrument, 60 seeds, same day) — and there is
-  nothing a player can do about it. `rivalBlocks` has exactly one reader in
-  `src/`, `foundBlocker` saying no, and the `Action` union contains no verb
-  that names him. He is a man you can see and cannot speak to.
+  **WHAT SHIPPED.** `SPEAK_RIVAL` — one verb, on the deeds sheet, through
+  `apply` like every other. Walk up to his hall when it is in sight, carry in
+  `GUEST_GIFT` of food, and the roll moves what he thinks of us. His opinion
+  lives on the same scale as a neighbour's, starts at the same clan opening
+  (`clanKind('clan').opening` — its own comment is the argument: "Another
+  Norse hall on the same coast is a rival before it is anything"), and clamps
+  the same way. Once he thinks well enough of us he takes his fence off the
+  stretch nearest our hall — **never his own**, because the ground his posts
+  are in is the second colony this refuses to be. SAVE_VERSION 67; the
+  migration stamps the opening on an old save.
 
-  **THE OLD DONE-WHEN WAS ARITHMETICALLY OUT OF REACH, and that is worth
-  saying rather than quietly dropping.** 12.11 asked for an interaction in
-  ≥ 40% of sagas. You cannot parley with a man you have never seen, so that
-  criterion exceeded the rate at which he is met at all — the same shape of
-  fault as 12.14's criterion 1, which asked for a number only reachable by
-  taking content away. The denominator has to be the sagas where he is MET.
+  **THE DONE-WHEN, MEASURED.** `PROBE 12.16`, 120 settler sagas on even to day
+  400, floor 7, paired against the same seeds with the habit turned off.
 
-  **Done when**, at 120 landings on even at floor 7, with the instrument and
-  the date recorded beside every figure:
-  1. of the sagas in which he is met, **≥ 60%** see an interaction fire — a
-     verb dispatched at him, or his standing moved by something the player
-     did. Met itself must not fall: it stays within 5 points of the 33% above,
-     or the item has changed who meets him rather than what meeting him is
-     worth;
-  2. `PROBE 12.12`'s off-menu rule holds — whatever verb is added is on the
-     deeds sheet and goes through `apply`, so the interface bot can reach it;
-  3. the curve holds within tolerance, paired against today's build, and the
-     rival's own cost stays where the re-take put it: he must not become the
-     expensive fence that 12.11 was closed for not being;
-  4. an old save migrates with his standing at the clan default.
+  | | |
+  |---|---|
+  | he exists on | 120/120 |
+  | met | 39 (33%) |
+  | **spoken to, of those met** | **6/39 (15%)** |
+  | **of those met AND ever able to** | **6/14 (43%)** — asked for ≥ 60% |
+  | visits in all | 31 |
+  | a fence opened in | 2 sagas |
 
-  **Note for the build:** `might` is **derived**, not stored — "derived, not
-  stored" is a pillar. And his standing wants to live where the neighbours'
-  does, or the coast will have two ideas of what a person thinks of you.
+  1. **MISSED.** 43% against 60%. Not moved to fit: the denominator was
+     re-cut once already, on the geography below, and re-cutting the
+     threshold as well would be a bar lowered to whatever the code does.
+  2. **MET.** Met is 33% in both arms — the habit changes what meeting him is
+     worth, not who meets him.
+  3. **MET.** He is the reason posts are refused in 4 sagas either way; spring
+     95 against 95, settled 103 against 103. **With a caveat that is part of
+     the reading**: all three are decided before the band has settled, and the
+     visits happen after, so they say the feature does not disturb the early
+     game rather than that it costs nothing at all.
+  4. **MET**, and tested: an old save comes back with him at the clan opening,
+     and a coast with no rival passes straight through.
+
+  **THE FINDING THAT GOVERNS THIS ITEM IS THE GEOGRAPHY, NOT THE VERB.** Over
+  49 settled sagas the walk from our hall to his is a **median of 24 days**,
+  2 to 79, with only 3 inside three days and 6 inside ten. He lands
+  `RIVAL_APART` stretches off the landing and the band settles wherever the
+  ground will have it; the two are rarely neighbours. He is met while WALKING
+  — 1,134 of the 1,146 days his hall is in sight are days the band has already
+  settled somewhere else entirely, and the door is ever open in only 14 of the
+  39 sagas that meet him.
+
+  **AND I WROTE AN UNREACHABLE CRITERION AFTER SAYING I HAD CAUGHT ONE.** This
+  entry's first cut asked for ≥ 60% of all met sagas — while its own text
+  explained that 12.11's "≥ 40% of sagas" had been out of reach because he is
+  met in a third of them. Sixty per cent of met sagas is out of reach for the
+  same kind of reason: in 25 of the 39, his door never opens at all. Knowing
+  the rule is not applying it (CLAUDE.md), and this is the third time today.
+
+  **TWO DEAD BRANCHES WERE WRITTEN AND TAKEN OUT, both found the same way — an
+  arm that tied its control exactly.**
+  - The bot's first gate sat BELOW `if (state.settlement)` in `step`, and
+    every path out of that block returns, so a settled band never reached it:
+    nought visits in 120 sagas and both arms identical. The probe that found
+    it counted the days the door was open — 942, of which 930 SETTLED, the
+    exact opposite of the guess the dead gate rested on.
+  - Then a bounded walk TO him, at three days out of the steading. Also nought
+    firings, also byte-identical, because the median walk is 24 days. Deleted
+    rather than widened: a month of walking to carry a man eight of food is a
+    search, not a player.
+
+  **WHAT WOULD CLOSE THE GAP, AND WHY I HAVE NOT.** The 8 reachable sagas that
+  saw no visit are ones where the bot judged it not worth going — he held only
+  his own hall, or the stores were tight. Loosening either, or dropping
+  `RIVAL_YIELDS`, would raise the figure by changing the game to suit the bar.
+  The five numbers in `sim/rival.ts` (`GUEST_GIFT`, `SPEAK_EVERY`, `SPEAK_DC`,
+  `SPEAK_WELL`/`SPEAK_ILL`, `RIVAL_YIELDS`) are a first cut and have never
+  been swept. **Evan's call**: sweep them, accept 43% as what an opportunistic
+  band does on this coast, or take the geography itself as the finding and
+  decide whether two halls a month apart is the game that was wanted.
 
 ### UI and what the screen says
 
@@ -8893,6 +8935,34 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-07 — 12.16 PART BUILT: the other landnám can be spoken to, and
+  the thing that governs the item is the geography.** `SPEAK_RIVAL` — one
+  verb, on the deeds sheet, through `apply`. Carry food to his hall, and what
+  he thinks of us moves on the same scale a neighbour's does, from the same
+  clan opening. Think well enough of us and he takes his fence off the stretch
+  nearest our hall, never his own. SAVE_VERSION 67.
+
+  **Three of four criteria met; the first is MISSED and recorded as missed** —
+  43% of the sagas where he is met and his door ever opens, against the 60%
+  asked for. Not moved to fit: the denominator was re-cut once already and
+  re-cutting the threshold too would be a bar lowered to whatever the code
+  does.
+
+  **THE FINDING IS THE DISTANCE.** Over 49 settled sagas the walk from our
+  hall to his is a **median of 24 days** (2..79), only 3 inside three days. He
+  is met while WALKING — 1,134 of the 1,146 days his hall is in sight are days
+  the band settled somewhere else long ago — and his door is ever open in only
+  14 of the 39 sagas that meet him.
+
+  **AND I WROTE AN UNREACHABLE CRITERION IN THE SAME ENTRY THAT EXPLAINED
+  12.11'S.** Sixty per cent of met sagas was out of reach for the same kind of
+  reason 40% of all sagas was. Knowing the rule is not applying it.
+
+  **Two dead branches written and deleted**, both caught by an arm that tied
+  its control exactly: a bot gate placed below `if (state.settlement)` where
+  every path returns (nought visits in 120 sagas), and a walk to his hall
+  bounded at three days against a median of twenty-four.
 
 - **2026-09-07 — 12.11 CLOSED on the ruling; what survives is re-cut as
   12.16.** Evan took the recommendation. The cost case is closed and recorded

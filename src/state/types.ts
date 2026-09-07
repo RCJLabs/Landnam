@@ -85,6 +85,17 @@ export interface Rival {
   metOn?: number;
   /** True once the saga has recorded that they landed at all. */
   told: boolean;
+  /**
+   * What he thinks of us, -100..100 (v67, 12.16).
+   *
+   * Absent on every save written before he could be spoken to, and
+   * `rivalStanding` reads that absence as `RIVAL_OPENING` — the same opening
+   * a Norse clan gets, for the reason that entry gives: "Another Norse hall
+   * on the same coast is a rival before it is anything."
+   */
+  standing?: number;
+  /** The day we were last at his hall. He will not be visited daily. */
+  spokeOn?: number;
 }
 
 /** One larder's history in one hex: days' take, and when the last one was. */

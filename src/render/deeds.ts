@@ -17,6 +17,7 @@ import { KEPT_FOR, canKeepHall, feastCost, sinceKept } from '../sim/hall';
 import { SAIL_ON_REASON, reckoningDue, sailOnBlocker } from '../sim/landnam';
 import { everyoneHome } from '../sim/expedition';
 import { BARGAIN_REASON, bargainBlocker, bargainBlurb, neighbourHere } from '../sim/neighbours';
+import { SPEAK_REASON, rivalHere, speakBlocker, speakBlurb } from '../sim/rival';
 import { foodPerDay } from '../sim/upkeep';
 import { offerGot, placeHere, tradeBlocker, TRADE_REASON } from '../sim/places';
 import { placeKind } from '../data/places';
@@ -229,6 +230,26 @@ export function deedsFor(
         'Whatever you take, they will remember who took it.',
       tone: 'grim',
       run: () => dispatch({ type: 'FALL_ON', id: host.id }),
+    });
+  }
+
+  // THE OTHER LANDNAM, ANSWERED (12.16). He was a man you could see and not
+  // speak to: met in a third of runs, and his only reader in `src/` was
+  // `foundBlocker` saying no. Offered whenever his hall is in sight — the
+  // same window `meetRival` uses to say we have laid eyes on it — and shown
+  // greyed with its own reason rather than hidden, like the founding deed
+  // below, because a control that vanishes teaches nothing.
+  if (rivalHere(state)) {
+    // `speakBlocker` answers 'nowhere' first, so every other reason it can
+    // give already implies we are standing in sight of the hall. One
+    // condition, not two.
+    const blocked = speakBlocker(state);
+    deeds.push({
+      id: 'speak-rival',
+      label: `Go up to ${state.rival!.hall}`,
+      blurb: speakBlurb(state),
+      ...(blocked ? { blocked: SPEAK_REASON[blocked] } : {}),
+      run: () => dispatch({ type: 'SPEAK_RIVAL' }),
     });
   }
 

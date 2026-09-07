@@ -22,6 +22,7 @@ import { feastLine, keepHall } from './hall';
 import { layDownSaga, sailOn } from './landnam';
 import { shakeNerve } from './morale';
 import { callThing, layDownRule } from './thing';
+import { speakToRival } from './rival';
 import { THING_OPENING } from '../data/thing';
 import { advance, marchLine, reveal } from './road';
 import { canWalk, countryHere, daysToWalk, markTrod, standingAt } from './coast';
@@ -45,6 +46,7 @@ export type TravelAction =
   | { type: 'FALL_ON'; id: string }
   | { type: 'SACK_PLACE'; id: string }
   | { type: 'STRANDHOGG' }
+  | { type: 'SPEAK_RIVAL' }
   | { type: 'CALL_THING' }
   | { type: 'RULE_ON' }
   | { type: 'LAY_DOWN_RULE' };
@@ -277,6 +279,17 @@ export function applyTravel(prev: GameState, action: TravelAction): GameState {
         }
         state.battle.log.push('They had not thought to watch the water.');
       }
+      return state;
+    }
+
+    case 'SPEAK_RIVAL': {
+      // 12.16. A day's walk up to his hall and back, and the gift eaten
+      // either way — `speakToRival` takes both, so this only has to spend
+      // the day and let the coast be seen from wherever the walk ended.
+      if (!speakToRival(state)) return prev;
+      advance(state, 1);
+      if (state.end) return state;
+      reveal(state);
       return state;
     }
 

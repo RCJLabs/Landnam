@@ -9,6 +9,7 @@
 //   3. Migrations never throw on missing fields; they fill defaults.
 
 import { SAVE_VERSION } from './version';
+import { RIVAL_OPENING } from '../sim/rival';
 import { makeShip } from '../sim/ship';
 import { SHIP_STRAKES } from '../data/ships';
 import { seedPlaces } from '../sim/places';
@@ -720,6 +721,28 @@ export const MIGRATIONS: Record<number, Migration> = {
    * It bumps the version and touches nothing, which is what a save shape
    * gaining an optional field with a meaningful absence looks like.
    */
+  /**
+   * v67 (12.16): the rival gains an opinion of us.
+   *
+   * Stamped rather than passed through, and that is the difference between
+   * this and v63. There, `orders` ABSENT was itself the old game — the crew
+   * stayed where the player put it — so writing a value would have handed a
+   * two-hundred-day saga a rule nobody agreed to. Here absence and the clan
+   * opening are the same coast: he has always disliked us exactly that much,
+   * there was simply nowhere to write it down. So it is written down, and a
+   * reader of the JSON does not have to know `rivalStanding`'s fallback to
+   * know what he thinks.
+   *
+   * A save with no rival on its coast passes straight through.
+   */
+  66: (save) => {
+    const rival = save['rival'];
+    if (!rival || typeof rival !== 'object') return { ...save, version: 67 };
+    const r = rival as Record<string, unknown>;
+    if (typeof r['standing'] === 'number') return { ...save, version: 67 };
+    return { ...save, rival: { ...r, standing: RIVAL_OPENING }, version: 67 };
+  },
+
   /**
    * v66 (12.13): `Jarldom` gains the person's id, resolved from the name.
    *

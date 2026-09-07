@@ -21,7 +21,10 @@ import type { GameState, Rival } from '../state/types';
 import { chronicle } from './saga';
 import { ROUTE_STOPS, neighbourStops, stopAt } from './route';
 import { standingAt } from './coast';
-import { CLAN_COUNT, CLAN_ELBOW, CLAN_MAX_GAP } from '../data/clans';
+import { atSea } from './road';
+import { BARTER_FOOD, CLAN_COUNT, CLAN_ELBOW, CLAN_MAX_GAP, clanKind } from '../data/clans';
+import { bestStat } from './people';
+import { checkOdds } from './events';
 
 /** How far from our landing theirs is. Far enough that we do not start in their yard. */
 export const RIVAL_APART = 7;
@@ -277,4 +280,212 @@ export function meetRival(state: GameState): void {
       + 'and his fences already out around it. This island has two landnams on it.',
     'grim',
   );
+}
+
+// --- 12.16: he can be answered ---
+//
+// He was a man you could see and not speak to. `PROBE 12.11` put a number on
+// how much of the run that is: he is met in a third of sagas, and until this
+// there was no verb in the whole `Action` union that named him — his single
+// reader in `src/` was `foundBlocker`, saying no.
+//
+// THIS IS NOT 12.11. That item wanted hands for him because he was thought to
+// cost more than he gives, and the re-take (2026-09-07) closed that: he is
+// the reason posts are refused in 3% of sagas, and paired he saved nought and
+// killed three of a hundred and twenty. Nothing here is meant to reduce a
+// cost. It is meant to answer a man.
+//
+// AND IT SIMULATES NOTHING BEHIND HIM. The 2026-08-26 decision — "there is no
+// second colony being simulated behind him and there is not meant to be" —
+// stands exactly as it did. He is still a name, a hall, and the ground he has
+// taken. What is new is that he has an opinion of us, and it can move.
+
+/**
+ * Where his opinion of us starts.
+ *
+ * The clan opening, taken from the same place a Norse neighbour's is rather
+ * than respelled here, and its own comment is the argument: "Another Norse
+ * hall on the same coast is a rival before it is anything." That is a
+ * description of this man.
+ */
+export const RIVAL_OPENING = clanKind('clan').opening;
+
+/**
+ * What you carry to a man's hall.
+ *
+ * `BARTER_FOOD`, because it is the same act — stores carried in to somebody
+ * else's fire — and a second number for it would be a second number to keep
+ * in step with the first.
+ */
+export const GUEST_GIFT = BARTER_FOOD;
+
+/** Days before he will hear us again. He is up the coast, not next door. */
+export const SPEAK_EVERY = 12;
+
+/** 2d6 against this, with what the speaker is worth added. */
+export const SPEAK_DC = 9;
+
+/** What a good hearing and a bad one are worth. */
+export const SPEAK_WELL = 14;
+export const SPEAK_ILL = -8;
+
+/**
+ * The standing at which he will give ground back.
+ *
+ * From `RIVAL_OPENING` that is three good hearings, and at `SPEAK_EVERY` days
+ * apart the earliest a fence can open is about five weeks of deliberately
+ * going to see him. THESE FIVE NUMBERS ARE A FIRST CUT, not a measurement:
+ * they are chosen so the thing is reachable and not free, and the sweep that
+ * prices them is 12.16's own, not something this comment can stand in for.
+ */
+export const RIVAL_YIELDS = 30;
+
+/** His opinion of us, with the opening for a save that never had one. */
+export function rivalStanding(state: GameState): number {
+  return state.rival?.standing ?? RIVAL_OPENING;
+}
+
+/**
+ * Move it, clamped the way a neighbour's is.
+ *
+ * Deliberately the same shape as `shiftStanding` rather than a call to it:
+ * that one looks a neighbour up by id in `state.neighbours`, and he is not in
+ * that array — he is a person with a schedule, not one of the coast's clans.
+ * What must not differ is the SCALE, so the clamp is the same and so is the
+ * opening, and `standingFor` reads his number the same way it reads theirs.
+ */
+export function shiftRivalStanding(state: GameState, delta: number): void {
+  const rival = state.rival;
+  if (!rival) return;
+  rival.standing = Math.max(-100, Math.min(100, rivalStanding(state) + delta));
+}
+
+/** True when his hall is close enough to walk up to. */
+export function rivalHere(state: GameState): boolean {
+  const rival = state.rival;
+  if (!rival || !rival.met || rival.stop === undefined) return false;
+  if (!rivalSettled(state)) return false;
+  // The same window `meetRival` uses to say sight has fallen on the hall: if
+  // you can see the smoke you can walk to the door, and the day this costs
+  // IS that walk.
+  return Math.abs(rival.stop - standingAt(state)) <= 1;
+}
+
+export type SpeakBlock = 'nowhere' | 'atsea' | 'soon' | 'stores';
+
+export const SPEAK_REASON: Record<SpeakBlock, string> = {
+  nowhere: 'His hall is not in sight of here.',
+  atsea: 'Not from the water.',
+  soon: 'We were there lately. Going back again this soon would say the wrong thing.',
+  stores: `We have nothing like ${GUEST_GIFT} to carry in, and you do not come empty-handed.`,
+};
+
+/** Days before he will hear us again, or 0. */
+export function speakCooldown(state: GameState): number {
+  const last = state.rival?.spokeOn;
+  if (last === undefined) return 0;
+  return Math.max(0, SPEAK_EVERY - (state.day - last));
+}
+
+export function speakBlocker(state: GameState): SpeakBlock | null {
+  if (!rivalHere(state)) return 'nowhere';
+  if (atSea(state)) return 'atsea';
+  if (speakCooldown(state) > 0) return 'soon';
+  if (state.party.food < GUEST_GIFT) return 'stores';
+  return null;
+}
+
+/** The odds, shown before it is tapped and never after. */
+export function speakOdds(state: GameState): number {
+  return checkOdds(speakWorth(state), SPEAK_DC);
+}
+
+/**
+ * What the band brings to the conversation.
+ *
+ * The best spirit among whoever is standing here — `callThing` picks its
+ * speaker the same way — and a jarl is heard differently from a man with six
+ * posts in the ground. A band that has been sacking its way up the coast is
+ * heard worse, and that is the one place in this file where what the player
+ * DID reaches him.
+ */
+export function speakWorth(state: GameState): number {
+  const spirit = bestStat(state.party.people, 'spirit');
+  return Math.floor(spirit / 2) + (state.jarl ? 2 : 0) - Math.floor(state.tally.sackings / 2);
+}
+
+/** The sheet's own words for it, composed here so a test can hold them. */
+export function speakBlurb(state: GameState): string {
+  const rival = state.rival;
+  if (!rival) return '';
+  const odds = Math.round(speakOdds(state) * 100);
+  const standing = rivalStanding(state);
+  const yields = standing >= RIVAL_YIELDS ? '' : ` He would want a great deal more of us before he gave any of it back.`;
+  return `${odds}% that he hears us out · costs a day and ${GUEST_GIFT} of food.`
+    + `${yields}`;
+}
+
+/**
+ * One hearing. Mutates; callers hold a clone.
+ *
+ * The gift is eaten either way — that is the cost of asking, and it is what
+ * makes going at bad odds a decision rather than a free reroll. Same shape as
+ * the Thing's feast, and for the same reason.
+ */
+export function speakToRival(state: GameState): boolean {
+  if (speakBlocker(state) !== null) return false;
+  const rival = state.rival!;
+  state.party.food = Math.max(0, state.party.food - GUEST_GIFT);
+  rival.spokeOn = state.day;
+
+  const rng = stream(state.seed, 'events').derive(`rival:speak:${state.day}`);
+  const heard = rng.roll(2, 6) + speakWorth(state) >= SPEAK_DC;
+  shiftRivalStanding(state, heard ? SPEAK_WELL : SPEAK_ILL);
+
+  if (!heard) {
+    chronicle(
+      state,
+      `${rival.leader} took what we brought and heard us out standing, in the `
+        + 'doorway, and we walked back the way we came.',
+      'grim',
+    );
+    return true;
+  }
+
+  chronicle(
+    state,
+    `We ate at ${rival.hall} and ${rival.leader} talked about the winter coming. `
+      + 'Two landnams on one island, and neither of us going anywhere.',
+    'good',
+  );
+
+  // AND THE FENCE CAN OPEN. The one thing he does that a player could never
+  // answer: ground he has closed his hand on. He gives back the stretch
+  // nearest our hall, because that is the one that was in the way.
+  if (rivalStanding(state) >= RIVAL_YIELDS) yieldNearest(state);
+  return true;
+}
+
+/**
+ * He gives up the claim nearest our hall, if he holds one that is not his own
+ * hall's stretch. Never the hall: a man does not hand over the ground his
+ * posts are in, and taking that would be the second colony this refuses to be.
+ */
+function yieldNearest(state: GameState): boolean {
+  const rival = state.rival;
+  if (!rival || rival.stop === undefined) return false;
+  const held = (rival.claimStops ?? []).filter((s) => s !== rival.stop);
+  if (held.length === 0) return false;
+  const from = state.settlement?.stop ?? standingAt(state);
+  const give = held.reduce((best, s) => (Math.abs(s - from) < Math.abs(best - from) ? s : best));
+  rival.claimStops = (rival.claimStops ?? []).filter((s) => s !== give);
+  chronicle(
+    state,
+    `${rival.leader} said the ${terrainDef(stopAt(state.seed, give).country).name.toLowerCase()} `
+      + 'up the coast was more trouble to him than it was worth, and took his '
+      + 'fence off it.',
+    'saga',
+    true,
+  );
+  return true;
 }
