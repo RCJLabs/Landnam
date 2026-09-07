@@ -7539,18 +7539,22 @@ would replace — which is why it is third and not fifteenth.
   ships zero external assets and runs from `file://`. **UNVERIFIED** — the
   direction candidates were in the verify queue when the session limit hit.
 
-- [ ] **12.11 — The other landnám has hands.** **THIS REVERSES A RECORDED
-  INTENT and is Evan's call before it is work.**
+- [x] **12.11 — The other landnám has hands. CLOSED 2026-09-07 ON THE
+  MEASUREMENT.** It reversed a recorded intent and was Evan's call; he ruled
+  on the re-take. **The cost case does not survive, so it is not built.** The
+  half of its premise that does survive is content rather than cost, and is
+  re-cut as **12.16** below — which reverses nothing, because it needs no
+  second colony behind him.
 
-  > **RE-TAKEN 2026-09-07 ON THE FLOOR-7 BASELINE, AND THE COST CASE DOES NOT
-  > SURVIVE.** `PROBE 12.11`. The item is kept open because its *other*
-  > observation does survive — see the recommendation at the foot of this
-  > entry — but nothing below the original text should be built on the
-  > 30–37% any more.
+  > Nothing under the original text should be built on the 30–37%. `PROBE
+  > 12.11`, 2026-09-07.
 
-  The rival's smallness is
-  stated three times as a decision — "He is deliberately small: a name, a
-  hall, and the ground he has taken" (2026-08-26). It is queued
+  **The item as it stood follows**, kept whole because the re-take below is
+  only readable against it.
+
+  The rival's smallness is stated three times as a decision — "He is
+  deliberately small: a name, a hall, and the ground he has taken"
+  (2026-08-26). It is queued
   because the measurement says the small rival costs more than he gives: met
   by 32% / 40% of sagas, he refuses founding in 30-37% of them (60 an arm,
   2026-08-31, floor 9 — and the verifier notes the "fenced" counter fires on
@@ -7622,7 +7626,8 @@ would replace — which is why it is third and not fifteenth.
   anywhere" is stale. It has four, all in `test/rival.test.ts`. No SIM reader,
   so the shape of the finding stands; the sentence does not.
 
-  **RECOMMENDED RULING — the case splits in two, and only one half survives.**
+  **THE RULING, TAKEN 2026-09-07 — the case splits in two, and only one half
+  survives.**
 
   1. **The cost case is closed.** "He costs more than he gives" was built on a
      counter three-quarters composed of settled bands. On today's baseline he
@@ -7637,10 +7642,48 @@ would replace — which is why it is third and not fifteenth.
      simulating a second colony behind him — one verb and a standing that can
      move would do it, which is what the original note actually refused to
      build ("There is no second colony being simulated behind him and there is
-     not meant to be"). If Evan wants that, it is a small item and should be
-     re-written as one rather than kept as this one.
+     not meant to be"). Re-written as **12.16**.
 
-  Either way the entry above should not be built as written.
+  The entry above is not built, and should not be.
+
+- [ ] **12.16 — The other landnám can be answered.** What is left of 12.11
+  after its cost case was measured away, cut down to the thing that actually
+  holds. **It reverses nothing**: the 2026-08-26 note refused to simulate a
+  second colony behind him ("There is no second colony being simulated behind
+  him and there is not meant to be"), and this needs none. He stays a name, a
+  hall, and the ground he has taken.
+
+  **THE PREMISE, and it is the one half of 12.11 that survived re-taking.**
+  A third of runs meet him — 33% (`PROBE 12.11`, 120 seeds, even, floor 7,
+  2026-09-07) to 38% (the older instrument, 60 seeds, same day) — and there is
+  nothing a player can do about it. `rivalBlocks` has exactly one reader in
+  `src/`, `foundBlocker` saying no, and the `Action` union contains no verb
+  that names him. He is a man you can see and cannot speak to.
+
+  **THE OLD DONE-WHEN WAS ARITHMETICALLY OUT OF REACH, and that is worth
+  saying rather than quietly dropping.** 12.11 asked for an interaction in
+  ≥ 40% of sagas. You cannot parley with a man you have never seen, so that
+  criterion exceeded the rate at which he is met at all — the same shape of
+  fault as 12.14's criterion 1, which asked for a number only reachable by
+  taking content away. The denominator has to be the sagas where he is MET.
+
+  **Done when**, at 120 landings on even at floor 7, with the instrument and
+  the date recorded beside every figure:
+  1. of the sagas in which he is met, **≥ 60%** see an interaction fire — a
+     verb dispatched at him, or his standing moved by something the player
+     did. Met itself must not fall: it stays within 5 points of the 33% above,
+     or the item has changed who meets him rather than what meeting him is
+     worth;
+  2. `PROBE 12.12`'s off-menu rule holds — whatever verb is added is on the
+     deeds sheet and goes through `apply`, so the interface bot can reach it;
+  3. the curve holds within tolerance, paired against today's build, and the
+     rival's own cost stays where the re-take put it: he must not become the
+     expensive fence that 12.11 was closed for not being;
+  4. an old save migrates with his standing at the clan default.
+
+  **Note for the build:** `might` is **derived**, not stored — "derived, not
+  stored" is a pillar. And his standing wants to live where the neighbours'
+  does, or the coast will have two ideas of what a person thinks of you.
 
 ### UI and what the screen says
 
@@ -8812,6 +8855,17 @@ would replace — which is why it is third and not fifteenth.
 
 ### Refuted, and recorded so it is not proposed again
 
+- **The rival as an expensive fence** — "he costs more than he gives, so give
+  him hands". Refuted on a re-take, 2026-09-07, and closed as 12.11. The
+  30–37% it rested on was a counter that fired whenever he held the ground
+  underfoot, INCLUDING after the band's own hall was up and founding was not
+  in question: on the old probe's own 60 seeds, 16 of the 22 sagas it counted
+  were already settled. Tightened to "he is the reason posts were refused" it
+  is **3%** of sagas, and paired against the same coasts with him lifted out
+  he saved 0 and killed 3 of 120 and cost a fifth of a day's walking. Do not
+  re-propose this on the cost. The CONTENT argument — a man met in a third of
+  runs with no verb pointing at him — is a different case and is 12.16.
+
 - **A wedding across the fence** — a kin tie to a neighbour clan. Nothing in
   this file declines it; the **code** does. `maybePair` pairs only within the
   band (`household.ts:45-103`) and the "sworn" tie the proposal wanted to
@@ -8839,6 +8893,20 @@ along drawn seams**, and a **dead-exports rule test**.
 Naval battles · winter solstice festivals · named legendary weapons · bloodline/generation play · daily-seed challenge mode · god-favor system
 
 ## Changelog
+
+- **2026-09-07 — 12.11 CLOSED on the ruling; what survives is re-cut as
+  12.16.** Evan took the recommendation. The cost case is closed and recorded
+  in *Refuted* so it is not re-proposed on the cost: he is the reason posts
+  are refused in 3% of sagas, and paired he saved 0 and killed 3 of 120.
+  **Nothing is built and nothing is reversed** — the 2026-08-26 decision that
+  no second colony is simulated behind him stands untouched.
+
+  **12.16 is the half that held**: he is met in a third of runs and no verb
+  points at him. Its Done-when is written against the sagas where he is MET,
+  because 12.11's "≥ 40% of sagas" exceeded the rate at which he is met at
+  all — you cannot parley with a man you have never seen. That is the same
+  shape of unreachable criterion 12.14 hit, caught this time before the work
+  rather than after.
 
 - **2026-09-07 — 12.11's cost case does not survive being re-taken.** The item
   is queued on "the small rival costs more than he gives": met by 32-40% of
