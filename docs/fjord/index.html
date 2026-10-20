@@ -127,6 +127,20 @@
       <button class="act scout" id="scout" type="button">Scout</button>
       <button class="act back" id="turn-back" type="button">Turn back</button>
     </div>
+    <div class="acts hidden" id="watched-acts">
+      <button class="act scout" id="parley" type="button">Parley</button>
+      <button class="act approach" id="force" type="button">Force</button>
+      <button class="act back" id="leave" type="button">Leave</button>
+    </div>
+    <div class="acts hidden" id="parley-acts" style="grid-template-columns: 1fr 1fr">
+      <button class="act approach" id="force-again" type="button">Force</button>
+      <button class="act back" id="leave-again" type="button">Leave</button>
+    </div>
+    <div class="acts hidden" id="wall-acts">
+      <button class="act scout" id="hold" type="button">Hold</button>
+      <button class="act approach" id="push" type="button">Push</button>
+      <button class="act back" id="give" type="button">Give ground</button>
+    </div>
     <div class="dock hidden" id="going">
       <button class="go" id="reach" type="button">The tower</button>
     </div>
@@ -160,16 +174,20 @@ const ROUTES = {
 const TOWER_WORD = {
   unknown: "Not yet walked",
   sighted: "Seen from the ridge",
-  scouted: "Scouted. Tracks, and an empty door",
-  entered: "Entered. The fish is in the hall",
+  watched: "Two on the wall",
+  parleyed: "Theirs. They know the boat",
+  taken: "Taken. The fish is in the hall",
 };
-const START = { day: 41, food: 18, phase: "beach", dock: "beach", route: null, tower: "unknown", line: "The tower is still only a shape." };
+const START = { day: 41, food: 18, phase: "beach", dock: "beach", route: null, tower: "unknown", surprised: false, line: "The tower is still only a shape." };
 
 function load() {
   try {
     const parsed = JSON.parse(localStorage.getItem(SAVE_KEY) || "");
     if (typeof parsed.day !== "number" || typeof parsed.phase !== "string") return { ...START };
-    return parsed;
+    if (parsed.tower === "scouted") parsed.tower = "watched";
+    if (parsed.tower === "entered") parsed.tower = "taken";
+    if (typeof parsed.surprised !== "boolean") parsed.surprised = false;
+    return { ...START, ...parsed };
   } catch {
     return { ...START };
   }
@@ -178,6 +196,7 @@ function load() {
 let state = load();
 
 function sceneFor(s) {
+  if (s.phase === "wall") return "wall.jpg";
   if (s.phase === "tower") return "tower.jpg";
   if (s.phase === "going" && s.route === "forest") return "forest.jpg";
   if (s.phase === "going" && s.route === "river") return "river.jpg";
@@ -194,6 +213,9 @@ const el = {
   acts: document.getElementById("acts"),
   going: document.getElementById("going"),
   sheet: document.getElementById("sheet"),
+  watched: document.getElementById("watched-acts"),
+  parley: document.getElementById("parley-acts"),
+  wall: document.getElementById("wall-acts"),
   tower: document.getElementById("tower-word"),
   setOut: document.getElementById("set-out"),
   again: document.getElementById("again"),
@@ -202,16 +224,22 @@ const el = {
 function paint() {
   const chart = state.phase === "chart";
   const atTower = state.phase === "tower";
+  const atWall = state.phase === "wall";
   const going = state.phase === "going";
+  const watched = atTower && state.tower === "watched";
+  const parleyed = atTower && state.tower === "parleyed";
   el.scene.src = sceneFor(state);
   el.day.textContent = String(state.day);
   el.food.textContent = String(state.food);
   el.line.textContent = state.line;
   el.lineWrap.classList.toggle("hidden", chart);
-  el.lineWrap.classList.toggle("high", going || atTower);
-  el.lineWrap.classList.toggle("low", !(going || atTower));
-  el.dock.classList.toggle("hidden", chart || going || atTower);
-  el.acts.classList.toggle("hidden", !atTower);
+  el.lineWrap.classList.toggle("high", going || atTower || atWall);
+  el.lineWrap.classList.toggle("low", !(going || atTower || atWall));
+  el.dock.classList.toggle("hidden", chart || going || atTower || atWall);
+  el.acts.classList.toggle("hidden", !atTower || watched || parleyed);
+  el.watched.classList.toggle("hidden", !watched);
+  el.parley.classList.toggle("hidden", !parleyed);
+  el.wall.classList.toggle("hidden", !atWall);
   el.going.classList.toggle("hidden", !going);
   el.sheet.classList.toggle("open", chart);
   el.sheet.inert = !chart;
@@ -252,35 +280,55 @@ document.getElementById("reach").onclick = () => {
     line: "The tower is a ruin. The door is a dark rectangle. Nobody calls down.",
   });
 };
-document.getElementById("approach").onclick = () => {
+document.getElementById("approach").onclick = () => walkUp();
+document.getElementById("force").onclick = () => walkUp();
+document.getElementById("force-again").onclick = () => walkUp();
+function walkUp() {
   if (state.phase !== "tower") return;
-  if (state.tower === "entered") {
-    set({
-      ...state, phase: "home", dock: "home", day: state.day + 1,
-      line: "The hearth is still cold. What was there, we already carried home.",
-    });
+  if (state.tower === "taken") {
+    set({ ...state, phase: "home", dock: "home", day: state.day + 1, line: "The hearth is still cold. What was there, we already carried home." });
     return;
   }
-  set({
-    ...state, phase: "home", dock: "home", tower: "entered",
-    food: state.food + 6, day: state.day + 1,
-    line: "The hearth was cold. We took six of dried fish and left the tower standing.",
-  });
-};
+  if (state.tower === "watched" || state.tower === "parleyed") {
+    set({ ...state, phase: "wall", surprised: false, line: "They wait in the door. Our shields are up." });
+    return;
+  }
+  set({ ...state, phase: "wall", surprised: true, tower: state.tower === "unknown" ? "sighted" : state.tower, line: "We walked up. Two shields were already in the door." });
+}
 document.getElementById("scout").onclick = () => {
   if (state.phase !== "tower") return;
-  set({ ...state, tower: "scouted", line: "Tracks, and not ours. The place is empty today. It may not stay empty." });
+  if (state.tower === "taken") { set({ ...state, line: "The door is as we left it." }); return; }
+  if (state.tower === "parleyed") { set({ ...state, line: "They are still on the wall. They know the boat." }); return; }
+  set({ ...state, tower: "watched", line: "Two on the wall. They saw the river before we saw them." });
 };
-document.getElementById("turn-back").onclick = () => {
+document.getElementById("parley").onclick = () => {
+  if (state.phase !== "tower" || state.tower !== "watched") return;
+  set({ ...state, phase: "home", dock: "home", tower: "parleyed", surprised: false, food: Math.max(0, state.food - 3), day: state.day + 1, line: "We left three fish on the stone. They let us look. They kept the tower." });
+};
+document.getElementById("push").onclick = () => {
+  if (state.phase !== "wall") return;
+  const surprised = state.surprised;
+  set({ ...state, phase: "home", dock: "home", tower: "taken", surprised: false, food: state.food + (surprised ? 2 : 6), day: state.day + 1, line: surprised ? "They had the door. We took it. Two fish, and one of us will not row tomorrow." : "We pushed them off the threshold. Six fish, and a cut that will mend." });
+};
+document.getElementById("hold").onclick = () => {
+  if (state.phase !== "wall") return;
+  set({ ...state, phase: "home", dock: "home", surprised: false, day: state.day + 1, line: "Neither line moved. We came down with the knowing, and nothing else." });
+};
+document.getElementById("give").onclick = () => {
+  if (state.phase !== "wall") return;
+  set({ ...state, phase: "home", dock: "home", surprised: false, day: state.day + 1, line: "We gave them the slope. The tower is still theirs." });
+};
+document.getElementById("turn-back").onclick = () => leaveRidge();
+document.getElementById("leave").onclick = () => leaveRidge();
+document.getElementById("leave-again").onclick = () => leaveRidge();
+function leaveRidge() {
   if (state.phase !== "tower") return;
-  const tower = state.tower === "entered" ? "entered" : state.tower === "scouted" ? "scouted" : "sighted";
+  const tower = state.tower === "taken" ? "taken" : state.tower === "parleyed" ? "parleyed" : state.tower === "watched" ? "watched" : "sighted";
   set({
-    ...state, phase: "home", dock: "home", tower, day: state.day + 1,
-    line: tower === "entered"
-      ? "We came down to the hall with what the tower gave."
-      : "We left the ridge. The tower is no longer only a shape.",
+    ...state, phase: "home", dock: "home", tower, surprised: false, day: state.day + 1,
+    line: tower === "taken" ? "We came down to the hall with what the tower gave." : tower === "parleyed" ? "We left them the wall, as we had agreed." : "We left the ridge. The tower is no longer only a shape.",
   });
-};
+}
 document.getElementById("again").onclick = () => {
   localStorage.removeItem(SAVE_KEY);
   set({ ...START });
@@ -295,7 +343,7 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.phase === "chart") set({ ...state, phase: state.dock });
 });
 paint();
-for (const src of ["chart.jpg", "beach.jpg", "river.jpg", "forest.jpg", "tower.jpg"]) {
+for (const src of ["chart.jpg", "beach.jpg", "river.jpg", "forest.jpg", "tower.jpg", "wall.jpg"]) {
   const img = new Image();
   img.src = src;
   img.decode?.().catch(() => {});
