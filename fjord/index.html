@@ -187,7 +187,9 @@ function load() {
     if (parsed.tower === "scouted") parsed.tower = "watched";
     if (parsed.tower === "entered") parsed.tower = "taken";
     if (typeof parsed.surprised !== "boolean") parsed.surprised = false;
-    return { ...START, ...parsed };
+    const next = { ...START, ...parsed };
+    if (next.phase === "chart") next.phase = next.dock;
+    return next;
   } catch {
     return { ...START };
   }
@@ -259,25 +261,34 @@ function set(next) {
 }
 
 const openBtn = document.getElementById("open-chart");
+function arm(button, run) {
+  if (!button) return;
+  button.addEventListener("pointerdown", (event) => {
+    if (event.button > 0) return;
+    button.dataset.armed = "1";
+  });
+  button.addEventListener("pointercancel", () => { delete button.dataset.armed; });
+  button.addEventListener("click", (event) => {
+    const armed = button.dataset.armed === "1" || event.detail === 0;
+    delete button.dataset.armed;
+    if (!armed) return;
+    run();
+  });
+}
 function openTheChart() {
   if (state.phase !== "beach" && state.phase !== "home") return;
   set({ ...state, phase: "chart", dock: state.phase });
 }
-openBtn.addEventListener("pointerdown", (event) => {
-  if (event.button > 0) return;
-  event.preventDefault();
-  openTheChart();
-});
-openBtn.onclick = openTheChart;
-document.getElementById("close-chart").onclick = () => {
+arm(openBtn, openTheChart);
+arm(document.getElementById("close-chart"), () => {
   if (state.phase !== "chart") return;
   set({ ...state, phase: state.dock });
-};
-document.getElementById("set-out").onclick = () => {
+});
+arm(document.getElementById("set-out"), () => {
   if (state.phase !== "chart" || !state.route) return;
   const road = ROUTES[state.route];
   set({ ...state, phase: "going", day: state.day + road.days, food: Math.max(0, state.food - road.food), line: road.line });
-};
+});
 document.getElementById("reach").onclick = () => {
   if (state.phase !== "going") return;
   set({
@@ -341,10 +352,10 @@ document.getElementById("again").onclick = () => {
   set({ ...START });
 };
 for (const button of document.querySelectorAll("[data-route]")) {
-  button.onclick = () => {
+  arm(button, () => {
     if (state.phase !== "chart") return;
     set({ ...state, route: button.dataset.route });
-  };
+  });
 }
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.phase === "chart") set({ ...state, phase: state.dock });
