@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Landnám — the fjord</title>
+<meta name="theme-color" content="#14110d">
+<style>
+  :root {
+    --parchment: #e8dcc0;
+    --parchment-deep: #d9c9a4;
+    --ink: #14110d;
+    --ink-soft: #2b261f;
+    --gold: #d3a441;
+    --gold-deep: #a67c28;
+    --rust: #c2703a;
+    --sea-deep: #1c3644;
+    --display: Palatino, "Iowan Old Style", Georgia, serif;
+    --ui: "Avenir Next", "Segoe UI", sans-serif;
+    --sheet: 1.25rem;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--parchment); }
+  body { font-family: var(--ui); line-height: 1.45; }
+  button { font: inherit; cursor: pointer; }
+  button:disabled { cursor: default; }
+  .desk { min-height: 100dvh; display: grid; place-items: center; }
+  .phone {
+    position: relative;
+    width: min(100vw, 430px);
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--sea-deep);
+  }
+  .scene { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .veil { position: absolute; inset: 0 0 auto 0; height: 7rem; background: linear-gradient(to bottom, rgb(20 17 13 / 0.8), transparent); pointer-events: none; }
+  .hud {
+    position: absolute; inset: 0 0 auto 0;
+    display: flex; justify-content: space-between; gap: 0.75rem;
+    padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0;
+  }
+  .day { font-family: var(--display); font-size: 1.125rem; line-height: 1.2; margin: 0; }
+  .kicker { display: block; margin-top: 0.125rem; font-family: var(--ui); font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+  .food { margin: 0; text-align: right; font-size: 0.875rem; }
+  .fire { display: block; margin-top: 0.125rem; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgb(232 220 192 / 0.8); }
+  .line {
+    position: absolute; left: 0.75rem; right: 0.75rem;
+    padding: 0.5rem 0.75rem; border-radius: 0.5rem;
+    background: rgb(20 17 13 / 0.8);
+    font-family: var(--display); font-size: 1.125rem; line-height: 1.35;
+  }
+  .line.low { bottom: 5rem; }
+  .line.high { bottom: 6rem; }
+  .dock { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 1rem max(0.75rem, env(safe-area-inset-bottom)); }
+  .chart-tab, .go, .act, .set-out, .again {
+    min-height: 3rem; border: 0; border-radius: var(--sheet);
+  }
+  .chart-tab {
+    width: 100%; border-radius: var(--sheet) var(--sheet) 0 0;
+    background: var(--parchment); color: var(--ink);
+    letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.875rem; font-weight: 500;
+  }
+  .go { width: 100%; background: var(--gold); color: var(--ink); font-size: 1rem; }
+  .acts { position: absolute; left: 1rem; right: 1rem; bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+  .act { font-size: 0.875rem; }
+  .act.approach { background: var(--gold); color: var(--ink); }
+  .act.scout { background: var(--parchment); color: var(--ink); }
+  .act.back { background: rgb(20 17 13 / 0.7); color: var(--parchment); border: 1px solid rgb(232 220 192 / 0.4); }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+    max-height: 78%; display: flex; flex-direction: column;
+    background: var(--parchment); color: var(--ink);
+    border-radius: var(--sheet) var(--sheet) 0 0;
+    box-shadow: 0 -12px 40px rgb(20 17 13 / 0.45);
+    transform: translateY(100%);
+    transition: transform 200ms ease;
+  }
+  .sheet.open { transform: none; }
+  .sheet-handle {
+    min-height: 2.75rem; background: transparent; color: var(--ink-soft);
+    letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.75rem; border: 0;
+  }
+  .plate { position: relative; margin: 0 1rem; overflow: hidden; border-radius: 0.5rem; border: 1px solid rgb(20 17 13 / 0.15); }
+  .plate img { display: block; width: 100%; height: 7rem; object-fit: cover; object-position: center 30%; }
+  .plate span { position: absolute; inset: 0; background: linear-gradient(to top, var(--parchment), rgb(232 220 192 / 0.3), transparent); }
+  .tower-word { margin: 0.75rem 1rem 0; font-family: var(--display); font-size: 1.125rem; }
+  .roads { display: grid; gap: 0.5rem; padding: 0.75rem 1rem 0; }
+  .road {
+    min-height: 3.5rem; text-align: left; padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem; border: 1px solid rgb(20 17 13 / 0.2);
+    background: rgb(217 201 164 / 0.4); color: var(--ink);
+  }
+  .road[aria-pressed="true"] { border: 2px solid var(--gold-deep); background: rgb(211 164 65 / 0.25); }
+  .road b { font-family: var(--display); font-size: 1.125rem; font-weight: 600; }
+  .road i { font-style: normal; font-size: 0.875rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--rust); }
+  .road small { display: block; margin-top: 0.125rem; color: var(--ink-soft); }
+  .road-top { display: flex; justify-content: space-between; gap: 0.75rem; align-items: baseline; }
+  .sheet-foot { margin-top: auto; display: grid; gap: 0.5rem; padding: 0.75rem 1rem max(1rem, env(safe-area-inset-bottom)); }
+  .set-out { background: var(--ink); color: var(--parchment); font-size: 1rem; }
+  .set-out:disabled { opacity: 0.4; }
+  .again { background: transparent; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 0.2em; min-height: 2.75rem; }
+  .hidden { display: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main class="desk">
+  <section class="phone">
+    <img class="scene" id="scene" alt="" src="beach.jpg">
+    <div class="veil"></div>
+    <header class="hud">
+      <p class="day">Day <span id="day">41</span><span class="kicker">Autumn</span></p>
+      <p class="food">Food <span id="food">18</span><span class="fire">Two keep the fire</span></p>
+    </header>
+    <div class="line low" id="line-wrap"><p id="line" style="margin:0">The tower is still only a shape.</p></div>
+    <div class="dock" id="dock">
+      <button class="chart-tab" id="open-chart" type="button">Chart</button>
+    </div>
+    <div class="acts hidden" id="acts">
+      <button class="act approach" id="approach" type="button">Approach</button>
+      <button class="act scout" id="scout" type="button">Scout</button>
+      <button class="act back" id="turn-back" type="button">Turn back</button>
+    </div>
+    <div class="dock hidden" id="going">
+      <button class="go" id="reach" type="button">The tower</button>
+    </div>
+    <div class="sheet" id="sheet" role="dialog" aria-label="Chart" inert>
+      <button class="sheet-handle" id="close-chart" type="button">Chart</button>
+      <div class="plate"><img src="chart.jpg" alt=""><span></span></div>
+      <p class="tower-word" id="tower-word">Tower · Not yet walked</p>
+      <div class="roads">
+        <button class="road" type="button" data-route="forest" aria-pressed="false">
+          <span class="road-top"><b>Forest track</b><i>2 days</i></span>
+          <small>Shorter. The trees hide whatever is in them.</small>
+        </button>
+        <button class="road" type="button" data-route="river" aria-pressed="false">
+          <span class="road-top"><b>River mouth</b><i>4 days</i></span>
+          <small>Longer. Open water, and you see the ridge coming.</small>
+        </button>
+      </div>
+      <div class="sheet-foot">
+        <button class="set-out" id="set-out" type="button" disabled>Set out</button>
+        <button class="again hidden" id="again" type="button">Begin again</button>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+const SAVE_KEY = "landnam-fjord-slice";
+const ROUTES = {
+  forest: { days: 2, food: 5, line: "Two days under the trees. Something moved off the path and did not show itself." },
+  river: { days: 4, food: 4, line: "Four days on the river. The tower grew out of the ridge instead of the haze." },
+};
+const TOWER_WORD = {
+  unknown: "Not yet walked",
+  sighted: "Seen from the ridge",
+  scouted: "Scouted. Tracks, and an empty door",
+  entered: "Entered. The fish is in the hall",
+};
+const START = { day: 41, food: 18, phase: "beach", dock: "beach", route: null, tower: "unknown", line: "The tower is still only a shape." };
+
+function load() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SAVE_KEY) || "");
+    if (typeof parsed.day !== "number" || typeof parsed.phase !== "string") return { ...START };
+    return parsed;
+  } catch {
+    return { ...START };
+  }
+}
+
+let state = load();
+
+function sceneFor(s) {
+  if (s.phase === "tower") return "tower.jpg";
+  if (s.phase === "going" && s.route === "forest") return "forest.jpg";
+  if (s.phase === "going" && s.route === "river") return "river.jpg";
+  return "beach.jpg";
+}
+
+const el = {
+  scene: document.getElementById("scene"),
+  day: document.getElementById("day"),
+  food: document.getElementById("food"),
+  line: document.getElementById("line"),
+  lineWrap: document.getElementById("line-wrap"),
+  dock: document.getElementById("dock"),
+  acts: document.getElementById("acts"),
+  going: document.getElementById("going"),
+  sheet: document.getElementById("sheet"),
+  tower: document.getElementById("tower-word"),
+  setOut: document.getElementById("set-out"),
+  again: document.getElementById("again"),
+};
+
+function paint() {
+  const chart = state.phase === "chart";
+  const atTower = state.phase === "tower";
+  const going = state.phase === "going";
+  el.scene.src = sceneFor(state);
+  el.day.textContent = String(state.day);
+  el.food.textContent = String(state.food);
+  el.line.textContent = state.line;
+  el.lineWrap.classList.toggle("hidden", chart);
+  el.lineWrap.classList.toggle("high", going || atTower);
+  el.lineWrap.classList.toggle("low", !(going || atTower));
+  el.dock.classList.toggle("hidden", chart || going || atTower);
+  el.acts.classList.toggle("hidden", !atTower);
+  el.going.classList.toggle("hidden", !going);
+  el.sheet.classList.toggle("open", chart);
+  el.sheet.inert = !chart;
+  el.sheet.setAttribute("aria-hidden", chart ? "false" : "true");
+  el.tower.textContent = "Tower · " + TOWER_WORD[state.tower];
+  for (const button of document.querySelectorAll("[data-route]")) {
+    button.setAttribute("aria-pressed", button.dataset.route === state.route ? "true" : "false");
+  }
+  el.setOut.disabled = !state.route;
+  el.again.classList.toggle("hidden", state.dock !== "home");
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function set(next) {
+  state = next;
+  paint();
+}
+
+document.getElementById("open-chart").onclick = () => {
+  if (state.phase !== "beach" && state.phase !== "home") return;
+  set({ ...state, phase: "chart", dock: state.phase });
+};
+document.getElementById("close-chart").onclick = () => {
+  if (state.phase !== "chart") return;
+  set({ ...state, phase: state.dock });
+};
+document.getElementById("set-out").onclick = () => {
+  if (state.phase !== "chart" || !state.route) return;
+  const road = ROUTES[state.route];
+  set({ ...state, phase: "going", day: state.day + road.days, food: Math.max(0, state.food - road.food), line: road.line });
+};
+document.getElementById("reach").onclick = () => {
+  if (state.phase !== "going") return;
+  set({
+    ...state,
+    phase: "tower",
+    tower: state.tower === "unknown" ? "sighted" : state.tower,
+    line: "The tower is a ruin. The door is a dark rectangle. Nobody calls down.",
+  });
+};
+document.getElementById("approach").onclick = () => {
+  if (state.phase !== "tower") return;
+  set({
+    ...state, phase: "home", dock: "home", tower: "entered",
+    food: state.food + 6, day: state.day + 1,
+    line: "The hearth was cold. We took six of dried fish and left the tower standing.",
+  });
+};
+document.getElementById("scout").onclick = () => {
+  if (state.phase !== "tower") return;
+  set({ ...state, tower: "scouted", line: "Tracks, and not ours. The place is empty today. It may not stay empty." });
+};
+document.getElementById("turn-back").onclick = () => {
+  if (state.phase !== "tower") return;
+  const tower = state.tower === "entered" ? "entered" : state.tower === "scouted" ? "scouted" : "sighted";
+  set({
+    ...state, phase: "home", dock: "home", tower, day: state.day + 1,
+    line: tower === "entered"
+      ? "We came down to the hall with what the tower gave."
+      : "We left the ridge. The tower is no longer only a shape.",
+  });
+};
+document.getElementById("again").onclick = () => {
+  localStorage.removeItem(SAVE_KEY);
+  set({ ...START });
+};
+for (const button of document.querySelectorAll("[data-route]")) {
+  button.onclick = () => {
+    if (state.phase !== "chart") return;
+    set({ ...state, route: button.dataset.route });
+  };
+}
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.phase === "chart") set({ ...state, phase: state.dock });
+});
+paint();
+</script>
+</body>
+</html>
