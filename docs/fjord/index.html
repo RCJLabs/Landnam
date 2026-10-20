@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Landnám — the fjord</title>
+<link rel="preload" as="image" href="chart.jpg">
+<link rel="preload" as="image" href="beach.jpg">
 <meta name="theme-color" content="#14110d">
 <style>
   :root {
@@ -20,7 +22,7 @@
     --sheet: 1.25rem;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--parchment); }
+  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--parchment); touch-action: manipulation; }
   body { font-family: var(--ui); line-height: 1.45; }
   button { font: inherit; cursor: pointer; }
   button:disabled { cursor: default; }
@@ -48,10 +50,11 @@
     padding: 0.5rem 0.75rem; border-radius: 0.5rem;
     background: rgb(20 17 13 / 0.8);
     font-family: var(--display); font-size: 1.125rem; line-height: 1.35;
+    pointer-events: none;
   }
-  .line.low { bottom: 5rem; }
-  .line.high { bottom: 6rem; }
-  .dock { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 1rem max(0.75rem, env(safe-area-inset-bottom)); }
+  .line.low { bottom: 6rem; }
+  .line.high { bottom: 7rem; }
+  .dock { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 0 1rem max(0.75rem, env(safe-area-inset-bottom)); }
   .chart-tab, .go, .act, .set-out, .again {
     min-height: 3rem; border: 0; border-radius: var(--sheet);
   }
@@ -73,7 +76,8 @@
     border-radius: var(--sheet) var(--sheet) 0 0;
     box-shadow: 0 -12px 40px rgb(20 17 13 / 0.45);
     transform: translateY(100%);
-    transition: transform 200ms ease;
+    transition: transform 120ms ease;
+    will-change: transform;
   }
   .sheet.open { transform: none; }
   .sheet-handle {
@@ -250,6 +254,13 @@ document.getElementById("reach").onclick = () => {
 };
 document.getElementById("approach").onclick = () => {
   if (state.phase !== "tower") return;
+  if (state.tower === "entered") {
+    set({
+      ...state, phase: "home", dock: "home", day: state.day + 1,
+      line: "The hearth is still cold. What was there, we already carried home.",
+    });
+    return;
+  }
   set({
     ...state, phase: "home", dock: "home", tower: "entered",
     food: state.food + 6, day: state.day + 1,
@@ -284,6 +295,11 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.phase === "chart") set({ ...state, phase: state.dock });
 });
 paint();
+for (const src of ["chart.jpg", "beach.jpg", "river.jpg", "forest.jpg", "tower.jpg"]) {
+  const img = new Image();
+  img.src = src;
+  img.decode?.().catch(() => {});
+}
 </script>
 </body>
 </html>
