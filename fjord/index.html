@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Landnám — the fjord</title>
-<link rel="preload" as="image" href="chart.jpg">
-<link rel="preload" as="image" href="beach.jpg">
 <meta name="theme-color" content="#14110d">
 <style>
   :root {
@@ -70,23 +68,20 @@
   .act.scout { background: var(--parchment); color: var(--ink); }
   .act.back { background: rgb(20 17 13 / 0.7); color: var(--parchment); border: 1px solid rgb(232 220 192 / 0.4); }
   .sheet {
+    display: none;
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
-    max-height: 78%; display: flex; flex-direction: column;
+    max-height: 78%; flex-direction: column;
     background: var(--parchment); color: var(--ink);
     border-radius: var(--sheet) var(--sheet) 0 0;
     box-shadow: 0 -12px 40px rgb(20 17 13 / 0.45);
-    transform: translateY(100%);
-    transition: transform 120ms ease;
-    will-change: transform;
   }
-  .sheet.open { transform: none; }
+  .sheet.open { display: flex; }
   .sheet-handle {
     min-height: 2.75rem; background: transparent; color: var(--ink-soft);
     letter-spacing: 0.22em; text-transform: uppercase; font-size: 0.75rem; border: 0;
   }
-  .plate { position: relative; margin: 0 1rem; overflow: hidden; border-radius: 0.5rem; border: 1px solid rgb(20 17 13 / 0.15); }
-  .plate img { display: block; width: 100%; height: 7rem; object-fit: cover; object-position: center 30%; }
-  .plate span { position: absolute; inset: 0; background: linear-gradient(to top, var(--parchment), rgb(232 220 192 / 0.3), transparent); }
+  .plate { margin: 0 1rem; overflow: hidden; border-radius: 0.5rem; border: 1px solid rgb(20 17 13 / 0.15); }
+  .plate svg { display: block; width: 100%; height: 7rem; }
   .tower-word { margin: 0.75rem 1rem 0; font-family: var(--display); font-size: 1.125rem; }
   .roads { display: grid; gap: 0.5rem; padding: 0.75rem 1rem 0; }
   .road {
@@ -104,9 +99,6 @@
   .set-out:disabled { opacity: 0.4; }
   .again { background: transparent; color: var(--ink-soft); text-decoration: underline; text-underline-offset: 0.2em; min-height: 2.75rem; }
   .hidden { display: none !important; }
-  @media (prefers-reduced-motion: reduce) {
-    .sheet { transition: none; }
-  }
 </style>
 </head>
 <body>
@@ -146,7 +138,15 @@
     </div>
     <div class="sheet" id="sheet" role="dialog" aria-label="Chart" inert>
       <button class="sheet-handle" id="close-chart" type="button">Chart</button>
-      <div class="plate"><img src="chart.jpg" alt=""><span></span></div>
+      <div class="plate">
+        <svg viewBox="0 0 240 72" aria-hidden="true">
+          <rect width="240" height="72" fill="#d9c9a4"/>
+          <path d="M6 60c40-8 78-22 118-28 40-6 78-16 110-24" fill="none" stroke="#2e5468" stroke-width="10" stroke-linecap="round"/>
+          <path d="M36 54c28-14 48-28 62-40" fill="none" stroke="#7d9150" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M48 56c48-6 96-16 150-28" fill="none" stroke="#c2703a" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="198" cy="22" r="3.5" fill="#14110d"/>
+        </svg>
+      </div>
       <p class="tower-word" id="tower-word">Tower · Not yet walked</p>
       <div class="roads">
         <button class="road" type="button" data-route="forest" aria-pressed="false">
@@ -258,10 +258,17 @@ function set(next) {
   paint();
 }
 
-document.getElementById("open-chart").onclick = () => {
+const openBtn = document.getElementById("open-chart");
+function openTheChart() {
   if (state.phase !== "beach" && state.phase !== "home") return;
   set({ ...state, phase: "chart", dock: state.phase });
-};
+}
+openBtn.addEventListener("pointerdown", (event) => {
+  if (event.button > 0) return;
+  event.preventDefault();
+  openTheChart();
+});
+openBtn.onclick = openTheChart;
 document.getElementById("close-chart").onclick = () => {
   if (state.phase !== "chart") return;
   set({ ...state, phase: state.dock });
@@ -343,11 +350,6 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.phase === "chart") set({ ...state, phase: state.dock });
 });
 paint();
-for (const src of ["chart.jpg", "beach.jpg", "river.jpg", "forest.jpg", "tower.jpg", "wall.jpg"]) {
-  const img = new Image();
-  img.src = src;
-  img.decode?.().catch(() => {});
-}
 </script>
 </body>
 </html>
